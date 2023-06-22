@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
 
@@ -14,8 +15,10 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func Test_calcDurationToWaitForNextHandle(t *testing.T) {
@@ -26,8 +29,8 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 	})
 
 	cleanupStore := func() {
-		store.Del(licenseValidityStoreKey)
-		store.Del(lastCalledAtStoreKey)
+		_ = store.Del(licenseValidityStoreKey)
+		_ = store.Del(lastCalledAtStoreKey)
 	}
 
 	now := time.Now().Round(time.Second)
@@ -74,7 +77,7 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cleanupStore()
 			if test.lastCalledAt != "" {
-				store.Set(lastCalledAtStoreKey, test.lastCalledAt)
+				_ = store.Set(lastCalledAtStoreKey, test.lastCalledAt)
 			}
 
 			got, err := calcDurationSinceLastCalled(clock)
@@ -88,6 +91,19 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 	}
 }
 
+func mockDotcomURL(t *testing.T, u *string) {
+	t.Helper()
+
+	origBaseURL := baseUrl
+	t.Cleanup(func() {
+		baseUrl = origBaseURL
+	})
+
+	if u != nil {
+		baseUrl = *u
+	}
+}
+
 func Test_licenseChecker(t *testing.T) {
 	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
 	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
@@ -96,8 +112,8 @@ func Test_licenseChecker(t *testing.T) {
 	})
 
 	cleanupStore := func() {
-		store.Del(licenseValidityStoreKey)
-		store.Del(lastCalledAtStoreKey)
+		_ = store.Del(licenseValidityStoreKey)
+		_ = store.Del(lastCalledAtStoreKey)
 	}
 
 	siteID := "some-site-id"
@@ -159,8 +175,8 @@ func Test_licenseChecker(t *testing.T) {
 			MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
 		})
 
-		store.Del(licenseValidityStoreKey)
-		store.Del(lastCalledAtStoreKey)
+		_ = store.Del(licenseValidityStoreKey)
+		_ = store.Del(lastCalledAtStoreKey)
 
 		doer := &mockDoer{
 			status:   '1',
@@ -195,6 +211,7 @@ func Test_licenseChecker(t *testing.T) {
 		status   int
 		want     bool
 		err      bool
+		baseUrl  *string
 	}{
 		"returns error if unable to make a request to license server": {
 			response: []byte(`{"error": "some error"}`),
@@ -216,11 +233,19 @@ func Test_licenseChecker(t *testing.T) {
 			status:   http.StatusOK,
 			want:     false,
 		},
+		`uses sourcegraph baseURL from env`: {
+			response: []byte(`{"data": {"is_valid": true}}`),
+			status:   http.StatusOK,
+			want:     true,
+			baseUrl:  pointers.Ptr("https://foo.bar"),
+		},
 	}
 
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
 			cleanupStore()
+
+			mockDotcomURL(t, test.baseUrl)
 
 			doer := &mockDoer{
 				status:   test.status,
@@ -254,9 +279,10 @@ func Test_licenseChecker(t *testing.T) {
 			require.NotEmpty(t, lastCalledAt)
 
 			// check doer with proper parameters
+			rUrl, _ := url.JoinPath(baseUrl, "/.api/license/check")
 			require.True(t, doer.DoCalled)
 			require.Equal(t, "POST", doer.Request.Method)
-			require.Equal(t, "https://sourcegraph.com/.api/license/check", doer.Request.URL.String())
+			require.Equal(t, rUrl, doer.Request.URL.String())
 			require.Equal(t, "application/json", doer.Request.Header.Get("Content-Type"))
 			require.Equal(t, "Bearer "+token, doer.Request.Header.Get("Authorization"))
 			var body struct {
@@ -268,8 +294,6 @@ func Test_licenseChecker(t *testing.T) {
 		})
 	}
 }
-
-var strPtr = func(s string) *string { return &s }
 
 type mockDoer struct {
 	DoCalled bool

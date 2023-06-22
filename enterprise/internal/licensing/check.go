@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"net/http"
+	"net/url"
 
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
@@ -13,6 +14,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -23,6 +25,7 @@ import (
 var (
 	licenseCheckStarted = false
 	store               = redispool.Store
+	baseUrl             = env.Get("SOURCEGRAPH_API_URL", "https://sourcegraph.com", "Base URL for license check API")
 )
 
 const (
@@ -41,12 +44,16 @@ type licenseChecker struct {
 
 func (l *licenseChecker) Handle(ctx context.Context) error {
 	l.logger.Debug("starting license check", log.String("siteID", l.siteID))
-	store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339))
+	if err := store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
+		return err
+	}
 
 	// skip if has explicitly allowed air-gapped feature
 	if err := Check(FeatureAllowAirGapped); err == nil {
 		l.logger.Debug("license is air-gapped, skipping check", log.String("siteID", l.siteID))
-		store.Set(licenseValidityStoreKey, true)
+		if err := store.Set(licenseValidityStoreKey, true); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -54,9 +61,11 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if info.HasTag("dev") {
-		l.logger.Debug("dev license, skipping license verification check")
-		store.Set(licenseValidityStoreKey, true)
+	if info.HasTag("dev") || info.HasTag("internal") {
+		l.logger.Debug("internal or dev license, skipping license verification check")
+		if err := store.Set(licenseValidityStoreKey, true); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -68,7 +77,12 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "https://sourcegraph.com/.api/license/check", bytes.NewBuffer(payload))
+	u, err := url.JoinPath(baseUrl, "/.api/license/check")
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest(http.MethodPost, u, bytes.NewBuffer(payload))
 	if err != nil {
 		return err
 	}
@@ -103,7 +117,9 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return errors.New("No data returned from license check")
 	}
 
-	store.Set(licenseValidityStoreKey, body.Data.IsValid)
+	if err := store.Set(licenseValidityStoreKey, body.Data.IsValid); err != nil {
+		return err
+	}
 	l.logger.Debug("finished license check", log.String("siteID", l.siteID))
 	return nil
 }
