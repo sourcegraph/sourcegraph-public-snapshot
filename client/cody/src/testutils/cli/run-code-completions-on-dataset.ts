@@ -34,8 +34,8 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
 
     const completionsClient = new SourcegraphNodeCompletionsClient(initialConfig, logger)
 
-    if (!initialConfig.experimentalSuggest) {
-        throw new Error('`cody.experimental.suggestions` is not true!')
+    if (!initialConfig.autocomplete) {
+        throw new Error('`cody.autocomplete` is not true!')
     }
 
     const history = new VSCodeHistory()

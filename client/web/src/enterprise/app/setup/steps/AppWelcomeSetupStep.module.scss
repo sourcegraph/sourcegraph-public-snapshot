@@ -70,3 +70,25 @@
         text-decoration: underline;
     }
 }
+
+.email-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+
+    flex-basis: 50%;
+    flex-shrink: 0;
+    padding: 6.75rem 2.5rem 2.5rem;
+    background-color: var(--gray-02);
+
+    &-icon {
+        height: 1.5rem;
+        margin-bottom: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    &-text {
+        font-size: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+}

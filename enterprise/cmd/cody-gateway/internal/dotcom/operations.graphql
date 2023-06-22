@@ -63,7 +63,7 @@ query ListProductSubscriptions {
 }
 
 fragment DotcomUserState on CodyGatewayDotcomUser {
-    username
+    id
     codyGatewayAccess {
         ...CodyGatewayAccessFields
     }
