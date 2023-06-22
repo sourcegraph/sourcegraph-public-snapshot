@@ -201,8 +201,8 @@ github.com/RoaringBitmap/roaring v1.2.3 h1:yqreLINqIrX22ErkKI0vY47/ivtJr6n+kMhVO
 github.com/RoaringBitmap/roaring v1.2.3/go.mod h1:plvDsJQpxOC5bw8LRteu/MLWHsHez/3y6cubLI4/1yE=
 github.com/Shopify/goreferrer v0.0.0-20181106222321-ec9c9a553398/go.mod h1:a1uqRtAwp2Xwc6WNPJEufxJ7fx3npB4UV/JOLmbu5I0=
 github.com/Shopify/logrus-bugsnag v0.0.0-20171204204709-577dee27f20d/go.mod h1:HI8ITrYtUY+O+ZhtlqUnD8+KwNPOyugEhfP9fdUIaEQ=
-github.com/XSAM/otelsql v0.18.0 h1:n9PcapiW6W801A4QgYG2ArfY2JwnWduXorRlZqucVhM=
-github.com/XSAM/otelsql v0.18.0/go.mod h1:M0w5PR/rB7GdEBiHsJ9C91NEKkD2uWFcKj+l5xj8K+c=
+github.com/XSAM/otelsql v0.20.0 h1:HIiNs5pmYxgqwm3c6J4Xv6JJ0zBlCAb0HUEJBNX/g2k=
+github.com/XSAM/otelsql v0.20.0/go.mod h1:65rhbaPV/WUP7I9F3yODndlvGD7xH3JGL/oR62XemZk=
 github.com/acomagu/bufpipe v1.0.3 h1:fxAGrHZTgQ9w5QqVItgzwj235/uYZYgbXitB+dLupOk=
 github.com/acomagu/bufpipe v1.0.3/go.mod h1:mxdxdup/WdsKVreO5GpW4+M/1CE2sMG4jeGJ2sYmHc4=
 github.com/agext/levenshtein v1.2.3 h1:YB2fHEn0UJagG8T1rrWknE3ZQzWM06O8AMAatNn7lmo=
