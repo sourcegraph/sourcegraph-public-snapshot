@@ -11,18 +11,20 @@ interface ConnectAppProps {
     appOS?: string
     appArch?: string
     callbackScheme?: string
+    isAppRunning: boolean
 }
 
 export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     vscodeAPI,
     isAppInstalled,
+    isAppRunning = false,
     isOSSupported,
     appOS = '',
     appArch = '',
     callbackScheme,
 }) => {
     const inDownloadMode = !isAppInstalled && isOSSupported
-    const buttonText = inDownloadMode ? 'Download Cody App' : 'Open Cody App'
+    const buttonText = inDownloadMode ? 'Download Cody App' : isAppRunning ? 'Connect Cody App' : 'Open Cody App'
     const buttonIcon = inDownloadMode ? 'codicon codicon-cloud-download' : 'codicon codicon-vm-running'
     // Open landing page if download link for user's arch cannot be found
     const DOWNLOAD_URL = APP_DOWNLOAD_URLS[appOS]?.[appArch] || APP_LANDING_URL.href

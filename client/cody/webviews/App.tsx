@@ -56,6 +56,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     setConfig(message.config)
                     setAuthStatus(message.authStatus)
                     setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
+                    setIsAppInstalled(message.config.isAppInstalled)
                     break
                 case 'login':
                     setAuthStatus(message.authStatus)

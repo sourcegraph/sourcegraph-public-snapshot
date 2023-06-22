@@ -3,7 +3,7 @@ import { useCallback, useState } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { AuthStatus, DOTCOM_CALLBACK_URL, DOTCOM_URL } from '../src/chat/protocol'
+import { AuthStatus, DOTCOM_CALLBACK_URL, DOTCOM_URL, LOCAL_APP_URL } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
 import { VSCodeWrapper } from './utils/VSCodeApi'
@@ -37,20 +37,21 @@ const ERROR_MESSAGES = {
         'Cody is not supported by your Sourcegraph instance version (version: $SITEVERSION). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
     INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
     EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
+    APP_NOT_RUNNING: 'Cody App is not running. Please start Cody App.',
 }
 
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
     authStatus,
     serverEndpoint,
-    isAppInstalled,
-    isAppRunning,
     vscodeAPI,
     callbackScheme,
     appOS,
     appArch,
-    isAppConnectEnabled,
+    isAppInstalled = false,
+    isAppRunning = false,
+    isAppConnectEnabled = false,
 }) => {
-    const [endpoint, setEndpoint] = useState(serverEndpoint || DOTCOM_URL.href)
+    const [endpoint, setEndpoint] = useState(serverEndpoint)
 
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
 
@@ -68,6 +69,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         [vscodeAPI]
     )
 
+    const isApp = endpoint === LOCAL_APP_URL.href
     const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
 
     const SigninWithApp: React.FunctionComponent = () => (
@@ -81,13 +83,14 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                         ? APP_MESSAGES.appNotRunning
                         : APP_MESSAGES.connectApp}
                 </p>
-                {!isAppInstalled && <small className={styles.openMessage}>APP_MESSAGES.download</small>}
+                {!isAppInstalled && <p className={styles.openMessage}>{APP_MESSAGES.download}</p>}
                 <ConnectApp
                     isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
                     isOSSupported={isOSSupported}
                     appOS={appOS}
                     appArch={appArch}
+                    isAppRunning={isAppRunning}
                     callbackScheme={callbackScheme}
                 />
                 {!isOSSupported && (
@@ -137,6 +140,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 <ConnectApp
                     isAppInstalled={isAppInstalled}
                     vscodeAPI={vscodeAPI}
+                    isAppRunning={isAppRunning}
                     isOSSupported={isOSSupported}
                     appOS={appOS || ''}
                     appArch={appArch || ''}
@@ -147,7 +151,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     return (
         <div className={styles.container}>
-            {authStatus && <ErrorContainer authStatus={authStatus} endpoint={endpoint} />}
+            {authStatus && <ErrorContainer authStatus={authStatus} isApp={isApp} />}
             {isAppConnectEnabled ? <SigninWithApp /> : <SigninWithoutApp />}
             <footer className={styles.footer}>
                 <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
@@ -161,7 +165,10 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     )
 }
 
-const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus; endpoint: string }> = ({ authStatus }) => {
+const ErrorContainer: React.FunctionComponent<{
+    authStatus: AuthStatus
+    isApp: boolean
+}> = ({ authStatus, isApp }) => {
     const {
         authenticated,
         siteHasCodyEnabled,
@@ -179,6 +186,10 @@ const ErrorContainer: React.FunctionComponent<{ authStatus: AuthStatus; endpoint
     const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
     const isVersionCompatible = isInsiderBuild || siteVersion >= '5.1.0'
     const isVersionBeforeCody = !isVersionCompatible && siteVersion < '5.0.0'
+    // When app is not running but logged in with an App token
+    if (isApp && showInvalidAccessTokenError) {
+        return <p className={styles.error}>{ERROR_MESSAGES.APP_NOT_RUNNING}</p>
+    }
     // When doesn't have a valid token
     if (showInvalidAccessTokenError) {
         return <p className={styles.error}>{ERROR_MESSAGES.INVALID}</p>
