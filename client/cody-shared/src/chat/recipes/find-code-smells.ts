@@ -1,4 +1,4 @@
-import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH } from '../../prompt/constants'
+import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
 import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
@@ -23,7 +23,10 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
         // Use the whole context window for the prompt because we're attaching no files
         const maxTokenCount =
             MAX_AVAILABLE_PROMPT_LENGTH - (promptPrefix.length + promptSuffix.length) / CHARS_PER_TOKEN
-        const truncatedSelectedText = truncateText(selection.selectedText, maxTokenCount)
+        const truncatedSelectedText = truncateText(
+            selection.selectedText,
+            Math.min(maxTokenCount, MAX_RECIPE_INPUT_TOKENS)
+        )
         const promptMessage = `${promptPrefix}\n\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\n\n${promptSuffix}`
 
         const displayText = `Find code smells in the following code: \n\`\`\`\n${selection.selectedText}\n\`\`\``
