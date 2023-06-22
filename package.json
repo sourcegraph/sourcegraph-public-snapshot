@@ -421,6 +421,7 @@
     "d3-voronoi": "^1.1.2",
     "date-fns": "^2.16.1",
     "delay": "^4.4.1",
+    "detect-indent": "^6.1.0",
     "dompurify": "^3.0.1",
     "downshift": "^3.4.8",
     "escape-html": "^1.0.3",

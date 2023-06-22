@@ -1,5 +1,8 @@
-import { PrefixComponents, indentation } from './text-processing'
+import detectIndent from 'detect-indent'
 
+import { PrefixComponents, getEditorTabSize, indentation } from './text-processing'
+
+const OPENING_BRACKET_REGEX = /[([{]$/
 export function detectMultilineMode(
     prefix: string,
     prevNonEmptyLine: string,
@@ -12,7 +15,7 @@ export function detectMultilineMode(
         return null
     }
 
-    if (sameLinePrefix.match(/[([{]$/)) {
+    if (sameLinePrefix.match(OPENING_BRACKET_REGEX)) {
         return 'block'
     }
 
@@ -36,11 +39,48 @@ export function checkOddIndentation(completion: string, prefix: PrefixComponents
     return completion.length > 0 && ODD_INDENTATION_REGEX.test(completion) && prefix.tail.rearSpace.length > 0
 }
 
+function adjustIndentation(text: string, originalIndent: number, newIndent: number): string {
+    const lines = text.split('\n')
+
+    return lines
+        .map(line => {
+            let spaceCount = 0
+            for (const char of line) {
+                if (char === ' ') {
+                    spaceCount++
+                } else {
+                    break
+                }
+            }
+
+            const indentLevel = spaceCount / originalIndent
+
+            if (Number.isInteger(indentLevel)) {
+                const newIndentStr = ' '.repeat(indentLevel * newIndent)
+                return line.replace(/^ +/, newIndentStr)
+            }
+
+            // The line has a non-standard number of spaces at the start, leave it unchanged
+            return line
+        })
+        .join('\n')
+}
+
+function ensureSameOrLargerIndentation(completion: string): string {
+    const indentAmount = detectIndent(completion).amount
+    const editorTabSize = getEditorTabSize()
+
+    if (editorTabSize > indentAmount) {
+        return adjustIndentation(completion, indentAmount, editorTabSize)
+    }
+
+    return completion
+}
+
 export function truncateMultilineCompletion(
     completion: string,
     prefix: string,
     suffix: string,
-    hasOddIndentation: boolean,
     languageId: string
 ): string {
     const config = getLanguageConfig(languageId)
@@ -48,7 +88,12 @@ export function truncateMultilineCompletion(
         return completion
     }
 
-    const lines = completion.split('\n')
+    // Ensure that the completion has the same or larger indentation
+    // because we rely on the indentation size to cut off the completion.
+    // TODO: add unit tests for this case. We need to update the indentation logic
+    // used in unit tests for code samples.
+    const indentedCompletion = ensureSameOrLargerIndentation(completion)
+    const lines = indentedCompletion.split('\n')
 
     // We use a whitespace counting approach to finding the end of the
     // completion. To find an end, we look for the first line that is below the
@@ -65,18 +110,6 @@ export function truncateMultilineCompletion(
         lines[0] = lines[0].trimStart()
     }
 
-    // If odd indentation is detected (i.e Claude adds a space to every line),
-    // we fix it for the whole multiline block first.
-    //
-    // We can skip the first line as it was already corrected above
-    if (hasOddIndentation) {
-        for (let i = 1; i < lines.length; i++) {
-            if (indentation(lines[i]) >= startIndent) {
-                lines[i] = lines[i].replace(/^(\t)* /, '$1')
-            }
-        }
-    }
-
     const firstNewLineIndex = suffix.indexOf('\n') + 1
     const nextNonEmptyLine =
         suffix
@@ -86,7 +119,9 @@ export function truncateMultilineCompletion(
 
     // Only include a closing line (e.g. `}`) if the block is empty yet. We
     // detect this by looking at the indentation of the next non-empty line.
-    const includeClosingLine = indentation(nextNonEmptyLine) < startIndent
+    const includeClosingLine =
+        indentation(nextNonEmptyLine) < startIndent ||
+        OPENING_BRACKET_REGEX.test(prefixIndentationWithFirstCompletionLine)
 
     let cutOffIndex = lines.length
     for (let i = 0; i < lines.length; i++) {
@@ -96,6 +131,8 @@ export function truncateMultilineCompletion(
             continue
         }
 
+        // TODO: need to change this check to <= to correctly cut-off multiline completions
+        // triggered by the OPENING_BRACKET_REGEX match. It currently breaks python unit tests.
         if (indentation(line) < startIndent) {
             // When we find the first block below the start indentation, only
             // include it if it is an end block

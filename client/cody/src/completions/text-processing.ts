@@ -27,6 +27,10 @@ export function extractFromCodeBlock(completion: string): string {
     return result.trimEnd()
 }
 
+export function getEditorTabSize(): number {
+    return vscode.window.activeTextEditor ? (vscode.window.activeTextEditor.options.tabSize as number) : 2
+}
+
 const INDENTATION_REGEX = /^[\t ]*/
 /**
  * Counts space or tabs in the beginning of a line.
@@ -35,10 +39,7 @@ const INDENTATION_REGEX = /^[\t ]*/
  * normalizes the whitespace first using the currently enabled tabSize option.
  */
 export function indentation(line: string): number {
-    const tabSize = vscode.window.activeTextEditor
-        ? // tabSize is always resolved to a number when accessing the property
-          (vscode.window.activeTextEditor.options.tabSize as number)
-        : 2
+    const tabSize = getEditorTabSize()
 
     const regex = line.match(INDENTATION_REGEX)
     if (regex) {
@@ -49,7 +50,7 @@ export function indentation(line: string): number {
     return 0
 }
 
-const BAD_COMPLETION_START = /^(\p{Emoji_Presentation}|\u{200B}|\+ |- |. )+(\s)+/u
+const BAD_COMPLETION_START = /^(\p{Emoji_Presentation}|\u{200B}|\+ |- |\. )+(\s)+/u
 export function fixBadCompletionStart(completion: string): string {
     if (BAD_COMPLETION_START.test(completion)) {
         return completion.replace(BAD_COMPLETION_START, '')

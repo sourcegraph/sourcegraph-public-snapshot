@@ -139,6 +139,7 @@ ts_project(
         "//:node_modules/@vscode/webview-ui-toolkit",
         "//:node_modules/classnames",
         "//:node_modules/date-fns",
+        "//:node_modules/detect-indent",
         "//:node_modules/lodash",
         "//:node_modules/react",
         "//:node_modules/react-dom",

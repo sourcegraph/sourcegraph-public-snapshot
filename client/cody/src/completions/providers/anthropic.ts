@@ -5,7 +5,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
-import { checkOddIndentation, truncateMultilineCompletion } from '../multiline'
+import { truncateMultilineCompletion } from '../multiline'
 import {
     OPENING_CODE_TAG,
     CLOSING_CODE_TAG,
@@ -109,28 +109,18 @@ export class AnthropicProvider extends Provider {
         return { messages: [...referenceSnippetMessages, ...prefixMessages], prefix }
     }
 
-    private postProcess(rawResponse: string, prefix: PrefixComponents): string {
+    private postProcess(rawResponse: string): string {
         let completion = extractFromCodeBlock(rawResponse)
 
-        // Sometimes Claude emits a single space in the completion. We call this an "odd indentation"
-        // completion and try to fix the response.
-        const hasOddIndentation = checkOddIndentation(completion, prefix)
+        // Remove leading newlines.
+        completion = completion.replace(/^\n*/, '')
 
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)
 
-        // Trim start of the completion to remove all trailing whitespace.
-        completion = completion.trimStart()
-
         // Handle multiline completion indentation and remove overlap with suffx.
         if (this.multilineMode === 'block') {
-            completion = truncateMultilineCompletion(
-                completion,
-                this.prefix,
-                this.suffix,
-                hasOddIndentation,
-                this.languageId
-            )
+            completion = truncateMultilineCompletion(completion, this.prefix, this.suffix, this.languageId)
             completion = trimUntilSuffix(completion, this.suffix)
         }
 
@@ -143,12 +133,13 @@ export class AnthropicProvider extends Provider {
             }
         }
 
-        return completion.trimEnd()
+        // Trim start and end of the completion to remove all trailing whitespace.
+        return completion.trim()
     }
 
     public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
         // Create prompt
-        const { messages: prompt, prefix } = this.createPrompt()
+        const { messages: prompt } = this.createPrompt()
         if (prompt.length > this.promptChars) {
             throw new Error('prompt length exceeded maximum alloted chars')
         }
@@ -181,7 +172,7 @@ export class AnthropicProvider extends Provider {
 
         // Post-process
         const ret = responses.map(resp => {
-            const content = this.postProcess(resp.completion, prefix)
+            const content = this.postProcess(resp.completion)
 
             if (content === null) {
                 return []

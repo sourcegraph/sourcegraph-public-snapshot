@@ -336,30 +336,6 @@ describe('Cody completions', () => {
                 ]
             `)
         })
-
-        it('removes odd indentation in multi-line completions', async () => {
-            const { completions } = await complete(
-                `
-                function test() {
-                    ${CURSOR_MARKER}
-                }`,
-                [createCompletionResponse(' foo()\n     bar()')]
-            )
-
-            expect(completions[0].insertText).toBe('foo()\n    bar()')
-        })
-
-        it('handles \t in multi-line completions', async () => {
-            const { completions } = await complete(
-                `
-                function test() {
-                \t${CURSOR_MARKER}
-                }`,
-                [createCompletionResponse(' foo()\n\t bar()')]
-            )
-
-            expect(completions[0].insertText).toBe('foo()\n\tbar()')
-        })
     })
 
     describe('multi-line completions', () => {
