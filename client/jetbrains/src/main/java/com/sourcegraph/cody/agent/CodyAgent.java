@@ -80,7 +80,6 @@ public class CodyAgent implements Disposable {
   }
 
   public void initialize() {
-    System.out.println("AGENT ENABLED " + System.getProperty("cody-agent.enabled", "false"));
     if (!"true".equals(System.getProperty("cody-agent.enabled", "false"))) {
       logger.info("Cody agent is disabled due to system property '-Dcody-agent.enabled=false'");
       return;
