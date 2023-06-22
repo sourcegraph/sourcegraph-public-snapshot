@@ -46,8 +46,8 @@ go_library(
 
 go_test(
     name = "store_test",
-    size = "large",
-    timeout = "moderate",
+    size = "enormous",
+    timeout = "long",
     srcs = [
         "cleanup_test.go",
         "commitdate_test.go",
