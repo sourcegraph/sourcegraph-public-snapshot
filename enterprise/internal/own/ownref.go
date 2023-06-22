@@ -393,6 +393,9 @@ func (b userReferencesBatch) augment(ctx context.Context, db edb.EnterpriseDB) {
 			}
 		}
 	}
+	if userIDsToFetchHandles.IsEmpty() {
+		return
+	}
 	// Now we batch fetch all user accounts.
 	handlesByUser, err := batchFetchCodeHostHandles(ctx, db, userIDsToFetchHandles.Values())
 	if err != nil {
