@@ -40,6 +40,11 @@ type EmbeddingsSetupProgress {
     The total number of files to process for the current repository
     """
     currentRepositoryTotalFilesToProcess: Int
+
+    """
+    Indicates that at least 1 repository has successfully completed
+    """
+    oneRepositoryReady: Boolean!
 }
 
 """
