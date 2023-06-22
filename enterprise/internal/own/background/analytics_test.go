@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/stretchr/testify/assert"
@@ -80,10 +81,14 @@ func TestAnalyticsIndexerSuccess(t *testing.T) {
 
 	gotCounts, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
 	require.NoError(t, err)
+	// We don't really need to compare time here.
+	defaultTime := time.Time{}
+	gotCounts.UpdatedAt = defaultTime
 	wantCounts := database.PathAggregateCounts{
 		CodeownedFileCount:         3,
 		AssignedOwnershipFileCount: 2,
 		TotalOwnedFileCount:        4,
+		UpdatedAt:                  defaultTime,
 	}
 	assert.Equal(t, wantCounts, gotCounts)
 }
@@ -141,6 +146,8 @@ func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
 	assert.Equal(t, int32(5), totalFileCount)
 
 	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
+	defaultTime := time.Time{}
+	codeownedCount.UpdatedAt = defaultTime
 	require.NoError(t, err)
-	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0}, codeownedCount)
+	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0, UpdatedAt: defaultTime}, codeownedCount)
 }

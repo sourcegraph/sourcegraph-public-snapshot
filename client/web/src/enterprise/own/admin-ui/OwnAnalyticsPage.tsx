@@ -69,13 +69,6 @@ const OwnAnalyticsPanel: FC = () => {
             fill: 'var(--info-3)',
             tooltip: `Owned files: ${totalOwnedFiles}/${totalFiles}`,
         },
-        // TODO decide whether we remove or keep all files
-        {
-            name: 'All files',
-            count: 100,
-            fill: 'var(--text-muted)',
-            tooltip: 'Total number of files',
-        },
     ]
 
     const lastUpdatedAt = data?.instanceOwnershipStats.updatedAt && (
@@ -118,8 +111,8 @@ const OwnAnalyticsPanel: FC = () => {
                         )}
                     </Card>
                     <Text className="font-italic text-center mt-2">
-                        {/* TODO(#52826): Provide more precise information about how stale data is, and how often it refreshes. */}
-                        Data is generated periodically from CODEOWNERS files and repository contents.
+                        Data is generated periodically from CODEOWNERS files and repository contents.{' '}
+                        {lastUpdatedAt && lastUpdatedAt}
                     </Text>
                 </>
             )}
