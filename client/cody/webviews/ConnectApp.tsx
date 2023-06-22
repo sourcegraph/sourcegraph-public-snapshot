@@ -4,6 +4,8 @@ import { APP_CALLBACK_URL, APP_DOWNLOAD_URLS, APP_LANDING_URL } from '../src/cha
 
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
+import styles from './Login.module.css'
+
 interface ConnectAppProps {
     vscodeAPI: VSCodeWrapper
     isAppInstalled: boolean
@@ -38,6 +40,7 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     return (
         <div>
             <VSCodeButton
+                className={styles.button}
                 type="button"
                 disabled={!isOSSupported}
                 onClick={() => openLink(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}

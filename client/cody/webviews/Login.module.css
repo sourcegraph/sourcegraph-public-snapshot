@@ -21,6 +21,7 @@
     border: 0.1em solid;
     border-image-slice: 1;
     border-width: 0.1em;
+    word-wrap: break-word;
 
     margin-bottom: var(--spacing);
     padding: var(--spacing);
@@ -31,7 +32,7 @@
 }
 
 .grey-gradient {
-    border-color: grey;
+    border-color: var(--vscode-checkbox-selectBorder);
 }
 
 .section-header {
@@ -52,8 +53,10 @@
 }
 
 .button {
+    word-wrap: break-word;
     justify-content: center;
     padding: 0.25rem;
+    max-width: 100%;
 }
 
 .error {
