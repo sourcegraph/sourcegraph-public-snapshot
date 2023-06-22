@@ -11,7 +11,7 @@ public class ContextGetter {
   private final @NotNull EmbeddingsSearcher embeddingsSearcher;
 
   /**
-   * @param repoName    Like "github.com/sourcegraph/cody"
+   * @param repoName Like "github.com/sourcegraph/cody"
    * @param instanceUrl Like "https://sourcegraph.com/", with a slash at the end
    */
   public ContextGetter(

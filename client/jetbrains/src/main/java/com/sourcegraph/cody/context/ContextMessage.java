@@ -23,6 +23,10 @@ public class ContextMessage extends Message {
     return new ContextMessage(Speaker.HUMAN, text, file);
   }
 
+  public static @NotNull ContextMessage createHumanMessage(@NotNull String text) {
+    return new ContextMessage(Speaker.HUMAN, text, null);
+  }
+
   public static @NotNull ContextMessage createDefaultAssistantMessage() {
     return new ContextMessage(Speaker.ASSISTANT, "Ok.", null);
   }

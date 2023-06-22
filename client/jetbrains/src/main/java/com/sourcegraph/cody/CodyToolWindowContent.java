@@ -14,11 +14,11 @@ import com.intellij.openapi.actionSystem.CustomShortcutSet;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.actionSystem.ShortcutSet;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
@@ -27,9 +27,15 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.ui.*;
+import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.chat.*;
+import com.sourcegraph.cody.context.ContextFile;
+import com.sourcegraph.cody.context.ContextGetter;
+import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
+import com.sourcegraph.cody.prompts.Preamble;
+import com.sourcegraph.cody.prompts.Prompter;
 import com.sourcegraph.cody.prompts.SupportedLanguages;
 import com.sourcegraph.cody.recipes.ExplainCodeDetailedPromptProvider;
 import com.sourcegraph.cody.recipes.ExplainCodeHighLevelPromptProvider;
@@ -53,9 +59,13 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.awt.event.AdjustmentListener;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -78,6 +88,7 @@ class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull JButton sendButton;
   private final @NotNull Project project;
   private boolean needScrollingDown = true;
+  private @NotNull Transcript transcript = new Transcript();
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -149,9 +160,9 @@ class CodyToolWindowContent implements UpdatableChat {
     recipesPanel.add(translateToLanguageButton);
     recipesPanel.add(gitHistoryButton);
     recipesPanel.add(findCodeSmellsButton);
-//    recipesPanel.add(fixupButton);
-//    recipesPanel.add(contextSearchButton);
-//    recipesPanel.add(releaseNotesButton);
+    //    recipesPanel.add(fixupButton);
+    //    recipesPanel.add(contextSearchButton);
+    //    recipesPanel.add(releaseNotesButton);
     recipesPanel.add(optimizeCodeButton);
 
     // Chat panel
@@ -359,6 +370,7 @@ class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
+              transcript.addAssistantResponse(message);
               if (messagesPanel.getComponentCount() > 0) {
                 JPanel lastBubblePanel =
                     (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
@@ -381,6 +393,7 @@ class CodyToolWindowContent implements UpdatableChat {
 
   @Override
   public void resetConversation() {
+    transcript = new Transcript();
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
@@ -395,10 +408,7 @@ class CodyToolWindowContent implements UpdatableChat {
   private void sendMessage(@NotNull Project project) {
     String messageText = promptInput.getText();
     promptInput.setText("");
-    sendMessage(
-        project,
-        ChatMessage.createHumanMessage(messageText, messageText, Collections.emptyList()),
-        "");
+    sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
   }
 
   private void sendMessage(@NotNull Project project, ChatMessage message, String responsePrefix) {
@@ -407,38 +417,141 @@ class CodyToolWindowContent implements UpdatableChat {
     }
     startMessageProcessing();
     // Build message
-    boolean isEnterprise =
-        ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
-    String instanceUrl =
-        isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
-    String accessToken =
-        isEnterprise
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
 
+    EditorContext editorContext = EditorContextGetter.getEditorContext(project);
+
+    String truncatedPrompt =
+        TruncationUtils.truncateText(message.prompt(), TruncationUtils.MAX_HUMAN_INPUT_TOKENS);
+    ChatMessage humanMessage =
+        ChatMessage.createHumanMessage(truncatedPrompt, message.getDisplayText());
+    addMessageToChat(humanMessage);
     VirtualFile currentFile = getCurrentFile(project);
-    ArrayList<String> contextFileContents =
-        EditorContextGetter.getEditorContext(project).getCurrentFileContentAsArrayList();
-
     // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
     // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the
     // messages streamed back to us.
     ApplicationManager.getApplication()
         .executeOnPooledThread(
             () -> {
-              var chat =
-                  new Chat(
-                      getRepoName(project, currentFile),
-                      instanceUrl,
-                      accessToken != null ? accessToken : "",
-                      ConfigUtil.getCustomRequestHeaders(project));
-              ChatMessage humanMessage =
-                  ChatMessage.createHumanMessage(
-                      message.prompt(), message.getDisplayText(), contextFileContents);
-              addMessageToChat(humanMessage);
+              boolean isEnterprise =
+                  ConfigUtil.getInstanceType(project)
+                      .equals(SettingsComponent.InstanceType.ENTERPRISE);
+              String instanceUrl =
+                  isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
+              String accessToken =
+                  isEnterprise
+                      ? ConfigUtil.getEnterpriseAccessToken(project)
+                      : ConfigUtil.getDotComAccessToken(project);
 
-              chat.sendMessage(humanMessage, responsePrefix, this);
+              String repoName = getRepoName(project, currentFile);
+              String accessTokenOrEmpty = accessToken != null ? accessToken : "";
+              Chat chat = new Chat(instanceUrl, accessTokenOrEmpty);
+              List<ContextMessage> contextMessages =
+                  getContextFromEmbeddings(
+                      project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
+              displayUsedFiles(contextMessages);
+              List<ContextMessage> editorContextMessages = getEditorContextMessages(editorContext);
+              contextMessages.addAll(editorContextMessages);
+              List<ContextMessage> selectionContextMessages =
+                  getSelectionContextMessages(editorContext);
+              contextMessages.addAll(selectionContextMessages);
+              // Add human message
+              transcript.addInteraction(new Interaction(humanMessage, contextMessages));
+
+              List<Message> prompt =
+                  transcript.getPromptForLastInteraction(
+                      Preamble.getPreamble(repoName), TruncationUtils.MAX_AVAILABLE_PROMPT_LENGTH);
+
+              try {
+                chat.sendPrompt(project, prompt, humanMessage, responsePrefix, this);
+              } catch (Exception e) {
+                logger.error("Error sending message '" + humanMessage + "' to chat", e);
+              }
             });
+  }
+
+  private void displayUsedFiles(List<ContextMessage> contextMessages) {
+    // Use context
+    if (contextMessages.size() == 0) {
+      this.addMessageToChat(
+          ChatMessage.createAssistantMessage(
+              "I didn't find any context for your ask. I'll try to answer without further context."));
+    } else {
+      // Collect file names and display them to user
+      List<String> contextFileNames =
+          contextMessages.stream()
+              .map(ContextMessage::getFile)
+              .filter(Objects::nonNull)
+              .map(ContextFile::getFileName)
+              .collect(Collectors.toList());
+
+      StringBuilder contextMessageText =
+          new StringBuilder(
+              "I found some context for your ask. I'll try to answer with the context of these "
+                  + contextFileNames.size()
+                  + " files:\n");
+      contextFileNames.forEach(fileName -> contextMessageText.append(fileName).append("\n"));
+      this.addMessageToChat(ChatMessage.createAssistantMessage(contextMessageText.toString()));
+    }
+  }
+
+  @NotNull
+  private List<ContextMessage> getContextFromEmbeddings(
+      @NotNull Project project,
+      ChatMessage humanMessage,
+      String instanceUrl,
+      String repoName,
+      String accessTokenOrEmpty) {
+    List<ContextMessage> contextMessages = new ArrayList<>();
+    if (repoName != null) {
+      try {
+        contextMessages =
+            new ContextGetter(
+                    repoName,
+                    instanceUrl,
+                    accessTokenOrEmpty,
+                    ConfigUtil.getCustomRequestHeaders(project))
+                .getContextMessages(humanMessage.getText(), 8, 2, true);
+      } catch (IOException e) {
+        this.addMessageToChat(
+            ChatMessage.createAssistantMessage(
+                "I didn't get a correct response. This is what I encountered while trying to get some context for your ask: \""
+                    + e.getMessage()
+                    + "\". I'll try to answer without further context."));
+      }
+    }
+    return contextMessages;
+  }
+
+  private List<ContextMessage> getEditorContextMessages(EditorContext editorContext) {
+    if (editorContext.getCurrentFileName() != null
+        && editorContext.getCurrentFileContent() != null) {
+      String truncatedCurrentFileContent =
+          TruncationUtils.truncateText(
+              editorContext.getCurrentFileContent(), TruncationUtils.MAX_CURRENT_FILE_TOKENS);
+      String currentFilePrompt =
+          Prompter.getCurrentEditorCodePrompt(
+              editorContext.getCurrentFileName(), truncatedCurrentFileContent);
+      ContextMessage currentFileHumanMessage = ContextMessage.createHumanMessage(currentFilePrompt);
+      ContextMessage defaultAssistantMessage = ContextMessage.createDefaultAssistantMessage();
+      return List.of(currentFileHumanMessage, defaultAssistantMessage);
+    }
+    return Collections.emptyList();
+  }
+
+  public List<ContextMessage> getSelectionContextMessages(EditorContext editorContext) {
+    if (editorContext.getCurrentFileName() != null && editorContext.getSelection() != null) {
+      String selectedText = editorContext.getSelection();
+      String truncatedSelectedText =
+          TruncationUtils.truncateText(selectedText, TruncationUtils.MAX_CURRENT_FILE_TOKENS);
+      String selectedTextPrompt =
+          Prompter.getCurrentEditorSelectedCode(
+              editorContext.getCurrentFileName(), truncatedSelectedText);
+      ContextMessage selectedTextHumanMessage =
+          ContextMessage.createHumanMessage(selectedTextPrompt);
+      ContextMessage defaultAssistantMessage = ContextMessage.createDefaultAssistantMessage();
+      return List.of(selectedTextHumanMessage, defaultAssistantMessage);
+    }
+    return Collections.emptyList();
   }
 
   @Nullable

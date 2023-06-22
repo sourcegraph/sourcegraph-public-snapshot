@@ -1,9 +1,10 @@
 package com.sourcegraph.cody.recipes;
 
+import static com.sourcegraph.cody.TruncationUtils.CHARS_PER_TOKEN;
+
 import org.jetbrains.annotations.NotNull;
 
 public class TruncatedText {
-  private static final int CHARS_PER_TOKEN = 4;
 
   private final @NotNull String value;
 
@@ -24,17 +25,13 @@ public class TruncatedText {
     return value;
   }
 
-  /**
-   * Truncates text to the given number of tokens, keeping the start of the text.
-   */
+  /** Truncates text to the given number of tokens, keeping the start of the text. */
   public static String truncateText(@NotNull String text, int maxTokens) {
     int maxLength = maxTokens * CHARS_PER_TOKEN;
     return text.length() <= maxLength ? text : text.substring(0, maxLength);
   }
 
-  /**
-   * Truncates text to the given number of tokens, keeping the end of the text.
-   */
+  /** Truncates text to the given number of tokens, keeping the end of the text. */
   public static String truncateTextStart(@NotNull String text, int maxTokens) {
     int maxLength = maxTokens * CHARS_PER_TOKEN;
     return text.length() <= maxLength ? text : text.substring(text.length() - maxLength);

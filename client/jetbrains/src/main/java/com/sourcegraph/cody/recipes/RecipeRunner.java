@@ -7,7 +7,6 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.prompts.LanguageUtils;
-import java.util.Collections;
 import org.jetbrains.annotations.NotNull;
 
 public class RecipeRunner {
@@ -34,13 +33,13 @@ public class RecipeRunner {
     String truncatedPrecedingText =
         precedingText != null
             ? TruncatedText.ofEndOf(precedingText, TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS)
-            .getValue()
+                .getValue()
             : "";
     String followingText = editorContext.getFollowingText();
     String truncatedFollowingText =
         followingText != null
             ? TruncatedText.of(followingText, TruncationUtils.MAX_RECIPE_SURROUNDING_TOKENS)
-            .getValue()
+                .getValue()
             : "";
 
     OriginalText selectedText = new OriginalText(textInputToPrompt);
@@ -48,22 +47,17 @@ public class RecipeRunner {
         promptProvider.getPromptContext(language, selectedText, truncatedTextInputToPrompt);
 
     ChatMessage humanMessage =
-        ChatMessage.createHumanMessage(
-            promptContext.getPrompt(), promptContext.getDisplayText(), Collections.emptyList());
+        ChatMessage.createHumanMessage(promptContext.getPrompt(), promptContext.getDisplayText());
 
     chat.respondToMessage(humanMessage, promptContext.getResponsePrefix());
   }
 
   // TODO: Implement or remove it
-  public void runGitHistory() {
-  }
+  public void runGitHistory() {}
 
-  public void runFixup() {
-  }
+  public void runFixup() {}
 
-  public void runContextSearch() {
-  }
+  public void runContextSearch() {}
 
-  public void runReleaseNotes() {
-  }
+  public void runReleaseNotes() {}
 }

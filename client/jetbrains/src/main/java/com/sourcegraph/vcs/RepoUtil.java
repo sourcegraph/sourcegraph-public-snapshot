@@ -114,9 +114,7 @@ public class RepoUtil {
     throw new Exception("Unsupported VCS: " + repository.getVcs().getName());
   }
 
-  /**
-   * Returns the repository root directory for any path within a repository.
-   */
+  /** Returns the repository root directory for any path within a repository. */
   @Nullable
   private static String getRepoRootPath(@NotNull Project project, @NotNull VirtualFile file) {
     VirtualFile vcsRoot = VcsUtil.getVcsRootFor(project, file);
