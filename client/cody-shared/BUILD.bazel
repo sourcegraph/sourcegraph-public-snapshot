@@ -91,7 +91,6 @@ ts_project(
         "src/utils.ts",
     ],
     tsconfig = ":tsconfig",
-    # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/common",
         ":node_modules/@sourcegraph/http-client",
