@@ -15,6 +15,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 ### Fixed
 
 - Endpoint setting out of sync issue. [pull/53434](https://github.com/sourcegraph/sourcegraph/pull/53434)
+- Endpoint URL without protocol causing sign-ins to fail. [pull/53908](https://github.com/sourcegraph/sourcegraph/pull/53908)
 
 ### Changed
 
