@@ -12,6 +12,7 @@ type OnChangeCallback = (token: string | null) => Promise<void>
  */
 export class LocalAppDetector implements vscode.Disposable {
     private localEnv: LocalEnv
+    private token: string | null = null
 
     // Check if the platform is supported and the user has a home directory
     private isSupported = false
@@ -92,6 +93,7 @@ export class LocalAppDetector implements vscode.Disposable {
         }
         const appJson = await loadAppJson(this.tokenFsPath)
         if (!appJson) {
+            debug('LocalAppDetector:fetchToken:loadAppJson', 'failed')
             return
         }
         const token = appJson.token
@@ -100,7 +102,8 @@ export class LocalAppDetector implements vscode.Disposable {
             debug('LocalAppDetector:fetchToken', 'found')
             this.localEnv.hasAppJson = true
             this.tokenFsPath = null
-            await this.found('token', token)
+            this.token = token
+            await this.found('token')
             await this.fetchServer()
             return
         }
@@ -118,7 +121,7 @@ export class LocalAppDetector implements vscode.Disposable {
             if (response.status === 200) {
                 debug('LocalAppDetector:fetchServer', 'found')
                 this.localEnv.isAppRunning = true
-                await this.found('server')
+                await this.found('server', this.token)
                 return
             }
         } catch {

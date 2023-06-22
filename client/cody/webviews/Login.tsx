@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -6,13 +6,14 @@ import classNames from 'classnames'
 import { AuthStatus, DOTCOM_CALLBACK_URL, DOTCOM_URL, LOCAL_APP_URL } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
+import { ErrorContainer } from './Error'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
 import styles from './Login.module.css'
 
 interface LoginProps {
     authStatus?: AuthStatus
-    serverEndpoint?: string
+    endpoint?: string
     isAppInstalled: boolean
     isAppRunning?: boolean
     vscodeAPI: VSCodeWrapper
@@ -20,29 +21,21 @@ interface LoginProps {
     appOS?: string
     appArch?: string
     isAppConnectEnabled?: boolean
+    setEndpoint: (endpoint: string) => void
 }
 
-const APP_MESSAGES = {
+const APP_DESC = {
     getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     download: 'Download and run the Cody desktop app to configure your local code graph.',
     connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
-    appNotRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
+    notRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     comingSoon:
         'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
 }
 
-const ERROR_MESSAGES = {
-    DISABLED: 'Cody is not enabled on your instance. To enable Cody, please contact your site admin.',
-    VERSION:
-        'Cody is not supported by your Sourcegraph instance version (version: $SITEVERSION). To use Cody, please contact your site admin to upgrade to version 5.1.0 or above.',
-    INVALID: 'Invalid credentials. Please check the Sourcegraph instance URL and access token.',
-    EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
-    APP_NOT_RUNNING: 'Cody App is not running. Please start Cody App.',
-}
-
 export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>> = ({
     authStatus,
-    serverEndpoint,
+    endpoint,
     vscodeAPI,
     callbackScheme,
     appOS,
@@ -50,9 +43,8 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     isAppInstalled = false,
     isAppRunning = false,
     isAppConnectEnabled = false,
+    setEndpoint,
 }) => {
-    const [endpoint, setEndpoint] = useState(serverEndpoint)
-
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
 
     const loginWithDotCom = useCallback(() => {
@@ -60,7 +52,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         callbackUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
         setEndpoint(DOTCOM_URL.href)
         vscodeAPI.postMessage({ command: 'links', value: callbackUri.href })
-    }, [callbackScheme, vscodeAPI])
+    }, [callbackScheme, setEndpoint, vscodeAPI])
 
     const onFooterButtonClick = useCallback(
         (title: 'signin' | 'support') => {
@@ -69,90 +61,84 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         [vscodeAPI]
     )
 
-    const isApp = endpoint === LOCAL_APP_URL.href
     const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
+    const openMsg = !isAppInstalled ? APP_DESC.getStarted : !isAppRunning ? APP_DESC.notRunning : APP_DESC.connectApp
 
-    const SigninWithApp: React.FunctionComponent = () => (
-        <div className={styles.sectionsContainer}>
-            <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : null)}>
-                <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Get Started'}</h2>
-                <p className={styles.openMessage}>
-                    {!isAppInstalled
-                        ? APP_MESSAGES.getStarted
-                        : !isAppRunning
-                        ? APP_MESSAGES.appNotRunning
-                        : APP_MESSAGES.connectApp}
-                </p>
-                {!isAppInstalled && <p className={styles.openMessage}>{APP_MESSAGES.download}</p>}
-                <ConnectApp
-                    isAppInstalled={isAppInstalled}
-                    vscodeAPI={vscodeAPI}
-                    isOSSupported={isOSSupported}
-                    appOS={appOS}
-                    appArch={appArch}
-                    isAppRunning={isAppRunning}
-                    callbackScheme={callbackScheme}
-                />
-                {!isOSSupported && (
-                    <small>
-                        Sorry, {appOS} {appArch} is not yet supported.
-                    </small>
-                )}
-            </section>
+    const AppConnect: React.FunctionComponent = () => (
+        <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : styles.greyGradient)}>
+            <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Get Started'}</h2>
+            <p className={styles.openMessage}>{openMsg}</p>
+            {!isAppInstalled && <p className={styles.openMessage}>{APP_DESC.download}</p>}
+            <ConnectApp
+                isAppInstalled={isAppInstalled}
+                vscodeAPI={vscodeAPI}
+                isOSSupported={isOSSupported}
+                appOS={appOS}
+                appArch={appArch}
+                isAppRunning={isAppRunning}
+                callbackScheme={callbackScheme}
+            />
             {!isOSSupported && (
-                <section className={classNames(styles.section, styles.codyGradient)}>
-                    <h2 className={styles.sectionHeader}>Cody App for {appOS} coming soon</h2>
-                    <p className={styles.openMessage}>{APP_MESSAGES.comingSoon}</p>
-                    <VSCodeButton className={styles.button} type="button" onClick={() => loginWithDotCom()}>
-                        Signin with Sourcegraph.com
-                    </VSCodeButton>
-                </section>
+                <small>
+                    Sorry, {appOS} {appArch} is not yet supported.
+                </small>
             )}
-        </div>
+        </section>
     )
 
-    const SigninWithoutApp: React.FunctionComponent = () => (
-        <div className={styles.sectionsContainer}>
-            {/* Sourcegraph Enterprise */}
-            <section className={classNames(styles.section, styles.greyGradient)}>
-                <h2 className={styles.sectionHeader}>Sourcegraph Enterprise</h2>
-                <p className={styles.openMessage}>
-                    Sign in by entering an access token created through your user settings on Sourcegraph.
-                </p>
-                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
-                    Continue with Access Token
-                </VSCodeButton>
-            </section>
-            {/* Sourcegraph DotCom */}
-            <section className={classNames(styles.section, styles.greyGradient)}>
-                <h2 className={styles.sectionHeader}>Sourcegraph.com</h2>
-                <p className={styles.openMessage}>
-                    Cody for open source code is available to all users with a Sourcegraph.com account.
-                </p>
-                <VSCodeButton className={styles.button} type="button" onClick={() => loginWithDotCom()}>
-                    Continue with Sourcegraph.com
-                </VSCodeButton>
-            </section>
-            {/* Cody App */}
-            <section className={classNames(styles.section, styles.codyGradient)}>
-                <h2 className={styles.sectionHeader}>Cody App</h2>
-                <p className={styles.openMessage}>{APP_MESSAGES.getStarted}</p>
-                <ConnectApp
-                    isAppInstalled={isAppInstalled}
-                    vscodeAPI={vscodeAPI}
-                    isAppRunning={isAppRunning}
-                    isOSSupported={isOSSupported}
-                    appOS={appOS || ''}
-                    appArch={appArch || ''}
-                />
-            </section>
-        </div>
+    const NoAppConnect: React.FunctionComponent = () => (
+        <section className={classNames(styles.section, styles.codyGradient)}>
+            <h2 className={styles.sectionHeader}>Cody App for {appOS} coming soon</h2>
+            <p className={styles.openMessage}>{APP_DESC.comingSoon}</p>
+            <VSCodeButton className={styles.button} type="button" onClick={() => loginWithDotCom()}>
+                Signin with Sourcegraph.com
+            </VSCodeButton>
+        </section>
     )
 
+    const EnterpriseSignin: React.FunctionComponent = () => (
+        <section
+            className={classNames(styles.section, !isAppConnectEnabled ? styles.codyGradient : styles.greyGradient)}
+        >
+            <h2 className={styles.sectionHeader}>Sourcegraph Enterprise</h2>
+            <p className={styles.openMessage}>
+                Sign in by entering an access token created through your user settings on Sourcegraph.
+            </p>
+            <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
+                Continue with Access Token
+            </VSCodeButton>
+        </section>
+    )
+
+    const DotComSignin: React.FunctionComponent = () => (
+        <section
+            className={classNames(styles.section, !isAppConnectEnabled ? styles.codyGradient : styles.greyGradient)}
+        >
+            <h2 className={styles.sectionHeader}>Sourcegraph.com</h2>
+            <p className={styles.openMessage}>
+                Cody for open source code is available to all users with a Sourcegraph.com account.
+            </p>
+            <VSCodeButton className={styles.button} type="button" onClick={() => loginWithDotCom()}>
+                Continue with Sourcegraph.com
+            </VSCodeButton>
+        </section>
+    )
+
+    const isApp = {
+        isInstalled: endpoint === LOCAL_APP_URL.href && isAppInstalled,
+        isRunning: isAppRunning,
+    }
     return (
         <div className={styles.container}>
-            {authStatus && <ErrorContainer authStatus={authStatus} isApp={isApp} />}
-            {isAppConnectEnabled ? <SigninWithApp /> : <SigninWithoutApp />}
+            {authStatus && <ErrorContainer authStatus={authStatus} isApp={isApp} endpoint={endpoint} />}
+            {/* Signin Sections */}
+            <div className={styles.sectionsContainer}>
+                <EnterpriseSignin />
+                <DotComSignin />
+                {isAppConnectEnabled && <AppConnect />}
+                {isAppConnectEnabled && !isOSSupported && <NoAppConnect />}
+            </div>
+            {/* Footer */}
             <footer className={styles.footer}>
                 <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
                     Other Sign In Options…
@@ -163,48 +149,4 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             </footer>
         </div>
     )
-}
-
-const ErrorContainer: React.FunctionComponent<{
-    authStatus: AuthStatus
-    isApp: boolean
-}> = ({ authStatus, isApp }) => {
-    const {
-        authenticated,
-        siteHasCodyEnabled,
-        showInvalidAccessTokenError,
-        requiresVerifiedEmail,
-        hasVerifiedEmail,
-        siteVersion,
-    } = authStatus
-    // Version is compatible if this is an insider build or version is 5.1.0 or above
-    // Right now we assumes all insider builds have Cody enabled
-    // NOTE: Insider build includes App builds but we should seperate them in the future
-    if (!authenticated && !showInvalidAccessTokenError) {
-        return null
-    }
-    const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
-    const isVersionCompatible = isInsiderBuild || siteVersion >= '5.1.0'
-    const isVersionBeforeCody = !isVersionCompatible && siteVersion < '5.0.0'
-    // When app is not running but logged in with an App token
-    if (isApp && showInvalidAccessTokenError) {
-        return <p className={styles.error}>{ERROR_MESSAGES.APP_NOT_RUNNING}</p>
-    }
-    // When doesn't have a valid token
-    if (showInvalidAccessTokenError) {
-        return <p className={styles.error}>{ERROR_MESSAGES.INVALID}</p>
-    }
-    // When authenticated but doesn't have a verified email
-    if (authenticated && requiresVerifiedEmail && !hasVerifiedEmail) {
-        return <p className={styles.error}>{ERROR_MESSAGES.EMAIL_NOT_VERIFIED}</p>
-    }
-    // When version is lower than 5.0.0
-    if (isVersionBeforeCody) {
-        return <p className={styles.error}>{ERROR_MESSAGES.VERSION.replace('$SITEVERSION', siteVersion)}</p>
-    }
-    // When version is compatible but Cody is not enabled
-    if (isVersionCompatible && !siteHasCodyEnabled) {
-        return <p className={styles.error}>{ERROR_MESSAGES.DISABLED}</p>
-    }
-    return null
 }

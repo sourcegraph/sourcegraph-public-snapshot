@@ -105,6 +105,7 @@ ts_project(
         "webviews/Chat.tsx",
         "webviews/ConnectApp.tsx",
         "webviews/Debug.tsx",
+        "webviews/Error.tsx",
         "webviews/FileLink.tsx",
         "webviews/Header.tsx",
         "webviews/LoadingPage.tsx",

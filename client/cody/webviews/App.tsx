@@ -23,6 +23,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
         null
     )
+    const [endpoint, setEndpoint] = useState<string>()
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -57,11 +58,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     setAuthStatus(message.authStatus)
                     setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
                     setIsAppInstalled(message.config.isAppInstalled)
+                    setEndpoint(message.authStatus.endpoint || config?.serverEndpoint)
                     break
                 case 'login':
                     setAuthStatus(message.authStatus)
                     setIsAuthenticated(isLoggedIn(message.authStatus))
                     setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
+                    if (message.authStatus.endpoint) {
+                        setEndpoint(message.authStatus.endpoint)
+                    }
                     break
                 case 'showTab':
                     if (message.tab === 'chat') {
@@ -93,10 +98,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     break
             }
         })
-
-        vscodeAPI.postMessage({ command: 'initialized' })
+        if (!view) {
+            vscodeAPI.postMessage({ command: 'initialized' })
+        }
         // The dependencies array is empty to execute the callback only on component mount.
-    }, [debugLog, errorMessages, vscodeAPI])
+    }, [config?.serverEndpoint, debugLog, endpoint, errorMessages, transcript, view, vscodeAPI])
 
     const onLogout = useCallback(() => {
         setIsAuthenticated(false)
@@ -113,7 +119,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             {view === 'login' || !isAuthenticated || !authStatus ? (
                 <Login
                     authStatus={authStatus}
-                    serverEndpoint={config?.serverEndpoint}
+                    endpoint={endpoint}
                     isAppInstalled={isAppInstalled}
                     isAppRunning={config?.isAppRunning}
                     vscodeAPI={vscodeAPI}
@@ -121,6 +127,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     appArch={config?.arch}
                     callbackScheme={config?.uriScheme}
                     isAppConnectEnabled={config?.isAppConnectEnabled}
+                    setEndpoint={setEndpoint}
                 />
             ) : (
                 <>
@@ -138,11 +145,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     )}
                     {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
                     {view === 'settings' && (
-                        <Settings
-                            onLogout={onLogout}
-                            endpoint={authStatus?.endpoint || config?.serverEndpoint}
-                            version={config?.extensionVersion}
-                        />
+                        <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
                     )}
                     {view === 'chat' && (
                         <Chat
