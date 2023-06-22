@@ -60,6 +60,11 @@ export const renderMarkdown = (
         /** Strip off any HTML and return a plain text string, useful for previews */
         plainText?: boolean
         dompurifyConfig?: DOMPurifyConfig & { RETURN_DOM_FRAGMENT?: false; RETURN_DOM?: false }
+
+        /**
+         * Add target="_blank" and rel="noopener" to all <a> links that have a href value.
+         */
+        addTargetBlankToAllLinks?: boolean
     } = {}
 ): string => {
     const tokenizer = new marked.Tokenizer()
@@ -95,7 +100,29 @@ export const renderMarkdown = (
                   FORBID_ATTR: ['rel', 'style', 'method', 'action'],
               }
 
-    return DOMPurify.sanitize(rendered, dompurifyConfig).trim()
+    if (options.addTargetBlankToAllLinks) {
+        // Add a hook that adds target="_blank" to all links. DOMPurify does not
+        // support setting hooks per individual call to sanitize() so we have to
+        // temporarily add the hook on the global module. This hook is removed
+        // after the call to sanitize().
+        DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+            if (node.tagName.toLowerCase() === 'a' && node.getAttribute('href')) {
+                node.setAttribute('target', '_blank')
+                node.setAttribute('rel', 'noopener')
+            }
+        })
+    }
+
+    const result = DOMPurify.sanitize(rendered, dompurifyConfig).trim()
+
+    if (options.addTargetBlankToAllLinks) {
+        // Unfortunately DOMPurify doesn't have a way to add a hook per
+        // individual call to sanitize(), so we have to clean up by removing the
+        // hook that we added for addTargetBlankToAllLinks.
+        DOMPurify.removeHook('afterSanitizeAttributes')
+    }
+
+    return result
 }
 
 export const markdownLexer = (markdown: string): marked.TokensList => marked.lexer(markdown)
