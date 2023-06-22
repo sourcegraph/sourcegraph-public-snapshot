@@ -5,4 +5,4 @@
 - [Installing the Cody VS Code Extension](installing_vs_code.md)
 - [Configuring code graph context](code_graph_context.md)
 - [Generating Index to Enable Codebase-Aware Answers](indexing.md)
-- [Auto-indexing](policies.md)
+- [Embeddings Policies](policies.md)
