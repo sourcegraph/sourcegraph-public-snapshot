@@ -116,7 +116,8 @@ export const OwnerList: FC<OwnerListProps> = ({
         setOpenAddOwnerModal(false)
     }, [])
 
-    const addOwnerButton = (): JSX.Element | undefined => showAddOwnerButton ? (
+    const addOwnerButton = (): JSX.Element | undefined =>
+        showAddOwnerButton ? (
             <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
             </Button>
