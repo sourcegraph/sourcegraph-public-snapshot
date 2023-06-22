@@ -5,4 +5,4 @@ contents:
     ## node-exporter-specific packages
     - 'prometheus-node-exporter=1.5.0-r3' # IMPORTANT: Pinned version for managed updates
 
-# MANUAL REBUILD: Wed Jun 14 15:27:52 BST 2023
+# MANUAL REBUILD: Thu Jun 22 13:43:35 BST 2023

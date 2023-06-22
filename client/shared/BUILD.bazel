@@ -268,6 +268,7 @@ ts_project(
         "src/react-shortcuts/index.ts",
         "src/react-shortcuts/keys.ts",
         "src/schema/extensionSchema.ts",
+        # TODO(bazel): #keep can be removed after https://github.com/aspect-build/aspect-cli/issues/479 is fixed
         "src/schema/settings.schema.d.ts",  #keep
         "src/search/backend.ts",
         "src/search/helpers.ts",
@@ -343,10 +344,11 @@ ts_project(
         ":node_modules/@sourcegraph/client-api",
         ":node_modules/@sourcegraph/codeintellify",
         ":node_modules/@sourcegraph/common",
-        ":node_modules/@sourcegraph/extension-api-types",  #keep
+        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/template-parser",
         ":node_modules/@sourcegraph/wildcard",
+        ":node_modules/sourcegraph",
         "//:node_modules/@apollo/client",
         "//:node_modules/@codemirror/language",
         "//:node_modules/@codemirror/state",
@@ -383,8 +385,8 @@ ts_project(
         "//:node_modules/tagged-template-noop",
         "//:node_modules/use-deep-compare-effect",
         "//:node_modules/util",
-        "//:node_modules/utility-types",  #keep
-        "//:node_modules/zustand",  #keep
+        "//:node_modules/utility-types",
+        "//:node_modules/zustand",
         "//schema:settings",  #keep
     ],
 )
@@ -480,10 +482,12 @@ ts_project(
         ":node_modules/@sourcegraph/client-api",
         ":node_modules/@sourcegraph/codeintellify",
         ":node_modules/@sourcegraph/common",
+        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/http-client",
         ":node_modules/@sourcegraph/template-parser",
         ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",
+        ":node_modules/sourcegraph",
         ":shared_lib",
         "//:node_modules/@apollo/client",
         "//:node_modules/@sourcegraph/extension-api-classes",
