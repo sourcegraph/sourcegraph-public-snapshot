@@ -144,13 +144,13 @@ type UpdateProductSubscriptionInput struct {
 
 type UpdateCodyGatewayAccessInput struct {
 	Enabled                                 *bool
-	ChatCompletionsRateLimit                *int32
+	ChatCompletionsRateLimit                *BigInt
 	ChatCompletionsRateLimitIntervalSeconds *int32
 	ChatCompletionsAllowedModels            *[]string
-	CodeCompletionsRateLimit                *int32
+	CodeCompletionsRateLimit                *BigInt
 	CodeCompletionsRateLimitIntervalSeconds *int32
 	CodeCompletionsAllowedModels            *[]string
-	EmbeddingsRateLimit                     *int32
+	EmbeddingsRateLimit                     *BigInt
 	EmbeddingsRateLimitIntervalSeconds      *int32
 	EmbeddingsAllowedModels                 *[]string
 }
@@ -162,6 +162,7 @@ type CodyGatewayUsersByAccessTokenArgs struct {
 type CodyGatewayUser interface {
 	Username() string
 	CodyGatewayAccess() CodyGatewayAccess
+	ID() graphql.ID
 }
 
 type CodyGatewayAccess interface {
@@ -174,7 +175,7 @@ type CodyGatewayAccess interface {
 type CodyGatewayUsageDatapoint interface {
 	Date() gqlutil.DateTime
 	Model() string
-	Count() int32
+	Count() BigInt
 }
 
 type CodyGatewayRateLimitSource string
@@ -187,7 +188,7 @@ const (
 type CodyGatewayRateLimit interface {
 	Source() CodyGatewayRateLimitSource
 	AllowedModels() []string
-	Limit() int32
+	Limit() BigInt
 	IntervalSeconds() int32
 	Usage(context.Context) ([]CodyGatewayUsageDatapoint, error)
 }

@@ -16,7 +16,6 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { addSourcegraphAppOutboundUrlParameters } from '@sourcegraph/shared/src/util/url'
 import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -25,7 +24,6 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { CodeMonitoringProps } from '../codeMonitoring'
 import { CodyLogo } from '../cody/components/CodyLogo'
-import { useIsCodyEnabled } from '../cody/useIsCodyEnabled'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { useFuzzyFinderFeatureFlags } from '../components/fuzzyFinder/FuzzyFinderFeatureFlag'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
@@ -151,7 +149,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showSearchNotebook = notebooksEnabled && !isSourcegraphApp
     const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
     const showBatchChanges = ((props.batchChangesEnabled && isLicensed) || isSourcegraphDotCom) && !isSourcegraphApp // Batch changes are enabled on sourcegraph.com so users can see the Getting Started page
-    const codyEnabled = useIsCodyEnabled()
+    const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
     // TODO: Include isSourcegraphDotCom in subsequent PR
@@ -178,7 +176,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
-            codyEnabled.search && {
+            codySearchEnabled && {
                 path: EnterprisePageRoutes.CodySearch,
                 content: (
                     <>
@@ -188,7 +186,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
-    }, [ownEnabled, showSearchContext, codyEnabled.search])
+    }, [ownEnabled, showSearchContext, codySearchEnabled])
 
     const { fuzzyFinderNavbar } = useFuzzyFinderFeatureFlags()
 
@@ -199,12 +197,14 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             <NavBar
                 ref={navbarReference}
                 logo={
-                    <BrandLogo
-                        branding={branding}
-                        isLightTheme={isLightTheme}
-                        variant="symbol"
-                        className={styles.logo}
-                    />
+                    !isSourcegraphApp && (
+                        <BrandLogo
+                            branding={branding}
+                            isLightTheme={isLightTheme}
+                            variant="symbol"
+                            className={styles.logo}
+                        />
+                    )
                 }
             >
                 <NavGroup>
@@ -230,13 +230,11 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavLink>
                             </NavItem>
                         ))}
-                    {(codyEnabled.chat || isSourcegraphDotCom) && (
-                        <NavItem icon={CodyLogo}>
-                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
-                                Cody AI
-                            </NavLink>
-                        </NavItem>
-                    )}
+                    <NavItem icon={CodyLogo}>
+                        <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
+                            Cody AI
+                        </NavLink>
+                    </NavItem>
                     {showSearchNotebook && (
                         <NavItem icon={BookOutlineIcon}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Notebooks}>
@@ -312,24 +310,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                             )}
                         </>
                     )}
-                    {isSourcegraphApp && (
-                        <ButtonLink
-                            variant="secondary"
-                            outline={true}
-                            to={addSourcegraphAppOutboundUrlParameters(
-                                'https://about.sourcegraph.com/get-started?t=enterprise',
-                                'navbar'
-                            )}
-                            size="sm"
-                            target="_blank"
-                            className="d-none d-sm-block"
-                            onClick={() =>
-                                eventLogger.log('ClickedOnEnterpriseCTA', { location: 'NavBarSourcegraphApp' })
-                            }
-                        >
-                            Try Sourcegraph Enterprise
-                        </ButtonLink>
-                    )}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
                         <>
@@ -358,7 +338,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                         </>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
-                    {props.authenticatedUser?.siteAdmin && (
+                    {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (
                         <NavAction>
                             <StatusMessagesNavItem isSourcegraphApp={isSourcegraphApp} />
                         </NavAction>

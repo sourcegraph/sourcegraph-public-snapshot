@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
+import { useNavigate } from 'react-router-dom'
 
 import { logger } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
@@ -35,6 +36,8 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
         },
     })
     const [makeOwnerError, setMakeOwnerError] = React.useState<Error | undefined>(undefined)
+    const navigate = useNavigate()
+    const refreshPage = (): Promise<any> => Promise.resolve(navigate(0))
 
     if (loading) {
         return (
@@ -49,7 +52,7 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     const makeOwnerButton = canAssignOwners
         ? (userId: string | undefined) => (
               <MakeOwnerButton
-                  onSuccess={refetch}
+                  onSuccess={refreshPage}
                   onError={setMakeOwnerError}
                   repoId={repoID}
                   path={filePath}
@@ -68,9 +71,10 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     }
 
     if (data?.node?.__typename === 'Repository') {
+        const commit = data.node.commit || data.node.changelist?.commit
         return (
             <OwnerList
-                data={data?.node?.commit?.blob?.ownership}
+                data={commit?.blob?.ownership}
                 isDirectory={false}
                 makeOwnerButton={makeOwnerButton}
                 makeOwnerError={makeOwnerError}
@@ -80,5 +84,5 @@ export const FileOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
             />
         )
     }
-    return <OwnerList refetch={refetch} filePath={filePath} repoID={repoID} />
+    return <OwnerList filePath={filePath} repoID={repoID} refetch={refetch} />
 }

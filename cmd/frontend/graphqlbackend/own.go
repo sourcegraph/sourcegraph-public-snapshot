@@ -86,6 +86,7 @@ type OwnershipStatsResolver interface {
 	TotalCodeownedFiles(context.Context) (int32, error)
 	TotalOwnedFiles(context.Context) (int32, error)
 	TotalAssignedOwnershipFiles(context.Context) (int32, error)
+	UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error)
 }
 
 type Ownable interface {

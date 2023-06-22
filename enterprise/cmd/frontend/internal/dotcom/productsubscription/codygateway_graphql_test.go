@@ -50,16 +50,16 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 		require.NoError(t, err)
 
 		wantRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(int(info.UserCount)), []string{})
-		assert.Equal(t, wantRateLimit.Limit, rateLimit.Limit())
+		assert.Equal(t, graphqlbackend.BigInt(wantRateLimit.Limit), rateLimit.Limit())
 		assert.Equal(t, wantRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
 	})
 
 	t.Run("override default rate limit for a plan", func(t *testing.T) {
-		err := (dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
+		err := dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
 			codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
-				ChatCompletionsRateLimit: pointify(int32(10)),
+				ChatCompletionsRateLimit: pointify(graphqlbackend.BigInt(10)),
 			},
-		}))
+		})
 		require.NoError(t, err)
 
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
@@ -70,7 +70,7 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 		require.NoError(t, err)
 
 		defaultRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(10), []string{})
-		assert.Equal(t, int32(10), rateLimit.Limit())
+		assert.Equal(t, graphqlbackend.BigInt(10), rateLimit.Limit())
 		assert.Equal(t, defaultRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
 	})
 }

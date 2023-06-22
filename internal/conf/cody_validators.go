@@ -19,12 +19,8 @@ func completionsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
 		return nil
 	}
 
-	if completionsConf.Provider == "" {
-		problems = append(problems, "completions.provider is required")
-	}
-
 	if completionsConf.Enabled != nil && q.SiteConfig().CodyEnabled == nil {
-		problems = append(problems, "completions.enabled has been renamed to cody.enabled, please migrate")
+		problems = append(problems, "'completions.enabled' has been superceded by 'cody.enabled', please migrate to the new configuration.")
 	}
 
 	if len(problems) > 0 {
@@ -42,13 +38,21 @@ func embeddingsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
 	}
 
 	if embeddingsConf.Provider == "" {
-		problems = append(problems, "embeddings.provider is required")
+		if embeddingsConf.AccessToken != "" {
+			problems = append(problems, "Because \"embeddings.accessToken\" is set, \"embeddings.provider\" is required")
+		}
 	}
 
 	minimumIntervalString := embeddingsConf.MinimumInterval
 	_, err := time.ParseDuration(minimumIntervalString)
 	if err != nil && minimumIntervalString != "" {
 		problems = append(problems, fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
+	}
+
+	if evaluatedConfig := GetEmbeddingsConfig(q.SiteConfig()); evaluatedConfig != nil {
+		if evaluatedConfig.Dimensions <= 0 {
+			problems = append(problems, "Could not set a default \"embeddings.dimensions\", please configure one manually")
+		}
 	}
 
 	if len(problems) > 0 {

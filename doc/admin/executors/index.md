@@ -1,23 +1,15 @@
 # Executors
 
-<aside class="beta">
-<p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
-</p>
-
-<p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
-</aside>
-
 Executors are Sourcegraph's solution for running untrusted code in a secure and controllable way.
 
 ## Installation
 
 To deploy executors to target your Sourcegraph instance, [follow our deployment guide](deploy_executors.md).
 
-There are two supported installation paths (in Beta):
+There are two supported installation paths:
 
-- <span class="badge badge-beta">Beta</span> Deploy with Terraform on AWS or GCP. Sourcegraph provides Terraform modules and AMIs for [supported regions](./deploy_executors.md).
-- <span class="badge badge-beta">Beta</span> Deploy [binaries](./deploy_executors_binary.md).
+- Deploy with Terraform on AWS or GCP. Sourcegraph provides Terraform modules and AMIs for [supported regions](./deploy_executors.md).
+- Deploy [binaries](./deploy_executors_binary.md).
 
 There are two supported installation methods (Experimental):
 

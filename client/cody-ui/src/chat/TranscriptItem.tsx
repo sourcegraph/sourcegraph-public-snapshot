@@ -11,7 +11,6 @@ import {
     CopyButtonProps,
     ChatUISubmitButtonProps,
 } from '../Chat'
-import { CodySvg } from '../utils/icons'
 
 import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
@@ -76,8 +75,6 @@ export const TranscriptItem: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent: SubmitButton,
     chatInputClassName,
-    abortMessageInProgressComponent: AbortMessageInProgressButton,
-    onAbortMessageInProgress = () => {},
 }) {
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
@@ -123,43 +120,25 @@ export const TranscriptItem: React.FunctionComponent<
             className={classNames(
                 styles.row,
                 transcriptItemClassName,
-                message.speaker === 'human' ? humanTranscriptItemClassName : null
+                message.speaker === 'human' ? humanTranscriptItemClassName : styles.assistantRow
             )}
         >
-            <header className={classNames(styles.participant, transcriptItemParticipantClassName)}>
-                <h2 className={styles.participantName}>
-                    {message.speaker === 'assistant' ? (
-                        <>
-                            <CodySvg className={styles.participantAvatar} /> Cody
-                        </>
-                    ) : (
-                        'Me'
+            {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
+            {EditButtonContainer && beingEdited && <p className={classNames(styles.editingLabel)}>Editing...</p>}
+            {showEditButton && EditButtonContainer && editButtonOnSubmit && TextArea && message.speaker === 'human' && (
+                <header
+                    className={classNames(
+                        beingEdited ? styles.editingContainer : styles.headerContainer,
+                        transcriptItemParticipantClassName
                     )}
-                </h2>
-                {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
-                <div className={styles.participantName}>
-                    {showEditButton &&
-                        EditButtonContainer &&
-                        editButtonOnSubmit &&
-                        TextArea &&
-                        message.speaker === 'human' && (
-                            <EditButtonContainer
-                                className={styles.FeedbackEditButtonsContainer}
-                                messageBeingEdited={beingEdited}
-                                setMessageBeingEdited={setBeingEdited}
-                            />
-                        )}
-                    {showFeedbackButtons &&
-                        FeedbackButtonsContainer &&
-                        feedbackButtonsOnSubmit &&
-                        message.speaker === 'assistant' && (
-                            <FeedbackButtonsContainer
-                                className={styles.FeedbackEditButtonsContainer}
-                                feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
-                            />
-                        )}
-                </div>
-            </header>
+                >
+                    <EditButtonContainer
+                        className={styles.FeedbackEditButtonsContainer}
+                        messageBeingEdited={beingEdited}
+                        setMessageBeingEdited={setBeingEdited}
+                    />
+                </header>
+            )}
             {message.contextFiles && message.contextFiles.length > 0 && (
                 <div className={styles.actions}>
                     <ContextFiles
@@ -169,7 +148,13 @@ export const TranscriptItem: React.FunctionComponent<
                     />
                 </div>
             )}
-            <div className={classNames(styles.contentPadding, textarea ? undefined : styles.content)}>
+            <div
+                className={classNames(
+                    styles.contentPadding,
+                    textarea ? undefined : styles.content,
+                    inProgress && styles.rowInProgress
+                )}
+            >
                 {message.displayText ? (
                     textarea ?? (
                         <CodeBlocks
@@ -182,10 +167,19 @@ export const TranscriptItem: React.FunctionComponent<
                 ) : inProgress ? (
                     <BlinkingCursor />
                 ) : null}
-                {inProgress && AbortMessageInProgressButton && (
-                    <AbortMessageInProgressButton onAbortMessageInProgress={onAbortMessageInProgress} />
-                )}
             </div>
+            {showFeedbackButtons &&
+                FeedbackButtonsContainer &&
+                feedbackButtonsOnSubmit &&
+                message.speaker === 'assistant' && (
+                    <footer className={classNames(styles.footerContainer, transcriptItemParticipantClassName)}>
+                        {/* display edit buttons on last user message, feedback buttons on last assistant message only */}
+                        <FeedbackButtonsContainer
+                            className={styles.FeedbackEditButtonsContainer}
+                            feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
+                        />
+                    </footer>
+                )}
         </div>
     )
 })

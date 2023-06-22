@@ -102,6 +102,7 @@ message CreateCommitFromPatchBinaryRequest {
   PatchCommitInfo commit_info = 6;
   // push_config is the configuration to be used for pushing the commit
   PushConfig push = 7;
+  // git_apply_args are the arguments to be passed to git apply
   repeated string git_apply_args = 8;
   // push_ref is the optional override for the ref that is pushed to
   optional string push_ref = 9;
@@ -112,7 +113,7 @@ message CreateCommitFromPatchError {
   string repository_name = 1;
   // internal_error is the error that occurred on the server
   string internal_error = 2;
-  // command is th git command that was attempted
+  // command is the git command that was attempted
   string command = 3;
   // combined_output is the combined stderr and stdout from running the command
   string combined_output = 4;
@@ -125,6 +126,8 @@ message CreateCommitFromPatchBinaryResponse {
   string rev = 1;
   // error is populated only on error
   CreateCommitFromPatchError error = 2;
+  // changelistid is the Perforce changelist id
+  string changelist_id = 3;
 }
 message ExecRequest {
   string repo = 1;

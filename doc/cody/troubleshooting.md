@@ -34,3 +34,7 @@ If you’re connected to a Sourcegraph Enterprise instance, please ask your site
 If you've completed the above and still seeing your codebase showing up as `NOT INDEXED`, try updating the `Cody: Codebase` (`cody.codebase`) setting in VS Code to the repository name as listed on your Sourcegraph instance.
 
 For more information, see [Generate Index to Enable Codebase-Aware Answers](explanations/indexing.md).
+
+### Signin fails on each VS Code restart
+
+If you are automatically signed out of Cody upon every VS Code restart due to keychain authentication issues, please follow the suggested steps detailed in the official VS Code docs on [troubleshooting keychain issues](https://code.visualstudio.com/docs/editor/settings-sync#_troubleshooting-keychain-issues) to resolve this.

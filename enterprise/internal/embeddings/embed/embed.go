@@ -188,6 +188,9 @@ func embedFiles(
 		if err != nil {
 			return errors.Wrap(err, "error while getting embeddings")
 		}
+		if expected := len(batchChunks) * dimensions; len(batchEmbeddings) != expected {
+			return errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings))
+		}
 		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
 
 		batch = batch[:0] // reset batch

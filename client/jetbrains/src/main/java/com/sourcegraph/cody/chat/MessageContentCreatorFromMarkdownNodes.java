@@ -1,24 +1,31 @@
 package com.sourcegraph.cody.chat;
 
+import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
+
 import com.intellij.ide.highlighter.HighlighterFactory;
 import com.intellij.lang.Language;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.EditorSettings;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
+import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.highlighter.EditorHighlighter;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
+import com.intellij.ui.BrowserHyperlinkListener;
+import com.intellij.ui.ColorUtil;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
+import com.sourcegraph.cody.api.Speaker;
 import java.awt.*;
 import java.util.List;
 import java.util.Optional;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.html.HTMLEditorKit;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
 import org.commonmark.node.Image;
@@ -27,17 +34,19 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
-  private static final int TEXT_MARGIN = 14;
   private final HtmlRenderer htmlRenderer =
       HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
   private final JPanel messagePanel;
+  private final Speaker speaker;
   private final int gradientWidth;
   private StringBuilder htmlContent = new StringBuilder();
   private int textPaneIndex = 0;
   private JEditorPane textPane;
 
-  public MessageContentCreatorFromMarkdownNodes(JPanel messagePanel, int gradientWidth) {
+  public MessageContentCreatorFromMarkdownNodes(
+      JPanel messagePanel, Speaker speaker, int gradientWidth) {
     this.messagePanel = messagePanel;
+    this.speaker = speaker;
     this.gradientWidth = gradientWidth;
     textPane = createNewEmptyTextPane();
   }
@@ -45,12 +54,30 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   @NotNull
   private JEditorPane createNewEmptyTextPane() {
     JEditorPane jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null);
+    HTMLEditorKit htmlEditorKit = (HTMLEditorKit) jEditorPane.getEditorKit();
+    EditorColorsScheme schemeForCurrentUITheme =
+        EditorColorsManager.getInstance().getSchemeForCurrentUITheme();
+    String editorFontName = schemeForCurrentUITheme.getEditorFontName();
+    int editorFontSize = schemeForCurrentUITheme.getEditorFontSize();
+    String fontFamilyAndSize =
+        "font-family:'" + editorFontName + "'; font-size:" + editorFontSize + "pt;";
+    String backgroundColor =
+        "background-color: #" + ColorUtil.toHex(getInlineCodeBackgroundColor()) + ";";
+    htmlEditorKit.getStyleSheet().addRule("code { " + backgroundColor + fontFamilyAndSize + "}");
     jEditorPane.setFocusable(true);
     jEditorPane.setMargin(
         JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN)));
+    jEditorPane.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
     textPane = jEditorPane;
     messagePanel.add(textPane, textPaneIndex++);
     return jEditorPane;
+  }
+
+  @NotNull
+  private Color getInlineCodeBackgroundColor() {
+    return this.speaker == Speaker.ASSISTANT
+        ? ColorUtil.darker(UIUtil.getPanelBackground(), 3)
+        : ColorUtil.brighter(UIUtil.getPanelBackground(), 3);
   }
 
   @Override
@@ -227,5 +254,6 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
     editorSettings.setIndentGuidesShown(false);
     editorSettings.setLineNumbersShown(false);
     editorSettings.setUseSoftWraps(false);
+    editorSettings.setCaretRowShown(false);
   }
 }

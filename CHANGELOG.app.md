@@ -15,6 +15,8 @@ All notable changes to the Cody app are documented in this file.
 
 ## Unreleased
 
+- Locally added repositories will be named using the git remote if available. This allows better integration with the Cody editor extensions.
+
 ## v2023.5.30
 
 - Users upgrading from the old Sourcegraph app version no longer need to delete directories / manually migrate.

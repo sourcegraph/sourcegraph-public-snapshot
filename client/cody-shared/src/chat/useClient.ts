@@ -136,6 +136,12 @@ export const useClient = ({
         setIsMessageInProgressState(false)
         setTranscriptState(newTranscript)
         setChatMessagesState(newTranscript.toChat())
+        setScopeState(scope => ({
+            includeInferredRepository: true,
+            includeInferredFile: true,
+            repositories: [],
+            editor: scope.editor,
+        }))
         onEvent?.('initializedNewChat')
 
         return newTranscript

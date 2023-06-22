@@ -6,21 +6,22 @@ import { isLocalApp } from '../src/chat/protocol'
 
 interface SettingsProps {
     onLogout: () => void
-    serverEndpoint?: string
+    endpoint?: string
+    version?: string
 }
 
 export const Settings: React.FunctionComponent<React.PropsWithChildren<SettingsProps>> = ({
     onLogout,
-    serverEndpoint,
+    endpoint,
+    version,
 }) => (
     <div className="inner-container">
         <div className="non-transcript-container">
             <div className="settings">
-                {serverEndpoint && (
-                    <p>🟢 Connected to {isLocalApp(serverEndpoint) ? 'Sourcegraph App' : serverEndpoint}</p>
-                )}
+                {endpoint && <p>Signed in to {isLocalApp(endpoint) ? 'Cody App' : endpoint}</p>}
+                {version && <p>Cody v{version}</p>}
                 <VSCodeButton className="logout-button" type="button" onClick={onLogout}>
-                    Logout
+                    Sign Out
                 </VSCodeButton>
             </div>
         </div>

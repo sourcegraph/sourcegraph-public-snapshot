@@ -67,25 +67,34 @@ export const FETCH_OWNERS = gql`
         ruleLineMatch
     }
 
+    fragment BlobOwnershipFields on GitCommit {
+        blob(path: $currentPath) {
+            ownership {
+                totalOwners
+                nodes {
+                    owner {
+                        ...OwnerFields
+                    }
+                    reasons {
+                        ...CodeownersFileEntryFields
+                        ...RecentContributorOwnershipSignalFields
+                        ...RecentViewOwnershipSignalFields
+                        ...AssignedOwnerFields
+                    }
+                }
+            }
+        }
+    }
+
     query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
         node(id: $repo) {
             ... on Repository {
                 commit(rev: $revision) {
-                    blob(path: $currentPath) {
-                        ownership {
-                            totalOwners
-                            nodes {
-                                owner {
-                                    ...OwnerFields
-                                }
-                                reasons {
-                                    ...CodeownersFileEntryFields
-                                    ...RecentContributorOwnershipSignalFields
-                                    ...RecentViewOwnershipSignalFields
-                                    ...AssignedOwnerFields
-                                }
-                            }
-                        }
+                    ...BlobOwnershipFields
+                }
+                changelist(cid: $revision) {
+                    commit {
+                        ...BlobOwnershipFields
                     }
                 }
             }
@@ -156,12 +165,12 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
     ${OWNER_FIELDS}
     ${gitCommitFragment}
 
-    query FetchOwnersAndHistory($repo: ID!, $revision: String!, $currentPath: String!) {
+    query FetchOwnersAndHistory($repo: ID!, $revision: String!, $currentPath: String!, $includeOwn: Boolean!) {
         node(id: $repo) {
             ... on Repository {
                 sourceType
                 commit(rev: $revision) {
-                    blob(path: $currentPath) {
+                    blob(path: $currentPath) @include(if: $includeOwn) {
                         ownership(first: 2, reasons: [CODEOWNERS_FILE_ENTRY, ASSIGNED_OWNER]) {
                             nodes {
                                 owner {

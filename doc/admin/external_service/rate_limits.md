@@ -27,7 +27,7 @@ Sourcegraph monitors external rate limits for the following code hosts:
 
 ## Internal rate limits
 
-Internal rate limits refer to self-imposed rate limits within Sourcegraph. While Sourcegraph adheres to external rate limits, sometimes more control is necessary, or pa code host might not have rate limit monitoring available or configured. In these cases, internal rate limits can be configured.
+Internal rate limits refer to self-imposed rate limits within Sourcegraph. While Sourcegraph adheres to external rate limits, sometimes more control is necessary, or a code host might not have rate limit monitoring available or configured. In these cases, internal rate limits can be configured.
 
 A [global default internal rate limit](../config/site_config.md#defaultRateLimit) can be configured in the [site configuration](../config/site_config.md). This limit applies to all code host connections that don't have a specific rate limit configured.
 

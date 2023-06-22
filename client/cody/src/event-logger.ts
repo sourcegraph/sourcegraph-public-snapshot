@@ -4,6 +4,7 @@ import { EventLogger } from '@sourcegraph/cody-shared/src/telemetry/EventLogger'
 
 import { version as packageVersion } from '../package.json'
 
+import { debug } from './log'
 import { LocalStorage } from './services/LocalStorageProvider'
 
 let eventLoggerGQLClient: SourcegraphGraphQLAPIClient
@@ -53,6 +54,7 @@ export function logEvent(eventName: string, eventProperties?: any, publicPropert
         version: packageVersion,
     }
     try {
+        debug('EventLogger', eventName, JSON.stringify(argument, null, 2))
         eventLogger.log(eventName, anonymousUserID, argument, publicArgument)
     } catch (error) {
         console.error(error)

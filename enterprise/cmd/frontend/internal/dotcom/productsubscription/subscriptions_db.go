@@ -19,7 +19,7 @@ import (
 
 type dbRateLimit struct {
 	AllowedModels       []string
-	RateLimit           *int32
+	RateLimit           *int64
 	RateIntervalSeconds *int32
 }
 
@@ -236,7 +236,7 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_enabled=%s", *v))
 		}
 		if v := access.ChatCompletionsRateLimit; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_chat_rate_limit=%s", dbutil.NewNullInt32(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_chat_rate_limit=%s", dbutil.NewNullInt64(int64(*v))))
 		}
 		if v := access.ChatCompletionsRateLimitIntervalSeconds; v != nil {
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_chat_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
@@ -245,7 +245,7 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_chat_rate_limit_allowed_models=%s", nullStringSlice(*v)))
 		}
 		if v := access.CodeCompletionsRateLimit; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_code_rate_limit=%s", dbutil.NewNullInt32(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_code_rate_limit=%s", dbutil.NewNullInt64(int64(*v))))
 		}
 		if v := access.CodeCompletionsRateLimitIntervalSeconds; v != nil {
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_code_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))
@@ -254,7 +254,7 @@ func (s dbSubscriptions) Update(ctx context.Context, id string, update dbSubscri
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_code_rate_limit_allowed_models=%s", nullStringSlice(*v)))
 		}
 		if v := access.EmbeddingsRateLimit; v != nil {
-			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_rate_limit=%s", dbutil.NewNullInt32(*v)))
+			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_rate_limit=%s", dbutil.NewNullInt64(int64(*v))))
 		}
 		if v := access.EmbeddingsRateLimitIntervalSeconds; v != nil {
 			fieldUpdates = append(fieldUpdates, sqlf.Sprintf("cody_gateway_embeddings_api_rate_interval_seconds=%s", dbutil.NewNullInt32(*v)))

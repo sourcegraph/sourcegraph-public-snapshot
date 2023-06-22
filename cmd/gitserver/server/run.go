@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sync"
 	"syscall"
 
 	"github.com/sourcegraph/log"
@@ -21,6 +22,18 @@ import (
 // unsetExitStatus is a sentinel value for an unknown/unset exit status.
 const unsetExitStatus = -10810
 
+// updateRunCommandMock sets the runCommand mock function for use in tests
+func updateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
+	runCommandMockMu.Lock()
+	defer runCommandMockMu.Unlock()
+
+	runCommandMock = mock
+}
+
+// runCommmandMockMu protects runCommandMock against simultaneous access across
+// multiple goroutines
+var runCommandMockMu sync.RWMutex
+
 // runCommandMock is set by tests. When non-nil it is run instead of
 // runCommand
 var runCommandMock func(context.Context, *exec.Cmd) (int, error)
@@ -28,9 +41,15 @@ var runCommandMock func(context.Context, *exec.Cmd) (int, error)
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
 func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
+	runCommandMockMu.RLock()
+
 	if runCommandMock != nil {
-		return runCommandMock(ctx, cmd.Unwrap())
+		code, err := runCommandMock(ctx, cmd.Unwrap())
+		runCommandMockMu.RUnlock()
+		return code, err
 	}
+	runCommandMockMu.RUnlock()
+
 	tr, _ := trace.New(ctx, "gitserver", "runCommand",
 		attribute.String("path", cmd.Unwrap().Path),
 		attribute.StringSlice("args", cmd.Unwrap().Args),

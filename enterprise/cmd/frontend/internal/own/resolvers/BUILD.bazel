@@ -69,7 +69,6 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/database/fakedb",
-        "//internal/featureflag",
         "//internal/gitserver",
         "//internal/rbac/types",
         "//internal/types",

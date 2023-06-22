@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
+	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/codenav/shared"
@@ -1405,6 +1406,9 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		return nil, err
 	}
 
+	// client-side normalizes the file to LF, so normalize CRLF files to that so the offsets are correct
+	file = bytes.ReplaceAll(file, []byte("\r\n"), []byte("\n"))
+
 	repo, err := s.repoStore.Get(ctx, api.RepoID(dump.RepositoryID))
 	if err != nil {
 		return nil, err
@@ -1423,9 +1427,11 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 
 	linemap := newLinemap(string(file))
 	formatter := scip.LenientVerboseSymbolFormatter
-	// symtab := document.SymbolTable()
+	symtab := document.SymbolTable()
 
 	for _, occ := range document.Occurrences {
+		var snapshotData shared.SnapshotData
+
 		formatted, err := formatter.Format(occ.Symbol)
 		if err != nil {
 			formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
@@ -1443,13 +1449,57 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 		snap.WriteString(strings.Repeat("^", int(originalRange.End.Character-originalRange.Start.Character)))
 		snap.WriteRune(' ')
 
-		if occ.SymbolRoles&int32(scip.SymbolRole_Definition) > 0 {
+		isDefinition := occ.SymbolRoles&int32(scip.SymbolRole_Definition) > 0
+		if isDefinition {
 			snap.WriteString("definition")
 		} else {
 			snap.WriteString("reference")
 		}
 		snap.WriteRune(' ')
 		snap.WriteString(formatted)
+
+		snapshotData.Symbol = snap.String()
+
+		// hasOverrideDocumentation := len(occ.OverrideDocumentation) > 0
+		// if hasOverrideDocumentation {
+		// 	documentation := occ.OverrideDocumentation[0]
+		// 	writeDocumentation(&b, documentation, prefix, true)
+		// }
+
+		if info, ok := symtab[occ.Symbol]; ok && isDefinition {
+			// for _, documentation := range info.Documentation {
+			// 	// At least get the first line of documentation if there is leading whitespace
+			// 	documentation = strings.TrimSpace(documentation)
+			// 	writeDocumentation(&b, documentation, prefix, false)
+			// }
+			slices.SortFunc(info.Relationships, func(a, b *scip.Relationship) bool {
+				return a.Symbol < b.Symbol
+			})
+			for _, relationship := range info.Relationships {
+				var b strings.Builder
+				b.WriteString(strings.Repeat(" ", (int(originalRange.Start.Character)-tabCount)+(tabCount*4)))
+				b.WriteString(strings.Repeat("^", int(originalRange.End.Character-originalRange.Start.Character)))
+				b.WriteString(" relationship ")
+
+				formatted, err = formatter.Format(relationship.Symbol)
+				if err != nil {
+					formatted = fmt.Sprintf("error formatting %q", occ.Symbol)
+				}
+
+				b.WriteString(formatted)
+				if relationship.IsImplementation {
+					b.WriteString(" implementation")
+				}
+				if relationship.IsReference {
+					b.WriteString(" reference")
+				}
+				if relationship.IsTypeDefinition {
+					b.WriteString(" type_definition")
+				}
+
+				snapshotData.AdditionalData = append(snapshotData.AdditionalData, b.String())
+			}
+		}
 
 		_, newRange, ok, err := gittranslator.GetTargetCommitPositionFromSourcePosition(ctx, dump.Commit, shared.Position{
 			Line:      int(originalRange.Start.Line),
@@ -1463,10 +1513,9 @@ func (s *Service) SnapshotForDocument(ctx context.Context, repositoryID int, com
 			continue
 		}
 
-		data = append(data, shared.SnapshotData{
-			DocumentOffset: linemap.positions[newRange.Line+1],
-			Symbol:         snap.String(),
-		})
+		snapshotData.DocumentOffset = linemap.positions[newRange.Line+1]
+
+		data = append(data, snapshotData)
 	}
 
 	return

@@ -80,7 +80,7 @@ They are evaluated before the execution of each entry in `steps`, except for the
 | --- | --- | --- |
 | `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. |
 | `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. |
-| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
+| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `on.repositoriesMatchingQuery`s have been found. Empty list if a `select:repo` filter is used in the `on.repositoriesMatchingQuery`, or if only `on.repository` entries are specified. |
 | `repository.branch` | `string` | The target branch of the repository in which the step is being executed. |
 | `repository.name` | `string` | Full name of the repository in which the step is being executed. Example: `org_foo/repo_bar`. |
 | `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous steps. Empty list if no files have been modified. |
@@ -108,7 +108,7 @@ They are evaluated after the execution of all entries in `steps`.
 | --- | --- | --- |
 | `batch_change.name` | `string` | The `name` of the batch change, as set in the batch spec. |
 | `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. |
-| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
+| `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `on.repositoriesMatchingQuery`s have been found. Empty list if a `select:repo` filter is used in the `on.repositoriesMatchingQuery`, or if only `on.repository` entries are specified. |
 | `repository.branch` | `string` | The target branch of the repository in which the step is being executed. |
 | `repository.name` | `string` | Full name of the repository in which the step is being executed. Example: `org_foo/repo_bar`. |
 | `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |

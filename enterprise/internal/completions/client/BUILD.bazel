@@ -3,7 +3,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "client",
-    srcs = ["client.go"],
+    srcs = [
+        "client.go",
+        "observe.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
@@ -13,6 +16,11 @@ go_library(
         "//internal/completions/types",
         "//internal/conf/conftypes",
         "//internal/httpcli",
+        "//internal/metrics",
+        "//internal/observation",
         "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

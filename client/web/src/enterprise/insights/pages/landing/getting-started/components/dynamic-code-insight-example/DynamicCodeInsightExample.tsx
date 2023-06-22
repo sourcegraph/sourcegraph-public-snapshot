@@ -39,12 +39,10 @@ const INITIAL_INSIGHT_VALUES: CodeInsightExampleFormValues = {
     query: 'TODO',
 }
 
-interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {
-    isSourcegraphApp?: boolean
-}
+interface DynamicCodeInsightExampleProps extends TelemetryProps, React.HTMLAttributes<HTMLDivElement> {}
 
 export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = props => {
-    const { telemetryService, isSourcegraphApp, ...otherProps } = props
+    const { telemetryService, ...otherProps } = props
 
     const { repositoryUrl, loading: repositoryValueLoading } = useExampleRepositoryUrl()
 
@@ -138,7 +136,7 @@ export const DynamicCodeInsightExample: FC<DynamicCodeInsightExampleProps> = pro
             </form>
 
             <div>
-                <CodeInsightsDescription isSourcegraphApp={isSourcegraphApp} />
+                <CodeInsightsDescription />
                 <footer className={styles.footer}>
                     <Button variant="primary" as={Link} to="/insights/create" onClick={handleGetStartedClick}>
                         <Icon aria-hidden={true} svgPath={mdiPlus} /> Create your first insight

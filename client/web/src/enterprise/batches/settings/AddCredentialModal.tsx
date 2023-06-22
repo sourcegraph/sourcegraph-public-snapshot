@@ -60,6 +60,7 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
         </span>
     ),
     [ExternalServiceKind.GERRIT]: <span />,
+    [ExternalServiceKind.PERFORCE]: <span>with the ability to shelve changelists.</span>,
     // These are just for type completeness and serve as placeholders for a bright future.
     [ExternalServiceKind.GITOLITE]: <span>Unsupported</span>,
     [ExternalServiceKind.GOMODULES]: <span>Unsupported</span>,
@@ -68,7 +69,6 @@ const scopeRequirements: Record<ExternalServiceKind, JSX.Element> = {
     [ExternalServiceKind.RUBYPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.JVMPACKAGES]: <span>Unsupported</span>,
     [ExternalServiceKind.NPMPACKAGES]: <span>Unsupported</span>,
-    [ExternalServiceKind.PERFORCE]: <span>Unsupported</span>,
     [ExternalServiceKind.PHABRICATOR]: <span>Unsupported</span>,
     [ExternalServiceKind.AWSCODECOMMIT]: <span>Unsupported</span>,
     [ExternalServiceKind.PAGURE]: <span>Unsupported</span>,
@@ -143,7 +143,11 @@ export const AddCredentialModal: React.FunctionComponent<React.PropsWithChildren
     )
 
     const patLabel =
-        externalServiceKind === ExternalServiceKind.BITBUCKETCLOUD ? 'App password' : 'Personal access token'
+        externalServiceKind === ExternalServiceKind.PERFORCE
+            ? 'Ticket'
+            : externalServiceKind === ExternalServiceKind.BITBUCKETCLOUD
+            ? 'App password'
+            : 'Personal access token'
 
     return (
         <Modal onDismiss={onCancel} aria-labelledby={labelId}>

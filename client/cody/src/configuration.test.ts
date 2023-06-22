@@ -1,5 +1,6 @@
 import type * as vscode from 'vscode'
 
+import { DOTCOM_URL } from './chat/protocol'
 import { getConfiguration } from './configuration'
 
 describe('getConfiguration', () => {
@@ -8,7 +9,7 @@ describe('getConfiguration', () => {
             get: <T>(_key: string, defaultValue?: T): typeof defaultValue | undefined => defaultValue,
         }
         expect(getConfiguration(config)).toEqual({
-            serverEndpoint: '',
+            serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             useContext: 'embeddings',
             experimentalSuggest: false,
@@ -20,6 +21,11 @@ describe('getConfiguration', () => {
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
+            completionsAdvancedProvider: 'anthropic',
+            completionsAdvancedServerEndpoint: null,
+            completionsAdvancedAccessToken: null,
+            completionsAdvancedCache: true,
+            completionsAdvancedEmbeddings: true,
         })
     })
 
@@ -54,6 +60,16 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.debug.filter':
                         return /.*/
+                    case 'cody.completions.advanced.provider':
+                        return 'unstable-codegen'
+                    case 'cody.completions.advanced.serverEndpoint':
+                        return 'https://example.com/llm'
+                    case 'cody.completions.advanced.accessToken':
+                        return 'foobar'
+                    case 'cody.completions.advanced.cache':
+                        return false
+                    case 'cody.completions.advanced.embeddings':
+                        return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
                 }
@@ -75,6 +91,11 @@ describe('getConfiguration', () => {
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
+            completionsAdvancedProvider: 'unstable-codegen',
+            completionsAdvancedServerEndpoint: 'https://example.com/llm',
+            completionsAdvancedAccessToken: 'foobar',
+            completionsAdvancedCache: false,
+            completionsAdvancedEmbeddings: false,
         })
     })
 })
