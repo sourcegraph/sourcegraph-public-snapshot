@@ -183,44 +183,6 @@ func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
 	}
 }
 
-func bazelTestWithDepends(optional bool, dependsOn string, targets ...string) func(*bk.Pipeline) {
-	cmds := []bk.StepOpt{
-		bk.Agent("queue", "bazel"),
-	}
-
-	bazelCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.Cmd(bazelCmd))
-	cmds = append(cmds, bk.DependsOn(dependsOn))
-
-	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
-		}
-		pipeline.AddStep(":bazel: Tests",
-			cmds...,
-		)
-	}
-}
-
-func bazelBuild(targets ...string) func(*bk.Pipeline) {
-	cmds := []bk.StepOpt{
-		bk.Key("bazel_build"),
-		bk.Agent("queue", "bazel"),
-	}
-	cmd := bazelStampedCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
-	cmds = append(
-		cmds,
-		bk.Cmd(cmd),
-		bk.Cmd(bazelStampedCmd("run //enterprise/cmd/server:candidate_push")),
-	)
-
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Build ...",
-			cmds...,
-		)
-	}
-}
-
 // Keep: allows building an array of images on one agent. Useful for streamlining and rules_oci in the future.
 func bazelBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
