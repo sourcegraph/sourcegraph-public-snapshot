@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
@@ -69,6 +70,8 @@ type UserExternalAccountsStore interface {
 	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
 
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)
+
+	ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error)
 
 	// LookupUserAndSave is used for authenticating a user (when both their Sourcegraph account and the
 	// association with the external account already exist).
@@ -439,6 +442,40 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 
 	conds := s.listSQL(opt)
 	return s.listBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY id ASC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+}
+
+func (s *userExternalAccountsStore) ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error) {
+	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.ListForUsers", "")
+	var count int
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+		tr.AddEvent(
+			"done",
+			attribute.String("userIDs", fmt.Sprintf("%v", userIDs)),
+			attribute.Int("accounts.count", count),
+		)
+		tr.Finish()
+	}()
+	if len(userIDs) == 0 {
+		return
+	}
+	condition := sqlf.Sprintf("WHERE user_id = ANY(%s)", pq.Array(userIDs))
+	accts, err := s.listBySQL(ctx, condition)
+	if err != nil {
+		return nil, err
+	}
+	count = len(accts)
+	userToAccts = make(map[int32][]*extsvc.Account)
+	for _, acct := range accts {
+		userID := acct.UserID
+		if _, ok := userToAccts[userID]; !ok {
+			userToAccts[userID] = make([]*extsvc.Account, 0)
+		}
+		userToAccts[userID] = append(userToAccts[userID], acct)
+	}
+	return
 }
 
 func (s *userExternalAccountsStore) Count(ctx context.Context, opt ExternalAccountsListOptions) (int, error) {

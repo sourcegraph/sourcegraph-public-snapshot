@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -322,21 +323,27 @@ func TestBagManyUsers(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 	ctx := context.Background()
-	_, err := db.Users().Create(ctx, database.NewUser{
+	user1, err := db.Users().Create(ctx, database.NewUser{
 		Email:           "john.doe@example.com",
 		Username:        "jdoe",
 		EmailIsVerified: true,
 	})
 	require.NoError(t, err)
-	_, err = db.Users().Create(ctx, database.NewUser{
+	addMockExternalAccount(ctx, t, db, user1.ID, extsvc.TypeGitHub, "jdoe-gh")
+	user2, err := db.Users().Create(ctx, database.NewUser{
 		Email:           "suzy.smith@example.com",
 		Username:        "ssmith",
 		EmailIsVerified: true,
 	})
 	require.NoError(t, err)
+	addMockExternalAccount(ctx, t, db, user2.ID, extsvc.TypeGitLab, "ssmith-gl")
+	addMockExternalAccount(ctx, t, db, user2.ID, extsvc.TypeBitbucketServer, "ssmith-bbs")
 	bag := ByTextReference(ctx, db, "jdoe", "ssmith")
 	assert.True(t, bag.Contains(Reference{Handle: "ssmith"}))
+	assert.True(t, bag.Contains(Reference{Handle: "ssmith-bbs"}))
+	assert.True(t, bag.Contains(Reference{Handle: "ssmith-gl"}))
 	assert.True(t, bag.Contains(Reference{Handle: "jdoe"}))
+	assert.True(t, bag.Contains(Reference{Handle: "jdoe-gh"}))
 }
 
 func initUser(ctx context.Context, t *testing.T, db edb.EnterpriseDB) (*types.User, error) {
@@ -349,36 +356,10 @@ func initUser(ctx context.Context, t *testing.T, db edb.EnterpriseDB) (*types.Us
 	require.NoError(t, err)
 	// Adding user external accounts.
 	// 1) GitHub.
-	spec := extsvc.AccountSpec{
-		ServiceType: extsvc.TypeGitHub,
-		ServiceID:   "https://github.com/",
-		AccountID:   "1337",
-	}
-	data := json.RawMessage(fmt.Sprintf(`{"login": "%s"}`, gitHubLogin))
-	accountData := extsvc.AccountData{
-		Data: extsvc.NewUnencryptedData(data),
-	}
-	require.NoError(t, db.UserExternalAccounts().Insert(ctx, user.ID, spec, accountData))
-	mockGitHubProvider := providers.MockAuthProvider{
-		MockConfigID:          providers.ConfigID{Type: extsvc.TypeGitHub},
-		MockPublicAccountData: &extsvc.PublicAccountData{Login: stringPointer(gitHubLogin)},
-	}
+	addMockExternalAccount(ctx, t, db, user.ID, extsvc.TypeGitHub, gitHubLogin)
 	// 2) GitLab.
-	gitLabSpec := extsvc.AccountSpec{
-		ServiceType: extsvc.TypeGitLab,
-		ServiceID:   "https://gitlab.com/",
-		AccountID:   "42",
-	}
-	gitLabData := json.RawMessage(fmt.Sprintf(`{"username": "%s"}`, gitLabLogin))
-	gitLabAccountData := extsvc.AccountData{
-		Data: extsvc.NewUnencryptedData(gitLabData),
-	}
-	require.NoError(t, db.UserExternalAccounts().Insert(ctx, user.ID, gitLabSpec, gitLabAccountData))
-	gitLabMockGitHubProvider := providers.MockAuthProvider{
-		MockConfigID:          providers.ConfigID{Type: extsvc.TypeGitLab},
-		MockPublicAccountData: &extsvc.PublicAccountData{Login: stringPointer(gitLabLogin)},
-	}
-	// 3) Adding SCIM external account to the user, but not to providers to test
+	addMockExternalAccount(ctx, t, db, user.ID, extsvc.TypeGitLab, gitLabLogin)
+	// 3) Adding SCIM external account to the user, but not to providers to test.
 	// https://github.com/sourcegraph/sourcegraph/issues/52718.
 	scimSpec := extsvc.AccountSpec{
 		ServiceType: "scim",
@@ -387,11 +368,33 @@ func initUser(ctx context.Context, t *testing.T, db edb.EnterpriseDB) (*types.Us
 	}
 	scimAccountData := extsvc.AccountData{Data: extsvc.NewUnencryptedData(json.RawMessage("{}"))}
 	require.NoError(t, db.UserExternalAccounts().Insert(ctx, user.ID, scimSpec, scimAccountData))
-	// Adding providers to the mock.
-	providers.MockProviders = []providers.Provider{mockGitHubProvider, gitLabMockGitHubProvider}
+	t.Cleanup(func() {
+		providers.MockProviders = nil
+	})
 	return user, err
 }
 
-func stringPointer(s string) *string {
-	return &s
+func addMockExternalAccount(ctx context.Context, t *testing.T, db edb.EnterpriseDB, userID int32, serviceType, handle string) {
+	spec := extsvc.AccountSpec{
+		ServiceType: serviceType,
+		ServiceID:   fmt.Sprintf("https://%s.com/%s", serviceType, handle),
+		AccountID:   "1337" + handle,
+	}
+	handleName := "login"
+	if serviceType == extsvc.TypeGitLab {
+		handleName = "username"
+	} else if serviceType == extsvc.TypeBitbucketServer {
+		handleName = "name"
+	}
+	data := json.RawMessage(fmt.Sprintf(`{"%s": "%s"}`, handleName, handle))
+	accountData := extsvc.AccountData{
+		Data: extsvc.NewUnencryptedData(data),
+	}
+	require.NoError(t, db.UserExternalAccounts().Insert(ctx, userID, spec, accountData))
+	mockProvider := providers.MockAuthProvider{
+		MockConfigID:          providers.ConfigID{Type: serviceType},
+		MockPublicAccountData: &extsvc.PublicAccountData{Login: pointers.Ptr(handle)},
+	}
+	// Adding providers to the mock.
+	providers.MockProviders = append(providers.MockProviders, mockProvider)
 }
