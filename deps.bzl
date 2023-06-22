@@ -6991,8 +6991,8 @@ def go_dependencies():
         name = "com_github_xsam_otelsql",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/XSAM/otelsql",
-        sum = "h1:n9PcapiW6W801A4QgYG2ArfY2JwnWduXorRlZqucVhM=",
-        version = "v0.18.0",
+        sum = "h1:HIiNs5pmYxgqwm3c6J4Xv6JJ0zBlCAb0HUEJBNX/g2k=",
+        version = "v0.20.0",
     )
 
     go_repository(
