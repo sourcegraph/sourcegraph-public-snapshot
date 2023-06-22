@@ -132,7 +132,7 @@ Environment.
 ### Batch Changes
 
 To run [Batch Changes](../../batch_changes/index.md) on
-Kubernetes, [Native Server-Side Batch Changes](./native_server_side_batch_changes.md) must be enabled.
+Kubernetes, [Native Server-Side Batch Changes](./native_execution.md) must be enabled.
 
 ### Example Configuration YAML
 
@@ -173,7 +173,7 @@ To specifically deploy Executors,
 
 ## Note
 
-Executors deployed on Kubernetes do not use [Firecracker](executors.md#how-it-works).
+Executors deployed on Kubernetes do not use [Firecracker](./index.md#how-it-works).
 
 If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md)
 or [installing the binary](deploy_executors_binary.md) directly.
