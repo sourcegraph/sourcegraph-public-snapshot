@@ -49,6 +49,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private suffixPercentage: number
     private disableTimeouts: boolean
     private isEmbeddingsContextEnabled: boolean
+    private stopLoading: () => void | undefined
     public inlineCompletionsCache?: CompletionsCache
 
     constructor(config: CodyCompletionItemProviderConfig) {
@@ -109,6 +110,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
+            this.stopLoading?.()
+
             if (isAbortError(error)) {
                 return []
             }
@@ -262,6 +265,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             contextSummary,
         })
         const stopLoading = this.statusBar.startLoading('Completions are being generated')
+        this.stopLoading = stopLoading
 
         // Overwrite the abort handler to also update the loading state
         const previousAbort = this.abortOpenInlineCompletions
