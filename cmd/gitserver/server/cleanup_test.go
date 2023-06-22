@@ -437,7 +437,8 @@ func TestCleanupExpired(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB: database.NewMockDB(),
+		DB:                      database.NewMockDB(),
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 	s.testSetup(t)
 	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
