@@ -32,9 +32,9 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
   github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
 
-  # these packages actually do not import dbconn but it is because of ./internal/singleprogram
+  # these packages actually do not import dbconn directly but transitively, because of ./internal/singleprogram
   # you can check this with the following query:
-  # bazel query 'kind("go_binary", rdeps(//cmd/blobstore/..., //internal/database/dbconn))' --keep_going > out.do | dot -Tsvg < out.dot > out.svg
+  # bazel query 'kind("go_binary", rdeps(//cmd/blobstore/..., //internal/database/dbconn))' --keep_going > out.dot | dot -Tsvg < out.dot > out.svg
   # TODO(burmudar): use bazel query instead fo this lint
   github.com/sourcegraph/sourcegraph/cmd/blobstore
   github.com/sourcegraph/sourcegraph/cmd/github-proxy
