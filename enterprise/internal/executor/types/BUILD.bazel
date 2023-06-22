@@ -15,6 +15,7 @@ go_library(
     deps = [
         "//internal/executor",
         "//lib/errors",
+        "//schema",
     ],
 )
 

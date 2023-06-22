@@ -970,7 +970,7 @@ func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
 	}
 }
 
-func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
+func TestMultiHandler_FilterForEligibleQueues(t *testing.T) {
 	tests := []struct {
 		name             string
 		queues           []string
@@ -991,11 +991,11 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 			name:   "All discarded",
 			queues: []string{"batches", "codeintel"},
 			mockCacheEntries: map[string]int{
-				// both have dequeued their limit
+				// both have dequeued their limit, so both will be returned
 				"batches":   50,
 				"codeintel": 250,
 			},
-			expectedQueues: nil,
+			expectedQueues: []string{"batches", "codeintel"},
 		},
 		{
 			name:   "Batches discarded",
@@ -1031,11 +1031,11 @@ func TestMultiHandler_DiscardQueuesAtLimit(t *testing.T) {
 				}
 			}
 
-			queues, err := m.DiscardQueuesAtLimit(tt.queues)
+			queues, err := m.FilterForEligibleQueues(tt.queues)
 			if err != nil {
 				t.Fatalf("unexpected error while discarding queues: %s", err)
 			}
-			assert.Equalf(t, tt.expectedQueues, queues, "DiscardQueuesAtLimit(%v)", tt.queues)
+			assert.Equalf(t, tt.expectedQueues, queues, "FilterForEligibleQueues(%v)", tt.queues)
 		})
 	}
 }

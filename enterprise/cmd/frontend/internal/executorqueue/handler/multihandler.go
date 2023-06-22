@@ -132,7 +132,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		selectedQueue = nonEmptyQueues[0]
 	} else {
 		// multiple populated queues, discard queues at dequeue limit
-		candidateQueues, err := m.DiscardQueuesAtLimit(nonEmptyQueues)
+		candidateQueues, err := m.FilterForEligibleQueues(nonEmptyQueues)
 		if err != nil {
 			return executortypes.Job{}, false, err
 		}
@@ -140,10 +140,6 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 			// only one queue hasn't reached dequeue limit for this window, select as candidate
 			selectedQueue = candidateQueues[0]
 		} else {
-			if len(candidateQueues) == 0 {
-				// all queues are at limit, so make all candidate
-				candidateQueues = nonEmptyQueues
-			}
 			// final list of candidates: multiple not at limit or all at limit.
 			selectedQueue, err = m.SelectQueueForDequeueing(candidateQueues)
 			if err != nil {
@@ -263,9 +259,9 @@ var DoSelectQueueForDequeueing = func(candidateQueues []string, config *schema.D
 	return chooser.Pick(), nil
 }
 
-// DiscardQueuesAtLimit returns a list of queues that have not yet reached the limit of dequeues in the
+// FilterForEligibleQueues returns a list of queues that have not yet reached the limit of dequeues in the
 // current time window.
-func (m *MultiHandler) DiscardQueuesAtLimit(queues []string) ([]string, error) {
+func (m *MultiHandler) FilterForEligibleQueues(queues []string) ([]string, error) {
 	var candidateQueues []string
 	for _, queue := range queues {
 		dequeues, err := m.DequeueCache.GetHashAll(queue)
@@ -282,6 +278,10 @@ func (m *MultiHandler) DiscardQueuesAtLimit(queues []string) ([]string, error) {
 		if len(dequeues) < limit {
 			candidateQueues = append(candidateQueues, queue)
 		}
+	}
+	if len(candidateQueues) == 0 {
+		// all queues are at limit, so make all candidate
+		candidateQueues = queues
 	}
 	return candidateQueues, nil
 }
