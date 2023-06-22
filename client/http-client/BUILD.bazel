@@ -31,19 +31,20 @@ ts_project(
         "src/index.ts",
     ],
     tsconfig = ":tsconfig",
+    # TODO(bazel): "#keep"s required for type-only imports
     deps = [
         ":node_modules/@sourcegraph/common",
         "//:node_modules/@apollo/client",
         "//:node_modules/@types/lodash",
-        "//:node_modules/@types/node-fetch",
+        "//:node_modules/@types/node-fetch",  #keep
         "//:node_modules/@types/react",
-        "//:node_modules/apollo3-cache-persist",
+        "//:node_modules/apollo3-cache-persist",  #keep
         "//:node_modules/graphql",
         "//:node_modules/lodash",
-        "//:node_modules/node-fetch",
+        "//:node_modules/node-fetch",  #keep
         "//:node_modules/react",
         "//:node_modules/rxjs",
-        "//:node_modules/utility-types",
+        "//:node_modules/utility-types",  #keep
     ],
 )
 

@@ -430,11 +430,11 @@ ts_project(
         "//:node_modules/@testing-library/react",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/d3-format",
-        "//:node_modules/@types/d3-scale",
-        "//:node_modules/@types/d3-shape",
+        "//:node_modules/@types/d3-scale",  #keep
+        "//:node_modules/@types/d3-shape",  #keep
         "//:node_modules/@types/d3-time-format",
-        "//:node_modules/@types/d3-voronoi",
-        "//:node_modules/@types/history",
+        "//:node_modules/@types/d3-voronoi",  #keep
+        "//:node_modules/@types/history",  #keep
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",  #keep
         "//:node_modules/@types/react",
@@ -449,16 +449,16 @@ ts_project(
         "//:node_modules/@visx/responsive",
         "//:node_modules/@visx/scale",
         "//:node_modules/@visx/shape",
-        "//:node_modules/@visx/text",
+        "//:node_modules/@visx/text",  #keep
         "//:node_modules/@visx/voronoi",
         "//:node_modules/chromatic",
         "//:node_modules/classnames",
         "//:node_modules/d3-format",
-        "//:node_modules/d3-scale",
-        "//:node_modules/d3-shape",
+        "//:node_modules/d3-scale",  #keep
+        "//:node_modules/d3-shape",  #keep
         "//:node_modules/d3-time-format",
-        "//:node_modules/d3-voronoi",
-        "//:node_modules/history",
+        "//:node_modules/d3-voronoi",  #keep
+        "//:node_modules/history",  #keep
         "//:node_modules/is-absolute-url",
         "//:node_modules/lodash",
         "//:node_modules/mdi-react",
@@ -473,7 +473,7 @@ ts_project(
         "//:node_modules/ts-key-enum",
         "//:node_modules/use-callback-ref",
         "//:node_modules/use-resize-observer",
-        "//:node_modules/utility-types",
+        "//:node_modules/utility-types",  #keep
         "//:node_modules/uuid",
     ],
 )

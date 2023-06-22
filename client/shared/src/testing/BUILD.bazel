@@ -82,13 +82,12 @@ ts_project(
         "//:node_modules/@types/react",
         "//:node_modules/@types/sinon",
         "//:node_modules/@types/uuid",
-        "//:node_modules/axe-core",
+        "//:node_modules/axe-core",  #keep
         "//:node_modules/chalk",
-        "//:node_modules/comlink",
         "//:node_modules/date-fns",
         "//:node_modules/delay",
         "//:node_modules/expect",
-        "//:node_modules/graphql",
+        "//:node_modules/graphql",  #keep
         "//:node_modules/jest",  #keep
         "//:node_modules/jest-mock-extended",
         "//:node_modules/jsonc-parser",
@@ -101,7 +100,6 @@ ts_project(
         "//:node_modules/prettier",
         "//:node_modules/puppeteer",
         "//:node_modules/react",
-        "//:node_modules/react-visibility-sensor",
         "//:node_modules/rxjs",
         "//:node_modules/sinon",
         "//:node_modules/string-width",
@@ -109,7 +107,6 @@ ts_project(
         "//:node_modules/ts-key-enum",
         "//:node_modules/util",
         "//:node_modules/uuid",
-        "//client/shared:graphql_operations",
         "//client/shared:node_modules/@sourcegraph/build-config",
         "//client/shared:node_modules/@sourcegraph/client-api",
         "//client/shared:node_modules/@sourcegraph/common",
