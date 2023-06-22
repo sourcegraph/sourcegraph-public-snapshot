@@ -7,6 +7,7 @@ import type {
 } from '@sourcegraph/cody-shared/src/configuration'
 
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
+import { logEvent } from './event-logger'
 import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
@@ -102,33 +103,47 @@ export const getFullConfig = async (secretStorage: SecretStorage): Promise<Confi
 
 // We run this callback on extension startup
 export async function migrateConfiguration(): Promise<void> {
-    await migrateDeprecatedConfigOption(CONFIG_KEY.experimentalSuggestions, CONFIG_KEY.autocompleteEnabled)
-    await migrateDeprecatedConfigOption(CONFIG_KEY.completionsAdvancedProvider, CONFIG_KEY.autocompleteAdvancedProvider)
-    await migrateDeprecatedConfigOption(
+    let didMigrate = false
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.experimentalSuggestions,
+        CONFIG_KEY.autocompleteEnabled
+    )
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedProvider,
+        CONFIG_KEY.autocompleteAdvancedProvider
+    )
+    didMigrate ||= await migrateDeprecatedConfigOption(
         CONFIG_KEY.completionsAdvancedServerEndpoint,
         CONFIG_KEY.autocompleteAdvancedServerEndpoint
     )
-    await migrateDeprecatedConfigOption(
+    didMigrate ||= await migrateDeprecatedConfigOption(
         CONFIG_KEY.completionsAdvancedAccessToken,
         CONFIG_KEY.autocompleteAdvancedAccessToken
     )
-    await migrateDeprecatedConfigOption(CONFIG_KEY.completionsAdvancedCache, CONFIG_KEY.autocompleteAdvancedCache)
-    await migrateDeprecatedConfigOption(
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedCache,
+        CONFIG_KEY.autocompleteAdvancedCache
+    )
+    didMigrate ||= await migrateDeprecatedConfigOption(
         CONFIG_KEY.completionsAdvancedEmbeddings,
         CONFIG_KEY.autocompleteAdvancedEmbeddings
     )
+
+    if (didMigrate) {
+        logEvent('ConfigMigrator:migrated')
+    }
 }
 
 async function migrateDeprecatedConfigOption(
     oldKey: typeof CONFIG_KEY[ConfigKeys],
     newKey: typeof CONFIG_KEY[ConfigKeys]
-): Promise<void> {
+): Promise<boolean> {
     const config = vscode.workspace.getConfiguration()
     const value = config.get(oldKey)
     const inspect = config.inspect(oldKey)
 
     if (inspect === undefined || value === inspect.defaultValue) {
-        return
+        return false
     }
 
     const scope =
@@ -140,4 +155,6 @@ async function migrateDeprecatedConfigOption(
 
     await config.update(newKey, value, scope)
     await config.update(oldKey, undefined, scope)
+
+    return true
 }
