@@ -21,6 +21,7 @@ export interface OwnershipPanelProps {
     repoID: string
     revision?: string
     filePath: string
+    showAddOwnerButton?: boolean
 }
 
 export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & TelemetryProps> = ({
@@ -28,6 +29,7 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
     revision,
     filePath,
     telemetryService,
+    showAddOwnerButton,
 }) => {
     useEffect(() => {
         telemetryService.log('OwnershipPanelOpened')
@@ -85,8 +87,10 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 repoID={repoID}
                 filePath={filePath}
                 makeOwnerError={makeOwnerError}
+                refetch={refetch}
+                showAddOwnerButton={showAddOwnerButton}
             />
         )
     }
-    return <OwnerList repoID={repoID} filePath={filePath} />
+    return <OwnerList repoID={repoID} filePath={filePath} refetch={refetch} showAddOwnerButton={showAddOwnerButton} />
 }

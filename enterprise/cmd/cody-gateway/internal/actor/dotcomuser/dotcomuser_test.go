@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
@@ -29,7 +30,7 @@ func TestNewActor(t *testing.T) {
 			name: "enabled with rate limits",
 			args: args{
 				dotcom.DotcomUserState{
-					Username: "user",
+					Id: string(relay.MarshalID("User", 10)),
 					CodyGatewayAccess: dotcom.DotcomUserStateCodyGatewayAccess{
 						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: true,
@@ -57,7 +58,7 @@ func TestNewActor(t *testing.T) {
 			name: "disabled with rate limits",
 			args: args{
 				dotcom.DotcomUserState{
-					Username: "user",
+					Id: string(relay.MarshalID("User", 10)),
 					CodyGatewayAccess: dotcom.DotcomUserStateCodyGatewayAccess{
 						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: false,
@@ -85,7 +86,7 @@ func TestNewActor(t *testing.T) {
 			name: "enabled no limits",
 			args: args{
 				dotcom.DotcomUserState{
-					Username: "user",
+					Id: string(relay.MarshalID("User", 10)),
 					CodyGatewayAccess: dotcom.DotcomUserStateCodyGatewayAccess{
 						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
 							Enabled: true,
@@ -94,6 +95,31 @@ func TestNewActor(t *testing.T) {
 				},
 			},
 			wantEnabled:   true,
+			wantChatLimit: 0,
+			wantCodeLimit: 0,
+		},
+		{
+			name: "empty user",
+			args: args{
+				dotcom.DotcomUserState{},
+			},
+			wantEnabled:   false,
+			wantChatLimit: 0,
+			wantCodeLimit: 0,
+		},
+		{
+			name: "invalid userID",
+			args: args{
+				dotcom.DotcomUserState{
+					Id: "NOT_A_VALID_GQL_ID",
+					CodyGatewayAccess: dotcom.DotcomUserStateCodyGatewayAccess{
+						CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
+							Enabled: true,
+						},
+					},
+				},
+			},
+			wantEnabled:   false,
 			wantChatLimit: 0,
 			wantCodeLimit: 0,
 		},

@@ -127,7 +127,7 @@ ts_project(
         ":node_modules/@sourcegraph/cody-ui",
         ":node_modules/lru-cache",
         ":node_modules/wink-nlp-utils",
-        "//:node_modules/@storybook/react",  #keep
+        "//:node_modules/@storybook/react",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",

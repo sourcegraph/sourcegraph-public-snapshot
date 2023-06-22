@@ -3,17 +3,29 @@ package com.sourcegraph.cody.completions;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.command.CommandProcessor;
+import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.editor.SelectionModel;
+import com.intellij.openapi.editor.VisualPosition;
 import com.intellij.openapi.editor.event.*;
 import com.intellij.openapi.editor.ex.util.EditorUtil;
+import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditor;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.fileEditor.impl.FileEditorManagerImpl;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
+import com.intellij.openapi.vfs.VirtualFile;
+import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentServer;
+import com.sourcegraph.cody.agent.protocol.Position;
+import com.sourcegraph.cody.agent.protocol.Range;
+import com.sourcegraph.cody.agent.protocol.TextDocument;
 import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Determines when to trigger completions and when to clear completions.
@@ -29,6 +41,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
   @Override
   public void editorCreated(@NotNull EditorFactoryEvent event) {
     Editor editor = event.getEditor();
+    informAgentAboutEditorChange(editor);
     Project project = editor.getProject();
     if (project == null || project.isDisposed()) {
       return;
@@ -44,6 +57,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
 
     @Override
     public void caretPositionChanged(@NotNull CaretEvent e) {
+      informAgentAboutEditorChange(e.getEditor());
       CodyCompletionsManager suggestions = CodyCompletionsManager.getInstance();
       if (suggestions.isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
@@ -58,6 +72,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     public void selectionChanged(@NotNull SelectionEvent e) {
       if (CodyCompletionsManager.getInstance().isEnabledForEditor(e.getEditor())
           && CodyEditorFactoryListener.isSelectedEditor(e.getEditor())) {
+        informAgentAboutEditorChange(e.getEditor());
         ApplicationManager.getApplication()
             .getService(CodyCompletionsManager.class)
             .clearCompletions(e.getEditor());
@@ -80,6 +95,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
       completions.clearCompletions(this.editor);
       if (completions.isEnabledForEditor(this.editor)
           && !CommandProcessor.getInstance().isUndoTransparentActionInProgress()) {
+        informAgentAboutEditorChange(this.editor);
         int changeOffset = event.getOffset() + event.getNewLength();
         if (this.editor.getCaretModel().getOffset() == changeOffset) {
           InlineCompletionTriggerKind requestType =
@@ -114,5 +130,58 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
     }
     FileEditor current = editorManager.getSelectedEditor();
     return current instanceof TextEditor && editor.equals(((TextEditor) current).getEditor());
+  }
+
+  @Nullable
+  private static Range getSelection(Editor editor) {
+    SelectionModel selectionModel = editor.getSelectionModel();
+    VisualPosition selectionStartPosition = selectionModel.getSelectionStartPosition();
+    VisualPosition selectionEndPosition = selectionModel.getSelectionEndPosition();
+    if (selectionStartPosition != null && selectionEndPosition != null) {
+      return new Range()
+          .setStart(
+              new Position()
+                  .setLine(selectionStartPosition.line)
+                  .setCharacter(selectionStartPosition.column))
+          .setEnd(
+              new Position()
+                  .setLine(selectionEndPosition.line)
+                  .setCharacter(selectionEndPosition.column));
+    }
+    List<Caret> carets = editor.getCaretModel().getAllCarets();
+    if (!carets.isEmpty()) {
+      Caret caret = carets.get(0);
+      Position position =
+          new Position()
+              .setLine(caret.getLogicalPosition().line)
+              .setCharacter(caret.getLogicalPosition().column);
+      // A single-offset caret is a selection where end == start.
+      return new Range().setStart(position).setEnd(position);
+    }
+    return null;
+  }
+
+  // Sends a textDocument/didChange notification to the agent server.
+  public static void informAgentAboutEditorChange(@Nullable Editor editor) {
+    if (editor == null) {
+      return;
+    }
+    if (editor.getProject() == null) {
+      return;
+    }
+    CodyAgentServer server = CodyAgent.getServer(editor.getProject());
+    if (server == null) {
+      return;
+    }
+    VirtualFile file = FileDocumentManager.getInstance().getFile(editor.getDocument());
+    if (file == null) {
+      return;
+    }
+    TextDocument document =
+        new TextDocument()
+            .setFilePath(file.getPath())
+            .setContent(editor.getDocument().getText())
+            .setSelection(getSelection(editor));
+    server.textDocumentDidChange(document);
   }
 }
