@@ -95,6 +95,7 @@ ts_project(
         "src/services/InlineAssist.ts",
         "src/services/InlineController.ts",
         "src/services/LocalAppDetector.ts",
+        "src/services/LocalAppFsPaths.ts",
         "src/services/LocalStorageProvider.ts",
         "src/services/SecretStorageProvider.ts",
         "src/services/StatusBar.ts",
