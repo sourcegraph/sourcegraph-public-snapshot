@@ -376,70 +376,11 @@ func headerXRequestedWithMiddleware(next http.Handler) http.HandlerFunc {
 	}
 }
 
-// recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
-// for a particular repository.
-func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
-	// empty repos, means we should never record since there is nothing to match on
-	if len(repos) == 0 {
-		return func(ctx context.Context, c *exec.Cmd) bool {
-			return false
-		}
-	}
-
-	// we won't record any git commands with these commands since they are considered to be not destructive
-	ignoredGitCommands := map[string]struct{}{
-		"show":      {},
-		"rev-parse": {},
-		"log":       {},
-		"diff":      {},
-		"ls-tree":   {},
-	}
-	return func(ctx context.Context, cmd *exec.Cmd) bool {
-		base := filepath.Base(cmd.Path)
-		if base != "git" {
-			return false
-		}
-
-		repoMatch := false
-		for _, repo := range repos {
-			if strings.Contains(cmd.Dir, repo) {
-				repoMatch = true
-				break
-			}
-		}
-
-		// If the repo doesn't match, no use in checking if it is a command we should record.
-		if !repoMatch {
-			return false
-		}
-		// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
-		// git -c "protocol.version=2" remote show
-		for _, arg := range cmd.Args {
-			if _, ok := ignoredGitCommands[arg]; ok {
-				return false
-			}
-		}
-		return true
-	}
-
-}
-
 // Handler returns the http.Handler that should be used to serve requests.
 func (s *Server) Handler() http.Handler {
 	s.ctx, s.cancel = context.WithCancel(context.Background())
 	s.locker = &RepositoryLocker{}
 	s.repoUpdateLocks = make(map[api.RepoName]*locks)
-
-	conf.Watch(func() {
-		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
-		// to determine whether a command should be recorded or not.
-		recordingConf := conf.Get().SiteConfig().GitRecorder
-		if recordingConf == nil {
-			s.recordingCommandFactory.Disable()
-			return
-		}
-		s.RecordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
-	})
 
 	// GitMaxConcurrentClones controls the maximum number of clones that
 	// can happen at once on a single gitserver.

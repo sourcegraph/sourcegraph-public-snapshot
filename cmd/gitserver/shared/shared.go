@@ -8,8 +8,10 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -136,6 +138,17 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	}
 
 	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
+	conf.Watch(func() {
+		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
+		// to determine whether a command should be recorded or not.
+		recordingConf := conf.Get().SiteConfig().GitRecorder
+		if recordingConf == nil {
+			recordingCommandFactory.Disable()
+			return
+		}
+		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
+	})
+
 	gitserver := server.Server{
 		Logger:             logger,
 		ObservationCtx:     observationCtx,
@@ -600,4 +613,52 @@ func methodSpecificUnaryInterceptor(method string, next grpc.UnaryServerIntercep
 
 		return next(ctx, req, info, handler)
 	}
+}
+
+// recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
+// for a particular repository.
+func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
+	// empty repos, means we should never record since there is nothing to match on
+	if len(repos) == 0 {
+		return func(ctx context.Context, c *exec.Cmd) bool {
+			return false
+		}
+	}
+
+	// we won't record any git commands with these commands since they are considered to be not destructive
+	ignoredGitCommands := map[string]struct{}{
+		"show":      {},
+		"rev-parse": {},
+		"log":       {},
+		"diff":      {},
+		"ls-tree":   {},
+	}
+	return func(ctx context.Context, cmd *exec.Cmd) bool {
+		base := filepath.Base(cmd.Path)
+		if base != "git" {
+			return false
+		}
+
+		repoMatch := false
+		for _, repo := range repos {
+			if strings.Contains(cmd.Dir, repo) {
+				repoMatch = true
+				break
+			}
+		}
+
+		// If the repo doesn't match, no use in checking if it is a command we should record.
+		if !repoMatch {
+			return false
+		}
+		// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
+		// git -c "protocol.version=2" remote show
+		for _, arg := range cmd.Args {
+			if _, ok := ignoredGitCommands[arg]; ok {
+				return false
+			}
+		}
+		return true
+	}
+
 }
