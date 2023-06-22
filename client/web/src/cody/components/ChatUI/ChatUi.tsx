@@ -369,7 +369,7 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
                         </>
                     ) : (
                         <>
-                            Cody isn't available on this instance, but you can learn more about Cody{' '}
+                            Cody isn't enabled on this instance, but you can learn more about Cody{' '}
                             <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
                         </>
                     )}
