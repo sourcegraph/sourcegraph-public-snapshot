@@ -14,7 +14,7 @@ import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
-import { AbstractProvider, ProviderConfig } from './providers/provider'
+import { Provider, ProviderConfig } from './providers/provider'
 import { SNIPPET_WINDOW_SIZE, isAbortError } from './utils'
 
 interface CodyCompletionItemProviderConfig {
@@ -180,7 +180,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             isEmbeddingsContextEnabled: this.isEmbeddingsContextEnabled,
         })
 
-        const completers: AbstractProvider[] = []
+        const completers: Provider[] = []
         let timeout: number
         // VS Code does not show completions if we are in the process of writing a word or if a
         // selected completion info is present (so something is selected from the completions

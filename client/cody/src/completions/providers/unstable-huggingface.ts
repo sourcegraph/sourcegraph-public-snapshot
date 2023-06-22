@@ -2,7 +2,7 @@ import { Completion } from '..'
 import { logger } from '../../log'
 import { isAbortError } from '../utils'
 
-import { AbstractProvider, ProviderConfig, ProviderOptions } from './provider'
+import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
 interface UnstableHuggingFaceOptions {
     serverEndpoint: string
@@ -12,7 +12,7 @@ interface UnstableHuggingFaceOptions {
 const PROVIDER_IDENTIFIER = 'huggingface'
 const STOP_WORD = '<|endoftext|>'
 
-export class UnstableHuggingFaceProvider extends AbstractProvider {
+export class UnstableHuggingFaceProvider extends Provider {
     private serverEndpoint: string
     private accessToken: null | string
 

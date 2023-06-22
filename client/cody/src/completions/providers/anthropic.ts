@@ -17,7 +17,7 @@ import {
 } from '../text-processing'
 import { batchCompletions, messagesToText } from '../utils'
 
-import { AbstractProvider, ProviderConfig, ProviderOptions } from './provider'
+import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
 const CHARS_PER_TOKEN = 4
 
@@ -30,7 +30,7 @@ interface AnthropicOptions {
     completionsClient: SourcegraphNodeCompletionsClient
 }
 
-export class AnthropicProvider extends AbstractProvider {
+export class AnthropicProvider extends Provider {
     private promptChars: number
     private responseTokens: number
     private completionsClient: SourcegraphNodeCompletionsClient

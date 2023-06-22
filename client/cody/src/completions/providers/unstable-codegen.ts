@@ -3,7 +3,7 @@ import { logger } from '../../log'
 import { ReferenceSnippet } from '../context'
 import { isAbortError } from '../utils'
 
-import { AbstractProvider, ProviderConfig, ProviderOptions } from './provider'
+import { Provider, ProviderConfig, ProviderOptions } from './provider'
 
 interface UnstableCodeGenOptions {
     serverEndpoint: string
@@ -11,7 +11,7 @@ interface UnstableCodeGenOptions {
 
 const PROVIDER_IDENTIFIER = 'codegen'
 
-export class UnstableCodeGenProvider extends AbstractProvider {
+export class UnstableCodeGenProvider extends Provider {
     private serverEndpoint: string
 
     constructor(options: ProviderOptions, unstableCodeGenOptions: UnstableCodeGenOptions) {
