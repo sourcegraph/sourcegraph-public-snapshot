@@ -15,6 +15,8 @@ There are 2 ways to connect with GitHub:
 
 <span class="badge badge-note">Sourcegraph 5.1+</span>
 
+<!-- NOTE: The instructions in the following sections closely mirror those in doc/admin/config/batch_changes.md under "Commit signing for GitHub". When making changes here, be sure to consider if those changes should also be made over there! -->
+
 To create a GitHub App and connect it to Sourcegraph:  
 
 1. Go to **Site admin > Repositories > Github Apps** on Sourcegraph.  
