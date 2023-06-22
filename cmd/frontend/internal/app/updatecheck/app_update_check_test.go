@@ -144,8 +144,9 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 	})
 	t.Run("with static manifest resolver, and older version", func(t *testing.T) {
 		var clientVersion = AppVersion{
-			Target:  "unknown-linux-gnu",
-			Version: "2000.3.4+old.1234",
+			Target: "unknown-linux-gnu",
+			// this version has to be higher than 2023.6.13 since versions before that are not allowed to update!
+			Version: "2023.8.23+old.1234",
 			Arch:    "x86_64",
 		}
 
@@ -161,7 +162,7 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 
 		resp := w.Result()
 		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP Status %d for exact version match, but got %d", http.StatusNoContent, resp.StatusCode)
+			t.Fatalf("expected HTTP Status %d for exact version match, but got %d", http.StatusOK, resp.StatusCode)
 		}
 
 		var updateResp AppUpdateResponse
@@ -185,22 +186,27 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 			t.Errorf("URL mismatch. Got %q wanted %q", updateResp.URL, platform.URL)
 		}
 	})
-	t.Run("client on '2023.06.13' gets told there is no update", func(t *testing.T) {
-		req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", noUpdateVersion+"+1234.stuff")
-		if err != nil {
-			t.Fatalf("failed to create client version request: %v", err)
-		}
-		w := httptest.NewRecorder()
+	t.Run("client on or before '2023.6.13' gets told there are no updates", func(t *testing.T) {
+		noUpdateVersions := []string{"2023.6.13+1234.stuff", "2021.1.11+1234.stuff"}
 
-		checker := NewAppUpdateChecker(logtest.NoOp(t), &resolver)
-		checker.Handler().ServeHTTP(w, req)
+		for _, version := range noUpdateVersions {
+			req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", version)
+			if err != nil {
+				t.Fatalf("failed to create client version request: %v", err)
+			}
+			w := httptest.NewRecorder()
 
-		resp := w.Result()
-		if resp.StatusCode != http.StatusNoContent {
-			t.Errorf("expected HTTP Status %d for client on version %s (who should not receive updates) but got %d", http.StatusNoContent, noUpdateVersion, resp.StatusCode)
+			checker := NewAppUpdateChecker(logtest.NoOp(t), &resolver)
+			checker.Handler().ServeHTTP(w, req)
+
+			resp := w.Result()
+			if resp.StatusCode != http.StatusNoContent {
+				t.Errorf("expected HTTP Status %d for client on version %s (who should not receive updates) but got %d", http.StatusNoContent, version, resp.StatusCode)
+			}
 		}
 	})
 }
+
 func TestGCSResolver(t *testing.T) {
 	flag.Parse()
 

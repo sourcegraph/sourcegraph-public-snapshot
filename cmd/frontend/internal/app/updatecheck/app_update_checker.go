@@ -31,11 +31,11 @@ const ManifestBucketDev = "sourcegraph-app-dev"
 // ManifestName is the name of the manifest object that is in the ManifestBucket
 const ManifestName = "app.update.prod.manifest.json"
 
-// noUpdateVersion clients on this version are using the "Sourcegraph App" version, which is the version prior to the
-// "Cody App" version which does not have search. Therefore, clients on this version should be told that there is NOT a
+// noUpdateConstraint clients on or prior to this version are using the "Sourcegraph App" version, which is the version prior to the
+// "Cody App" version which does not have search. Therefore, clients that match this constraint should be told that there is NOT a
 // new version for them to update to with the Tauri updater. Instead we will notify them with a banner in the app - which is not
 // part of the Tauri updater.
-var noUpdateVersion = "2023.06.13"
+var noUpdateConstraint = mustConstraint("<= 2023.6.13")
 
 type AppVersion struct {
 	Target  string
@@ -247,12 +247,6 @@ func readClientAppVersion(reqURL *url.URL) *AppVersion {
 }
 
 func (checker *AppUpdateChecker) canUpdate(client *AppVersion, manifest *AppUpdateManifest) (bool, error) {
-	// we don't want clients who match this version to be prompted with the Tauri updater, so we tell them
-	// they can't update!
-	if strings.HasPrefix(client.Version, noUpdateVersion) {
-		return false, nil
-	}
-
 	clientVersion, err := semver.NewVersion(client.Version)
 	if err != nil {
 		return false, err
@@ -260,6 +254,11 @@ func (checker *AppUpdateChecker) canUpdate(client *AppVersion, manifest *AppUpda
 	manifestVersion, err := semver.NewVersion(manifest.Version)
 	if err != nil {
 		return false, err
+	}
+
+	// no updates for clients that match this constraint!
+	if noUpdateConstraint.Check(clientVersion) {
+		return false, nil
 	}
 
 	// if the manifest version is higher than then the clientVersion, then the client can upgrade
@@ -286,4 +285,13 @@ func AppUpdateHandler(logger log.Logger) http.HandlerFunc {
 	} else {
 		return NewAppUpdateChecker(logger, resolver).Handler()
 	}
+}
+
+func mustConstraint(c string) *semver.Constraints {
+	constraint, err := semver.NewConstraint(c)
+	if err != nil {
+		panic(fmt.Sprintf("invalid constraint %q: %v", c, err))
+	}
+
+	return constraint
 }
