@@ -179,7 +179,7 @@ With that in `sg.config.overwrite.yaml` you can now run `sg start minimal-batche
 `sg start` runs many of the services (defined in the `commands` section of `sg.config.yaml`) as binaries that it compiles and runs according to the settings in their `cmd` and `install` sections. Sometimes while developing, you need to run some of the services isolated from your local environment. This example shows what to add to `sg.config.overwrite.yaml` so that `gitserver` will run in a Docker container. The `gitserver` service already has a build script that generates a Docker image; this configuration will use that script in the `install` section, and use the `env` defined in `sg.config.yaml` to pass environment variables to `docker` in the `run` section.
 
 **A few things to note about this configuration**
-- `PGHOST` is set to `host.docker.internal` so that `gitserver` running in the container can connect to the database that's running on your local machine. See [the Docker documentation](https://docs.docker.com/desktop/networking/#i-want-to-connect-from-a-container-to-a-service-on-the-host) for more information about `host.docker.internal`. In order to use `host.docker.internal` here, you will need to add it to `/etc/hosts` so that the services not running in Docker containers will be able to use it also. If you are using a different database, you will need to adjust `PHHOST` to suit.
+- `PGHOST` is set to `host.docker.internal` so that `gitserver` running in the container can connect to the database that's running on your local machine. See [the Docker documentation](https://docs.docker.com/desktop/networking/#i-want-to-connect-from-a-container-to-a-service-on-the-host) for more information about `host.docker.internal`. In order to use `host.docker.internal` here, you will need to add it to `/etc/hosts` so that the services not running in Docker containers will be able to use it also. If you are using a different database, you will need to adjust `PGHOST` to suit.
 -  `${SRC_FRONTEND_INTERNAL##*:}`, `${HOSTNAME##*:}`, and `${SRC_PROF_HTTP##*:}` use shell parameter expansion to pull the port number from the environment variables defined in `sg.config.yaml`. This parameter expansion works in at least the `ksh`, `bash` and `zsh` shells; might not work in others.
 - The `gitserver` Docker containers will be left running after `sg` has terminated. You will need to manually stop them.
 - The Prometheus agent gets metrics about the `/data/repos` mount. Because the Docker operating system is Linux, the metric function uses the `sysfs` pseudo filesystem and assumes that `/data/repos` is on a block device.  However, Docker bind mounts (which is what `-v ${SRC_REPOS_DIR}:/data/repos` creates) create virtual filesystems, not block filesystems. This will result in error messages in the container about "skipping metric registration" with a reason containing "failed to evaluate sysfs symlink". You can ignore those errors unless your development work involves the Prometheus metrics, in which case you will need to create Docker volumes and mount those instead of the bind mounts (Docker volumes are mounted as block devices). Using a Docker volume means that the repo dirs will not be on your local filesystem in the same location as `SRC_REPOS_DIR`.
@@ -191,7 +191,10 @@ env:
 commands:
   gitserver:
     install: |
-      VERSION=dev IMAGE=sourcegraph/gitserver ./cmd/gitserver/build.sh
+      config=""
+      [[ $(uname) == "Darwin" ]] && config="--config darwin-docker"
+      bazel build //enterprise/cmd/gitserver:image_tarball ${config} && \
+      docker load --input $(bazel cquery //enterprise/cmd/gitserver:image_tarball ${config} --output=files)
   gitserver-0:
     cmd: |
       docker inspect gitserver-${GITSERVER_INDEX} >/dev/null 2>&1 && docker stop gitserver-${GITSERVER_INDEX}
@@ -207,7 +210,7 @@ commands:
       -v ${SRC_REPOS_DIR}:/data/repos \
       --detach \
       --name gitserver-${GITSERVER_INDEX} \
-      sourcegraph/gitserver
+      gitserver:candidate
     env:
       GITSERVER_INDEX: 0
   gitserver-1:
@@ -225,7 +228,7 @@ commands:
       -v ${SRC_REPOS_DIR}:/data/repos \
       --detach \
       --name gitserver-${GITSERVER_INDEX} \
-      sourcegraph/gitserver
+      gitserver:candidate
     env:
       GITSERVER_INDEX: 1
 ```
