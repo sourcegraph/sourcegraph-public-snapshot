@@ -4,6 +4,8 @@
     padding-top: 4.5rem;
     width: 100%;
     overflow: hidden;
+    flex-shrink: 0;
+    flex-grow: 1;
 }
 
 .description {
@@ -35,7 +37,15 @@
     }
 }
 
+.image-wrapper {
+    flex-grow: 1;
+    position: relative;
+    margin: auto -7rem 0;
+    max-width: calc(100% + 14rem);
+}
+
 .image {
     max-width: 100%;
-    margin: auto 0 0;
+    position: absolute;
+
 }

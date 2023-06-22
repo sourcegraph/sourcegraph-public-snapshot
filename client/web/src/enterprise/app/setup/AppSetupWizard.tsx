@@ -8,6 +8,7 @@ import { Theme, ThemeContext, ThemeSetting, useTheme } from '@sourcegraph/shared
 
 import { PageTitle } from '../../../components/PageTitle'
 import { SetupStepsContent, SetupStepsRoot, StepConfiguration } from '../../../setup-wizard'
+import { FooterWidgetPortal } from '../../../setup-wizard/components/setup-steps'
 
 import { AppAllSetSetupStep } from './steps/AppAllSetSetupStep'
 import { AppInstallExtensionsSetupStep } from './steps/AppInstallExtensionsSetupStep'
@@ -106,14 +107,18 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
         <ThemeContext.Provider value={{ themeSetting: ThemeSetting.Light }}>
             <PageTitle title="Cody App setup" />
 
-            <SetupStepsRoot
-                baseURL="/app-setup/"
-                initialStepId={activeStepId}
-                steps={APP_SETUP_STEPS}
-                onStepChange={handleStepChange}
-            >
-                <SetupStepsContent telemetryService={telemetryService} className={styles.content} />
-            </SetupStepsRoot>
+            <div className={styles.root}>
+                <SetupStepsRoot
+                    baseURL="/app-setup/"
+                    initialStepId={activeStepId}
+                    steps={APP_SETUP_STEPS}
+                    onStepChange={handleStepChange}
+                >
+                    <SetupStepsContent telemetryService={telemetryService} className={styles.content} />
+
+                    <FooterWidgetPortal className={styles.footer}/>
+                </SetupStepsRoot>
+            </div>
         </ThemeContext.Provider>
     )
 }

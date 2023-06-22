@@ -6,7 +6,8 @@ import classNames from 'classnames'
 import { Badge, Button, H1, H3, Link, Text, Icon, BadgeVariantType } from '@sourcegraph/wildcard'
 
 import { tauriShellOpen } from '../../../../app/tauriIcpUtils'
-import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { FooterWidget, SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { AppSetupProgressBar } from '../components/AppSetupProgressBar'
 
 import styles from './AppInstallExtensionsSetupStep.module.scss'
 
@@ -116,6 +117,10 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                     </Link>
                 </li>
             </ul>
+
+            <FooterWidget>
+                <AppSetupProgressBar />
+            </FooterWidget>
         </div>
     )
 }

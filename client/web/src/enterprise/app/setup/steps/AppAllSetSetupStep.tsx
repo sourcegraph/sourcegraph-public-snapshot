@@ -4,7 +4,8 @@ import classNames from 'classnames'
 
 import { Button, H1, Text } from '@sourcegraph/wildcard'
 
-import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { FooterWidget, SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { AppSetupProgressBar } from '../components/AppSetupProgressBar'
 
 import styles from './AppAllSetSetupStep.module.scss'
 
@@ -27,7 +28,13 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
                 </div>
             </div>
 
-            <img src="https://storage.googleapis.com/sourcegraph-assets/all-set.png" alt="" className={styles.image} />
+            <div className={styles.imageWrapper}>
+                <img src="https://storage.googleapis.com/sourcegraph-assets/all-set.png" alt="" className={styles.image} />
+            </div>
+
+            <FooterWidget>
+                <AppSetupProgressBar />
+            </FooterWidget>
         </div>
     )
 }

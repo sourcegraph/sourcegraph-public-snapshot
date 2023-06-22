@@ -6,6 +6,7 @@ export {
     FooterWidget,
     CustomNextButton,
     SetupStepsContext,
+    FooterWidgetPortal,
 } from './SetupSteps'
 
 export type { StepConfiguration, StepComponentProps } from './SetupSteps'
