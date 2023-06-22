@@ -14698,7 +14698,15 @@
           "ConstraintDefinition": "PRIMARY KEY (policy_id, repo_id)"
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "fk_policy_id",
+          "ConstraintType": "f",
+          "RefTableName": "lsif_configuration_policies",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (policy_id) REFERENCES lsif_configuration_policies(id) ON DELETE CASCADE NOT VALID"
+        }
+      ],
       "Triggers": []
     },
     {

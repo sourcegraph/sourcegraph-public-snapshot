@@ -2018,6 +2018,8 @@ Stores data points for a code insight that do not need to be queried directly, b
 Indexes:
     "lsif_configuration_policies_pkey" PRIMARY KEY, btree (id)
     "lsif_configuration_policies_repository_id" btree (repository_id)
+Referenced by:
+    TABLE "lsif_configuration_policies_repository_pattern_lookup" CONSTRAINT "fk_policy_id" FOREIGN KEY (policy_id) REFERENCES lsif_configuration_policies(id) ON DELETE CASCADE NOT VALID
 Triggers:
     trigger_configuration_policies_delete AFTER DELETE ON lsif_configuration_policies REFERENCING OLD TABLE AS old FOR EACH STATEMENT EXECUTE FUNCTION func_configuration_policies_delete()
     trigger_configuration_policies_insert AFTER INSERT ON lsif_configuration_policies FOR EACH ROW EXECUTE FUNCTION func_configuration_policies_insert()
@@ -2055,6 +2057,8 @@ Triggers:
  repo_id   | integer |           | not null | 
 Indexes:
     "lsif_configuration_policies_repository_pattern_lookup_pkey" PRIMARY KEY, btree (policy_id, repo_id)
+Foreign-key constraints:
+    "fk_policy_id" FOREIGN KEY (policy_id) REFERENCES lsif_configuration_policies(id) ON DELETE CASCADE NOT VALID
 
 ```
 

@@ -6517,6 +6517,9 @@ ALTER TABLE ONLY codeintel_initial_path_ranks_processed
 ALTER TABLE ONLY codeintel_ranking_references_processed
     ADD CONSTRAINT fk_codeintel_ranking_reference FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY lsif_configuration_policies_repository_pattern_lookup
+    ADD CONSTRAINT fk_policy_id FOREIGN KEY (policy_id) REFERENCES lsif_configuration_policies(id) ON DELETE CASCADE NOT VALID;
+
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_upload FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;
 
