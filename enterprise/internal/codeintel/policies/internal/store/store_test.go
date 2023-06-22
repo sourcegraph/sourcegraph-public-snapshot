@@ -17,7 +17,7 @@ import (
 
 // removes default configuration policies
 func testStoreWithoutConfigurationPolicies(t *testing.T, db database.DB) Store {
-	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies`); err != nil {
+	if _, err := db.ExecContext(context.Background(), `TRUNCATE lsif_configuration_policies CASCADE`); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
 	}
 
