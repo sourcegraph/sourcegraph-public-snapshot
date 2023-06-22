@@ -1,4 +1,4 @@
-## Code Completions (Experimental)
+## Code Autocomplete (Beta)
 
 <video autoPlay muted loop playsInline>
     <source
@@ -7,4 +7,4 @@
     />
 </video>
 
-Start writing code or write a comment and Cody will suggest the next few lines for you. Choose to accept it, or open the command palette and click "Cody: View Suggestions" to see various code snippets Cody suggests using.
+Start writing code or write a comment and Cody will suggest the next few lines for you. Choose to accept it, or open the command palette and click "Cody: Open Completions Panel" to see various code snippets Cody suggests using.

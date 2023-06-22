@@ -57,11 +57,11 @@ export function createStatusBar(): CodyStatusBar {
             // These description should stay in sync with the settings in package.json
             [
                 createFeatureToggle(
-                    'Code Completions',
+                    'Code Autocomplete',
                     'Beta',
-                    'Experimental Cody completions in your editor',
-                    'cody.experimental.suggestions',
-                    c => c.experimentalSuggest
+                    'Enables inline code suggestions in your editor',
+                    'cody.autocomplete.enabled',
+                    c => c.autocomplete
                 ),
                 createFeatureToggle(
                     'Inline Assist',

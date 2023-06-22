@@ -12,7 +12,7 @@ describe('getConfiguration', () => {
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             useContext: 'embeddings',
-            experimentalSuggest: false,
+            autocomplete: false,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
             experimentalInline: false,
@@ -21,11 +21,11 @@ describe('getConfiguration', () => {
             debugEnable: false,
             debugVerbose: false,
             debugFilter: null,
-            completionsAdvancedProvider: 'anthropic',
-            completionsAdvancedServerEndpoint: null,
-            completionsAdvancedAccessToken: null,
-            completionsAdvancedCache: true,
-            completionsAdvancedEmbeddings: true,
+            autocompleteAdvancedProvider: 'anthropic',
+            autocompleteAdvancedServerEndpoint: null,
+            autocompleteAdvancedAccessToken: null,
+            autocompleteAdvancedCache: true,
+            autocompleteAdvancedEmbeddings: true,
         })
     })
 
@@ -44,7 +44,7 @@ describe('getConfiguration', () => {
                             'Cache-Control': 'no-cache',
                             'Proxy-Authenticate': 'Basic',
                         }
-                    case 'cody.experimental.suggestions':
+                    case 'cody.autocomplete.enabled':
                         return true
                     case 'cody.experimental.chatPredictions':
                         return true
@@ -60,15 +60,15 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.debug.filter':
                         return /.*/
-                    case 'cody.completions.advanced.provider':
+                    case 'cody.autocomplete.advanced.provider':
                         return 'unstable-codegen'
-                    case 'cody.completions.advanced.serverEndpoint':
+                    case 'cody.autocomplete.advanced.serverEndpoint':
                         return 'https://example.com/llm'
-                    case 'cody.completions.advanced.accessToken':
+                    case 'cody.autocomplete.advanced.accessToken':
                         return 'foobar'
-                    case 'cody.completions.advanced.cache':
+                    case 'cody.autocomplete.advanced.cache':
                         return false
-                    case 'cody.completions.advanced.embeddings':
+                    case 'cody.autocomplete.advanced.embeddings':
                         return false
                     default:
                         throw new Error(`unexpected key: ${key}`)
@@ -83,7 +83,7 @@ describe('getConfiguration', () => {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
             },
-            experimentalSuggest: true,
+            autocomplete: true,
             experimentalChatPredictions: true,
             experimentalGuardrails: true,
             experimentalInline: true,
@@ -91,11 +91,11 @@ describe('getConfiguration', () => {
             debugEnable: true,
             debugVerbose: true,
             debugFilter: /.*/,
-            completionsAdvancedProvider: 'unstable-codegen',
-            completionsAdvancedServerEndpoint: 'https://example.com/llm',
-            completionsAdvancedAccessToken: 'foobar',
-            completionsAdvancedCache: false,
-            completionsAdvancedEmbeddings: false,
+            autocompleteAdvancedProvider: 'unstable-codegen',
+            autocompleteAdvancedServerEndpoint: 'https://example.com/llm',
+            autocompleteAdvancedAccessToken: 'foobar',
+            autocompleteAdvancedCache: false,
+            autocompleteAdvancedEmbeddings: false,
         })
     })
 })
