@@ -1,8 +1,12 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "resolvers",
-    srcs = ["app.go"],
+    srcs = [
+        "app.go",
+        "progress.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
@@ -11,15 +15,29 @@ go_library(
         "//enterprise/internal/embeddings",
         "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
+        "//internal/api/internalapi",
         "//internal/auth",
         "//internal/database",
         "//internal/gitserver",
+        "//internal/httpcli",
         "//internal/jsonc",
         "//internal/service/servegit",
+        "//internal/types",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "resolvers_test",
+    srcs = ["progress_test.go"],
+    embed = [":resolvers"],
+    deps = [
+        "//enterprise/internal/embeddings/background/repo",
+        "//lib/pointers",
     ],
 )

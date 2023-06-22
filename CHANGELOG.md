@@ -21,7 +21,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- `golang.org/x/net/trace` instrumentation, previously available under `/debug/requests` and `/debug/events`, has been removed entirely from core Sourcegraph services. It remains available for Zoekt. [#53795](https://github.com/sourcegraph/sourcegraph/pull/53795)
 
 ### Fixed
 

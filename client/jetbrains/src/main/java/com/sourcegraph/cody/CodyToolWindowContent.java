@@ -166,7 +166,7 @@ class CodyToolWindowContent implements UpdatableChat {
     contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
     contentPanel.add(chatPanel, BorderLayout.CENTER);
     contentPanel.add(controlsPanel, BorderLayout.SOUTH);
-
+    tabbedPane.addChangeListener(e -> this.focusPromptInput());
     // Add welcome message
     addWelcomeMessage();
   }
@@ -240,6 +240,7 @@ class CodyToolWindowContent implements UpdatableChat {
     promptInput.setFont(UIUtil.getLabelFont());
     promptInput.setLineWrap(true);
     promptInput.setWrapStyleWord(true);
+    promptInput.requestFocusInWindow();
     KeyboardShortcut CTRL_ENTER =
         new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
     KeyboardShortcut META_ENTER =
@@ -403,5 +404,13 @@ class CodyToolWindowContent implements UpdatableChat {
 
   public @NotNull JComponent getContentPanel() {
     return tabbedPane;
+  }
+
+  public void focusPromptInput() {
+    if (tabbedPane.getSelectedIndex() == CHAT_TAB_INDEX) {
+      promptInput.requestFocusInWindow();
+      int textLength = promptInput.getDocument().getLength();
+      promptInput.setCaretPosition(textLength);
+    }
   }
 }

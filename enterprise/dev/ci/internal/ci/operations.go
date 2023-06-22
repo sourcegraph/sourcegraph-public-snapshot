@@ -442,13 +442,6 @@ func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.St
 	}
 }
 
-// Builds the OSS and Enterprise Go commands.
-func addGoBuild(pipeline *bk.Pipeline) {
-	pipeline.AddStep(":go: Build",
-		bk.Cmd("./dev/ci/go-build.sh"),
-	)
-}
-
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests

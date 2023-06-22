@@ -30,16 +30,19 @@ go_library(
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",
         "@io_opentelemetry_go_otel_trace//:trace",
-        "@org_golang_x_net//trace",
     ],
 )
 
 go_test(
     name = "trace_test",
-    srcs = ["attributes_test.go"],
+    srcs = [
+        "attributes_test.go",
+        "context_test.go",
+    ],
     embed = [":trace"],
     deps = [
         "//lib/errors",
         "@com_github_stretchr_testify//require",
+        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )
