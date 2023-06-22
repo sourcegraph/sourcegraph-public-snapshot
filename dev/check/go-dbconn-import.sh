@@ -31,6 +31,15 @@ allowed_prefix=(
   # Main entrypoints for running all services, so they must be allowed to import it.
   github.com/sourcegraph/sourcegraph/cmd/sourcegraph-oss
   github.com/sourcegraph/sourcegraph/enterprise/cmd/sourcegraph
+
+  # these packages actually do not import dbconn but it is because of ./internal/singleprogram
+  # you can check this with the following query:
+  # bazel query 'kind("go_binary", rdeps(//cmd/blobstore/..., //internal/database/dbconn))' --keep_going > out.do | dot -Tsvg < out.dot > out.svg
+  # TODO(burmudar): use bazel query instead fo this lint
+  github.com/sourcegraph/sourcegraph/cmd/blobstore
+  github.com/sourcegraph/sourcegraph/cmd/github-proxy
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway
+  github.com/sourcegraph/sourcegraph/enterprise/cmd/llm-proxy
 )
 
 # Create regex ^(a|b|c)
