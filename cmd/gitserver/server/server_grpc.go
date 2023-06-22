@@ -159,13 +159,24 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 
 		} else if errors.Is(err, ErrInvalidCommand) {
 			return status.New(codes.InvalidArgument, "invalid command").Err()
+		} else if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
 		}
 
 		return err
 	}
 
 	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
-		s, err := status.New(codes.Unknown, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		gRPCStatus := codes.Unknown
+		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
+			gRPCStatus = codes.Aborted
+		}
+
+		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
 			StatusCode: int32(execStatus.ExitStatus),
 			Stderr:     execStatus.Stderr,
 		})
