@@ -12,6 +12,8 @@ go_library(
         "//internal/codygateway",
         "//internal/trace",
         "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_gregjones_httpcache//:httpcache",
         "@com_github_khan_genqlient//graphql",
         "@com_github_sourcegraph_log//:log",
@@ -26,6 +28,7 @@ go_test(
     deps = [
         "//enterprise/cmd/cody-gateway/internal/dotcom",
         "//internal/codygateway",
+        "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_stretchr_testify//assert",
     ],
 )

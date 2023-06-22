@@ -3,10 +3,14 @@ package dotcomuser
 import (
 	"context"
 	"encoding/json"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Khan/genqlient/graphql"
+	graphqltypes "github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/gregjones/httpcache"
 	"github.com/sourcegraph/log"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -131,10 +135,13 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 // newActor creates an actor from Sourcegraph.com user.
 func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *actor.Actor {
 	now := time.Now()
+
+	userID := unmarshalUserID(user.Id)
+
 	a := &actor.Actor{
 		Key:           cacheKey,
-		ID:            user.Username,
-		AccessEnabled: user.GetCodyGatewayAccess().Enabled,
+		ID:            userID,
+		AccessEnabled: userID != "" && user.GetCodyGatewayAccess().Enabled,
 		RateLimits:    zeroRequestsAllowed(),
 		LastUpdated:   &now,
 		Source:        source,
@@ -176,4 +183,16 @@ func zeroRequestsAllowed() map[codygateway.Feature]actor.RateLimit {
 		codygateway.FeatureCodeCompletions: {},
 		codygateway.FeatureEmbeddings:      {},
 	}
+}
+
+func unmarshalUserID(id string) (userID string) {
+	if id == "" {
+		return ""
+	}
+	var user int32
+	err := relay.UnmarshalSpec(graphqltypes.ID(id), &user)
+	if err != nil {
+		return ""
+	}
+	return strconv.Itoa(int(user))
 }

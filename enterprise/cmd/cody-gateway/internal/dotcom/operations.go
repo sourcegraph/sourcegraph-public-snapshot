@@ -158,9 +158,9 @@ type CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCody
 	DotcomUserState `json:"-"`
 }
 
-// GetUsername returns CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser.Username, and is useful for accessing the field via an interface.
-func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) GetUsername() string {
-	return v.DotcomUserState.Username
+// GetId returns CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser.Id, and is useful for accessing the field via an interface.
+func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) GetId() string {
+	return v.DotcomUserState.Id
 }
 
 // GetCodyGatewayAccess returns CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser.CodyGatewayAccess, and is useful for accessing the field via an interface.
@@ -194,7 +194,7 @@ func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByToken
 }
 
 type __premarshalCheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser struct {
-	Username string `json:"username"`
+	Id string `json:"id"`
 
 	CodyGatewayAccess DotcomUserStateCodyGatewayAccess `json:"codyGatewayAccess"`
 }
@@ -210,7 +210,7 @@ func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByToken
 func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) __premarshalJSON() (*__premarshalCheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser, error) {
 	var retval __premarshalCheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser
 
-	retval.Username = v.DotcomUserState.Username
+	retval.Id = v.DotcomUserState.Id
 	retval.CodyGatewayAccess = v.DotcomUserState.CodyGatewayAccess
 	return &retval, nil
 }
@@ -525,14 +525,14 @@ const (
 // A dotcom user allowed to access the Cody Gateway
 // FOR INTERNAL USE ONLY.
 type DotcomUserState struct {
-	// The user name of the user
-	Username string `json:"username"`
+	// The id of the user
+	Id string `json:"id"`
 	// Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
 	CodyGatewayAccess DotcomUserStateCodyGatewayAccess `json:"codyGatewayAccess"`
 }
 
-// GetUsername returns DotcomUserState.Username, and is useful for accessing the field via an interface.
-func (v *DotcomUserState) GetUsername() string { return v.Username }
+// GetId returns DotcomUserState.Id, and is useful for accessing the field via an interface.
+func (v *DotcomUserState) GetId() string { return v.Id }
 
 // GetCodyGatewayAccess returns DotcomUserState.CodyGatewayAccess, and is useful for accessing the field via an interface.
 func (v *DotcomUserState) GetCodyGatewayAccess() DotcomUserStateCodyGatewayAccess {
@@ -1184,7 +1184,7 @@ query CheckDotcomUserAccessToken ($token: String!) {
 	}
 }
 fragment DotcomUserState on CodyGatewayDotcomUser {
-	username
+	id
 	codyGatewayAccess {
 		... CodyGatewayAccessFields
 	}
