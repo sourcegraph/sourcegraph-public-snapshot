@@ -65,22 +65,17 @@ export const Transcript: React.FunctionComponent<
             // We allow some small threshold for "what is considered not scrolled up" so that
             // minimal scroll doesn't affect it (ie. if I'm not all the way scrolled down by like a
             // pixel or two, I probably still want it to scroll).
-            const SCROLL_THRESHOLD = 100
+            const SCROLL_THRESHOLD = 25
             const delta = Math.abs(
                 transcriptContainerRef.current.scrollHeight -
                     transcriptContainerRef.current.offsetHeight -
                     transcriptContainerRef.current.scrollTop
             )
-            if (delta < SCROLL_THRESHOLD) {
+            if (delta <= SCROLL_THRESHOLD) {
                 transcriptContainerRef.current.scrollTo({
                     top: transcriptContainerRef.current.scrollHeight,
                 })
             }
-
-            // scroll to the end when messages are loaded
-            transcriptContainerRef.current.scrollTo({
-                top: transcriptContainerRef.current.scrollHeight,
-            })
         }
     }, [transcript, transcriptContainerRef])
 
