@@ -1,6 +1,6 @@
 # Client feature availability
 
-| Subject                      | Description                                             | VS Code | IntelliJ | Web UI | App |
+| Subject                      | Description                                             | VS Code | JetBrains IDEs | Web UI | App |
 |-----------------------------|---------------------------------------------------------|:-:|:-:|:-:|:-:|
 |Chat                         | ChatGPT-like chat functionality                         |✅|✅|✅|✅|
 |Code autocomplete                  | Start typing a line of code and Cody will suggest a completion|✖️|✅|✖️|✖️| 
