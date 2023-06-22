@@ -34,7 +34,7 @@ To create a GitHub App and connect it to Sourcegraph:
 <img alt="The GitHub App creation page on Sourcegraph, with the default values filled out" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-apps-create.png" class="screenshot theme-light-only" />
 <img alt="The GitHub App creation page on Sourcegraph, with the default values filled out" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-apps-create-dark.png" class="screenshot theme-dark-only" />
 
-1. When you click **Create GitHub App**, you will be redirected to GitHub to confirm the details of the App to be created.
+4. When you click **Create GitHub App**, you will be redirected to GitHub to confirm the details of the App to be created.
 
 <img alt="The GitHub App creation page on GitHub" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-create-on-gh.png" class="screenshot theme-light-only" />
 <img alt="The GitHub App creation page on GitHub" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-create-on-gh-dark.png" class="screenshot theme-dark-only" />
