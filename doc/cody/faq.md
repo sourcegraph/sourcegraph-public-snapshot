@@ -23,6 +23,10 @@ Yes, Cody works with self-hosted Sourcegraph instances, with the caveat that sni
 
 In particular, this means the Sourcegraph instance needs to be able to access the internet.
 
+#### Is there a public facing Cody API?
+
+Not at the moment. 
+
 #### Does Cody require Sourcegraph to function?
 
 Yes. Sourcegraph is needed both to retrieve context and as a proxy for the LLM provider.
