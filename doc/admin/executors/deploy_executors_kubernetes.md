@@ -10,15 +10,7 @@
 
 > NOTE: This feature is available in Sourcegraph 5.1.0 and later.
 
-<!--
-
-TODO: uncomment when we complete the actual implementations.
-
-[Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph) are provided to deploy Sourcegraph Executors
-on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are
-available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
-
--->
+[Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph-k8s) are provided to deploy Sourcegraph Executors on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
 
 ## Requirements
 
@@ -148,10 +140,6 @@ See
 the [local development YAMLs](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@main/-/blob/enterprise/cmd/executor/kubernetes)
 for an example of how to configure the Executor in Kubernetes.
 
-<!--
-
-TODO uncomment and fix up when we have completed the actual deployments.
-
 ## Deployment
 
 Executors on Kubernetes require specific RBAC rules to be configured in order to operate correctly.
@@ -159,21 +147,29 @@ See [RBAC Roles](#rbac-roles) for more information.
 
 ### Step-by-step Guide
 
-Ensure you have the following tools installed.
+Ensure you have the following tools installed:
 
 - [kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+- [Helm](https://helm.sh/) if you're installing Sourcegraph with `helm`.
 
-#### Deployment via kubectl (Kubernetes manifests)
+#### Deployment via Kustomize
 
-1. Clone the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository to your local machine.
-2. Run `cd deploy-sourcegraph/configure/executors`.
-3. Configure
-   the [Executor environment variables](https://docs.sourcegraph.com/admin/executors/deploy_executors_binary#step-2-setup-environment-variables)
-   in the `executor/executor.deployment.yaml` file.
-4. Run  `kubectl apply -f . --recursive` to deploy all components.
-5. Confirm executors are working by checking the _Executors_ page under _Site Admin_ > _Executors_ > _Instances_ .
+Please refer to the [Sourcegraph Kustomize docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/kustomize) for the latest instructions.
 
--->
+To include Native Kubernetes Executors, see [configure Sourcegraph with Kustomize](https://docs.sourcegraph.com/admin/deploy/kubernetes/configure) on how to specify the component.
+
+#### Deployment via Helm
+
+Please refer to the [Sourcegraph Helm docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/helm#quickstart) for the latest instructions.
+
+To specifically deploy Executors,
+1. Create an overrides file, `override.yaml`, with any other customizations you may require.
+    1. See [details on configurations](https://docs.sourcegraph.com/admin/deploy/kubernetes/helm#configuration).
+2. Run the following command:
+    ```bash
+    helm upgrade --install --values ./override.yaml --version <your Sourcegraph Version> sg-executor sourcegraph/sourcegraph-executor-k8s
+    ```
+3. Confirm executors are working by checking the _Executors_ page under **Site admin > Executors > Instances** .
 
 ## Note
 
