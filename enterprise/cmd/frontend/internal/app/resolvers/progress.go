@@ -115,16 +115,23 @@ func getAllRepos(ctx context.Context, db database.DB, repoNames []string) ([]typ
 // - Returns the progress percentage, defaulting to 0 if no processing job found.
 func (r *embeddingsSetupProgressResolver) getProgressForRepo(ctx context.Context, current types.MinimalRepo) (float64, error) {
 	var progress float64
+	hasFailedJob := false
+	hasPendingJob := false
 	embeddingsStore := repo.NewRepoEmbeddingJobsStore(r.db)
 	jobs, err := embeddingsStore.ListRepoEmbeddingJobs(ctx, repo.ListOpts{Repo: &current.ID, PaginationArgs: &database.PaginationArgs{First: pointers.Ptr(10)}})
 	if err != nil {
 		return progress, err
 	}
 	for _, job := range jobs {
+		if job.IsRepoEmbeddingJobScheduledOrCompleted() {
+			hasPendingJob = true
+		}
 		if job.StartedAt == nil {
 			continue
 		}
 		switch job.State {
+		case "canceled", "failed":
+			hasFailedJob = true
 		case "completed":
 			r.oneRepoCompleted = true
 			return 1, nil
@@ -138,8 +145,16 @@ func (r *embeddingsSetupProgressResolver) getProgressForRepo(ctx context.Context
 				continue
 			}
 			r.currentProcessed, r.currentTotal, progress = getProgress(status)
+			// we continue to process the rest of the jobs incase there is another job that is already completed
 		}
 	}
+
+	// if we have a failed or canceled job and there are no jobs scheduled or completed
+	// we advance the progress to 100% for that repo because it will not completed
+	if hasFailedJob && !hasPendingJob {
+		return 1, nil
+	}
+
 	return progress, nil
 }
 
