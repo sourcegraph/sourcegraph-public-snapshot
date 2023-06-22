@@ -10,6 +10,7 @@ import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaTextAreaUI;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
@@ -39,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 class CodyToolWindowContent implements UpdatableChat {
+  public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
   private static final int CHAT_TAB_INDEX = 0;
   private static final int RECIPES_TAB_INDEX = 1;
   private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
@@ -382,7 +384,6 @@ class CodyToolWindowContent implements UpdatableChat {
         isEnterprise
             ? ConfigUtil.getEnterpriseAccessToken(project)
             : ConfigUtil.getDotComAccessToken(project);
-    System.out.println("isEnterprise: " + isEnterprise);
 
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
     ArrayList<String> contextFiles =
@@ -397,7 +398,11 @@ class CodyToolWindowContent implements UpdatableChat {
     //       in the main thread and then waited, we wouldn't see the messages streamed back to us.
     new Thread(
             () -> {
-              chat.sendMessage(humanMessage, responsePrefix, this); // TODO: Use prefix
+              try {
+                chat.sendMessage(project, humanMessage, responsePrefix, this);
+              } catch (Exception e) {
+                logger.error("Error sending message '" + humanMessage + "' to chat", e);
+              }
             })
         .start();
   }

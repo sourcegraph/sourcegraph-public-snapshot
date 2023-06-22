@@ -1,21 +1,7 @@
-# sourcegraph/prometheus - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/prometheus
+# sourcegraph/prometheus-gcp - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 
-# Note: to be able to use an ARG with a FROM it has to be at the TOP of the Dockerfile
-# This allows the base image to be substituted for a GCP image that ships metrics to managed Prometheus. Default base image is regular upstream Prometheus
-#	https://cloud.google.com/stackdriver/docs/managed-prometheus/setup-unmanaged#run-gmp
-# To upgrade Prometheus or Alertmanager, see https://docs.sourcegraph.com/dev/background-information/observability/prometheus#upgrading-prometheus-or-alertmanager
-ARG BASE_IMAGE="prom/prometheus:v2.42.0@sha256:5689a4360cf1479bbad944b1311a90b495546c498c46f48e44fa7e5ac6412191"
-# https://github.com/hadolint/hadolint/issues/339
-# hadolint ignore=DL3006
-FROM ${BASE_IMAGE} AS prom_upstream
+FROM gke.gcr.io/prometheus-engine/prometheus:v2.35.0-gmp.2-gke.0 AS prom_upstream
 FROM prom/alertmanager:v0.25.0@sha256:db8303fa05341f5dc6b19b36a97325cd1b8307254ed9042a2c554af71f3c0284 AS am_upstream
-
-# Build monitoring definitions
-# FROM sourcegraph/alpine-3.14:211375_2023-04-02_5.0-05ccd1762636@sha256:cd5089e0b0f7e5a5cd18996f5acd23cfa2bde33f6b7ffb9ace47f552941f0be2 AS monitoring_builder
-# RUN mkdir -p '/generated/prometheus'
-# COPY ./.bin/monitoring-generator /bin/monitoring-generator
-# RUN PROMETHEUS_DIR='/generated/prometheus' GRAFANA_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
-# RUN ls '/generated/prometheus'
 
 # Prepare final image
 # hadolint ignore=DL3007

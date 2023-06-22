@@ -16,7 +16,7 @@ import { createProviderConfig as createAnthropicProviderConfig } from './complet
 import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
-import { getConfiguration, getFullConfig } from './configuration'
+import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger, eventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
@@ -41,6 +41,8 @@ import { TestSupport } from './test-support'
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
 export async function start(context: vscode.ExtensionContext): Promise<vscode.Disposable> {
+    await migrateConfiguration()
+
     const secretStorage =
         process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
@@ -253,18 +255,18 @@ const register = async (
                 openToSide: true,
             })
         }),
-        vscode.commands.registerCommand('cody.walkthrough.enableCodeCompletions', async () => {
-            await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
+        vscode.commands.registerCommand('cody.walkthrough.enableCodeAutocomplete', async () => {
+            await workspaceConfig.update('cody.autocomplete.enabled', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.experimental.suggestions',
+                query: 'cody.autocomplete.enabled',
                 openToSide: true,
             })
         })
     )
 
     let completionsProvider: vscode.Disposable | null = null
-    if (initialConfig.experimentalSuggest) {
+    if (initialConfig.autocomplete) {
         completionsProvider = createCompletionsProvider(
             config,
             webviewErrorMessenger,
@@ -283,13 +285,10 @@ const register = async (
     disposables.push(disposeCompletions)
 
     vscode.workspace.onDidChangeConfiguration(event => {
-        if (
-            event.affectsConfiguration('cody.experimental.suggestions') ||
-            event.affectsConfiguration('cody.completions')
-        ) {
+        if (event.affectsConfiguration('cody.autocomplete')) {
             const config = getConfiguration(vscode.workspace.getConfiguration())
 
-            if (!config.experimentalSuggest) {
+            if (!config.autocomplete) {
                 completionsProvider?.dispose()
                 completionsProvider = null
                 return
@@ -375,15 +374,15 @@ function createCompletionsProvider(
         history,
         statusBar,
         codebaseContext,
-        isCompletionsCacheEnabled: config.completionsAdvancedCache,
-        isEmbeddingsContextEnabled: config.completionsAdvancedEmbeddings,
+        isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
+        isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
     })
 
     disposables.push(
         vscode.commands.registerCommand('cody.manual-completions', async () => {
             await manualCompletionService.fetchAndShowManualCompletions()
         }),
-        vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId, codyLines }) => {
+        vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
             CompletionsLogger.accept(codyLogId, codyLines)
         }),
         vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
@@ -403,31 +402,31 @@ function createCompletionProviderConfig(
     completionsClient: SourcegraphNodeCompletionsClient
 ): ProviderConfig {
     let providerConfig: null | ProviderConfig = null
-    switch (config.completionsAdvancedProvider) {
+    switch (config.autocompleteAdvancedProvider) {
         case 'unstable-codegen': {
-            if (config.completionsAdvancedServerEndpoint !== null) {
+            if (config.autocompleteAdvancedServerEndpoint !== null) {
                 providerConfig = createUnstableCodeGenProviderConfig({
-                    serverEndpoint: config.completionsAdvancedServerEndpoint,
+                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
                 })
             }
 
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             webviewErrorMessenger(
-                'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+                'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
             )
             break
         }
         case 'unstable-huggingface': {
-            if (config.completionsAdvancedServerEndpoint !== null) {
+            if (config.autocompleteAdvancedServerEndpoint !== null) {
                 providerConfig = createUnstableHuggingFaceProviderConfig({
-                    serverEndpoint: config.completionsAdvancedServerEndpoint,
-                    accessToken: config.completionsAdvancedAccessToken,
+                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
+                    accessToken: config.autocompleteAdvancedAccessToken,
                 })
             }
 
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             webviewErrorMessenger(
-                'Provider `unstable-huggingface` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+                'Provider `unstable-huggingface` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
             )
             break
         }

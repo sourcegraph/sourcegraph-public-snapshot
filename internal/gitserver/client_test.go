@@ -47,6 +47,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -521,8 +522,9 @@ func TestClient_ArchiveReader(t *testing.T) {
 					return "", errors.Errorf("no remote for %s", test.name)
 				},
 				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-					return &server.GitRepoSyncer{}, nil
+					return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 				},
+				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 			}
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1071,10 +1073,11 @@ func TestClient_ResolveRevisions(t *testing.T) {
 			return remote, nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return &server.GitRepoSyncer{}, nil
+			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB:       db,
-		Perforce: perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
+		DB:                      db,
+		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1573,10 +1576,11 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return &server.GitRepoSyncer{}, nil
+			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB:         db,
-		CloneQueue: server.NewCloneQueue(observation.TestContextTB(t), list.New()),
+		DB:                      db,
+		CloneQueue:              server.NewCloneQueue(observation.TestContextTB(t), list.New()),
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
