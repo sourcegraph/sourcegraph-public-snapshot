@@ -51,7 +51,7 @@ func NewMultiHandler(
 	siteConfig := conf.Get().SiteConfiguration
 	dequeueCache := rcache.New(executortypes.DequeueCachePrefix)
 	dequeueCacheConfig := executortypes.DequeuePropertiesPerQueue
-	if siteConfig.ExecutorsMultiqueue != nil {
+	if siteConfig.ExecutorsMultiqueue != nil && siteConfig.ExecutorsMultiqueue.DequeueCacheConfig != nil {
 		dequeueCacheConfig = siteConfig.ExecutorsMultiqueue.DequeueCacheConfig
 	}
 	multiHandler := MultiHandler{

@@ -269,9 +269,9 @@ type BatchSpec struct {
 // Batches description: The configuration for the batches queue.
 type Batches struct {
 	// Limit description: The maximum number of dequeues allowed within the expiration window.
-	Limit int `json:"limit,omitempty"`
+	Limit int `json:"limit"`
 	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
-	Weight int `json:"weight,omitempty"`
+	Weight int `json:"weight"`
 }
 
 // BitbucketCloudAuthProvider description: Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/bitbucketcloud/callback".
@@ -553,9 +553,9 @@ type CloudKMSEncryptionKey struct {
 // Codeintel description: The configuration for the codeintel queue.
 type Codeintel struct {
 	// Limit description: The maximum number of dequeues allowed within the expiration window.
-	Limit int `json:"limit,omitempty"`
+	Limit int `json:"limit"`
 	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
-	Weight int `json:"weight,omitempty"`
+	Weight int `json:"weight"`
 }
 
 // CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
