@@ -18,12 +18,13 @@
 
 ### Security
 
-## [3.0.0-alpha.6]
+## [3.0.0-alpha.7]
 
 ### Added
 
-- Chat message when access token is invalid or not
-  configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
+- Background color and font of inline code blocks differs from regular text in message [#53761](https://github.com/sourcegraph/sourcegraph/pull/53761)
+- Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
+- Cody Agent [#53370](https://github.com/sourcegraph/sourcegraph/pull/53370)
 
 ### Changed
 
@@ -41,6 +42,23 @@
 - Wrap long words in the chat message [#54244](https://github.com/sourcegraph/sourcegraph/pull/54244)
 - Reset conversation button re-enables "Send"
   button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
+
+### Security
+
+## [3.0.0-alpha.6]
+
+### Added
+
+- Chat message when access token is invalid or not
+  configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
 
 ### Security
 
