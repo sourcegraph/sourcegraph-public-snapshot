@@ -135,5 +135,33 @@ func TestClient_GetChangeReviews(t *testing.T) {
 		t.Fatal(err)
 	}
 	testutil.AssertGolden(t, "testdata/golden/GetChangeReviews.json", *update, resp)
+}
 
+func TestClient_MoveChange(t *testing.T) {
+	cli, save := NewTestClient(t, "MoveChange", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	resp, err := cli.MoveChange(ctx, "I8a43a17e679cf4ee3ba862e875746be2ed2215ec", MoveChangePayload{
+		DestinationBranch: "newest-batch",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	testutil.AssertGolden(t, "testdata/golden/MoveChange.json", *update, resp)
+}
+
+func TestClient_SetCommitMessage(t *testing.T) {
+	cli, save := NewTestClient(t, "SetCommitMessage", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	err := cli.SetCommitMessage(ctx, "I8a43a17e679cf4ee3ba862e875746be2ed2215ec", SetCommitMessagePayload{
+		Message: "New commit message\n\nChange-Id: I8a43a17e679cf4ee3ba862e875746be2ed2215ec\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 }
