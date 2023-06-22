@@ -281,10 +281,11 @@ func TestServer_handleP4Exec(t *testing.T) {
 		logger := logtest.Scoped(t)
 
 		s := &Server{
-			Logger:            logger,
-			ObservationCtx:    observation.TestContextTB(t),
-			skipCloneForTests: true,
-			DB:                database.NewMockDB(),
+			Logger:                  logger,
+			ObservationCtx:          observation.TestContextTB(t),
+			skipCloneForTests:       true,
+			DB:                      database.NewMockDB(),
+			RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		}
 
 		server := defaults.NewServer(logger)
