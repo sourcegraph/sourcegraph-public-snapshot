@@ -3,7 +3,7 @@
 | Subject                      | Description                                             | VS Code | JetBrains IDEs | Web UI | App |
 |-----------------------------|---------------------------------------------------------|:-:|:-:|:-:|:-:|
 |Chat                         | ChatGPT-like chat functionality                         |✅|✅|✅|✅|
-|Code autocomplete                  | Start typing a line of code and Cody will suggest a completion|✖️|✅|✖️|✖️| 
+|Code autocomplete                  | Start typing a line of code and Cody will suggest a completion|✅|✅|✖️|✖️| 
 |Mutli-line code autocomplete      | Cody suggests multiple lines of a completion            |✅|✖️|✖️|✖️| 
 |Inline assist                | Prompt Cody within the lines of your IDE                |✅|✖️|✖️|✖️| 
 |Recipes                      | Predefined prompts |✅|✅|✅|✖️|
