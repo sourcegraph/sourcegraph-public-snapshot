@@ -176,6 +176,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                                         filePath={filePath}
                                         reasons={ownership.reasons}
                                         setRemoveOwnerError={setRemoveOwnerError}
+                                        isDirectory={isDirectory}
                                     />
                                 </Fragment>
                             ))}
@@ -223,6 +224,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                                             filePath={filePath}
                                             refetch={refetch}
                                             setRemoveOwnerError={setRemoveOwnerError}
+                                            isDirectory={isDirectory}
                                         />
                                     </Fragment>
                                 )
