@@ -36,6 +36,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private maxPrefixChars: number
     private maxSuffixChars: number
     private abortOpenInlineCompletions: () => void = () => {}
+    private stopLoading: () => void = () => {}
     private lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
         max: 10,
     })
@@ -49,7 +50,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private suffixPercentage: number
     private disableTimeouts: boolean
     private isEmbeddingsContextEnabled: boolean
-    private stopLoading: () => void | undefined
     public inlineCompletionsCache?: CompletionsCache
 
     constructor(config: CodyCompletionItemProviderConfig) {
@@ -110,7 +110,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
-            this.stopLoading?.()
+            this.stopLoading()
 
             if (isAbortError(error)) {
                 return []
