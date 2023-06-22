@@ -1,3 +1,5 @@
+import { LRUCache } from 'lru-cache'
+
 import { logEvent } from '../event-logger'
 
 interface CompletionEvent {
@@ -11,8 +13,16 @@ interface CompletionEvent {
         }
         languageId: string
     }
+    // The timestamp when the request started
     startedAt: number
+    // The timestamp of when the suggestion was first displayed to a users
+    // screen
     suggestedAt: number | null
+    // The timestamp of when the suggestion was logged to our analytics backend
+    // This is to avoid double-logging
+    suggestionLoggedAt: number | null
+    // The timestamp of when a completion was accepted and logged to our backend
+    acceptedAt: number | null
     // When set, the completion will always be marked as `read`. This helps us
     // to avoid not counting a suggested event in case where the user accepts
     // the completion below the default timeout
@@ -21,7 +31,9 @@ interface CompletionEvent {
 
 const READ_TIMEOUT = 750
 
-const displayedCompletions: Map<string, CompletionEvent> = new Map()
+const displayedCompletions = new LRUCache<string, CompletionEvent>({
+    max: 100, // Maximum number of completions that we are keeping track of
+})
 
 export function logCompletionEvent(name: string, params?: unknown): void {
     logEvent(`CodyVSCodeExtension:completion:${name}`, params, params)
@@ -33,6 +45,8 @@ export function start(params: CompletionEvent['params']): string {
         params,
         startedAt: Date.now(),
         suggestedAt: null,
+        suggestionLoggedAt: null,
+        acceptedAt: null,
         forceRead: false,
     })
 
@@ -41,9 +55,9 @@ export function start(params: CompletionEvent['params']): string {
     return id
 }
 
-// Suggested completions will not logged individually. Instead, we log them when we either hide them
-// again (they are NOT accepted) or when they ARE accepted. This way, we can calculate the duration
-// they were actually visible.
+// Suggested completions will not logged individually. Instead, we log them when
+// we either hide them again (they are NOT accepted) or when they ARE accepted.
+// This way, we can calculate the duration they were actually visible.
 export function suggest(id: string): void {
     const event = displayedCompletions.get(id)
     if (event) {
@@ -51,15 +65,16 @@ export function suggest(id: string): void {
     }
 }
 
-export function accept(id: string): void {
+export function accept(id: string, lines: number): void {
     const completionEvent = displayedCompletions.get(id)
-    if (!completionEvent) {
+    if (!completionEvent || completionEvent.acceptedAt) {
         return
     }
     completionEvent.forceRead = true
+    completionEvent.acceptedAt = Date.now()
 
     logSuggestionEvent()
-    logCompletionEvent('accepted', completionEvent.params)
+    logCompletionEvent('accepted', { ...completionEvent.params, lines })
 }
 
 export function noResponse(id: string): void {
@@ -68,7 +83,8 @@ export function noResponse(id: string): void {
 }
 
 /**
- * This callback should be triggered whenever VS Code tries to highlight a new completion and it's
+ * This callback should be triggered whenever VS Code tries to highlight a new
+ * completion and it's
  * used to measure how long previous completions were visible.
  */
 export function clear(): void {
@@ -81,12 +97,16 @@ function createId(): string {
 
 function logSuggestionEvent(): void {
     const now = Date.now()
-    for (const completionEvent of displayedCompletions.values()) {
-        const { suggestedAt, startedAt, params, forceRead } = completionEvent
+    // eslint-disable-next-line ban/ban
+    displayedCompletions.forEach(completionEvent => {
+        const { suggestedAt, suggestionLoggedAt, startedAt, params, forceRead } = completionEvent
 
-        if (!suggestedAt) {
-            continue
+        // Only log events that were already suggested to the user and have not
+        // been logged yet.
+        if (!suggestedAt || suggestionLoggedAt) {
+            return
         }
+        completionEvent.suggestionLoggedAt = now
 
         const latency = suggestedAt - startedAt
         const displayDuration = now - suggestedAt
@@ -98,6 +118,9 @@ function logSuggestionEvent(): void {
             displayDuration,
             read: forceRead || read,
         })
-    }
-    displayedCompletions.clear()
+    })
+
+    // Completions are kept in the LRU cache for longer. This is because they
+    // can still become visible if e.g. they are served from the cache and we
+    // need to retain the ability to mark them as seen
 }
