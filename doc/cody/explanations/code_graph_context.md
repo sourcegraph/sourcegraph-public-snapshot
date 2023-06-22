@@ -17,7 +17,7 @@ Embeddings for relevant code files must be enabled for each repository that you'
 > NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
 > See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
 
-Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md).
+Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
 Embeddings will not be generated for any repo unless an admin takes action. There are two ways to do this.
 
@@ -27,15 +27,7 @@ To run a one-time embeddings job, an admin can manually schedule specific reposi
 
 Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](#incremental-embeddings) are enabled.
 
-> NOTE: Generating embeddings sends code snippets to a third-party language party provider. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). 
-
-<span class="virtual-br"></span>
-
-> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
-
-<span class="virtual-br"></span>
-
-> NOTE: You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
+> NOTE: Generating embeddings sends code snippets to a third-party language party provider. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
 
 ### Excluding files from embeddings
 
