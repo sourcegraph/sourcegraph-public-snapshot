@@ -27,7 +27,7 @@ To run a one-time embeddings job, an admin can manually schedule specific reposi
 
 Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](#incremental-embeddings) are enabled.
 
-> NOTE: Generating embeddings sends code snippets to a third-party language party provider. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
+> NOTE: Generating embeddings sends code snippets to a third-party language party provider. By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
 
 ### Excluding files from embeddings
 
