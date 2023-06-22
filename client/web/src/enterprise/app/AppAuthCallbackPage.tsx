@@ -11,6 +11,18 @@ import { PageTitle } from '../../components/PageTitle'
 import { fetchSite, updateSiteConfiguration } from '../../site-admin/backend'
 import { eventLogger } from '../../tracking/eventLogger'
 
+/**
+ * Redirect to a relative URL if provided, or redirect to "/" otherwise.
+ */
+function safelyRedirectToDestination(destination: string | null): void {
+    // A safe destination must be a relative URL
+    if (destination && destination.startsWith('/')) {
+        location.href = destination
+    } else {
+        location.href = '/'
+    }
+}
+
 export const AppAuthCallbackPage: React.FC = () => {
     useEffect(() => eventLogger.logPageView('AppAuthCallbackPage'), [])
 
@@ -75,5 +87,5 @@ async function saveAccessToken(accessToken: string, destination: string | null):
     // If the Cody window is open, we need to reload it so it gets the new site config
     tauriInvoke('reload_cody_window')
     // Also reload the main window so it gets the new site config, and redirect to the destination
-    location.href = destination ?? '/'
+    safelyRedirectToDestination(destination)
 }
