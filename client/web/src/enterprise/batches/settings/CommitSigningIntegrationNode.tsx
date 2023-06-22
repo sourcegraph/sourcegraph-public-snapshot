@@ -3,10 +3,10 @@ import React, { useState } from 'react'
 import { mdiCheckCircleOutline, mdiCheckboxBlankCircleOutline, mdiCogOutline, mdiDelete, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 import { AnchorLink, Button, ButtonLink, H3, Icon, Link, Text } from '@sourcegraph/wildcard'
 
 import { defaultExternalServices } from '../../../components/externalServices/externalServices'
+import { AppLogo } from '../../../components/gitHubApps/AppLogo'
 import { RemoveGitHubAppModal } from '../../../components/gitHubApps/RemoveGitHubAppModal'
 import { BatchChangesCodeHostFields } from '../../../graphql-operations'
 
@@ -70,7 +70,6 @@ interface AppDetailsControlsProps {
 
 const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ baseURL, config, refetch }) => {
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
-    const [fallbackImage, setFallbackImage] = useState<boolean>(false)
 
     const createURL = `/site-admin/batch-changes/github-apps/new?baseURL=${encodeURIComponent(baseURL)}`
     return config ? (
@@ -79,19 +78,8 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                 <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
             )}
             <div className="d-flex align-items-center">
-                {!fallbackImage ? (
-                    <img
-                        className={classNames(styles.appLogoLarge, 'mr-2')}
-                        src={config.logo}
-                        alt="App logo"
-                        aria-hidden={true}
-                        onError={() => {
-                            setFallbackImage(true)
-                        }}
-                    />
-                ) : (
-                    <UserAvatar user={{ avatarURL: null, username: config.name, displayName: config.name }} />
-                )}
+                <AppLogo app={config} className={classNames(styles.appLogoLarge, 'mr-2')} />
+
                 <div className={styles.appDetailsColumn}>
                     <Text size="small" className="font-weight-bold mb-0">
                         {config.name}

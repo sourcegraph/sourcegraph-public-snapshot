@@ -30,6 +30,7 @@ import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
+import { AppLogo } from './AppLogo'
 import { AuthProviderMessage } from './AuthProviderMessage'
 import { GITHUB_APP_BY_ID_QUERY } from './backend'
 import { RemoveGitHubAppModal } from './RemoveGitHubAppModal'
@@ -100,11 +101,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                             {
                                 text: (
                                     <span className="d-flex align-items-center">
-                                        <img
-                                            className={classNames(styles.logo, 'mr-2')}
-                                            src={app.logo}
-                                            alt="App logo"
-                                        />
+                                        <AppLogo app={app} className={classNames(styles.logo, 'mr-2')} />
                                         <span>{app.name}</span>
                                     </span>
                                 ),

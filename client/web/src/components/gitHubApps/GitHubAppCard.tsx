@@ -5,11 +5,12 @@ import classNames from 'classnames'
 
 import { Button, Icon, Container, AnchorLink, ButtonLink } from '@sourcegraph/wildcard'
 
+import { AppLogo } from './AppLogo'
 import { RemoveGitHubAppModal } from './RemoveGitHubAppModal'
 
 import styles from './GitHubAppCard.module.scss'
 
-interface GitHubApp {
+export interface GitHubApp {
     id: string
     appID: number
     appURL: string
@@ -33,7 +34,7 @@ export const GitHubAppCard: React.FC<GitHubAppCardProps> = ({ app, refetch }) =>
                 <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={app} />
             )}
             <span className={classNames(styles.appLink, 'd-flex align-items-center')}>
-                <img className={classNames('mr-3', styles.logo)} src={app.logo} alt="app logo" aria-hidden={true} />
+                <AppLogo app={app} className={classNames(styles.logo, 'mr-2')} />
                 <span>
                     <div className="font-weight-bold">{app.name}</div>
                     <div className="text-muted">AppID: {app.appID}</div>
