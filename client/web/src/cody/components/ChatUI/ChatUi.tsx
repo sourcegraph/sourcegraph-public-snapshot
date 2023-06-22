@@ -25,11 +25,13 @@ import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
 import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
+import { ContextSelectorCallout } from '../Callouts/ContextSelectorCallout'
 import { ScopeSelector } from '../ScopeSelector'
 
 import styles from './ChatUi.module.scss'
@@ -77,6 +79,8 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         [scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile]
     )
 
+    const [enableResearchCallout] = useFeatureFlag('research-cody-callout')
+
     if (!loaded) {
         return <></>
     }
@@ -119,6 +123,11 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 onAbortMessageInProgress={abortMessageInProgress}
                 isCodyEnabled={isCodyEnabled()}
             />
+            {enableResearchCallout && (
+                <div className={styles.calloutContainer}>
+                    <ContextSelectorCallout />
+                </div>
+            )}
         </>
     )
 }

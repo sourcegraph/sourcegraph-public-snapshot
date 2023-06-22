@@ -1,0 +1,61 @@
+@keyframes slideFadeIn {
+    0% {
+        opacity: 0;
+        transform: translateX(0.625rem);
+    }
+    100% {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.wrapper {
+    width: auto;
+    max-width: 26.875rem;
+    margin: 0;
+    animation: slideFadeIn 0.5s ease-out forwards;
+}
+
+.box {
+    background-color: var(--brand-secondary);
+    color: white;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.3);
+    padding: 0.8125rem 1.375rem;
+}
+
+.headerElements {
+    display: flex;
+    align-items: top;
+    gap: 0.25rem;
+}
+
+.header {
+    font-size: 1.15rem;
+    font-weight: 400;
+    display: flex;
+    justify-content: space-between;
+    align-self: center;
+}
+
+.header .closeButton {
+    position: relative;
+    margin-right: -0.5rem;
+    margin-top: -0.5rem;
+}
+
+.contentBody {
+    display: flex;
+    padding: 0.5rem 0rem 0.45rem 0.3rem;
+    font-size: 0.8rem;
+}
+
+.tail {
+    position: relative;
+    width: 0;
+    height: 0;
+    border-left: 0.5625rem solid transparent;
+    border-right: 0.5625rem solid transparent;
+    border-top: 0.5625rem solid var(--brand-secondary);
+    left: 1.875rem;
+}

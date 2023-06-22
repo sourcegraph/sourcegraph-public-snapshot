@@ -16,6 +16,7 @@ export type FeatureFlagName =
     | 'enable-streaming-git-blame'
     | 'plg-enable-add-codehost-widget'
     | 'accessible-file-tree'
+    | 'research-cody-callout'
     | 'accessible-symbol-tree'
     | 'accessible-file-tree-always-load-ancestors'
     | 'enable-ownership-panels'
