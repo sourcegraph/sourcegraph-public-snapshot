@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -66,10 +65,18 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client g
 	} else {
 		c.ExternalState = state
 	}
-	if state, err := computeReviewState(c, history); err != nil {
-		logger.Warn("Computing changeset review state", log.Error(err))
-	} else {
+
+	switch c.Metadata.(type) {
+	case *github.PullRequest:
+		state := computeGitHubReviewState(c)
 		c.ExternalReviewState = state
+
+	default:
+		if state, err := computeReviewState(c, history); err != nil {
+			logger.Warn("Computing changeset review state", log.Error(err))
+		} else {
+			c.ExternalReviewState = state
+		}
 	}
 
 	// If the changeset was "complete" (that is, not open) the last time we
@@ -146,23 +153,27 @@ func computeExternalState(c *btypes.Changeset, history []changesetStatesAtTime, 
 	return newestDataPoint.externalState, nil
 }
 
+// computeSingleChangesetExternalState computes the reviewState for a github changeset
+func computeGitHubReviewState(c *btypes.Changeset) btypes.ChangesetReviewState {
+
+	// GitHub only stores the ReviewDecision in PullRequest metadata, not
+	// in events, so we need to handle it separtely. We want to respect the
+	// CODEOWNERS review as the mergeable state, not any other approval.
+	switch c.Metadata.(*github.PullRequest).ReviewDecision {
+	case "REVIEW_REQUIRED":
+		return btypes.ChangesetReviewStatePending
+	case "APPROVED":
+		return btypes.ChangesetReviewStateApproved
+	case "CHANGES_REQUESTED":
+		return btypes.ChangesetReviewStateChangesRequested
+	default:
+		return btypes.ChangesetReviewStatePending
+	}
+}
+
 // computeReviewState computes the review state for the changeset and its
 // associated events. The events should be presorted.
 func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (btypes.ChangesetReviewState, error) {
-
-	// GitHub only stores the ReviewDecision in PullRequest metadata, not
-	// in events, so we need to handle it first. We want to respect the
-	// CODEOWNERS review as the mergeable state, so we only use this.
-	if c.ExternalServiceType == extsvc.TypeGitHub {
-		switch c.Metadata.(*github.PullRequest).ReviewDecision {
-		case "REVIEW_REQUIRED":
-			return btypes.ChangesetReviewStatePending, nil
-		case "APPROVED":
-			return btypes.ChangesetReviewStateApproved, nil
-		case "CHANGES_REQUESTED":
-			return btypes.ChangesetReviewStateChangesRequested, nil
-		}
-	}
 
 	if len(history) == 0 {
 		return computeSingleChangesetReviewState(c)
@@ -227,6 +238,7 @@ func parseBitbucketServerBuildState(s string) btypes.ChangesetCheckState {
 	default:
 		return btypes.ChangesetCheckStateUnknown
 	}
+
 }
 
 func computeBitbucketCloudBuildState(lastSynced time.Time, apr *bbcs.AnnotatedPullRequest, events []*btypes.ChangesetEvent) btypes.ChangesetCheckState {
