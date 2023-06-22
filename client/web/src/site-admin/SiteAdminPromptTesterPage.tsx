@@ -19,7 +19,7 @@ import {
     Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { PromptVersion } from '../../../shared/src/cody/prompt-tester'
+import { PromptVersion } from '../../../shared/src/util/prompt-tester'
 import { CompletionRequest, getCodyCompletionOneShot } from '../cody/search/api'
 import { PageTitle } from '../components/PageTitle'
 
@@ -213,8 +213,8 @@ export const SiteAdminPromptTesterPage: React.FunctionComponent<
                         {results.map((completions, resultIndex) => (
                             <div className={styles.resultRow} key={resultIndex}>
                                 <div>{resultIndex + 1}</div>
-                                {completions.map((completion, completionIndex) => (
-                                    <div key={completionIndex}>{completion}</div>
+                                {completions.map(completion => (
+                                    <div key={completion}>{completion}</div>
                                 ))}
                             </div>
                         ))}

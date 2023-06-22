@@ -1,7 +1,7 @@
 import { Optional } from 'utility-types'
 
-import { PromptVersion } from '../../cody/prompt-tester'
 import { BatchChangeState } from '../../graphql-operations'
+import { PromptVersion } from '../../util/prompt-tester'
 
 import { DiffMode } from './diffMode'
 import { RecentSearch } from './recentSearches'
