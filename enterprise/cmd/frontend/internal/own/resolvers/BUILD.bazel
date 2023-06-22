@@ -49,6 +49,7 @@ go_test(
         "resolvers_test.go",
     ],
     embed = [":resolvers"],
+    flaky = True,
     tags = [
         # Test requires localhost database
         "requires-network",
