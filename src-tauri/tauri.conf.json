@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "beforeBuildCommand": "bash ./src-tauri/compose-assets.sh",
-    "devPath": "http://localhost:3080/sign-in?secret=foobar&returnTo=/",
+    "devPath": "http://localhost:3080/sign-in?s=foobar&returnTo=/",
     "distDir": "./assets",
     "withGlobalTauri": true
   },
