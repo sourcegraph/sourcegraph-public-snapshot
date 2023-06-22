@@ -228,7 +228,7 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	// increment dequeue counter
 	err = m.DequeueCache.SetHashItem(selectedQueue, fmt.Sprint(time.Now().UnixNano()), job.Token)
 	if err != nil {
-		return executortypes.Job{}, false, errors.Wrapf(err, "failed to increment dequeue count for queue '%s'", selectedQueue)
+		m.logger.Error("failed to increment dequeue count", log.String("queue", selectedQueue), log.Error(err))
 	}
 
 	return job, true, nil
