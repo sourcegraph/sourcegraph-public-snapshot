@@ -26,6 +26,13 @@ func contextWithTrace(ctx context.Context, tr *Trace) context.Context {
 // nil if no such Trace could be found.
 func TraceFromContext(ctx context.Context) *Trace {
 	tr, _ := ctx.Value(traceKey).(*Trace)
+	if tr == nil {
+		// There is no Trace in the context, so check for a raw OTel span we can use.
+		span := oteltrace.SpanFromContext(ctx)
+		if span.IsRecording() {
+			tr = &Trace{oteltraceSpan: span}
+		}
+	}
 	return tr
 }
 
