@@ -2,22 +2,19 @@ import React, { useState } from 'react'
 
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
 
-import { BatchChangesCodeHostFields } from '../../graphql-operations'
-
-import { GitHubApp } from './GitHubAppCard'
-
 interface AppLogoProps {
-    app: GitHubApp | BatchChangesCodeHostFields['commitSigningConfiguration']
+    src: string | undefined
+    name: string
     className: string
 }
 
-export const AppLogo: React.FC<AppLogoProps> = ({ app, className }) => {
+export const AppLogo: React.FC<AppLogoProps> = ({ src, name, className }) => {
     const [fallbackImage, setFallbackImage] = useState<boolean>(false)
 
     return !fallbackImage ? (
         <img
             className={className}
-            src={app!.logo}
+            src={src}
             alt="App logo"
             aria-hidden={true}
             onError={() => {
@@ -25,6 +22,6 @@ export const AppLogo: React.FC<AppLogoProps> = ({ app, className }) => {
             }}
         />
     ) : (
-        <UserAvatar user={{ avatarURL: null, username: app!.name, displayName: app!.name }} className={className} />
+        <UserAvatar user={{ avatarURL: null, username: name, displayName: name }} className={className} />
     )
 }

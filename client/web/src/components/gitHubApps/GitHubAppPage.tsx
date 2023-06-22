@@ -101,7 +101,11 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                             {
                                 text: (
                                     <span className="d-flex align-items-center">
-                                        <AppLogo app={app} className={classNames(styles.logo, 'mr-2')} />
+                                        <AppLogo
+                                            src={app.logo}
+                                            name={app.name}
+                                            className={classNames(styles.logo, 'mr-2')}
+                                        />
                                         <span>{app.name}</span>
                                     </span>
                                 ),
@@ -202,10 +206,10 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                                     <Container className={classNames(styles.installation, 'p-3')} key={installation.id}>
                                         <div className="d-flex align-items-center">
                                             <Link to={installation.account.url} className="d-flex align-items-center">
-                                                <img
-                                                    className={styles.logo}
+                                                <AppLogo
                                                     src={installation.account.avatarURL}
-                                                    alt="account avatar"
+                                                    name={installation.account.login}
+                                                    className={styles.logo}
                                                 />
                                                 <div className="d-flex flex-column ml-3">
                                                     {installation.account.login}

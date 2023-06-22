@@ -78,7 +78,7 @@ const AppDetailsControls: React.FunctionComponent<AppDetailsControlsProps> = ({ 
                 <RemoveGitHubAppModal onCancel={() => setRemoveModalOpen(false)} afterDelete={refetch} app={config} />
             )}
             <div className="d-flex align-items-center">
-                <AppLogo app={config} className={classNames(styles.appLogoLarge, 'mr-2')} />
+                <AppLogo src={config.logo} name={config.name} className={classNames(styles.appLogoLarge, 'mr-2')} />
 
                 <div className={styles.appDetailsColumn}>
                     <Text size="small" className="font-weight-bold mb-0">
