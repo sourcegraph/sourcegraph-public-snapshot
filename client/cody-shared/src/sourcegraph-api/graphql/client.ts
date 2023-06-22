@@ -270,6 +270,7 @@ export class SourcegraphGraphQLAPIClient {
         userCookieID: string
         url: string
         source: string
+        referrer?: string
         argument?: string | {}
         publicArgument?: string | {}
     }): Promise<void | Error> {

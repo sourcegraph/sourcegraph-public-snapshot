@@ -110,6 +110,7 @@ export class EventLogger {
                     userCookieID: anonymousUserID,
                     source: 'IDEEXTENSION',
                     url: '',
+                    referrer: 'VSCE',
                     argument: JSON.stringify(argument),
                     publicArgument: JSON.stringify(publicArgument),
                 })
