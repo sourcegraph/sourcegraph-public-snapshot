@@ -1,6 +1,7 @@
 import React from 'react'
 
 import { mdiEmail } from '@mdi/js'
+import { useNavigate } from 'react-router-dom'
 
 import { TeamAvatar } from '@sourcegraph/shared/src/components/TeamAvatar'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -19,7 +20,6 @@ import { OwnershipBadge } from './OwnershipBadge'
 import { RemoveOwnerButton } from './RemoveOwnerButton'
 
 import containerStyles from './OwnerList.module.scss'
-import {useNavigate} from "react-router-dom";
 
 interface Props {
     owner: OwnerFields
