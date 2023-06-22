@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	adobatches "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -66,17 +67,10 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, client g
 		c.ExternalState = state
 	}
 
-	switch c.Metadata.(type) {
-	case *github.PullRequest:
-		state := computeGitHubReviewState(c)
+	if state, err := computeReviewState(c, history); err != nil {
+		logger.Warn("Computing changeset review state", log.Error(err))
+	} else {
 		c.ExternalReviewState = state
-
-	default:
-		if state, err := computeReviewState(c, history); err != nil {
-			logger.Warn("Computing changeset review state", log.Error(err))
-		} else {
-			c.ExternalReviewState = state
-		}
 	}
 
 	// If the changeset was "complete" (that is, not open) the last time we
@@ -174,6 +168,10 @@ func computeGitHubReviewState(c *btypes.Changeset) btypes.ChangesetReviewState {
 // computeReviewState computes the review state for the changeset and its
 // associated events. The events should be presorted.
 func computeReviewState(c *btypes.Changeset, history []changesetStatesAtTime) (btypes.ChangesetReviewState, error) {
+
+	if c.ExternalServiceType == extsvc.TypeGitHub {
+		return computeGitHubReviewState(c), nil
+	}
 
 	if len(history) == 0 {
 		return computeSingleChangesetReviewState(c)
