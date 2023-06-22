@@ -382,8 +382,8 @@ function createCompletionsProvider(
         vscode.commands.registerCommand('cody.manual-completions', async () => {
             await manualCompletionService.fetchAndShowManualCompletions()
         }),
-        vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId }) => {
-            CompletionsLogger.accept(codyLogId)
+        vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
+            CompletionsLogger.accept(codyLogId, codyLines)
         }),
         vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
     )
