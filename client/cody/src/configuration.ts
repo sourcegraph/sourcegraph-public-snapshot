@@ -6,8 +6,10 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
+import { DOTCOM_URL } from './chat/protocol'
 import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
 import { logEvent } from './event-logger'
+import { LocalStorage } from './services/LocalStorageProvider'
 import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
 
 interface ConfigGetter {
@@ -84,6 +86,9 @@ function sanitizeCodebase(codebase: string | undefined): string {
 }
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
+    if (!serverEndpoint) {
+        return DOTCOM_URL.href
+    }
     const trailingSlashRegexp = /\/$/
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }
@@ -95,8 +100,13 @@ export async function updateConfiguration(configKey: string, configValue: string
     await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
 }
 
-export const getFullConfig = async (secretStorage: SecretStorage): Promise<ConfigurationWithAccessToken> => {
+export const getFullConfig = async (
+    secretStorage: SecretStorage,
+    localStorage?: LocalStorage
+): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration(vscode.workspace.getConfiguration())
+    // Migrate endpoints to local storage
+    config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
 }

@@ -3,27 +3,17 @@ package cli
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
-	"net/http"
 	"os"
 	"time"
 
-	gcontext "github.com/gorilla/context"
-	"github.com/gorilla/mux"
 	"github.com/jackc/pgerrcode"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
@@ -31,8 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
@@ -41,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 const appName = "frontend-autoupgrader"
@@ -127,6 +114,12 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 			obsvCtx.Logger.Error("failed to set auto-upgrade status", log.Error(err))
 		}
 	}()
+
+	stopHeartbeat, err := heartbeatLoop(obsvCtx.Logger, db)
+	if err != nil {
+		return err
+	}
+	defer stopHeartbeat()
 
 	plan, err := planMigration(currentVersion, toVersion)
 	if err != nil {
@@ -290,6 +283,7 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, db 
 		}
 
 		if claimed {
+			obsvCtx.Logger.Info("claimed autoupgrade lock")
 			return true, nil
 		}
 
@@ -299,85 +293,37 @@ func claimAutoUpgradeLock(ctx context.Context, obsvCtx *observation.Context, db 
 	}
 }
 
-func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, error) {
-	middleware := httpapi.JsonMiddleware(&httpapi.ErrorHandler{
-		Logger:       obsvCtx.Logger,
-		WriteErrBody: true,
-	})
+const heartbeatInterval = time.Second * 10
 
-	serveMux := http.NewServeMux()
+func heartbeatLoop(logger log.Logger, db database.DB) (func(), error) {
+	upgradestore := upgradestore.New(db)
 
-	internalRouter := mux.NewRouter().PathPrefix("/.internal").Subrouter()
-	internalRouter.StrictSlash(true)
-	internalRouter.Path("/configuration").Methods("POST").Name(apirouter.Configuration)
-	internalRouter.Get(apirouter.Configuration).Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
-		configuration := conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{},
-			ServiceConnectionConfig: conftypes.ServiceConnections{
-				PostgresDSN:          dbconn.MigrationInProgressSentinelDSN,
-				CodeIntelPostgresDSN: dbconn.MigrationInProgressSentinelDSN,
-				CodeInsightsDSN:      dbconn.MigrationInProgressSentinelDSN,
-			},
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	if err := upgradestore.Heartbeat(ctx); err != nil {
+		return nil, errors.Wrap(err, "error executing autoupgrade heartbeat")
+	}
+
+	ticker := time.NewTicker(heartbeatInterval)
+	done := make(chan struct{})
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				func() {
+					ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+					defer cancel()
+					if err := upgradestore.Heartbeat(ctx); err != nil {
+						logger.Error("error executing autoupgrade heartbeat", log.Error(err))
+					}
+				}()
+			}
 		}
-		b, _ := json.Marshal(configuration.SiteConfiguration)
-		raw := conftypes.RawUnified{
-			Site:               string(b),
-			ServiceConnections: configuration.ServiceConnections(),
-		}
-		return json.NewEncoder(w).Encode(raw)
-	}))
+	}()
 
-	serveMux.Handle("/.internal/", internalRouter)
-
-	h := gcontext.ClearHandler(serveMux)
-	h = healthCheckMiddleware(h)
-
-	server := &http.Server{
-		Handler:      h,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
-	listener, err := httpserver.NewListener(httpAddrInternal)
-	if err != nil {
-		return nil, err
-	}
-	confServer := httpserver.New(listener, server)
-
-	goroutine.Go(func() {
-		confServer.Start()
-	})
-
-	return confServer.Stop, nil
-}
-
-func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (context.CancelFunc, error) {
-	progressHandler, err := makeUpgradeProgressHandler(obsvCtx, sqlDB, db)
-	if err != nil {
-		return nil, err
-	}
-
-	serveMux := http.NewServeMux()
-	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
-	serveMux.HandleFunc("/", progressHandler)
-	h := gcontext.ClearHandler(serveMux)
-	h = healthCheckMiddleware(h)
-
-	server := &http.Server{
-		Handler:      h,
-		ReadTimeout:  30 * time.Second,
-		WriteTimeout: 30 * time.Second,
-	}
-	listener, err := httpserver.NewListener(httpAddr)
-	if err != nil {
-		return nil, err
-	}
-	progressServer := httpserver.New(listener, server)
-
-	goroutine.Go(func() {
-		progressServer.Start()
-	})
-
-	return progressServer.Stop, nil
+	return func() { ticker.Stop(); close(done) }, nil
 }
 
 func checkForDisconnects(ctx context.Context, _ log.Logger, db database.DB) (remaining []string, err error) {

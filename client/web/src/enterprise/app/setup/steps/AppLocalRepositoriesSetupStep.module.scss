@@ -39,6 +39,8 @@
 .local-repositories {
     padding: 2rem;
     background-color: var(--gray-02);
+    height: 100vh;
+    overflow: auto;
 
     &-buttons-group {
         justify-content: stretch;

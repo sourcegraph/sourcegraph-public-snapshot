@@ -211,7 +211,7 @@ deprecatedEventLogger.log
 
 
 ### Var keywords
-Number of var keywords in the code basee (ES5 depreciation)
+Number of var keywords in the code base (ES5 deprecation)
 ```sgquery
 (lang:TypeScript OR lang:JavaScript) var ... =  patterntype:structural
 ```

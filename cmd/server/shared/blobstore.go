@@ -50,6 +50,10 @@ func maybeBlobstore(logger sglog.Logger) []string {
 	SetDefaultEnv("JCLOUDS_KEYSTONE_SCOPE", "")
 	SetDefaultEnv("JCLOUDS_KEYSTONE_PROJECT_DOMAIN_NAME", "")
 	// SetDefaultEnv("JCLOUDS_FILESYSTEM_BASEDIR", dataDir) // overridden above; here for equality with Dockerfile
+	// We don't use the secure endpoint, but these values must be set
+	SetDefaultEnv("S3PROXY_SECURE_ENDPOINT", "https://0.0.0.0:9443")
+	SetDefaultEnv("S3PROXY_KEYSTORE_PATH", "/opt/s3proxy/test-classes/keystore.jks")
+	SetDefaultEnv("S3PROXY_KEYSTORE_PASSWORD", "password")
 
 	// Configure blobstore service
 	blobstoreDataDir := os.Getenv("JCLOUDS_FILESYSTEM_BASEDIR")
