@@ -373,6 +373,7 @@ func (s *store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err 
 }
 
 const deleteConfigurationPolicyByIDQuery = `
+BEGIN;
 WITH
 candidate AS (
 	SELECT id, protected
@@ -382,8 +383,12 @@ candidate AS (
 ),
 deleted AS (
 	DELETE FROM lsif_configuration_policies WHERE id IN (SELECT id FROM candidate WHERE NOT protected)
+),
+deleted2 AS (
+	DELETE FROM lsif_configuration_policies_repository_pattern_lookup WHERE policy_id IN (SELECT id FROM candidate WHERE NOT protected)
 )
-SELECT protected FROM candidate
+SELECT protected FROM candidate;
+COMMIT;
 `
 
 //
