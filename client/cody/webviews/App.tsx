@@ -110,7 +110,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             <Header />
-            {view === 'login' && !isAuthenticated ? (
+            {view === 'login' || !isAuthenticated || !authStatus ? (
                 <Login
                     authStatus={authStatus}
                     serverEndpoint={config?.serverEndpoint}

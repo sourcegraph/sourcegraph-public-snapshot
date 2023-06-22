@@ -90,13 +90,13 @@ export class LocalAppDetector implements vscode.Disposable {
         if (!this.tokenFsPath || this.localEnv.hasAppJson) {
             return
         }
-        const appJson = await loadAppJson()
+        const appJson = await loadAppJson(this.tokenFsPath)
         if (!appJson) {
-          return
+            return
         }
-        const token = json.token
+        const token = appJson.token
         // Once the token is found, we can stop watching the files
-        if (token && token.length) {
+        if (token?.length) {
             debug('LocalAppDetector:fetchToken', 'found')
             this.localEnv.hasAppJson = true
             this.tokenFsPath = null
@@ -161,6 +161,15 @@ function expandHomeDir(path: string, homeDir: string | null): string {
         return path.replace('~', homeDir)
     }
     return path
+}
+
+async function loadAppJson(uri: vscode.Uri): Promise<AppJson | null> {
+    try {
+        const data = await vscode.workspace.fs.readFile(uri)
+        return JSON.parse(data.toString()) as AppJson
+    } catch {
+        return null
+    }
 }
 
 const envInit = {

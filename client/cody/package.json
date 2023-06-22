@@ -298,13 +298,13 @@
       {
         "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Sign out...",
+        "title": "Sign Out",
         "icon": "$(sign-out)"
       },
       {
         "command": "cody.auth.signin",
         "category": "Cody",
-        "title": "Switch Account..."
+        "title": "Switch Account"
       },
       {
         "command": "cody.manual-completions",
@@ -316,7 +316,8 @@
         "category": "Cody",
         "title": "User Settings",
         "group": "Cody",
-        "icon": "$(account)"
+        "icon": "$(account)",
+        "when": "cody.activated"
       },
       {
         "command": "cody.settings.extension",
@@ -713,6 +714,11 @@
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
+        },
+        {
+          "command": "workbench.action.reloadWindow",
+          "title": "Reload",
+          "group": "8_cody@0"
         }
       ],
       "editor/title": [
