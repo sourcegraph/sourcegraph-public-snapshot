@@ -1,12 +1,12 @@
 import { Optional } from 'utility-types'
 
+import { PromptVersion } from '../../cody/prompt-tester'
 import { BatchChangeState } from '../../graphql-operations'
 
 import { DiffMode } from './diffMode'
 import { RecentSearch } from './recentSearches'
 import { SectionID, NoResultsSectionID } from './searchSidebar'
 import { TourListState } from './tourState'
-import { PromptVersion } from '../../cody/prompt-tester'
 
 // Prior to this type we store in settings list of MultiSelectState
 // we no longer use MultiSelect UI but for backward compatibility we still

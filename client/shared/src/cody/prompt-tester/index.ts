@@ -2,6 +2,6 @@
 export interface PromptVersion {
     prompt: string
     provider: 'anthropic' | 'openai'
-    temperature: number,
-    maxTokensToSample: number,
+    temperature: number
+    maxTokensToSample: number
 }

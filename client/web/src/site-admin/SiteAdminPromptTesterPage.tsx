@@ -1,28 +1,31 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
+import { mdiPlus } from '@mdi/js'
+
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
     Button,
     Container,
     ErrorAlert,
-    H3, Icon,
+    H3,
+    Icon,
     Input,
     Label,
     LoadingSpinner,
     PageHeader,
     Select,
-    TextArea, Tooltip,
+    TextArea,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
-import { PageTitle } from '../components/PageTitle'
-import styles from './SiteAdminPromptTesterPage.module.scss'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { PromptVersion } from '../../../shared/src/cody/prompt-tester'
-import { CompletionRequest, getCodyCompletionOneShot } from '../enterprise/cody/api'
-import { mdiPlus } from '@mdi/js'
+import { CompletionRequest, getCodyCompletionOneShot } from '../cody/search/api'
+import { PageTitle } from '../components/PageTitle'
 
-export interface SiteAdminPromptTesterPageProps extends TelemetryProps {
-}
+import styles from './SiteAdminPromptTesterPage.module.scss'
+
+export interface SiteAdminPromptTesterPageProps extends TelemetryProps {}
 
 const DEFAULT_VARIATION_COUNT = 1
 
@@ -41,10 +44,17 @@ function buildMessages(prompt: string): { speaker: 'human' | 'assistant'; text: 
             return { speaker: speaker.toLowerCase() as 'human' | 'assistant', text }
         })
     }
-    return [{ speaker: 'human', text: prompt }, { speaker: 'assistant', text: '' }]
+    return [
+        { speaker: 'human', text: prompt },
+        { speaker: 'assistant', text: '' },
+    ]
 }
 
-async function getResults(promptVersions: PromptVersion[], variationCount: number, abortSignal: AbortSignal): Promise<string[][]> {
+async function getResults(
+    promptVersions: PromptVersion[],
+    variationCount: number,
+    abortSignal: AbortSignal
+): Promise<string[][]> {
     const resultPromises: Promise<string[]>[] = promptVersions.map(async promptVersion => {
         const params: CompletionRequest = {
             messages: buildMessages(promptVersion.prompt),
@@ -66,13 +76,26 @@ export const SiteAdminPromptTesterPage: React.FunctionComponent<
     React.PropsWithChildren<SiteAdminPromptTesterPageProps>
 > = ({ telemetryService }) => {
     const [promptVersions, setPromptVersions] = useTemporarySetting('admin.promptTester.promptVersions', [
-        { prompt: '', provider: 'anthropic', temperature: DEFAULT_TEMPERATURE, maxTokensToSample: DEFAULT_MAX_TOKENS_TO_SAMPLE },
-        { prompt: '', provider: 'openai', temperature: DEFAULT_TEMPERATURE, maxTokensToSample: DEFAULT_MAX_TOKENS_TO_SAMPLE }
+        {
+            prompt: '',
+            provider: 'anthropic',
+            temperature: DEFAULT_TEMPERATURE,
+            maxTokensToSample: DEFAULT_MAX_TOKENS_TO_SAMPLE,
+        },
+        {
+            prompt: '',
+            provider: 'openai',
+            temperature: DEFAULT_TEMPERATURE,
+            maxTokensToSample: DEFAULT_MAX_TOKENS_TO_SAMPLE,
+        },
     ])
     const [results, setResults] = useState<string[][] | undefined>(undefined)
     const [error, setError] = useState<Error>()
     const [loadingResults, setLoadingResults] = useState<boolean>(false)
-    const [variationCount, setVariationCount] = useTemporarySetting('admin.promptTester.variationCount', DEFAULT_VARIATION_COUNT)
+    const [variationCount, setVariationCount] = useTemporarySetting(
+        'admin.promptTester.variationCount',
+        DEFAULT_VARIATION_COUNT
+    )
     const abortController = new AbortController()
 
     useEffect(() => {
@@ -95,21 +118,38 @@ export const SiteAdminPromptTesterPage: React.FunctionComponent<
     }, [promptVersions, variationCount, abortController.signal])
 
     const addPromptVersion = useCallback(() => {
-        setPromptVersions(promptVersions => promptVersions ? [...promptVersions, {
-            prompt: '',
-            provider: 'anthropic',
-            temperature: DEFAULT_TEMPERATURE,
-            maxTokensToSample: DEFAULT_MAX_TOKENS_TO_SAMPLE
-        }] : undefined)
+        setPromptVersions(promptVersions =>
+            promptVersions
+                ? [
+                      ...promptVersions,
+                      {
+                          prompt: '',
+                          provider: 'anthropic',
+                          temperature: DEFAULT_TEMPERATURE,
+                          maxTokensToSample: DEFAULT_MAX_TOKENS_TO_SAMPLE,
+                      },
+                  ]
+                : undefined
+        )
     }, [setPromptVersions])
 
-    const setPromptVersion = useCallback((index: number, newPV: PromptVersion) => {
-        setPromptVersions(pvs => pvs ? pvs.map((oldPV, currentIndex) => currentIndex === index ? newPV : oldPV) : undefined)
-    }, [setPromptVersions])
+    const setPromptVersion = useCallback(
+        (index: number, newPV: PromptVersion) => {
+            setPromptVersions(pvs =>
+                pvs ? pvs.map((oldPV, currentIndex) => (currentIndex === index ? newPV : oldPV)) : undefined
+            )
+        },
+        [setPromptVersions]
+    )
 
-    const removePromptVersion = useCallback((index: number) => {
-        setPromptVersions(pvs => pvs ? pvs.filter((promptVersion, currentIndex) => currentIndex !== index) : undefined)
-    }, [setPromptVersions])
+    const removePromptVersion = useCallback(
+        (index: number) => {
+            setPromptVersions(pvs =>
+                pvs ? pvs.filter((promptVersion, currentIndex) => currentIndex !== index) : undefined
+            )
+        },
+        [setPromptVersions]
+    )
 
     const onRunButtonClick = (): void => {
         runTests().catch(() => {})
@@ -123,7 +163,8 @@ export const SiteAdminPromptTesterPage: React.FunctionComponent<
                 headingElement="h2"
                 description={
                     <>
-                        This is a tool to test prompts for Cody.<br />
+                        This is a tool to test prompts for Cody.
+                        <br />
                         Add your prompts, select the LLMs, and click Run. Then compare the quality of the results.
                     </>
                 }
@@ -139,23 +180,29 @@ export const SiteAdminPromptTesterPage: React.FunctionComponent<
                     <div>Output</div>
                 </div>
                 {promptVersions && promptVersions.length === 0 && <div>No prompts yet</div>}
-                {!!promptVersions && promptVersions.map((promptVersion, index) => formatPromptVersion(promptVersion, index, setPromptVersion, removePromptVersion))}
-                <Button variant="success" onClick={addPromptVersion}><Icon aria-hidden={true} svgPath={mdiPlus} /> Add prompt</Button>
+                {!!promptVersions &&
+                    promptVersions.map((promptVersion, index) =>
+                        formatPromptVersion(promptVersion, index, setPromptVersion, removePromptVersion)
+                    )}
+                <Button variant="success" onClick={addPromptVersion}>
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Add prompt
+                </Button>
             </Container>
             <div className={styles.variationCountContainer}>
-            <Label htmlFor="variation-count">Number of variations to produce for each prompt:</Label>
-            <Input
-                id="variation-count"
-                className={styles.variationCountInput}
-                type="number"
-                min={1}
-                max={10}
-                value={variationCount ?? 1}
-                onChange={event => setVariationCount(parseInt(event.target.value, 10))}
-            />
+                <Label htmlFor="variation-count">Number of variations to produce for each prompt:</Label>
+                <Input
+                    id="variation-count"
+                    className={styles.variationCountInput}
+                    type="number"
+                    min={1}
+                    max={10}
+                    value={variationCount ?? 1}
+                    onChange={event => setVariationCount(parseInt(event.target.value, 10))}
+                />
             </div>
-            <Button variant="primary" className={styles.runButton} onClick={onRunButtonClick}
-                    disabled={loadingResults}>Run tests</Button>
+            <Button variant="primary" className={styles.runButton} onClick={onRunButtonClick} disabled={loadingResults}>
+                Run tests
+            </Button>
 
             <Container className="mb-3">
                 <H3>Results</H3>
@@ -163,38 +210,47 @@ export const SiteAdminPromptTesterPage: React.FunctionComponent<
                 {loadingResults && !error && <LoadingSpinner />}
                 {results && (
                     <div>
-                    {results.map((completions, resultIndex) =>
-                        (
+                        {results.map((completions, resultIndex) => (
                             <div className={styles.resultRow} key={resultIndex}>
                                 <div>{resultIndex + 1}</div>
-                                {completions.map((completion, completionIndex) => <div key={completionIndex}>{completion}</div>)}
+                                {completions.map((completion, completionIndex) => (
+                                    <div key={completionIndex}>{completion}</div>
+                                ))}
                             </div>
-                        )
-                    )}
+                        ))}
                     </div>
-                    )}
+                )}
             </Container>
         </div>
     )
 }
 
-function formatPromptVersion(promptVersion: PromptVersion, index: number, setPromptVersion: (index: number, promptVersion: PromptVersion) => void, removePromptVersion: (id: number) => void): React.ReactNode {
-    const onPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>): void => setPromptVersion(index, {
-        ...promptVersion,
-        prompt: event.target.value
-    })
-    const onProviderChange = (event: React.ChangeEvent<HTMLSelectElement>): void => setPromptVersion(index, {
-        ...promptVersion,
-        provider: event.target.value as 'anthropic' | 'openai'
-    })
-    const onTemperatureChange = (temperature: number): void => setPromptVersion(index, {
-        ...promptVersion,
-        temperature
-    })
-    const onMaxTokensToSampleChange = (maxTokensToSample: number): void => setPromptVersion(index, {
-        ...promptVersion,
-        maxTokensToSample
-    })
+function formatPromptVersion(
+    promptVersion: PromptVersion,
+    index: number,
+    setPromptVersion: (index: number, promptVersion: PromptVersion) => void,
+    removePromptVersion: (id: number) => void
+): React.ReactNode {
+    const onPromptChange = (event: React.ChangeEvent<HTMLTextAreaElement>): void =>
+        setPromptVersion(index, {
+            ...promptVersion,
+            prompt: event.target.value,
+        })
+    const onProviderChange = (event: React.ChangeEvent<HTMLSelectElement>): void =>
+        setPromptVersion(index, {
+            ...promptVersion,
+            provider: event.target.value as 'anthropic' | 'openai',
+        })
+    const onTemperatureChange = (temperature: number): void =>
+        setPromptVersion(index, {
+            ...promptVersion,
+            temperature,
+        })
+    const onMaxTokensToSampleChange = (maxTokensToSample: number): void =>
+        setPromptVersion(index, {
+            ...promptVersion,
+            maxTokensToSample,
+        })
     return (
         <div className={styles.promptVersion}>
             <div>{index + 1}</div>
@@ -224,7 +280,9 @@ function formatPromptVersion(promptVersion: PromptVersion, index: number, setPro
                     onChange={event => onMaxTokensToSampleChange(parseInt(event.target.value, 10))}
                 />
             </Tooltip>
-            <Button variant="danger" onClick={() => removePromptVersion(index)}>Remove</Button>
+            <Button variant="danger" onClick={() => removePromptVersion(index)}>
+                Remove
+            </Button>
         </div>
     )
 }

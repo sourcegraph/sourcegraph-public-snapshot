@@ -4,7 +4,13 @@ import { CompletionRequest, DEFAULT_CHAT_COMPLETION_PARAMETERS, getCodyCompletio
 
 export async function translateToQuery(input: string, user: AuthenticatedUser | null): Promise<string | null> {
     const messages = getCompletionRequestMessages(input, user)
-    const result = await getCodyCompletionOneShot({...DEFAULT_CHAT_COMPLETION_PARAMETERS, messages}, null)
+    const result = await getCodyCompletionOneShot(
+        {
+            ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
+            messages,
+        },
+        null
+    )
     if (!result.includes('contents>') && !result.includes('filters>')) {
         return null
     }
