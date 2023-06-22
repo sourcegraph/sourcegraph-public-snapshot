@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -16,14 +17,14 @@ type embeddingsSetupProgressResolver struct {
 }
 
 func (r *embeddingsSetupProgressResolver) PercentComplete(ctx context.Context) (int32, error) {
-	repos, err := getAllReposIds(ctx, r.db)
+	repos, err := getAllRepos(ctx, r.db)
 	if err != nil {
 		return 0, err
 	}
 
-	repoProgress := make([]float64, len(repos))
+	repoProgress := make([]float64, 0, len(repos))
 	for _, repo := range repos {
-		p, err := getProgressForRepo(ctx, r.db, repo)
+		p, err := getProgressForRepo(ctx, r.db, repo.ID)
 		if err != nil {
 			return 0, err
 		}
@@ -33,36 +34,18 @@ func (r *embeddingsSetupProgressResolver) PercentComplete(ctx context.Context) (
 
 }
 
-func getAllReposIds(ctx context.Context, db database.DB) ([]api.RepoID, error) {
-	rows, err := db.QueryContext(ctx, `SELECT gr.repo_id FROM gitserver_repos gr JOIN repo r on gr.repo_id = r.id WHERE r.deleted_at IS NULL;`)
+func getAllRepos(ctx context.Context, db database.DB) ([]types.MinimalRepo, error) {
+	repos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{})
 	if err != nil {
 		return nil, err
 	}
-
-	defer rows.Close()
-
-	repos := make([]api.RepoID, 0)
-	for rows.Next() {
-		var id int32
-
-		if err := rows.Scan(&id); err != nil {
-			return nil, err
-		}
-
-		repos = append(repos, api.RepoID(id))
-	}
-
-	if rows.Err() != nil {
-		return nil, err
-	}
-
 	return repos, nil
 }
 
 func getProgressForRepo(ctx context.Context, db database.DB, repoID api.RepoID) (float64, error) {
 	var progress float64
 	embeddingsStore := repo.NewRepoEmbeddingJobsStore(db)
-	jobs, err := embeddingsStore.ListRepoEmbeddingJobs(ctx, repo.ListOpts{Repo: &repoID, PaginationArgs: &database.PaginationArgs{First: pointers.Ptr(100)}})
+	jobs, err := embeddingsStore.ListRepoEmbeddingJobs(ctx, repo.ListOpts{Repo: &repoID, PaginationArgs: &database.PaginationArgs{First: pointers.Ptr(10)}})
 	if err != nil {
 		return progress, err
 	}
