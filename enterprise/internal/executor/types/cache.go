@@ -8,7 +8,7 @@ import (
 
 const (
 	DequeueCachePrefix = "executor_multihandler_dequeues"
-	DequeueTtl         = 5 * 60 * time.Second // 5 minutes
+	DequeueTtl         = 5 * time.Minute
 	CleanupInterval    = 5 * time.Second
 )
 
