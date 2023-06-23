@@ -13,7 +13,7 @@ import styles from './Login.module.css'
 
 interface LoginProps {
     authStatus?: AuthStatus
-    endpoint?: string
+    endpoint: string | null
     isAppInstalled: boolean
     isAppRunning?: boolean
     vscodeAPI: VSCodeWrapper

@@ -23,13 +23,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
         null
     )
-    const [endpoint, setEndpoint] = useState<string>()
+    const [endpoint, setEndpoint] = useState<string | null>()
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-    const [authStatus, setAuthStatus] = useState<AuthStatus>()
+    const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
@@ -42,6 +42,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         vscodeAPI.onMessage(message => {
             switch (message.type) {
                 case 'transcript': {
+                    console.log('transcript', message)
                     if (message.isMessageInProgress) {
                         const msgLength = message.messages.length - 1
                         setTranscript(message.messages.slice(0, msgLength))
@@ -54,25 +55,20 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 }
                 case 'config':
                     setConfig(message.config)
-                    setAuthStatus(message.authStatus)
-                    setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
                     setIsAppInstalled(message.config.isAppInstalled)
-                    setEndpoint(message.authStatus.endpoint || config?.serverEndpoint)
                     break
                 case 'login':
                     setAuthStatus(message.authStatus)
                     setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
-                    if (message.authStatus.endpoint) {
-                        setEndpoint(message.authStatus.endpoint)
-                    }
+                    setEndpoint(message.authStatus.endpoint)
                     break
                 case 'showTab':
                     if (message.tab === 'chat') {
-                        setView('chat')
+                        setView(message.tab)
                     }
                     break
                 case 'debug':
-                    setDebugLog([...debugLog, message.message])
+                    setDebugLog([message.message])
                     break
                 case 'history':
                     setInputHistory(message.messages?.input ?? [])
@@ -82,8 +78,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     setContextStatus(message.contextStatus)
                     break
                 case 'errors':
-                    setErrorMessages([...errorMessages, message.errors].slice(-5))
-                    setDebugLog([...debugLog, message.errors])
+                    setErrorMessages([message.errors])
                     break
                 case 'view':
                     setView(message.messages)
@@ -96,28 +91,26 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     break
             }
         })
-        if (!view) {
-            vscodeAPI.postMessage({ command: 'initialized' })
-        }
+        vscodeAPI.postMessage({ command: 'initialized' })
         // The dependencies array is empty to execute the callback only on component mount.
-    }, [config?.serverEndpoint, debugLog, endpoint, errorMessages, transcript, view, vscodeAPI])
+    }, [vscodeAPI])
 
     const onLogout = useCallback(() => {
-        setAuthStatus(undefined)
+        setAuthStatus(null)
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
 
-    if (!view) {
+    if (!view || !authStatus) {
         return <LoadingPage />
     }
 
     return (
         <div className="outer-container">
             <Header />
-            {view === 'login' || !authStatus?.authenticated ? (
+            {view === 'login' ? (
                 <Login
                     authStatus={authStatus}
-                    endpoint={endpoint}
+                    endpoint={endpoint || null}
                     isAppInstalled={isAppInstalled}
                     isAppRunning={config?.isAppRunning}
                     vscodeAPI={vscodeAPI}
@@ -142,7 +135,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                     {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-                    {view === 'settings' && (
+                    {view === 'settings' && endpoint && (
                         <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
                     )}
                     {view === 'chat' && (
