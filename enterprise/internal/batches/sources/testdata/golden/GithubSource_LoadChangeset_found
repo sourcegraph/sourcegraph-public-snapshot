@@ -9,6 +9,7 @@
   "HeadRefName": "disable-extension-native-integratin",
   "BaseRefName": "master",
   "Number": 5550,
+  "ReviewDecision": "APPROVED",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/1741180?u=d126637129a1c2fae6f79de2c7cf8390059feb85\u0026v=4",
    "Login": "lguychard",
@@ -123,7 +124,7 @@
       "Login": "felixfbecker",
       "URL": "https://github.com/felixfbecker"
      },
-     "AuthorAssociation": "MEMBER",
+     "AuthorAssociation": "CONTRIBUTOR",
      "Body": "",
      "State": "COMMENTED",
      "URL": "https://github.com/sourcegraph/sourcegraph/pull/5550#pullrequestreview-287549355",

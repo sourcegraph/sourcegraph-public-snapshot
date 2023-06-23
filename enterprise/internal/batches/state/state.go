@@ -633,10 +633,6 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 	states := map[btypes.ChangesetReviewState]bool{}
 
 	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		// For GitHub we need to use `ChangesetEvents.ReviewDecision`.
-		return btypes.ChangesetReviewStatePending, nil
-
 	case *bitbucketserver.PullRequest:
 		for _, r := range m.Reviewers {
 			switch r.Status {

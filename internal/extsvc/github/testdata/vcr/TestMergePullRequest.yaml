@@ -38,7 +38,7 @@ interactions:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -49,7 +49,7 @@ interactions:
       READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT]) {\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    nodes
       {\n      __typename\n      ...timelineItems\n    }\n  }\n}\n\n\nmutation MergePullRequest($input:
       MergePullRequestInput!) {\n  mergePullRequest(input: $input) {\n\t  pullRequest
-      {\n\t\t  ...pr\n\t  }\n  }\n}\n","variables":{"input":{"pullRequestId":"PR_kwDODS5xec5JaPkU","mergeMethod":"SQUASH"}}}'
+      {\n\t\t  ...pr\n\t  }\n  }\n}\n","variables":{"input":{"pullRequestId":"PR_kwDODS5xec5TxsRF","mergeMethod":"SQUASH"}}}'
     form: {}
     headers:
       Accept:
@@ -61,10 +61,10 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"mergePullRequest":{"pullRequest":{"id":"PR_kwDODS5xec5JaPkU","title":"Test
-      PR for GitHub client `MergePullRequest`","body":"","state":"MERGED","url":"https://github.com/sourcegraph/automation-testing/pull/488","number":488,"createdAt":"2023-02-07T08:43:51Z","updatedAt":"2023-02-07T08:48:42Z","headRefOid":"413b8a40386bd4fdc86871bb59963f79810e9ca3","baseRefOid":"1c94aaf85d51e9d016b8ce4639b9f022d94c52e6","headRefName":"test-merge-branch","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},{"avatarUrl":"https://avatars.githubusercontent.com/u/63290851?v=4","login":"sourcegraph-vcr","url":"https://github.com/sourcegraph-vcr"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"413b8a40386bd4fdc86871bb59963f79810e9ca3","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAAChRt_rg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAAChRt_xQ","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAAChRt_2g","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAAChRt_-Q","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAAChRuAHQ","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2023-02-07T08:43:12Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABhisQHhABqjg0NTU1MTUwMjA="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"413b8a40386bd4fdc86871bb59963f79810e9ca3","message":"Update
-      circle-ci.yml","messageHeadline":"Update circle-ci.yml","committedDate":"2023-02-07T08:43:12Z","pushedDate":"2023-02-07T08:43:13Z","url":"https://github.com/sourcegraph/automation-testing/commit/413b8a40386bd4fdc86871bb59963f79810e9ca3","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}},{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/63290851?v=4","login":"sourcegraph-vcr","url":"https://github.com/sourcegraph-vcr"},"mergeRefName":"master","url":"https://github.com/sourcegraph/automation-testing/pull/488#event-8455514986","commit":{"oid":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","message":"Update
-      circle-ci.yml (#488)","messageHeadline":"Update circle-ci.yml (#488)","committedDate":"2023-02-07T08:48:41Z","pushedDate":null,"url":"https://github.com/sourcegraph/automation-testing/commit/58dd8da9d9099a823c814c528b29b72c9b2ac98b","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2023-02-07T08:48:41Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/63290851?v=4","login":"sourcegraph-vcr","url":"https://github.com/sourcegraph-vcr"},"createdAt":"2023-02-07T08:48:42Z","url":"https://github.com/sourcegraph/automation-testing/pull/488#event-8455515020"}]}}}}}'
+    body: '{"data":{"mergePullRequest":{"pullRequest":{"id":"PR_kwDODS5xec5TxsRF","title":"This
+      is a test PR, feel free to ignore","body":"I''m opening this PR to test something.
+      Please ignore.","state":"MERGED","url":"https://github.com/sourcegraph/automation-testing/pull/506","number":506,"createdAt":"2023-06-23T19:24:56Z","updatedAt":"2023-06-23T19:44:52Z","headRefOid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","baseRefOid":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","headRefName":"test-pr-02","baseRefName":"master","reviewDecision":"REVIEW_REQUIRED","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAADNrcULQ","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcURA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUXg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUcw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUkg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2023-06-22T21:05:25Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABiOnJuyABqjk2MjE1ODcxNjk="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","message":"foobar","messageHeadline":"foobar","committedDate":"2023-06-22T21:05:25Z","pushedDate":"2023-06-22T21:05:29Z","url":"https://github.com/sourcegraph/automation-testing/commit/7c232f7ec9b8e717ff297e33f2ab095a7e902085","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?v=4","email":"davetry@gmail.com","name":"davejrt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"}}}},{"__typename":"MergedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"mergeRefName":"master","url":"https://github.com/sourcegraph/automation-testing/pull/506#event-9621587152","commit":{"oid":"19c79cbd5e3aa4d5961edfb2edf92a7cf155c15b","message":"foobar
+      (#506)","messageHeadline":"foobar (#506)","committedDate":"2023-06-23T19:44:51Z","pushedDate":null,"url":"https://github.com/sourcegraph/automation-testing/commit/19c79cbd5e3aa4d5961edfb2edf92a7cf155c15b","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}},"createdAt":"2023-06-23T19:44:52Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T19:44:52Z","url":"https://github.com/sourcegraph/automation-testing/pull/506#event-9621587169"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -78,7 +78,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 07 Feb 2023 08:48:43 GMT
+      - Fri, 23 Jun 2023 19:44:53 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -94,17 +94,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1C21:B79B:105CEAE:10ABB5C:63E21069
+      - E364:6A59:209313:428206:6495F633
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4997"
+      - "4764"
       X-Ratelimit-Reset:
-      - "1675763321"
+      - "1687551677"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "3"
+      - "236"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -147,7 +147,7 @@ interactions:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -170,7 +170,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"mergePullRequest":null},"errors":[{"type":"UNPROCESSABLE","path":["mergePullRequest"],"locations":[{"line":317,"column":3}],"message":"Pull
+    body: '{"data":{"mergePullRequest":null},"errors":[{"type":"UNPROCESSABLE","path":["mergePullRequest"],"locations":[{"line":318,"column":3}],"message":"Pull
       Request is not mergeable"}],"extensions":{"warnings":[{"type":"DEPRECATION","message":"The
       id MDExOlB1bGxSZXF1ZXN0NTY1Mzk1NTc3 is deprecated. Update your cache to use
       the next_global_id from the data payload.","data":{"legacy_global_id":"MDExOlB1bGxSZXF1ZXN0NTY1Mzk1NTc3","next_global_id":"PR_kwDODS5xec4hs0B5"},"link":"https://docs.github.com"}]}}'
@@ -187,7 +187,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 07 Feb 2023 08:48:43 GMT
+      - Fri, 23 Jun 2023 19:44:53 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -203,17 +203,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1C21:B79B:105D5AA:10AC267:63E21069
+      - E364:6A59:209557:4286B0:6495F633
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4994"
+      - "4761"
       X-Ratelimit-Reset:
-      - "1675763321"
+      - "1687551677"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "6"
+      - "239"
       X-Xss-Protection:
       - "0"
     status: 200 OK
