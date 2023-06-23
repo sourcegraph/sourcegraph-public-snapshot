@@ -26,7 +26,7 @@ pub fn extract_path_from_scheme_url<'a>(url: &'a str, scheme: &str) -> Option<&'
 
     let tentative_path = &url[(scheme.len() + 2)..];
 
-    // Only allow relative paths that start with a slash
+    // Only allow paths that start with a slash
     if tentative_path.starts_with('/') {
         Some(tentative_path)
     } else {
