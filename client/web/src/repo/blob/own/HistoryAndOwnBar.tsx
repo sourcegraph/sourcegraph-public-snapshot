@@ -72,7 +72,7 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         return errorDiv
     }
 
-    const commit = data?.node?.commit || data?.node?.changelist?.commit
+    const commit = data.node.commit || data.node.changelist?.commit
 
     if (!commit) {
         return errorDiv
