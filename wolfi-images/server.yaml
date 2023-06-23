@@ -39,7 +39,6 @@ contents:
     - p4-fusion@sourcegraph
     - s3proxy@sourcegraph
     - grafana@chainguard
-    - grafana-dashboards@chainguard
 
 accounts:
   groups:
