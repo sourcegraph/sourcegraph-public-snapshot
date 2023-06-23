@@ -24,6 +24,7 @@ import styles from './RepoEmbeddingJobNode.module.scss'
 
 interface RepoEmbeddingJobNodeProps extends RepoEmbeddingJobFields {
     onCancel: (id: string) => void
+    isSourcegraphApp: boolean
 }
 
 export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
@@ -38,6 +39,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
     failureMessage,
     stats,
     onCancel,
+    isSourcegraphApp,
 }) => (
     <li className="list-group-item p-2">
         <div className="d-flex justify-content-between">
@@ -47,9 +49,15 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                 </div>
                 <div className="d-flex flex-column ml-3">
                     {repo && revision ? (
-                        <Link to={`${repo.url}@${revision.oid}`}>
-                            {repo.name}@{revision.abbreviatedOID}
-                        </Link>
+                        isSourcegraphApp ? (
+                            <>
+                                {repo.name}@{revision.abbreviatedOID}
+                            </>
+                        ) : (
+                            <Link to={`${repo.url}@${revision.oid}`}>
+                                {repo.name}@{revision.abbreviatedOID}
+                            </Link>
+                        )
                     ) : (
                         <div>Unknown repository</div>
                     )}
