@@ -247,15 +247,12 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
         return null
     }
-    const getPerforceTreeCanonnicalURL = (url: string, cid: string) => url.split('@')[0] + '@' + cid
 
     if (!node.tree) {
         return <ErrorAlert className="mt-2" error={new Error('missing information about tree')} />
     }
 
-    const treeCanonicalURL = isPerforceDepot
-        ? getPerforceTreeCanonnicalURL(node.tree.canonicalURL, refID)
-        : node.tree.canonicalURL
+    const treeCanonicalURL = isPerforceDepot ? node.tree.canonicalURL.replace(node.oid, refID) : node.tree.canonicalURL
 
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between align-items-start">
