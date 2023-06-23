@@ -145,10 +145,11 @@ You must create your own key with Anthropic [here](https://console.anthropic.com
   "cody.enabled": true,
   "completions": {
     "provider": "anthropic", // or "openai" if you use OpenAI
-    "model": "claude-v1", // or one of the models listed [here](https://platform.openai.com/docs/models) if you use OpenAI
+    "model": "claude-v1", // or one of the models listed at https://platform.openai.com/docs/models if you use openAI
     "accessToken": "<key>"
   }
 }
 ```
+_[*OpenAI models supported](https://platform.openai.com/docs/models)_
 
 Similarly, you can also [use a third-party LLM provider directly for embeddings](./code_graph_context.md#using-a-third-party-llm-directly).
