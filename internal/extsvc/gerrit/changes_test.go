@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
@@ -21,6 +22,18 @@ func TestClient_GetChange(t *testing.T) {
 	}
 
 	testutil.AssertGolden(t, "testdata/golden/GetChange.json", *update, resp)
+}
+
+func TestClient_GetChangeMultipleChanges(t *testing.T) {
+	cli, save := NewTestClient(t, "GetChangeMultipleChanges", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	// In order to recreate this tests you need to push two changes to two different branches using the same Chande-Id.
+	_, err := cli.GetChange(ctx, "I52bede3e6dd80b9048924d0416e5d1a7bf49cf5a")
+	assert.NotNil(t, err)
+	assert.True(t, errors.As(err, &MultipleChangesError{}))
 }
 
 func TestClient_WriteReviewComment(t *testing.T) {

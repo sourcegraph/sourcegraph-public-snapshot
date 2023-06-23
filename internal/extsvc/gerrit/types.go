@@ -173,13 +173,13 @@ type Pagination struct {
 	Skip int
 }
 
-// GerritMultipleChangesError is returned by GetChange in
+// MultipleChangesError is returned by GetChange in
 // the fringe situation that multiple
-type GerritMultipleChangesError struct {
+type MultipleChangesError struct {
 	ID string
 }
 
-func (e GerritMultipleChangesError) Error() string {
+func (e MultipleChangesError) Error() string {
 	return fmt.Sprintf("Multiple changes found with ID %s not found", e.ID)
 }
 

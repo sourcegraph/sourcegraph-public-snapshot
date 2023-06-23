@@ -28,7 +28,7 @@ func (c *client) GetChange(ctx context.Context, changeID string) (*Change, error
 		// This is a fringe scenario where Gerrit has multiple changes with the same Change ID, we want
 		// to pass back a unique error explicitly.
 		if strings.Contains(err.Error(), "changes found for") {
-			return nil, GerritMultipleChangesError{ID: changeID}
+			return nil, MultipleChangesError{ID: changeID}
 		}
 		return nil, err
 	}

@@ -102,9 +102,6 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 // CreateChangeset will create the Changeset on the source. If it already
 // exists, *Changeset will be populated and the return value will be true.
 func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
-	if cs.ExternalID != "" {
-		return true, s.LoadChangeset(ctx, cs)
-	}
 	changeID := GenerateGerritChangeID(*cs.Changeset)
 	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
 	// was created successfully.
@@ -124,9 +121,6 @@ func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool,
 
 // CreateDraftChangeset creates the given changeset on the code host in draft mode.
 func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
-	if cs.ExternalID != "" && cs.ExternalState == btypes.ChangesetExternalStateDraft {
-		return true, s.LoadChangeset(ctx, cs)
-	}
 	changeID := GenerateGerritChangeID(*cs.Changeset)
 
 	// For Gerrit, the Change is created at `git push` time, so we just call the API to mark it as WIP.
@@ -188,24 +182,19 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	pr, err := s.client.GetChange(ctx, cs.ExternalID)
 	if err != nil {
-		if errors.As(err, &gerrit.GerritMultipleChangesError{}) {
-			// The most recent push has created two Gerrit changes with the same Change ID.
-			// This happens when the target branch is changed at the same time that the diffs are changed,
-			// it is a bit of a fringe scenario, but it causese us to have 2 changes with the same Change ID,
-			// but different (actual) ID. What we do here, is delete the change that existed before our most
-			// recent push, and then load the new change now that it doesn't have a conflict.
+		// Route 1
+		// The most recent push has created two Gerrit changes with the same Change ID.
+		// This happens when the target branch is changed at the same time that the diffs are changed,
+		// it is a bit of a fringe scenario, but it causes us to have 2 changes with the same Change ID,
+		// but different ID. What we do here, is delete the change that existed before our most
+		// recent push, and then load the new change now that it doesn't have a conflict.
+		if errors.As(err, &gerrit.MultipleChangesError{}) {
 			originalPR := cs.Metadata.(*gerritbatches.AnnotatedChange)
 			err = s.client.DeleteChange(ctx, originalPR.Change.ID)
 			if err != nil {
 				return errors.Wrap(err, "deleting change")
 			}
-			pr, err = s.client.GetChange(ctx, cs.ExternalID)
-			if err != nil {
-				if errcode.IsNotFound(err) {
-					return ChangesetNotFoundError{Changeset: cs}
-				}
-				return errors.Wrap(err, "getting newer change")
-			}
+			return s.LoadChangeset(ctx, cs)
 		} else {
 			if errcode.IsNotFound(err) {
 				return ChangesetNotFoundError{Changeset: cs}
@@ -213,6 +202,8 @@ func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error 
 			return errors.Wrap(err, "getting newer change")
 		}
 	}
+	// Route 2
+	// We did not push before this, therefore this update, is only through API
 	if pr.Branch != cs.BaseRef {
 		_, err = s.client.MoveChange(ctx, cs.ExternalID, gerrit.MoveChangePayload{
 			DestinationBranch: cs.BaseRef,
