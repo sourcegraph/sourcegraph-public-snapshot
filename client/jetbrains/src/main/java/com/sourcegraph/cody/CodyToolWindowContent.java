@@ -202,12 +202,7 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void addWelcomeMessage() {
-    boolean isEnterprise =
-        ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
-    String accessToken =
-        isEnterprise
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
+    String accessToken = ConfigUtil.getProjectAccessToken(project);
     String welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
@@ -378,12 +373,8 @@ class CodyToolWindowContent implements UpdatableChat {
     // Build message
     boolean isEnterprise =
         ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
-    String instanceUrl =
-        isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
-    String accessToken =
-        isEnterprise
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
+    String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
+    String accessToken = ConfigUtil.getProjectAccessToken(project);
 
     var chat = new Chat("", instanceUrl, accessToken != null ? accessToken : "");
     ArrayList<String> contextFiles =
