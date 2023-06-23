@@ -9,10 +9,6 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/blobstore",
     visibility = ["//visibility:private"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
     deps = [
         "//cmd/blobstore/shared",
         "//cmd/sourcegraph-oss/osscmd",
@@ -24,6 +20,10 @@ go_binary(
     name = "blobstore",
     embed = [":blobstore_lib"],
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 pkg_tar(
