@@ -134,8 +134,6 @@ export class AnthropicProvider extends Provider {
             }
         }
 
-        completion = trimUntilSuffix(completion, this.suffix)
-
         // Trim start and end of the completion to remove all trailing whitespace.
         return completion.trimEnd()
     }

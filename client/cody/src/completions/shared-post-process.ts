@@ -1,5 +1,6 @@
 import { Completion } from '.'
 import { truncateMultilineCompletion } from './multiline'
+import { trimUntilSuffix } from './text-processing'
 
 /**
  * This function implements post-processing logic that is applied regardless of
@@ -23,6 +24,7 @@ export function sharedPostProcess({
     if (multiline) {
         content = truncateMultilineCompletion(content, prefix, suffix, languageId)
     }
+    content = trimUntilSuffix(content, suffix)
 
     return {
         ...completion,
