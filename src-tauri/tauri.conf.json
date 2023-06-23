@@ -85,7 +85,9 @@
         "fullscreen": false,
         "resizable": true,
         "width": 1024,
-        "height": 768
+        "height": 768,
+        "minWidth": 360,
+        "minHeight": 620
       }
     ]
   }
