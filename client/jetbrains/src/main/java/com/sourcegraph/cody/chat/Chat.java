@@ -1,10 +1,10 @@
 package com.sourcegraph.cody.chat;
 
-import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentClient;
+import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.ExecuteRecipeParams;
-import com.sourcegraph.cody.api.*;
 import com.sourcegraph.cody.api.ChatUpdaterCallbacks;
 import com.sourcegraph.cody.api.CompletionsInput;
 import com.sourcegraph.cody.api.CompletionsService;
@@ -12,9 +12,9 @@ import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,20 +28,7 @@ public class Chat {
     completionsService = new CompletionsService(instanceUrl, accessToken);
   }
 
-  public void sendPrompt(
-      @NotNull Project project,
-      @NotNull List<Message> prompt,
-      @NotNull ChatMessage humanMessage,
-      @Nullable String prefix,
-      @NotNull UpdatableChat chat) throws ExecutionException, InterruptedException {
-    if (CodyAgent.isConnected(project)) {
-      sendMessageViaAgent(project, humanMessage, chat);
-    } else {
-      sendMessageWithoutAgent(prompt, prefix, chat);
-    }
-  }
-
-  private void sendMessageWithoutAgent(
+  public void sendMessageWithoutAgent(
       @NotNull List<Message> prompt, @Nullable String prefix, @NotNull UpdatableChat chat) {
     completionsService.streamCompletion(
         new CompletionsInput(prompt, 0.5f, null, 1000, -1, -1),
@@ -50,20 +37,21 @@ public class Chat {
         new CancellationToken());
   }
 
-  private void sendMessageViaAgent(
-      @NotNull Project project, @NotNull ChatMessage humanMessage, @NotNull UpdatableChat chat)
+  public void sendMessageViaAgent(
+      @NotNull CodyAgentClient client,
+      @NotNull CompletableFuture<CodyAgentServer> codyAgentServer,
+      @NotNull ChatMessage humanMessage,
+      @NotNull UpdatableChat chat)
       throws ExecutionException, InterruptedException {
     final AtomicBoolean isFirstMessage = new AtomicBoolean(false);
-    CodyAgent.getClient(project).onChatUpdateMessageInProgress =
+    client.onChatUpdateMessageInProgress =
         (agentChatMessage) -> {
           if (agentChatMessage.text == null) {
             return;
           }
           ChatMessage chatMessage =
               new ChatMessage(
-                  Speaker.ASSISTANT,
-                  agentChatMessage.text,
-                  agentChatMessage.displayText);
+                  Speaker.ASSISTANT, agentChatMessage.text, agentChatMessage.displayText);
           if (isFirstMessage.compareAndSet(false, true)) {
             chat.addMessageToChat(chatMessage);
           } else {
@@ -71,7 +59,7 @@ public class Chat {
           }
         };
 
-    CodyAgent.getInitializedServer(project)
+    codyAgentServer
         .thenAcceptAsync(
             server ->
                 server.recipesExecute(

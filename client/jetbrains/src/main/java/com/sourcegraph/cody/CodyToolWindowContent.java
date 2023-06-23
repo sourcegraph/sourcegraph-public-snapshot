@@ -27,6 +27,7 @@ import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.ui.*;
+import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.chat.*;
 import com.sourcegraph.cody.context.ContextFile;
@@ -445,26 +446,36 @@ class CodyToolWindowContent implements UpdatableChat {
               String repoName = getRepoName(project, currentFile);
               String accessTokenOrEmpty = accessToken != null ? accessToken : "";
               Chat chat = new Chat(instanceUrl, accessTokenOrEmpty);
-              List<ContextMessage> contextMessages =
-                  getContextFromEmbeddings(
-                      project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
-              displayUsedFiles(contextMessages);
-              List<ContextMessage> editorContextMessages = getEditorContextMessages(editorContext);
-              contextMessages.addAll(editorContextMessages);
-              List<ContextMessage> selectionContextMessages =
-                  getSelectionContextMessages(editorContext);
-              contextMessages.addAll(selectionContextMessages);
-              // Add human message
-              transcript.addInteraction(new Interaction(humanMessage, contextMessages));
+              if (CodyAgent.isConnected(project)) {
+                try {
+                  chat.sendMessageViaAgent(CodyAgent.getClient(project),CodyAgent.getInitializedServer(project), humanMessage, this);
+                } catch (Exception e) {
+                  logger.error("Error sending message '" + humanMessage + "' to chat", e);
+                }
+              } else {
+                List<ContextMessage> contextMessages =
+                    getContextFromEmbeddings(
+                        project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
+                displayUsedFiles(contextMessages);
+                List<ContextMessage> editorContextMessages =
+                    getEditorContextMessages(editorContext);
+                contextMessages.addAll(editorContextMessages);
+                List<ContextMessage> selectionContextMessages =
+                    getSelectionContextMessages(editorContext);
+                contextMessages.addAll(selectionContextMessages);
+                // Add human message
+                transcript.addInteraction(new Interaction(humanMessage, contextMessages));
 
-              List<Message> prompt =
-                  transcript.getPromptForLastInteraction(
-                      Preamble.getPreamble(repoName), TruncationUtils.MAX_AVAILABLE_PROMPT_LENGTH);
+                List<Message> prompt =
+                    transcript.getPromptForLastInteraction(
+                        Preamble.getPreamble(repoName),
+                        TruncationUtils.MAX_AVAILABLE_PROMPT_LENGTH);
 
-              try {
-                chat.sendPrompt(project, prompt, humanMessage, responsePrefix, this);
-              } catch (Exception e) {
-                logger.error("Error sending message '" + humanMessage + "' to chat", e);
+                try {
+                  chat.sendMessageWithoutAgent(prompt, responsePrefix, this);
+                } catch (Exception e) {
+                  logger.error("Error sending message '" + humanMessage + "' to chat", e);
+                }
               }
             });
   }
