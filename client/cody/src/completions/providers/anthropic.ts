@@ -14,6 +14,7 @@ import {
     PrefixComponents,
     getHeadAndTail,
     trimUntilSuffix,
+    trimStartUntilNewline,
 } from '../text-processing'
 import { batchCompletions, messagesToText } from '../utils'
 
@@ -112,13 +113,19 @@ export class AnthropicProvider extends Provider {
     private postProcess(rawResponse: string): string {
         let completion = extractFromCodeBlock(rawResponse)
 
-        // Remove leading newlines.
-        completion = completion.replace(/^\n*/, '')
+        const trimmedPrefixContainNewline = this.prefix.slice(this.prefix.trimEnd().length).includes('\n')
+        if (trimmedPrefixContainNewline) {
+            // The prefix already contains a `\n` that Claude was not aware of, so we remove any
+            // leading `\n` that claude might add.
+            completion = completion.trimStart()
+        } else {
+            completion = trimStartUntilNewline(completion)
+        }
 
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)
 
-        // Handle multiline completion indentation and remove overlap with suffx.
+        // Handle multiline completion indentation and remove overlap with suffix.
         if (this.multilineMode === 'block') {
             completion = truncateMultilineCompletion(completion, this.prefix, this.suffix, this.languageId)
         }
@@ -135,7 +142,7 @@ export class AnthropicProvider extends Provider {
         completion = trimUntilSuffix(completion, this.suffix)
 
         // Trim start and end of the completion to remove all trailing whitespace.
-        return completion.trim()
+        return completion.trimEnd()
     }
 
     public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {

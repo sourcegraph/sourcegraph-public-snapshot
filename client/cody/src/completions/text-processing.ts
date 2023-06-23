@@ -155,3 +155,11 @@ export function trimUntilSuffix(insertion: string, suffix: string): string {
     }
     return insertionLines.slice(0, insertionEnd).join('\n')
 }
+
+export function trimStartUntilNewline(str: string): string {
+    const index = str.indexOf('\n')
+    if (index === -1) {
+        return str.trimStart()
+    }
+    return str.slice(0, index).trimStart() + str.slice(index)
+}
