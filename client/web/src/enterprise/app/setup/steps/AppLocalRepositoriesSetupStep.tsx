@@ -42,7 +42,7 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
     const [repositories, setRepositories] = useState<LocalRepository[]>([])
 
     const handleNext = async (): Promise<void> => {
-        await scheduleEmbeddings({
+        scheduleEmbeddings({
             variables: { repoNames: repositories.map(repo => repo.name) },
         })
         onNextStep()
