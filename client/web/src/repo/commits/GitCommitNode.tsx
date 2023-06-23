@@ -7,7 +7,7 @@ import { capitalize } from 'lodash'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { pluralize } from '@sourcegraph/common'
-import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonGroup, Link, Icon, Code, screenReaderAnnounce, Tooltip, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { GitCommitFields, RepositoryType } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -247,13 +247,22 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
         return null
     }
+    const getPerforceTreeCanonnicalURL = (url: string, cid: string) => url.split('@')[0] + '@' + cid
+
+    if (!node.tree) {
+        return <ErrorAlert className="mt-2" error={new Error('missing information about tree')} />
+    }
+
+    const treeCanonicalURL = isPerforceDepot
+        ? getPerforceTreeCanonnicalURL(node.tree.canonicalURL, refID)
+        : node.tree.canonicalURL
 
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between align-items-start">
             <Tooltip content="Browse files in the repository at this point in history">
                 <Button
                     className="align-center d-inline-flex"
-                    to={node.tree.canonicalURL}
+                    to={treeCanonicalURL}
                     variant="secondary"
                     outline={true}
                     size="sm"
@@ -316,7 +325,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                             <Tooltip content={`View files at this ${refType}`}>
                                                 <Button
                                                     aria-label="View files"
-                                                    to={node.tree.canonicalURL}
+                                                    to={treeCanonicalURL}
                                                     variant="secondary"
                                                     size="sm"
                                                     as={Link}
