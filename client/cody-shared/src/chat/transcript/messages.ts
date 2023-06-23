@@ -3,6 +3,11 @@ import { Message } from '../../sourcegraph-api'
 
 import { TranscriptJSON } from '.'
 
+export interface Transcript {
+    id: string
+    messages: ChatMessage[]
+}
+
 export interface ChatMessage extends Message {
     displayText?: string
     contextFiles?: ContextFile[]

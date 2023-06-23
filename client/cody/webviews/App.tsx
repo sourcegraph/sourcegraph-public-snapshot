@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import './App.css'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatHistory, ChatMessage, Transcript } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { AuthStatus, LocalEnv, isLoggedIn } from '../src/chat/protocol'
@@ -27,7 +27,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
-    const [transcript, setTranscript] = useState<ChatMessage[]>([])
+    const [transcript, setTranscript] = useState<Transcript>()
     const [authStatus, setAuthStatus] = useState<AuthStatus>()
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
@@ -43,10 +43,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 case 'transcript': {
                     if (message.isMessageInProgress) {
                         const msgLength = message.messages.length - 1
-                        setTranscript(message.messages.slice(0, msgLength))
+                        setTranscript({
+                            id: message.id,
+                            messages: message.messages.slice(0, msgLength),
+                        })
                         setMessageInProgress(message.messages[msgLength])
                     } else {
-                        setTranscript(message.messages)
+                        setTranscript({
+                            id: message.id,
+                            messages: message.messages,
+                        })
                         setMessageInProgress(null)
                     }
                     break
@@ -146,10 +152,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     {view === 'settings' && <Settings onLogout={onLogout} serverEndpoint={config?.serverEndpoint} />}
                     {view === 'chat' && (
                         <Chat
+                            key={transcript?.id}
                             messageInProgress={messageInProgress}
                             messageBeingEdited={messageBeingEdited}
                             setMessageBeingEdited={setMessageBeingEdited}
-                            transcript={transcript}
+                            transcript={transcript?.messages || []}
                             contextStatus={contextStatus}
                             formInput={formInput}
                             setFormInput={setFormInput}

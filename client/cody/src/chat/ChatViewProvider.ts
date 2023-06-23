@@ -609,6 +609,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private sendTranscript(): void {
         void this.webview?.postMessage({
             type: 'transcript',
+            id: this.currentChatID,
             messages: this.transcript.toChat(),
             isMessageInProgress: this.isMessageInProgress,
         })

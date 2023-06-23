@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage, Transcript as TranscriptType } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import {
     ChatUITextAreaProps,
@@ -19,7 +19,7 @@ import styles from './Transcript.module.css'
 
 export const Transcript: React.FunctionComponent<
     {
-        transcript: ChatMessage[]
+        transcript: TranscriptType
         messageInProgress: ChatMessage | null
         messageBeingEdited: boolean
         setMessageBeingEdited: (input: boolean) => void
@@ -76,25 +76,20 @@ export const Transcript: React.FunctionComponent<
                     top: transcriptContainerRef.current.scrollHeight,
                 })
             }
-
-            // scroll to the end when messages are loaded
-            transcriptContainerRef.current.scrollTo({
-                top: transcriptContainerRef.current.scrollHeight,
-            })
         }
     }, [transcript, transcriptContainerRef])
 
-    // Scroll down whenever a new message is received.
-    const lastMessageSpeaker = transcript[transcript.length - 1]?.speaker
+    // Scroll down whenever a new message is received or a transcript is loaded for the first time
+    const lastMessageSpeaker = transcript.messages[transcript.messages.length - 1]?.speaker
     useEffect(() => {
         transcriptContainerRef.current?.scrollTo({
             top: transcriptContainerRef.current.scrollHeight,
         })
-    }, [lastMessageSpeaker])
+    }, [lastMessageSpeaker, transcript.id])
 
     return (
         <div ref={transcriptContainerRef} className={classNames(className, styles.container)}>
-            {transcript.map(
+            {transcript.messages.map(
                 (message, index) =>
                     message?.displayText && (
                         <TranscriptItem
@@ -102,7 +97,7 @@ export const Transcript: React.FunctionComponent<
                             key={index}
                             message={message}
                             inProgress={false}
-                            beingEdited={index > 0 && transcript.length - index === 2 && messageBeingEdited}
+                            beingEdited={index > 0 && transcript.messages.length - index === 2 && messageBeingEdited}
                             setBeingEdited={setMessageBeingEdited}
                             fileLinkComponent={fileLinkComponent}
                             codeBlocksCopyButtonClassName={codeBlocksCopyButtonClassName}
@@ -114,11 +109,11 @@ export const Transcript: React.FunctionComponent<
                             textAreaComponent={textAreaComponent}
                             EditButtonContainer={EditButtonContainer}
                             editButtonOnSubmit={editButtonOnSubmit}
-                            showEditButton={index > 0 && transcript.length - index === 2}
+                            showEditButton={index > 0 && transcript.messages.length - index === 2}
                             FeedbackButtonsContainer={FeedbackButtonsContainer}
                             feedbackButtonsOnSubmit={feedbackButtonsOnSubmit}
                             copyButtonOnSubmit={copyButtonOnSubmit}
-                            showFeedbackButtons={index > 0 && transcript.length - index === 1}
+                            showFeedbackButtons={index > 0 && transcript.messages.length - index === 1}
                             submitButtonComponent={submitButtonComponent}
                             chatInputClassName={chatInputClassName}
                         />
