@@ -36,6 +36,9 @@ func TestCachedSearcher(t *testing.T) {
 			1: {},
 			2: {HasSymbols: true},
 		},
+		Stats: zoekt.RepoStats{
+			Repos: 2,
+		},
 	}
 
 	if !cmp.Equal(have, want) {
@@ -51,7 +54,12 @@ func TestCachedSearcher(t *testing.T) {
 	s.List(ctx, &zoektquery.Const{Value: true}, nil)
 
 	have, _ = s.List(ctx, &zoektquery.Const{Value: true}, nil)
-	want = &zoekt.RepoList{Repos: ms.FakeStreamer.Repos}
+	want = &zoekt.RepoList{
+		Repos: ms.FakeStreamer.Repos,
+		Stats: zoekt.RepoStats{
+			Repos: len(ms.FakeStreamer.Repos),
+		},
+	}
 
 	diffOpts := cmpopts.IgnoreUnexported(zoekt.Repository{})
 	if d := cmp.Diff(want, have, diffOpts); d != "" {
@@ -68,7 +76,12 @@ func TestCachedSearcher(t *testing.T) {
 
 	for {
 		have, _ = s.List(ctx, &zoektquery.Const{Value: true}, nil)
-		want = &zoekt.RepoList{Repos: ms.FakeStreamer.Repos}
+		want = &zoekt.RepoList{
+			Repos: ms.FakeStreamer.Repos,
+			Stats: zoekt.RepoStats{
+				Repos: len(ms.FakeStreamer.Repos),
+			},
+		}
 
 		if !cmp.Equal(have, want, diffOpts) {
 			time.Sleep(10 * time.Millisecond)
