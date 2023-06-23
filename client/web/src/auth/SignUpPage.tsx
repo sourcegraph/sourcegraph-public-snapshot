@@ -81,7 +81,8 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
 
-            window.location.replace(returnTo)
+            // Redirect page to `/get-cody`, post signup.
+            window.location.replace('get-cody')
 
             return Promise.resolve()
         })
