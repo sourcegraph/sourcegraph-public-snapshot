@@ -84,14 +84,6 @@
         "description": "Discover how Cody can help you write and understand code faster.",
         "steps": [
           {
-            "id": "setup",
-            "title": "Setup Cody",
-            "description": "Get started by logging into Sourcegraph and setting up Cody.\n[Setup Cody](command:cody.walkthrough.showLogin)",
-            "media": {
-              "markdown": "walkthroughs/setup.md"
-            }
-          },
-          {
             "id": "chat",
             "title": "Ask Cody a Question",
             "description": "Cody writes code and answers questions using your own code graph as context.\n[Open Chat](command:cody.walkthrough.showChat)",
