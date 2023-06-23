@@ -13,7 +13,7 @@ import styles from './BatchChangesListIntro.module.scss'
  * Ie. After 5.0 is cut, this should be bumped to 5.1, and so on. This ensures we
  * always render the right changelog.
  */
-const CURRENT_VERSION = '5.2'
+const CURRENT_VERSION = '5.1'
 /**
  * SHOW_CHANGELOG has to be set to true when a changelog entry is added for a release.
  * After every release, this will be set back to `false`. Chromatic will also verify
@@ -43,15 +43,15 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                     <H4 as={H3}>Batch Changes updates in version {CURRENT_VERSION}</H4>
                     <ul className="mb-0 pl-3">
                         <li>
-                            Batch Changes can now sign commits created on GitHub{' '}
+                            Batch Changes can now{' '}
                             <Link
-                                to="/help/admin/executors/deploy_executors#using-private-registries"
                                 rel="noopener"
+                                to="/help/admin/config/batch_changes#commit-signing-for-github"
                                 target="_blank"
                             >
-                                via GitHub Apps
-                            </Link>
-                            .{' '}
+                                sign commits
+                            </Link>{' '}
+                            created on GitHub via GitHub Apps.{' '}
                             {viewerIsAdmin ? (
                                 <>
                                     {' '}
@@ -81,6 +81,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                             Batch Changes now supports per-batch-change control for pushing to a fork of the upstream
                             repository with the batch spec property{' '}
                             <Link
+                                rel="noopener"
                                 to="/help/batch_changes/references/batch_spec_yaml_reference#changesettemplate-fork"
                                 target="_blank"
                             >
@@ -92,6 +93,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                             Branches created by Batch Changes can now be automatically deleted on the code host upon
                             merging or closing a changeset by enabling the site config setting{' '}
                             <Link
+                                rel="noopener"
                                 to="/help/admin/config/batch_changes#automatically-delete-branches-on-merge-close"
                                 target="_blank"
                             >
