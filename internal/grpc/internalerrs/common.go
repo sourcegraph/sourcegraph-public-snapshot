@@ -1,6 +1,7 @@
 package internalerrs
 
 import (
+	"context"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -213,4 +214,26 @@ func findNonUTF8StringFields(m proto.Message) ([]string, error) {
 	}
 
 	return fields, nil
+}
+
+// massageIntoStatusErr converts an error into a status.Status if possible.
+func massageIntoStatusErr(err error) (s *status.Status, ok bool) {
+	if err == nil {
+		return nil, false
+	}
+
+	if s, ok := status.FromError(err); ok {
+		return s, true
+	}
+
+	if errors.Is(err, context.Canceled) {
+		return status.New(codes.Canceled, context.Canceled.Error()), true
+
+	}
+
+	if errors.Is(err, context.DeadlineExceeded) {
+		return status.New(codes.DeadlineExceeded, context.DeadlineExceeded.Error()), true
+	}
+
+	return nil, false
 }

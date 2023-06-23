@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var metricGRPCMethodStatus = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -97,7 +96,7 @@ func doObservation(serviceName, methodName string, rpcErr error) {
 		return
 	}
 
-	s, ok := status.FromError(rpcErr)
+	s, ok := massageIntoStatusErr(rpcErr)
 	if !ok {
 		// An error occurred, but it was not an error that has a status.Status implementation. We record this as an unknown error.
 		metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, codes.Unknown.String(), "false").Inc()
