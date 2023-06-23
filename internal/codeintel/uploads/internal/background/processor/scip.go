@@ -3,7 +3,6 @@ package processor
 import (
 	"bytes"
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"io"
 	"sort"
 
@@ -11,8 +10,9 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/internal/lsifstore"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -299,16 +299,6 @@ func ignorePaths(ctx context.Context, documentRelativePaths []string, root strin
 
 	return ignorePathSet, nil
 }
-
-//// readExternalSymbols inverts the external symbols from the given index into a map keyed by name.
-//func readExternalSymbols(index *scip.Index) map[string]*scip.SymbolInformation {
-//	externalSymbolsByName := make(map[string]*scip.SymbolInformation, len(index.ExternalSymbols))
-//	for _, symbol := range index.ExternalSymbols {
-//		externalSymbolsByName[symbol.Symbol] = symbol
-//	}
-//
-//	return externalSymbolsByName
-//}
 
 // processDocument canonicalizes and serializes the given document for persistence.
 func processDocument(document *scip.Document, externalSymbolsByName map[string]*scip.SymbolInformation) lsifstore.ProcessedSCIPDocument {
