@@ -93,6 +93,7 @@ interface OwnerListProps {
     repoID: string
     filePath: string
     refetch: any
+    showAddOwnerButton?: boolean
 }
 
 export const OwnerList: FC<OwnerListProps> = ({
@@ -103,6 +104,7 @@ export const OwnerList: FC<OwnerListProps> = ({
     repoID,
     filePath,
     refetch,
+    showAddOwnerButton,
 }) => {
     const [removeOwnerError, setRemoveOwnerError] = useState<Error | undefined>(undefined)
     const [openAddOwnerModal, setOpenAddOwnerModal] = useState<boolean>(false)
@@ -114,6 +116,12 @@ export const OwnerList: FC<OwnerListProps> = ({
         setOpenAddOwnerModal(false)
     }, [])
 
+    const addOwnerButton = (): JSX.Element | undefined =>
+        showAddOwnerButton ? (
+            <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
+                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
+            </Button>
+        ) : undefined
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -130,23 +138,12 @@ export const OwnerList: FC<OwnerListProps> = ({
                         <ErrorAlert error={removeOwnerError} prefix="Error promoting an owner" className="mt-2" />
                     </div>
                 )}
-                {totalCount === 0 ? (
-                    <NoOwnershipAlert isDirectory={isDirectory} />
-                ) : (
-                    <PageHeader
-                        path={[{ text: 'Owners' }]}
-                        className="mb-3"
-                        actions={
-                            <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
-                            </Button>
-                        }
-                    >
-                        <PageHeader.Heading className={styles.heading} as="h4">
-                            Owners
-                        </PageHeader.Heading>
-                    </PageHeader>
-                )}
+                <PageHeader className="mb-3" actions={addOwnerButton()}>
+                    <PageHeader.Heading className={styles.heading} as="h4">
+                        Owners
+                    </PageHeader.Heading>
+                </PageHeader>
+                {totalCount === 0 && <NoOwnershipAlert isDirectory={isDirectory} />}
                 <table className={styles.table}>
                     <thead>
                         <tr className="sr-only">
@@ -176,6 +173,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                                         filePath={filePath}
                                         reasons={ownership.reasons}
                                         setRemoveOwnerError={setRemoveOwnerError}
+                                        isDirectory={isDirectory}
                                     />
                                 </Fragment>
                             ))}
@@ -223,6 +221,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                                             filePath={filePath}
                                             refetch={refetch}
                                             setRemoveOwnerError={setRemoveOwnerError}
+                                            isDirectory={isDirectory}
                                         />
                                     </Fragment>
                                 )
@@ -237,6 +236,11 @@ export const OwnerList: FC<OwnerListProps> = ({
     return (
         <div className={styles.contents}>
             <OwnExplanation />
+            <PageHeader className="mb-3" actions={addOwnerButton()}>
+                <PageHeader.Heading className={styles.heading} as="h4">
+                    Owners
+                </PageHeader.Heading>
+            </PageHeader>
             <NoOwnershipAlert isDirectory={isDirectory} />
         </div>
     )

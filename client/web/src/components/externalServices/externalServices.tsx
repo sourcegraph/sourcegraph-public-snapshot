@@ -618,8 +618,7 @@ const GITHUB_APP: AddExternalServiceOptions = {
 export const gitHubAppConfig = (
     baseURL: string | null,
     appID: string | null,
-    installationID: string | null,
-    org: string | null
+    installationID: string | null
 ): AddExternalServiceOptions => ({
     ...GITHUB_APP,
     defaultConfig: `{
@@ -627,9 +626,9 @@ export const gitHubAppConfig = (
   "gitHubAppDetails": {
     "installationID": ${installationID ?? -1},
     "appID": ${appID ?? -1},
-    "baseURL": "${baseURL ?? ''}"
+    "baseURL": "${baseURL ?? ''}",
+    "cloneAllRepositories": true
   },
-  "orgs": ["${org ?? ''}"],
   "authorization": {}
 }`,
 })
