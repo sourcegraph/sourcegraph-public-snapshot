@@ -121,7 +121,6 @@ export class AnthropicProvider extends Provider {
         // Handle multiline completion indentation and remove overlap with suffx.
         if (this.multilineMode === 'block') {
             completion = truncateMultilineCompletion(completion, this.prefix, this.suffix, this.languageId)
-            completion = trimUntilSuffix(completion, this.suffix)
         }
 
         // Remove incomplete lines in single-line completions
@@ -132,6 +131,8 @@ export class AnthropicProvider extends Provider {
                 completion = lines.slice(0, allowedNewlines).join('\n')
             }
         }
+
+        completion = trimUntilSuffix(completion, this.suffix)
 
         // Trim start and end of the completion to remove all trailing whitespace.
         return completion.trim()
@@ -151,7 +152,7 @@ export class AnthropicProvider extends Provider {
                     temperature: 0.5,
                     messages: prompt,
                     maxTokensToSample: this.responseTokens,
-                    stopSequences: [anthropic.HUMAN_PROMPT],
+                    stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG],
                 }
                 break
             }
@@ -160,8 +161,7 @@ export class AnthropicProvider extends Provider {
                     temperature: 0.5,
                     messages: prompt,
                     maxTokensToSample: Math.min(100, this.responseTokens),
-                    // '\n' contributed the most to a sub 1 second response latency
-                    stopSequences: [anthropic.HUMAN_PROMPT, '\n', '\n\n'],
+                    stopSequences: [anthropic.HUMAN_PROMPT, CLOSING_CODE_TAG, '\n\n'],
                 }
                 break
             }

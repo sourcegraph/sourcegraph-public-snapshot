@@ -204,7 +204,7 @@ describe('Cody completions', () => {
                     this.startLine =",
             }
         `)
-        expect(requests[0]!.stopSequences).toEqual(['\n\nHuman:', '\n', '\n\n'])
+        expect(requests[0]!.stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
     it('does not make a request when in the middle of a word', async () => {
@@ -339,6 +339,53 @@ describe('Cody completions', () => {
     })
 
     describe('multi-line completions', () => {
+        it('cuts-off redundant closing brackets on the start indent level', async () => {
+            const { completions } = await complete(
+                `
+            describe('bubbleSort', () => {
+                it('bubbleSort test case', () => {${CURSOR_MARKER}
+
+                })
+            })
+            `,
+                [
+                    createCompletionResponse(`const unsortedArray = [4,3,78,2,0,2]
+        const sortedArray = bubbleSort(unsortedArray)
+        expect(sortedArray).toEqual([0,2,2,3,4,78])
+    })
+})`),
+                ]
+            )
+
+            expect(completions).toMatchInlineSnapshot(`
+            Array [
+              InlineCompletionItem {
+                "insertText": "const unsortedArray = [4,3,78,2,0,2]
+                    const sortedArray = bubbleSort(unsortedArray)
+                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
+              },
+            ]
+        `)
+        })
+
+        it('keeps the closing bracket', async () => {
+            const { completions } = await complete(`function printHello(${CURSOR_MARKER})`, [
+                createCompletionResponse(` {
+    console.log('Hello');
+}`),
+            ])
+
+            expect(completions).toMatchInlineSnapshot(`
+            Array [
+              InlineCompletionItem {
+                "insertText": "{
+                console.log('Hello');
+            }",
+              },
+            ]
+        `)
+        })
+
         it('triggers a multi-line completion at the start of a block', async () => {
             const { requests } = await complete(`function bubbleSort() {\n  ${CURSOR_MARKER}`)
 
@@ -392,14 +439,14 @@ describe('Cody completions', () => {
             const { requests } = await complete(`function looksLegit() {\n  ${CURSOR_MARKER}`, undefined, 'elixir')
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).toContain('\n')
+            expect(requests[0]!.stopSequences).toContain('\n\n')
         })
 
         it('requires an indentation to start a block', async () => {
             const { requests } = await complete(`function bubbleSort() {\n${CURSOR_MARKER}`)
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).toContain('\n')
+            expect(requests[0]!.stopSequences).toContain('\n\n')
         })
 
         it('works with python', async () => {

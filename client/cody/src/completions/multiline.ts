@@ -2,7 +2,12 @@ import detectIndent from 'detect-indent'
 
 import { PrefixComponents, getEditorTabSize, indentation } from './text-processing'
 
-const OPENING_BRACKET_REGEX = /[([{]$/
+const BRACKET_PAIR = {
+    '(': ')',
+    '[': ']',
+    '{': '}',
+} as const
+const OPENING_BRACKET_REGEX = /([([{])$/
 export function detectMultilineMode(
     prefix: string,
     prevNonEmptyLine: string,
@@ -39,6 +44,9 @@ export function checkOddIndentation(completion: string, prefix: PrefixComponents
     return completion.length > 0 && ODD_INDENTATION_REGEX.test(completion) && prefix.tail.rearSpace.length > 0
 }
 
+/**
+ * Adjusts the indentation of a multiline completion to match the current editor indentation.
+ */
 function adjustIndentation(text: string, originalIndent: number, newIndent: number): string {
     const lines = text.split('\n')
 
@@ -77,6 +85,52 @@ function ensureSameOrLargerIndentation(completion: string): string {
     return completion
 }
 
+/**
+ * If a completion starts with an opening bracket and a suffix starts with
+ * the corresponding closing bracket, we include the last closing bracket of the completion.
+ * E.g., function foo(__CURSOR__)
+ *
+ * We can do this because we know that the existing block is already closed, which means that
+ * new blocks need to be closed separately.
+ * E.g. function foo() { console.log('hello') }
+ */
+function shouldIncludeClosingLineBasedOnBrackets(
+    prefixIndentationWithFirstCompletionLine: string,
+    suffix: string
+): boolean {
+    const matches = prefixIndentationWithFirstCompletionLine.match(OPENING_BRACKET_REGEX)
+
+    if (matches && matches.length > 0) {
+        const openingBracket = matches[0] as keyof typeof BRACKET_PAIR
+        const closingBracket = BRACKET_PAIR[openingBracket]
+
+        return Boolean(openingBracket) && suffix.startsWith(closingBracket)
+    }
+
+    return false
+}
+
+/**
+ * Only include a closing line (e.g. `}`) if the block is empty yet if the block is already closed.
+ * We detect this by looking at the indentation of the next non-empty line.
+ */
+function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine: string, suffix: string): boolean {
+    const includeClosingLineBasedOnBrackets = shouldIncludeClosingLineBasedOnBrackets(
+        prefixIndentationWithFirstCompletionLine,
+        suffix
+    )
+    const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
+
+    const firstNewLineIndex = suffix.indexOf('\n') + 1
+    const nextNonEmptyLine =
+        suffix
+            .slice(firstNewLineIndex)
+            .split('\n')
+            .find(line => line.trim().length > 0) ?? ''
+
+    return indentation(nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
+}
+
 export function truncateMultilineCompletion(
     completion: string,
     prefix: string,
@@ -102,6 +156,7 @@ export function truncateMultilineCompletion(
     const prefixLastNewline = prefix.lastIndexOf('\n')
     const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewline + 1)
     const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
+    const hasEmptyCompletionLine = prefixIndentationWithFirstCompletionLine.trim() === ''
 
     // Normalize responses that start with a newline followed by the exact
     // indentation of the first line.
@@ -110,18 +165,7 @@ export function truncateMultilineCompletion(
         lines[0] = lines[0].trimStart()
     }
 
-    const firstNewLineIndex = suffix.indexOf('\n') + 1
-    const nextNonEmptyLine =
-        suffix
-            .slice(firstNewLineIndex)
-            .split('\n')
-            .find(line => line.trim().length > 0) ?? ''
-
-    // Only include a closing line (e.g. `}`) if the block is empty yet. We
-    // detect this by looking at the indentation of the next non-empty line.
-    const includeClosingLine =
-        indentation(nextNonEmptyLine) < startIndent ||
-        OPENING_BRACKET_REGEX.test(prefixIndentationWithFirstCompletionLine)
+    const includeClosingLine = shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine, suffix)
 
     let cutOffIndex = lines.length
     for (let i = 0; i < lines.length; i++) {
@@ -131,9 +175,10 @@ export function truncateMultilineCompletion(
             continue
         }
 
-        // TODO: need to change this check to <= to correctly cut-off multiline completions
-        // triggered by the OPENING_BRACKET_REGEX match. It currently breaks python unit tests.
-        if (indentation(line) < startIndent) {
+        if (
+            (indentation(line) <= startIndent && !hasEmptyCompletionLine) ||
+            (indentation(line) < startIndent && hasEmptyCompletionLine)
+        ) {
             // When we find the first block below the start indentation, only
             // include it if it is an end block
             if (includeClosingLine && config.blockEnd && line.trim().startsWith(config.blockEnd)) {
