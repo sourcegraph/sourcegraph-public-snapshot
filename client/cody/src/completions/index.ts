@@ -218,7 +218,14 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffixPercentage: this.suffixPercentage,
         }
 
-        const multilineMode = detectMultilineMode(prefix, prevNonEmptyLine, sameLinePrefix, sameLineSuffix, languageId)
+        const multilineMode = detectMultilineMode(
+            prefix,
+            prevNonEmptyLine,
+            sameLinePrefix,
+            sameLineSuffix,
+            languageId,
+            this.providerConfig.enableExtendedMultilineTriggers
+        )
         if (multilineMode === 'block') {
             timeout = 100
             completers.push(

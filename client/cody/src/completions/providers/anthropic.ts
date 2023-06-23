@@ -196,6 +196,7 @@ export function createProviderConfig(anthropicOptions: AnthropicOptions): Provid
             return new AnthropicProvider(options, anthropicOptions)
         },
         maximumContextCharacters: tokensToChars(anthropicOptions.contextWindowTokens),
+        enableExtendedMultilineTriggers: true,
         identifier: 'anthropic',
     }
 }

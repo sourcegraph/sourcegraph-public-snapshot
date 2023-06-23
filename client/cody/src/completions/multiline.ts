@@ -13,14 +13,15 @@ export function detectMultilineMode(
     prevNonEmptyLine: string,
     sameLinePrefix: string,
     sameLineSuffix: string,
-    languageId: string
+    languageId: string,
+    enableExtendedTriggers: boolean
 ): null | 'block' {
     const config = getLanguageConfig(languageId)
     if (!config) {
         return null
     }
 
-    if (sameLinePrefix.match(OPENING_BRACKET_REGEX)) {
+    if (enableExtendedTriggers && sameLinePrefix.match(OPENING_BRACKET_REGEX)) {
         return 'block'
     }
 

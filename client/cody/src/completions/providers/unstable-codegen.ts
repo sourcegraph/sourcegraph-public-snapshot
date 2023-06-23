@@ -149,6 +149,7 @@ export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOpti
             return new UnstableCodeGenProvider(options, unstableCodeGenOptions)
         },
         maximumContextCharacters: contextWindowChars,
+        enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
     }
 }

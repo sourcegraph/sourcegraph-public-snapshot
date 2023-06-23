@@ -96,6 +96,7 @@ export function createProviderConfig(unstableHuggingFaceOptions: UnstableHugging
             return new UnstableHuggingFaceProvider(options, unstableHuggingFaceOptions)
         },
         maximumContextCharacters: contextWindowChars,
+        enableExtendedMultilineTriggers: true,
         identifier: PROVIDER_IDENTIFIER,
     }
 }
