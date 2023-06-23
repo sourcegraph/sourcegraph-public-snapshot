@@ -14,25 +14,19 @@ suite('API tests', () => {
     test('History', () => {
         const h = new VSCodeHistory(() => null)
         h.addItem({
-            document: {
-                uri: vscode.Uri.file('foo.ts'),
-                languageId: 'ts',
-            },
+            uri: vscode.Uri.file('foo.ts').toString(),
+            languageId: 'ts',
         })
         h.addItem({
-            document: {
-                uri: vscode.Uri.file('bar.ts'),
-                languageId: 'ts',
-            },
+            uri: vscode.Uri.file('bar.ts').toString(),
+            languageId: 'ts',
         })
         h.addItem({
-            document: {
-                uri: vscode.Uri.file('foo.ts'),
-                languageId: 'ts',
-            },
+            uri: vscode.Uri.file('foo.ts').toString(),
+            languageId: 'ts',
         })
         assert.deepStrictEqual(
-            h.lastN(20).map(h => h.document.uri.fsPath),
+            h.lastN(20).map(h => vscode.Uri.parse(h.uri).fsPath),
             ['/foo.ts', '/bar.ts']
         )
     })

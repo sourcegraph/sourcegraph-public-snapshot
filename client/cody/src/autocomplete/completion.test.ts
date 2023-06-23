@@ -38,7 +38,7 @@ jest.mock('vscode', () => ({
     },
 }))
 
-jest.mock('./context-embeddings.ts', () => ({
+jest.mock('@sourcegraph/cody-shared/src/autocomplete/context-embeddings.ts', () => ({
     getContextFromEmbeddings: () => [],
 }))
 
