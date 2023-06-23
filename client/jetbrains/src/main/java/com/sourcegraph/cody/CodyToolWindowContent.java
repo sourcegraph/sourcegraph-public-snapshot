@@ -448,7 +448,11 @@ class CodyToolWindowContent implements UpdatableChat {
               Chat chat = new Chat(instanceUrl, accessTokenOrEmpty);
               if (CodyAgent.isConnected(project)) {
                 try {
-                  chat.sendMessageViaAgent(CodyAgent.getClient(project),CodyAgent.getInitializedServer(project), humanMessage, this);
+                  chat.sendMessageViaAgent(
+                      CodyAgent.getClient(project),
+                      CodyAgent.getInitializedServer(project),
+                      humanMessage,
+                      this);
                 } catch (Exception e) {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }
