@@ -55,10 +55,10 @@ export const CodeHostsNavigation: FC<CodeHostsNavigationProps> = props => {
     }
 
     // Filter out all other external services since we don't properly support them
-    // in the wizard, "Other" external services are used as local repositories setup in
+    // in the wizard, "Other" and "LocalGit" external services are used as local repositories setup in
     // Sourcegraph App for which we have a special setup step
     const nonOtherExternalServices = data.externalServices.nodes.filter(
-        service => service.kind !== ExternalServiceKind.OTHER
+        service => service.kind !== ExternalServiceKind.OTHER && service.kind !== ExternalServiceKind.LOCALGIT
     )
 
     if (nonOtherExternalServices.length === 0) {

@@ -2,10 +2,12 @@ package repos
 
 import (
 	"context"
+	"net/url"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/grafana/regexp"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -53,32 +55,44 @@ func (s *LocalGitSource) ExternalServices() types.ExternalServices {
 }
 
 func (s *LocalGitSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	urn := s.svc.URN()
-	repoPaths := getRepoPaths(s.config, s.logger)
-	for _, r := range repoPaths {
-		uri := "file://" + r.Path
-		s.logger.Info("found repo ", log.String("uri", uri))
+	for _, r := range s.Repos(ctx) {
+		s.logger.Info("found repo ", log.String("uri", r.URI))
 		results <- SourceResult{
 			Source: s,
-			Repo: &types.Repo{
-				Name: r.fullName(),
-				URI:  uri,
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          uri,
-					ServiceType: extsvc.VariantLocalGit.AsType(),
-					ServiceID:   uri,
-				},
-				Sources: map[string]*types.SourceInfo{
-					urn: {
-						ID:       urn,
-						CloneURL: uri,
-					},
-				},
-				// Looks like this needs to be convertible to a JSON object
-				Metadata: struct{}{},
-			},
+			Repo:   r,
 		}
 	}
+}
+
+// Repos is called internall by ListRepos and provides a simpler API for getting
+// a list of corresponding repositories from disk (e.g. for GraphQL responses).
+func (s *LocalGitSource) Repos(ctx context.Context) []*types.Repo {
+	var repos []*types.Repo
+
+	urn := s.svc.URN()
+	for _, r := range getRepoPaths(s.config, s.logger) {
+		uri := "file://" + r.Path
+		repos = append(repos, &types.Repo{
+			Name: r.fullName(),
+			URI:  uri,
+			ExternalRepo: api.ExternalRepoSpec{
+				ID:          uri,
+				ServiceType: extsvc.VariantLocalGit.AsType(),
+				ServiceID:   uri,
+			},
+			Sources: map[string]*types.SourceInfo{
+				urn: {
+					ID:       urn,
+					CloneURL: uri,
+				},
+			},
+			Metadata: &extsvc.LocalGitMetadata{
+				AbsRepoPath: r.Path,
+			},
+		})
+	}
+
+	return repos
 }
 
 // Checks if git thinks the given path is a valid .git folder for a repository
@@ -95,7 +109,8 @@ func isBareRepo(path string) bool {
 
 // Check if git thinks the given path is a proper git checkout
 func isGitRepo(path string) bool {
-	// Executing git rev-parse --git-dir in the root of a worktree returns .git
+	// Executing git rev-parse in the root of a worktree returns an error if the
+	// path is not a git repo.
 	c := exec.Command("git", "-C", path, "rev-parse")
 	err := c.Run()
 	return err == nil
@@ -107,7 +122,10 @@ type repoConfig struct {
 }
 
 func (c repoConfig) fullName() api.RepoName {
-	name := ""
+	name := gitRemote(c.Path)
+	if name != "" {
+		return api.RepoName(name)
+	}
 	if c.Group != "" {
 		name = c.Group + "/"
 	}
@@ -139,4 +157,68 @@ func getRepoPaths(config *schema.LocalGitExternalService, logger log.Logger) []r
 	}
 
 	return paths
+}
+
+// Returns a string of the git remote if it exists
+func gitRemote(path string) string {
+	// Executing git rev-parse --git-dir in the root of a worktree returns .git
+	c := exec.Command("git", "remote", "get-url", "origin")
+	c.Dir = path
+	out, err := c.CombinedOutput()
+
+	if err != nil {
+		return ""
+	}
+
+	return convertGitCloneURLToCodebaseName(string(out))
+}
+
+// Converts a git clone URL to the codebase name that includes the slash-separated code host, owner, and repository name
+// This should captures:
+// - "github:sourcegraph/sourcegraph" a common SSH host alias
+// - "https://github.com/sourcegraph/deploy-sourcegraph-k8s.git"
+// - "git@github.com:sourcegraph/sourcegraph.git"
+func convertGitCloneURLToCodebaseName(cloneURL string) string {
+	cloneURL = strings.TrimSpace(cloneURL)
+	if cloneURL == "" {
+		return ""
+	}
+	uri, err := url.Parse(strings.Replace(cloneURL, "git@", "", 1))
+	if err != nil {
+		return ""
+	}
+	// Handle common Git SSH URL format
+	match := regexp.MustCompile(`git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?`).FindStringSubmatch(cloneURL)
+	if strings.HasPrefix(cloneURL, "git@") && len(match) > 0 {
+		host := match[1]
+		owner := match[2]
+		repo := match[3]
+		return host + "/" + owner + "/" + repo
+	}
+
+	buildName := func(prefix string, uri *url.URL) string {
+		name := uri.Path
+		if name == "" {
+			name = uri.Opaque
+		}
+		return prefix + strings.TrimSuffix(name, ".git")
+	}
+
+	// Handle GitHub URLs
+	if strings.HasPrefix(uri.Scheme, "github") || strings.HasPrefix(uri.String(), "github") {
+		return buildName("github.com/", uri)
+	}
+	// Handle GitLab URLs
+	if strings.HasPrefix(uri.Scheme, "gitlab") || strings.HasPrefix(uri.String(), "gitlab") {
+		return buildName("gitlab.com/", uri)
+	}
+	// Handle HTTPS URLs
+	if strings.HasPrefix(uri.Scheme, "http") && uri.Host != "" && uri.Path != "" {
+		return buildName(uri.Host, uri)
+	}
+	// Generic URL
+	if uri.Host != "" && uri.Path != "" {
+		return buildName(uri.Host, uri)
+	}
+	return ""
 }

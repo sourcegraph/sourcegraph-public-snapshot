@@ -72,7 +72,7 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                 <Tooltip
                     content={
                         repositories.length > MAX_NUMBER_OF_REPOSITORIES
-                            ? `Select less repositores, Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos`
+                            ? `Select fewer repositories, Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos`
                             : repositories.length === 0
                             ? 'Select at least one repo to continue'
                             : undefined

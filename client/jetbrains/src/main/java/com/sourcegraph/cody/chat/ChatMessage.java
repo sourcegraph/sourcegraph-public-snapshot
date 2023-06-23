@@ -10,7 +10,7 @@ public class ChatMessage extends Message {
   private final @NotNull String displayText;
   private final @NotNull List<String> contextFiles;
 
-  private ChatMessage(
+  ChatMessage(
       @NotNull Speaker speaker,
       @NotNull String text,
       @NotNull String displayText,

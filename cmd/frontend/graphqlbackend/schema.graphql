@@ -7114,6 +7114,42 @@ type Site implements SettingsSubject {
     Whether Cody is enabled for this site.
     """
     isCodyEnabled: Boolean!
+
+    """
+    If Cody is enabled, this returns how Cody is configured to talk to the LLM.
+    """
+    codyLLMConfiguration: CodyLLMConfiguration
+}
+
+"""
+Cody LLM configuration contains information about how the main LLM used by Cody
+is configured.
+"""
+type CodyLLMConfiguration {
+    """
+    Name of the model being used for chat.
+    """
+    chatModel: String!
+    """
+    Maximum number of tokens client should use when talking to the chatModel.
+    """
+    chatModelMaxTokens: Int
+    """
+    Name of the model being used for fast chat.
+    """
+    fastChatModel: String!
+    """
+    Maximum number of tokens client should use when talking to the fastChatModel.
+    """
+    fastChatModelMaxTokens: Int
+    """
+    Name of the model being used for code completions.
+    """
+    completionModel: String!
+    """
+    Maximum number of tokens client should use when talking to the completionModel.
+    """
+    completionModelMaxTokens: Int
 }
 
 """

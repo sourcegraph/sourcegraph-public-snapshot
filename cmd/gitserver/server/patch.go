@@ -148,7 +148,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		t := time.Now()
 		// runRemoteGitCommand since one of our commands could be git push
-		out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
+		out, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
 
 		logger := logger.With(
 			log.String("prefix", prefix),

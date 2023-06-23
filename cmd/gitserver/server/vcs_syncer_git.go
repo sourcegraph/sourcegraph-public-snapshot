@@ -13,15 +13,21 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// GitRepoSyncer is a syncer for Git repositories.
-type GitRepoSyncer struct{}
+// gitRepoSyncer is a syncer for Git repositories.
+type gitRepoSyncer struct {
+	recordingCommandFactory *wrexec.RecordingCommandFactory
+}
 
-func (s *GitRepoSyncer) Type() string {
+func NewGitRepoSyncer(r *wrexec.RecordingCommandFactory) *gitRepoSyncer {
+	return &gitRepoSyncer{recordingCommandFactory: r}
+}
+
+func (s *gitRepoSyncer) Type() string {
 	return "git"
 }
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
-func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
+func (s *gitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
 	if isAlwaysCloningTestRemoteURL(remoteURL) {
 		return nil
 	}
@@ -48,7 +54,7 @@ func (s *GitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 }
 
 // CloneCommand returns the command to be executed for cloning a Git repository.
-func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error) {
+func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error) {
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return nil, errors.Wrapf(err, "clone failed to create tmp dir")
 	}
@@ -65,21 +71,21 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
+func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
-	if output, err := runRemoteGitCommand(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
+	if output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
 		return nil, &common.GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
 	}
 	return nil, nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote of a Git repository.
-func (s *GitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+func (s *gitRepoSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
 	return exec.CommandContext(ctx, "git", "remote", "show", remoteURL.String()), nil
 }
 
-func (s *GitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, configRemoteOpts bool) {
+func (s *gitRepoSyncer) fetchCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, configRemoteOpts bool) {
 	configRemoteOpts = true
 	if customCmd := customFetchCmd(ctx, remoteURL); customCmd != nil {
 		cmd = customCmd

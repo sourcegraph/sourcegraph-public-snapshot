@@ -45,7 +45,7 @@ export async function getContextMessagesFromSelection(
 
     return selectedTextContext.concat(
         [precedingText, followingText].flatMap(text =>
-            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName), {
+            getContextMessageWithResponse(populateCodeContextTemplate(text, fileName, repoName), {
                 fileName,
                 repoName,
                 revision,

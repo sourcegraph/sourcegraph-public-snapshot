@@ -558,14 +558,20 @@ type Completions struct {
 	AccessToken string `json:"accessToken,omitempty"`
 	// ChatModel description: The model used for chat completions. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	ChatModel string `json:"chatModel,omitempty"`
+	// ChatModelMaxTokens description: The maximum number of tokens to use as client when talking to chatModel. If not set, clients need to set their own limit.
+	ChatModelMaxTokens int `json:"chatModelMaxTokens,omitempty"`
 	// CompletionModel description: The model used for code completion. If using the default provider 'sourcegraph', a reasonable default model will be set.
 	CompletionModel string `json:"completionModel,omitempty"`
+	// CompletionModelMaxTokens description: The maximum number of tokens to use as client when talking to completionModel. If not set, clients need to set their own limit.
+	CompletionModelMaxTokens int `json:"completionModelMaxTokens,omitempty"`
 	// Enabled description: DEPRECATED. Use cody.enabled instead to turn Cody on/off.
 	Enabled *bool `json:"enabled,omitempty"`
 	// Endpoint description: The endpoint under which to reach the provider. Currently only used for provider types "sourcegraph", "openai" and "anthropic". The default values are "https://cody-gateway.sourcegraph.com", "https://api.openai.com/v1/chat/completions", and "https://api.anthropic.com/v1/complete" for Sourcegraph, OpenAI, and Anthropic, respectively.
 	Endpoint string `json:"endpoint,omitempty"`
 	// FastChatModel description: The model used for fast chat completions.
 	FastChatModel string `json:"fastChatModel,omitempty"`
+	// FastChatModelMaxTokens description: The maximum number of tokens to use as client when talking to fastChatModel. If not set, clients need to set their own limit.
+	FastChatModelMaxTokens int `json:"fastChatModelMaxTokens,omitempty"`
 	// Model description: DEPRECATED. Use chatModel instead.
 	Model string `json:"model,omitempty"`
 	// PerUserCodeCompletionsDailyLimit description: If > 0, enables the maximum number of code completions requests allowed to be made by a single user account in a day. On instances that allow anonymous requests, the rate limit is enforced by IP.
@@ -1040,6 +1046,8 @@ type GitHubAppDetails struct {
 	AppID int `json:"appID,omitempty"`
 	// BaseURL description: The base URL of the GitHub App.
 	BaseURL string `json:"baseURL,omitempty"`
+	// CloneAllRepositories description: Clone all repositories for this App installation.
+	CloneAllRepositories bool `json:"cloneAllRepositories,omitempty"`
 	// InstallationID description: The installation ID of this connection.
 	InstallationID int `json:"installationID,omitempty"`
 }

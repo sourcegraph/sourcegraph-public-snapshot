@@ -17,14 +17,17 @@ Embeddings for relevant code files must be enabled for each repository that you'
 > NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
 > See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
 
-Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md).
-After enabling Cody, navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
+Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
-> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
+Embeddings will not be generated for any repo unless an admin takes action. There are two ways to do this.
 
-<span class="virtual-br"></span>
+The recommended way of configuring embeddings is to use a policy. These are configured through the Admin UI using [policies](https://docs.sourcegraph.com/cody/explanations/policies). Policy based embeddings will be automatically updated based on the [update interval](#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings).
 
-> NOTE: You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
+To run a one-time embeddings job, an admin can manually schedule specific repositories for embedding by navigating to **Site admin > Cody** (`/site-admin/cody`) and entering the names of the repositories that should be embeded. Manual embeddings are useful for one-off embeddings or to run an embeddings job immediately. These will not be automatically updated.
+
+Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](#incremental-embeddings) are enabled.
+
+> NOTE: Generating embeddings sends code snippets to a third-party language party provider. By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
 
 ### Excluding files from embeddings
 

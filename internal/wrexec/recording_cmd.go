@@ -153,3 +153,8 @@ func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, 
 	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
 }
+
+// NewNoOpRecordingCommandFactory is a recording command factory that is intialised with a nil shouldRecord and maxSize 0. This is a helper for use in tests.
+func NewNoOpRecordingCommandFactory() *RecordingCommandFactory {
+	return &RecordingCommandFactory{shouldRecord: nil, maxSize: 0}
+}

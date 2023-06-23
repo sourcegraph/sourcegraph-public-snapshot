@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -20,13 +21,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/semaphore"
-	"golang.org/x/time/rate"
-
 	"github.com/sourcegraph/log"
-
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -34,6 +30,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
@@ -41,8 +40,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/semaphore"
+	"golang.org/x/time/rate"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type Test struct {
@@ -180,9 +183,10 @@ func TestExecRequest(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return &GitRepoSyncer{}, nil
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB: db,
+		DB:                      db,
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 	h := s.Handler()
 
@@ -258,47 +262,7 @@ func TestExecRequest(t *testing.T) {
 }
 
 func TestServer_handleP4Exec(t *testing.T) {
-	tests := []Test{
-		{
-			Name:         "Command",
-			Request:      newRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
-			ExpectedTrailers: http.Header{
-				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"42"},
-				"X-Exec-Stderr":      {"teststderr"},
-			},
-		},
-		{
-			Name:         "Error",
-			Request:      newRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "subcommand \"bad_command\" is not allowed",
-		},
-		{
-			Name:         "EmptyBody",
-			Request:      newRequest("POST", "/p4-exec", nil),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: `EOF`,
-		},
-		{
-			Name:         "EmptyInput",
-			Request:      newRequest("POST", "/p4-exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: `args must be greater than or equal to 1`,
-		},
-	}
-
-	s := &Server{
-		Logger:            logtest.Scoped(t),
-		ObservationCtx:    observation.TestContextTB(t),
-		skipCloneForTests: true,
-		DB:                database.NewMockDB(),
-	}
-	h := s.Handler()
-
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	defaultMockRunCommand := func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
 		case "users":
 			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
@@ -307,33 +271,219 @@ func TestServer_handleP4Exec(t *testing.T) {
 		}
 		return 0, nil
 	}
-	t.Cleanup(func() { runCommandMock = nil })
 
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
-			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
-			h.ServeHTTP(&w, test.Request)
+	t.Cleanup(func() {
+		updateRunCommandMock(nil)
+	})
 
-			res := w.Result()
-			if res.StatusCode != test.ExpectedCode {
-				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
-			}
+	startServer := func(t *testing.T) (handler http.Handler, client proto.GitserverServiceClient, cleanup func()) {
+		t.Helper()
 
-			body, err := io.ReadAll(res.Body)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if strings.TrimSpace(string(body)) != test.ExpectedBody {
-				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
-			}
+		logger := logtest.Scoped(t)
 
-			for k, v := range test.ExpectedTrailers {
-				if got := res.Trailer.Get(k); got != v[0] {
-					t.Errorf("wrong trailer %q: expected %q, got %q", k, v[0], got)
+		s := &Server{
+			Logger:                  logger,
+			ObservationCtx:          observation.TestContextTB(t),
+			skipCloneForTests:       true,
+			DB:                      database.NewMockDB(),
+			RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		}
+
+		server := defaults.NewServer(logger)
+		proto.RegisterGitserverServiceServer(server, &GRPCServer{Server: s})
+		handler = grpc.MultiplexHandlers(server, s.Handler())
+
+		srv := httptest.NewServer(handler)
+
+		u, _ := url.Parse(srv.URL)
+		conn, err := defaults.Dial(u.Host, logger.Scoped("gRPC client", ""))
+		if err != nil {
+			t.Fatalf("failed to dial: %v", err)
+		}
+
+		client = proto.NewGitserverServiceClient(conn)
+
+		return handler, client, func() {
+			srv.Close()
+			conn.Close()
+			server.Stop()
+		}
+	}
+
+	t.Run("gRPC", func(t *testing.T) {
+		readAll := func(execClient proto.GitserverService_P4ExecClient) ([]byte, error) {
+			var buf bytes.Buffer
+			for {
+				resp, err := execClient.Recv()
+				if err != nil {
+					if err == io.EOF {
+						return buf.Bytes(), nil
+					}
+					return nil, err
+				}
+
+				_, err = buf.Write(resp.GetData())
+				if err != nil {
+					t.Fatalf("failed to write data: %v", err)
 				}
 			}
+		}
+
+		t.Run("success", func(t *testing.T) {
+			updateRunCommandMock(defaultMockRunCommand)
+
+			_, client, closeFunc := startServer(t)
+			t.Cleanup(closeFunc)
+
+			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
+				Args: []string{"users"},
+			})
+			if err != nil {
+				t.Fatalf("failed to call P4Exec: %v", err)
+			}
+
+			data, err := readAll(stream)
+			if status.Code(err) != codes.OK {
+				t.Fatalf("expected no error, got %v", err)
+			}
+
+			expectedData := []byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31")
+
+			if diff := cmp.Diff(expectedData, data); diff != "" {
+				t.Fatalf("unexpected data (-want +got):\n%s", diff)
+			}
 		})
-	}
+
+		t.Run("empty request", func(t *testing.T) {
+			updateRunCommandMock(defaultMockRunCommand)
+
+			_, client, closeFunc := startServer(t)
+			t.Cleanup(closeFunc)
+
+			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{})
+			if err != nil {
+				t.Fatalf("failed to call P4Exec: %v", err)
+			}
+
+			_, err = readAll(stream)
+			if status.Code(err) != codes.InvalidArgument {
+				t.Fatalf("expected InvalidArgument error, got %v", err)
+			}
+		})
+
+		t.Run("disallowed command", func(t *testing.T) {
+
+			updateRunCommandMock(defaultMockRunCommand)
+
+			_, client, closeFunc := startServer(t)
+			t.Cleanup(closeFunc)
+
+			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
+				Args: []string{"bad_command"},
+			})
+			if err != nil {
+				t.Fatalf("failed to call P4Exec: %v", err)
+			}
+
+			_, err = readAll(stream)
+			if status.Code(err) != codes.InvalidArgument {
+				t.Fatalf("expected InvalidArgument error, got %v", err)
+			}
+		})
+
+		t.Run("context cancelled", func(t *testing.T) {
+			ctx, cancel := context.WithCancel(context.Background())
+
+			updateRunCommandMock(func(ctx context.Context, _ *exec.Cmd) (int, error) {
+				// fake a context cancellation that occurs while the process is running
+
+				cancel()
+				return 0, ctx.Err()
+			})
+
+			_, client, closeFunc := startServer(t)
+			t.Cleanup(closeFunc)
+
+			stream, err := client.P4Exec(ctx, &proto.P4ExecRequest{
+				Args: []string{"users"},
+			})
+			if err != nil {
+				t.Fatalf("failed to call P4Exec: %v", err)
+			}
+
+			_, err = readAll(stream)
+			if status.Code(err) != codes.Canceled {
+				t.Fatalf("expected codes.Cancelled error, got %v", err)
+			}
+		})
+
+	})
+
+	t.Run("HTTP", func(t *testing.T) {
+
+		tests := []Test{
+			{
+				Name:         "Command",
+				Request:      newRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
+				ExpectedCode: http.StatusOK,
+				ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
+				ExpectedTrailers: http.Header{
+					"X-Exec-Error":       {""},
+					"X-Exec-Exit-Status": {"42"},
+					"X-Exec-Stderr":      {"teststderr"},
+				},
+			},
+			{
+				Name:         "Error",
+				Request:      newRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
+				ExpectedCode: http.StatusBadRequest,
+				ExpectedBody: "subcommand \"bad_command\" is not allowed",
+			},
+			{
+				Name:         "EmptyBody",
+				Request:      newRequest("POST", "/p4-exec", nil),
+				ExpectedCode: http.StatusBadRequest,
+				ExpectedBody: `EOF`,
+			},
+			{
+				Name:         "EmptyInput",
+				Request:      newRequest("POST", "/p4-exec", strings.NewReader("{}")),
+				ExpectedCode: http.StatusBadRequest,
+				ExpectedBody: `args must be greater than or equal to 1`,
+			},
+		}
+
+		for _, test := range tests {
+			t.Run(test.Name, func(t *testing.T) {
+				updateRunCommandMock(defaultMockRunCommand)
+
+				handler, _, closeFunc := startServer(t)
+				t.Cleanup(closeFunc)
+
+				w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
+				handler.ServeHTTP(&w, test.Request)
+
+				res := w.Result()
+				if res.StatusCode != test.ExpectedCode {
+					t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
+				}
+
+				body, err := io.ReadAll(res.Body)
+				if err != nil {
+					t.Fatal(err)
+				}
+				if strings.TrimSpace(string(body)) != test.ExpectedBody {
+					t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
+				}
+
+				for k, v := range test.ExpectedTrailers {
+					if got := res.Trailer.Get(k); got != v[0] {
+						t.Errorf("wrong trailer %q: expected %q, got %q", k, v[0], got)
+					}
+				}
+			})
+		}
+	})
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
@@ -566,7 +716,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return &GitRepoSyncer{}, nil
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              NewCloneQueue(obctx, list.New()),
@@ -575,7 +725,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		cloneLimiter:            limiter.NewMutable(1),
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
-		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
+		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
 	}
 
@@ -1583,6 +1733,7 @@ func TestHandleBatchLog(t *testing.T) {
 				ObservationCtx:          observation.TestContextTB(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
 				DB:                      database.NewMockDB(),
+				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 			}
 			h := server.Handler()
 

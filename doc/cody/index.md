@@ -13,6 +13,8 @@ Cody is also available as an editor extension that can be connected to a Sourceg
   - [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
   - Jetbrains extension (coming soon)
 
+See the full [breakdown of features available by client](client_feature_availability.md).
+
 <div class="getting-started">
   <a class="btn btn-primary text-center" href="quickstart">★ Cody quickstart</a>
   <a class="btn text-center" href="explanations/use_cases">Cody use cases</a>
