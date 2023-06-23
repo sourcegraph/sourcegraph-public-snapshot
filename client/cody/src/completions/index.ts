@@ -147,26 +147,23 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
-        // Bypass cache if explicitly triggered
-        if (context.triggerKind !== vscode.InlineCompletionTriggerKind.Invoke) {
-            // Avoid showing completions when we're deleting code (Cody can only insert code at the
-            // moment)
-            const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
-            if (lastChange === 'del') {
-                // When a line was deleted, only look up cached items and only include them if the
-                // untruncated prefix matches. This fixes some weird issues where the completion would
-                // render if you insert whitespace but not on the original place when you delete it
-                // again
-                const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
-                if (cachedCompletions?.isExactPrefix) {
-                    return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
-                }
+        // Avoid showing completions when we're deleting code (Cody can only insert code at the
+        // moment)
+        const lastChange = this.lastContentChanges.get(document.fileName) ?? 'add'
+        if (lastChange === 'del') {
+            // When a line was deleted, only look up cached items and only include them if the
+            // untruncated prefix matches. This fixes some weird issues where the completion would
+            // render if you insert whitespace but not on the original place when you delete it
+            // again
+            const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
+            if (cachedCompletions?.isExactPrefix) {
                 return []
             }
-            const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
-            if (cachedCompletions) {
-                return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
-            }
+        }
+
+        const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
+        if (cachedCompletions) {
+            return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
         }
 
         const { context: similarCode, logSummary: contextSummary } = await getContext({
@@ -198,9 +195,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (/\w/.test(sameLineSuffix)) {
             return []
         }
+
         // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
         // suggested method names from the language server instead.
-        if (sameLinePrefix.endsWith('.')) {
+        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || sameLinePrefix.endsWith('.')) {
             return []
         }
 
