@@ -318,12 +318,13 @@ func TestGerritSource_UpdateChangeset(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.ErrorIs(t, err, want)
 	})
-	t.Run("multiple changes, error when loading change", func(t *testing.T) {
+	t.Run("multiple changes, error when setting change WIP", func(t *testing.T) {
 		cs, id, _ := mockGerritChangeset()
 		cs.ExternalID = id
 		cs.Metadata = &gerritbatches.AnnotatedChange{
 			Change: &gerrit.Change{
-				ID: testChangeIDPrefix + id,
+				ID:             testChangeIDPrefix + id,
+				WorkInProgress: true,
 			},
 		}
 		s, client := mockGerritSource()
@@ -334,6 +335,38 @@ func TestGerritSource_UpdateChangeset(t *testing.T) {
 		})
 		client.DeleteChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
 			assert.Equal(t, testChangeIDPrefix+id, changeID)
+			return nil
+		})
+		client.SetWIPFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
+			assert.Equal(t, id, changeID)
+			return want
+		})
+
+		err := s.UpdateChangeset(ctx, cs)
+		assert.NotNil(t, err)
+		assert.ErrorIs(t, err, want)
+	})
+	t.Run("multiple changes, error when loading change", func(t *testing.T) {
+		cs, id, _ := mockGerritChangeset()
+		cs.ExternalID = id
+		cs.Metadata = &gerritbatches.AnnotatedChange{
+			Change: &gerrit.Change{
+				ID:             testChangeIDPrefix + id,
+				WorkInProgress: true,
+			},
+		}
+		s, client := mockGerritSource()
+		want := errors.New("error")
+		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
+			assert.Equal(t, id, changeID)
+			return nil, gerrit.MultipleChangesError{}
+		})
+		client.DeleteChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
+			assert.Equal(t, testChangeIDPrefix+id, changeID)
+			return nil
+		})
+		client.SetWIPFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
+			assert.Equal(t, id, changeID)
 			return nil
 		})
 		client.GetChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) (*gerrit.Change, error) {
@@ -350,13 +383,18 @@ func TestGerritSource_UpdateChangeset(t *testing.T) {
 		cs.ExternalID = id
 		cs.Metadata = &gerritbatches.AnnotatedChange{
 			Change: &gerrit.Change{
-				ID: testChangeIDPrefix + id,
+				ID:             testChangeIDPrefix + id,
+				WorkInProgress: true,
 			},
 		}
 		change := mockGerritChange(&testProject, id)
 		s, client := mockGerritSource()
 		client.DeleteChangeFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
 			assert.Equal(t, testChangeIDPrefix+id, changeID)
+			return nil
+		})
+		client.SetWIPFunc.SetDefaultHook(func(ctx context.Context, changeID string) error {
+			assert.Equal(t, id, changeID)
 			return nil
 		})
 		hook1 := func(ctx context.Context, changeID string) (*gerrit.Change, error) {

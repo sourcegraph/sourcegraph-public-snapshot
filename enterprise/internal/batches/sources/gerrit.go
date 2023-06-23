@@ -194,6 +194,13 @@ func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error 
 			if err != nil {
 				return errors.Wrap(err, "deleting change")
 			}
+			// If the original PR was a WIP, the new one needs to be as well.
+			if originalPR.Change.WorkInProgress {
+				err = s.client.SetWIP(ctx, cs.ExternalID)
+				if err != nil {
+					return errors.Wrap(err, "setting updated change as WIP")
+				}
+			}
 			return s.LoadChangeset(ctx, cs)
 		} else {
 			if errcode.IsNotFound(err) {
