@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { CardBody, Card, H3, H4, Link, Code } from '@sourcegraph/wildcard'
+import { CardBody, Card, H3, H4, Link, Code, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 
@@ -43,6 +43,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<
                     <H4 as={H3}>Batch Changes updates in version {CURRENT_VERSION}</H4>
                     <ul className="mb-0 pl-3">
                         <li>
+                            <ProductStatusBadge status="beta" className="mr-1" />
                             Batch Changes can now{' '}
                             <Link
                                 rel="noopener"

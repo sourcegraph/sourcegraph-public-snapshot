@@ -2,7 +2,7 @@ import React from 'react'
 
 import { useLocation } from 'react-router-dom'
 
-import { Container, H3, Link, Text } from '@sourcegraph/wildcard'
+import { Container, H3, Link, ProductStatusBadge, Text } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../components/DismissibleAlert'
 import { UseShowMorePaginationResult } from '../../../components/FilteredConnection/hooks/useShowMorePagination'
@@ -59,7 +59,10 @@ export const CommitSigningIntegrations: React.FunctionComponent<
     const setupError = new URLSearchParams(location.search).get('error')
     return (
         <Container>
-            <H3>Commit signing integrations</H3>
+            <H3>
+                Commit signing integrations
+                <ProductStatusBadge status="beta" className="ml-2" />
+            </H3>
             <Text>
                 Connect GitHub Apps to enable Batch Changes to sign commits for your changesets.{' '}
                 {readOnly ? (

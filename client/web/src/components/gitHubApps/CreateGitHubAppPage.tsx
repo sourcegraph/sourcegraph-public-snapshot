@@ -31,11 +31,13 @@ export interface CreateGitHubAppPageProps {
      */
     pageTitle?: string
     /**
-     * The main description to show at the top of the page underneat the header. If
+     * The main description to show at the top of the page underneath the header. If
      * omitted, a generic introduction to GitHub Apps with a link to the docs will be
      * shown.
      */
     headerDescription?: React.ReactNode
+    /** An optional annotation to show in the page header. */
+    headerAnnotation?: React.ReactNode
     /** The domain the new GitHub App is meant to be used for in Sourcegraph. */
     appDomain: GitHubAppDomain
     /** The name to use for the new GitHub App. Defaults to "Sourcegraph". */
@@ -60,6 +62,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     defaultPermissions,
     pageTitle = 'Create GitHub App',
     headerDescription,
+    headerAnnotation,
     appDomain,
     defaultAppName = 'Sourcegraph',
     baseURL,
@@ -205,6 +208,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                         </>
                     )
                 }
+                annotation={headerAnnotation}
             />
             <Container className="mt-3">
                 {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}

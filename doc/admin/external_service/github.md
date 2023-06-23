@@ -57,6 +57,8 @@ To create a GitHub App and connect it to Sourcegraph:
 
 9. (Optional) If you want to sync repositories from other organization or user namespaces and your GitHub App is set to public visibility, you can create additional installations with **Add installation**.
 
+> NOTE: If you are using [Batch Changes](../../batch_changes/index.md), you can also [configure commit signing](../config/batch_changes.md#commit-signing-for-github) using a GitHub App <span class="badge badge-beta">Beta</span>.
+
 ### Multiple installations
 
 The initial GitHub App setup will only install the App on the organization or user account that you registered it with. If your code is spread across multiple organizations or user accounts, you will need to create additional installations for each namespace that you want Sourcegraph to sync repositories from.
