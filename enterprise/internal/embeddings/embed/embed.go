@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,7 +24,7 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 	case "sourcegraph":
 		return sourcegraph.NewClient(config), nil
 	case "openai":
-		return openai.NewClient(config), nil
+		return openai.NewClient(httpcli.ExternalClient, config), nil
 	default:
 		return nil, errors.Newf("invalid provider %q", config.Provider)
 	}
