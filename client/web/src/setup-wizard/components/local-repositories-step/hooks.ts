@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import { isEqual } from 'lodash'
@@ -285,16 +285,18 @@ export function useLocalExternalServices(): LocalCodeHostResult {
         [deleteLocalCodeHost]
     )
 
+    const services = data?.localExternalServices ?? previousData?.localExternalServices ?? EMPTY_CODEHOST_LIST
+
     return {
         loading,
         error,
         loaded: !!data || !!previousData,
-        services: (
-            data?.localExternalServices ??
-            previousData?.localExternalServices ??
-            // FIXME: Determine folder/single repo on the server
-            EMPTY_CODEHOST_LIST
-        ).map(service => ({ ...service, isFolder: service.repositories.length !== 1 })),
+        // TODO: Determine folder/single repo on the server. Just comparing the length is not technically correct.
+        // (a folder might have only one repository)
+        services: useMemo(
+            () => services.map(service => ({ ...service, isFolder: service.repositories.length !== 1 })),
+            [services]
+        ),
         deleteService,
         addRepositories,
     }
