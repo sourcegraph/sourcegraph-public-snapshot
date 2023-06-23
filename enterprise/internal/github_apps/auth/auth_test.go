@@ -118,6 +118,7 @@ invalid key
 }
 
 func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
+	rcache.SetupForTest(t)
 	installationID := 1
 	appAuthenticator := &mockAuthenticator{}
 	u, err := url.Parse("https://github.com")
@@ -144,6 +145,8 @@ func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("token refreshes", func(t *testing.T) {
+		rcache.SetupForTest(t)
+
 		token := NewInstallationAccessToken(
 			u,
 			1,
