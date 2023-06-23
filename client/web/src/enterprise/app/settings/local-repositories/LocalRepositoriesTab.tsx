@@ -4,14 +4,24 @@ import { mdiGit, mdiDelete, mdiFolderMultipleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
-import { Text, Icon, Button, Container, PageHeader, LoadingSpinner, ErrorAlert, Collapse, CollapsePanel } from '@sourcegraph/wildcard'
+import { pluralize } from '@sourcegraph/common'
+import {
+    Text,
+    Icon,
+    Button,
+    Container,
+    PageHeader,
+    LoadingSpinner,
+    ErrorAlert,
+    Collapse,
+    CollapsePanel,
+} from '@sourcegraph/wildcard'
 
 import { LocalRepository } from '../../../../graphql-operations'
 import { callFilePicker, useLocalExternalServices, LocalCodeHost } from '../../../../setup-wizard/components'
 import { NoReposAddedState } from '../../components'
 
 import styles from './LocalRepositoriesTab.module.scss'
-import { pluralize } from '@sourcegraph/common'
 
 type Path = string
 
@@ -193,12 +203,10 @@ interface RepositoryItemProps {
 const RepositoryItem: FC<RepositoryItemProps> = ({ service, repository, onDelete }) => (
     <li className={styles.listItem}>
         <span className={styles.listItemContent}>
-            <span className={styles.listItemNameWrapper}>
-                <Icon aria-hidden={true} svgPath={mdiGit} inline={false} className={styles.listItemIcon} />
-                <Text weight="bold" className={styles.listItemName}>
-                    {repository.name}
-                </Text>
-            </span>
+            <Icon aria-hidden={true} svgPath={mdiGit} inline={false} className={styles.listItemIcon} />
+            <Text weight="bold" className={styles.listItemName}>
+                {repository.name}
+            </Text>
             <Text size="small" className={styles.listItemDescription}>
                 {repository.path}
             </Text>

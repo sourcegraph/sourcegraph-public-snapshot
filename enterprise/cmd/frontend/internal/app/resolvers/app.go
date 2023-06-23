@@ -3,10 +3,10 @@ package resolvers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"fmt"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -464,4 +464,3 @@ func isGitRepo(path string) bool {
 	err := c.Run()
 	return err == nil
 }
-
