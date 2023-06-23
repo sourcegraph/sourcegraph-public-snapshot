@@ -21,7 +21,9 @@
      "CloneURL": "file://~root~/projects/a"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/projects/a"
+   }
   },
   {
    "ID": 0,
@@ -45,7 +47,9 @@
      "CloneURL": "file://~root~/projects/b"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/projects/b"
+   }
   },
   {
    "ID": 0,
@@ -69,7 +73,9 @@
      "CloneURL": "file://~root~/projects/c.bare"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/projects/c.bare"
+   }
   },
   {
    "ID": 0,
@@ -93,7 +99,9 @@
      "CloneURL": "file://~root~/nested/other-work/other-project"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/nested/other-work/other-project"
+   }
   },
   {
    "ID": 0,
@@ -117,7 +125,9 @@
      "CloneURL": "file://~root~/nested/work/project"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/nested/work/project"
+   }
   },
   {
    "ID": 0,
@@ -141,7 +151,9 @@
      "CloneURL": "file://~root~/single-repo"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/single-repo"
+   }
   },
   {
    "ID": 0,
@@ -165,7 +177,9 @@
      "CloneURL": "file://~root~/with space"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/with space"
+   }
   },
   {
    "ID": 0,
@@ -189,7 +203,9 @@
      "CloneURL": "file://~root~/work-project"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/work-project"
+   }
   },
   {
    "ID": 0,
@@ -213,7 +229,9 @@
      "CloneURL": "file://~root~/work-project2"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/work-project2"
+   }
   },
   {
    "ID": 0,
@@ -237,7 +255,9 @@
      "CloneURL": "file://~root~/work/a"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/work/a"
+   }
   },
   {
    "ID": 0,
@@ -261,7 +281,9 @@
      "CloneURL": "file://~root~/work/b"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/work/b"
+   }
   },
   {
    "ID": 0,
@@ -285,6 +307,8 @@
      "CloneURL": "file://~root~/work/c.bare"
     }
    },
-   "Metadata": {}
+   "Metadata": {
+    "AbsRepoPath": "~root~/work/c.bare"
+   }
   }
  ]

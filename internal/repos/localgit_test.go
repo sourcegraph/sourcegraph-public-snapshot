@@ -104,6 +104,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 				for k := range repo.Sources {
 					repo.Sources[k].CloneURL = strings.Replace(repo.Sources[k].CloneURL, root, root_placeholder, 1)
 				}
+				repo.Metadata.(*extsvc.LocalGitMetadata).AbsRepoPath = strings.Replace(repo.Metadata.(*extsvc.LocalGitMetadata).AbsRepoPath, root, root_placeholder, 1)
 				break
 			}
 		}
