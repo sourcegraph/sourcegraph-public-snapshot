@@ -33,6 +33,7 @@ import {
     H3,
     H4,
     Label,
+    AnchorLink,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
@@ -85,10 +86,15 @@ const SiteUpdateCheck: React.FC = () => {
                         {!data.site.updateCheck.errorMessage && (
                             <small>
                                 {data.site.updateCheck.updateVersionAvailable ? (
-                                    <Link to="https://about.sourcegraph.com">
+                                    <AnchorLink
+                                        to="/help/admin/updates"
+                                        target="_blank"
+                                        rel="noopener"
+                                        className="ml-1"
+                                    >
                                         Update available to version {data.site.updateCheck.updateVersionAvailable}{' '}
                                         <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                                    </Link>
+                                    </AnchorLink>
                                 ) : (
                                     <span>
                                         <Icon
