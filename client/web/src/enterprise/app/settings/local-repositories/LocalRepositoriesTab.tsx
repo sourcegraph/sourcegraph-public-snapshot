@@ -56,7 +56,7 @@ export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props =
     const { services, loading, loaded, error, addRepositories, deleteService } = useLocalExternalServices()
 
     useLayoutEffect(() => {
-        onRepositoriesChange(services)
+        onRepositoriesChange(services.flatMap(service => service.repositories))
     }, [services, onRepositoriesChange])
 
     return (
