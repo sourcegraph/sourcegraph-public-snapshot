@@ -140,7 +140,7 @@ export async function migrateConfiguration(): Promise<void> {
     )
 
     if (didMigrate) {
-        logEvent('ConfigMigrator:migrated')
+        logEvent('CodyVSCodeExtension:configMigrator:migrated')
     }
 }
 
