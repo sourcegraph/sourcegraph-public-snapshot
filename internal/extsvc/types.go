@@ -757,6 +757,13 @@ type OtherRepoMetadata struct {
 	AbsFilePath string
 }
 
+type LocalGitMetadata struct {
+	// AbsFilePath is the absolute path to the local repository. The path can also
+	// be extracted from the repo's URN, but storing it separately makes it easier
+	// work with.
+	AbsRepoPath string
+}
+
 func UniqueEncryptableCodeHostIdentifier(ctx context.Context, kind string, config *EncryptableConfig) (string, error) {
 	cfg, err := ParseEncryptableConfig(ctx, kind, config)
 	if err != nil {

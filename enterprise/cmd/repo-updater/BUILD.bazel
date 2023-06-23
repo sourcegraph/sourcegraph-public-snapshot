@@ -9,10 +9,6 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater",
     visibility = ["//visibility:private"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
     deps = [
         "//enterprise/cmd/repo-updater/shared",
         "//enterprise/cmd/sourcegraph/enterprisecmd",
@@ -24,6 +20,10 @@ go_binary(
     name = "repo-updater",
     embed = [":repo-updater_lib"],
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 pkg_tar(

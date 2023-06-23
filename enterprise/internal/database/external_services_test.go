@@ -671,7 +671,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			assert: includes(
 				"url is required",
 				"either token or GitHub App Details must be set",
-				"at least one of repositoryQuery, repos or orgs must be set",
+				"at least one of repositoryQuery, repos, orgs, or gitHubAppDetails.cloneAllRepositories must be set",
 			),
 		},
 		{

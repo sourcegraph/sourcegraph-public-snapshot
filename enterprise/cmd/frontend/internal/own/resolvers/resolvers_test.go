@@ -343,7 +343,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}
@@ -891,7 +891,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}
@@ -1591,7 +1591,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}

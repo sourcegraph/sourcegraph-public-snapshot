@@ -33,7 +33,7 @@ export const showFeedbackSupportQuickPick = async (): Promise<void> => {
     await selectedItem?.onSelect()
 }
 
-export const AuthOptionItems = [
+export const SettingsOptionItems = [
     {
         label: '$(gear) Settings',
         detail: 'Configure your Cody settings.',

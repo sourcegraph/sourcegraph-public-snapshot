@@ -614,7 +614,6 @@ func NewKubernetesSingleJob(
 	}
 
 	for stepIndex, step := range specs {
-		fmt.Println("dir: ", step.Dir)
 		jobEnvs := newEnvVars(step.Env)
 
 		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), step.Key)
@@ -647,13 +646,8 @@ func NewKubernetesSingleJob(
 			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					NodeName:     options.NodeName,
-					NodeSelector: options.NodeSelector,
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser:  options.SecurityContext.RunAsUser,
-						RunAsGroup: options.SecurityContext.RunAsGroup,
-						FSGroup:    options.SecurityContext.FSGroup,
-					},
+					NodeName:              options.NodeName,
+					NodeSelector:          options.NodeSelector,
 					Affinity:              affinity,
 					RestartPolicy:         corev1.RestartPolicyNever,
 					Tolerations:           options.Tolerations,

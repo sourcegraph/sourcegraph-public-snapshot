@@ -8,12 +8,13 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 )
@@ -331,6 +332,80 @@ func TestExternalAccounts_List(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestExternalAccounts_ListForUsers(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	specs := []extsvc.AccountSpec{
+		{ServiceType: "xa", ServiceID: "xb", ClientID: "xc", AccountID: "11"},
+		{ServiceType: "xa", ServiceID: "xb", ClientID: "xc", AccountID: "12"},
+	}
+	const numberOfUsers = 3
+	userIDs := make([]int32, 0, numberOfUsers)
+	thirdUserSpecs := []extsvc.AccountSpec{
+		{ServiceType: "a", ServiceID: "b", ClientID: "xc", AccountID: "111"},
+		{ServiceType: "c", ServiceID: "d", ClientID: "xc", AccountID: "112"},
+		{ServiceType: "e", ServiceID: "f", ClientID: "yc", AccountID: "13"},
+	}
+
+	for i, spec := range append(specs, thirdUserSpecs...) {
+		if i < 3 {
+			user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountData{})
+			require.NoError(t, err)
+			userIDs = append(userIDs, user.ID)
+		} else {
+			// Last user gets all the accounts.
+			err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userIDs[2], spec, extsvc.AccountData{})
+			require.NoError(t, err)
+		}
+	}
+
+	wantAccountsByUserID := make(map[int32][]*extsvc.Account)
+	for _, id := range userIDs {
+		// Last user gets all the accounts.
+		if int(id) == numberOfUsers {
+			accts := make([]*extsvc.Account, 0, numberOfUsers)
+			for idx, spec := range thirdUserSpecs {
+				accts = append(accts, &extsvc.Account{UserID: id, ID: id + int32(idx), AccountSpec: spec})
+			}
+			wantAccountsByUserID[id] = accts
+		} else {
+			wantAccountsByUserID[id] = []*extsvc.Account{{UserID: id, ID: id, AccountSpec: specs[int(id)-1]}}
+		}
+	}
+
+	// Zero IDs in the input -- empty map in the output.
+	accounts, err := db.UserExternalAccounts().ListForUsers(ctx, []int32{})
+	require.NoError(t, err)
+	assert.Empty(t, accounts)
+
+	// All accounts should be returned.
+	accounts, err = db.UserExternalAccounts().ListForUsers(ctx, userIDs)
+	require.NoError(t, err)
+	assert.Len(t, accounts, numberOfUsers)
+
+	for userID, wantAccounts := range wantAccountsByUserID {
+		gotAccounts := accounts[userID]
+		// Case of last user with all accounts.
+		if int(userID) == numberOfUsers {
+			assert.Equal(t, len(wantAccounts), len(gotAccounts))
+			for _, gotAccount := range gotAccounts {
+				simplifyExternalAccount(gotAccount)
+			}
+			assert.ElementsMatch(t, wantAccounts, gotAccounts)
+		} else {
+			assert.Len(t, gotAccounts, 1)
+			gotAccount := gotAccounts[0]
+			simplifyExternalAccount(gotAccount)
+			assert.Equal(t, wantAccounts[0], gotAccount)
+		}
 	}
 }
 

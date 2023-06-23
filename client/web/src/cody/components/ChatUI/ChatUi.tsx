@@ -69,6 +69,10 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
     )
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
 
+    useEffect(() => {
+        setMessageBeingEdited(false)
+    }, [transcript?.id])
+
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
