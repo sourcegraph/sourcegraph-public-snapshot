@@ -1,11 +1,13 @@
-import { FC } from 'react'
+import { FC, useEffect } from 'react'
+
+import { noop } from 'lodash'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
-import { Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { RepositoriesProgressResult } from '../../../../graphql-operations'
 
-import styles from './AppSetupProgressBar.modules.scss'
+import styles from './AppSetupProgressBar.module.scss'
 
 const REPO_UPLOADING_PROGRESS = gql`
     query RepositoriesProgress {
@@ -14,15 +16,32 @@ const REPO_UPLOADING_PROGRESS = gql`
             currentRepository
             currentRepositoryFilesProcessed
             currentRepositoryTotalFilesToProcess
+            oneRepositoryReady
         }
     }
 `
 
-export const AppSetupProgressBar: FC = props => {
+interface AppSetupProgressBarProps {
+    /**
+     * Whenever at least one repository has been processed
+     * (embeddings uploading has been finished), Primary is used
+     * for unblocking setup flow when we have at least one repo ready
+     */
+    onOneRepositoryFinished?: () => void
+}
+
+export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
+    const { onOneRepositoryFinished = noop } = props
     const { data } = useQuery<RepositoriesProgressResult>(REPO_UPLOADING_PROGRESS, {
         pollInterval: 2000,
         fetchPolicy: 'cache-and-network',
     })
+
+    useEffect(() => {
+        if (data && data.embeddingsSetupProgress.oneRepositoryReady) {
+            onOneRepositoryFinished()
+        }
+    }, [data, onOneRepositoryFinished])
 
     if (
         !data ||
@@ -42,7 +61,7 @@ export const AppSetupProgressBar: FC = props => {
             <div className={styles.description}>
                 {hasDetails && (
                     <>
-                        <span>Generate embeddings for {data.embeddingsSetupProgress.currentRepository}</span>
+                        <span>Generating embeddings for {data.embeddingsSetupProgress.currentRepository}</span>
                         <Text size="small" className={styles.percent}>
                             {data.embeddingsSetupProgress.currentRepositoryFilesProcessed} /{' '}
                             {data.embeddingsSetupProgress.currentRepositoryTotalFilesToProcess}
@@ -50,7 +69,14 @@ export const AppSetupProgressBar: FC = props => {
                     </>
                 )}
 
-                {!hasDetails && <span>Generate repositories embeddings</span>}
+                {!hasDetails && (
+                    <>
+                        <span>Generating repositories embeddings</span>
+                        <Text size="small" className={styles.percent}>
+                            Loading files <LoadingSpinner />
+                        </Text>
+                    </>
+                )}
             </div>
 
             <div className={styles.progress}>

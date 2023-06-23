@@ -116,7 +116,7 @@ export const AppSetupWizard: FC<TelemetryProps> = ({ telemetryService }) => {
                 >
                     <SetupStepsContent telemetryService={telemetryService} className={styles.content} />
 
-                    <FooterWidgetPortal className={styles.footer}/>
+                    <FooterWidgetPortal className={styles.footer} />
                 </SetupStepsRoot>
             </div>
         </ThemeContext.Provider>
