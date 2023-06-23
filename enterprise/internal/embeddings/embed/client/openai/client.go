@@ -111,31 +111,35 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 
 	dimensionality := len(response.Data[0].Embedding)
 	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
-OUTER:
 	for _, embedding := range response.Data {
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
-			continue
-		}
-
-		// Nondeterministically, the OpenAI API will occasionally send back a `null` for
-		// an embedding in the response. Try it again a few times and hope for the best.
-	INNER:
-		for i := 0; i < 3; i++ {
-			response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: []string{augmentedTexts[embedding.Index]}})
+		} else {
+			// Nondeterministically, the OpenAI API will occasionally send back a `null` for
+			// an embedding in the response. Try it again a few times and hope for the best.
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
 			if err != nil {
 				return nil, err
 			}
-			if len(response.Data) != 1 || len(response.Data[0].Embedding) == 0 {
-				continue INNER // retry
-			}
-			embeddings = append(embeddings, response.Data[0].Embedding...)
-			continue OUTER // success
+			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}
-		return nil, errors.New("null response for embedding")
 	}
 
 	return embeddings, nil
+}
+
+func (c *openaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {
+	for i := 0; i < retries; i++ {
+		response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: []string{input}})
+		if err != nil {
+			return nil, err
+		}
+		if len(response.Data) != 1 || len(response.Data[0].Embedding) == 0 {
+			continue
+		}
+		return response, nil
+	}
+	return nil, errors.Newf("null response for embedding after %d retries", retries)
 }
 
 func (c *openaiEmbeddingsClient) do(ctx context.Context, request openaiEmbeddingAPIRequest) (*openaiEmbeddingAPIResponse, error) {

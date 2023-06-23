@@ -51,34 +51,25 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 	})
 
 	embeddings := make([]codygateway.Embedding, len(response.Data))
-OUTER:
 	for i, d := range response.Data {
 		if len(d.Embedding) > 0 {
 			embeddings[i] = codygateway.Embedding{
 				Index: d.Index,
 				Data:  d.Embedding,
 			}
-			continue
-		}
-
-	INNER:
-		for j := 0; j < 3; j++ {
-			// Nondeterministically, the OpenAI API will occasionally send back a `null` for
-			// an embedding in the response. Try it again a few times and hope for the best.
-			response, err := c.requestEmbeddings(ctx, model, []string{input.Input[d.Index]})
+		} else {
+			// HACK(camdencheek): Nondeterministically, the OpenAI API will
+			// occasionally send back a `null` for an embedding in the
+			// response. Try it again a few times and hope for the best.
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, model, input.Input[d.Index], 3)
 			if err != nil {
 				return nil, 0, err
 			}
-			if len(response.Data) != 1 || len(response.Data[0].Embedding) != model.dimensions {
-				continue INNER // retry
-			}
 			embeddings[i] = codygateway.Embedding{
-				Index: i,
-				Data:  response.Data[0].Embedding,
+				Index: d.Index,
+				Data:  resp.Data[0].Embedding,
 			}
-			continue OUTER // success
 		}
-		return nil, 0, errors.New("null response returned for embedding")
 	}
 
 	return &codygateway.EmbeddingsResponse{
@@ -86,6 +77,20 @@ OUTER:
 		Model:           response.Model,
 		ModelDimensions: model.dimensions,
 	}, response.Usage.TotalTokens, nil
+}
+
+func (c *openaiClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, model openAIModel, input string, retries int) (resp *openaiEmbeddingsResponse, err error) {
+	for i := 0; i < retries; i++ {
+		resp, err = c.requestEmbeddings(ctx, model, []string{input})
+		if err != nil {
+			return nil, err
+		}
+		if len(resp.Data) != 1 || len(resp.Data[0].Embedding) != model.dimensions {
+			continue // retry
+		}
+		return resp, err
+	}
+	return nil, errors.Newf("null response for embedding after %d retries", retries)
 }
 
 func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel, input []string) (*openaiEmbeddingsResponse, error) {
