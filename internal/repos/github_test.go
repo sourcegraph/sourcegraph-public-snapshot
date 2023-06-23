@@ -135,13 +135,13 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 
 	service := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://ghe.sgdev.org",
 			Token: gheToken,
 		})),
 	}
 
-	factory, save := newClientFactory(t, fixtureName)
+	factory, save := NewClientFactory(t, fixtureName)
 	defer save(t)
 
 	ctx := context.Background()
@@ -179,7 +179,7 @@ func prepareGheToken(t *testing.T, fixtureName string) string {
 	t.Helper()
 	gheToken := os.Getenv("GHE_TOKEN")
 
-	if update(fixtureName) && gheToken == "" {
+	if Update(fixtureName) && gheToken == "" {
 		t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
 	}
 	return gheToken
@@ -257,12 +257,12 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			// We need to clear the cache before we run the tests
 			rcache.SetupForTest(t)
 
-			cf, save := newClientFactory(t, tc.name)
+			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 					Url: "https://github.com",
 				})),
 			}
@@ -359,19 +359,19 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			gheToken := os.Getenv("GHE_TOKEN")
 			fmt.Println(gheToken)
 
-			if update(fixtureName) && gheToken == "" {
+			if Update(fixtureName) && gheToken == "" {
 				t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
 			}
 
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 					Url:   "https://ghe.sgdev.org",
 					Token: gheToken,
 				})),
 			}
 
-			cf, save := newClientFactory(t, tc.name)
+			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
 			ctx := context.Background()
@@ -484,7 +484,7 @@ func TestGithubSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, Update(test.name), got)
 		})
 	}
 }
@@ -516,7 +516,6 @@ func TestMatchOrg(t *testing.T) {
 }
 
 func TestGitHubSource_doRecursively(t *testing.T) {
-
 	ctx := context.Background()
 
 	testCases := map[string]struct {
@@ -727,6 +726,22 @@ func TestGithubSource_ListRepos(t *testing.T) {
 			},
 			err: "<nil>",
 		},
+		{
+			name: "github app",
+			assert: assertAllReposListed([]string{
+				"github.com/pjlast/ygoza",
+			}),
+			conf: &schema.GitHubConnection{
+				Url: "https://github.com",
+				GitHubAppDetails: &schema.GitHubAppDetails{
+					InstallationID:       38844262,
+					AppID:                350528,
+					BaseURL:              "https://github.com",
+					CloneAllRepositories: true,
+				},
+			},
+			err: "<nil>",
+		},
 	}
 
 	for _, tc := range testCases {
@@ -743,16 +758,16 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				save func(testing.TB)
 			)
 			if tc.mw != nil {
-				cf, save = newClientFactory(t, tc.name, tc.mw)
+				cf, save = NewClientFactory(t, tc.name, tc.mw)
 			} else {
-				cf, save = newClientFactory(t, tc.name)
+				cf, save = NewClientFactory(t, tc.name)
 			}
 
 			defer save(t)
 
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
 			}
 
 			ctx := context.Background()
@@ -761,7 +776,134 @@ func TestGithubSource_ListRepos(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			repos, err := listAll(context.Background(), githubSrc)
+			repos, err := ListAll(context.Background(), githubSrc)
+			if have, want := fmt.Sprint(err), tc.err; have != want {
+				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			}
+
+			if tc.assert != nil {
+				tc.assert(t, repos)
+			}
+		})
+	}
+}
+
+// TestGithubSource_ListRepos_GitHubApp tests the ListRepos function for GitHub
+// Apps specifically. We have a separate test case for this so that the VCR
+// tests for GitHub App and non-GitHub App connections can be updated separately,
+// as setting up credentials for a GitHub App VCR test is significantly more effort.
+func TestGithubSource_ListRepos_GitHubApp(t *testing.T) {
+	// This private key is no longer valid. If this VCR test needs to be updated,
+	// a new GitHub App with new keys and secrets will have to be created
+	// and deleted afterwards.
+	const ghAppPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
+MIIEpAIBAAKCAQEAqHG1k8V0pCUAh+U5+thGPHutM0R8rIVmAlPCVw7VzqtxyMf3
+5pK4uc7IrIy29w5seyJRDLtY7PnsqU+lvXaAL8k3J0CtRi7doZEfUX1lGOqpomsg
+fyJeBH988ZSK+b8DUk7GAj0+Vgy6L70Q3ZdRJt2Ili3Zwtlv14vNyuAxUhgP04Ag
+1rczMjNc5LJpvw7gFPk7paYgV41LLrTr1c66ZycXbqFk/a/er6QW4Nnojn1jjJNb
+mq6xU7XZlx65BglW8iKJORmo2Or88H178/vFSNnxW0eUarw3FDKsVBubTdr0vLRV
+hw5EIsQ7nfrUBvTjMmouLEennYEIStYWNKfuAQIDAQABAoIBAHxIYeQlJZnTH2Al
+drEpkDEiQ7n3B1I3nvuKl3KqpIC3qN2vBa8fhKK7+v6tWHZTMyFrQYf2V3eKM978
+wFpZq90WRtZ0dyS4gZirPgNfVQ+cXQtUpYaIcfw5oJOSuTPqhuXc72ZJj8vn2hxN
+ELue4SafAB9mtyx4SHguU+ojnuBlZA8w2SllddWfJXnmSymrQUCOKvyL/NKSLRqf
+Vws4T01Sn5vsJp//lQtLhIDRTFk6qSeX007gNMNi/TiHka+HgulX4R5cxptXq4Xf
+xgH9Us2v87UbRRfPygptDk1YZ+g+zpqjX6bbZN8TsMceMkV6eN9txFo9YQlzPxUP
+zsP5M5ECgYEA1A3uATaRR/eDj/ziGGsJdxP6lWqmfozw2edQEmIaKBUTj2FOSKc5
+vZKQlw54sTtW5tN+9wkiiavCpq5wWRddPfxA0S2hwCnp3IrAanfrD6mjK1oSczf/
+lX4c5kZoSIuiJfImToJa6NMoGYdG7btT6wBuqc6NOST55AobBwoQK80CgYEAy1oi
+8v/pRdgOaCg1Qu78HS/covyUkNzt0NRL0KUQ//cJuhxkpbycjInU3W0n9sfa694b
+dK+D3br1GKRJaeKFZQyW7PV2B5ckXuBdtHOHgFdc14BtQJDWELGthE7rx3BdZYpl
+Dz0vF/okm3Vv2J3zBwT733fjYWqQzlOjBPBuXwUCgYEAxGCyDQWPvWoGuI2khKB7
+f39NDJpb3c6ALgv9J0kamAwMtTeT28yhuGHG7V1FgDxH2jP63KPlDEG4Xcwl1xvA
+CetVy2HK7b7jCI6mavLrCPI8XaVoeLNfSf4knUyOvsAxRZrexs4JipwiAqI4mWhl
+6rfXxAG43zbTBNAm/3neR/ECgYBns16xRxoh2Q13xlFrAc6l37uHjoEA4vmQDkNf
+cl4Z+lQGieY1stquvLdF+B1yNvcIY6ritYLstyO4Xkdl7POT1Xi9/GslcclFbOu8
+U1Ide+/HoiGU1Iel2cYf+9M3ULEAUDQ7Mjtq4dB7Sscv01SVFtCPZGcbTans3i/7
+G9VdNQKBgQC3p4CuoJZ0dWizgCuClOPH879RcBfE16xrxxQ+CbQTkYtyqTbaf+Et
+x0BN4L+7v8OqXKSX0opjSVT7lg+RhAoZ8Efv+CsJn6SKz9RmFfNGkiqmwjmFg9k2
+EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
+-----END RSA PRIVATE KEY-----
+`
+	assertAllReposListed := func(want []string) typestest.ReposAssertion {
+		return func(t testing.TB, rs types.Repos) {
+			t.Helper()
+
+			have := rs.Names()
+			sort.Strings(have)
+			sort.Strings(want)
+
+			if !reflect.DeepEqual(have, want) {
+				t.Error(cmp.Diff(have, want))
+			}
+		}
+	}
+
+	testCases := []struct {
+		name   string
+		assert typestest.ReposAssertion
+		mw     httpcli.Middleware
+		conf   *schema.GitHubConnection
+		ghApp  conf.GitHubAppConfiguration
+		err    string
+	}{
+		{
+			name: "github app",
+			assert: assertAllReposListed([]string{
+				"github.com/pjlast/ygoza",
+			}),
+			conf: &schema.GitHubConnection{
+				Url: "https://github.com",
+				GitHubAppDetails: &schema.GitHubAppDetails{
+					InstallationID:       38844262,
+					AppID:                350528,
+					BaseURL:              "https://github.com",
+					CloneAllRepositories: true,
+				},
+			},
+			ghApp: conf.GitHubAppConfiguration{
+				PrivateKey:   []byte(ghAppPrivateKey),
+				AppID:        "350528",
+				Slug:         "sourcegraphforpetriwoop",
+				ClientID:     "Iv1.4e78f8613134c221",
+				ClientSecret: "0e1540fbcea7c59ddae70dc6eb0ae4f1f52255c9",
+			},
+			err: "<nil>",
+		},
+	}
+
+	for _, tc := range testCases {
+		tc := tc
+		tc.name = "GITHUB-LIST-REPOS/" + tc.name
+		t.Run(tc.name, func(t *testing.T) {
+			// The GitHubSource uses the github.Client under the hood, which
+			// uses rcache, a caching layer that uses Redis.
+			// We need to clear the cache before we run the tests
+			rcache.SetupForTest(t)
+
+			var (
+				cf   *httpcli.Factory
+				save func(testing.TB)
+			)
+			if tc.mw != nil {
+				cf, save = NewClientFactory(t, tc.name, tc.mw)
+			} else {
+				cf, save = NewClientFactory(t, tc.name)
+			}
+
+			defer save(t)
+
+			svc := &types.ExternalService{
+				Kind:   extsvc.KindGitHub,
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
+			}
+
+			ctx := context.Background()
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), svc, cf)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			repos, err := ListAll(context.Background(), githubSrc)
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
 			}
@@ -790,7 +932,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
 		})),
@@ -824,7 +966,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindGitHub,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 			Url:   "https://github.com",
 			Token: os.Getenv("GITHUB_TOKEN"),
 		})),
@@ -857,7 +999,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 
 		svc := &types.ExternalService{
 			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 				Url: "https://github.com",
 			})),
 		}
@@ -886,16 +1028,16 @@ func TestGithubSource_GetVersion(t *testing.T) {
 
 		fixtureName := "githubenterprise-version"
 		gheToken := os.Getenv("GHE_TOKEN")
-		if update(fixtureName) && gheToken == "" {
+		if Update(fixtureName) && gheToken == "" {
 			t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
 		}
 
-		cf, save := newClientFactory(t, fixtureName)
+		cf, save := NewClientFactory(t, fixtureName)
 		defer save(t)
 
 		svc := &types.ExternalService{
 			Kind: extsvc.KindGitHub,
-			Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
+			Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitHubConnection{
 				Url:   "https://ghe.sgdev.org",
 				Token: gheToken,
 			})),
@@ -941,7 +1083,7 @@ func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
 	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(t.Name()), t.Name())
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, Update(t.Name()), t.Name())
 			t.Cleanup(save)
 
 			cli, err := cf.Doer()
@@ -980,7 +1122,7 @@ func TestRepositoryQuery_DoWithRefinedWindow(t *testing.T) {
 				have = append(have, res)
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update(t.Name()), have)
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), Update(t.Name()), have)
 		})
 	}
 }
@@ -1013,7 +1155,7 @@ func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
 			// We need to clear the cache before we run the tests
 			rcache.SetupForTest(t)
 
-			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(t.Name()), t.Name())
+			cf, save := httptestutil.NewGitHubRecorderFactory(t, Update(t.Name()), t.Name())
 			t.Cleanup(save)
 
 			cli, err := cf.Doer()
@@ -1052,7 +1194,7 @@ func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
 				have = append(have, res)
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update(t.Name()), have)
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), Update(t.Name()), have)
 		})
 	}
 }
@@ -1220,16 +1362,16 @@ func TestGithubSource_SearchRepositories(t *testing.T) {
 				save func(testing.TB)
 			)
 			if tc.mw != nil {
-				cf, save = newClientFactory(t, tc.name, tc.mw)
+				cf, save = NewClientFactory(t, tc.name, tc.mw)
 			} else {
-				cf, save = newClientFactory(t, tc.name)
+				cf, save = NewClientFactory(t, tc.name)
 			}
 
 			defer save(t)
 
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindGitHub,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
 			}
 
 			ctx := context.Background()

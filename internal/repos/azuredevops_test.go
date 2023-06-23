@@ -30,12 +30,12 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 			},
 		},
 	}
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := NewClientFactory(t, t.Name())
 	defer save(t)
 
 	svc := &types.ExternalService{
 		Kind:   extsvc.KindAzureDevOps,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, conf)),
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
 	}
 
 	ctx := context.Background()
@@ -44,10 +44,10 @@ func TestAzureDevOpsSource_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos, err := listAll(context.Background(), src)
+	repos, err := ListAll(context.Background(), src)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/AZUREDEVOPS/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/AZUREDEVOPS/"+t.Name(), Update(t.Name()), repos)
 }
