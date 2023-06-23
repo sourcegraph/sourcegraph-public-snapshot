@@ -157,8 +157,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             // again
             const cachedCompletions = this.inlineCompletionsCache?.get(prefix, false)
             if (cachedCompletions?.isExactPrefix) {
-                return []
+                return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
             }
+            return []
         }
 
         const cachedCompletions = this.inlineCompletionsCache?.get(prefix)
