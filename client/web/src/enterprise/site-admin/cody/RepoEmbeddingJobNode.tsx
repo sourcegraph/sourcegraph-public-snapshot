@@ -24,6 +24,7 @@ import styles from './RepoEmbeddingJobNode.module.scss'
 
 interface RepoEmbeddingJobNodeProps extends RepoEmbeddingJobFields {
     onCancel: (id: string) => void
+    isSourcegraphApp: boolean
 }
 
 export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
@@ -38,61 +39,59 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
     failureMessage,
     stats,
     onCancel,
-}) => {
-    const isSourcegraphApp = window.context?.sourcegraphAppMode
-    return (
-        <li className="list-group-item p-2">
-            <div className="d-flex justify-content-between">
-                <div className="d-flex align-items-center">
-                    <div className={styles.badgeWrapper}>
-                        <RepoEmbeddingJobStateBadge state={state} />
-                    </div>
-                    <div className="d-flex flex-column ml-3">
-                        {repo && revision ? (
-                            isSourcegraphApp ? (
-                                <>
-                                    {repo.name}@{revision.abbreviatedOID}
-                                </>
-                            ) : (
-                                <Link to={`${repo.url}@${revision.oid}`}>
-                                    {repo.name}@{revision.abbreviatedOID}
-                                </Link>
-                            )
-                        ) : (
-                            <div>Unknown repository</div>
-                        )}
-                        <div className="mt-1">
-                            <RepoEmbeddingJobExecutionInfo
-                                state={state}
-                                cancel={cancel}
-                                finishedAt={finishedAt}
-                                queuedAt={queuedAt}
-                                startedAt={startedAt}
-                                failureMessage={failureMessage}
-                                stats={stats}
-                            />
-                        </div>
-                    </div>
+    isSourcegraphApp,
+}) => (
+    <li className="list-group-item p-2">
+        <div className="d-flex justify-content-between">
+            <div className="d-flex align-items-center">
+                <div className={styles.badgeWrapper}>
+                    <RepoEmbeddingJobStateBadge state={state} />
                 </div>
-                <div className="d-flex align-items-center">
-                    {state === RepoEmbeddingJobState.QUEUED || state === RepoEmbeddingJobState.PROCESSING ? (
-                        <Tooltip content="Cancel repository embedding job">
-                            <Button
-                                aria-label="Cancel"
-                                onClick={() => onCancel(id)}
-                                variant="secondary"
-                                size="sm"
-                                disabled={cancel}
-                            >
-                                Cancel
-                            </Button>
-                        </Tooltip>
-                    ) : null}
+                <div className="d-flex flex-column ml-3">
+                    {repo && revision ? (
+                        isSourcegraphApp ? (
+                            <>
+                                {repo.name}@{revision.abbreviatedOID}
+                            </>
+                        ) : (
+                            <Link to={`${repo.url}@${revision.oid}`}>
+                                {repo.name}@{revision.abbreviatedOID}
+                            </Link>
+                        )
+                    ) : (
+                        <div>Unknown repository</div>
+                    )}
+                    <div className="mt-1">
+                        <RepoEmbeddingJobExecutionInfo
+                            state={state}
+                            cancel={cancel}
+                            finishedAt={finishedAt}
+                            queuedAt={queuedAt}
+                            startedAt={startedAt}
+                            failureMessage={failureMessage}
+                            stats={stats}
+                        />
+                    </div>
                 </div>
             </div>
-        </li>
-    )
-}
+            <div className="d-flex align-items-center">
+                {state === RepoEmbeddingJobState.QUEUED || state === RepoEmbeddingJobState.PROCESSING ? (
+                    <Tooltip content="Cancel repository embedding job">
+                        <Button
+                            aria-label="Cancel"
+                            onClick={() => onCancel(id)}
+                            variant="secondary"
+                            size="sm"
+                            disabled={cancel}
+                        >
+                            Cancel
+                        </Button>
+                    </Tooltip>
+                ) : null}
+            </div>
+        </div>
+    </li>
+)
 
 const RepoEmbeddingJobExecutionInfo: FC<
     Pick<
