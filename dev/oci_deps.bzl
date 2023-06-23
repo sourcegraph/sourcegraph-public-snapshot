@@ -60,13 +60,13 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_jaeger_all_in_one_base",
-        digest = "sha256:6d978aa3cc31e3410088ef4a3220fe419878c0b53e604c9323b343d0044ed9d3",
+        digest = "sha256:f5df06fba21785e56a345bcc8ff4d197c9d5bd95392119447dcf6633e35746a2",
         image = "us.gcr.io/sourcegraph-dev/wolfi-jaeger-all-in-one-base",
     )
 
     oci_pull(
         name = "wolfi_jaeger_agent_base",
-        digest = "sha256:a7dd18fa67c5c02f1f6ba6f503a2249a1fe103bfe47775a2faa041b16895c59c",
+        digest = "sha256:8a26bb610eb28d55119156e594db18e72c80c893971caee3f973c9ed6626df3b",
         image = "us.gcr.io/sourcegraph-dev/wolfi-jaeger-agent-base",
     )
 
@@ -156,7 +156,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_opentelemetry_collector_base",
-        digest = "sha256:2b410f0807c8db91ac324edf48b9b657bf7ddabfe7553d0d32d2f5e77db23a7e",
+        digest = "sha256:e6ebf3853f5ac70f7d63d35197a1e2ffb802c0229034e68b46c608d74e27dd44",
         image = "us.gcr.io/sourcegraph-dev/wolfi-opentelemetry-collector-base",
     )
 
