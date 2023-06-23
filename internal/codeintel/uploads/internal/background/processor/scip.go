@@ -25,7 +25,7 @@ type firstPassResult struct {
 	documentCountByPath   map[string]int
 }
 
-func aggregateExternalSymbolsAndPaths(indexReader gzipReadSeeker) (firstPassResult, error) {
+func aggregateExternalSymbolsAndPaths(indexReader *gzipReadSeeker) (firstPassResult, error) {
 	var metadata *scip.Metadata
 	var paths []string
 	externalSymbolsByName := make(map[string]*scip.SymbolInformation, 1024)
@@ -45,7 +45,7 @@ func aggregateExternalSymbolsAndPaths(indexReader gzipReadSeeker) (firstPassResu
 			externalSymbolsByName[s.Symbol] = s
 		},
 	}
-	if err := indexVisitor.ParseStreaming(&indexReader); err != nil {
+	if err := indexVisitor.ParseStreaming(indexReader); err != nil {
 		return firstPassResult{}, err
 	}
 	if err := indexReader.seekToStart(); err != nil {
@@ -71,7 +71,7 @@ func correlateSCIP(
 	getChildren pathexistence.GetChildrenFunc,
 ) (lsifstore.ProcessedSCIPData, error) {
 
-	indexSummary, err := aggregateExternalSymbolsAndPaths(indexReader)
+	indexSummary, err := aggregateExternalSymbolsAndPaths(&indexReader)
 	if err != nil {
 		return lsifstore.ProcessedSCIPData{}, err
 	}

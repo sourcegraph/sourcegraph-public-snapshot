@@ -409,7 +409,7 @@ func (grs gzipReadSeeker) Read(buf []byte) (int, error) {
 	return grs.gzipReader.Read(buf)
 }
 
-func (grs gzipReadSeeker) seekToStart() (err error) {
+func (grs *gzipReadSeeker) seekToStart() (err error) {
 	if _, err := grs.inner.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
