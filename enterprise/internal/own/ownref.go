@@ -373,7 +373,7 @@ func (b userReferencesBatch) augment(ctx context.Context, db edb.EnterpriseDB) {
 		// User references has to have an ID.
 		if r.id == 0 {
 			r.appendErr(errors.New("userReferences needs id set for augmenting"))
-			return
+			continue
 		}
 		var err error
 		if r.user == nil {
