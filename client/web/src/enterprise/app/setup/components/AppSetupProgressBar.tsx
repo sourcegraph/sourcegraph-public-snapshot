@@ -40,7 +40,7 @@ export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
     })
 
     useEffect(() => {
-        if (data && data.embeddingsSetupProgress.oneRepositoryReady) {
+        if (data?.embeddingsSetupProgress?.oneRepositoryReady) {
             onOneRepositoryFinished()
         }
     }, [data, onOneRepositoryFinished])
@@ -84,6 +84,7 @@ export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
             <div className={styles.progress}>
                 <div
                     className={styles.bar}
+                    // eslint-disable-next-line react/forbid-dom-props
                     style={{ width: `${data.embeddingsSetupProgress.overallPercentComplete}%` }}
                 />
             </div>
