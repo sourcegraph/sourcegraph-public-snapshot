@@ -317,7 +317,7 @@ func parseGerritBuildState(s string) btypes.ChangesetCheckState {
 	switch s {
 	case "-2", "-1":
 		return btypes.ChangesetCheckStateFailed
-	case "0":
+	case " 0":
 		return btypes.ChangesetCheckStatePending
 	case "+2", "+1":
 		return btypes.ChangesetCheckStatePassed
