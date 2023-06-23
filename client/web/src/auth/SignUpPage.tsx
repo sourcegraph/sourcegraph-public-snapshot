@@ -81,7 +81,7 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
 
-            window.location.replace('get-cody')
+            window.location.replace(returnTo)
 
             return Promise.resolve()
         })

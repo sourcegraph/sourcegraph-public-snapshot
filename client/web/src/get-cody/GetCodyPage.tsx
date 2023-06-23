@@ -1,4 +1,4 @@
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { mdiEmailOutline, mdiMicrosoftVisualStudioCode, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
@@ -29,11 +29,46 @@ interface GetCodyPageProps {
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
+const SOURCEGRAPH_MAC_DMG =
+    'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.13%2B1311.1af08ae774/Sourcegraph_2023.6.13+1311.1af08ae774_aarch64.dmg'
+
 const onClickCTAButton = (type: string): void =>
     eventLogger.log(EventName.TRY_CODY_SIGNUP_INITIATED, { type, source: 'get-cody' }, { type, page: 'get-cody' })
 
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
-    const lightRef = useRef(null)
+    const lightRef = useRef<HTMLDivElement>(null)
+    const scrollContainer = document.querySelector('main')
+
+    useEffect(() => {
+        if (!scrollContainer || !lightRef.current) {
+            return
+        }
+
+        const handleScroll = (): void => {
+            const lightElement = lightRef.current
+            const alignedElements = document.querySelectorAll('.get-cody-step')
+
+            if (lightElement) {
+                const lightBounds = lightElement.getBoundingClientRect()
+
+                for (const alignedElement of alignedElements) {
+                    const elementBounds = alignedElement.getBoundingClientRect()
+
+                    if (elementBounds.top <= lightBounds.top && elementBounds.bottom >= lightBounds.top) {
+                        alignedElement.classList.add(styles.focusBackground)
+                    } else {
+                        alignedElement.classList.remove(styles.focusBackground)
+                    }
+                }
+            }
+        }
+
+        scrollContainer.addEventListener('scroll', handleScroll)
+
+        return () => {
+            scrollContainer.removeEventListener('scroll', handleScroll)
+        }
+    }, [scrollContainer])
 
     return (
         <div className={styles.pageWrapper}>
@@ -43,7 +78,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                     <Link to="https://about.sourcegraph.com/">
                         <img
                             className={styles.pageHeaderImage}
-                            src="/.assets/img/sourcegraph-logo-dark.svg"
+                            src="https://sourcegraph.com/.assets/img/sourcegraph-logo-dark.svg"
                             alt="Sourcegraph logo"
                         />
                     </Link>
@@ -60,13 +95,14 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                 </div>
 
                 <div className={styles.cardWrapper}>
-                    <div ref={lightRef} className={styles.light}>
-                        <Light />
+                    <div className={styles.lightLine} />
+                    <div ref={lightRef} className={styles.lightWrapper}>
+                        <Light className={styles.light} />
                     </div>
 
                     {/* connect to cody section */}
-                    {!authenticatedUser && (
-                        <div className={styles.card}>
+                    {authenticatedUser && (
+                        <div className={classNames(styles.card, 'get-cody-step', styles.focusBackground)}>
                             <H2 className={classNames(styles.cardTitle, 'mb-4')}>
                                 You’ll need a Sourcegraph account to connect to Cody
                             </H2>
@@ -86,7 +122,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                     />
                                 </div>
                                 <Link
-                                    to="https://sourcegraph.com/sign-up?showEmail=true"
+                                    to="https://sourcegraph.com/sign-up?showEmail=true&returnTo=get-cody"
                                     className={classNames('text-decoration-none', styles.emailAuthButton)}
                                     onClick={() => onClickCTAButton('builtin')}
                                 >
@@ -123,7 +159,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                     )}
 
                     {/* Install cody desktop app section */}
-                    <div className={styles.card}>
+                    <div className={classNames(styles.card, 'get-cody-step')}>
                         <H2 className={classNames(styles.cardTitle, 'mb-4')}>
                             Install the <span className={styles.installCodyTitle}>Cody desktop app</span>
                         </H2>
@@ -133,7 +169,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             currently open in your IDE.
                         </Text>
                         <Link
-                            to="https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.13%2B1311.1af08ae774/Sourcegraph_2023.6.13+1311.1af08ae774_aarch64.dmg"
+                            to={SOURCEGRAPH_MAC_DMG}
                             className={classNames('text-decoration-none', styles.downloadForMacButton)}
                         >
                             Download for Mac <Badge className={classNames('ml-2', styles.betaBadge)}>Beta</Badge>
@@ -172,7 +208,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                     </div>
 
                     {/* Install cody extension section */}
-                    <div className={styles.card}>
+                    <div className={classNames(styles.card, 'get-cody-step')}>
                         <H2 className={classNames(styles.cardTitle, 'mb-4')}>
                             Install the Cody extension for your IDE(s)
                         </H2>
@@ -221,7 +257,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         </div>
                     </div>
 
-                    <div className={classNames(styles.card, styles.startCodingWithMeImgWrapper)}>
+                    <div className={classNames(styles.card, styles.startCodingWithMeImgWrapper, 'get-cody-step')}>
                         <CodyStartCoding className={styles.startCodingWithMeImg} />
                     </div>
 

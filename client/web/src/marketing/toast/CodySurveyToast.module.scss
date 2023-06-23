@@ -37,48 +37,48 @@
 }
 
 .modal-checkbox[type='checkbox'] {
-    display: none;
-  }
-  
-  .modal-checkbox + label {
-    display: inline-block;
-    position: relative;
-    padding-left: 1.5625rem;
-    cursor: pointer;
-  }
-  
-  .modal-checkbox + label::before {
-    content: '';
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    background-color: var(--white); /* Initial background color */
-    border: 1px solid var(--gray-07);
-    border-radius: 0.25rem;
-    position: absolute;
-    left: 0;
-    top: 2px;
-  }
-  
-  .modal-checkbox:checked + label::before {
-    background-color: var(--violet-05); /* Background color when checked */
-    border-color: var(--violet-05); /* Border color when checked */
-  }
-  
-  .modal-checkbox + label::after {
-    content: '';
-    display: none;
-    width: 0.375rem;
-    height: 0.625rem;
-    border: solid var(--white); /* Tick color */
-    border-width: 0 2px 2px 0;
-    transform: rotate(45deg);
-    position: absolute;
-    left: 5px;
-    top: 4px;
-  }
-  
-  .modal-checkbox:checked + label::after {
-    display: block;
-  }
+  display: none;
+}
+
+.modal-checkbox + label {
+  display: inline-block;
+  position: relative;
+  padding-left: 1.5625rem;
+  cursor: pointer;
+}
+
+.modal-checkbox + label::before {
+  content: '';
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  background-color: var(--white); /* Initial background color */
+  border: 1px solid var(--gray-07);
+  border-radius: 0.25rem;
+  position: absolute;
+  left: 0;
+  top: 2px;
+}
+
+.modal-checkbox:checked + label::before {
+  background-color: var(--violet-05); /* Background color when checked */
+  border-color: var(--violet-05); /* Border color when checked */
+}
+
+.modal-checkbox + label::after {
+  content: '';
+  display: none;
+  width: 0.375rem;
+  height: 0.625rem;
+  border: solid var(--white); /* Tick color */
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+  position: absolute;
+  left: 5px;
+  top: 4px;
+}
+
+.modal-checkbox:checked + label::after {
+  display: block;
+}
   

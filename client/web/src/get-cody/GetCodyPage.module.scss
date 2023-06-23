@@ -41,7 +41,7 @@
         padding-left: 4.75rem;
         gap: 6rem;
         border-left: 2px dashed;
-        border-image: linear-gradient(to bottom, rgba(52, 58, 77, 0), rgba(52, 58, 77, 0.41), rgba(52, 58, 77, 0.41), rgba(52, 58, 77, 0)) 1;
+        border-color: rgba(255, 255, 255, 0.10);
     }
 
     @media (--md-breakpoint-down) {
@@ -66,7 +66,7 @@
         }
     }
 }
-
+  
 .card-title {
     font-size: 2.25rem;
     line-height: 2.6875rem;
@@ -458,21 +458,40 @@
     }
 }
 
-.light {
+.light-wrapper {
     width: 19.25rem;
     height: 19.25rem;
     text-align: center;
     margin-left: -14.375rem;
+    margin-top: 1.875rem;
     position: fixed;
     background: radial-gradient(52.85% 41.07% at 50% 50%, rgba(161, 18, 255, 0.34) 0%, rgba(15, 17, 26, 0) 100%);
     @media (--sm-breakpoint-down) {
-        display: none;;
+        display: none;
+    }
+
+    .light {
+        margin-top: -6.25rem;
+    }
+}
+
+.light-line {
+    position: fixed;
+    margin-left: -4.875rem;
+    margin-top: -6.25rem;
+    width: 0.125rem;
+    height: 13.3125rem;
+    background: linear-gradient(270deg, rgba(161, 18, 255, 0.64) 0%, #A112FF 77.36%, rgba(161, 18, 255, 0.00) 100%);
+    @media (--sm-breakpoint-down) {
+        display: none;
     }
 }
 
 .focus-background {
-    background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)), radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, radial-gradient(92.93% 92.93% at 50% 50%, rgba(161, 18, 255, 0.25) 0%, rgba(161, 18, 255, 0) 100%);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 0 40px -12px rgba(161, 18, 255, 0.3);
-    border-radius: 0.5rem;
+    @media (--md-breakpoint-up) {
+        background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)), radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, radial-gradient(92.93% 92.93% at 50% 50%, rgba(161, 18, 255, 0.25) 0%, rgba(161, 18, 255, 0) 100%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        box-shadow: 0 0 40px -12px rgba(161, 18, 255, 0.3) !important;
+        border-radius: 0.5rem !important;
+    }
 }
