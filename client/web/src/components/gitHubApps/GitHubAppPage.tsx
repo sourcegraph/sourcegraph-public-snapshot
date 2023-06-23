@@ -30,6 +30,7 @@ import { ExternalServiceNode } from '../externalServices/ExternalServiceNode'
 import { ConnectionList, SummaryContainer, ConnectionSummary } from '../FilteredConnection/ui'
 import { PageTitle } from '../PageTitle'
 
+import { AppLogo } from './AppLogo'
 import { AuthProviderMessage } from './AuthProviderMessage'
 import { GITHUB_APP_BY_ID_QUERY } from './backend'
 import { RemoveGitHubAppModal } from './RemoveGitHubAppModal'
@@ -100,10 +101,10 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                             {
                                 text: (
                                     <span className="d-flex align-items-center">
-                                        <img
-                                            className={classNames(styles.logo, 'mr-2')}
+                                        <AppLogo
                                             src={app.logo}
-                                            alt="App logo"
+                                            name={app.name}
+                                            className={classNames(styles.logo, 'mr-2')}
                                         />
                                         <span>{app.name}</span>
                                     </span>
@@ -113,19 +114,19 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                         className="mb-3"
                         headingElement="h2"
                     />
-                    <div className="d-flex align-items-center">
-                        <span className="timestamps text-muted">
+                    <div className="d-flex align-items-sm-center flex-sm-row flex-column">
+                        <span className="timestamps text-muted mb-2">
                             Created <Timestamp date={app.createdAt} /> | Updated <Timestamp date={app.updatedAt} />
                         </span>
-                        <span className="ml-auto">
-                            <AnchorLink to={app.appURL} target="_blank" className="mr-3">
+                        <span className="ml-sm-auto">
+                            <AnchorLink to={app.appURL} target="_blank">
                                 View In GitHub <Icon inline={true} svgPath={mdiOpenInNew} aria-hidden={true} />
                             </AnchorLink>
-                            <Button onClick={() => navigate(-1)} variant="secondary">
+                            <Button onClick={() => navigate(-1)} variant="secondary" className="mx-2">
                                 Cancel
                             </Button>
                             <Button
-                                className="ml-2 text-nowrap"
+                                className="text-nowrap"
                                 aria-label="Remove GitHub App"
                                 onClick={() => setRemoveModalOpen(true)}
                                 variant="danger"
@@ -137,12 +138,12 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                 </>
             )}
             {app && (
-                <Container className="mt-3 mb-3">
+                <Container className="my-3">
                     <Grid columnCount={2} templateColumns="auto 1fr" spacing={[0.6, 2]}>
                         <span className="font-weight-bold">GitHub App Name</span>
                         <span>{app.name}</span>
                         <span className="font-weight-bold">URL</span>
-                        <AnchorLink to={app.appURL} target="_blank" className="text-decoration-none">
+                        <AnchorLink to={app.appURL} target="_blank" className="text-decoration-none text-break">
                             {app.appURL}
                         </AnchorLink>
                         <span className="font-weight-bold">AppID</span>
@@ -154,9 +155,13 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                     <hr className="mt-4 mb-4" />
 
                     <div>
-                        <H2 className="d-flex align-items-center mb-3">
+                        <H2 className="d-flex flex-sm-row flex-column align-items-sm-center mb-3">
                             Installations
-                            <Button className="ml-auto" onClick={() => onAddInstallation(app)} variant="primary">
+                            <Button
+                                className="ml-sm-auto mr-sm-0 mr-auto mt-sm-0 mt-2"
+                                onClick={() => onAddInstallation(app)}
+                                variant="primary"
+                            >
                                 <Icon svgPath={mdiPlus} aria-hidden={true} /> Add installation
                             </Button>
                         </H2>
@@ -201,10 +206,11 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                                     <Container className={classNames(styles.installation, 'p-3')} key={installation.id}>
                                         <div className="d-flex align-items-center">
                                             <Link to={installation.account.url} className="d-flex align-items-center">
-                                                <img
-                                                    className={styles.logo}
+                                                <AppLogo
                                                     src={installation.account.avatarURL}
-                                                    alt="account avatar"
+                                                    name={installation.account.login}
+                                                    alt="Account avatar"
+                                                    className={styles.logo}
                                                 />
                                                 <div className="d-flex flex-column ml-3">
                                                     {installation.account.login}

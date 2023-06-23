@@ -357,6 +357,7 @@ ts_project(
         "src/components/fuzzyFinder/FuzzyTabs.tsx",
         "src/components/fuzzyFinder/HighlightedLink.tsx",
         "src/components/fuzzyFinder/LazyFuzzyFinder.tsx",
+        "src/components/gitHubApps/AppLogo.tsx",
         "src/components/gitHubApps/AuthProviderMessage.tsx",
         "src/components/gitHubApps/CreateGitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppCard.tsx",
