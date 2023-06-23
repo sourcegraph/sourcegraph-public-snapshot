@@ -8,14 +8,18 @@ Cody reads relevant code files to increase the accuracy and quality of the respo
 
 ### Embeddings
 
+> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
+> See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
+
 Embeddings are a semantic representation of text that allow us to create a search index over an entire codebase. The process of creating embeddings involves us splitting the entire codebase into searchable chunks and sending them to the external service specified in the site config for embedding. The final embedding index is stored in a managed object storage service.
 
 Embeddings for relevant code files must be enabled for each repository that you'd like Cody to have context on.
 
 ### Configuring embeddings
 
-> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
-> See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
+> NOTE: By default, there is no embedding policy created to allow admins to choose which code is sent to a
+> third party LLM for embedding (currently OpenAI). Once Sourcegraph can provide our own embeddings, all
+> instances will automatically get a default policy which embeds all repositories.
 
 Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
