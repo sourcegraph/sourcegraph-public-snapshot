@@ -41,10 +41,10 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
     const [scheduleEmbeddings, { loading }] = useScheduleRepoEmbeddingJobs()
     const [repositories, setRepositories] = useState<LocalRepository[]>([])
 
-    const handleNext = async (): Promise<void> => {
-        await scheduleEmbeddings({
+    const handleNext = (): void => {
+        scheduleEmbeddings({
             variables: { repoNames: repositories.map(repo => repo.name) },
-        })
+        }).catch(() => {})
         onNextStep()
     }
 
@@ -98,7 +98,7 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                 >
                     {api => (
                         <PathsPickerActions
-                            disabled={repositories.length > MAX_NUMBER_OF_REPOSITORIES}
+                            disabled={repositories.length >= MAX_NUMBER_OF_REPOSITORIES}
                             className={styles.localRepositoriesButtonsGroup}
                             onPathsChange={api.addNewPaths}
                         />
