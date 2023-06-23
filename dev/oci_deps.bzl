@@ -76,13 +76,13 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_jaeger_all_in_one_base",
-        digest = "sha256:232c2761cf712a820eeb428fc8d023fb6cecca6af4bbb8bfc7ff2c7f8396a9cc",
+        digest = "sha256:f5df06fba21785e56a345bcc8ff4d197c9d5bd95392119447dcf6633e35746a2",
         image = "index.docker.io/sourcegraph/wolfi-jaeger-all-in-one-base",
     )
 
     oci_pull(
         name = "wolfi_jaeger_agent_base",
-        digest = "sha256:6ab25a722ef49bbe29d0682cfb9db2dc122e21ce0e25184b45ce77ed2b1a978d",
+        digest = "sha256:8a26bb610eb28d55119156e594db18e72c80c893971caee3f973c9ed6626df3b",
         image = "index.docker.io/sourcegraph/wolfi-jaeger-agent-base",
     )
 
@@ -173,7 +173,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_opentelemetry_collector_base",
-        digest = "sha256:7db1b0609502e55e55bade8fd22852456cd81f8cbb780cfdb233b28c5778ce50",
+        digest = "sha256:e6ebf3853f5ac70f7d63d35197a1e2ffb802c0229034e68b46c608d74e27dd44",
         image = "index.docker.io/sourcegraph/wolfi-opentelemetry-collector-base",
     )
 
