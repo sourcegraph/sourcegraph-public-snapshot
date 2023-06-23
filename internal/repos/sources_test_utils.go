@@ -2,7 +2,6 @@ package repos
 
 import (
 	"encoding/json"
-	"flag"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -29,7 +28,7 @@ func Save(t testing.TB, rec *recorder.Recorder) {
 	}
 }
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+var updateRegex *string
 
 func Update(name string) bool {
 	if updateRegex == nil || *updateRegex == "" {

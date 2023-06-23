@@ -10,6 +10,7 @@ import (
 )
 
 func TestMain(m *testing.M) {
+    updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
 	flag.Parse()
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
