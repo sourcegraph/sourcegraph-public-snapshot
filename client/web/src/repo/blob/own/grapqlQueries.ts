@@ -190,14 +190,17 @@ export const FETCH_OWNERS_AND_HISTORY = gql`
     query FetchOwnersAndHistory($repo: ID!, $revision: String!, $currentPath: String!, $includeOwn: Boolean!) {
         node(id: $repo) {
             ... on Repository {
+                __typename
                 sourceType
                 commit(rev: $revision) {
+                    __typename
                     blob(path: $currentPath) @include(if: $includeOwn) {
                         ...BlobOwnership
                     }
                     ...HistoryFragment
                 }
                 changelist(cid: $revision) {
+                    __typename
                     commit {
                         blob(path: $currentPath) @include(if: $includeOwn) {
                             ...BlobOwnership

@@ -60,16 +60,22 @@ export const HistoryAndOwnBar: React.FunctionComponent<{
         )
     }
 
+    const errorDiv = (
+        <div className={styles.wrapper}>
+            <Alert variant="danger" className="mb-0 py-1" aria-live="polite">
+                Error getting history and ownership details about this file.
+            </Alert>
+        </div>
+    )
+
+    if (error || !(data?.node?.__typename === 'Repository')) {
+        return errorDiv
+    }
+
     const commit = data?.node?.commit || data?.node?.changelist?.commit
 
-    if (error || !(data?.node?.__typename === 'Repository' && commit)) {
-        return (
-            <div className={styles.wrapper}>
-                <Alert variant="danger" className="mb-0 py-1" aria-live="polite">
-                    Error getting history and ownership details about this file.
-                </Alert>
-            </div>
-        )
+    if (!commit) {
+        return errorDiv
     }
 
     const history = commit?.ancestors?.nodes?.[0]
