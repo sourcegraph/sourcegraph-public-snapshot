@@ -30,7 +30,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
     const [authStatus, setAuthStatus] = useState<AuthStatus>()
-    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false)
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
@@ -62,7 +61,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     break
                 case 'login':
                     setAuthStatus(message.authStatus)
-                    setIsAuthenticated(isLoggedIn(message.authStatus))
                     setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
                     if (message.authStatus.endpoint) {
                         setEndpoint(message.authStatus.endpoint)
@@ -105,7 +103,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [config?.serverEndpoint, debugLog, endpoint, errorMessages, transcript, view, vscodeAPI])
 
     const onLogout = useCallback(() => {
-        setIsAuthenticated(false)
+        setAuthStatus(undefined)
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
 
