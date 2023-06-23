@@ -17,9 +17,9 @@ Embeddings for relevant code files must be enabled for each repository that you'
 
 ### Configuring embeddings
 
-> NOTE: By default, there is no embedding policy created to allow admins to choose which code is sent to a
-> third party LLM for embedding (currently OpenAI). Once Sourcegraph can provide our own embeddings, all
-> instances will automatically get a default policy which embeds all repositories.
+> NOTE: By default, there are no embeddings created. Admins must choose which code is sent to the
+> third party LLM for embedding (currently OpenAI). Once Sourcegraph provides first party embeddings,
+> embeddings will be enabled for all repositories by default.
 
 Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
