@@ -124,7 +124,7 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 	case *gerritbatches.AnnotatedChange:
 		return computeGerritBuildState(m)
 	case *protocol.PerforceChangelistState:
-		// Perforce don't have builds built-in, its better to be explicit by still
+		// Perforce doesn't have builds built-in, its better to be explicit by still
 		// including this case for clarity.
 		return btypes.ChangesetCheckStateUnknown
 	}
