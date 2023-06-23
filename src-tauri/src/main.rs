@@ -110,7 +110,17 @@ fn main() {
                     // This is a temporary solution that only works if the app has a single window.
                     // If we need to add more windows in the future, we need to wait until
                     // https://github.com/tauri-apps/tauri/issues/3084 is fixed.
-                    tauri::AppHandle::hide(&event.window().app_handle()).unwrap();
+                    #[allow(unused_unsafe)]
+                    #[cfg(not(target_os = "macos"))]
+                    {
+                        event.window().hide().unwrap();
+                    }
+
+                    #[allow(unused_unsafe)]
+                    #[cfg(target_os = "macos")]
+                    unsafe {
+                        tauri::AppHandle::hide(&event.window().app_handle()).unwrap();
+                    }
                     api.prevent_close();
                 }
             }

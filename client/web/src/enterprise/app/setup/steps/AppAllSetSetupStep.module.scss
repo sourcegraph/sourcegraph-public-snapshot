@@ -1,12 +1,13 @@
 .root {
     display: flex;
     flex-direction: column;
-    padding: 4.5rem 3.5rem 0;
+    padding-top: 4.5rem;
     width: 100%;
     overflow: hidden;
 }
 
 .description {
+    padding: 0 3.5rem;
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
@@ -35,6 +36,6 @@
 }
 
 .image {
-    max-width: calc(100% + 14rem);
-    margin: auto -7rem 0;
+    max-width: 100%;
+    margin: auto 0 0;
 }

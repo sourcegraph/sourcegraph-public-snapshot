@@ -26,8 +26,18 @@ func TestExcludingFilePaths(t *testing.T) {
 		"data/names.csv",
 	}
 
-	expectedFiles := []string{"cool.go", "Dockerfile", "README.md", "LICENSE.txt", "no_ignore"}
-	gotFiles := []string{}
+	expectedFiles := []string{
+		"file.sql",
+		"root/file.yaml",
+		"client/web/struct.json",
+		"cool.go",
+		"Dockerfile",
+		"README.md",
+		"LICENSE.txt",
+		"no_ignore",
+	}
+
+	var gotFiles []string
 
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 	for _, file := range files {

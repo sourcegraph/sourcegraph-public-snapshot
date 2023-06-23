@@ -157,18 +157,3 @@ When trying to install `sg` with the pre-built binaries on WSL2 you may run into
 
 Note: this change will be reverted when your session ends. You will need to reset these limits every time you open a new session and want to use `sg`.
 
-## Symbols docker image creation fails
-
-If you see an error like this:
-
-```
-executor failed running [/bin/sh -c /ctags-install-alpine.sh]: exit code: 133
---------------------------------------------------------------------------------
-❌ failed to run symbols
-```
-and you are running the default `sg start` look for the error string `rosetta error: futex(FUTEX_LOCK_PI_PRIVATE) failure:`
-
-You may have enabled Rosetta emulation in your docker configuration.
-You may either disable Rosetta emulation in docker or manually build the symbols
-binary with `./dev/ctags-install.sh` and then set the `CTAGS_COMMAND` env var
-in your sg.config.overwrite.yaml to point to the binary.

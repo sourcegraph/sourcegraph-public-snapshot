@@ -23,7 +23,7 @@ Single-package imports with an alias:
 import log15 "gopkg.in/inconshreveable/log15.v2"
 ```
 
-And multi-package import statements with our without an alias:
+And multi-package import statements with or without an alias:
 
 ```go
 import (

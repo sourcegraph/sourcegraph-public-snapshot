@@ -194,6 +194,11 @@
           "description": "The installation ID of this connection.",
           "type": "integer",
           "minimum": 1
+        },
+        "cloneAllRepositories": {
+          "description": "Clone all repositories for this App installation.",
+          "type": "boolean",
+          "default": false
         }
       }
     },

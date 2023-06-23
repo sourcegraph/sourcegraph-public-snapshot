@@ -1,6 +1,6 @@
 import { FC, ReactNode, useLayoutEffect, useMemo } from 'react'
 
-import { mdiFolderMultipleOutline, mdiFolderMultiplePlusOutline, mdiGit, mdiDelete } from '@mdi/js'
+import { mdiGit, mdiDelete, mdiFolderMultipleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
 
@@ -11,14 +11,14 @@ import {
     Button,
     Container,
     PageHeader,
-    Collapse,
-    CollapsePanel,
     LoadingSpinner,
     ErrorAlert,
+    Collapse,
+    CollapsePanel,
 } from '@sourcegraph/wildcard'
 
 import { LocalRepository } from '../../../../graphql-operations'
-import { callFilePicker, useLocalRepositories, useNewLocalRepositoriesPaths } from '../../../../setup-wizard/components'
+import { callFilePicker, useLocalExternalServices, LocalCodeHost } from '../../../../setup-wizard/components'
 import { NoReposAddedState } from '../../components'
 
 import styles from './LocalRepositoriesTab.module.scss'
@@ -53,50 +53,22 @@ interface LocalRepositoriesWidgetProps {
 export const LocalRepositoriesWidget: FC<LocalRepositoriesWidgetProps> = props => {
     const { children, className, onRepositoriesChange = noop } = props
 
-    const {
-        paths,
-        loading: pathsLoading,
-        loaded: pathLoaded,
-        error: pathsError,
-        addNewPaths,
-        deletePath,
-    } = useNewLocalRepositoriesPaths()
-
-    const {
-        repositories,
-        loading: repositoriesLoading,
-        loaded: repositoriesLoaded,
-        error: repositoriesError,
-    } = useLocalRepositories({ paths, skip: paths.length === 0 })
+    const { services, loading, loaded, error, addRepositories, deleteService } = useLocalExternalServices()
 
     useLayoutEffect(() => {
-        onRepositoriesChange(repositories)
-    }, [repositories, onRepositoriesChange])
-
-    const handleRepositoriesDelete = async (pathToDelete: Path): Promise<void> => {
-        await deletePath(pathToDelete)
-    }
-
-    const anyLoading = pathsLoading || repositoriesLoading
-    const anyError = pathsError || repositoriesError
-    const allLoaded = pathLoaded && repositoriesLoaded
+        onRepositoriesChange(services)
+    }, [services, onRepositoriesChange])
 
     return (
         <div className={classNames(className, styles.root)}>
-            {children({ addNewPaths })}
+            {children({ addNewPaths: addRepositories })}
 
             <Container className={styles.container}>
-                {anyError && <ErrorAlert error={anyError} />}
+                {error && <ErrorAlert error={error} />}
 
-                {!anyError && anyLoading && !allLoaded && <LoadingSpinner />}
-                {!anyError && allLoaded && repositories.length === 0 && <NoReposAddedState />}
-                {!anyError && allLoaded && (
-                    <LocalRepositoriesList
-                        paths={paths}
-                        repositories={repositories}
-                        onPathDelete={handleRepositoriesDelete}
-                    />
-                )}
+                {!error && loading && !loaded && <LoadingSpinner />}
+                {!error && loaded && services.length === 0 && <NoReposAddedState />}
+                {!error && loaded && <LocalRepositoriesList services={services} onPathDelete={deleteService} />}
             </Container>
         </div>
     )
@@ -126,106 +98,54 @@ export const PathsPickerActions: FC<PathsPickerActionsProps> = ({ className, onP
             <Button variant="primary" onClick={handleClickCallPathPicker}>
                 <Icon svgPath={mdiGit} aria-hidden={true} /> Add a repository
             </Button>
-            <Button variant="primary" onClick={handleClickCallPathPicker}>
-                <Icon svgPath={mdiFolderMultiplePlusOutline} aria-hidden={true} /> Add all repositories from a folder
-            </Button>
         </div>
     )
 }
 
-interface Directory {
-    path: Path
-    repositories: LocalRepository[]
-}
-
 interface LocalRepositoriesListProps {
-    paths: Path[]
-    repositories: LocalRepository[]
-    onPathDelete: (path: Path) => void
+    services: LocalCodeHost[]
+    onPathDelete: (service: LocalCodeHost) => void
 }
 
 /**
  * Fetches and renders a list of local repositories by a list of specified
  * local paths, it also aggregates list of resolved repositories and group them
  * by directories if repositories are in the same directory.
- *
- * NOTE: at the moment we have to have this group logic on the client since
- * backend API doesn't expose this information, but as soon as we have this in
- * API we can simplify this component.
  */
-const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ paths, repositories, onPathDelete }) => {
-    const { folders, plainRepositories } = useMemo(() => {
-        const repositoriesTree: Record<Path, LocalRepository[]> = {}
-
-        for (const path of paths) {
-            for (const repository of repositories) {
-                // Exactly match in this case path in file picker is a path to
-                // .git repository, mark as plain repository
-                if (repository.path === path) {
-                    repositoriesTree[path] = [repository]
-                    continue
-                }
-
-                // Repository's path falls within the path, means that path in file picker
-                // is a path to directory with multiples .git repositories
-                if (repository.path.startsWith(path)) {
-                    const existingDirectoryRepositories = repositoriesTree[path] ?? []
-                    repositoriesTree[path] = [...existingDirectoryRepositories, repository]
-                }
-            }
-        }
-
-        const folders: Directory[] = []
-        const plainRepositories: LocalRepository[] = []
-
-        for (const path of Object.keys(repositoriesTree)) {
-            const repositories = repositoriesTree[path]
-
-            if (repositories.length > 1) {
-                folders.push({
-                    path,
-                    repositories,
-                })
-
-                continue
-            }
-
-            if (repositories.length === 1 && repositories[0].path !== path) {
-                folders.push({
-                    path,
-                    repositories,
-                })
-            } else {
-                plainRepositories.push(repositories[0])
-            }
-        }
-
-        return { folders, plainRepositories }
-    }, [paths, repositories])
+const LocalRepositoriesList: FC<LocalRepositoriesListProps> = ({ services, onPathDelete }) => {
+    const sortedServices = useMemo(
+        () =>
+            services.slice().sort((serviceA, serviceB) => {
+                const result = +serviceB.isFolder - +serviceA.isFolder
+                return result === 0 ? serviceA.path.localeCompare(serviceB.path) : result
+            }),
+        [services]
+    )
 
     return (
         <ul className={styles.list}>
-            {folders.map(folder => (
-                <DirectoryItem key={folder.path} directory={folder} onDelete={() => onPathDelete(folder.path)} />
-            ))}
-            {plainRepositories.map(repository => (
-                <RepositoryItem
-                    key={repository.path}
-                    repository={repository}
-                    withDelete={true}
-                    onDelete={() => onPathDelete(repository.path)}
-                />
-            ))}
+            {sortedServices.map(service =>
+                service.isFolder ? (
+                    <DirectoryItem key={service.id} service={service} onDelete={onPathDelete} />
+                ) : (
+                    <RepositoryItem
+                        key={service.id}
+                        service={service}
+                        repository={service.repositories[0]}
+                        onDelete={onPathDelete}
+                    />
+                )
+            )}
         </ul>
     )
 }
 
 interface DirectoryItemProps {
-    directory: Directory
-    onDelete: () => void
+    service: LocalCodeHost
+    onDelete: (service: LocalCodeHost) => void
 }
 
-const DirectoryItem: FC<DirectoryItemProps> = ({ directory, onDelete }) => (
+const DirectoryItem: FC<DirectoryItemProps> = ({ service, onDelete }) => (
     <li className={classNames(styles.listItem, styles.listItemDirectory)}>
         <Collapse>
             {({ isOpen, setOpen }) => (
@@ -245,21 +165,27 @@ const DirectoryItem: FC<DirectoryItemProps> = ({ directory, onDelete }) => (
                                     className={styles.listItemIcon}
                                 />
                                 <Text weight="bold" className={styles.listItemName}>
-                                    {directory.path}
+                                    {service.path}
                                 </Text>
                             </div>
                             <Text size="small" className={styles.listItemDescription}>
-                                This folder contains {directory.repositories.length}{' '}
-                                {pluralize('repository', directory.repositories.length, 'repositories')}
+                                This folder contains {service.repositories.length}{' '}
+                                {pluralize('repository', service.repositories.length, 'repositories')}
                             </Text>
                         </Button>
-                        <Button variant="secondary" onClick={onDelete} className={styles.listItemAction}>
-                            <Icon aria-hidden={true} svgPath={mdiDelete} />
-                        </Button>
+                        {!service.autogenerated && (
+                            <Button
+                                variant="secondary"
+                                onClick={() => onDelete(service)}
+                                className={styles.listItemAction}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiDelete} />
+                            </Button>
+                        )}
                     </div>
                     <CollapsePanel as="ul" className={classNames(styles.list, styles.listSubList)}>
-                        {directory.repositories.map(repository => (
-                            <RepositoryItem key={repository.path} repository={repository} withDelete={false} />
+                        {service.repositories.map(repository => (
+                            <RepositoryItem key={repository.path} service={service} repository={repository} />
                         ))}
                     </CollapsePanel>
                 </>
@@ -269,12 +195,12 @@ const DirectoryItem: FC<DirectoryItemProps> = ({ directory, onDelete }) => (
 )
 
 interface RepositoryItemProps {
+    service: LocalCodeHost
     repository: LocalRepository
-    withDelete: boolean
-    onDelete?: () => void
+    onDelete?: (service: LocalCodeHost) => void
 }
 
-const RepositoryItem: FC<RepositoryItemProps> = ({ repository, withDelete, onDelete }) => (
+const RepositoryItem: FC<RepositoryItemProps> = ({ service, repository, onDelete }) => (
     <li className={styles.listItem}>
         <span className={styles.listItemContent}>
             <Icon aria-hidden={true} svgPath={mdiGit} inline={false} className={styles.listItemIcon} />
@@ -285,8 +211,8 @@ const RepositoryItem: FC<RepositoryItemProps> = ({ repository, withDelete, onDel
                 {repository.path}
             </Text>
         </span>
-        {withDelete && (
-            <Button variant="secondary" onClick={onDelete} className={styles.listItemAction}>
+        {onDelete && !service.autogenerated && (
+            <Button variant="secondary" onClick={() => onDelete(service)} className={styles.listItemAction}>
                 <Icon aria-hidden={true} svgPath={mdiDelete} />
             </Button>
         )}

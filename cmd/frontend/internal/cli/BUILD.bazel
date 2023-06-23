@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "autoupgrade.go",
         "autoupgrade_progress.go",
+        "autoupgrade_servers.go",
         "config.go",
         "doc.go",
         "http.go",

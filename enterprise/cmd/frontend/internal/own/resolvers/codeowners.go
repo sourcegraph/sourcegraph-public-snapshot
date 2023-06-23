@@ -89,7 +89,7 @@ func (r *codeownersFileEntryResolver) CodeownersFile(ctx context.Context) (graph
 			}
 			return f.Contents, nil
 		}, graphqlbackend.VirtualFileResolverOptions{
-			URL: fmt.Sprintf("%s/-/own", r.repo.URL()),
+			URL: fmt.Sprintf("%s/-/own/edit", r.repo.URL()),
 		}), nil
 	case codeowners.GitRulesetSource:
 		// For committed, we can return a GitTreeEntry, as it implements File2.

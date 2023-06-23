@@ -5,6 +5,7 @@ import { PrefilledOptions, withPreselectedOptions } from '../editor/withPreselec
 import { SourcegraphEmbeddingsSearchClient } from '../embeddings/client'
 import { SourcegraphIntentDetectorClient } from '../intent-detector/client'
 import { SourcegraphBrowserCompletionsClient } from '../sourcegraph-api/completions/browserClient'
+import { CompletionsClientConfig, SourcegraphCompletionsClient } from '../sourcegraph-api/completions/client'
 import { SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql'
 import { isError } from '../utils'
 
@@ -20,15 +21,18 @@ import { reformatBotMessage } from './viewHelpers'
 export type { TranscriptJSON }
 export { Transcript }
 
+export type ClientInitConfig = Pick<
+    ConfigurationWithAccessToken,
+    'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
+>
+
 export interface ClientInit {
-    config: Pick<
-        ConfigurationWithAccessToken,
-        'serverEndpoint' | 'codebase' | 'useContext' | 'accessToken' | 'customHeaders'
-    >
+    config: ClientInitConfig
     setMessageInProgress: (messageInProgress: ChatMessage | null) => void
     setTranscript: (transcript: Transcript) => void
     editor: Editor
     initialTranscript?: Transcript
+    createCompletionsClient?: (config: CompletionsClientConfig) => SourcegraphCompletionsClient
 }
 
 export interface Client {
@@ -52,10 +56,11 @@ export async function createClient({
     setTranscript,
     editor,
     initialTranscript,
+    createCompletionsClient = config => new SourcegraphBrowserCompletionsClient(config),
 }: ClientInit): Promise<Client> {
     const fullConfig = { debugEnable: false, ...config }
 
-    const completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
+    const completionsClient = createCompletionsClient(fullConfig)
     const chatClient = new ChatClient(completionsClient)
 
     const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)

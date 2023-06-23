@@ -18,7 +18,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Explanations](cody/explanations/index.md)
   - [FAQ](cody/faq.md)
   - [Troubleshooting](cody/troubleshooting.md)
-  - [Completions (experimental)](cody/completions.md)
+  - [Code Autocomplete](cody/autocomplete.md)
 - [Code search](code_search/index.md)
   - [Tutorials](code_search/tutorials/index.md)
   - [How-to guides](code_search/how-to/index.md)
@@ -78,7 +78,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Background information](dev/background-information/index.md)
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
-- [App (experimental)](app/index.md)
+- [Cody App (experimental)](app/index.md)
 - [Own (experimental)](own/index.md)
 - <br/>
 - [★ Search query syntax](code_search/reference/queries.md)

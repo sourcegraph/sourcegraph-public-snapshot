@@ -11,11 +11,13 @@ import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
+import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.CodyCompatibility;
 import com.sourcegraph.cody.api.CompletionsService;
 import com.sourcegraph.cody.completions.prompt_library.*;
 import com.sourcegraph.cody.vscode.*;
+import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.NotificationActivity;
 import com.sourcegraph.config.SettingsComponent;
@@ -142,6 +144,7 @@ public class CodyCompletionsManager {
               Optional<InlineCompletionItem> maybeItem =
                   result.items.stream()
                       .map(CodyCompletionsManager::removeUndesiredCharacters)
+                      .map(item -> normalizeIndentation(item, EditorUtils.indentOptions(editor)))
                       .map(
                           resultItem ->
                               postProcessInlineCompletionBasedOnDocumentContext(
@@ -166,6 +169,24 @@ public class CodyCompletionsManager {
                 e.printStackTrace();
               }
             });
+  }
+
+  // TODO: handle tabs in multiline completions when we add them
+  public static InlineCompletionItem normalizeIndentation(
+      @NotNull InlineCompletionItem item,
+      @NotNull CommonCodeStyleSettings.IndentOptions indentOptions) {
+    if (item.insertText.matches("^[\t ]*.+")) {
+      String withoutLeadingWhitespace = item.insertText.stripLeading();
+      String indentation =
+          item.insertText.substring(
+              0, item.insertText.length() - withoutLeadingWhitespace.length());
+      String newIndentation = EditorUtils.tabsToSpaces(indentation, indentOptions);
+      String newInsertText = newIndentation + withoutLeadingWhitespace;
+      int rangeDiff = item.insertText.length() - newInsertText.length();
+      Range newRange =
+          item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
+      return item.withInsertText(newInsertText).withRange(newRange);
+    } else return item;
   }
 
   public static InlineCompletionItem removeUndesiredCharacters(InlineCompletionItem item) {

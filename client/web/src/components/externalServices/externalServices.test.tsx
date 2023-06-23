@@ -5,15 +5,15 @@ import { codeHostExternalServices, gitHubAppConfig, resolveExternalServiceCatego
 
 describe('gitHubAppConfig', () => {
     test('get config', () => {
-        const config = gitHubAppConfig('https://test.com', '1234', '5678', 'testUser')
+        const config = gitHubAppConfig('https://test.com', '1234', '5678')
         expect(config.defaultConfig).toEqual(`{
   "url": "https://test.com",
   "gitHubAppDetails": {
     "installationID": 5678,
     "appID": 1234,
-    "baseURL": "https://test.com"
+    "baseURL": "https://test.com",
+    "cloneAllRepositories": true
   },
-  "orgs": ["testUser"],
   "authorization": {}
 }`)
     })

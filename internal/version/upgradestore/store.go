@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver"
+	"github.com/derision-test/glock"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
 	"github.com/keegancsmith/sqlf"
@@ -19,7 +20,8 @@ import (
 // store manages checking and updating the version of the instance that was running prior to an ongoing
 // instance upgrade or downgrade operation.
 type store struct {
-	db *basestore.Store
+	db    *basestore.Store
+	clock glock.Clock
 }
 
 // New returns a new version store with the given database handle.
@@ -29,8 +31,13 @@ func New(db database.DB) *store {
 
 // NewWith returns a new version store with the given transactable handle.
 func NewWith(db basestore.TransactableHandle) *store {
+	return newStore(basestore.NewWithHandle(db), glock.NewRealClock())
+}
+
+func newStore(db *basestore.Store, clock glock.Clock) *store {
 	return &store{
-		db: basestore.NewWithHandle(db),
+		db:    db,
+		clock: clock,
 	}
 }
 
@@ -189,6 +196,7 @@ func (s *store) EnsureUpgradeTable(ctx context.Context) (err error) {
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS to_version text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS upgrader_hostname text NOT NULL`),
 		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS plan json NOT NULL DEFAULT '{}'::json`),
+		sqlf.Sprintf(`ALTER TABLE upgrade_logs ADD COLUMN IF NOT EXISTS last_heartbeat_at timestamptz NOT NULL DEFAULT now()`),
 	}
 
 	if err := s.db.WithTransact(ctx, func(tx *basestore.Store) error {
@@ -217,7 +225,7 @@ func (s *store) ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed 
 			return err
 		}
 
-		query := sqlf.Sprintf(claimAutoUpgradeQuery, from, to, hostname.Get(), to)
+		query := sqlf.Sprintf(claimAutoUpgradeQuery, from, to, hostname.Get(), s.clock.Now(), heartbeatStaleInterval, to)
 		if claimed, _, err = basestore.ScanFirstBool(tx.Query(ctx, query)); err != nil {
 			return err
 		}
@@ -227,6 +235,8 @@ func (s *store) ClaimAutoUpgrade(ctx context.Context, from, to string) (claimed 
 
 	return claimed, err
 }
+
+const heartbeatStaleInterval = time.Second * 30
 
 const claimAutoUpgradeQuery = `
 WITH claim_attempt AS (
@@ -244,7 +254,12 @@ WITH claim_attempt AS (
 		)
 		-- that is currently running
 		AND (
-			finished_at IS NULL
+			(
+				finished_at IS NULL
+				AND (
+					last_heartbeat_at >= %s::timestamptz - %s::interval
+				)
+			)
 			-- or that succeeded to the expected version
 			OR (
 				success = true
@@ -293,6 +308,18 @@ UPDATE upgrade_logs
 SET
 	finished_at = %s,
 	success = %s
+WHERE id = (
+	SELECT MAX(id) FROM upgrade_logs
+)
+`
+
+func (s *store) Heartbeat(ctx context.Context) error {
+	return s.db.Exec(ctx, sqlf.Sprintf(heartbeatQuery, s.clock.Now()))
+}
+
+const heartbeatQuery = `
+UPDATE upgrade_logs
+SET last_heartbeat_at = %s::timestamptz
 WHERE id = (
 	SELECT MAX(id) FROM upgrade_logs
 )
