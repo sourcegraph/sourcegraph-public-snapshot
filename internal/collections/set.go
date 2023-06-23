@@ -98,6 +98,11 @@ func (s Set[T]) Contains(b Set[T]) bool {
 	return true
 }
 
+// IsEmpty returns true if the set doesn't contain any elements.
+func (s Set[T]) IsEmpty() bool {
+	return len(s) == 0
+}
+
 // Union returns a new set with all the elements from s and b
 func (s Set[T]) Union(b Set[T]) Set[T] {
 	return Union(s, b)

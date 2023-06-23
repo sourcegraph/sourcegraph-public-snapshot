@@ -168,6 +168,6 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_s3proxy_base",
-        digest = "sha256:4299634c0e403059a5a2aeda323181feb8189648c23fd69d0b5d057e0e7966eb",
+        digest = "sha256:92614e804e5a5cb5316f8d9235286b659d8957c557170ddefda2973053ca5e4d",
         image = "us.gcr.io/sourcegraph-dev/wolfi-blobstore-base",
     )

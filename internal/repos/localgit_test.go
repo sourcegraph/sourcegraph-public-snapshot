@@ -64,7 +64,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 		roots = append(roots, root)
 		repoPatterns = append(repoPatterns, &schema.LocalGitRepoPattern{Pattern: filepath.Join(root, config.pattern), Group: config.group})
 		for _, folder := range config.folders {
-			if err := os.MkdirAll(filepath.Join(root, folder), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Join(root, folder), 0o755); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -74,7 +74,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind: extsvc.VariantLocalGit.AsKind(),
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.LocalGitExternalService{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.LocalGitExternalService{
 			Repos: repoPatterns,
 		})),
 	}
@@ -84,7 +84,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos, err := listAll(ctx, src)
+	repos, err := ListAll(ctx, src)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,7 +109,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 		}
 	}
 
-	testutil.AssertGolden(t, filepath.Join("testdata", "sources", t.Name()), update(t.Name()), repos)
+	testutil.AssertGolden(t, filepath.Join("testdata", "sources", t.Name()), Update(t.Name()), repos)
 }
 
 func gitInitBare(t *testing.T, path string) {
@@ -132,7 +132,7 @@ func gitInitRepos(t *testing.T, names ...string) string {
 
 	for _, name := range names {
 		p := filepath.Join(root, name)
-		if err := os.MkdirAll(p, 0755); err != nil {
+		if err := os.MkdirAll(p, 0o755); err != nil {
 			t.Fatal(err)
 		}
 

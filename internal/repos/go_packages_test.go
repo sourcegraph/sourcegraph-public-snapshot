@@ -39,7 +39,7 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindGoPackages,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GoModulesConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GoModulesConnection{
 			Urls: []string{
 				"https://proxy.golang.org",
 			},
@@ -52,7 +52,7 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 		})),
 	}
 
-	cf, save := newClientFactory(t, t.Name())
+	cf, save := NewClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
 	src, err := NewGoPackagesSource(ctx, &svc, cf)
@@ -62,7 +62,7 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 
 	src.SetDependenciesService(depsSvc)
 
-	repos, err := listAll(ctx, src)
+	repos, err := ListAll(ctx, src)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -71,5 +71,5 @@ func TestGoPackagesSource_ListRepos(t *testing.T) {
 		return repos[i].Name < repos[j].Name
 	})
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
 }
