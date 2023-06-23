@@ -126,7 +126,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const transcriptId = transcript?.id
 
     useEffect(() => {
-        if (!loaded || !transcriptId) {
+        if (!loaded || !transcriptId || !authenticatedUser || !isCodyEnabled()) {
             return
         }
         const idFromUrl = transcriptIdFromUrl(pathname)
@@ -136,7 +136,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 replace: true,
             })
         }
-    }, [transcriptId, loaded, pathname, navigate])
+    }, [transcriptId, loaded, pathname, navigate, authenticatedUser])
 
     const [showMobileHistory, setShowMobileHistory] = useState<boolean>(false)
     // Close mobile history list when transcript changes
