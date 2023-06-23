@@ -25,7 +25,7 @@ type firstPassResult struct {
 	documentCountByPath   map[string]int
 }
 
-func aggregateExternalSymbolsAndPaths(rr readResetter) (firstPassResult, error) {
+func aggregateExternalSymbolsAndPaths(indexReader gzipReadSeeker) (firstPassResult, error) {
 	var metadata *scip.Metadata
 	var paths []string
 	externalSymbolsByName := make(map[string]*scip.SymbolInformation, 1024)
@@ -45,10 +45,10 @@ func aggregateExternalSymbolsAndPaths(rr readResetter) (firstPassResult, error) 
 			externalSymbolsByName[s.Symbol] = s
 		},
 	}
-	if err := indexVisitor.ParseStreaming(rr); err != nil {
+	if err := indexVisitor.ParseStreaming(&indexReader); err != nil {
 		return firstPassResult{}, err
 	}
-	if err := rr.seekToStart(); err != nil {
+	if err := indexReader.seekToStart(); err != nil {
 		return firstPassResult{}, err
 	}
 	return firstPassResult{metadata, externalSymbolsByName, paths, documentCountByPath}, nil
@@ -66,12 +66,12 @@ func aggregateExternalSymbolsAndPaths(rr readResetter) (firstPassResult, error) 
 // package and package reference channels concurrently.
 func correlateSCIP(
 	ctx context.Context,
-	rr readResetter,
+	indexReader gzipReadSeeker,
 	root string,
 	getChildren pathexistence.GetChildrenFunc,
 ) (lsifstore.ProcessedSCIPData, error) {
 
-	indexSummary, err := aggregateExternalSymbolsAndPaths(rr)
+	indexSummary, err := aggregateExternalSymbolsAndPaths(indexReader)
 	if err != nil {
 		return lsifstore.ProcessedSCIPData{}, err
 	}
@@ -153,7 +153,7 @@ func correlateSCIP(
 			}
 		},
 		}
-		if err := secondPassVisitor.ParseStreaming(rr); err != nil {
+		if err := secondPassVisitor.ParseStreaming(&indexReader); err != nil {
 			// FIXME: How do we handle the error here properly?
 			panic(err)
 		}

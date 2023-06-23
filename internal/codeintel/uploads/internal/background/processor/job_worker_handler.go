@@ -243,7 +243,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		return directoryChildren, nil
 	}
 
-	return false, withUploadData(ctx, logger, uploadStore, upload.SizeStats(), trace, func(rr readResetter) (err error) {
+	return false, withUploadData(ctx, logger, uploadStore, upload.SizeStats(), trace, func(indexReader gzipReadSeeker) (err error) {
 		const (
 			lsifContentType = "application/x-ndjson+lsif"
 			scipContentType = "application/x-protobuf+scip"
@@ -276,7 +276,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		correlatedSCIPData, err := correlateSCIP(ctx, rr, upload.Root, getChildren)
+		correlatedSCIPData, err := correlateSCIP(ctx, indexReader, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}
@@ -395,45 +395,32 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, git
 // that is 512MiB.
 const uncompressedSizeLimitBytes = 512 * 1024 * 1024
 
-type readResetter interface {
-	io.Reader
-	seekToStart() error
+type gzipReadSeeker struct {
+	inner      io.ReadSeeker
+	gzipReader *gzip.Reader
 }
 
-type gzipReadResetter struct {
-	file   *os.File
-	reader *gzip.Reader
+func newGzipReadSeeker(rs io.ReadSeeker) (gzipReadSeeker, error) {
+	gzipReader, err := gzip.NewReader(rs)
+	return gzipReadSeeker{rs, gzipReader}, err
 }
 
-func (grr *gzipReadResetter) Read(buf []byte) (int, error) {
-	return grr.reader.Read(buf)
+func (grs gzipReadSeeker) Read(buf []byte) (int, error) {
+	return grs.gzipReader.Read(buf)
 }
 
-func (grr *gzipReadResetter) seekToStart() (err error) {
-	if _, err = grr.file.Seek(0, io.SeekStart); err != nil {
+func (grs gzipReadSeeker) seekToStart() (err error) {
+	if _, err := grs.inner.Seek(0, io.SeekStart); err != nil {
 		return err
 	}
-	grr.reader, err = gzip.NewReader(grr.file)
-	return err
-}
-
-type bufReadResetter struct {
-	reader *bytes.Reader
-}
-
-func (brr *bufReadResetter) Read(p []byte) (int, error) {
-	return brr.reader.Read(p)
-}
-
-func (brr *bufReadResetter) seekToStart() error {
-	_, err := brr.reader.Seek(0, io.SeekStart)
+	grs.gzipReader, err = gzip.NewReader(grs.inner)
 	return err
 }
 
 // withUploadData will invoke the given function with a reader of the upload's raw data. The
 // consumer should expect raw newline-delimited JSON content. If the function returns without
 // an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, uploadStats uploadsshared.UploadSizeStats, trace observation.TraceLogger, fn func(r readResetter) error) error {
+func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, uploadStats uploadsshared.UploadSizeStats, trace observation.TraceLogger, fn func(r gzipReadSeeker) error) error {
 	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", uploadStats.ID)
 
 	trace.AddEvent("TODO Domain Owner", attribute.String("uploadFilename", uploadFilename))
@@ -445,21 +432,18 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 	}
 	defer rc.Close()
 
-	trySaveToDisk := func(r io.Reader) (readResetter, *os.File, error) {
-		var cursor readResetter = nil
+	trySaveToDisk := func(r io.Reader) (gzipReadSeeker, *os.File, error) {
+		var indexReader gzipReadSeeker
 		tmpFilePattern := fmt.Sprintf("upload-%s-*.gz", strings.ReplaceAll(uploadFilename, "*", "_"))
 		tmpFile, err := os.CreateTemp("", tmpFilePattern)
 		if err != nil {
 			logger.Warn("Failed to create temporary file to save upload for streaming",
 				log.NamedError("err", err),
 				log.String("filename", uploadFilename))
-		} else {
-			cursor = &gzipReadResetter{file: tmpFile}
-			if err = cursor.seekToStart(); err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to seek for file: %s", tmpFile.Name())
-			}
+		} else if indexReader, err = newGzipReadSeeker(tmpFile); err != nil {
+			return indexReader, nil, errors.Wrapf(err, "failed to seek for file: %s", tmpFile.Name())
 		}
-		return cursor, tmpFile, nil
+		return indexReader, tmpFile, nil
 	}
 
 	var readerForDiskWrite io.Reader = nil
@@ -481,10 +465,10 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 			readerForDiskWrite = bytes.NewReader(buf)
 		}
 	}
-	var cursor readResetter = nil
+	var indexReader gzipReadSeeker
 	if readerForDiskWrite != nil {
 		var tmpFile *os.File
-		cursor, tmpFile, err = trySaveToDisk(readerForDiskWrite)
+		indexReader, tmpFile, err = trySaveToDisk(readerForDiskWrite)
 		if tmpFile != nil {
 			defer os.RemoveAll(tmpFile.Name())
 		}
@@ -492,7 +476,7 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 			return err
 		}
 	}
-	if cursor == nil {
+	if indexReader.inner == nil {
 		if buf == nil {
 			// trySaveToDisk may return err == nil and cursor == nil,
 			// e.g. if it fails to create a temporary file.
@@ -501,10 +485,12 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 				return errors.Wrap(err, "failed to read upload file")
 			}
 		}
-		cursor = &bufReadResetter{reader: bytes.NewReader(buf)}
+		if indexReader, err = newGzipReadSeeker(bytes.NewReader(buf)); err != nil {
+			return errors.Wrap(err, "failed to create gzip reader")
+		}
 	}
 
-	if err := fn(cursor); err != nil {
+	if err := fn(indexReader); err != nil {
 		return err
 	}
 

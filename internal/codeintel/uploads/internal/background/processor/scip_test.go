@@ -1,14 +1,13 @@
 package processor
 
 import (
-	"compress/gzip"
 	"context"
-	"io"
 	"os"
 	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -18,27 +17,19 @@ import (
 func TestCorrelateSCIP(t *testing.T) {
 	ctx := context.Background()
 
-	testReader := func() io.Reader {
+	testReader := func() gzipReadSeeker {
 		gzipped, err := os.Open("./testdata/index1.scip.gz")
 		if err != nil {
 			t.Fatalf("unexpected error reading test file: %s", err)
 		}
-		r, err := gzip.NewReader(gzipped)
-		if err != nil {
-			t.Fatalf("unexpected error unzipping test file: %s", err)
-		}
+		indexReader, err := newGzipReadSeeker(gzipped)
+		require.NoError(t, err, "failed to create reader for test file")
 
-		return r
+		return *indexReader
 	}
-
-	content, err := io.ReadAll(testReader())
-	if err != nil {
-		t.Fatalf("unexpected error reading test reader: %s", err)
-	}
-	n := int64(len(content))
 
 	// Correlate and consume channels from returned object
-	correlatedSCIPData, err := correlateSCIP(ctx, testReader(), n, "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+	correlatedSCIPData, err := correlateSCIP(ctx, testReader(), "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		return scipDirectoryChildren, nil
 	})
 	if err != nil {
