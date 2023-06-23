@@ -604,4 +604,8 @@ class CodyToolWindowContent implements UpdatableChat {
       promptInput.setCaretPosition(textLength);
     }
   }
+
+  public JComponent getPreferredFocusableComponent() {
+    return promptInput;
+  }
 }

@@ -33,16 +33,8 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
         ContentFactory.SERVICE
             .getInstance()
             .createContent(toolWindowContent.getContentPanel(), "", false);
+    content.setPreferredFocusableComponent(toolWindowContent.getPreferredFocusableComponent());
     toolWindow.getContentManager().addContent(content);
-    new FocusWatcher() {
-      @Override
-      protected void focusedComponentChanged(Component focusedComponent, @Nullable AWTEvent cause) {
-        if (focusedComponent != null
-            && SwingUtilities.isDescendingFrom(focusedComponent, toolWindow.getComponent())) {
-          toolWindowContent.focusPromptInput();
-        }
-      }
-    }.install(toolWindow.getComponent());
     List<AnAction> titleActions = new ArrayList<>();
     createTitleActions(titleActions);
     if (!titleActions.isEmpty()) {
