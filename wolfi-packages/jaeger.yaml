@@ -3,7 +3,7 @@
 
 package:
   name: jaeger
-  version: 1.45.0
+  version: 1.45.0 # Keep in sync with version in sg.config.yaml
   epoch: 1
   description: "Distributed Tracing Platform"
   target-architecture:
