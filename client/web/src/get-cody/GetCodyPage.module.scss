@@ -40,8 +40,6 @@
         padding-bottom: 7.5rem;
         padding-left: 4.75rem;
         gap: 6rem;
-        border-left: 2px dashed;
-        border-color: rgba(255, 255, 255, 0.10);
     }
 
     @media (--md-breakpoint-down) {
@@ -65,6 +63,15 @@
             border-radius: 0.5rem;
         }
     }
+}
+
+.dashed-line {
+    width: 0.125rem;
+    height: 105.25rem;
+    background-image: linear-gradient(to bottom, transparent 50%,rgba(255, 255, 255, 0.10) 50%);
+    background-size: 0.0625rem 2.625rem;
+    margin-left: -4.875rem;
+    position: absolute;
 }
   
 .card-title {

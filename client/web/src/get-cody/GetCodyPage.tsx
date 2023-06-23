@@ -95,6 +95,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                 </div>
 
                 <div className={styles.cardWrapper}>
+                    <div className={styles.dashedLine} />
                     <div className={styles.lightLine} />
                     <div ref={lightRef} className={styles.lightWrapper}>
                         <Light className={styles.light} />
