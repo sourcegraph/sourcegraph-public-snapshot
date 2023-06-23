@@ -6,7 +6,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthStatus, LocalEnv, isLoggedIn } from '../src/chat/protocol'
+import { AuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
@@ -23,7 +23,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
         null
     )
-    const [endpoint, setEndpoint] = useState<string | null>()
+    const [endpoint, setEndpoint] = useState<string | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
@@ -42,7 +42,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         vscodeAPI.onMessage(message => {
             switch (message.type) {
                 case 'transcript': {
-                    console.log('transcript', message)
                     if (message.isMessageInProgress) {
                         const msgLength = message.messages.length - 1
                         setTranscript(message.messages.slice(0, msgLength))
@@ -55,16 +54,15 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 }
                 case 'config':
                     setConfig(message.config)
-                    setIsAppInstalled(message.config.isAppInstalled)
                     break
                 case 'login':
                     setAuthStatus(message.authStatus)
-                    setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
+                    setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                     setEndpoint(message.authStatus.endpoint)
                     break
                 case 'showTab':
                     if (message.tab === 'chat') {
-                        setView(message.tab)
+                        setView('chat')
                     }
                     break
                 case 'debug':
@@ -97,6 +95,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     const onLogout = useCallback(() => {
         setAuthStatus(null)
+        setEndpoint(null)
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
 
@@ -117,7 +116,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     appOS={config?.os}
                     appArch={config?.arch}
                     callbackScheme={config?.uriScheme}
-                    isAppConnectEnabled={config?.isAppConnectEnabled}
                     setEndpoint={setEndpoint}
                 />
             ) : (

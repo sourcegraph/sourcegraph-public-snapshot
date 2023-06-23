@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
@@ -20,14 +20,13 @@ interface LoginProps {
     callbackScheme?: string
     appOS?: string
     appArch?: string
-    isAppConnectEnabled?: boolean
     setEndpoint: (endpoint: string) => void
 }
 
 const APP_DESC = {
     getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     download: 'Download and run the Cody desktop app to configure your local code graph.',
-    connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
+    connectApp: 'Cody App detected. All that’s left to do is connect VS Code with Cody App.',
     notRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     comingSoon:
         'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
@@ -42,12 +41,13 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     appArch,
     isAppInstalled = false,
     isAppRunning = false,
-    isAppConnectEnabled = false,
     setEndpoint,
 }) => {
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
+    const [enableCodyAppConnect, setEnableCodyAppConnect] = useState(callbackScheme === 'vscode-insiders')
 
     const loginWithDotCom = useCallback(() => {
+        setEnableCodyAppConnect(false)
         const callbackUri = new URL(DOTCOM_CALLBACK_URL.href)
         callbackUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
         setEndpoint(DOTCOM_URL.href)
@@ -98,7 +98,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     const EnterpriseSignin: React.FunctionComponent = () => (
         <section
-            className={classNames(styles.section, !isAppConnectEnabled ? styles.codyGradient : styles.greyGradient)}
+            className={classNames(styles.section, !enableCodyAppConnect ? styles.codyGradient : styles.greyGradient)}
         >
             <h2 className={styles.sectionHeader}>Sourcegraph Enterprise</h2>
             <p className={styles.openMessage}>
@@ -112,7 +112,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     const DotComSignin: React.FunctionComponent = () => (
         <section
-            className={classNames(styles.section, !isAppConnectEnabled ? styles.codyGradient : styles.greyGradient)}
+            className={classNames(styles.section, !enableCodyAppConnect ? styles.codyGradient : styles.greyGradient)}
         >
             <h2 className={styles.sectionHeader}>Sourcegraph.com</h2>
             <p className={styles.openMessage}>
@@ -133,10 +133,10 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             {authStatus && <ErrorContainer authStatus={authStatus} isApp={isApp} endpoint={endpoint} />}
             {/* Signin Sections */}
             <div className={styles.sectionsContainer}>
-                <EnterpriseSignin />
-                <DotComSignin />
-                {isAppConnectEnabled && <AppConnect />}
-                {isAppConnectEnabled && !isOSSupported && <NoAppConnect />}
+                {!enableCodyAppConnect && <EnterpriseSignin />}
+                {!enableCodyAppConnect && <DotComSignin />}
+                <AppConnect />
+                {enableCodyAppConnect && !isOSSupported && <NoAppConnect />}
             </div>
             {/* Footer */}
             <footer className={styles.footer}>

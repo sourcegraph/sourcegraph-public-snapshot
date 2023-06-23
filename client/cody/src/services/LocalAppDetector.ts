@@ -30,16 +30,10 @@ export class LocalAppDetector implements vscode.Disposable {
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
         // Only Mac is supported for now
         this.isSupported = this.localEnv.os === 'darwin' && this.localEnv.homeDir !== undefined
-        const codyConfiguration = vscode.workspace.getConfiguration('cody')
-        // TODO: remove this once the experimental period for connect app is over
-        this.localEnv.isAppConnectEnabled = codyConfiguration.get<boolean>('experimental.app.connect') ?? false
         void this.init()
     }
 
-    public async getProcessInfo(isLoggedIn = false): Promise<LocalEnv> {
-        if (isLoggedIn && this._watchers.length > 0) {
-            this.dispose()
-        }
+    public async getProcessInfo(): Promise<LocalEnv> {
         await this.fetchServer()
         return this.localEnv
     }
@@ -185,7 +179,4 @@ const envInit = {
     isAppInstalled: false,
     isAppRunning: false,
     hasAppJson: false,
-
-    // TODO: remove this once the experimental period for connect app is over
-    isAppConnectEnabled: false,
 }

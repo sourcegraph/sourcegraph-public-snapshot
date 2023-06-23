@@ -29,7 +29,7 @@ export type WebviewMessage =
  */
 export type ExtensionMessage =
     | { type: 'showTab'; tab: string }
-    | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv; authStatus: AuthStatus }
+    | { type: 'config'; config: ConfigurationSubsetForWebview & LocalEnv }
     | { type: 'login'; authStatus: AuthStatus }
     | { type: 'history'; messages: UserLocalHistory | null }
     | { type: 'transcript'; messages: ChatMessage[]; isMessageInProgress: boolean }
@@ -122,8 +122,6 @@ export interface LocalEnv {
     hasAppJson: boolean
     isAppInstalled: boolean
     isAppRunning: boolean
-    // TODO: remove this once the experimental period for connect app is over
-    isAppConnectEnabled: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

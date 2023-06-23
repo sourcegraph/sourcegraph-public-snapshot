@@ -89,8 +89,8 @@ export class AuthProvider {
             default: {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
-                const token = await this.secretStorage.get(selectedEndpoint)
-                const authState = await this.auth(selectedEndpoint, token || null)
+                const token = (await this.secretStorage.get(selectedEndpoint)) || null
+                const authState = await this.auth(selectedEndpoint, token)
                 if (!authState) {
                     return
                 }
@@ -204,7 +204,7 @@ export class AuthProvider {
         await this.storeAuthInfo(endpoint, token)
         const authState = await this.auth(endpoint, token, customHeaders)
         if (authState?.isLoggedIn) {
-            const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
+            const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${isLocalApp(endpoint)}`
             await vscode.window.showInformationMessage(successMessage)
         }
     }

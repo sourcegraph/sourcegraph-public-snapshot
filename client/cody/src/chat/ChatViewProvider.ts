@@ -625,13 +625,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * activate extension when user has valid login
      */
     public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        if (authStatus.isLoggedIn) {
-            void this.publishConfig()
-        }
-        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
-        this.setWebviewView(authStatus.isLoggedIn ? 'chat' : 'login')
         await this.webview?.postMessage({ type: 'login', authStatus })
         this.sendEvent('auth', authStatus.isLoggedIn ? 'successfully' : 'failed')
+        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
     }
 
     /**
@@ -726,9 +722,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const send = async (): Promise<void> => {
             this.config = await getFullConfig(this.secretStorage, this.localStorage)
 
-            // check if the new configuration change is valid or not
-            const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = await this.localAppDetector.getProcessInfo(authStatus.isLoggedIn)
+            const localProcess = await this.localAppDetector.getProcessInfo()
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
@@ -737,8 +731,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
             // update codebase context on configuration change
             await this.updateCodebaseContext()
-            await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-            debug('Cody:publishConfig', 'webview', { verbose: authStatus })
+            await this.webview?.postMessage({ type: 'config', config: configForWebview })
+            debug('Cody:publishConfig:ConfigurationSubsetForWebview', 'LocalEnv', { verbose: configForWebview })
         }
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))

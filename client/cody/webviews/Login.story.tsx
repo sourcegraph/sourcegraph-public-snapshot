@@ -1,6 +1,6 @@
 import { ComponentMeta, ComponentStoryObj } from '@storybook/react'
 
-import { AuthStatus, defaultAuthStatus, unauthenticatedStatus } from '../src/chat/protocol'
+import { AuthStatus, LOCAL_APP_URL, defaultAuthStatus, unauthenticatedStatus } from '../src/chat/protocol'
 
 import { Login } from './Login'
 import { VSCodeStoryDecorator } from './storybook/VSCodeStoryDecorator'
@@ -48,7 +48,13 @@ export default meta
 export const Simple: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login authStatus={validAuthStatus} isAppInstalled={false} vscodeAPI={vscodeAPI} setEndpoint={() => {}} />
+            <Login
+                authStatus={validAuthStatus}
+                isAppInstalled={false}
+                vscodeAPI={vscodeAPI}
+                setEndpoint={() => {}}
+                endpoint={endpoint}
+            />
         </div>
     ),
 }
@@ -61,6 +67,7 @@ export const InvalidLogin: ComponentStoryObj<typeof Login> = {
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
                 setEndpoint={() => {}}
+                endpoint={endpoint}
             />
         </div>
     ),
@@ -74,6 +81,7 @@ export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
                 setEndpoint={() => {}}
+                endpoint={endpoint}
             />
         </div>
     ),
@@ -82,7 +90,13 @@ export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
 export const LoginWithAppInstalled: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login authStatus={validAuthStatus} isAppInstalled={true} vscodeAPI={vscodeAPI} setEndpoint={() => {}} />
+            <Login
+                authStatus={validAuthStatus}
+                isAppInstalled={true}
+                vscodeAPI={vscodeAPI}
+                setEndpoint={() => {}}
+                endpoint={LOCAL_APP_URL.href}
+            />
         </div>
     ),
 }

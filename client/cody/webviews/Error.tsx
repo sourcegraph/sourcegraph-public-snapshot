@@ -1,4 +1,4 @@
-import { AuthStatus } from '../src/chat/protocol'
+import { AuthStatus, isLocalApp } from '../src/chat/protocol'
 
 import styles from './Login.module.css'
 
@@ -43,7 +43,7 @@ export const ErrorContainer: React.FunctionComponent<{
     const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
     const isVersionCompatible = isInsiderBuild || siteVersion >= '5.1.0'
     const isVersionBeforeCody = !isVersionCompatible && siteVersion < '5.0.0'
-    const prefix = `Failed: ${isApp ? 'Cody App' : endpoint}`
+    const prefix = `Failed: ${isLocalApp(endpoint) ? 'Cody App' : endpoint}`
     // When doesn't have a valid token
     if (showInvalidAccessTokenError) {
         return (
