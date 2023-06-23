@@ -24,8 +24,8 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
 
                 <div className={styles.descriptionContent}>
                     <Text className={styles.descriptionText}>
-                        Open the app to get started. You can also access Cody from the system tray to chat with Cody
-                        alongside your editor.
+                        Once embeddings are finished being generated, you can specify Cody’s context and start asking
+                        cody questions in Cody Chat.
                     </Text>
 
                     <Tooltip content={!isProgressFinished ? 'Embeddings are still being generated' : ''}>
@@ -36,7 +36,7 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
                             className={styles.descriptionButton}
                             onClick={onNextStep}
                         >
-                            Open the app →
+                            Get Started
                         </Button>
                     </Tooltip>
                 </div>
