@@ -15,6 +15,7 @@ import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
 import { Provider, ProviderConfig } from './providers/provider'
+import { sharedPostProcess } from './shared-post-process'
 import { SNIPPET_WINDOW_SIZE, isAbortError } from './utils'
 
 interface CodyCompletionItemProviderConfig {
@@ -266,8 +267,13 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))
         ).flat()
 
+        // Shared post-processing logic
+        const processedCompletions = completions.map(completion =>
+            sharedPostProcess({ prefix, suffix, multiline: multilineMode !== null, languageId, completion })
+        )
+
         // Filter results
-        const visibleResults = filterCompletions(completions)
+        const visibleResults = filterCompletions(processedCompletions)
 
         // Rank results
         const rankedResults = rankCompletions(visibleResults)

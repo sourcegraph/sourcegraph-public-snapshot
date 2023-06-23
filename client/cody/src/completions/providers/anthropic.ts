@@ -125,11 +125,6 @@ export class AnthropicProvider extends Provider {
         // Remove bad symbols from the start of the completion string.
         completion = fixBadCompletionStart(completion)
 
-        // Handle multiline completion indentation and remove overlap with suffix.
-        if (this.multilineMode === 'block') {
-            completion = truncateMultilineCompletion(completion, this.prefix, this.suffix, this.languageId)
-        }
-
         // Remove incomplete lines in single-line completions
         if (this.multilineMode === null) {
             const allowedNewlines = 2

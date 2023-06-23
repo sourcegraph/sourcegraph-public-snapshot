@@ -60,7 +60,7 @@ export class UnstableHuggingFaceProvider extends Provider {
                 throw new Error(data.error)
             }
 
-            const completions: string[] = data.map(c => c.generated_text.replace(STOP_WORD, ''))
+            const completions: string[] = data.map(c => postProcess(c.generated_text, this.multilineMode))
             log?.onComplete(completions)
 
             return completions.map(content => ({
@@ -75,6 +75,18 @@ export class UnstableHuggingFaceProvider extends Provider {
             throw error
         }
     }
+}
+
+function postProcess(content: string, multilineMode: null | 'block'): string {
+    content = content.replace(STOP_WORD, '')
+
+    // The model might return multiple lines for single line completions because
+    // we are only able to specify a token limit.
+    if (multilineMode === null && content.includes('\n')) {
+        content = content.slice(0, content.indexOf('\n'))
+    }
+
+    return content.trim()
 }
 
 export function createProviderConfig(unstableHuggingFaceOptions: UnstableHuggingFaceOptions): ProviderConfig {
