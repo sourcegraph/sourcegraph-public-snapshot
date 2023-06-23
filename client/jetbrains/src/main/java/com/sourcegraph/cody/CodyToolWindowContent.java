@@ -460,7 +460,7 @@ class CodyToolWindowContent implements UpdatableChat {
                 List<ContextMessage> contextMessages =
                     getContextFromEmbeddings(
                         project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
-                displayUsedFiles(contextMessages);
+                this.displayUsedContext(contextMessages);
                 List<ContextMessage> editorContextMessages =
                     getEditorContextMessages(editorContext);
                 contextMessages.addAll(editorContextMessages);
@@ -484,7 +484,8 @@ class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
-  private void displayUsedFiles(List<ContextMessage> contextMessages) {
+  @Override
+  public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
     // Use context
     if (contextMessages.size() == 0) {
       this.addMessageToChat(

@@ -10,11 +10,14 @@ import com.sourcegraph.cody.api.CompletionsInput;
 import com.sourcegraph.cody.api.CompletionsService;
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.api.Speaker;
+import com.sourcegraph.cody.context.ContextFile;
+import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -49,10 +52,24 @@ public class Chat {
           if (agentChatMessage.text == null) {
             return;
           }
+
           ChatMessage chatMessage =
               new ChatMessage(
                   Speaker.ASSISTANT, agentChatMessage.text, agentChatMessage.displayText);
           if (isFirstMessage.compareAndSet(false, true)) {
+            List<ContextMessage> contextMessages =
+                agentChatMessage.contextFiles.stream()
+                    .map(
+                        contextFile ->
+                            new ContextMessage(
+                                Speaker.ASSISTANT,
+                                agentChatMessage.text,
+                                new ContextFile(
+                                    contextFile.fileName,
+                                    contextFile.repoName,
+                                    contextFile.revision)))
+                    .collect(Collectors.toList());
+            chat.displayUsedContext(contextMessages);
             chat.addMessageToChat(chatMessage);
           } else {
             chat.updateLastMessage(chatMessage);
