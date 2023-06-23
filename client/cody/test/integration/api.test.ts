@@ -2,7 +2,7 @@ import * as assert from 'assert'
 
 import * as vscode from 'vscode'
 
-import { VSCodeHistory } from '../../src/completions/history'
+import { VSCodeHistory } from '../../src/autocomplete/history'
 
 suite('API tests', () => {
     test('Cody registers some commands', async () => {

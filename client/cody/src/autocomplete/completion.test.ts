@@ -1,9 +1,17 @@
-import { CompletionParameters, CompletionResponse } from '../sourcegraph-api/completions/types'
+import type * as vscode from 'vscode'
+
+import { createProviderConfig } from '@sourcegraph/cody-shared/src/autocomplete/providers/anthropic'
+import {
+    CompletionParameters,
+    CompletionResponse,
+} from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
+
+import { mockVSCodeExports } from '../testutils/vscode'
 
 import { CodyCompletionItemProvider } from '.'
-import { createProviderConfig } from './providers/anthropic'
 
 jest.mock('vscode', () => ({
+    ...mockVSCodeExports(),
     InlineCompletionTriggerKind: {
         Invoke: 0,
         Automatic: 1,

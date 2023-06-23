@@ -1,6 +1,6 @@
 import vscode from 'vscode'
 
-import { CurrentDocumentContext } from '@sourcegraph/cody-shared/src/completions'
+import { CurrentDocumentContext } from '@sourcegraph/cody-shared/src/autocomplete'
 
 /**
  * Get the current document context based on the cursor position in the current document.
