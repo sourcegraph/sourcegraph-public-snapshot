@@ -12,7 +12,10 @@ export const textEditor: TextEditor = {
 
     getCurrentDocument(): LightTextDocument | null {
         const curr = vscode.window.activeTextEditor?.document
-        if (!curr) return null
+        if (!curr) {
+            return null
+        }
+
         return {
             uri: curr.uri.toString(),
             languageId: curr.languageId,

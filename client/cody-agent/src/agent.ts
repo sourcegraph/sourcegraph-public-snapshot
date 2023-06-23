@@ -83,9 +83,7 @@ export class Agent extends MessageHandler {
             return null
         })
 
-        this.registerRequest('completions/execute', async data => {
-            return null
-        })
+        this.registerRequest('completions/execute', data => Promise.resolve(null))
     }
 
     private setClient(config: ConnectionConfiguration): void {

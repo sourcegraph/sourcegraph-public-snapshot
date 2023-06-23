@@ -1,8 +1,9 @@
-import { Completion } from '../autocomplete'
-import { ReferenceSnippet } from '../autocomplete/context'
-import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, messagesToText } from '../autocomplete/utils'
 import { SourcegraphNodeCompletionsClient } from '../sourcegraph-api/completions/nodeClient'
 import { Message } from '../sourcegraph-api/completions/types'
+
+import { Completion } from '.'
+import { ReferenceSnippet } from './context'
+import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, messagesToText } from './utils'
 
 export class ManualCompletionProvider {
     constructor(
