@@ -10,6 +10,7 @@ import {
     IS_CONTEXT_REQUIRED_QUERY,
     REPOSITORY_ID_QUERY,
     REPOSITORY_IDS_QUERY,
+    REPOSITORY_NAMES_QUERY,
     SEARCH_ATTRIBUTION_QUERY,
     SEARCH_EMBEDDINGS_QUERY,
     LEGACY_SEARCH_EMBEDDINGS_QUERY,
@@ -52,6 +53,10 @@ interface RepositoryIdResponse {
 }
 
 interface RepositoryIdsResponse {
+    repositories: { nodes: { id: string; name: string }[] }
+}
+
+interface RepositoryNamesResponse {
     repositories: { nodes: { id: string; name: string }[] }
 }
 
@@ -212,6 +217,16 @@ export class SourcegraphGraphQLAPIClient {
             extractDataOrError(response, data =>
                 data.repository ? data.repository.id : new RepoNotFoundError(`repository ${repoName} not found`)
             )
+        )
+    }
+
+    public async getRepoNames(first: number): Promise<string[] | Error> {
+        return this.fetchSourcegraphAPI<APIResponse<RepositoryNamesResponse>>(REPOSITORY_NAMES_QUERY, { first }).then(
+            response =>
+                extractDataOrError(
+                    response,
+                    data => data?.repositories?.nodes?.map((node: { id: string; name: string }) => node?.name) || []
+                )
         )
     }
 
