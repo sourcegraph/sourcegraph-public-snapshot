@@ -53,12 +53,12 @@ func TestCorrelateSCIP(t *testing.T) {
 		ProtocolVersion:      0,
 	}
 	if diff := cmp.Diff(expectedMetadata, correlatedSCIPData.Metadata); diff != "" {
-		t.Errorf("unexpected metadata (-want +got):\n%s", diff)
+		t.Fatalf("unexpected metadata (-want +got):\n%s", diff)
 	}
 
 	// Check document values
 	if len(documents) != 11 {
-		t.Errorf("unexpected number of documents. want=%d have=%d", 11, len(documents))
+		t.Fatalf("unexpected number of documents. want=%d have=%d", 11, len(documents))
 	} else {
 		documentMap := map[string]lsifstore.ProcessedSCIPDocument{}
 		for _, document := range documents {
