@@ -17,9 +17,11 @@ export const AppLogo: React.FC<AppLogoProps> = ({ src, name, className }) => {
             src={src}
             alt="App logo"
             aria-hidden={true}
-            onError={() => {
-                setFallbackImage(true)
-            }}
+			// On certain code hosts, the image resource may be locked behind a login
+			// screen. It's not practical to authenticate the user in this context, so instead,
+			// we catch when there's an error loading the image and toggle the component
+			// state to render a fallback icon instead.
+            onError={() => setFallbackImage(true)}
         />
     ) : (
         <UserAvatar user={{ avatarURL: null, username: name, displayName: name }} className={className} />
