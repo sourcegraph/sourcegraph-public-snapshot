@@ -4,7 +4,7 @@ import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from '../configuration'
 
-import { AuthOptionItems, FeedbackOptionItems } from './FeedbackOptions'
+import { SettingsOptionItems, FeedbackOptionItems } from './FeedbackOptions'
 
 export interface CodyStatusBar {
     dispose(): void
@@ -57,11 +57,11 @@ export function createStatusBar(): CodyStatusBar {
             // These description should stay in sync with the settings in package.json
             [
                 createFeatureToggle(
-                    'Code Completions',
+                    'Code Autocomplete',
                     'Beta',
-                    'Experimental Cody completions in your editor',
-                    'cody.experimental.suggestions',
-                    c => c.experimentalSuggest
+                    'Enables inline code suggestions in your editor',
+                    'cody.autocomplete.enabled',
+                    c => c.autocomplete
                 ),
                 createFeatureToggle(
                     'Inline Assist',
@@ -82,7 +82,7 @@ export function createStatusBar(): CodyStatusBar {
                 { label: 'cody feedback', kind: vscode.QuickPickItemKind.Separator },
                 ...FeedbackOptionItems,
                 { label: 'cody settings', kind: vscode.QuickPickItemKind.Separator },
-                ...AuthOptionItems,
+                ...SettingsOptionItems,
             ],
             {
                 placeHolder: 'Select an option',

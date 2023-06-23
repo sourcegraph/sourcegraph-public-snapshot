@@ -1046,6 +1046,8 @@ type GitHubAppDetails struct {
 	AppID int `json:"appID,omitempty"`
 	// BaseURL description: The base URL of the GitHub App.
 	BaseURL string `json:"baseURL,omitempty"`
+	// CloneAllRepositories description: Clone all repositories for this App installation.
+	CloneAllRepositories bool `json:"cloneAllRepositories,omitempty"`
 	// InstallationID description: The installation ID of this connection.
 	InstallationID int `json:"installationID,omitempty"`
 }

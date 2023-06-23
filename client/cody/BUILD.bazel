@@ -95,6 +95,7 @@ ts_project(
         "src/services/InlineAssist.ts",
         "src/services/InlineController.ts",
         "src/services/LocalAppDetector.ts",
+        "src/services/LocalAppFsPaths.ts",
         "src/services/LocalStorageProvider.ts",
         "src/services/SecretStorageProvider.ts",
         "src/services/StatusBar.ts",
@@ -105,6 +106,7 @@ ts_project(
         "webviews/Chat.tsx",
         "webviews/ConnectApp.tsx",
         "webviews/Debug.tsx",
+        "webviews/Error.tsx",
         "webviews/FileLink.tsx",
         "webviews/Header.tsx",
         "webviews/LoadingPage.tsx",
@@ -126,7 +128,7 @@ ts_project(
         ":node_modules/@sourcegraph/cody-ui",
         ":node_modules/lru-cache",
         ":node_modules/wink-nlp-utils",
-        "//:node_modules/@storybook/react",  #keep
+        "//:node_modules/@storybook/react",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",

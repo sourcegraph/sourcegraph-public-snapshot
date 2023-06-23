@@ -78,12 +78,12 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 		tc := tc
 		tc.name = "BITBUCKETCLOUD-LIST-REPOS/" + tc.name
 		t.Run(tc.name, func(t *testing.T) {
-			cf, save := newClientFactory(t, tc.name)
+			cf, save := NewClientFactory(t, tc.name)
 			defer save(t)
 
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindBitbucketCloud,
-				Config: extsvc.NewUnencryptedConfig(marshalJSON(t, tc.conf)),
+				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
 			}
 
 			bbcSrc, err := newBitbucketCloudSource(logtest.Scoped(t), svc, tc.conf, cf)
@@ -91,7 +91,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			repos, err := listAll(context.Background(), bbcSrc)
+			repos, err := ListAll(context.Background(), bbcSrc)
 
 			if have, want := fmt.Sprint(err), tc.err; have != want {
 				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
@@ -162,7 +162,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 				got = append(got, s.makeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, update(test.name), got)
+			testutil.AssertGolden(t, "testdata/golden/"+test.name, Update(test.name), got)
 		})
 	}
 }
@@ -246,7 +246,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 			}
 
 			path := filepath.Join("testdata", "bitbucketcloud-repos-exclude-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+			testutil.AssertGolden(t, path, Update(name), got)
 		})
 	}
 }

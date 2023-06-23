@@ -36,6 +36,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
     private maxPrefixChars: number
     private maxSuffixChars: number
     private abortOpenInlineCompletions: () => void = () => {}
+    private stopLoading: () => void = () => {}
     private lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
         max: 10,
     })
@@ -109,6 +110,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         try {
             return await this.provideInlineCompletionItemsInner(document, position, context, token)
         } catch (error) {
+            this.stopLoading()
+
             if (isAbortError(error)) {
                 return []
             }
@@ -262,6 +265,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             contextSummary,
         })
         const stopLoading = this.statusBar.startLoading('Completions are being generated')
+        this.stopLoading = stopLoading
 
         // Overwrite the abort handler to also update the loading state
         const previousAbort = this.abortOpenInlineCompletions
@@ -319,7 +323,7 @@ function toInlineCompletionItems(logId: string, completions: Completion[]): vsco
         completion =>
             new vscode.InlineCompletionItem(completion.content, undefined, {
                 title: 'Completion accepted',
-                command: 'cody.completions.inline.accepted',
+                command: 'cody.autocomplete.inline.accepted',
                 arguments: [{ codyLogId: logId, codyLines: completion.content.split('\n').length }],
             })
     )

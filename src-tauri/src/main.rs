@@ -141,24 +141,24 @@ fn main() {
             start_embedded_services(&handle);
             // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
-                let path: &str = extract_path_from_scheme_url(&request, SCHEME);
+                if let Some(path) = extract_path_from_scheme_url(&request, SCHEME) {
+                    // Case 1: the app has been *launched* with the scheme
+                    // url. In the frontend, app-shell.tsx will read it with
+                    // getLaunchPath().
+                    set_launch_path(path.to_string());
 
-                // Case 1: the app has been *launched* with the scheme
-                // url. In the frontend, app-shell.tsx will read it with
-                // getLaunchPath().
-                set_launch_path(path.to_string());
-
-                // Case 2: the app was *already running* when the scheme url was
-                // opened. This currently doesn't collide with Case 1 because it
-                // doesn't do anything while we're still launching, probably
-                // because the webview isn't ready yet.
-                // TODO(marek) add a guard to check whether we're still launching.
-                handle
-                    .get_window("main")
-                    .unwrap()
-                    .eval(&format!("window.location.href = '{}'", path))
-                    .unwrap();
-                show_window(&handle, "main");
+                    // Case 2: the app was *already running* when the scheme url was
+                    // opened. This currently doesn't collide with Case 1 because it
+                    // doesn't do anything while we're still launching, probably
+                    // because the webview isn't ready yet.
+                    // TODO(marek) add a guard to check whether we're still launching.
+                    handle
+                        .get_window("main")
+                        .unwrap()
+                        .eval(&format!("window.location.href = '{}'", path))
+                        .unwrap();
+                    show_window(&handle, "main");
+                }
             })
             .unwrap();
 

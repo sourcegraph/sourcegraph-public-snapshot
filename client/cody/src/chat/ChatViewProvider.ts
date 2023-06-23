@@ -47,6 +47,7 @@ import {
     WebviewMessage,
     defaultAuthStatus,
     LocalEnv,
+    LOCAL_APP_URL,
 } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
@@ -119,7 +120,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             })
         )
 
-        this.localAppDetector = new LocalAppDetector({ onChange: isInstalled => this.sendLocalAppState(isInstalled) })
+        this.localAppDetector = new LocalAppDetector({ onChange: token => this.sendLocalAppState(token) })
         this.disposables.push(this.localAppDetector)
 
         const codyConfig = vscode.workspace.getConfiguration('cody')
@@ -724,10 +725,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private publishConfig(): void {
         const send = async (): Promise<void> => {
             this.config = await getFullConfig(this.secretStorage, this.localStorage)
+
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = this.localAppDetector.getProcessInfo()
-            this.sendLocalAppState(localProcess.isAppInstalled)
+            const localProcess = await this.localAppDetector.getProcessInfo(authStatus.isLoggedIn)
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
@@ -774,8 +775,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
     }
 
-    private sendLocalAppState(isInstalled: boolean): void {
-        void this.webview?.postMessage({ type: 'app-state', isInstalled })
+    /**
+     * Display app state in webview view that is used during Signin flow
+     */
+    private async sendLocalAppState(token: string | null): Promise<void> {
+        // Notify webview that app is installed
+        debug('ChatViewProvider:sendLocalAppState', 'isInstalled')
+        void this.webview?.postMessage({ type: 'app-state', isInstalled: true })
+        // Log user in if token is present and user is not logged in
+        if (token) {
+            debug('ChatViewProvider:sendLocalAppState', 'auth')
+            await this.authProvider.auth(LOCAL_APP_URL.href, token, this.config.customHeaders)
+        }
     }
     /**
      * Display error message in webview view as banner in chat view

@@ -167,12 +167,11 @@ ts_project(
         "src/search-ui/util/stars.ts",
     ],
     tsconfig = ":tsconfig",
-    # TODO(bazel): type-only #keep imports
     deps = [
         ":module_style_typings",
         ":node_modules/@sourcegraph/codeintellify",  #keep
         ":node_modules/@sourcegraph/common",
-        ":node_modules/@sourcegraph/extension-api-types",  #keep
+        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/observability-client",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/wildcard",
@@ -185,7 +184,7 @@ ts_project(
         "//:node_modules/@reach/visually-hidden",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/dompurify",
-        "//:node_modules/@types/history",  #keep
+        "//:node_modules/@types/history",
         "//:node_modules/@types/lodash",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
@@ -196,7 +195,7 @@ ts_project(
         "//:node_modules/date-fns",
         "//:node_modules/dompurify",
         "//:node_modules/fzf",
-        "//:node_modules/history",  #keep
+        "//:node_modules/history",
         "//:node_modules/lodash",
         "//:node_modules/mdi-react",
         "//:node_modules/react",
@@ -208,7 +207,7 @@ ts_project(
         "//:node_modules/ts-key-enum",
         "//:node_modules/use-resize-observer",
         "//client/shared:graphql_operations",
-        "//client/shared:shared_lib",  #keep
+        "//client/shared:shared_lib",
     ],
 )
 
@@ -246,9 +245,11 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":branded_lib",
+        ":node_modules/@sourcegraph/extension-api-types",
         ":node_modules/@sourcegraph/shared",
         ":node_modules/@sourcegraph/testing",
         ":node_modules/@sourcegraph/wildcard",
+        "//:node_modules/@codemirror/autocomplete",
         "//:node_modules/@codemirror/state",
         "//:node_modules/@testing-library/react",
         "//:node_modules/@testing-library/user-event",

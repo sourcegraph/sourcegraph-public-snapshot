@@ -9,7 +9,7 @@ ts_project(
     module = "commonjs",
     tsconfig = "//client/web:tsconfig",
     deps = [
-        "//:node_modules/@types/shelljs",  #keep
+        "//:node_modules/@types/shelljs",
         "//:node_modules/octokit",
         "//:node_modules/shelljs",
     ],
