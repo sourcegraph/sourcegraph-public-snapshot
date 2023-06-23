@@ -416,6 +416,23 @@ describe('Cody completions', () => {
         `)
         })
 
+        it('keeps the closing bracket if it starts with a newline', async () => {
+            const { completions } = await complete(`function printHello() {${CURSOR_MARKER}}`, [
+                createCompletionResponse(`
+    console.log('bar');
+}`),
+            ])
+
+            expect(completions).toMatchInlineSnapshot(`
+                Array [
+                  InlineCompletionItem {
+                    "insertText": "console.log('bar');
+                }",
+                  },
+                ]
+            `)
+        })
+
         it('triggers a multi-line completion at the start of a block', async () => {
             const { requests } = await complete(`function bubbleSort() {\n  ${CURSOR_MARKER}`)
 
