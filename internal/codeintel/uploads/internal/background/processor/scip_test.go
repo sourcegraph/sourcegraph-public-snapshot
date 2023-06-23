@@ -25,7 +25,7 @@ func TestCorrelateSCIP(t *testing.T) {
 		indexReader, err := newGzipReadSeeker(gzipped)
 		require.NoError(t, err, "failed to create reader for test file")
 
-		return *indexReader
+		return indexReader
 	}
 
 	// Correlate and consume channels from returned object
