@@ -47,5 +47,5 @@ func (v *recentViewOwnershipSignal) Title() (string, error) {
 }
 
 func (v *recentViewOwnershipSignal) Description() (string, error) {
-	return "Owner is associated because they have viewed this file in the last 90 days.", nil
+	return "Associated because they have viewed this file in the last 90 days.", nil
 }
