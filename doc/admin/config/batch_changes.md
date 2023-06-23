@@ -188,7 +188,7 @@ Sourcegraph can be configured to sign commits pushed to GitHub using a GitHub Ap
 
 At present, only GitHub code hosts (both Cloud and Enterprise) are supported, and only GitHub App signing is supported. Support for other code hosts and signing methods may be added in the future.
 
-GitHub Apps are also the recommended way to [sync repositories on GitHub](../external_service/github.md#using-a-github-app). However, it is necessary to create a separate GitHub App for Batch Changes commit signing even if you already have an App connected for the same code host for repository syncing because the Apps require different permissions. Fortunately, the process for creating each type of GitHub App is almost identical.
+GitHub Apps are also the recommended way to [sync repositories on GitHub](../external_service/github.md#using-a-github-app). However, it is necessary to create a separate GitHub App for Batch Changes commit signing even if you already have an App connected for the same code host for repository syncing because the Apps require different permissions. The process for creating each type of GitHub App is almost identical.
 
 <!-- NOTE: The instructions in the following sections closely mirror those in doc/admin/external_service/github.md. When making changes here, be sure to consider if those changes should also be made over there! -->
 
@@ -245,11 +245,10 @@ Once public, App can be installed in additional namespaces either from Sourcegra
 
     > NOTE: Only [organization owners](https://docs.github.com/en/organizations/managing-peoples-access-to-your-organization-with-roles/roles-in-an-organization#organization-owners) can install GitHub Apps on an organization. If you are not an owner, you will need to ask an owner to install the App for you.
 
-<!-- TODO: Update me -->
-<img alt="The GitHub App installation page, with a list of namespaces to select from" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-multi-install-gh.png" class="screenshot theme-light-only" />
-<img alt="The GitHub App installation page, with a list of namespaces to select from" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-multi-install-gh-dark.png" class="screenshot theme-dark-only" />
+<img alt="The GitHub App installation page, with a list of namespaces to select from" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-multi-install-gh-batches.png" class="screenshot theme-light-only" />
+<img alt="The GitHub App installation page, with a list of namespaces to select from" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-multi-install-gh-batches-dark.png" class="screenshot theme-dark-only" />
 
-1. As before, you will be asked to review the App permissions and select which repositories the App can access before installing it in a namespace. Once you click **Install** and the setup completes, you will be redirected back to Sourcegraph. You will now be able to push signed commits for repositories in this namespace.
+3. As before, you will be asked to review the App permissions and select which repositories the App can access before installing it in a namespace. Once you click **Install** and the setup completes, you will be redirected back to Sourcegraph. You will now be able to push signed commits for repositories in this namespace.
 
 #### Installing from GitHub
 
@@ -258,9 +257,8 @@ Once public, App can be installed in additional namespaces either from Sourcegra
 3. As before, you will be asked to review the App permissions and select which repositories the App can access before installing it in a namespace. Once you click **Install** and the setup completes, you will be redirected back to Sourcegraph.
 4. GitHub App installations will be automatically synced in the background. Return to **Site admin > Batch Changes > Settings** and click **Edit** on the App you added the new installation for. You'll be taken to the App details page. Once synced, you will see the new installation listed, and you will be able to push signed commits for repositories in this namespace.
 
-<!-- TODO: Update me -->
-<img alt="The GitHub App details page on Sourcegraph, scrolled to show a second new installation" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-post-multi-install.png" class="screenshot theme-light-only" />
-<img alt="The GitHub App details page on Sourcegraph, scrolled to show a second new installation" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-post-multi-install-dark.png" class="screenshot theme-dark-only" />
+<img alt="The GitHub App details page on Sourcegraph, scrolled to show a second new installation" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-post-multi-install-batches.png" class="screenshot theme-light-only" />
+<img alt="The GitHub App details page on Sourcegraph, scrolled to show a second new installation" src="https://sourcegraphstatic.com/docs/images/administration/config/github-apps/github-app-post-multi-install-batches-dark.png" class="screenshot theme-dark-only" />
 
 ### Uninstalling an App
 
