@@ -38,4 +38,13 @@ expression: dumped
   func MadeUp() SomeSymbol {}
 //     ^^^^^^ definition(Function) scip-ctags symbolexample/MadeUp().
 //              ^^^^^^^^^^ reference scip-ctags SomeSymbol#
+  
+  func CallsAFunction() bool {
+//     ^^^^^^^^^^^^^^ definition(Function) scip-ctags symbolexample/CallsAFunction().
+//                      ^^^^ reference scip-ctags bool#
+   x := DoSomething()
+//      ^^^^^^^^^^^ reference scip-ctags DoSomething().
+   y := pkg.DoSomething()
+//          ^^^^^^^^^^^ reference scip-ctags pkg/DoSomething().
+  }
 

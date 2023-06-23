@@ -156,10 +156,6 @@ impl Scope {
             occurrences.push(scip::types::Occurrence {
                 range: reference.range.to_vec(),
                 symbol: symbol.clone(),
-                // enclosing_range: match &reference.enclosing {
-                //     Some(enclosing) => enclosing.to_vec(),
-                //     None => vec![],
-                // },
                 ..Default::default()
             });
         }
@@ -188,8 +184,6 @@ pub fn parse_tree<'a>(
     let mut globals = vec![];
     let mut references = vec![];
 
-    let mut local_ranges = BitVec::<u8, Msb0>::repeat(false, source_bytes.len());
-
     let matches = cursor.matches(&config.sym_query, root_node, source_bytes);
     for m in matches {
         if config.is_filtered(&m) {
@@ -199,7 +193,6 @@ pub fn parse_tree<'a>(
         let mut node = None;
         let mut enclosing_node = None;
         let mut scope = None;
-        let mut local_range = None;
         let mut descriptors = vec![];
         let mut reference = None;
         let mut kind = None;
@@ -224,10 +217,6 @@ pub fn parse_tree<'a>(
                 enclosing_node = Some(capture.node);
             }
 
-            if capture_name.starts_with("local") {
-                local_range = Some(capture.node.byte_range());
-            }
-
             if capture_name.starts_with("kind") {
                 assert!(kind.is_none(), "declare only one kind per match");
                 kind = Some(capture_name)
@@ -241,20 +230,6 @@ pub fn parse_tree<'a>(
 
         match node {
             Some(node) => {
-                // TODO: I think we may need to consider something like this at some point
-                // but for now it's fine. Just something I was thinking of while debugging
-                // an issue with go locals
-                //
-                // match scope {
-                //     Some(scope) if local_ranges[scope.node.start_byte()] => continue,
-                //     None if local_ranges[node.start_byte()] => continue,
-                //     _ => {}
-                // };
-
-                if local_ranges[node.start_byte()] {
-                    continue;
-                }
-
                 let kind = crate::ts_scip::captures_to_kind(&kind);
 
                 let descriptors = descriptors
@@ -318,15 +293,7 @@ pub fn parse_tree<'a>(
                     }
                 }
             }
-            None => {
-                if local_range.is_none() {
-                    panic!("there must always be at least one descriptor (except for @local)");
-                }
-            }
-        }
-
-        if let Some(local_range) = local_range {
-            local_ranges.get_mut(local_range).unwrap().fill(true);
+            None => continue,
         }
     }
 

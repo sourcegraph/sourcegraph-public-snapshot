@@ -25,3 +25,8 @@ func authAllowSignup(c *Unified) bool {
 }
 
 func MadeUp() SomeSymbol {}
+
+func CallsAFunction() bool {
+	x := DoSomething()
+	y := pkg.DoSomething()
+}

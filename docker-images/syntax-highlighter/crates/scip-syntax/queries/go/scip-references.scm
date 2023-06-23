@@ -12,3 +12,11 @@
 
 (parameter_declaration
   type: (pointer_type (type_identifier) @descriptor.type)) @reference
+
+(call_expression
+ function: (selector_expression
+             operand: (_) @descriptor.namespace
+             field: (_) @descriptor.method)) @reference
+
+
+(call_expression function: (identifier) @descriptor.method) @reference
