@@ -107,7 +107,7 @@ export const renderMarkdown = (
         // support setting hooks per individual call to sanitize() so we have to
         // temporarily add the hook on the global module. This hook is removed
         // after the call to sanitize().
-        DOMPurify.addHook('afterSanitizeAttributes', function (node) {
+        DOMPurify.addHook('afterSanitizeAttributes', node => {
             if (node.tagName.toLowerCase() === 'a' && node.getAttribute('href')) {
                 node.setAttribute('target', '_blank')
                 node.setAttribute('rel', 'noopener')
