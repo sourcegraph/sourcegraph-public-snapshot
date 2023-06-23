@@ -52,7 +52,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_server_base",
-        digest = "sha256:75e0770f4c9a0336d823361211fbf9dcfe8a41ab15b9e3c05caed7870d5afca7",
+        digest = "sha256:fd88efe0dbdf1f8d73c847d2fcd501736a93dfec97169569979658b855ebddf7",
         image = "index.docker.io/sourcegraph/wolfi-server-base",
     )
 
