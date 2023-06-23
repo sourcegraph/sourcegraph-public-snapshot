@@ -6,7 +6,12 @@ pub mod ctags;
 pub mod globals;
 pub mod languages;
 pub mod locals;
+pub mod symbols;
 pub mod ts_scip;
+
+pub fn get_symbols(parser: &BundledParser, source_bytes: &[u8]) -> Result<Option<Vec<Occurrence>>> {
+    Ok(Some(vec![]))
+}
 
 pub fn get_globals(
     parser: &BundledParser,
