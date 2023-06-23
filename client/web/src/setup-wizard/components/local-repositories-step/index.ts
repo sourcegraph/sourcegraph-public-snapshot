@@ -1,5 +1,6 @@
 export { LocalRepositoriesStep } from './LocalRepositoriesStep'
-export { callFilePicker, LocalCodeHost } from './helpers'
+export type { LocalCodeHost } from './helpers'
+export { callFilePicker } from './helpers'
 export {
     useLocalRepositories,
     useLocalRepositoriesPaths,

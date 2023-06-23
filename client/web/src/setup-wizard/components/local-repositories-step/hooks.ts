@@ -274,7 +274,7 @@ export function useLocalExternalServices(): LocalCodeHostResult {
             await addLocalRepositories({ variables: { paths } })
             await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts'] })
         },
-        [deleteLocalCodeHost]
+        [addLocalRepositories, apolloClient]
     )
 
     const deleteService = useCallback(
@@ -282,7 +282,7 @@ export function useLocalExternalServices(): LocalCodeHostResult {
             await deleteLocalCodeHost({ variables: { id: service.id } })
             await apolloClient.refetchQueries({ include: ['GetLocalCodeHosts'] })
         },
-        [deleteLocalCodeHost]
+        [deleteLocalCodeHost, apolloClient]
     )
 
     const services = data?.localExternalServices ?? previousData?.localExternalServices ?? EMPTY_CODEHOST_LIST
