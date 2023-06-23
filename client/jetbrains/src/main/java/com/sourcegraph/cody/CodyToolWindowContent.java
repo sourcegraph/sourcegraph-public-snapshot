@@ -30,7 +30,6 @@ import com.intellij.util.ui.*;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.chat.*;
-import com.sourcegraph.cody.context.ContextFile;
 import com.sourcegraph.cody.context.ContextGetter;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.editor.EditorContext;
@@ -64,9 +63,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -492,21 +489,11 @@ class CodyToolWindowContent implements UpdatableChat {
           ChatMessage.createAssistantMessage(
               "I didn't find any context for your ask. I'll try to answer without further context."));
     } else {
-      // Collect file names and display them to user
-      List<String> contextFileNames =
-          contextMessages.stream()
-              .map(ContextMessage::getFile)
-              .filter(Objects::nonNull)
-              .map(ContextFile::getFileName)
-              .collect(Collectors.toList());
 
-      StringBuilder contextMessageText =
-          new StringBuilder(
-              "I found some context for your ask. I'll try to answer with the context of these "
-                  + contextFileNames.size()
-                  + " files:\n");
-      contextFileNames.forEach(fileName -> contextMessageText.append(fileName).append("\n"));
-      this.addMessageToChat(ChatMessage.createAssistantMessage(contextMessageText.toString()));
+      ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
+      var messageContentPanel = new JPanel(new BorderLayout());
+      messageContentPanel.add(contextFilesMessage);
+      this.addComponentToChat(messageContentPanel);
     }
   }
 
