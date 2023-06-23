@@ -38,7 +38,7 @@ contents:
     - p4cli@sourcegraph
     - p4-fusion@sourcegraph
     - s3proxy@sourcegraph
-    - grafana@chainguard
+    - grafana@sourcegraph # TODO: Switch back to @chainguard
 
 accounts:
   groups:
