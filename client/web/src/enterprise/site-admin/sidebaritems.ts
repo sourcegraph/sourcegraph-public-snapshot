@@ -147,6 +147,11 @@ export const codyGroup: SiteAdminSideBarGroup = {
     header: { label: 'Cody', icon: CodyPageIcon },
     items: [
         {
+            label: 'General settings',
+            to: '/site-admin/cody-general',
+            exact: true
+        },
+        {
             label: 'Embeddings jobs',
             to: '/site-admin/embeddings',
             exact: true,

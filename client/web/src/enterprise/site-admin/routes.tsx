@@ -85,6 +85,8 @@ const CodyConfigurationPage = lazyComponent(
     () => import('../cody/configuration/pages/CodyConfigurationPage'),
     'CodyConfigurationPage'
 )
+const CodyGeneralPage = lazyComponent(() => import('../cody/configuration/pages/CodyGeneralPage'), 'CodyGeneralPage')
+
 
 const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
 
@@ -208,6 +210,12 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             path: '/executors/*',
             render: () => <ExecutorsSiteAdminArea />,
             condition: () => Boolean(window.context?.executorsEnabled),
+        },
+
+        {
+            exact: true,
+            path: '/cody-general',
+            render: () => <CodyGeneralPage />,
         },
 
         // Cody configuration
