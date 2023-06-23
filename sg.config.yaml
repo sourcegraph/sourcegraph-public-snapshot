@@ -670,7 +670,7 @@ commands:
       .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
     install_func: installJaeger
     env:
-      JAEGER_VERSION: 1.36.0
+      JAEGER_VERSION: 1.45.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
       JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger

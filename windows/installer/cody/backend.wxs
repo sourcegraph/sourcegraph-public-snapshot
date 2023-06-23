@@ -1,0 +1,14 @@
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
+    <Fragment>
+        <Feature Id="Backend" Title="Sourcegraph Server" AllowAbsent="no" AllowAdvertise="no"
+                 Description="!(loc.BackendDescription)">
+            <ComponentGroupRef Id="Backend"/>
+        </Feature>
+
+        <ComponentGroup Id="Backend" Directory="INSTALLDIR">
+            <Component>
+                <File Source="bin/$(var.Platform)/signed/sourcegraph-backend.exe" />
+            </Component>
+        </ComponentGroup>
+    </Fragment>
+</Wix>
