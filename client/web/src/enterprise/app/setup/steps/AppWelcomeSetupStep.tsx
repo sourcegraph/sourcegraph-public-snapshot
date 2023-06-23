@@ -63,10 +63,10 @@ const EmailCheckVerificationForm: FC = () => {
                 onClick={onNextStep}
             >
                 {hasEmailBeenVerified ? (
-                    <>Email has verified, go to the next step →</>
+                    <>Email verified, go to the next step →</>
                 ) : (
                     <>
-                        <LoadingSpinner /> Waiting for email to be verified
+                        <LoadingSpinner /> Waiting for email verification
                     </>
                 )}
             </Button>

@@ -25,7 +25,7 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
                 <div className={styles.descriptionContent}>
                     <Text className={styles.descriptionText}>
                         Once embeddings are finished being generated, you can specify Cody’s context and start asking
-                        cody questions in Cody Chat.
+                        questions in the Cody Chat.
                     </Text>
 
                     <Tooltip content={!isProgressFinished ? 'Embeddings are still being generated' : ''}>
