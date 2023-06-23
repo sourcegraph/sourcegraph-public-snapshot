@@ -614,7 +614,6 @@ func NewKubernetesSingleJob(
 	}
 
 	for stepIndex, step := range specs {
-		fmt.Println("dir: ", step.Dir)
 		jobEnvs := newEnvVars(step.Env)
 
 		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), step.Key)
