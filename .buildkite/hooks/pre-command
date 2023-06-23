@@ -15,7 +15,7 @@ if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" && "$BUILDKITE_AGENT_META_DA
     asdf install golang
   elif [[ "$BUILDKITE_STEP_KEY" == "pipeline-upload" ]]; then
     echo "pipeline-upload step: skipping asdf install"
-  elif [[ "${BUILDKITE_GROUP_KEY:=\"\"}" == "Publishimages" && ! "${BUILDKITE_STEP_KEY:-""}" =~  "Publishexecutorimage" ]]; then
+  elif [[ "${BUILDKITE_GROUP_KEY:=\"\"}" == "Publishimages" && ! "${BUILDKITE_STEP_KEY:-""}" =~  "Publishexecutorimage|Publishdockerregistrymirrorimage" ]]; then
     echo "publish image step: skipping asdf install"
   else
     echo "running normal install"
