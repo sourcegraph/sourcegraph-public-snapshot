@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"net/url"
 	"strings"
 
@@ -95,7 +96,6 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 		}
 		return errors.Wrap(err, "getting change")
 	}
-
 	return errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
 }
 
@@ -103,7 +103,6 @@ func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
 // exists, *Changeset will be populated and the return value will be true.
 func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
 	changeID := GenerateGerritChangeID(*cs.Changeset)
-
 	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
 	// was created successfully.
 	pr, err := s.client.GetChange(ctx, changeID)
@@ -181,6 +180,53 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 // UpdateChangeset can update Changesets.
 // Noop, Gerrit updates changes through git push directly
 func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
+	pr, err := s.client.GetChange(ctx, cs.ExternalID)
+	if err != nil {
+		// Route 1
+		// The most recent push has created two Gerrit changes with the same Change ID.
+		// This happens when the target branch is changed at the same time that the diffs are changed,
+		// it is a bit of a fringe scenario, but it causes us to have 2 changes with the same Change ID,
+		// but different ID. What we do here, is delete the change that existed before our most
+		// recent push, and then load the new change now that it doesn't have a conflict.
+		if errors.As(err, &gerrit.MultipleChangesError{}) {
+			originalPR := cs.Metadata.(*gerritbatches.AnnotatedChange)
+			err = s.client.DeleteChange(ctx, originalPR.Change.ID)
+			if err != nil {
+				return errors.Wrap(err, "deleting change")
+			}
+			// If the original PR was a WIP, the new one needs to be as well.
+			if originalPR.Change.WorkInProgress {
+				err = s.client.SetWIP(ctx, cs.ExternalID)
+				if err != nil {
+					return errors.Wrap(err, "setting updated change as WIP")
+				}
+			}
+			return s.LoadChangeset(ctx, cs)
+		} else {
+			if errcode.IsNotFound(err) {
+				return ChangesetNotFoundError{Changeset: cs}
+			}
+			return errors.Wrap(err, "getting newer change")
+		}
+	}
+	// Route 2
+	// We did not push before this, therefore this update, is only through API
+	if pr.Branch != cs.BaseRef {
+		_, err = s.client.MoveChange(ctx, cs.ExternalID, gerrit.MoveChangePayload{
+			DestinationBranch: cs.BaseRef,
+		})
+		if err != nil {
+			return errors.Wrap(err, "moving change")
+		}
+	}
+	if pr.Subject != cs.Title {
+		err = s.client.SetCommitMessage(ctx, cs.ExternalID, gerrit.SetCommitMessagePayload{
+			Message: fmt.Sprintf("%s\n\nChange-Id: %s\n", cs.Title, cs.ExternalID),
+		})
+		if err != nil {
+			return errors.Wrap(err, "setting change commit message")
+		}
+	}
 	return s.LoadChangeset(ctx, cs)
 }
 

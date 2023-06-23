@@ -8523,9 +8523,15 @@ type MockGerritClient struct {
 	// ListProjectsFunc is an instance of a mock function object controlling
 	// the behavior of the method ListProjects.
 	ListProjectsFunc *GerritClientListProjectsFunc
+	// MoveChangeFunc is an instance of a mock function object controlling
+	// the behavior of the method MoveChange.
+	MoveChangeFunc *GerritClientMoveChangeFunc
 	// RestoreChangeFunc is an instance of a mock function object
 	// controlling the behavior of the method RestoreChange.
 	RestoreChangeFunc *GerritClientRestoreChangeFunc
+	// SetCommitMessageFunc is an instance of a mock function object
+	// controlling the behavior of the method SetCommitMessage.
+	SetCommitMessageFunc *GerritClientSetCommitMessageFunc
 	// SetReadyForReviewFunc is an instance of a mock function object
 	// controlling the behavior of the method SetReadyForReview.
 	SetReadyForReviewFunc *GerritClientSetReadyForReviewFunc
@@ -8592,8 +8598,18 @@ func NewMockGerritClient() *MockGerritClient {
 				return
 			},
 		},
+		MoveChangeFunc: &GerritClientMoveChangeFunc{
+			defaultHook: func(context.Context, string, gerrit.MoveChangePayload) (r0 *gerrit.Change, r1 error) {
+				return
+			},
+		},
 		RestoreChangeFunc: &GerritClientRestoreChangeFunc{
 			defaultHook: func(context.Context, string) (r0 *gerrit.Change, r1 error) {
+				return
+			},
+		},
+		SetCommitMessageFunc: &GerritClientSetCommitMessageFunc{
+			defaultHook: func(context.Context, string, gerrit.SetCommitMessagePayload) (r0 error) {
 				return
 			},
 		},
@@ -8674,9 +8690,19 @@ func NewStrictMockGerritClient() *MockGerritClient {
 				panic("unexpected invocation of MockGerritClient.ListProjects")
 			},
 		},
+		MoveChangeFunc: &GerritClientMoveChangeFunc{
+			defaultHook: func(context.Context, string, gerrit.MoveChangePayload) (*gerrit.Change, error) {
+				panic("unexpected invocation of MockGerritClient.MoveChange")
+			},
+		},
 		RestoreChangeFunc: &GerritClientRestoreChangeFunc{
 			defaultHook: func(context.Context, string) (*gerrit.Change, error) {
 				panic("unexpected invocation of MockGerritClient.RestoreChange")
+			},
+		},
+		SetCommitMessageFunc: &GerritClientSetCommitMessageFunc{
+			defaultHook: func(context.Context, string, gerrit.SetCommitMessagePayload) error {
+				panic("unexpected invocation of MockGerritClient.SetCommitMessage")
 			},
 		},
 		SetReadyForReviewFunc: &GerritClientSetReadyForReviewFunc{
@@ -8739,8 +8765,14 @@ func NewMockGerritClientFrom(i gerrit.Client) *MockGerritClient {
 		ListProjectsFunc: &GerritClientListProjectsFunc{
 			defaultHook: i.ListProjects,
 		},
+		MoveChangeFunc: &GerritClientMoveChangeFunc{
+			defaultHook: i.MoveChange,
+		},
 		RestoreChangeFunc: &GerritClientRestoreChangeFunc{
 			defaultHook: i.RestoreChange,
+		},
+		SetCommitMessageFunc: &GerritClientSetCommitMessageFunc{
+			defaultHook: i.SetCommitMessage,
 		},
 		SetReadyForReviewFunc: &GerritClientSetReadyForReviewFunc{
 			defaultHook: i.SetReadyForReview,
@@ -9715,6 +9747,117 @@ func (c GerritClientListProjectsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
+// GerritClientMoveChangeFunc describes the behavior when the MoveChange
+// method of the parent MockGerritClient instance is invoked.
+type GerritClientMoveChangeFunc struct {
+	defaultHook func(context.Context, string, gerrit.MoveChangePayload) (*gerrit.Change, error)
+	hooks       []func(context.Context, string, gerrit.MoveChangePayload) (*gerrit.Change, error)
+	history     []GerritClientMoveChangeFuncCall
+	mutex       sync.Mutex
+}
+
+// MoveChange delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGerritClient) MoveChange(v0 context.Context, v1 string, v2 gerrit.MoveChangePayload) (*gerrit.Change, error) {
+	r0, r1 := m.MoveChangeFunc.nextHook()(v0, v1, v2)
+	m.MoveChangeFunc.appendCall(GerritClientMoveChangeFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MoveChange method of
+// the parent MockGerritClient instance is invoked and the hook queue is
+// empty.
+func (f *GerritClientMoveChangeFunc) SetDefaultHook(hook func(context.Context, string, gerrit.MoveChangePayload) (*gerrit.Change, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MoveChange method of the parent MockGerritClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GerritClientMoveChangeFunc) PushHook(hook func(context.Context, string, gerrit.MoveChangePayload) (*gerrit.Change, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientMoveChangeFunc) SetDefaultReturn(r0 *gerrit.Change, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, gerrit.MoveChangePayload) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientMoveChangeFunc) PushReturn(r0 *gerrit.Change, r1 error) {
+	f.PushHook(func(context.Context, string, gerrit.MoveChangePayload) (*gerrit.Change, error) {
+		return r0, r1
+	})
+}
+
+func (f *GerritClientMoveChangeFunc) nextHook() func(context.Context, string, gerrit.MoveChangePayload) (*gerrit.Change, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientMoveChangeFunc) appendCall(r0 GerritClientMoveChangeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientMoveChangeFuncCall objects
+// describing the invocations of this function.
+func (f *GerritClientMoveChangeFunc) History() []GerritClientMoveChangeFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientMoveChangeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientMoveChangeFuncCall is an object that describes an invocation
+// of method MoveChange on an instance of MockGerritClient.
+type GerritClientMoveChangeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 gerrit.MoveChangePayload
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *gerrit.Change
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientMoveChangeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientMoveChangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // GerritClientRestoreChangeFunc describes the behavior when the
 // RestoreChange method of the parent MockGerritClient instance is invoked.
 type GerritClientRestoreChangeFunc struct {
@@ -9821,6 +9964,115 @@ func (c GerritClientRestoreChangeFuncCall) Args() []interface{} {
 // invocation.
 func (c GerritClientRestoreChangeFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GerritClientSetCommitMessageFunc describes the behavior when the
+// SetCommitMessage method of the parent MockGerritClient instance is
+// invoked.
+type GerritClientSetCommitMessageFunc struct {
+	defaultHook func(context.Context, string, gerrit.SetCommitMessagePayload) error
+	hooks       []func(context.Context, string, gerrit.SetCommitMessagePayload) error
+	history     []GerritClientSetCommitMessageFuncCall
+	mutex       sync.Mutex
+}
+
+// SetCommitMessage delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGerritClient) SetCommitMessage(v0 context.Context, v1 string, v2 gerrit.SetCommitMessagePayload) error {
+	r0 := m.SetCommitMessageFunc.nextHook()(v0, v1, v2)
+	m.SetCommitMessageFunc.appendCall(GerritClientSetCommitMessageFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SetCommitMessage
+// method of the parent MockGerritClient instance is invoked and the hook
+// queue is empty.
+func (f *GerritClientSetCommitMessageFunc) SetDefaultHook(hook func(context.Context, string, gerrit.SetCommitMessagePayload) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetCommitMessage method of the parent MockGerritClient instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GerritClientSetCommitMessageFunc) PushHook(hook func(context.Context, string, gerrit.SetCommitMessagePayload) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GerritClientSetCommitMessageFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, gerrit.SetCommitMessagePayload) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GerritClientSetCommitMessageFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, gerrit.SetCommitMessagePayload) error {
+		return r0
+	})
+}
+
+func (f *GerritClientSetCommitMessageFunc) nextHook() func(context.Context, string, gerrit.SetCommitMessagePayload) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GerritClientSetCommitMessageFunc) appendCall(r0 GerritClientSetCommitMessageFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GerritClientSetCommitMessageFuncCall
+// objects describing the invocations of this function.
+func (f *GerritClientSetCommitMessageFunc) History() []GerritClientSetCommitMessageFuncCall {
+	f.mutex.Lock()
+	history := make([]GerritClientSetCommitMessageFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GerritClientSetCommitMessageFuncCall is an object that describes an
+// invocation of method SetCommitMessage on an instance of MockGerritClient.
+type GerritClientSetCommitMessageFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 gerrit.SetCommitMessagePayload
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GerritClientSetCommitMessageFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GerritClientSetCommitMessageFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // GerritClientSetReadyForReviewFunc describes the behavior when the
