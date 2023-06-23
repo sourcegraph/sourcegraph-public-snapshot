@@ -1,10 +1,16 @@
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 
-import { CompletionRequest, getCodyCompletionOneShot } from './api'
+import { CompletionRequest, DEFAULT_CHAT_COMPLETION_PARAMETERS, getCodyCompletionOneShot } from './api'
 
 export async function translateToQuery(input: string, user: AuthenticatedUser | null): Promise<string | null> {
     const messages = getCompletionRequestMessages(input, user)
-    const result = await getCodyCompletionOneShot(messages)
+    const result = await getCodyCompletionOneShot(
+        {
+            ...DEFAULT_CHAT_COMPLETION_PARAMETERS,
+            messages,
+        },
+        null
+    )
     if (!result.includes('contents>') && !result.includes('filters>')) {
         return null
     }

@@ -1486,6 +1486,7 @@ ts_project(
         "src/site-admin/SiteAdminOutboundRequestsPage.tsx",
         "src/site-admin/SiteAdminPackagesPage.tsx",
         "src/site-admin/SiteAdminPingsPage.tsx",
+        "src/site-admin/SiteAdminPromptTesterPage.tsx",
         "src/site-admin/SiteAdminReportBugPage.tsx",
         "src/site-admin/SiteAdminRepositoriesContainer.tsx",
         "src/site-admin/SiteAdminRepositoriesPage.tsx",

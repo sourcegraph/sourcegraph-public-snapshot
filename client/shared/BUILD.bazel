@@ -334,6 +334,7 @@ ts_project(
         "src/types/web-ext/index.d.ts",
         "src/util/dom.ts",
         "src/util/lazyComponent.tsx",
+        "src/util/prompt-tester.ts",
         "src/util/url.ts",
         "src/util/useInputValidation.ts",
     ],

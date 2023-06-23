@@ -94,6 +94,10 @@ const SiteAdminWebhookUpdatePage = lazyComponent(
     'SiteAdminWebhookUpdatePage'
 )
 const SiteAdminPackagesPage = lazyComponent(() => import('./SiteAdminPackagesPage'), 'SiteAdminPackagesPage')
+const SiteAdminPromptTesterPage = lazyComponent(
+    () => import('./SiteAdminPromptTesterPage'),
+    'SiteAdminPromptTesterPage'
+)
 
 export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -241,6 +245,10 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/permissions-syncs',
         render: props => <PermissionsSyncJobsTable {...props} />,
+    },
+    {
+        path: '/prompt-tester',
+        render: props => <SiteAdminPromptTesterPage {...props} />,
     },
 ]
 

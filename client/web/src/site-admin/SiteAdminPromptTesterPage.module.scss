@@ -1,0 +1,33 @@
+.prompt-version {
+    display: grid;
+    grid-gap: 0.5rem;
+    grid-template-columns: 1em auto 9em 6em 6em 7em;
+    align-items: start;
+    margin-bottom: 0.5rem;
+
+    textarea {
+        height: var(--input-height);
+    }
+}
+
+.variation-count-container {
+    display: flex;
+    grid-gap: 0.5rem;
+    align-items: center;
+}
+
+.variation-count-input {
+    width: 5rem;
+    margin-bottom: 0.5rem;
+}
+
+.run-button {
+    margin: 1rem;
+}
+
+.result-row {
+    display: grid;
+    gap: 1em;
+    grid-template-columns: 1em repeat(auto-fit, minmax(10px, 1fr));
+    margin-bottom: 0.5rem;
+}

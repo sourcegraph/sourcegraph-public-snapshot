@@ -1,6 +1,7 @@
 import { Optional } from 'utility-types'
 
 import { BatchChangeState } from '../../graphql-operations'
+import { PromptVersion } from '../../util/prompt-tester'
 
 import { DiffMode } from './diffMode'
 import { RecentSearch } from './recentSearches'
@@ -74,6 +75,8 @@ export interface TemporarySettingsSchema {
     'cody.chatPageCta.dismissed': boolean
     'cody.survey.submitted': boolean
     'app.codyStandalonePage.selectedRepo': string
+    'admin.promptTester.promptVersions': PromptVersion[]
+    'admin.promptTester.variationCount': number
 }
 
 /**

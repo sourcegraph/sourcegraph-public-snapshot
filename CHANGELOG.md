@@ -50,17 +50,34 @@ All notable changes to Sourcegraph are documented in this file.
 - Added the ability to block auto-indexing scheduling and inference via the `codeintel_autoindexing_exceptions` Postgres table. [#51578](https://github.com/sourcegraph/sourcegraph/pull/51578)
 - When an admin has configured rollout windows for Batch Changes changesets, the configuration details are now visible to all users on the Batch Changes settings page. [#50479](https://github.com/sourcegraph/sourcegraph/pull/50479)
 - Added support for regular expressions in`exclude` repositories for GitLab code host connections. [#51862](https://github.com/sourcegraph/sourcegraph/pull/51862)
-- Branches created by Batch Changes will now be automatically deleted on the code host upon merging or closing a changeset if the new `batchChanges.autoDeleteBranch` site setting is enabled. [#52055](https://github.com/sourcegraph/sourcegraph/pull/52055)
-- Repository metadata now generally available for everyone [#50567](https://github.com/sourcegraph/sourcegraph/pull/50567), [#50607](https://github.com/sourcegraph/sourcegraph/pull/50607), [#50857](https://github.com/sourcegraph/sourcegraph/pull/50857), [#50908](https://github.com/sourcegraph/sourcegraph/pull/50908), [#972](https://github.com/sourcegraph/src-cli/pull/972), [#51031](https://github.com/sourcegraph/sourcegraph/pull/51031), [#977](https://github.com/sourcegraph/src-cli/pull/977), [#50821](https://github.com/sourcegraph/sourcegraph/pull/50821), [#51258](https://github.com/sourcegraph/sourcegraph/pull/51258), [#52078](https://github.com/sourcegraph/sourcegraph/pull/52078), [#51985](https://github.com/sourcegraph/sourcegraph/pull/51985), [#52150](https://github.com/sourcegraph/sourcegraph/pull/52150), [#52249](https://github.com/sourcegraph/sourcegraph/pull/52249), [#51982](https://github.com/sourcegraph/sourcegraph/pull/51982), [#51248](https://github.com/sourcegraph/sourcegraph/pull/51248), [#51921](https://github.com/sourcegraph/sourcegraph/pull/51921), [#52301](https://github.com/sourcegraph/sourcegraph/pull/52301)
-- Batch Changes for Gerrit Code Hosts [#52647](https://github.com/sourcegraph/sourcegraph/pull/52647).
-- Batch Changes now supports per-batch-change control for pushing to a fork of the upstream repository when the property `changesetTemplate.fork` is specified in the batch spec. [#51572](https://github.com/sourcegraph/sourcegraph/pull/51572)
-- Executors can now be configured to process multiple queues. [#52016](https://github.com/sourcegraph/sourcegraph/pull/52016)
-- Added `isCodyEnabled` as a new GraphQL field to `Site`. [#52941](https://github.com/sourcegraph/sourcegraph/pull/52941)
-- Enabled improved search ranking by default. This feature can be disabled through the `search-ranking` feature flag.[#53031](https://github.com/sourcegraph/sourcegraph/pull/53031)
-- Added token callback route for Cody in VS Code and VS Code insiders. [#53313](https://github.com/sourcegraph/sourcegraph/pull/53313)
-- Latest repository clone/sync output is surfaced in the "Mirroring and cloning" page (`{REPO}/-/settings/mirror`). Added primarily to enable easier debugging of issues with Perforce depots, it can also be useful for other code hosts. [#51598](https://github.com/sourcegraph/sourcegraph/pull/51598)
-- New `file:has.contributor(...)` predicate for filtering files based on contributors. [#53206](https://github.com/sourcegraph/sourcegraph/pull/53206)
-- Added multi-repo scope selector for Cody on the web supporting unified context generation API which uses combination of embeddings search and keyword search as fallback for context generation. [53046](https://github.com/sourcegraph/sourcegraph/pull/53046)
+- Branches created by Batch Changes will now be automatically deleted on the code host upon merging
+  or closing a changeset if the new `batchChanges.autoDeleteBranch` site setting is
+  enabled. [#52055](https://github.com/sourcegraph/sourcegraph/pull/52055)
+- Repository metadata now generally available for
+  everyone [#50567](https://github.com/sourcegraph/sourcegraph/pull/50567), [#50607](https://github.com/sourcegraph/sourcegraph/pull/50607), [#50857](https://github.com/sourcegraph/sourcegraph/pull/50857), [#50908](https://github.com/sourcegraph/sourcegraph/pull/50908), [#972](https://github.com/sourcegraph/src-cli/pull/972), [#51031](https://github.com/sourcegraph/sourcegraph/pull/51031), [#977](https://github.com/sourcegraph/src-cli/pull/977), [#50821](https://github.com/sourcegraph/sourcegraph/pull/50821), [#51258](https://github.com/sourcegraph/sourcegraph/pull/51258), [#52078](https://github.com/sourcegraph/sourcegraph/pull/52078), [#51985](https://github.com/sourcegraph/sourcegraph/pull/51985), [#52150](https://github.com/sourcegraph/sourcegraph/pull/52150), [#52249](https://github.com/sourcegraph/sourcegraph/pull/52249), [#51982](https://github.com/sourcegraph/sourcegraph/pull/51982), [#51248](https://github.com/sourcegraph/sourcegraph/pull/51248), [#51921](https://github.com/sourcegraph/sourcegraph/pull/51921), [#52301](https://github.com/sourcegraph/sourcegraph/pull/52301)
+- Batch Changes for Gerrit Code
+  Hosts [#52647](https://github.com/sourcegraph/sourcegraph/pull/52647).
+- Batch Changes now supports per-batch-change control for pushing to a fork of the upstream
+  repository when the property `changesetTemplate.fork` is specified in the batch
+  spec. [#51572](https://github.com/sourcegraph/sourcegraph/pull/51572)
+- Executors can now be configured to process multiple
+  queues. [#52016](https://github.com/sourcegraph/sourcegraph/pull/52016)
+- Added `isCodyEnabled` as a new GraphQL field
+  to `Site`. [#52941](https://github.com/sourcegraph/sourcegraph/pull/52941)
+- Enabled improved search ranking by default. This feature can be disabled through
+  the `search-ranking` feature flag.[#53031](https://github.com/sourcegraph/sourcegraph/pull/53031)
+- Added token callback route for Cody in VS Code and VS Code
+  insiders. [#53313](https://github.com/sourcegraph/sourcegraph/pull/53313)
+- Latest repository clone/sync output is surfaced in the "Mirroring and cloning"
+  page (`{REPO}/-/settings/mirror`). Added primarily to enable easier debugging of issues with
+  Perforce depots, it can also be useful for other code
+  hosts. [#51598](https://github.com/sourcegraph/sourcegraph/pull/51598)
+- New `file:has.contributor(...)` predicate for filtering files based on
+  contributors. [#53206](https://github.com/sourcegraph/sourcegraph/pull/53206)
+- Added multi-repo scope selector for Cody on the web supporting unified context generation API
+  which uses combination of embeddings search and keyword search as fallback for context
+  generation. [53046](https://github.com/sourcegraph/sourcegraph/pull/53046)
+- Prompt testing tool [#51256](https://github.com/sourcegraph/sourcegraph/pull/51256)
 
 ### Changed
 
