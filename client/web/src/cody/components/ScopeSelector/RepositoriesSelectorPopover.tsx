@@ -502,7 +502,17 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
                         : 'Embeddings are missing for this repository. Enable embeddings to improve the quality of Cody’s responses.'
                 }
             >
-                <Link to="/site-admin/embeddings" className="text-body" onClick={event => event.stopPropagation()}>
+                {window.context.currentUser?.siteAdmin ? (
+                    <Link to="/site-admin/embeddings" className="text-body" onClick={event => event.stopPropagation()}>
+                        <Icon
+                            aria-hidden={true}
+                            className={classNames({
+                                [styles.embeddingIconNoEmbeddings]: !embeddingExists,
+                            })}
+                            svgPath={embeddingExists ? mdiDatabaseCheckOutline : mdiDatabaseRemoveOutline}
+                        />
+                    </Link>
+                ) : (
                     <Icon
                         aria-hidden={true}
                         className={classNames({
@@ -510,7 +520,7 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
                         })}
                         svgPath={embeddingExists ? mdiDatabaseCheckOutline : mdiDatabaseRemoveOutline}
                     />
-                </Link>
+                )}
             </Tooltip>
         )
     }
