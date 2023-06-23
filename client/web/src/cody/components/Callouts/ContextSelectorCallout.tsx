@@ -21,9 +21,7 @@ export const ContextSelectorCallout: React.FC = () => {
         <div className={styles.wrapper}>
             <div className={styles.box}>
                 <div className={styles.header}>
-                    <div className={styles.headerElements}>
-                        <CodyCalloutIcon /> Give Cody context
-                    </div>
+                    <div className={styles.headerElements}>Give Cody context</div>
                     <Button className={styles.closeButton} onClick={handleCloseClick} variant="icon" aria-label="Close">
                         <Icon aria-hidden={true} svgPath={mdiClose} />
                     </Button>
