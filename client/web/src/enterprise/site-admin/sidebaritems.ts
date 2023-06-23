@@ -160,10 +160,10 @@ export const codyGroup: SiteAdminSideBarGroup = {
         {
             label: 'Embeddings policies',
             to: '/site-admin/embeddings/configuration',
-            condition: () => window.context?.embeddingsEnabled,
+            // condition: () => window.context?.embeddingsEnabled,
         },
-    ],
-    condition: () => window.context?.codyEnabled,
+    ]
+    // condition: () => window.context?.codyEnabled,
 }
 
 const usersGroup: SiteAdminSideBarGroup = {

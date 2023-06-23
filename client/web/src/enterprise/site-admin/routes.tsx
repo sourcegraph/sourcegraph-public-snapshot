@@ -235,7 +235,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
             path: '/embeddings/configuration',
             render: props => <CodyConfigurationPage {...props} />,
-            condition: codyIsEnabled,
+            // condition: codyIsEnabled,
         },
         {
             path: '/embeddings/configuration/:id',

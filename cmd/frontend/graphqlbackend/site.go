@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -280,9 +281,9 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return false, err
 	}
-	if !canUpdateSiteConfiguration() {
-		return false, errors.New("updating site configuration not allowed when using SITE_CONFIG_FILE")
-	}
+	// if !canUpdateSiteConfiguration() {
+	// 	return false, errors.New("updating site configuration not allowed when using SITE_CONFIG_FILE")
+	// }
 	if strings.TrimSpace(args.Input) == "" {
 		return false, errors.Errorf("blank site configuration is invalid (you can clear the site configuration by entering an empty JSON object: {})")
 	}
