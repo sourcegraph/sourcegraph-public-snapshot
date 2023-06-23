@@ -339,6 +339,36 @@ describe('Cody completions', () => {
     })
 
     describe('multi-line completions', () => {
+        it('honors a leading new line in the completion', async () => {
+            const { completions } = await complete(
+                `
+            describe('bubbleSort', () => {
+                it('bubbleSort test case', () => {${CURSOR_MARKER}
+
+                })
+            })
+            `,
+                [
+                    createCompletionResponse(`  \n        const unsortedArray = [4,3,78,2,0,2]
+        const sortedArray = bubbleSort(unsortedArray)
+        expect(sortedArray).toEqual([0,2,2,3,4,78])
+    })
+})`),
+                ]
+            )
+
+            expect(completions).toMatchInlineSnapshot(`
+            Array [
+              InlineCompletionItem {
+                "insertText": "
+                    const unsortedArray = [4,3,78,2,0,2]
+                    const sortedArray = bubbleSort(unsortedArray)
+                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
+              },
+            ]
+        `)
+        })
+
         it('cuts-off redundant closing brackets on the start indent level', async () => {
             const { completions } = await complete(
                 `
