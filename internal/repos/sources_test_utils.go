@@ -29,7 +29,6 @@ func Save(t testing.TB, rec *recorder.Recorder) {
 	}
 }
 
-
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
 
 func Update(name string) bool {
@@ -57,7 +56,6 @@ func GitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
 		return cli.Do(req)
 	})
 }
-
 
 func NewRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 	rec, err := httptestutil.NewRecorder(file, record, func(i *cassette.Interaction) error {
@@ -105,4 +103,3 @@ func MarshalJSON(t testing.TB, v any) string {
 
 	return string(bs)
 }
-

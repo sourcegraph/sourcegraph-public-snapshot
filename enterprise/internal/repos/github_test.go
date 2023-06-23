@@ -110,17 +110,17 @@ EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ghAppsStore := edb.NewEnterpriseDB(db).GitHubApps().WithEncryptionKey(keyring.Default().GitHubAppKey)
 	_, err := ghAppsStore.Create(context.Background(), &ghtypes.GitHubApp{
-				AppID: 350528,
-				BaseURL: "https://github.com/",
-				Name: "SourcegraphForPetriWoop",
-				Slug: "sourcegraphforpetriwoop",
-				PrivateKey: ghAppPrivateKey,
-				ClientID: "Iv1.4e78f8613134c221",
-				ClientSecret: "0e1540fbcea7c59ddae70dc6eb0ae4f1f52255c9",
-				Domain: types.ReposGitHubAppDomain,
-				Logo: "logo.png",
-				AppURL: "https://github.com/appurl",
-			})
+		AppID:        350528,
+		BaseURL:      "https://github.com/",
+		Name:         "SourcegraphForPetriWoop",
+		Slug:         "sourcegraphforpetriwoop",
+		PrivateKey:   ghAppPrivateKey,
+		ClientID:     "Iv1.4e78f8613134c221",
+		ClientSecret: "0e1540fbcea7c59ddae70dc6eb0ae4f1f52255c9",
+		Domain:       types.ReposGitHubAppDomain,
+		Logo:         "logo.png",
+		AppURL:       "https://github.com/appurl",
+	})
 	require.NoError(t, err)
 	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, keyring.Default().GitHubAppKey)
 
