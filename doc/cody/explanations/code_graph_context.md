@@ -17,7 +17,7 @@ Embeddings for relevant code files must be enabled for each repository that you'
 
 ### Configuring embeddings
 
-> NOTE: By default, there are no embeddings created. Admins must choose which code is sent to the
+> NOTE: By default, no embeddings are created. Admins must choose which code is sent to the
 > third party LLM for embedding (currently OpenAI). Once Sourcegraph provides first party embeddings,
 > embeddings will be enabled for all repositories by default.
 
