@@ -209,6 +209,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                                                 <AppLogo
                                                     src={installation.account.avatarURL}
                                                     name={installation.account.login}
+                                                    alt="Account avatar"
                                                     className={styles.logo}
                                                 />
                                                 <div className="d-flex flex-column ml-3">
