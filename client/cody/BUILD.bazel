@@ -53,6 +53,7 @@ ts_project(
         "src/completions/providers/provider.ts",
         "src/completions/providers/unstable-codegen.ts",
         "src/completions/providers/unstable-huggingface.ts",
+        "src/completions/shared-post-process.ts",
         "src/completions/text-processing.ts",
         "src/completions/utils.ts",
         "src/configuration.ts",

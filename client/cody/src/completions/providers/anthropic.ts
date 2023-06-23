@@ -5,7 +5,6 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
-import { truncateMultilineCompletion } from '../multiline'
 import {
     OPENING_CODE_TAG,
     CLOSING_CODE_TAG,
@@ -13,7 +12,6 @@ import {
     fixBadCompletionStart,
     PrefixComponents,
     getHeadAndTail,
-    trimUntilSuffix,
     trimStartUntilNewline,
 } from '../text-processing'
 import { batchCompletions, messagesToText } from '../utils'
