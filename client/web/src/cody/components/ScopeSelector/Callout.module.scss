@@ -22,13 +22,13 @@
 
 .box {
     background-color: var(--brand-secondary);
-    color: white;
+    color: var(--white);
     border-radius: 0.375rem;
     box-shadow: 0 0.125rem 0.375rem rgba(0, 0, 0, 0.3);
     padding: 0.8125rem 1rem;
 }
 
-.headerElements {
+.header-elements {
     display: flex;
     align-items: top;
     gap: 0.28rem;
@@ -42,7 +42,7 @@
     align-self: center;
 }
 
-.header .closeButton {
+.header .close-button {
     position: relative;
     margin-right: -0.5rem;
     margin-top: -0.5rem;
@@ -57,8 +57,8 @@
     position: relative;
     width: 0;
     height: 0;
-    border-left: 0.5625rem solid transparent;
-    border-right: 0.5625rem solid transparent;
-    border-top: 0.5625rem solid var(--brand-secondary);
+    border-left: 9px solid transparent;
+    border-right: 9px solid transparent;
+    border-top: 9px solid var(--brand-secondary);
     left: 1.875rem;
 }

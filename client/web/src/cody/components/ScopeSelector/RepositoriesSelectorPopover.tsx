@@ -24,6 +24,7 @@ import {
     Text,
     Input,
     Tooltip,
+    Link,
     useDebounce,
 } from '@sourcegraph/wildcard'
 
@@ -501,13 +502,7 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
                         : 'Embeddings are missing for this repository. Enable embeddings to improve the quality of Cody’s responses.'
                 }
             >
-                <a
-                    href="/site-admin/embeddings"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-body"
-                    onClick={e => e.stopPropagation()}
-                >
+                <Link to="/site-admin/embeddings" className="text-body" onClick={event => event.stopPropagation()}>
                     <Icon
                         aria-hidden={true}
                         className={classNames({
@@ -515,7 +510,7 @@ const EmbeddingExistsIcon: React.FC<{ repo: { embeddingExists: boolean } }> = Re
                         })}
                         svgPath={embeddingExists ? mdiDatabaseCheckOutline : mdiDatabaseRemoveOutline}
                     />
-                </a>
+                </Link>
             </Tooltip>
         )
     }
@@ -534,9 +529,8 @@ const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; 
         if (reposWithoutEmbeddingsCount) {
             return (
                 <Tooltip
-                    content={`Embeddings are missing for ${
-                        totalReposCount === 1 ? 'this repository' : 'some repositories'
-                    }. Enable embeddings to improve the quality of Cody’s responses.`}
+                    content={`Embeddings are missing for ${totalReposCount === 1 ? 'this repository' : 'some repositories'
+                        }. Enable embeddings to improve the quality of Cody’s responses.`}
                 >
                     <Icon
                         svgPath={mdiDatabaseRemoveOutline}
