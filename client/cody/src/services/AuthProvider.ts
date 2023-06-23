@@ -45,14 +45,17 @@ export class AuthProvider {
         if (!lastEndpoint) {
             return
         }
+        debug('AuthProvider:init:lastEndpoint', lastEndpoint)
         const token = await this.secretStorage.get(lastEndpoint)
-        if (token) {
-            await this.auth(lastEndpoint, token || null)
+        if (!token) {
+            return
         }
+        await this.auth(lastEndpoint, token || null)
+        debug('AuthProvider:init:tokenFound', lastEndpoint)
     }
 
     // Display quickpick to select endpoint to sign in to
-    public async signinMenu(): Promise<void> {
+    public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
         debug('AuthProvider:signinMenu', mode)
         logEvent('CodyVSCodeExtension:login:clicked')
@@ -60,21 +63,23 @@ export class AuthProvider {
         if (!item) {
             return
         }
-        switch (item?.id) {
+        const menuID = type || item?.id
+        switch (menuID) {
             case 'enterprise': {
                 const input = await LoginStepInputBox(item.uri, 1, false)
                 if (!input?.endpoint) {
                     return
                 }
                 this.authStatus.endpoint = input.endpoint
-                this.redirectToEndpointLogin(false)
+                await this.redirectToEndpointLogin(false)
                 break
             }
             case 'dotcom':
-                this.redirectToEndpointLogin(true)
+                await this.redirectToEndpointLogin(true)
                 break
             case 'token': {
-                const input = await LoginStepInputBox(item.uri, 1, true)
+                const endpoint = uri || item.uri
+                const input = await LoginStepInputBox(endpoint, 1, true)
                 if (!input?.endpoint || !input?.token) {
                     return
                 }
@@ -158,10 +163,11 @@ export class AuthProvider {
 
     // It processes the authentication steps and stores the login info before sharing the auth status with chatview
     public async auth(
-        endpoint: string,
+        uri: string,
         token: string | null,
         customHeaders = {}
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
+        const endpoint = formatURL(uri) || ''
         const config = {
             serverEndpoint: endpoint,
             accessToken: token,
@@ -208,16 +214,30 @@ export class AuthProvider {
     }
 
     // Open callback URL in browser to get token from instance
-    private redirectToEndpointLogin(isDotCom: boolean): void {
-        const endpoint = isDotCom ? DOTCOM_URL.href : this.authStatus.endpoint
+    private async redirectToEndpointLogin(isDotCom: boolean): Promise<void> {
+        const uri = isDotCom ? DOTCOM_URL.href : this.authStatus.endpoint || ''
+        const endpoint = formatURL(uri)
         if (!endpoint) {
             return
         }
-        const authUri = new URL('/user/settings/tokens/new/callback', endpoint)
-        authUri.searchParams.append('requestFrom', this.appScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
-        this.authStatus.endpoint = endpoint
-        // open external link
-        void vscode.env.openExternal(vscode.Uri.parse(authUri.href))
+        await fetch(endpoint)
+            .then(async res => {
+                // Read the string response body
+                const version = await res.text()
+                if (version < '5.1.0') {
+                    void this.signinMenu('token', uri)
+                    return
+                }
+                const authUri = new URL('/user/settings/tokens/new/callback', endpoint)
+                authUri.searchParams.append(
+                    'requestFrom',
+                    this.appScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY'
+                )
+                this.authStatus.endpoint = endpoint
+                // open external link
+                void vscode.env.openExternal(vscode.Uri.parse(authUri.href))
+            })
+            .catch(error => console.error(error))
     }
 
     // Refresh current endpoint history with the one from local storage
@@ -239,4 +259,22 @@ export class AuthProvider {
         this.loadEndpointHistory()
         debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
     }
+}
+
+function formatURL(uri: string): string | null {
+    if (!uri) {
+        return null
+    }
+    // Check if the URI is in the correct URL format
+    // Add missing https:// if needed
+    if (!uri.startsWith('http')) {
+        uri = `https://${uri}`
+    }
+    try {
+        const endpointUri = new URL(uri)
+        return endpointUri.href
+    } catch {
+        console.error('Invalid URL')
+    }
+    return null
 }

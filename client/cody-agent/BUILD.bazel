@@ -44,6 +44,7 @@ ts_project(
     tsconfig = ":tsconfig",
     deps = [
         ":cody-agent",
+        ":node_modules/@sourcegraph/cody-shared",
         "//:node_modules/@types/node",
     ],
 )
