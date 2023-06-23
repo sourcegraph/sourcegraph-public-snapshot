@@ -30,21 +30,21 @@ func TestUpdateFileCounts(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	d := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	// Create repo
-	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
+	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
 
 	// Insert new path
 	counts := fakeRepoTreeCounts{"new_path": 10}
 	timestamp := time.Now()
-	updatedRows, err := d.RepoPaths().UpdateFileCounts(ctx, repo.ID, counts, timestamp)
+	updatedRows, err := db.RepoPaths().UpdateFileCounts(ctx, repo.ID, counts, timestamp)
 	require.NoError(t, err)
 	assert.Equal(t, updatedRows, 1)
 
 	// Update existing path
 	counts = fakeRepoTreeCounts{"new_path": 20}
-	updatedRows, err = d.RepoPaths().UpdateFileCounts(ctx, repo.ID, counts, timestamp)
+	updatedRows, err = db.RepoPaths().UpdateFileCounts(ctx, repo.ID, counts, timestamp)
 	require.NoError(t, err)
 	assert.Equal(t, updatedRows, 1)
 }
@@ -55,15 +55,15 @@ func TestAggregateFileCounts(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	d := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Create repos
-	repo1 := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
-	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "c/d"})
+	// Create repos.
+	repo1 := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
+	repo2 := mustCreate(ctx, t, db, &types.Repo{Name: "c/d"})
 
 	// Check counts without data.
-	count, err := d.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
+	count, err := db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
 	require.NoError(t, err)
 	assert.Equal(t, int32(0), count)
 
@@ -73,32 +73,39 @@ func TestAggregateFileCounts(t *testing.T) {
 		"path2": 20,
 	}
 	timestamp := time.Now()
-	_, err = d.RepoPaths().UpdateFileCounts(ctx, repo1.ID, counts1, timestamp)
+	_, err = db.RepoPaths().UpdateFileCounts(ctx, repo1.ID, counts1, timestamp)
 	require.NoError(t, err)
 	counts2 := fakeRepoTreeCounts{
 		"":      50,
 		"path3": 50,
 	}
-	_, err = d.RepoPaths().UpdateFileCounts(ctx, repo2.ID, counts2, timestamp)
+	_, err = db.RepoPaths().UpdateFileCounts(ctx, repo2.ID, counts2, timestamp)
 	require.NoError(t, err)
 
-	// Aggregate counts for single path in repo1
-	count, err = d.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{
+	// Aggregate counts for single path in repo1.
+	count, err = db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{
 		Path:   "path1",
 		RepoID: repo1.ID,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, int32(counts1["path1"]), count)
 
-	// Aggregate counts for root path in repo1
-	count, err = d.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{
+	// Aggregate counts for root path in repo1.
+	count, err = db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{
 		RepoID: repo1.ID,
 	})
 	require.NoError(t, err)
 	assert.Equal(t, int32(counts1[""]), count)
 
-	// Aggregate counts for all repos
-	count, err = d.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
+	// Aggregate counts for all repos.
+	count, err = db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
 	require.NoError(t, err)
 	assert.Equal(t, int32(counts1[""]+counts2[""]), count)
+
+	// Aggregate counts for all repos, but repo1 is excluded.
+	err = SignalConfigurationStoreWith(db).UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "analytics", Enabled: true, ExcludedRepoPatterns: []string{"a/b"}})
+	require.NoError(t, err)
+	count, err = db.RepoPaths().AggregateFileCount(ctx, TreeLocationOpts{})
+	require.NoError(t, err)
+	assert.Equal(t, int32(counts2[""]), count)
 }
