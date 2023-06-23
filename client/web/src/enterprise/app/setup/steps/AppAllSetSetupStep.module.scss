@@ -34,6 +34,12 @@
     &-button {
         flex-basis: 50%;
         align-self: flex-start;
+
+        &[aria-disabled='true'] {
+            filter: brightness(0.75);
+
+            --btn-light-color-variant: var(--primary-3);
+        }
     }
 }
 
