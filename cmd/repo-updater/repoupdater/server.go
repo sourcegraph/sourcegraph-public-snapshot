@@ -381,7 +381,7 @@ func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.
 	result, err := s.externalServiceNamespaces(r.Context(), logger, req.ToProto())
 	if err != nil {
 		logger.Error("server.query-external-service-namespaces", log.Error(err))
-		httpCode := codeToStatus(status.Code(err))
+		httpCode := grpcErrToStatus(err)
 		s.respond(w, httpCode, &protocol.ExternalServiceNamespacesResult{Error: err.Error()})
 		return
 	}
@@ -460,7 +460,7 @@ func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *htt
 	result, err := s.externalServiceRepositories(r.Context(), logger, req.ToProto())
 	if err != nil {
 		logger.Error("server.query-external-service-repositories", log.Error(err))
-		httpCode := codeToStatus(status.Code(err))
+		httpCode := grpcErrToStatus(err)
 		s.respond(w, httpCode, &protocol.ExternalServiceRepositoriesResult{Error: err.Error()})
 		return
 	}
@@ -533,9 +533,19 @@ func (s *Server) externalServiceRepositories(ctx context.Context, logger log.Log
 	return &proto.ExternalServiceRepositoriesResponse{Repos: repositories}, sourceErrs
 }
 
-// codeToStatus translates the grpc status codes used in this package to http status codes.
-func codeToStatus(code codes.Code) int {
-	switch code {
+// grpcErrToStatus translates the grpc status codes used in this package to http status codes.
+func grpcErrToStatus(err error) int {
+	if err == nil {
+		return http.StatusOK
+	}
+
+	s, ok := status.FromError(err)
+	if !ok {
+		// we deliberately make context.Canceled and context.DeadlineExceeded return 500
+		return http.StatusInternalServerError
+	}
+
+	switch s.Code() {
 	case codes.NotFound:
 		return http.StatusNotFound
 	case codes.Internal:
