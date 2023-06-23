@@ -83,6 +83,37 @@ create_app_archive() {
   fi
 }
 
+create_dmg() {
+  local version
+  local platform
+  local path
+  local app_path
+  local arch
+  local target
+
+  version=$1
+  platform=$2
+  path="$(bundle_path)"
+  app_path=$(find "${path}" -type d -name "Cody.app")
+
+  # we extract the arch from the platform
+  arch=$(echo "${platform}" | cut -d '-' -f1)
+  if [[ -z ${arch} ]]; then
+    arch=$(uname -m)
+  fi
+
+  ./enterprise/dev/app/dmg/bundle_dmg.sh \
+    --background $HOME/code/sourcegraph/enterprise/dev/app/dmg/Folder-bg.png \
+    --volname Cody \
+    --icon Cody 215 200 \
+    --app-drop-link 450 200 \
+    --window-size 660 400 \
+    --hide-extension Cody.app --volicon $(pwd)/src-tauri/icons/icon.icns \
+    Cody_${version}_${arch}.dmg \
+    ${app_path}
+
+}
+
 cleanup_codesigning() {
   # shellcheck disable=SC2143
   if [[ $(security list-keychains -d user | grep -q "my_temporary_keychain") ]]; then
@@ -163,7 +194,7 @@ build() {
   do_updater_bundle="$3"
 
   # we only allow the updater build once we're in CI or see "SRC_APP_UPDATER_BUILD=1"
-  bundles="deb,appimage,app,dmg"
+  bundles="deb,appimage,app"
 
   echo "platform is: ${platform}"
 
@@ -182,7 +213,11 @@ build() {
 
   echo "--- :tauri: Building Application (${version}) with bundles '${bundles}' for platform: ${platform}"
   NODE_ENV=production pnpm run build-app-shell
-  pnpm tauri build --bundles ${bundles} --target "${platform}"
+  pnpm tauri build --bundles ${bundles} --target "${platform}" --verbose
+
+  if [[ $(uname -s) == "Darwin" ]]; then
+    create_dmg $platform $version
+  fi
 }
 
 if [[ ${CI:-""} == "true" ]]; then
