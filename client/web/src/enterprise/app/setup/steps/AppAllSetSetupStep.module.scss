@@ -40,11 +40,18 @@
 .image-wrapper {
     flex-grow: 1;
     position: relative;
-    margin: auto -7rem 0;
-    max-width: calc(100% + 14rem);
+    margin: auto -3.5rem 0;
+    max-width: calc(100% + 7rem);
 }
 
 .image {
     max-width: 100%;
     position: absolute;
+    bottom: 0;
+}
+
+.footer {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
 }

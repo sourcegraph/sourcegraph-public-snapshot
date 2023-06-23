@@ -1,5 +1,6 @@
 import { FC, useEffect } from 'react'
 
+import classNames from 'classnames'
 import { noop } from 'lodash'
 
 import { gql, useQuery } from '@sourcegraph/http-client'
@@ -22,6 +23,7 @@ const REPO_UPLOADING_PROGRESS = gql`
 `
 
 interface AppSetupProgressBarProps {
+    className?: string
     /**
      * Whenever at least one repository has been processed
      * (embeddings uploading has been finished), Primary is used
@@ -31,7 +33,7 @@ interface AppSetupProgressBarProps {
 }
 
 export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
-    const { onOneRepositoryFinished = noop } = props
+    const { className, onOneRepositoryFinished = noop } = props
     const { data } = useQuery<RepositoriesProgressResult>(REPO_UPLOADING_PROGRESS, {
         pollInterval: 2000,
         fetchPolicy: 'cache-and-network',
@@ -57,7 +59,7 @@ export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
     const hasDetails = currentRepository && filesProcessed !== null && filesToProcess !== null
 
     return (
-        <div className={styles.root}>
+        <div className={classNames(className, styles.root)}>
             <div className={styles.description}>
                 {hasDetails && (
                     <>

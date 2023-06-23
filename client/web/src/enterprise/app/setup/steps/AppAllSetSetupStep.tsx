@@ -44,14 +44,14 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
 
             <div className={styles.imageWrapper}>
                 <img
-                    src="https://storage.googleapis.com/sourcegraph-assets/all-set.png"
+                    src="https://storage.googleapis.com/sourcegraph-assets/setup/vscode-and-cody-chat.png"
                     alt=""
                     className={styles.image}
                 />
             </div>
 
             <FooterWidget>
-                <AppSetupProgressBar onOneRepositoryFinished={handleOneRepositoryFinished} />
+                <AppSetupProgressBar onOneRepositoryFinished={handleOneRepositoryFinished} className={styles.footer} />
             </FooterWidget>
         </div>
     )
