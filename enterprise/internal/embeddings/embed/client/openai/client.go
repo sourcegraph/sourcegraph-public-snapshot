@@ -115,8 +115,9 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
 		} else {
-			// Nondeterministically, the OpenAI API will occasionally send back a `null` for
-			// an embedding in the response. Try it again a few times and hope for the best.
+			// HACK(camdencheek): Nondeterministically, the OpenAI API will
+			// occasionally send back a `null` for an embedding in the
+			// response. Try it again a few times and hope for the best.
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
 			if err != nil {
 				return nil, err
