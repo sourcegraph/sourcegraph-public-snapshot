@@ -529,8 +529,9 @@ const EmbeddingStatusIndicator: React.FC<{ reposWithoutEmbeddingsCount: number; 
         if (reposWithoutEmbeddingsCount) {
             return (
                 <Tooltip
-                    content={`Embeddings are missing for ${totalReposCount === 1 ? 'this repository' : 'some repositories'
-                        }. Enable embeddings to improve the quality of Cody’s responses.`}
+                    content={`Embeddings are missing for ${
+                        totalReposCount === 1 ? 'this repository' : 'some repositories'
+                    }. Enable embeddings to improve the quality of Cody’s responses.`}
                 >
                     <Icon
                         svgPath={mdiDatabaseRemoveOutline}
