@@ -52,6 +52,9 @@ func Init(logger log.Logger) CleanupFunc {
 	// hostname.
 	setDefaultEnv(logger, "SRC_SYNTECT_SERVER", "http://localhost:9238")
 
+	// Code Insights does not run in App
+	setDefaultEnv(logger, "DISABLE_CODE_INSIGHTS", "true")
+
 	// Jaeger might not be running, but this is a better default than an internal hostname.
 	//
 	// TODO(sqs) TODO(single-binary): this isnt taking effect
