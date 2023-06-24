@@ -31,9 +31,10 @@ const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:f
 
 interface IChatUIProps {
     codyChatStore: CodyChatStore
+    isSourcegraphApp?: boolean
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element => {
+export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp = false }): JSX.Element => {
     const {
         submitMessage,
         editMessage,
