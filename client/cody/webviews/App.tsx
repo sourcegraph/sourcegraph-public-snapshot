@@ -53,17 +53,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     break
                 }
                 case 'config':
-                    console.log(message.authStatus)
                     setConfig(message.config)
-                    setAuthStatus(message.authStatus)
-                    setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                     setIsAppInstalled(message.config.isAppInstalled)
-                    break
-                case 'login':
-                    console.log(message.authStatus)
                     setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
                     setAuthStatus(message.authStatus)
                     setEndpoint(message.authStatus.endpoint)
+                    break
+                case 'login':
                     break
                 case 'showTab':
                     if (message.tab === 'chat') {
@@ -107,11 +103,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
 
-    if (!view) {
-        return <div>why</div>
-    }
-
-    if (!authStatus) {
+    if (!view || !authStatus) {
         return <LoadingPage />
     }
 
