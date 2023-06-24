@@ -2,11 +2,15 @@ package singleprogram
 
 import (
 	"bufio"
+	"fmt"
 	"io"
+	"net"
+	"net/url"
 	"os"
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
 	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
@@ -106,6 +110,25 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresF
 		PGDATASOURCE: "postgresql:///sourcegraph?host=" + unixSocketDir,
 	}
 
+	var pgPort uint32 = 5432
+
+	if runtime.GOOS == "windows" {
+		vars.PGHOST = "localhost"
+		vars.PGPORT = os.Getenv("PGPORT")
+		vars.PGPASSWORD = "sourcegraph"
+		vars.PGDATASOURCE = (&url.URL{
+			Scheme: "postgres",
+			Host:   net.JoinHostPort("localhost", vars.PGPORT),
+		}).String()
+
+		unixSocketDir = ""
+
+		intPgPort, _ := strconv.ParseUint(vars.PGPORT, 10, 32)
+		pgPort = uint32(intPgPort)
+
+		logger.Info(fmt.Sprintf("Embedded PostgreSQL running on %s:%s", vars.PGHOST, vars.PGPORT))
+	}
+
 	db := embeddedpostgres.NewDatabase(
 		embeddedpostgres.DefaultConfig().
 			Version(embeddedpostgres.V14).
@@ -115,6 +138,8 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresF
 			Username(vars.PGUSER).
 			Database(vars.PGDATABASE).
 			UseUnixSocket(unixSocketDir).
+			Port(pgPort).
+			Password(vars.PGPASSWORD).
 			StartTimeout(120 * time.Second).
 			Logger(debugLogLinesWriter(logger, "postgres output line")),
 	)

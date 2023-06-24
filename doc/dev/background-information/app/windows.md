@@ -29,7 +29,7 @@ Run Sourcegraph.exe, located in `src-tauri\target\release`.
 
 ## Logs
 
-The `Troubleshoot` option in the system tray does not work. You can view the logs by opening `%APPDATA%\com.sourcegraph.cody\logs\Sourcegraph.log`.
+The `Troubleshoot` option in the system tray does not work. You can view the logs by opening `%APPDATA%\com.sourcegraph.cody\logs\Cody.log`.
 
 ## Resources
 
