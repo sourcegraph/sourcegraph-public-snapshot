@@ -47,6 +47,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
         abortMessageInProgress,
+        fetchRepositoryNames,
     } = codyChatStore
 
     const [formInput, setFormInput] = useState('')
@@ -67,8 +68,22 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
     const scopeSelectorProps = useMemo(
-        () => ({ scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile }),
-        [scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile]
+        () => ({
+            scope,
+            setScope,
+            toggleIncludeInferredRepository,
+            toggleIncludeInferredFile,
+            fetchRepositoryNames,
+            isSourcegraphApp,
+        }),
+        [
+            scope,
+            setScope,
+            toggleIncludeInferredRepository,
+            toggleIncludeInferredFile,
+            fetchRepositoryNames,
+            isSourcegraphApp,
+        ]
     )
 
     if (!loaded) {
