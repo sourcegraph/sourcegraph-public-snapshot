@@ -57,7 +57,7 @@ export class DecorationProvider {
             return
         }
         this.clear()
-        this.decorations.push({ range, hoverMessage: 'Cody Assist #' + this.id })
+        this.decorations.push({ range })
         const rangeStartLine = getSingleLineRange(range.start.line)
         if (this.status === CodyTaskState.error) {
             this.decorationTypePending.dispose()
@@ -90,7 +90,7 @@ export class DecorationProvider {
      */
     public setState(status: CodyTaskState, newRange: vscode.Range): void {
         this.status = status
-        this.range = new vscode.Range(newRange.start.line, 0, newRange.end.line - 1, 0)
+        this.range = new vscode.Range(newRange.start.line, 0, Math.max(0, newRange.end.line - 1), 0)
         this.decorate()
         this._onDidChange.fire()
     }

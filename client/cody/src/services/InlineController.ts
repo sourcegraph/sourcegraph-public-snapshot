@@ -15,11 +15,13 @@ const initRange = new vscode.Range(initPost, initPost)
 export class InlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
-    private readonly label = 'Cody: File Chat'
-    private readonly threadLabel = 'Ask Cody...'
+    private readonly label = 'Cody: Inline Chat'
+    private readonly threadLabel =
+        '[TIPS] New Inline Chat: `ctrl + shift + c` | Submit: `cmd + enter` | Hide: `shift + esc`'
     private options = {
-        prompt: 'Click here to ask Cody.',
-        placeHolder: 'Ask Cody a question, or start with /fix to request edits (e.g. "/fix convert tabs to spaces")',
+        prompt: 'Cody Inline Chat - Ask Cody a question or request inline fix with `/fix` or `/touch`.',
+        placeHolder:
+            'Examples: "How can I improve this?", "/fix convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
     }
     private readonly codyIcon: vscode.Uri = getIconPath('cody', this.extensionPath)
     private readonly userIcon: vscode.Uri = getIconPath('user', this.extensionPath)
