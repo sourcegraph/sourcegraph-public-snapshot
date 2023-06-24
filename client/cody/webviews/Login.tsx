@@ -13,21 +13,20 @@ import styles from './Login.module.css'
 
 interface LoginProps {
     authStatus?: AuthStatus
-    endpoint?: string
+    endpoint: string | null
     isAppInstalled: boolean
     isAppRunning?: boolean
     vscodeAPI: VSCodeWrapper
     callbackScheme?: string
     appOS?: string
     appArch?: string
-    isAppConnectEnabled?: boolean
     setEndpoint: (endpoint: string) => void
 }
 
 const APP_DESC = {
     getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     download: 'Download and run the Cody desktop app to configure your local code graph.',
-    connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
+    connectApp: 'Cody App detected. All that’s left to do is connect VS Code with Cody App.',
     notRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     comingSoon:
         'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
@@ -42,7 +41,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     appArch,
     isAppInstalled = false,
     isAppRunning = false,
-    isAppConnectEnabled = false,
     setEndpoint,
 }) => {
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
@@ -96,34 +94,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         </section>
     )
 
-    const EnterpriseSignin: React.FunctionComponent = () => (
-        <section
-            className={classNames(styles.section, !isAppConnectEnabled ? styles.codyGradient : styles.greyGradient)}
-        >
-            <h2 className={styles.sectionHeader}>Sourcegraph Enterprise</h2>
-            <p className={styles.openMessage}>
-                Sign in by entering an access token created through your user settings on Sourcegraph.
-            </p>
-            <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
-                Continue with Access Token
-            </VSCodeButton>
-        </section>
-    )
-
-    const DotComSignin: React.FunctionComponent = () => (
-        <section
-            className={classNames(styles.section, !isAppConnectEnabled ? styles.codyGradient : styles.greyGradient)}
-        >
-            <h2 className={styles.sectionHeader}>Sourcegraph.com</h2>
-            <p className={styles.openMessage}>
-                Cody for open source code is available to all users with a Sourcegraph.com account.
-            </p>
-            <VSCodeButton className={styles.button} type="button" onClick={() => loginWithDotCom()}>
-                Continue with Sourcegraph.com
-            </VSCodeButton>
-        </section>
-    )
-
     const isApp = {
         isInstalled: endpoint === LOCAL_APP_URL.href && isAppInstalled,
         isRunning: isAppRunning,
@@ -133,10 +103,8 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             {authStatus && <ErrorContainer authStatus={authStatus} isApp={isApp} endpoint={endpoint} />}
             {/* Signin Sections */}
             <div className={styles.sectionsContainer}>
-                <EnterpriseSignin />
-                <DotComSignin />
-                {isAppConnectEnabled && <AppConnect />}
-                {isAppConnectEnabled && !isOSSupported && <NoAppConnect />}
+                <AppConnect />
+                {!isOSSupported && <NoAppConnect />}
             </div>
             {/* Footer */}
             <footer className={styles.footer}>

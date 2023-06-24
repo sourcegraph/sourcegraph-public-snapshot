@@ -2,10 +2,6 @@ export const LOCAL_APP_LOCATIONS: LocalAppPaths = {
     darwin: [
         {
             dir: '/Applications/',
-            file: 'Sourcegraph.app',
-        },
-        {
-            dir: '/Applications/',
             file: 'Cody.app',
         },
         {

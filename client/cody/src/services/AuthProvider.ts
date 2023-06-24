@@ -42,6 +42,7 @@ export class AuthProvider {
     // Sign into the last endpoint the user was signed into if any
     private async init(localStorage: LocalStorage): Promise<void> {
         const lastEndpoint = localStorage?.getEndpoint()
+        this.authStatus.endpoint = lastEndpoint
         if (!lastEndpoint) {
             return
         }

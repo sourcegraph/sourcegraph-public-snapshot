@@ -53,7 +53,6 @@ const dummyVSCodeAPI: VSCodeWrapper = {
                 arch: 'x64',
                 homeDir: '/home/user',
                 isAppInstalled: false,
-                isAppConnectEnabled: false,
                 isAppRunning: false,
                 hasAppJson: false,
                 extensionVersion: '0.0.0',

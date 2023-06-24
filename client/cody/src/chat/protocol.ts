@@ -122,8 +122,6 @@ export interface LocalEnv {
     hasAppJson: boolean
     isAppInstalled: boolean
     isAppRunning: boolean
-    // TODO: remove this once the experimental period for connect app is over
-    isAppConnectEnabled: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
