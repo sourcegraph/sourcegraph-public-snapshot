@@ -36,12 +36,11 @@ export class AuthProvider {
         private localStorage: LocalStorage
     ) {
         this.loadEndpointHistory()
-        this.init(localStorage).catch(() => null)
     }
 
     // Sign into the last endpoint the user was signed into if any
-    private async init(localStorage: LocalStorage): Promise<void> {
-        const lastEndpoint = localStorage?.getEndpoint()
+    public async init(): Promise<void> {
+        const lastEndpoint = this.localStorage?.getEndpoint()
         this.authStatus.endpoint = lastEndpoint
         if (!lastEndpoint) {
             return
@@ -51,7 +50,7 @@ export class AuthProvider {
         if (!token) {
             return
         }
-        await this.auth(lastEndpoint, token || null)
+        await this.auth(lastEndpoint, token)
         debug('AuthProvider:init:tokenFound', lastEndpoint)
     }
 

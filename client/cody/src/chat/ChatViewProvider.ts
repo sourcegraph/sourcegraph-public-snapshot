@@ -40,7 +40,6 @@ import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
 import {
-    AuthStatus,
     ConfigurationSubsetForWebview,
     DOTCOM_URL,
     ExtensionMessage,
@@ -221,10 +220,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 this.loadChatHistory()
                 this.publishContextStatus()
-                this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
                 await this.loadRecentChat()
+                this.publishConfig()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -624,10 +623,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save, verify, and sync authStatus between extension host and webview
      * activate extension when user has valid login
      */
-    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        if (authStatus.isLoggedIn) {
-            void this.publishConfig()
-        }
+    public async syncAuthStatus(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
         await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
         this.setWebviewView(authStatus.isLoggedIn ? 'chat' : 'login')
         await this.webview?.postMessage({ type: 'login', authStatus })
