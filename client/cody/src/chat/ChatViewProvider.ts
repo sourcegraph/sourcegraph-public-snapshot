@@ -32,7 +32,7 @@ import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
-import { AuthProvider } from '../services/AuthProvider'
+import { AuthProvider, isNetworkError } from '../services/AuthProvider'
 import { LocalAppDetector } from '../services/LocalAppDetector'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
@@ -246,7 +246,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
             case 'settings': {
-                await this.authProvider.auth(message.serverEndpoint, message.accessToken, this.config.customHeaders)
+                const endpoint = message.serverEndpoint.length ? message.serverEndpoint : this.config.serverEndpoint
+                const token = message.accessToken.length ? message.accessToken : this.config.accessToken
+                await this.authProvider.auth(endpoint, token, this.config.customHeaders)
                 break
             }
             case 'insert':
@@ -712,6 +714,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return
         }
         const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
+
+        // check first if search error is due to any network issue
+        if (isNetworkError(searchErrors)) {
+            console.log('sent error to webview')
+            void this.sendErrorToWebview(
+                'Cody cannot respond due to network error. Please check your connection and try again.'
+            )
+            return
+        }
         // Display error message as assistant response for users with indexed codebase but getting search errors
         if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
             this.transcript.addErrorAsAssistantResponse(searchErrors)

@@ -61,6 +61,7 @@
     background-color: var(--vscode-inputValidation-errorBackground);
     padding: 0.5rem;
     margin-top: 1rem;
+    margin-bottom: 1rem;
 }
 
 .terms {

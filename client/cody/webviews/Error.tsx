@@ -1,4 +1,8 @@
+import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
+
 import { AuthStatus } from '../src/chat/protocol'
+
+import { getVSCodeAPI } from './utils/VSCodeApi'
 
 import styles from './Login.module.css'
 
@@ -10,6 +14,8 @@ const AUTH_ERRORS = {
     EMAIL_NOT_VERIFIED: 'Email not verified. Please add a verified email to your Sourcegraph.com account.',
     APP_NOT_RUNNING: 'Cody App is not running. Please open the Cody App to continue.',
     INVALID_URL: 'Connection failed due to invalid URL. Please enter a valid Sourcegraph instance URL.',
+    NETWORK_ERROR:
+        'Due to network-related problems, Cody cannot be reached. Try again after checking it! Once your connection is restored, attempt a reload.',
 }
 export const ErrorContainer: React.FunctionComponent<{
     authStatus: AuthStatus
@@ -25,12 +31,13 @@ export const ErrorContainer: React.FunctionComponent<{
         showInvalidAccessTokenError,
         requiresVerifiedEmail,
         hasVerifiedEmail,
+        showNetworkError,
         siteVersion,
     } = authStatus
     // Version is compatible if this is an insider build or version is 5.1.0 or above
     // Right now we assumes all insider builds have Cody enabled
     // NOTE: Insider build includes App builds but we should seperate them in the future
-    if (!authenticated && !showInvalidAccessTokenError) {
+    if (!authenticated && !showInvalidAccessTokenError && !showNetworkError) {
         return null
     }
     // Errors for app are handled in the ConnectApp component
@@ -44,6 +51,24 @@ export const ErrorContainer: React.FunctionComponent<{
     const isVersionCompatible = isInsiderBuild || siteVersion >= '5.1.0'
     const isVersionBeforeCody = !isVersionCompatible && siteVersion < '5.0.0'
     const prefix = `Failed: ${isApp ? 'Cody App' : endpoint}`
+
+    const handleReload = (): void => {
+        getVSCodeAPI().postMessage({ command: 'settings', serverEndpoint: '', accessToken: '' })
+    }
+
+    // When there's a network error
+    if (showNetworkError) {
+        return (
+            <>
+                <div className={styles.error}>
+                    <p>{AUTH_ERRORS.NETWORK_ERROR}</p>
+                    <VSCodeButton className={styles.button} type="button" onClick={handleReload}>
+                        Reload
+                    </VSCodeButton>
+                </div>
+            </>
+        )
+    }
     // When doesn't have a valid token
     if (showInvalidAccessTokenError) {
         return (

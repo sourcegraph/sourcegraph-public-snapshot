@@ -82,6 +82,7 @@ export interface AuthStatus {
     requiresVerifiedEmail: boolean
     siteHasCodyEnabled: boolean
     siteVersion: string
+    showNetworkError?: boolean
 }
 
 export const defaultAuthStatus = {
@@ -100,6 +101,17 @@ export const unauthenticatedStatus = {
     showInvalidAccessTokenError: true,
     authenticated: false,
     hasVerifiedEmail: false,
+    requiresVerifiedEmail: false,
+    siteHasCodyEnabled: false,
+    siteVersion: '',
+}
+
+export const networkErrorAuthStatus = {
+    showInvalidAccessTokenError: false,
+    authenticated: false,
+    isLoggedIn: false,
+    hasVerifiedEmail: false,
+    showNetworkError: true,
     requiresVerifiedEmail: false,
     siteHasCodyEnabled: false,
     siteVersion: '',

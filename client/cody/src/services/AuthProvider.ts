@@ -11,6 +11,7 @@ import {
     defaultAuthStatus,
     isLocalApp,
     isLoggedIn as isAuthed,
+    networkErrorAuthStatus,
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
@@ -148,10 +149,25 @@ export class AuthProvider {
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
+
+            // check first if it's a network error
+            if (isError(currentUserID)) {
+                if (isNetworkError(currentUserID.message)) {
+                    return { ...networkErrorAuthStatus, endpoint }
+                }
+            }
+
             return newAuthStatus(endpoint, isDotComOrApp, !isError(currentUserID), hasVerifiedEmail, enabled, version)
         }
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
+
+        // check first if it's a network error
+        if (isError(userInfo)) {
+            if (isNetworkError(userInfo.message)) {
+                return { ...networkErrorAuthStatus, endpoint }
+            }
+        }
         return isError(userInfo)
             ? { ...unauthenticatedStatus, endpoint }
             : newAuthStatus(endpoint, isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, isCodyEnabled, version)
@@ -255,6 +271,15 @@ export class AuthProvider {
         this.loadEndpointHistory()
         debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
     }
+}
+
+export function isNetworkError(error: string): boolean {
+    return (
+        error.includes('ENOTFOUND') ||
+        error.includes('ECONNREFUSED') ||
+        error.includes('ECONNRESET') ||
+        error.includes('EHOSTUNREACH')
+    )
 }
 
 function formatURL(uri: string): string | null {
