@@ -28,7 +28,7 @@ export class AuthProvider {
     private appScheme = vscode.env.uriScheme
     private client: SourcegraphGraphQLAPIClient | null = null
 
-    private authStatus: AuthStatus = defaultAuthStatus
+    private authStatus: AuthStatus = { ...defaultAuthStatus }
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
@@ -36,22 +36,28 @@ export class AuthProvider {
         private localStorage: LocalStorage
     ) {
         this.loadEndpointHistory()
-        this.init(localStorage).catch(() => null)
     }
 
     // Sign into the last endpoint the user was signed into if any
-    private async init(localStorage: LocalStorage): Promise<void> {
-        const lastEndpoint = localStorage?.getEndpoint()
+    public async init(): Promise<void> {
+        const lastEndpoint = this.localStorage?.getEndpoint()
+        this.authStatus.endpoint = lastEndpoint
         if (!lastEndpoint) {
             return
         }
-        debug('AuthProvider:init:lastEndpoint', lastEndpoint)
         const token = await this.secretStorage.get(lastEndpoint)
-        if (!token) {
+        await this.auth(lastEndpoint, token || null)
+        debug('AuthProvider:init:lastEndpoint', lastEndpoint)
+    }
+
+    public async appInit(token?: string): Promise<void> {
+        if (this.authStatus.isLoggedIn) {
             return
         }
-        await this.auth(lastEndpoint, token || null)
-        debug('AuthProvider:init:tokenFound', lastEndpoint)
+        const appUrl = LOCAL_APP_URL.href
+        const appToken = (await this.secretStorage.get(LOCAL_APP_URL.href)) || token || null
+        debug('AuthProvider:init:appInit', '')
+        await this.auth(appUrl, appToken)
     }
 
     // Display quickpick to select endpoint to sign in to
@@ -89,17 +95,16 @@ export class AuthProvider {
             default: {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
-                const token = (await this.secretStorage.get(selectedEndpoint)) || null
-                const authState = await this.auth(selectedEndpoint, token)
-                if (!authState) {
-                    return
+                const token = await this.secretStorage.get(selectedEndpoint)
+                if (token) {
+                    const authState = await this.auth(selectedEndpoint, token)
+                    if (authState?.isLoggedIn) {
+                        return
+                    }
                 }
-                let isLoggedIn = authState.isLoggedIn
-                if (!authState.isLoggedIn) {
-                    const input = await TokenInputBox(item.uri)
-                    isLoggedIn = (await this.auth(selectedEndpoint, input?.token || null))?.isLoggedIn || false
-                }
-                if (isLoggedIn) {
+                const input = await TokenInputBox(item.uri)
+                const tokenAuthStatus = await this.auth(selectedEndpoint, input?.token || null)
+                if (tokenAuthStatus?.isLoggedIn) {
                     void vscode.window.showInformationMessage(`Signed in to ${selectedEndpoint}`)
                     debug('AuthProvider:signinMenu', mode, selectedEndpoint)
                     return
@@ -167,6 +172,7 @@ export class AuthProvider {
         token: string | null,
         customHeaders = {}
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
+        debug('AuthProvider:auth:init', '', { verbose: uri })
         const endpoint = formatURL(uri) || ''
         const config = {
             serverEndpoint: endpoint,
@@ -176,18 +182,18 @@ export class AuthProvider {
         const authStatus = await this.makeAuthStatus(config)
         const isLoggedIn = isAuthed(authStatus)
         authStatus.isLoggedIn = isLoggedIn
-        await this.syncAuthStatus(authStatus)
+        this.authStatus = authStatus
         await this.storeAuthInfo(endpoint, token)
+        await this.syncAuthStatus(authStatus)
+        debug('AuthProvider:auth:done', '')
         return { authStatus, isLoggedIn }
     }
 
     // Set auth status and share it with chatview
     private async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        if (this.authStatus === authStatus) {
-            return
-        }
         this.authStatus = authStatus
-        await vscode.commands.executeCommand('cody.auth.sync', authStatus)
+        await vscode.commands.executeCommand('cody.auth.sync')
+        debug('AuthProvider:syncAuthStatus', '')
     }
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for:
@@ -204,7 +210,9 @@ export class AuthProvider {
         await this.storeAuthInfo(endpoint, token)
         const authState = await this.auth(endpoint, token, customHeaders)
         if (authState?.isLoggedIn) {
-            const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${isLocalApp(endpoint)}`
+            const successMessage = isApp
+                ? 'Connected to Cody App'
+                : `Signed in to ${isLocalApp(endpoint) ? 'Cody App' : endpoint}`
             await vscode.window.showInformationMessage(successMessage)
         }
     }

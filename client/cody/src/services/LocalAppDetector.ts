@@ -37,6 +37,7 @@ export class LocalAppDetector implements vscode.Disposable {
         await this.fetchServer()
         return this.localEnv
     }
+
     private async init(): Promise<void> {
         debug('LocalAppDetector:init:', 'initializing')
         const homeDir = this.localEnv.homeDir
@@ -61,6 +62,7 @@ export class LocalAppDetector implements vscode.Disposable {
         }
         debug('LocalAppDetector:init', 'initialized')
         await this.fetchApp()
+        await this.fetchToken()
     }
 
     // Check if App is installed
@@ -115,7 +117,7 @@ export class LocalAppDetector implements vscode.Disposable {
             if (response.status === 200) {
                 debug('LocalAppDetector:fetchServer', 'found')
                 this.localEnv.isAppRunning = true
-                await this.found('server', this.token)
+                await this.found('server')
                 return
             }
         } catch {
@@ -126,10 +128,10 @@ export class LocalAppDetector implements vscode.Disposable {
 
     // Notify the caller that the app has been found. send the token if it exists
     // NOTE: Call this function only when the app is found
-    private async found(type: 'app' | 'token' | 'server', token: string | null = null): Promise<void> {
-        await this.onChange(token)
+    private async found(type: 'app' | 'token' | 'server'): Promise<void> {
         debug('LocalAppDetector:found', type)
         this.localEnv.isAppInstalled = true
+        await this.onChange(this.token)
     }
 
     // We can dispose the file watcher when app is found or when user has logged in
@@ -140,6 +142,7 @@ export class LocalAppDetector implements vscode.Disposable {
         this._watchers = []
         this.appFsPaths = []
         this.tokenFsPath = null
+        debug('LocalAppDetector:dispose', 'disposed')
     }
 }
 

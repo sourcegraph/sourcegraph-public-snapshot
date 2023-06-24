@@ -37,6 +37,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
+    const [isAppRunning, setIsAppRunning] = useState<boolean>(false)
 
     useEffect(() => {
         vscodeAPI.onMessage(message => {
@@ -54,6 +55,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 }
                 case 'config':
                     setConfig(message.config)
+                    setIsAppInstalled(message.config.isAppInstalled)
+                    setIsAppRunning(message.config.isAppRunning)
                     break
                 case 'login':
                     setAuthStatus(message.authStatus)
@@ -94,8 +97,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [vscodeAPI])
 
     const onLogout = useCallback(() => {
-        setAuthStatus(null)
         setEndpoint(null)
+        setView('login')
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
 
@@ -106,12 +109,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     return (
         <div className="outer-container">
             <Header />
-            {view === 'login' ? (
+            {view === 'login' || !authStatus.isLoggedIn ? (
                 <Login
                     authStatus={authStatus}
                     endpoint={endpoint || null}
                     isAppInstalled={isAppInstalled}
-                    isAppRunning={config?.isAppRunning}
+                    isAppRunning={isAppRunning}
                     vscodeAPI={vscodeAPI}
                     appOS={config?.os}
                     appArch={config?.arch}

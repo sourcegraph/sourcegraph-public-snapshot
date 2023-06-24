@@ -6,7 +6,7 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
-import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -184,7 +184,7 @@ const register = async (
             }
         }),
         // Auth
-        vscode.commands.registerCommand('cody.auth.sync', (state: AuthStatus) => chatProvider.syncAuthStatus(state)),
+        vscode.commands.registerCommand('cody.auth.sync', () => chatProvider.syncAuthStatus()),
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),

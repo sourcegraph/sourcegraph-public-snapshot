@@ -12,7 +12,7 @@ import { VSCodeWrapper } from './utils/VSCodeApi'
 import styles from './Login.module.css'
 
 interface LoginProps {
-    authStatus?: AuthStatus
+    authStatus: AuthStatus
     endpoint: string | null
     isAppInstalled: boolean
     isAppRunning?: boolean
@@ -61,6 +61,14 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         [vscodeAPI]
     )
 
+    const onAppButtonClick = useCallback(
+        (uri: string) => {
+            // Use postMessage to open because it won't open otherwise due to the sourcegraph:// scheme.
+            vscodeAPI.postMessage({ command: 'links', value: uri, type: 'app' })
+        },
+        [vscodeAPI]
+    )
+
     const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
     const openMsg = !isAppInstalled ? APP_DESC.getStarted : !isAppRunning ? APP_DESC.notRunning : APP_DESC.connectApp
 
@@ -71,12 +79,12 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             {!isAppInstalled && <p className={styles.openMessage}>{APP_DESC.download}</p>}
             <ConnectApp
                 isAppInstalled={isAppInstalled}
-                vscodeAPI={vscodeAPI}
                 isOSSupported={isOSSupported}
                 appOS={appOS}
                 appArch={appArch}
                 isAppRunning={isAppRunning}
                 callbackScheme={callbackScheme}
+                onAppButtonClick={onAppButtonClick}
             />
             {!isOSSupported && (
                 <small>
@@ -98,7 +106,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     const EnterpriseSignin: React.FunctionComponent = () => (
         <section
-            className={classNames(styles.section, !enableCodyAppConnect ? styles.codyGradient : styles.greyGradient)}
+            className={classNames(styles.section, !enableCodyAppConnect ? styles.greyGradient : styles.codyGradient)}
         >
             <h2 className={styles.sectionHeader}>Sourcegraph Enterprise</h2>
             <p className={styles.openMessage}>
@@ -112,7 +120,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     const DotComSignin: React.FunctionComponent = () => (
         <section
-            className={classNames(styles.section, !enableCodyAppConnect ? styles.codyGradient : styles.greyGradient)}
+            className={classNames(styles.section, !enableCodyAppConnect ? styles.greyGradient : styles.codyGradient)}
         >
             <h2 className={styles.sectionHeader}>Sourcegraph.com</h2>
             <p className={styles.openMessage}>

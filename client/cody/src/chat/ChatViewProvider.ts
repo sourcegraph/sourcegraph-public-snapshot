@@ -40,14 +40,12 @@ import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
 import {
-    AuthStatus,
     ConfigurationSubsetForWebview,
     DOTCOM_URL,
     ExtensionMessage,
     WebviewMessage,
     defaultAuthStatus,
     LocalEnv,
-    LOCAL_APP_URL,
 } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
@@ -225,6 +223,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendTranscript()
                 this.sendChatHistory()
                 await this.loadRecentChat()
+                await this.authProvider.init()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -242,13 +241,12 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
-                // cody.auth.signin or cody.auth.signout
+                // cody.auth.signin or cody.auth.signout menu
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
-            case 'settings': {
+            case 'settings':
                 await this.authProvider.auth(message.serverEndpoint, message.accessToken, this.config.customHeaders)
                 break
-            }
             case 'insert':
                 await vscode.commands.executeCommand('cody.inline.insert', message.text)
                 break
@@ -266,6 +264,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
+                if (message.type === 'app') {
+                    await this.authProvider.appInit()
+                }
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -624,10 +625,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save, verify, and sync authStatus between extension host and webview
      * activate extension when user has valid login
      */
-    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        await this.webview?.postMessage({ type: 'login', authStatus })
-        this.sendEvent('auth', authStatus.isLoggedIn ? 'successfully' : 'failed')
+    public async syncAuthStatus(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
+        void this.webview?.postMessage({ type: 'login', authStatus })
         await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
+        debug('ChatViewProvider:syncAuthStatus', 'completed', { verbose: authStatus })
     }
 
     /**
@@ -778,8 +780,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         void this.webview?.postMessage({ type: 'app-state', isInstalled: true })
         // Log user in if token is present and user is not logged in
         if (token) {
-            debug('ChatViewProvider:sendLocalAppState', 'auth')
-            await this.authProvider.auth(LOCAL_APP_URL.href, token, this.config.customHeaders)
+            await this.authProvider.appInit(token)
         }
     }
     /**
@@ -794,11 +795,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Set webview view
      */
     public setWebviewView(view: View): void {
-        void vscode.commands.executeCommand('cody.chat.focus')
         void this.webview?.postMessage({
             type: 'view',
             messages: view,
         })
+        void vscode.commands.executeCommand('cody.chat.focus')
     }
 
     /**
@@ -811,6 +812,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         _token: vscode.CancellationToken
     ): Promise<void> {
+        debug('ChatViewProvider:resolveWebviewView', 'init')
         this.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
@@ -837,6 +839,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         // Register webview
         this.disposables.push(webviewView.webview.onDidReceiveMessage(message => this.onDidReceiveMessage(message)))
+        debug('ChatViewProvider:resolveWebviewView', 'ready')
     }
 
     /**

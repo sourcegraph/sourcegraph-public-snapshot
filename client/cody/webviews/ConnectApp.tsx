@@ -2,26 +2,24 @@ import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 
 import { APP_CALLBACK_URL, APP_DOWNLOAD_URLS, APP_LANDING_URL } from '../src/chat/protocol'
 
-import { VSCodeWrapper } from './utils/VSCodeApi'
-
 interface ConnectAppProps {
-    vscodeAPI: VSCodeWrapper
     isAppInstalled: boolean
     isOSSupported: boolean
     appOS?: string
     appArch?: string
     callbackScheme?: string
     isAppRunning: boolean
+    onAppButtonClick: (type: string) => void
 }
 
 export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
-    vscodeAPI,
     isAppInstalled,
     isAppRunning = false,
     isOSSupported,
     appOS = '',
     appArch = '',
     callbackScheme,
+    onAppButtonClick,
 }) => {
     const inDownloadMode = !isAppInstalled && isOSSupported && !isAppRunning
     const buttonText = inDownloadMode ? 'Download Cody App' : isAppRunning ? 'Connect Cody App' : 'Open Cody App'
@@ -32,19 +30,12 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     const callbackUri = new URL(APP_CALLBACK_URL.href)
     callbackUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
 
-    // Use postMessage to open because it won't open otherwise due to the sourcegraph:// scheme.
-    const openLink = (url: string): void =>
-        vscodeAPI.postMessage({
-            command: 'links',
-            value: url,
-        })
-
     return (
         <div>
             <VSCodeButton
                 type="button"
                 disabled={!isOSSupported}
-                onClick={() => openLink(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}
+                onClick={() => onAppButtonClick(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}
             >
                 <i className={'codicon codicon-' + buttonIcon} slot="start" />
                 {buttonText}

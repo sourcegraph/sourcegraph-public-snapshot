@@ -17,7 +17,7 @@ export type WebviewMessage =
     | { command: 'removeHistory' }
     | { command: 'restoreHistory'; chatID: string }
     | { command: 'deleteHistory'; chatID: string }
-    | { command: 'links'; value: string }
+    | { command: 'links'; value: string; type?: string }
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
