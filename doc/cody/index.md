@@ -80,6 +80,7 @@ See [Cody troubleshooting guide](troubleshooting.md).
 
 ## Explanations
 
+- [Cody clients, plugins, and extensions](explanations/cody_clients.md)
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
 - [Enabling Cody for the Cody app](../app/index.md)
 - [Enabling Cody for open source Sourcegraph.com users](explanations/enabling_cody.md)
