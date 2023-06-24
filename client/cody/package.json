@@ -290,13 +290,13 @@
       {
         "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Sign Out",
+        "title": "Sign Out…",
         "icon": "$(sign-out)"
       },
       {
         "command": "cody.auth.signin",
         "category": "Cody",
-        "title": "Switch Account"
+        "title": "Switch Account…"
       },
       {
         "command": "cody.manual-completions",
