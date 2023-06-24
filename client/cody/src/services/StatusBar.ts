@@ -4,7 +4,7 @@ import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from '../configuration'
 
-import { SettingsOptionItems, FeedbackOptionItems } from './FeedbackOptions'
+import { FeedbackOptionItems } from './FeedbackOptions'
 
 export interface CodyStatusBar {
     dispose(): void
@@ -12,7 +12,7 @@ export interface CodyStatusBar {
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
-const DEFAULT_TOOLTIP = 'Cody Features Toggle'
+const DEFAULT_TOOLTIP = 'Cody Settings'
 
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -56,6 +56,7 @@ export function createStatusBar(): CodyStatusBar {
         const option = await vscode.window.showQuickPick(
             // These description should stay in sync with the settings in package.json
             [
+                { label: 'features', kind: vscode.QuickPickItemKind.Separator },
                 createFeatureToggle(
                     'Code Autocomplete',
                     'Beta',
@@ -79,10 +80,16 @@ export function createStatusBar(): CodyStatusBar {
                     c => c.experimentalChatPredictions,
                     true
                 ),
-                { label: 'cody feedback', kind: vscode.QuickPickItemKind.Separator },
+                { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
+                {
+                    label: '$(gear) Settings',
+                    detail: 'Configure your Cody settings.',
+                    async onSelect(): Promise<void> {
+                        await vscode.commands.executeCommand('cody.settings.extension')
+                    },
+                },
+                { label: 'feedback', kind: vscode.QuickPickItemKind.Separator },
                 ...FeedbackOptionItems,
-                { label: 'cody settings', kind: vscode.QuickPickItemKind.Separator },
-                ...SettingsOptionItems,
             ],
             {
                 placeHolder: 'Select an option',

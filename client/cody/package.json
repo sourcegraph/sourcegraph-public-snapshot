@@ -304,14 +304,6 @@
         "title": "Open Completions Panel"
       },
       {
-        "command": "cody.settings.user",
-        "category": "Cody",
-        "title": "User Settings",
-        "group": "Cody",
-        "icon": "$(account)",
-        "when": "cody.activated"
-      },
-      {
         "command": "cody.settings.extension",
         "category": "Cody",
         "title": "Extension Settings",
@@ -688,19 +680,9 @@
           "group": "9_cody@0"
         },
         {
-          "command": "cody.settings.user",
-          "when": "view == cody.chat && cody.activated && cody.test.inProgress",
-          "group": "navigation@3"
-        },
-        {
           "command": "cody.settings.extension",
           "when": "view == cody.chat",
           "group": "8_cody@1"
-        },
-        {
-          "command": "cody.settings.user",
-          "when": "view == cody.chat && cody.activated",
-          "group": "8_cody@0"
         },
         {
           "command": "cody.fixup.apply-all",
