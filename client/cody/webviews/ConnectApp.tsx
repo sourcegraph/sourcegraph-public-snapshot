@@ -25,7 +25,6 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
 }) => {
     const inDownloadMode = !isAppInstalled && isOSSupported && !isAppRunning
     const buttonText = inDownloadMode ? 'Download Cody App' : isAppRunning ? 'Connect Cody App' : 'Open Cody App'
-    const buttonIcon = inDownloadMode ? 'cloud-download' : isAppRunning ? 'link' : 'rocket'
     // Open landing page if download link for user's arch cannot be found
     const DOWNLOAD_URL = APP_DOWNLOAD_URLS[appOS]?.[appArch] || APP_LANDING_URL.href
     // If the user already has the app installed, open the callback URL directly.
@@ -46,7 +45,6 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
                 disabled={!isOSSupported}
                 onClick={() => openLink(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}
             >
-                <i className={'codicon codicon-' + buttonIcon} slot="start" />
                 {buttonText}
             </VSCodeButton>
         </div>

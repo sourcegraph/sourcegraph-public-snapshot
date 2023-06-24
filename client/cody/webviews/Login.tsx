@@ -20,14 +20,13 @@ interface LoginProps {
     callbackScheme?: string
     appOS?: string
     appArch?: string
-    isAppConnectEnabled?: boolean
     setEndpoint: (endpoint: string) => void
 }
 
 const APP_DESC = {
     getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     download: 'Download and run the Cody desktop app to configure your local code graph.',
-    connectApp: 'Cody App detected. All that’s left is to do is connect VS Code with Cody App.',
+    connectApp: 'All that’s left is to do is connect VS Code with Cody App.',
     notRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     comingSoon:
         'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
@@ -42,7 +41,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     appArch,
     isAppInstalled = false,
     isAppRunning = false,
-    isAppConnectEnabled = false,
     setEndpoint,
 }) => {
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
@@ -61,7 +59,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         [vscodeAPI]
     )
 
-    const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
+    const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Open Cody App') : 'Get Started'
     const openMsg = !isAppInstalled ? APP_DESC.getStarted : !isAppRunning ? APP_DESC.notRunning : APP_DESC.connectApp
 
     const AppConnect: React.FunctionComponent = () => (
@@ -97,9 +95,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     )
 
     const EnterpriseSignin: React.FunctionComponent = () => (
-        <section
-            className={classNames(styles.section, !isAppConnectEnabled ? styles.codyGradient : styles.greyGradient)}
-        >
+        <section className={classNames(styles.section, styles.greyGradient)}>
             <h2 className={styles.sectionHeader}>Sourcegraph Enterprise</h2>
             <p className={styles.openMessage}>
                 Sign in by entering an access token created through your user settings on Sourcegraph.
@@ -111,9 +107,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     )
 
     const DotComSignin: React.FunctionComponent = () => (
-        <section
-            className={classNames(styles.section, !isAppConnectEnabled ? styles.codyGradient : styles.greyGradient)}
-        >
+        <section className={classNames(styles.section, styles.greyGradient)}>
             <h2 className={styles.sectionHeader}>Sourcegraph.com</h2>
             <p className={styles.openMessage}>
                 Cody for open source code is available to all users with a Sourcegraph.com account.
@@ -133,10 +127,8 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             {authStatus && <ErrorContainer authStatus={authStatus} isApp={isApp} endpoint={endpoint} />}
             {/* Signin Sections */}
             <div className={styles.sectionsContainer}>
-                <EnterpriseSignin />
-                <DotComSignin />
-                {isAppConnectEnabled && <AppConnect />}
-                {isAppConnectEnabled && !isOSSupported && <NoAppConnect />}
+                <AppConnect />
+                {!isOSSupported && <NoAppConnect />}
             </div>
             {/* Footer */}
             <footer className={styles.footer}>
