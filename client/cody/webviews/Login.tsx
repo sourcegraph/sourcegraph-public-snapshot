@@ -25,7 +25,7 @@ interface LoginProps {
 
 const APP_DESC = {
     getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
-    download: 'Download and run the Cody desktop app to configure your local code graph.',
+    download: 'Download and open the Cody desktop app to configure your local code graph.',
     connectApp: 'All that’s left is to do is connect VS Code with Cody App.',
     notRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     comingSoon:
@@ -64,7 +64,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     const AppConnect: React.FunctionComponent = () => (
         <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : styles.greyGradient)}>
-            <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Get Started'}</h2>
+            <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Download & Open Cody App'}</h2>
             <p className={styles.openMessage}>{openMsg}</p>
             {!isAppInstalled && <p className={styles.openMessage}>{APP_DESC.download}</p>}
             <ConnectApp

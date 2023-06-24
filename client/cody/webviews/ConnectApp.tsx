@@ -24,7 +24,7 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     callbackScheme,
 }) => {
     const inDownloadMode = !isAppInstalled && isOSSupported && !isAppRunning
-    const buttonText = inDownloadMode ? 'Download Cody App' : isAppRunning ? 'Connect Cody App' : 'Open Cody App'
+    const buttonText = inDownloadMode ? 'Download Cody App' : isAppRunning ? 'Connect Cody App' : 'Get Started'
     // Open landing page if download link for user's arch cannot be found
     const DOWNLOAD_URL = APP_DOWNLOAD_URLS[appOS]?.[appArch] || APP_LANDING_URL.href
     // If the user already has the app installed, open the callback URL directly.
