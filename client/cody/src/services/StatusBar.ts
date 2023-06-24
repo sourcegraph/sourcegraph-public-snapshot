@@ -56,7 +56,7 @@ export function createStatusBar(): CodyStatusBar {
         const option = await vscode.window.showQuickPick(
             // These description should stay in sync with the settings in package.json
             [
-                { label: 'features', kind: vscode.QuickPickItemKind.Separator },
+                { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
                 createFeatureToggle(
                     'Code Autocomplete',
                     'Beta',
