@@ -38,7 +38,6 @@ Coming soon:
 
 See the full feature comparison for Cody IDE extensions: 
 
-
 <table>
    <thead>
       <tr>
@@ -78,8 +77,6 @@ See the full feature comparison for Cody IDE extensions:
       </tr>
    </tbody>
 </table>
-
-
 
 ### Status definitions
 An IDE extention status is:
