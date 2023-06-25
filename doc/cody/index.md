@@ -1,6 +1,6 @@
 # <picture title="Cody"><img class="theme-dark-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.png" width="200"><img class="theme-light-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="200"><div style="display:none">Cody</div></picture>
 
-<span class="badge badge-beta">Beta</span> Cody is an AI code assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
+<span class="badge badge-beta">Beta</span> Cody is an AI codeing assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
 
 Cody uses a combination of Sourcegraph's code graph and Large Language Models (LLMs) to eliminate toil and keep human devs in flow. You can think of Cody as your coding assistant who has read through all the code in open source, all the questions on StackOverflow, and your own entire codebase, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
 
@@ -12,6 +12,7 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 Cody is also available as an editor extension that can be connected to a Sourcegraph enterprise instance, the Cody app, or Sourcegraph.com (for open source code only):
   - [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
   - Jetbrains extension (coming soon)
+  - [Read more about the Cody IDE extensions](explanations/cody_clients.md)
 
 See the full [breakdown of features available by client](client_feature_availability.md).
 
@@ -27,9 +28,9 @@ See the full [breakdown of features available by client](client_feature_availabi
 <!-- NOTE: These should stay roughly in sync with client/cody/README.md, although these need to be not specific to VS Code. -->
 
 - **🤖 Chatbot that knows _your_ code:** Writes code and answers questions with knowledge of your entire codebase, following your project's code conventions and architecture better than other AI code chatbots.
-- **✨ Fixup code:** Interactively writes and refactors code for you, based on quick natural-language instructions.
+- **✨ Fix code inline:** Interactively writes and refactors code for you, based on quick natural-language instructions.
 - **📖 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
-- **🧪 Experimental Completions:** Get suggestions from Cody as you're coding.
+- **Autocomplete:** Get suggestions from Cody as you're coding.
 
 ### 🤖 Chatbot that knows _your_ code
 
@@ -46,7 +47,7 @@ Examples of the kinds of questions Cody can handle:
 
 Cody tells you which code files it read to generate its response. (If Cody gives a wrong answer, please share feedback so we can improve it.)
 
-### ✨ Fixup code
+### ✨ Fix code inline
 
 [**📽️ Demo**](https://twitter.com/sqs/status/1647673013343780864)
 
