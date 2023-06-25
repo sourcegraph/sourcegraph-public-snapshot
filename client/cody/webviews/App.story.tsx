@@ -59,6 +59,7 @@ const dummyVSCodeAPI: VSCodeWrapper = {
             },
             authStatus: {
                 ...defaultAuthStatus,
+                isLoggedIn: true,
                 authenticated: true,
                 hasVerifiedEmail: true,
                 requiresVerifiedEmail: false,
