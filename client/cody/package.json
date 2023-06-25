@@ -109,8 +109,8 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Assist (Experimental)",
-            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
+            "title": "Inline Chat (Experimental)",
+            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
             }
@@ -360,7 +360,7 @@
       {
         "command": "cody.walkthrough.enableInlineAssist",
         "category": "Cody Walkthrough",
-        "title": "Show Inline Assist"
+        "title": "Show Inline Chat"
       },
       {
         "command": "cody.walkthrough.enableCodeAutocomplete",
@@ -370,14 +370,14 @@
       {
         "command": "cody.comment.add",
         "title": "Ask Cody",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
         "title": "Remove Comment",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
@@ -385,7 +385,7 @@
       {
         "command": "cody.comment.load",
         "title": "Loading",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
@@ -827,9 +827,9 @@
         },
         "cody.experimental.inline": {
           "order": 7,
-          "title": "Cody Inline Assist",
+          "title": "Cody Inline Chat",
           "type": "boolean",
-          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
+          "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
           "default": false
         },
         "cody.experimental.guardrails": {
