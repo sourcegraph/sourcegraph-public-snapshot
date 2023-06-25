@@ -43,6 +43,11 @@ const requiresVerifiedEmailAuthStatus: AuthStatus = {
     endpoint,
 }
 
+const supportedAppOS = 'darwin'
+const supportedAppArch = 'arm64'
+const unsupportedAppOS = 'other-os'
+const unsupportedAppArch = 'other-arch'
+
 export default meta
 
 export const Simple: ComponentStoryObj<typeof Login> = {
@@ -54,6 +59,8 @@ export const Simple: ComponentStoryObj<typeof Login> = {
                 vscodeAPI={vscodeAPI}
                 setEndpoint={() => {}}
                 endpoint={endpoint}
+                appOS={supportedAppOS}
+                appArch={supportedAppArch}
             />
         </div>
     ),
@@ -68,6 +75,8 @@ export const InvalidLogin: ComponentStoryObj<typeof Login> = {
                 vscodeAPI={vscodeAPI}
                 setEndpoint={() => {}}
                 endpoint={endpoint}
+                appOS={supportedAppOS}
+                appArch={supportedAppArch}
             />
         </div>
     ),
@@ -82,6 +91,8 @@ export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
                 vscodeAPI={vscodeAPI}
                 setEndpoint={() => {}}
                 endpoint={endpoint}
+                appOS={supportedAppOS}
+                appArch={supportedAppArch}
             />
         </div>
     ),
@@ -96,6 +107,24 @@ export const LoginWithAppInstalled: ComponentStoryObj<typeof Login> = {
                 vscodeAPI={vscodeAPI}
                 setEndpoint={() => {}}
                 endpoint={endpoint}
+                appOS={supportedAppOS}
+                appArch={supportedAppArch}
+            />
+        </div>
+    ),
+}
+
+export const UnsupportedAppOS: ComponentStoryObj<typeof Login> = {
+    render: () => (
+        <div style={{ background: 'rgb(28, 33, 40)' }}>
+            <Login
+                authStatus={validAuthStatus}
+                isAppInstalled={false}
+                vscodeAPI={vscodeAPI}
+                setEndpoint={() => {}}
+                endpoint={endpoint}
+                appOS={unsupportedAppOS}
+                appArch={unsupportedAppArch}
             />
         </div>
     ),
