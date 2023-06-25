@@ -717,7 +717,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         // check first if search error is due to any network issue
         if (isNetworkError(searchErrors)) {
-            console.log('sent error to webview')
             void this.sendErrorToWebview(
                 'Cody cannot respond due to network error. Please check your connection and try again.'
             )
