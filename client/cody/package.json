@@ -288,6 +288,12 @@
         "title": "Set Access Token"
       },
       {
+        "command": "cody.settings.user",
+        "category": "Cody",
+        "title": "User Settings",
+        "icon": "$(account)"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
         "title": "Sign Out…",
@@ -528,6 +534,10 @@
           "when": "!cody.activated"
         },
         {
+          "command": "cody.settings.user",
+          "when": "cody.activated && cody.test.inProgress"
+        },
+        {
           "command": "cody.comment.add",
           "when": "false"
         },
@@ -678,6 +688,11 @@
           "command": "cody.auth.signin",
           "when": "view == cody.chat && cody.activated",
           "group": "9_cody@0"
+        },
+        {
+          "command": "cody.settings.user",
+          "when": "view == cody.chat && cody.activated && cody.test.inProgress",
+          "group": "navigation@3"
         },
         {
           "command": "cody.settings.extension",
