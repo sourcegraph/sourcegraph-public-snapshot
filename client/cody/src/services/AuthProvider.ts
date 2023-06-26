@@ -36,12 +36,12 @@ export class AuthProvider {
         private localStorage: LocalStorage
     ) {
         this.loadEndpointHistory()
-        this.init(localStorage).catch(() => null)
     }
 
     // Sign into the last endpoint the user was signed into if any
-    private async init(localStorage: LocalStorage): Promise<void> {
-        const lastEndpoint = localStorage?.getEndpoint()
+    public async init(): Promise<void> {
+        const lastEndpoint = this.localStorage?.getEndpoint()
+        this.authStatus.endpoint = lastEndpoint
         if (!lastEndpoint) {
             return
         }
@@ -50,12 +50,12 @@ export class AuthProvider {
         if (!token) {
             return
         }
-        await this.auth(lastEndpoint, token || null)
+        await this.auth(lastEndpoint, token)
         debug('AuthProvider:init:tokenFound', lastEndpoint)
     }
 
     // Display quickpick to select endpoint to sign in to
-    public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token', uri?: string): Promise<void> {
+    public async signinMenu(type?: 'enterprise' | 'dotcom' | 'token' | 'app', uri?: string): Promise<void> {
         const mode = this.authStatus.isLoggedIn ? 'switch' : 'signin'
         debug('AuthProvider:signinMenu', mode)
         logEvent('CodyVSCodeExtension:login:clicked')
@@ -86,9 +86,19 @@ export class AuthProvider {
                 await this.auth(input.endpoint, input.token)
                 break
             }
+            case 'app': {
+                if (uri) {
+                    await this.appAuth(uri)
+                }
+                break
+            }
             default: {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
+                if (isLocalApp(selectedEndpoint)) {
+                    await this.appAuth(selectedEndpoint)
+                    return
+                }
                 const token = await this.secretStorage.get(selectedEndpoint)
                 const authState = await this.auth(selectedEndpoint, token || null)
                 if (!authState) {
@@ -105,6 +115,20 @@ export class AuthProvider {
                     return
                 }
             }
+        }
+    }
+
+    public async appAuth(uri?: string): Promise<void> {
+        const token = await this.secretStorage.get('SOURCEGRAPH_CODY_APP')
+        if (token) {
+            const authStatus = await this.auth(LOCAL_APP_URL.href, token)
+            const isLoggedIn = authStatus?.isLoggedIn
+            if (isLoggedIn) {
+                return
+            }
+        }
+        if (uri) {
+            await vscode.env.openExternal(vscode.Uri.parse(uri))
         }
     }
 
@@ -248,9 +272,11 @@ export class AuthProvider {
             return
         }
         await this.localStorage.saveEndpoint(endpoint)
-        await updateConfiguration('serverEndpoint', endpoint)
         if (token) {
             await this.secretStorage.storeToken(endpoint, token)
+        }
+        if (token && isLocalApp(endpoint)) {
+            await this.secretStorage.storeToken('SOURCEGRAPH_CODY_APP', token)
         }
         this.loadEndpointHistory()
         debug('AuthProvider:storeAuthInfo:stored', endpoint || '')

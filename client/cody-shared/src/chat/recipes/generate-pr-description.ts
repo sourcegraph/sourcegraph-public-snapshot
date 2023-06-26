@@ -3,7 +3,7 @@ import { readFileSync } from 'fs'
 import path from 'path'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
-import { truncateText } from '../../prompt/truncation'
+import { truncateText, isTextTruncated } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -40,7 +40,12 @@ export class PrDescription implements Recipe {
             prTemplateContent = readFileSync(templatePath).toString()
         }
 
-        const gitCommit = spawnSync('git', ['log', 'origin/HEAD..HEAD', logFormat], { cwd: dirPath })
+        const userEmail = spawnSync('git', ['config', 'user.email'], { cwd: dirPath })
+        const email = userEmail.stdout.toString().trim()
+
+        const gitCommit = spawnSync('git', ['log', `--author=<${email}>`, 'origin/HEAD..HEAD', logFormat], {
+            cwd: dirPath,
+        })
         const gitCommitOutput = gitCommit.stdout.toString().trim()
 
         if (!gitCommitOutput) {
@@ -58,13 +63,15 @@ export class PrDescription implements Recipe {
         }
 
         const truncatedGitCommitOutput = truncateText(gitCommitOutput, MAX_RECIPE_INPUT_TOKENS)
-        let truncatedCommitMessage = ''
-        if (truncatedGitCommitOutput.length < gitCommitOutput.length) {
-            truncatedCommitMessage = 'Truncated extra long git log output, so PR description may be incomplete.'
+
+        if (isTextTruncated(gitCommitOutput, truncatedGitCommitOutput)) {
+            await context.editor.showWarningMessage(
+                'Truncated extra long git log output, so PR description may be incomplete.'
+            )
         }
 
         const promptMessage = `Summarise these changes:\n${gitCommitOutput}\n\n made while working in the current git branch.\nUse this pull request template to ${prTemplateContent} generate a pull request description based on the committed changes.\nIf the PR template mentions a requirement to check the contribution guidelines, then just summarise the changes in bulletin format.\n If it mentions a test plan for the changes use N/A\n.`
-        const assistantResponsePrefix = `Here is the PR description for the work done in your current branch:\n${truncatedCommitMessage}`
+        const assistantResponsePrefix = 'Here is the PR description for the work done in your current branch:\n'
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {

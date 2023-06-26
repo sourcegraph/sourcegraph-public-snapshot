@@ -6,7 +6,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthStatus, LocalEnv, isLoggedIn } from '../src/chat/protocol'
+import { AuthStatus, LocalEnv } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
@@ -23,13 +23,13 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [config, setConfig] = useState<(Pick<Configuration, 'debugEnable' | 'serverEndpoint'> & LocalEnv) | null>(
         null
     )
-    const [endpoint, setEndpoint] = useState<string>()
+    const [endpoint, setEndpoint] = useState<string | null>(null)
     const [debugLog, setDebugLog] = useState<string[]>([])
     const [view, setView] = useState<View | undefined>()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
     const [transcript, setTranscript] = useState<ChatMessage[]>([])
-    const [authStatus, setAuthStatus] = useState<AuthStatus>()
+    const [authStatus, setAuthStatus] = useState<AuthStatus | null>(null)
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
     const [userHistory, setUserHistory] = useState<ChatHistory | null>(null)
@@ -54,17 +54,12 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                 }
                 case 'config':
                     setConfig(message.config)
-                    setAuthStatus(message.authStatus)
-                    setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
                     setIsAppInstalled(message.config.isAppInstalled)
-                    setEndpoint(message.authStatus.endpoint || config?.serverEndpoint)
+                    setEndpoint(message.authStatus.endpoint)
+                    setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                    setAuthStatus(message.authStatus)
                     break
                 case 'login':
-                    setAuthStatus(message.authStatus)
-                    setView(isLoggedIn(message.authStatus) ? 'chat' : 'login')
-                    if (message.authStatus.endpoint) {
-                        setEndpoint(message.authStatus.endpoint)
-                    }
                     break
                 case 'showTab':
                     if (message.tab === 'chat') {
@@ -100,21 +95,24 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
             vscodeAPI.postMessage({ command: 'initialized' })
         }
         // The dependencies array is empty to execute the callback only on component mount.
-    }, [config?.serverEndpoint, debugLog, endpoint, errorMessages, transcript, view, vscodeAPI])
+    }, [debugLog, errorMessages, view, vscodeAPI])
 
     const onLogout = useCallback(() => {
-        setAuthStatus(undefined)
+        setConfig(null)
+        setEndpoint(null)
+        setAuthStatus(null)
+        setView('login')
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
 
-    if (!view) {
+    if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
 
     return (
         <div className="outer-container">
             <Header />
-            {view === 'login' || !authStatus?.authenticated ? (
+            {view === 'login' || !authStatus.isLoggedIn ? (
                 <Login
                     authStatus={authStatus}
                     endpoint={endpoint}
@@ -124,7 +122,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     appOS={config?.os}
                     appArch={config?.arch}
                     callbackScheme={config?.uriScheme}
-                    isAppConnectEnabled={config?.isAppConnectEnabled}
                     setEndpoint={setEndpoint}
                 />
             ) : (
@@ -142,7 +139,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         />
                     )}
                     {view === 'recipes' && <Recipes vscodeAPI={vscodeAPI} />}
-                    {view === 'settings' && (
+                    {view === 'settings' && endpoint && (
                         <Settings onLogout={onLogout} endpoint={endpoint} version={config?.extensionVersion} />
                     )}
                     {view === 'chat' && (

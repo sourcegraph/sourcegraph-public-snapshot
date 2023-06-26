@@ -6,7 +6,7 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
-import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -90,7 +90,7 @@ const register = async (
     const disposables: vscode.Disposable[] = []
 
     await updateEventLogger(initialConfig, localStorage)
-    // Controller for inline assist
+    // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
 
@@ -105,7 +105,6 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
-    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
 
     const {
         intentDetector,
@@ -115,6 +114,8 @@ const register = async (
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
+
+    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
 
     // Create chat webview
     const chatProvider = new ChatViewProvider(
@@ -166,7 +167,7 @@ const register = async (
     const statusBar = createStatusBar()
 
     disposables.push(
-        // Inline Assist Provider
+        // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
@@ -176,6 +177,9 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
+        vscode.commands.registerCommand('cody.inline.new', () =>
+            vscode.commands.executeCommand('workbench.action.addComment')
+        ),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
@@ -184,7 +188,7 @@ const register = async (
             }
         }),
         // Auth
-        vscode.commands.registerCommand('cody.auth.sync', (state: AuthStatus) => chatProvider.syncAuthStatus(state)),
+        vscode.commands.registerCommand('cody.auth.sync', () => chatProvider.syncAuthStatus()),
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
@@ -265,6 +269,9 @@ const register = async (
         })
     )
 
+    // Make sure all commands are registered before initializing the authProvider which sends info to webview.
+    await authProvider.init()
+
     let completionsProvider: vscode.Disposable | null = null
     if (initialConfig.autocomplete) {
         completionsProvider = createCompletionsProvider(
@@ -309,7 +316,7 @@ const register = async (
         }
     })
 
-    // Initiate inline assist when feature flag is on
+    // Initiate inline chat when feature flag is on
     if (initialConfig.experimentalInline) {
         commentController.get().commentingRangeProvider = {
             provideCommentingRanges: (document: vscode.TextDocument) => {

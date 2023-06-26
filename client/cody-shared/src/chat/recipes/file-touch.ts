@@ -9,7 +9,7 @@ import {
     MAX_RECIPE_SURROUNDING_TOKENS,
 } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
-import { truncateText } from '../../prompt/truncation'
+import { truncateText, isTextTruncated } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
@@ -64,7 +64,13 @@ export class FileTouch implements Recipe {
 
         const truncatedText = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
         const MAX_RECIPE_CONTENT_TOKENS = MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS * 2
-        const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_CONTENT_TOKENS)
+        const truncatedSelectedText = truncateText(
+            selection.selectedText,
+            Math.min(MAX_RECIPE_CONTENT_TOKENS, MAX_RECIPE_INPUT_TOKENS)
+        )
+        if (isTextTruncated(selection.selectedText, truncatedSelectedText)) {
+            await context.editor.showWarningMessage('Truncated extra long selection so output may be incomplete.')
+        }
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
@@ -101,7 +107,7 @@ export class FileTouch implements Recipe {
                 },
                 {
                     speaker: 'assistant',
-                    prefix: 'Working on it! I will notify you when the file is ready.\n',
+                    prefix: 'Working on it! I will show you the new file when it is ready.\n',
                 },
                 this.getContextMessages(selection, currentDir),
                 []
@@ -131,32 +137,31 @@ export class FileTouch implements Recipe {
     {selectedText}
     \`\`\`
 
-    As my coding assistant, please help me with creating content for a new file based on the selected code as well as other context I am sharing with you.
-    The new file is called {newFileName}. Here is my questions and instruction:
+    Help me with creating content for a new file based on the selected code.
     - {humanInput}
 
     ## Instruction
-    - Follow my instructions above to produce new code for the new file we are working on together
-    - Think carefully and use the share context as reference before produce the new code to make sure the new code works with the shared context.
-    - You must use the same framework and language as the shared context that are also in the current directory I am working on.
-    - Please put the new content inside <selection> tags.
-    - I only want to see the new code enclosed with the <selection> tags if you understand the instruction provided.
-    - Do not enclose any part of your answer with tags if you are not sure about the answer.
+    - Follow my instructions to produce new code for the new file called {newFileName}.
+    - Think carefully and use the shared context as reference before produce the new code
+    - Make sure the new code works with the shared context and the selected code.
+    - Use the same framework, language and style as the shared context that are also from current directory I am working on.
+    - Put all new content inside <selection> tags.
+    - I only want to see the new code enclosed with the <selection> tags only if you understand my instructions.
+    - Do not enclose any part of your answer with <selection> tags if you are not sure about the answer.
     - Only provide me with the code inside <selection> and nothing else.
-    - It is unacceptable to enclose the rewritten replacement with markdowns.
-
-    ## Guidelines for the new code
+    - Do not enclose your answer with markdowns.
+    ## Guidelines for the new file
     - Include all the import statements that are required for the new code to work.
-    - If there are already content in the file with the same name, the new code will be appended to the end of the file so import statements is not required.
-    - If the selected code is empty, it means I am working on an empty file.
-    - Do not remove code that might be being used by the other files that was not shared.
+    - If there are already content in the file with the same name, the new code will be appended to the file.
+    - If my selected code is empty, it means I am working in an empty file.
+    - Do not remove code that is being used by the the shared filesd.
     - Do not suggest code that are not related to any of the shared context.
-    - Do not make up code, including function names, that cannot be found or used in the selected code.
+    - Do not make up code, including function names, that could break the selected code.
     `
 
     // Prompt template for displaying the prompt to users in chat view
     public static readonly displayPrompt = `\n
-    Requesting help on: `
+    File: `
 
     // ======================================================== //
     //                      GET CONTEXT                         //
@@ -172,10 +177,10 @@ export class FileTouch implements Recipe {
         const currentDirContext = await FileTouch.getEditorDirContext(currentDir)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs
-        if (contextMessages.length < 12) {
+        if (contextMessages.length < 10) {
             contextMessages.push(...FileTouch.getEditorOpenTabsContext(currentDir))
         }
-        return contextMessages.slice(-12)
+        return contextMessages.slice(-10)
     }
 
     // Create Context from Current Directory of Active Document //
@@ -235,7 +240,7 @@ export class FileTouch implements Recipe {
 
     // Get display text for human
     private getHumanDisplayText(humanChatInput: string, fileName: string): string {
-        return humanChatInput + FileTouch.displayPrompt + fileName
+        return '**✨Touch✨** ' + humanChatInput + FileTouch.displayPrompt + fileName
     }
 
     private async getInstructionFromInput(): Promise<string> {

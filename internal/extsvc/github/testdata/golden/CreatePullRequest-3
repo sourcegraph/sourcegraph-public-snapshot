@@ -1,18 +1,19 @@
 {
-  "ID": "PR_kwDODS5xec5JaAaX",
+  "ID": "PR_kwDODS5xec5TxsSC",
   "Title": "This is a test PR, feel free to ignore",
   "Body": "I'm opening this PR to test something. Please ignore.",
   "State": "OPEN",
-  "URL": "https://github.com/sourcegraph/automation-testing/pull/487",
+  "URL": "https://github.com/sourcegraph/automation-testing/pull/507",
   "HeadRefOid": "6653600c1ddda040a235926e79e576900cb39848",
-  "BaseRefOid": "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
-  "HeadRefName": "test-pr-13",
+  "BaseRefOid": "58dd8da9d9099a823c814c528b29b72c9b2ac98b",
+  "HeadRefName": "test-pr-15",
   "BaseRefName": "master",
-  "Number": 487,
+  "Number": 507,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
-   "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
-   "Login": "sourcegraph-vcr",
-   "URL": "https://github.com/sourcegraph-vcr"
+   "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+   "Login": "davejrt",
+   "URL": "https://github.com/davejrt"
   },
   "BaseRepository": {
    "ID": "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
@@ -30,9 +31,9 @@
   },
   "Participants": [
    {
-    "AvatarURL": "https://avatars.githubusercontent.com/u/63290851?v=4",
-    "Login": "sourcegraph-vcr",
-    "URL": "https://github.com/sourcegraph-vcr"
+    "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+    "Login": "davejrt",
+    "URL": "https://github.com/davejrt"
    },
    {
     "AvatarURL": "https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466\u0026v=4",
@@ -127,6 +128,6 @@
    ]
   },
   "IsDraft": true,
-  "CreatedAt": "2023-02-07T07:47:43Z",
-  "UpdatedAt": "2023-02-07T07:47:43Z"
+  "CreatedAt": "2023-06-23T19:24:59Z",
+  "UpdatedAt": "2023-06-23T19:24:59Z"
  }
