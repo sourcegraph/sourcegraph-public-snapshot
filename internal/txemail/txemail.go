@@ -10,6 +10,7 @@ import (
 	"net/smtp"
 	"net/textproto"
 	"strconv"
+	"strings"
 
 	"github.com/jordan-wright/email"
 	"github.com/prometheus/client_golang/prometheus"
@@ -98,7 +99,15 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 	// Previous errors are configuration errors, do not track as error. Subsequent errors
 	// are delivery errors.
 	defer func() {
-		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil), source).Inc()
+
+		emailSentSuccess := err == nil
+		// certain errors are from the recipient server and there is nothing we can do about them.
+		// so if the email we sent failed because of a recipient server error, we don't increase the metric
+		if !emailSentSuccess && strings.Contains(err.Error(), "Insufficient system storage") {
+			return
+		}
+
+		emailSendCounter.WithLabelValues(strconv.FormatBool(emailSentSuccess), source).Inc()
 	}()
 
 	m, err := render(config.EmailAddress, config.EmailSenderName, message)
