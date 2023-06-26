@@ -5,10 +5,11 @@
   "State": "OPEN",
   "URL": "https://github.com/sourcegraph/automation-testing/pull/355",
   "HeadRefOid": "55dc5cf08fad39e41973cd384ffe0ea5d5e958d3",
-  "BaseRefOid": "1c94aaf85d51e9d016b8ce4639b9f022d94c52e6",
+  "BaseRefOid": "58dd8da9d9099a823c814c528b29b72c9b2ac98b",
   "HeadRefName": "demo/200-in-2",
   "BaseRefName": "master",
   "Number": 355,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
    "Login": "mrnugget",
@@ -38,6 +39,11 @@
     "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
     "Login": "LawnGnome",
     "URL": "https://github.com/LawnGnome"
+   },
+   {
+    "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+    "Login": "davejrt",
+    "URL": "https://github.com/davejrt"
    },
    {
     "AvatarURL": "https://avatars.githubusercontent.com/u/23356519?u=314e3cc368638ce1f8117c4377b62ce158127302\u0026v=4",
@@ -163,6 +169,29 @@
      },
      "CreatedAt": "2023-02-07T08:14:54Z"
     }
+   },
+   {
+    "Type": "ClosedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
+      "Login": "mrnugget",
+      "URL": "https://github.com/mrnugget"
+     },
+     "CreatedAt": "2023-06-06T07:44:01Z",
+     "URL": "https://github.com/sourcegraph/automation-testing/pull/355#event-9442706403"
+    }
+   },
+   {
+    "Type": "ReopenedEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T19:28:53Z"
+    }
    }
   ],
   "Commits": {
@@ -184,5 +213,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2020-09-17T11:37:38Z",
-  "UpdatedAt": "2023-02-07T08:14:54Z"
+  "UpdatedAt": "2023-06-23T19:28:53Z"
  }

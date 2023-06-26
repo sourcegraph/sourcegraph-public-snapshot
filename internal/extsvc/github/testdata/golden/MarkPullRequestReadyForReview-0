@@ -9,6 +9,7 @@
   "HeadRefName": "test-pr-9",
   "BaseRefName": "master",
   "Number": 467,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/229984?v=4",
    "Login": "LawnGnome",
@@ -58,7 +59,7 @@
        }
       },
       "CommittedDate": "2021-12-30T22:41:59Z",
-      "PushedDate": "2021-12-30T22:43:12Z"
+      "PushedDate": "2021-12-30T22:43:11Z"
      }
     }
    },
@@ -93,6 +94,28 @@
       "URL": "https://github.com/sourcegraph-vcr"
      },
      "CreatedAt": "2023-02-07T08:39:23Z"
+    }
+   },
+   {
+    "Type": "ConvertToDraftEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T19:29:53Z"
+    }
+   },
+   {
+    "Type": "ReadyForReviewEvent",
+    "Item": {
+     "Actor": {
+      "AvatarURL": "https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e\u0026v=4",
+      "Login": "davejrt",
+      "URL": "https://github.com/davejrt"
+     },
+     "CreatedAt": "2023-06-23T19:30:16Z"
     }
    }
   ],
@@ -143,5 +166,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2021-12-30T22:43:31Z",
-  "UpdatedAt": "2023-02-07T08:39:23Z"
+  "UpdatedAt": "2023-06-23T19:30:16Z"
  }

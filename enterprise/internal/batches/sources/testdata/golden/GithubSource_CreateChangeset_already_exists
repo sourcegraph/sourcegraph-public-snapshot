@@ -1,7 +1,7 @@
 {
   "ID": "MDExOlB1bGxSZXF1ZXN0MzM5NzUyNDQy",
   "Title": "This is a test PR that is always open (keep it open!)",
-  "Body": "Feel free to ignore this. This is a test PR that is always open.",
+  "Body": "Feel free to ignore this. This is a test PR that is always open and is sometimes updated.",
   "State": "OPEN",
   "URL": "https://github.com/sourcegraph/automation-testing/pull/1",
   "HeadRefOid": "37406e7dfa4466b80d1da183d6477aac16b1e58c",
@@ -9,6 +9,7 @@
   "HeadRefName": "always-open-pr",
   "BaseRefName": "master",
   "Number": 1,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
    "Login": "mrnugget",
@@ -146,5 +147,5 @@
   },
   "IsDraft": false,
   "CreatedAt": "2019-11-12T06:40:21Z",
-  "UpdatedAt": "2019-12-05T07:09:31Z"
+  "UpdatedAt": "2023-02-03T20:42:20Z"
  }

@@ -38,7 +38,7 @@ interactions:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -48,7 +48,7 @@ interactions:
       REVIEW_REQUESTED_EVENT, UNASSIGNED_EVENT, LABELED_EVENT, UNLABELED_EVENT, PULL_REQUEST_COMMIT,
       READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT]) {\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    nodes
       {\n      __typename\n      ...timelineItems\n    }\n  }\n}\nmutation\tClosePullRequest($input:ClosePullRequestInput!)
-      {\n  closePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"PR_kwDODS5xec4waMkR"}}}'
+      {\n  closePullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"pullRequestId":"PR_kwDODS5xec5TsclN"}}}'
     form: {}
     headers:
       Accept:
@@ -60,10 +60,8 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"closePullRequest":{"pullRequest":{"id":"PR_kwDODS5xec4waMkR","title":"This
-      is a test PR","body":"This is the description of the test PR","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/468","number":468,"createdAt":"2021-12-30T22:57:42Z","updatedAt":"2023-05-17T01:50:02Z","headRefOid":"a5955a89096304d07531f7467b269b1bcf2727c7","baseRefOid":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","headRefName":"test-pr-10","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"a5955a89096304d07531f7467b269b1bcf2727c7","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAABHeqoTA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHeqoUA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAABHeqoVA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADA7bFkw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADA7bFlw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2021-12-30T22:56:31Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABiCdmZRABqjkyNjM4MzIxMDE="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"a5955a89096304d07531f7467b269b1bcf2727c7","message":"Test
-      branch.","messageHeadline":"Test branch.","committedDate":"2021-12-30T22:56:31Z","pushedDate":"2021-12-30T22:56:37Z","url":"https://github.com/sourcegraph/automation-testing/commit/a5955a89096304d07531f7467b269b1bcf2727c7","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","email":"adam@adamharvey.name","name":"Adam
-      Harvey","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"}}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/229984?v=4","login":"LawnGnome","url":"https://github.com/LawnGnome"},"createdAt":"2021-12-30T23:02:46Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-5829292407"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-02-03T20:14:42Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-02-03T20:15:12Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-8435938069"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:32:21Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:36:41Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9263776785"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:40:30Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:40:47Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9263793435"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:42:37Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:44:38Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9263807970"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:49:43Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"createdAt":"2023-05-17T01:50:02Z","url":"https://github.com/sourcegraph/automation-testing/pull/468#event-9263832101"}]}}}}}'
+    body: '{"data":{"closePullRequest":{"pullRequest":{"id":"PR_kwDODS5xec5TsclN","title":"This
+      is a test PR","body":"This is the description of the test PR","state":"CLOSED","url":"https://github.com/sourcegraph/automation-testing/pull/490","number":490,"createdAt":"2023-06-22T21:06:33Z","updatedAt":"2023-06-23T15:23:36Z","headRefOid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","baseRefOid":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","headRefName":"test-review-decision","baseRefName":"master","reviewDecision":"REVIEW_REQUIRED","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAADNrcULQ","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcURA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUXg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUcw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUkg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2023-06-22T21:05:25Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABiOjaiMABqjk2MTg5ODk3NzI="},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","message":"foobar","messageHeadline":"foobar","committedDate":"2023-06-22T21:05:25Z","pushedDate":"2023-06-22T21:05:29Z","url":"https://github.com/sourcegraph/automation-testing/commit/7c232f7ec9b8e717ff297e33f2ab095a7e902085","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?v=4","email":"davetry@gmail.com","name":"davejrt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"}}}},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T15:17:36Z","url":"https://github.com/sourcegraph/automation-testing/pull/490#event-9618938482"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T15:18:20Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T15:18:34Z","url":"https://github.com/sourcegraph/automation-testing/pull/490#event-9618946734"},{"__typename":"ReopenedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T15:22:17Z"},{"__typename":"ClosedEvent","actor":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"createdAt":"2023-06-23T15:23:36Z","url":"https://github.com/sourcegraph/automation-testing/pull/490#event-9618989772"}]}}}}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -77,7 +75,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Wed, 17 May 2023 01:50:03 GMT
+      - Fri, 23 Jun 2023 15:39:42 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -93,11 +91,11 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - F9B7:8788:745CCD5:785EE4F:646432C9
+      - CEB5:70B1:234BA84:47E2755:6495BCBD
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "231"
+      - "151"
       X-Xss-Protection:
       - "0"
     status: 200 OK
@@ -114,7 +112,7 @@ interactions:
       - max-age=0
       Content-Type:
       - application/json; charset=utf-8
-    url: https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/test-pr-10
+    url: https://api.github.com/repos/sourcegraph/automation-testing/git/refs/heads/test-review-decision
     method: DELETE
   response:
     body: ""
@@ -129,7 +127,7 @@ interactions:
       Content-Security-Policy:
       - default-src 'none'
       Date:
-      - Wed, 17 May 2023 01:50:03 GMT
+      - Fri, 23 Jun 2023 15:39:42 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -148,11 +146,11 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - F9B7:8788:745CF13:785F08B:646432CA
+      - CEB5:70B1:234BBD6:47E29DB:6495BCBD
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "16"
+      - "50"
       X-Xss-Protection:
       - "0"
     status: 204 No Content
