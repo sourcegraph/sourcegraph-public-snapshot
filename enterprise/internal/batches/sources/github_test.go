@@ -56,7 +56,7 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 			cs: &Changeset{
 				Title:      "This is a test PR",
 				Body:       "This is the description of the test PR",
-				HeadRef:    "refs/heads/test-pr-11",
+				HeadRef:    "refs/heads/test-review-decision",
 				BaseRef:    "refs/heads/master",
 				RemoteRepo: repo,
 				TargetRepo: repo,
@@ -257,8 +257,8 @@ func TestGithubSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
 			cs: &Changeset{
 				Changeset: &btypes.Changeset{
 					Metadata: &github.PullRequest{
-						ID:          "PR_kwDODS5xec4waMkR",
-						HeadRefName: "refs/heads/test-pr-10",
+						ID:          "PR_kwDODS5xec5TsclN",
+						HeadRefName: "refs/heads/test-review-decision",
 					},
 				},
 				RemoteRepo: repo,
