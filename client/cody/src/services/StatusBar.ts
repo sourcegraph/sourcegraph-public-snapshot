@@ -82,13 +82,12 @@ export function createStatusBar(): CodyStatusBar {
                 ),
                 { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
                 {
-                    label: '$(gear) Settings',
-                    detail: 'Configure your Cody settings.',
+                    label: '$(gear) Cody Settings',
                     async onSelect(): Promise<void> {
                         await vscode.commands.executeCommand('cody.settings.extension')
                     },
                 },
-                { label: 'feedback', kind: vscode.QuickPickItemKind.Separator },
+                { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
                 ...FeedbackOptionItems,
             ],
             {
