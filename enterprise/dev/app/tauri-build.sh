@@ -103,7 +103,6 @@ create_dmg() {
   if [[ -z ${arch} ]]; then
     arch=$(uname -m)
   fi
-  export CI="true"
 
   local args
   args="--background $(pwd)/enterprise/dev/app/dmg/Folder-bg.png \
@@ -115,7 +114,7 @@ create_dmg() {
 
   # when not in CI, pop the finder window up
   # the option is called jenkins because that is how the script was written by tauri
-  if [[ ${CI:""} == "true" ]]; then
+  if [[ ${CI:-""} == "true" ]]; then
     args="${args} --skip-jenkins"
   fi
 
@@ -228,7 +227,7 @@ build() {
 
   if [[ $(uname -s) == "Darwin" ]]; then
     # the dmg bundles the `app` bundle which has the updater, so we don't have to sign the dmg with tauri
-    echo "--- :mac: Creating dmg bundle manually with :sparkles: fancy background"
+    echo "--- :mac: Creating dmg bundle (${version}) manually with :sparkles: fancy background for ${platform}"
     create_dmg $version $platform
   fi
 }
