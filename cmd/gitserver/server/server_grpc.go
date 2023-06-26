@@ -218,24 +218,25 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 }
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
-	var internalReq protocol.P4ExecRequest
-	internalReq.FromProto(req)
+	arguments := req.GetArgs()
 
-	if len(req.Args) < 1 {
+	if len(arguments) < 1 {
 		return status.Error(codes.InvalidArgument, "args must be greater than or equal to 1")
 	}
+
+	subCommand := arguments[0]
 
 	// Make sure the subcommand is explicitly allowed
 	allowlist := []string{"protects", "groups", "users", "group", "changes"}
 	allowed := false
-	for _, arg := range allowlist {
-		if req.Args[0] == arg {
+	for _, c := range allowlist {
+		if subCommand == c {
 			allowed = true
 			break
 		}
 	}
 	if !allowed {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]))
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", subCommand))
 	}
 
 	// Log which actor is accessing p4-exec.
@@ -243,13 +244,13 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	// p4-exec is currently only used for fetching user based permissions information
 	// so, we don't have a repo name.
 	accesslog.Record(ss.Context(), "<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-		log.Strings("args", req.Args),
+		log.String("p4user", req.GetP4User()),
+		log.String("p4port", req.GetP4Port()),
+		log.Strings("args", arguments),
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := p4testWithTrust(ss.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4testWithTrust(ss.Context(), req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
 	if err != nil {
 		if ctxErr := ss.Context().Err(); ctxErr != nil {
 			return status.FromContextError(ctxErr).Err()
@@ -264,8 +265,10 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 		})
 	})
 
-	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
+	var r protocol.P4ExecRequest
+	r.FromProto(req)
 
+	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &r, "unknown-grpc-client", w)
 }
 
 func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) error {
