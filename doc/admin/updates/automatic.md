@@ -18,6 +18,8 @@ The upgrade magic now happens when the new version is booted. In more detail, st
 5. Runs the migration plan (performing the same steps as `migration upgrade ...` )
 6. Shuts down the internal and status servers and continues to boot normally
 
+Note that if you have unresolved schema drift, the upgrade will refuse to continue to avoid future migration failures which are more difficult to resolve. Drift should be resolved prior to the beginning of an upgrade. Drift can also be explicitly ignored (which might be required when an upgrade is *resumed* after a failure) by setting the `SRC_AUTOUPGRADE_IGNORE_DRIFT` envvar to true on the migrator and frontend containers.
+
 ## Viewing progress
 
 During an automatic multi-version upgrade, we'll attempt to boot a status server in the frontend container that is running (or blocking on) an active upgrade attempt. If there is an upgrade failure that affects the frontend, this status page will not be available and the `frontend` container logs should be viewed. Optimistically, the status server will also be unreachable in the case that an upgrade performs quickly enough that there's no time for the status server to start.
