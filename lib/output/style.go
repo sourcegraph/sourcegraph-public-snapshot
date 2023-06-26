@@ -5,72 +5,61 @@ import (
 	"strings"
 )
 
-type Style interface {
-	fmt.Stringer
+type Style struct{ code string }
 
-	// isStyle is a sentinel method to differentiate styles from
-	// fmt.Stringers in type checks. Without being able to tell
-	// apart styles from regular stringify-able arguments makes
-	// it difficult to strip things lke colors on non-TTY outputs.
-	isStyle() bool
-}
+func (s Style) String() string { return s.code }
 
 func CombineStyles(styles ...Style) Style {
 	sb := strings.Builder{}
 	for _, s := range styles {
 		fmt.Fprint(&sb, s)
 	}
-	return &style{sb.String()}
+	return Style{sb.String()}
 }
 
-func Fg256Color(code int) Style { return &style{fmt.Sprintf("\033[38;5;%dm", code)} }
-func Bg256Color(code int) Style { return &style{fmt.Sprintf("\033[48;5;%dm", code)} }
-
-type style struct{ code string }
-
-func (s *style) String() string { return s.code }
-func (s *style) isStyle() bool  { return true }
+func Fg256Color(code int) Style { return Style{fmt.Sprintf("\033[38;5;%dm", code)} }
+func Bg256Color(code int) Style { return Style{fmt.Sprintf("\033[48;5;%dm", code)} }
 
 var (
-	StyleReset      = &style{"\033[0m"}
-	StyleLogo       = Fg256Color(57)
-	StylePending    = Fg256Color(4)
-	StyleWarning    = Fg256Color(124)
-	StyleFailure    = CombineStyles(StyleBold, Fg256Color(196))
-	StyleSuccess    = Fg256Color(2)
-	StyleSuggestion = Fg256Color(244)
+	styleReset      = &Style{"\033[0m"}
+	styleLogo       = Fg256Color(57)
+	stylePending    = Fg256Color(4)
+	styleWarning    = Fg256Color(124)
+	styleFailure    = CombineStyles(styleBold, Fg256Color(196))
+	styleSuccess    = Fg256Color(2)
+	styleSuggestion = Fg256Color(244)
 
-	StyleBold      = &style{"\033[1m"}
-	StyleItalic    = &style{"\033[3m"}
-	StyleUnderline = &style{"\033[4m"}
+	styleBold      = Style{"\033[1m"}
+	styleItalic    = Style{"\033[3m"}
+	styleUnderline = Style{"\033[4m"}
 
 	// Search-specific colors.
-	StyleSearchQuery         = Fg256Color(68)
-	StyleSearchBorder        = Fg256Color(239)
-	StyleSearchLink          = Fg256Color(237)
-	StyleSearchRepository    = Fg256Color(23)
-	StyleSearchFilename      = Fg256Color(69)
-	StyleSearchMatch         = CombineStyles(Fg256Color(0), Bg256Color(11))
-	StyleSearchLineNumbers   = Fg256Color(69)
-	StyleSearchCommitAuthor  = Fg256Color(2)
-	StyleSearchCommitSubject = Fg256Color(68)
-	StyleSearchCommitDate    = Fg256Color(23)
+	styleSearchQuery         = Fg256Color(68)
+	styleSearchBorder        = Fg256Color(239)
+	styleSearchLink          = Fg256Color(237)
+	styleSearchRepository    = Fg256Color(23)
+	styleSearchFilename      = Fg256Color(69)
+	styleSearchMatch         = CombineStyles(Fg256Color(0), Bg256Color(11))
+	styleSearchLineNumbers   = Fg256Color(69)
+	styleSearchCommitAuthor  = Fg256Color(2)
+	styleSearchCommitSubject = Fg256Color(68)
+	styleSearchCommitDate    = Fg256Color(23)
 
-	StyleWhiteOnPurple  = CombineStyles(Fg256Color(255), Bg256Color(55))
-	StyleGreyBackground = CombineStyles(Fg256Color(0), Bg256Color(242))
+	styleWhiteOnPurple  = CombineStyles(Fg256Color(255), Bg256Color(55))
+	styleGreyBackground = CombineStyles(Fg256Color(0), Bg256Color(242))
 
 	// Search alert specific colors.
-	StyleSearchAlertTitle               = Fg256Color(124)
-	StyleSearchAlertDescription         = Fg256Color(124)
-	StyleSearchAlertProposedTitle       = &style{""}
-	StyleSearchAlertProposedQuery       = Fg256Color(69)
-	StyleSearchAlertProposedDescription = &style{""}
+	styleSearchAlertTitle               = Fg256Color(124)
+	styleSearchAlertDescription         = Fg256Color(124)
+	styleSearchAlertProposedTitle       = Style{""}
+	styleSearchAlertProposedQuery       = Fg256Color(69)
+	styleSearchAlertProposedDescription = Style{""}
 
-	StyleLinesDeleted = Fg256Color(196)
-	StyleLinesAdded   = Fg256Color(2)
+	styleLinesDeleted = Fg256Color(196)
+	styleLinesAdded   = Fg256Color(2)
 
 	// Colors
-	StyleGrey   = Fg256Color(8)
-	StyleYellow = Fg256Color(220)
-	StyleOrange = Fg256Color(202)
+	styleGrey   = Fg256Color(8)
+	styleYellow = Fg256Color(220)
+	styleOrange = Fg256Color(202)
 )
