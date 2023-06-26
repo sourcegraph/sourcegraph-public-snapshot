@@ -18,6 +18,7 @@ export {
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
     type SearchMatch,
+    type OwnerMatch,
     getRepoMatchLabel,
     getRepoMatchUrl,
     type RepositoryMatch,

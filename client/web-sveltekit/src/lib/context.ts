@@ -3,7 +3,7 @@
 // couple of errors.
 // TODO: Consolidate with actual platform context
 //
-import type { ApolloQueryResult, ObservableQuery } from '@apollo/client'
+import type { ApolloQueryResult, ObservableQuery } from '@apollo/client/core'
 import { map, publishReplay, refCount, shareReplay } from 'rxjs/operators'
 
 import { createAggregateError } from '$lib/common'

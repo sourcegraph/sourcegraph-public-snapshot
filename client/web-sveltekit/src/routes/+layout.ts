@@ -1,14 +1,8 @@
-import { from } from 'rxjs'
-import { switchMap, take } from 'rxjs/operators'
-
 import { browser } from '$app/environment'
-import { createPlatformContext } from '$lib/context'
 import type { CurrentAuthStateResult } from '$lib/graphql/shared'
 import { getDocumentNode } from '$lib/http-client'
 import { currentAuthStateQuery } from '$lib/loader/auth'
 import { getWebGraphQLClient } from '$lib/web'
-
-import type { LayoutLoad } from './$types'
 
 // Disable server side rendering for the whole app
 export const ssr = false
@@ -24,22 +18,15 @@ if (browser) {
     }
 }
 
-export const load: LayoutLoad = () => {
+export const load = () => {
     const graphqlClient = getWebGraphQLClient()
-    const platformContext = graphqlClient.then(createPlatformContext)
 
     return {
-        platformContext,
         graphqlClient,
         user: graphqlClient
             .then(client => client.query<CurrentAuthStateResult>({ query: getDocumentNode(currentAuthStateQuery) }))
             .then(result => result.data.currentUser),
         // Initial user settings
-        settings: from(platformContext)
-            .pipe(
-                switchMap(platformContext => platformContext.settings),
-                take(1)
-            )
-            .toPromise(),
+        settings: null,
     }
 }

@@ -5,10 +5,9 @@
 
     import { HighlightResponseFormat } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
-    import { fetchFileRangeMatches } from '$lib/search/results'
+    import { fetchFileRangeMatches } from '$lib/search/api/results'
     import { getSymbolIconPath } from '$lib/search/symbolIcons'
     import { displayRepoName, splitPath, getFileMatchUrl, getRepositoryUrl, type SymbolMatch } from '$lib/shared'
-    import { platformContext } from '$lib/stores'
 
     import CodeExcerpt from './CodeExcerpt.svelte'
     import SearchResult from './SearchResult.svelte'
@@ -22,7 +21,6 @@
     function fetchHighlightedSymbolMatchLineRanges(startLine: number, endLine: number) {
         return fetchFileRangeMatches({
             result,
-            platformContext: $platformContext,
             format: HighlightResponseFormat.HTML_HIGHLIGHT,
             ranges: result.symbols.map(symbol => ({
                 startLine: symbol.line - 1,

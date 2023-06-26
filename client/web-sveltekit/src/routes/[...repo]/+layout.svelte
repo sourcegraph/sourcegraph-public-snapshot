@@ -12,6 +12,7 @@
     import type { LayoutData } from './$types'
     import Permalink from './Permalink.svelte'
     import RepoNotFoundError from './RepoNotFoundError.svelte'
+    import Header from '$lib/Header.svelte'
 
     export let data: LayoutData
 
@@ -33,8 +34,7 @@
     setContext<ActionStore>('repo-actions', repoActions)
 
     $: viewerCanAdminister = data.user?.siteAdmin ?? false
-    $: ({ repo, path } = $page.params)
-    $: nav = path ? navFromPath(path, repo, $page.url.pathname.includes('/-/blob/')) : []
+    $: ({ repo } = $page.params)
 
     $: resolvedRevision = isErrorLike(data.resolvedRevision) ? null : data.resolvedRevision
     $: revisionLabel = getRevisionLabel(data.revision, resolvedRevision)
@@ -55,48 +55,40 @@
         Something went wrong
     {/if}
 {:else}
-    <div class="header">
-        <nav>
-            <h1><a href="/{repo}"><Icon svgPath={mdiSourceRepository} inline /> {repoName}</a></h1>
-            <!--
-                TODO: Add back revision
-                {#if revisionLabel}
-                    @ <span class="button">{revisionLabel}</span>
-                {/if}
-                -->
-            <ul class="menu">
-                <li>
-                    <a href={data.repoURL} class:active={isCodePage(data.repoURL, $page.url.pathname)}>
-                        <Icon svgPath={mdiCodeTags} inline /> <span class="ml-1">Code</span>
-                    </a>
-                </li>
-                {#each menu as entry}
-                    {@const href = data.repoURL + entry.path}
+    <Header>
+        <div class="header">
+            <nav>
+                <h2><a href="/{repo}"><Icon svgPath={mdiSourceRepository} inline /> {repoName}</a></h2>
+                <!--
+                    TODO: Add back revision
+                    {#if revisionLabel}
+                        @ <span class="button">{revisionLabel}</span>
+                    {/if}
+                    -->
+                <ul class="menu">
                     <li>
-                        <a {href} class:active={$page.url.pathname.startsWith(href)}>
-                            <Icon svgPath={entry.icon} inline /> <span class="ml-1">{entry.title}</span>
+                        <a href={data.repoURL} class:active={isCodePage(data.repoURL, $page.url.pathname)}>
+                            <Icon svgPath={mdiCodeTags} inline /> <span class="ml-1">Code</span>
                         </a>
                     </li>
-                {/each}
-            </ul>
-        </nav>
+                    {#each menu as entry}
+                        {@const href = data.repoURL + entry.path}
+                        <li>
+                            <a {href} class:active={$page.url.pathname.startsWith(href)}>
+                                <Icon svgPath={entry.icon} inline /> <span class="ml-1">{entry.title}</span>
+                            </a>
+                        </li>
+                    {/each}
+                </ul>
+            </nav>
 
-        <div class="actions">
-            {#each $repoActions as action (action.key)}
-                <svelte:component this={action.component} />
-            {/each}
-        </div>
-    </div>
-    <div class="ml-3 mt-1">
-        {#if nav.length > 0}
-            <span class="crumps">
-                {#each nav as [label, url]}
-                    <span>/</span>
-                    <a href={url}>{label}</a>&nbsp;
+            <div class="actions">
+                {#each $repoActions as action (action.key)}
+                    <svelte:component this={action.component} />
                 {/each}
-            </span>
-        {/if}
-    </div>
+            </div>
+        </div>
+    </Header>
     <slot />
 {/if}
 
@@ -104,14 +96,11 @@
     .header {
         display: flex;
         align-items: center;
-        padding: 0.5rem 1rem;
-        border-bottom: 1px solid var(--border-color);
     }
 
-    h1 {
+    h2 {
         margin: 0;
         margin-right: 1rem;
-        font-size: 1.3rem;
     }
 
     nav {

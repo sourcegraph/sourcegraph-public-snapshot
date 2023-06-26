@@ -1,14 +1,16 @@
 <script lang="ts">
-    import { onMount, setContext } from 'svelte'
+    import { setContext } from 'svelte'
+    import { mdiBookOutline, mdiChartBar, mdiClose, mdiMagnify } from '@mdi/js'
     import { readable, writable, type Readable } from 'svelte/store'
+    import { mark } from '$lib/images'
 
     import { browser } from '$app/environment'
-    import { isErrorLike } from '$lib/common'
     import { TemporarySettingsStorage } from '$lib/shared'
     import { KEY, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
-
-    import Header from './Header.svelte'
+    import HeaderNavLink from '$lib/HeaderNavLink.svelte'
+    import Button from '$lib/wildcard/Button.svelte'
+    import Icon from '$lib/Icon.svelte'
 
     import './styles.scss'
 
@@ -33,8 +35,7 @@
     }
 
     const user = writable(data.user ?? null)
-    const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
-    const platformContext = writable(data.platformContext)
+    const settings = writable(null)
     const isLightTheme = createLightThemeStore()
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
@@ -45,23 +46,12 @@
     setContext<SourcegraphContext>(KEY, {
         user,
         settings,
-        platformContext,
         isLightTheme,
         temporarySettingsStorage,
     })
 
-    onMount(() => {
-        // Settings can change over time. This ensures that the store is always
-        // up-to-date.
-        const settingsSubscription = data.platformContext?.settings.subscribe(newSettings => {
-            settings.set(isErrorLike(newSettings.final) ? null : newSettings.final)
-        })
-        return () => settingsSubscription?.unsubscribe()
-    })
-
+    // Update stores when data changes
     $: $user = data.user ?? null
-    $: $settings = isErrorLike(data.settings) ? null : data.settings.final
-    $: $platformContext = data.platformContext
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
@@ -81,20 +71,16 @@
             return { x: scrollTop }
         },
         restore(value) {
-            restoreScrollPosition(value.x)
+            const start = Date.now()
+            requestAnimationFrame(function scroll() {
+                if (main) {
+                    main.scrollTo(0, value.x)
+                }
+                if ((!main || main.scrollTop !== value.x) && Date.now() - start < 3000) {
+                    requestAnimationFrame(scroll)
+                }
+            })
         },
-    }
-
-    function restoreScrollPosition(y: number) {
-        const start = Date.now()
-        requestAnimationFrame(function scroll() {
-            if (main) {
-                main.scrollTo(0, y)
-            }
-            if ((!main || main.scrollTop !== y) && Date.now() - start < 3000) {
-                requestAnimationFrame(scroll)
-            }
-        })
     }
 </script>
 
@@ -104,8 +90,18 @@
 </svelte:head>
 
 <div class="app">
-    <Header authenticatedUser={$user} />
-
+    <div class="dock">
+        <div class="bar">
+        <img src={mark} class="mt-2" alt="Sourcegraph" width="25" height="25" />
+        <nav class="ml-2">
+            <ul>
+                <HeaderNavLink href="/search" svgIconPath={mdiMagnify}><span>Code search</span></HeaderNavLink>
+                <HeaderNavLink href="/notebooks" svgIconPath={mdiBookOutline}><span>Notebooks</span></HeaderNavLink>
+                <HeaderNavLink href="/insights" svgIconPath={mdiChartBar}><span>Insights</span></HeaderNavLink>
+            </ul>
+        </nav>
+    </div>
+    </div>
     <main bind:this={main}>
         <slot />
     </main>
@@ -114,9 +110,57 @@
 <style lang="scss">
     .app {
         display: flex;
-        flex-direction: column;
         height: 100vh;
         overflow: hidden;
+
+    }
+
+    .dock {
+        width: 40px;
+        background-color: black;
+        display: flex;
+        flex-direction:  column;
+        align-items: left;
+
+
+        img {
+            align-self: center;
+        }
+
+        ul {
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            background-size: contain;
+
+            span {
+                display: none;
+            }
+
+        }
+
+        .bar {
+            display: flex;
+        flex-direction:  column;
+            flex: 1;
+            width: 40px;
+            transition: width 100ms ease-in-out;
+        overflow: hidden;
+
+            &:hover {
+            box-shadow: 5px 0px 10px -7px rgba(0,0,0,0.75);
+                background-color: black;
+                    z-index: 100;
+                    position: fixed;
+                    top: 0;
+                    bottom: 0;
+                    width: 150px;
+                    span {
+                        display:initial;
+                    }
+            }
+        }
+
     }
 
     main {
@@ -126,4 +170,23 @@
         box-sizing: border-box;
         overflow: auto;
     }
+
+    img {
+        &:hover {
+            @keyframes spin {
+                50% {
+                    transform: rotate(180deg) scale(1.2);
+                }
+                100% {
+                    transform: rotate(180deg) scale(1);
+                }
+            }
+
+            @media (prefers-reduced-motion: no-preference) {
+                animation: spin 0.5s ease-in-out 1;
+            }
+        }
+    }
+
+
 </style>

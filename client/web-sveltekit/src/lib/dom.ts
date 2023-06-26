@@ -21,3 +21,12 @@ export function onClickOutside(
         },
     }
 }
+
+/**
+ *  Helper function for scrolling the provided element into view, taking into account
+ * the user's motion preferences.
+ */
+export function scrollElementIntoView(element: HTMLElement): void {
+    const reducedMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+    element.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
+}

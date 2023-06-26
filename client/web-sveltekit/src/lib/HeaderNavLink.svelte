@@ -14,7 +14,7 @@
             <slot name="icon" />
             &nbsp;
         {:else if svgIconPath}
-            <Icon svgPath={svgIconPath} aria-hidden="true" inline --color="var(--header-icon-color)" />
+            <Icon svgPath={svgIconPath} aria-hidden="true" --color="var(--header-icon-color)" />
             &nbsp;
         {/if}
         <span><slot /></span>
@@ -27,7 +27,9 @@
         display: flex;
         align-items: stretch;
         border-bottom: 2px solid transparent;
-        margin: 0 0.5rem;
+        margin: 1em;
+        margin-left: 0em;
+        white-space: nowrap;
 
         &:hover {
             border-color: var(--border-color-2);
@@ -51,6 +53,6 @@
 
     span,
     a {
-        color: var(--body-color);
+        color: white;
     }
 </style>

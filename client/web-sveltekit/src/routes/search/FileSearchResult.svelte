@@ -6,7 +6,8 @@
 
     import { pluralize } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { resultToMatchItems } from '$lib/search/utils'
+    import {scrollElementIntoView} from '$lib/dom'
+    import { mapContentMatchToMatchItems } from '$lib/search/api/results'
     import {
         displayRepoName,
         splitPath,
@@ -30,7 +31,7 @@
     $: repoName = result.repository
     $: repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     $: [fileBase, fileName] = splitPath(result.path)
-    $: items = resultToMatchItems(result)
+    $: items = mapContentMatchToMatchItems(result)
     $: expandedMatchGroups = ranking.expandedResults(items, context)
     $: collapsedMatchGroups = ranking.collapsedResults(items, context)
 
@@ -52,10 +53,7 @@
     let root: HTMLElement
     let userInteracted = false
     $: if (!expanded && root && userInteracted) {
-        setTimeout(() => {
-            const reducedMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
-            root.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
-        }, 0)
+        setTimeout(() => scrollElementIntoView(root), 0)
     }
 </script>
 

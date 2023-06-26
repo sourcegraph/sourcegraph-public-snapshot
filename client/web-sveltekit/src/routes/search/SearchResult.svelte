@@ -3,7 +3,7 @@
 
     import { formatRepositoryStarCount } from '$lib/branded'
     import Icon from '$lib/Icon.svelte'
-    import type { SearchMatch } from '$lib/shared'
+    import type { SearchMatch, OwnerMatch } from '$lib/shared'
     import Tooltip from '$lib/Tooltip.svelte'
 
     function codeHostIcon(repoName: string): { hostName: string; svgPath?: string } {
@@ -16,7 +16,7 @@
         return { hostName, svgPath: iconMap[hostName] }
     }
 
-    export let result: SearchMatch
+    export let result: Exclude<SearchMatch, OwnerMatch>
 
     $: icon = codeHostIcon(result.repository)
 </script>

@@ -6,6 +6,7 @@
     import FileTree from '$lib/repo/FileTree.svelte'
 
     import type { PageData } from './$types'
+    import { navFromPath } from '$lib/repo/utils'
 
     export let data: PageData
 
@@ -14,6 +15,8 @@
     }
 
     $: treeOrError = data.treeEntries
+    $: ({ repo, path } = $page.params)
+    $: nav = path ? navFromPath(path, repo, $page.url.pathname.includes('/-/blob/')) : []
     let showSidebar = true
 </script>
 
@@ -39,6 +42,16 @@
         {/if}
     </div>
     <div class="content">
+        {#if nav.length > 0}
+            <div class="ml-3 mt-1">
+                <span class="crumps">
+                    {#each nav as [label, url]}
+                        <span>/</span>
+                        <a href={url}>{label}</a>&nbsp;
+                    {/each}
+                </span>
+            </div>
+        {/if}
         <slot />
     </div>
 </section>
