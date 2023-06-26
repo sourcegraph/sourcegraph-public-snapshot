@@ -57,6 +57,6 @@ export const NoReposAddedState: FC = () => (
     <div className={styles.noRepoState}>
         <Icon svgPath={mdiGit} aria-hidden={true} className={styles.noRepoStateIcon} />
 
-        <Text className="mb-0">No repos added yet</Text>
+        <Text className="mb-0">Import your first repository</Text>
     </div>
 )
