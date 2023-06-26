@@ -70,6 +70,12 @@ async function getRelevantFiles(currentEditor: vscode.TextEditor, history: Histo
             // omit current file
             return
         }
+
+        // Only add files and VSCode user settings.
+        if (!['file', 'vscode-userdata'].includes(document.uri.scheme)) {
+            return
+        }
+
         if (document.languageId !== curLang) {
             // TODO(beyang): handle JavaScript <-> TypeScript and verify this works for C header files
             // omit files of other languages
@@ -86,8 +92,17 @@ async function getRelevantFiles(currentEditor: vscode.TextEditor, history: Histo
         })
     }
 
-    const documents = vscode.workspace.textDocuments
-    for (const document of documents) {
+    // Use tabs API to get current docs instead of `vscode.workspace.textDocuments`.
+    // See related discussion: https://github.com/microsoft/vscode/issues/15178
+    // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
+    const uris = vscode.window.tabGroups.all
+        .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
+        .filter(Boolean)
+
+    // Since documents are already opened, this function only gets references to them.
+    const docs = await Promise.all(uris.map(uri => uri && vscode.workspace.openTextDocument(uri)))
+
+    for (const document of docs) {
         if (document.fileName.endsWith('.git')) {
             // The VS Code API returns fils with the .git suffix for every open file
             continue

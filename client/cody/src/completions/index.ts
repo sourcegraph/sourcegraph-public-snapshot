@@ -239,6 +239,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             )
         }
 
+        if (!this.disableTimeouts) {
+            await new Promise<void>(resolve => setTimeout(resolve, timeout))
+        }
+
         // We don't need to make a request at all if the signal is already aborted after the
         // debounce
         if (abortController.signal.aborted) {
@@ -271,10 +275,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         this.abortOpenInlineCompletions = () => {
             previousAbort()
             stopLoading()
-        }
-
-        if (!this.disableTimeouts) {
-            await new Promise<void>(resolve => setTimeout(resolve, timeout))
         }
 
         const completions = (
