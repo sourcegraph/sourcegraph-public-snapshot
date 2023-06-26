@@ -272,7 +272,6 @@ export class AuthProvider {
             return
         }
         await this.localStorage.saveEndpoint(endpoint)
-        await updateConfiguration('serverEndpoint', endpoint)
         if (token) {
             await this.secretStorage.storeToken(endpoint, token)
         }
