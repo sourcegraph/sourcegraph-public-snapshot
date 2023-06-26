@@ -30,7 +30,7 @@ If the Sourcegraph upgrade fails, you can redeploy using the current `cluster.ya
 
 **Step 2**: Merge the new version of Sourcegraph into your release branch.
 
-  ```bash
+  ```sh
   cd $DEPLOY_SOURCEGRAPH_FORK
   # get updates
   git fetch upstream
@@ -46,13 +46,13 @@ If the Sourcegraph upgrade fails, you can redeploy using the current `cluster.ya
 
 Generate a new set of manifests locally using your current overlay `instances/$INSTANCE_NAME` (e.g. INSTANCE_NAME=my-sourcegraph) without applying to the cluster.
 
-  ```bash
+  ```sh
   $ kubectl kustomize instances/my-sourcegraph -o cluster.yaml
   ```
 
 Review the generated manifests to ensure they match your intended configuration and have the images for the `$NEW_VERSION` version.
 
-  ```bash
+  ```sh
   $ less cluster.yaml
   ```
 
@@ -62,7 +62,7 @@ Review the generated manifests to ensure they match your intended configuration 
 
 Apply the new manifests from the ouput file `cluster.yaml` to your cluster:
 
-  ```bash
+  ```sh
   $ kubectl apply --prune -l deploy=sourcegraph -f cluster.yaml
   ```
 
@@ -70,7 +70,7 @@ Apply the new manifests from the ouput file `cluster.yaml` to your cluster:
 
 **Step 5**: Monitor the status of the deployment to determine its success.
 
-  ```bash
+  ```sh
   $ kubectl get pods -o wide --watch
   ```
 
@@ -82,7 +82,7 @@ The following procedure is for performing a **standard upgrade** with Sourcegrap
 
 **Step 1**: Merge the new version of Sourcegraph into your release branch.
 
-  ```bash
+  ```sh
   cd $DEPLOY_SOURCEGRAPH_FORK
   # get updates
   git fetch upstream
@@ -106,13 +106,13 @@ For example, if you use [overlays to make changes to the manifests](https://gith
 
 **Step 3**: Apply the updates to your cluster.
 
-  ```bash
+  ```sh
   $ ./kubectl-apply-all.sh
   ```
 
 **Step 4**: Monitor the status of the deployment to determine its success.
 
-  ```bash
+  ```sh
   $ kubectl get pods -o wide --watch
   ```
 
@@ -120,9 +120,13 @@ For example, if you use [overlays to make changes to the manifests](https://gith
 
 ## Multi-version upgrades
 
+If you are upgrading to **Sourcegraph 5.1 or later**, we encourage you to perform an [**automatic multi-version upgrade**](../../updates/automatic.md). The following instructions are still applicable, just the manual version of what automatic multi-version upgrade do for you now (and therefore is valuable information during a bumpy upgrade).
+
+---
+
 > **⚠️ Attention:** please see our [cautionary note](../../updates/index.md#best-practices) on upgrades, if you have any concerns about running a multiversion upgrade, please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com) for advisement.
 
-To perform a multi-version upgrade on a Sourcegraph instance running on our **kubernetes** repo follow the procedure below:
+To perform a **manual** multi-version upgrade on a Sourcegraph instance running on our **kubernetes** repo follow the procedure below:
 
 1. **Check Upgrade Readiness**:
    - Check the [upgrade notes](../../updates/kubernetes.md#kubernetes-upgrade-notes) for the version range you're passing through.
@@ -143,8 +147,8 @@ To perform a multi-version upgrade on a Sourcegraph instance running on our **ku
        - indexed-search
 
     *convenience command:*
-    ```
-    kubectl scale deployment precise-code-intel-worker repo-updater searcher sourcegraph-frontend sourcegraph-frontend-internal symbols worker --replicas=0 && kubectl scale sts gitserver indexed-search --replicas=0
+    ```sh
+    $ kubectl scale deployment precise-code-intel-worker repo-updater searcher sourcegraph-frontend sourcegraph-frontend-internal symbols worker --replicas=0 && kubectl scale sts gitserver indexed-search --replicas=0
     ```
 
 3. **Run Migrator with the `upgrade` command**:
@@ -162,7 +166,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on our **ku
       >  - *Always use the latest image version of migrator for migrator commands, except the startup command `up`*
       >  - *You may add the `--dry-run` flag to the `command:` to test things out before altering the dbs*
      2. Run the following commands to schedule the migrator job with the upgrade command and monitor its progress:
-     ```bash
+     ```sh
      # To ensure no previous job invocations will conflict with our current invocation
      kubectl delete -f configure/migrator/migrator.Job.yaml
      # Start the migrator job
@@ -171,7 +175,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on our **ku
      kubectl logs job.batch/migrator -f
      ```
      **Example:**
-     ```bash
+     ```sh
      $ kubectl -n sourcegraph apply -f ./migrator.Job.yaml
      job.batch/migrator created
      $ kubectl -n sourcegraph get jobs
@@ -236,13 +240,13 @@ If you are rolling back more than a single version, then you must also [rollback
 
 For instances deployed using the [deploy-sourcegraph-k8s](https://github.com/sourcegraph/deploy-sourcegraph-k8s) repository:
 
-  ```bash
+  ```sh
   # Re-generate manifests
-  $ kubectl kustomize instances/$YOUR_INSTANCE -o cluster-rollback.yaml
+  kubectl kustomize instances/$YOUR_INSTANCE -o cluster-rollback.yaml
   # Review manifests
-  $ less cluster-rollback.yaml
+  less cluster-rollback.yaml
   # Re-deploy
-  $ kubectl apply --prune -l deploy=sourcegraph -f cluster-rollback.yaml
+  kubectl apply --prune -l deploy=sourcegraph -f cluster-rollback.yaml
   ```
 
 ### Rollback without Kustomize
@@ -251,7 +255,7 @@ For instances deployed using the [deploy-sourcegraph-k8s](https://github.com/sou
 
 For instances deployed using the old [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository:
 
-  ```bash
+  ```sh
   $ ./kubectl-apply-all.sh
   ```
 
