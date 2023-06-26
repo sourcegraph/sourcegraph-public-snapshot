@@ -120,7 +120,7 @@ For example, if you use [overlays to make changes to the manifests](https://gith
 
 ## Multi-version upgrades
 
-If you are upgrading to **Sourcegraph 5.1 or later**, we encourage you to perform an [**automatic multi-version upgrade**](/admin/updates/automatic.md). The following instructions are still applicable, just the manual version of what automatic multi-version upgrade do for you now (and therefore is valuable information during a bumpy upgrade).
+If you are upgrading to **Sourcegraph 5.1 or later**, we encourage you to perform an [**automatic multi-version upgrade**](../../updates/automatic.md). The following instructions are still applicable, just the manual version of what automatic multi-version upgrade do for you now (and therefore is valuable information during a bumpy upgrade).
 
 ---
 
