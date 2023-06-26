@@ -40,7 +40,6 @@ import { TestSupport } from '../test-support'
 
 import { fastFilesExist } from './fastFileFinder'
 import {
-    AuthStatus,
     ConfigurationSubsetForWebview,
     DOTCOM_URL,
     ExtensionMessage,
@@ -116,6 +115,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.currentWorkspaceRoot = ''
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
+                await this.updateCodebaseContext()
+            }),
+            vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
             })
         )
@@ -221,10 +223,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 this.loadChatHistory()
                 this.publishContextStatus()
-                this.publishConfig()
                 this.sendTranscript()
                 this.sendChatHistory()
                 await this.loadRecentChat()
+                this.publishConfig()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -242,6 +244,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
+                if (message.type === 'app' && message.endpoint) {
+                    await this.authProvider.appAuth(message.endpoint)
+                    break
+                }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
@@ -623,14 +629,26 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Save, verify, and sync authStatus between extension host and webview
      * activate extension when user has valid login
      */
-    public async syncAuthStatus(authStatus: AuthStatus): Promise<void> {
-        if (authStatus.isLoggedIn) {
-            void this.publishConfig()
-        }
+    public async syncAuthStatus(): Promise<void> {
+        const authStatus = this.authProvider.getAuthStatus()
         await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
         this.setWebviewView(authStatus.isLoggedIn ? 'chat' : 'login')
         await this.webview?.postMessage({ type: 'login', authStatus })
         this.sendEvent('auth', authStatus.isLoggedIn ? 'successfully' : 'failed')
+    }
+
+    /**
+     * Display app state in webview view that is used during Signin flow
+     */
+    private async sendLocalAppState(token: string | null): Promise<void> {
+        // Notify webview that app is installed
+        debug('ChatViewProvider:sendLocalAppState', 'isInstalled')
+        void this.webview?.postMessage({ type: 'app-state', isInstalled: true })
+        // Log user in if token is present and user is not logged in
+        if (token) {
+            debug('ChatViewProvider:sendLocalAppState', 'auth')
+            await this.authProvider.auth(LOCAL_APP_URL.href, token, this.config.customHeaders)
+        }
     }
 
     /**
@@ -774,19 +792,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
     }
 
-    /**
-     * Display app state in webview view that is used during Signin flow
-     */
-    private async sendLocalAppState(token: string | null): Promise<void> {
-        // Notify webview that app is installed
-        debug('ChatViewProvider:sendLocalAppState', 'isInstalled')
-        void this.webview?.postMessage({ type: 'app-state', isInstalled: true })
-        // Log user in if token is present and user is not logged in
-        if (token) {
-            debug('ChatViewProvider:sendLocalAppState', 'auth')
-            await this.authProvider.auth(LOCAL_APP_URL.href, token, this.config.customHeaders)
-        }
-    }
     /**
      * Display error message in webview view as banner in chat view
      * It does not display error message as assistant response

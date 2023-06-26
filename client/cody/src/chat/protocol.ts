@@ -21,7 +21,7 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'signin' | 'signout' | 'support' }
+    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app'; endpoint?: string }
     | { command: 'abort' }
 
 /**
@@ -85,7 +85,7 @@ export interface AuthStatus {
 }
 
 export const defaultAuthStatus = {
-    endpoint: DOTCOM_URL.href,
+    endpoint: '',
     isLoggedIn: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
@@ -122,8 +122,6 @@ export interface LocalEnv {
     hasAppJson: boolean
     isAppInstalled: boolean
     isAppRunning: boolean
-    // TODO: remove this once the experimental period for connect app is over
-    isAppConnectEnabled: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {

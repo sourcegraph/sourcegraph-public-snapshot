@@ -33,10 +33,11 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     callbackUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
 
     // Use postMessage to open because it won't open otherwise due to the sourcegraph:// scheme.
-    const openLink = (url: string): void =>
+    const authApp = (url: string): void =>
         vscodeAPI.postMessage({
-            command: 'links',
-            value: url,
+            command: 'auth',
+            type: 'app',
+            endpoint: url,
         })
 
     return (
@@ -44,7 +45,7 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
             <VSCodeButton
                 type="button"
                 disabled={!isOSSupported}
-                onClick={() => openLink(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}
+                onClick={() => authApp(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}
             >
                 <i className={'codicon codicon-' + buttonIcon} slot="start" />
                 {buttonText}
