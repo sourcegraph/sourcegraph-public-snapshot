@@ -322,7 +322,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
 interface WelcomeTextOptions {
     /** Provide users with a way to quickly access Cody docs/help.*/
     helpMarkdown?: string
-    /** Provide markdown to supplement the original message */
+    /** Provide additional content to supplement the original message. Example: tips, privacy policy. */
     afterMarkdown?: string
 }
 

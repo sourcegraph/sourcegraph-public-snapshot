@@ -2,6 +2,14 @@ import { marked } from 'marked'
 
 import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon } from '@sourcegraph/common'
 
+/**
+ * Supported URIs to render as links in outputted markdown.
+ * - https?: Web
+ * - vscode: VS Code URL scheme (open in editor)
+ * - command: VS Code command scheme (e.g. command:workbench.action.goToLine)
+ */
+const ALLOWED_URI_REGEXP = /^((https?|vscode):\/\/[^\s#$./?].\S*|command:.*)$/i
+
 const DOMPURIFY_CONFIG = {
     ALLOWED_TAGS: [
         'p',
@@ -35,7 +43,7 @@ const DOMPURIFY_CONFIG = {
         's',
         'u',
     ],
-    ALLOWED_URI_REGEXP: /^((https?|vscode):\/\/[^\s#$./?].\S*|command:.*)$/i,
+    ALLOWED_URI_REGEXP,
 }
 
 /**
