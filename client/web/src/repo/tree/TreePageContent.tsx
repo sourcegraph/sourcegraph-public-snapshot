@@ -588,23 +588,11 @@ const Ownership: React.FC<OwnershipProps> = ({ repo, filePath }) => {
                 )}
                 <SummaryContainer className={styles.tableSummary}>
                     {connection && (
-                        <>
-                            <ConnectionSummary
-                                compact={true}
-                                connection={connection}
-                                first={COUNT}
-                                noun="owner"
-                                pluralNoun="owners"
-                                hasNextPage={connection.pageInfo.hasNextPage}
-                            />
-                            <small>
-                                <Link
-                                    to={`${repo.url}/-/own?${filePath ? 'path=' + encodeURIComponent(filePath) : ''}`}
-                                >
-                                    Show more
-                                </Link>
-                            </small>
-                        </>
+                        <small>
+                            <Link to={`${repo.url}/-/own?${filePath ? 'path=' + encodeURIComponent(filePath) : ''}`}>
+                                Show more
+                            </Link>
+                        </small>
                     )}
                 </SummaryContainer>
             </ConnectionContainer>
