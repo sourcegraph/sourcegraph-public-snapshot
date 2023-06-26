@@ -22,9 +22,8 @@ Embeddings for relevant code files must be enabled for each repository that you'
 > embeddings will be enabled for all repositories by default.
 
 Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
-> NOTE: `Embeddings` and `completions` are not automatically enabled for cloud customers.
-> Cloud customers must enable `embeddings` and `completions` in the site-admin panel.
-> If these are not enabled, visiting `site-admin/cody` will result in a `404` error.
+
+> NOTE: Unless both completions and embeddings are configured, the `/site-admin/cody` page will not be available.
 
 Embeddings will not be generated for any repo unless an admin takes action. There are two ways to do this.
 
