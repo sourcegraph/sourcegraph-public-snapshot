@@ -25,13 +25,15 @@ interface GetContextOptions {
     isEmbeddingsContextEnabled?: boolean
 }
 
-export async function getContext(options: GetContextOptions): Promise<{
+interface GetContextResult {
     context: ReferenceSnippet[]
     logSummary: {
         embeddings?: number
         local?: number
     }
-}> {
+}
+
+export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
     const { maxChars, isEmbeddingsContextEnabled } = options
 
     /**

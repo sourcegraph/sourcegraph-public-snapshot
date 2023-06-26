@@ -15,7 +15,7 @@ import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
 import { postProcess } from './post-process'
-import { Provider, ProviderConfig } from './providers/provider'
+import { Provider, ProviderConfig, ProviderOptions } from './providers/provider'
 import { SNIPPET_WINDOW_SIZE, isAbortError } from './utils'
 
 interface CodyCompletionItemProviderConfig {
@@ -171,17 +171,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
         }
 
-        const { context: similarCode, logSummary: contextSummary } = await getContext({
-            currentEditor,
-            prefix,
-            suffix,
-            history: this.history,
-            jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
-            maxChars: this.promptChars,
-            codebaseContext: this.codebaseContext,
-            isEmbeddingsContextEnabled: this.isEmbeddingsContextEnabled,
-        })
-
         const completers: Provider[] = []
         let timeout: number
         let multilineMode: null | 'block' = null
@@ -212,11 +201,10 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffix,
             fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
             languageId,
-            snippets: similarCode,
             responsePercentage: this.responsePercentage,
             prefixPercentage: this.prefixPercentage,
             suffixPercentage: this.suffixPercentage,
-        }
+        } satisfies Omit<ProviderOptions, 'n' | 'multilineMode'>
 
         if (
             (multilineMode = detectMultilineMode(prefix, prevNonEmptyLine, sameLinePrefix, sameLineSuffix, languageId))
@@ -257,6 +245,17 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return []
         }
 
+        const { context: similarCode, logSummary: contextSummary } = await getContext({
+            currentEditor,
+            prefix,
+            suffix,
+            history: this.history,
+            jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
+            maxChars: this.promptChars,
+            codebaseContext: this.codebaseContext,
+            isEmbeddingsContextEnabled: this.isEmbeddingsContextEnabled,
+        })
+
         const logId = CompletionLogger.start({
             type: 'inline',
             multilineMode,
@@ -279,7 +278,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         }
 
         const completions = (
-            await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))
+            await Promise.all(completers.map(c => c.generateCompletions(abortController.signal, similarCode)))
         ).flat()
 
         // Post process

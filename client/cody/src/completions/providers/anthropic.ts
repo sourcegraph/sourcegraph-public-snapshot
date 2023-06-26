@@ -4,6 +4,7 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { Completion } from '..'
+import { ReferenceSnippet } from '../context'
 import { messagesToText } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -93,7 +94,7 @@ export class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(injectPrefix?: string): Message[] {
+    protected createPrompt(snippets: ReferenceSnippet[], injectPrefix?: string): Message[] {
         const prefixMessages = this.createPromptPrefix(injectPrefix)
         const referenceSnippetMessages: Message[] = []
 
@@ -132,7 +133,7 @@ export class AnthropicProvider extends Provider {
             }
         }
 
-        for (const snippet of this.snippets) {
+        for (const snippet of snippets) {
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
@@ -158,11 +159,11 @@ export class AnthropicProvider extends Provider {
         return [...referenceSnippetMessages, ...prefixMessages]
     }
 
-    public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
         // TODO: Bring back the logic with injectPrefix \n when the current line is non empty
 
         // Create prompt
-        const prompt = this.createPrompt()
+        const prompt = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
             throw new Error('prompt length exceeded maximum allowed chars')
         }
