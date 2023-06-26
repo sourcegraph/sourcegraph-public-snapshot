@@ -99,10 +99,10 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 
 func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
 	// Log which which actor is accessing the repo.
-	accesslog.Record(ss.Context(), req.Repo,
-		log.String("treeish", req.Treeish),
-		log.String("format", req.Format),
-		log.Strings("path", req.Pathspecs),
+	accesslog.Record(ss.Context(), req.GetRepo(),
+		log.String("treeish", req.GetTreeish()),
+		log.String("format", req.GetFormat()),
+		log.Strings("path", req.GetPathspecs()),
 	)
 
 	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
@@ -118,7 +118,7 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		Args: []string{
 			"archive",
 			"--worktree-attributes",
-			"--format=" + req.Format,
+			"--format=" + req.GetFormat(),
 		},
 	}
 
