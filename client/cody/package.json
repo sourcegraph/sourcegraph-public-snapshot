@@ -288,28 +288,26 @@
         "title": "Set Access Token"
       },
       {
+        "command": "cody.settings.user",
+        "category": "Cody",
+        "title": "User Settings",
+        "icon": "$(account)"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Sign Out",
+        "title": "Sign Out…",
         "icon": "$(sign-out)"
       },
       {
         "command": "cody.auth.signin",
         "category": "Cody",
-        "title": "Switch Account"
+        "title": "Switch Account…"
       },
       {
         "command": "cody.manual-completions",
         "category": "Cody",
         "title": "Open Completions Panel"
-      },
-      {
-        "command": "cody.settings.user",
-        "category": "Cody",
-        "title": "User Settings",
-        "group": "Cody",
-        "icon": "$(account)",
-        "when": "cody.activated"
       },
       {
         "command": "cody.settings.extension",
@@ -536,6 +534,10 @@
           "when": "!cody.activated"
         },
         {
+          "command": "cody.settings.user",
+          "when": "cody.activated && cody.test.inProgress"
+        },
+        {
           "command": "cody.comment.add",
           "when": "false"
         },
@@ -696,11 +698,6 @@
           "command": "cody.settings.extension",
           "when": "view == cody.chat",
           "group": "8_cody@1"
-        },
-        {
-          "command": "cody.settings.user",
-          "when": "view == cody.chat && cody.activated",
-          "group": "8_cody@0"
         },
         {
           "command": "cody.fixup.apply-all",
