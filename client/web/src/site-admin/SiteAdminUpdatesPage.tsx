@@ -146,9 +146,9 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
         const element = document.createElement('a')
         element.download = 'drift.json'
         element.href = URL.createObjectURL(new Blob([content], { type: 'application/json' }))
-        document.body.appendChild(element)
+        document.body.append(element)
         element.click()
-    }, [data?.site.upgradeReadiness.schemaDrift])
+    }, [data])
 
     const [setAutoUpgrade] = useMutation<SetAutoUpgradeResult, SetAutoUpgradeVariables>(SET_AUTO_UPGRADE)
     const [autoUpgradeEnabled, setAutoUpgradeEnabled] = useState(data?.site.autoUpgradeEnabled)
