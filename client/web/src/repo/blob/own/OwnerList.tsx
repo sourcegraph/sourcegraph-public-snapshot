@@ -191,8 +191,8 @@ export const OwnerList: FC<OwnerListProps> = ({
                                 <th colSpan={3}>
                                     <H4 className="mt-3 mb-2">Inference signals</H4>
                                     <Text className={styles.ownInferenceExplanation}>
-                                        These users have viewed or contributed to the file but are not registered owners
-                                        of the file.
+                                        These users have viewed or contributed to this part of the codebase but are not
+                                        registered owners.
                                     </Text>
                                 </th>
                             </tr>
