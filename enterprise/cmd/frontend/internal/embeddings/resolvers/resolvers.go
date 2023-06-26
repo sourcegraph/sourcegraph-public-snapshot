@@ -128,10 +128,8 @@ func (r *Resolver) RepoEmbeddingJobs(ctx context.Context, args graphqlbackend.Li
 	if !conf.EmbeddingsEnabled() {
 		return nil, errors.New("embeddings are not configured or disabled")
 	}
-	// 🚨 SECURITY: Only site admins may list repo embedding jobs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
+	// TODO(naman): temoporarily disabling site-admin check for listing repo embedding RepoEmbeddingJobs
+	// for embeddings status indicator in Cody App. Will add the check back if required by design.
 	return NewRepoEmbeddingJobsResolver(r.db, r.gitserverClient, r.repoEmbeddingJobsStore, args)
 }
 

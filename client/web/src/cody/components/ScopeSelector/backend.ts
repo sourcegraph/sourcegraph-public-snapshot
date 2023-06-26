@@ -11,6 +11,13 @@ export const ReposSelectorSearchQuery = gql`
                     id
                     serviceType
                 }
+                embeddingJobs(first: 1) {
+                    nodes {
+                        id
+                        state
+                        failureMessage
+                    }
+                }
             }
         }
     }
@@ -26,6 +33,13 @@ export const ReposStatusQuery = gql`
                 externalRepository {
                     id
                     serviceType
+                }
+                embeddingJobs(first: 1) {
+                    nodes {
+                        id
+                        state
+                        failureMessage
+                    }
                 }
             }
         }
