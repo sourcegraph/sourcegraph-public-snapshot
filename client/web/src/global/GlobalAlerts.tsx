@@ -123,9 +123,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                     <div>
                         <strong>Warning!</strong> No embeddings policies have been configured. This will lead to poor
                         results from Cody, Sourcegraph’s AI assistant. Add an{' '}
-                        <Link target="__blank" to="/site-admin/embeddings/configuration">
-                            embedding policy
-                        </Link>
+                        <Link to="/site-admin/embeddings/configuration">embedding policy</Link>
                     </div>
                     .
                 </DismissibleAlert>
