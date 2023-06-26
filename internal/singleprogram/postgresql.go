@@ -110,7 +110,16 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresF
 		PGDATASOURCE: "postgresql:///sourcegraph?host=" + unixSocketDir,
 	}
 
-	var pgPort uint32 = 5432
+	config := embeddedpostgres.DefaultConfig().
+		Version(embeddedpostgres.V14).
+		BinariesPath(filepath.Join(pgRootDir, "bin")).
+		DataPath(filepath.Join(pgRootDir, "data")).
+		RuntimePath(filepath.Join(pgRootDir, "runtime")).
+		Username(vars.PGUSER).
+		Database(vars.PGDATABASE).
+		UseUnixSocket(unixSocketDir).
+		StartTimeout(120 * time.Second).
+		Logger(debugLogLinesWriter(logger, "postgres output line"))
 
 	if runtime.GOOS == "windows" {
 		vars.PGHOST = "localhost"
@@ -121,28 +130,17 @@ func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresF
 			Host:   net.JoinHostPort("localhost", vars.PGPORT),
 		}).String()
 
-		unixSocketDir = ""
-
 		intPgPort, _ := strconv.ParseUint(vars.PGPORT, 10, 32)
-		pgPort = uint32(intPgPort)
+
+		config = config.
+			UseUnixSocket("").
+			Port(uint32(intPgPort)).
+			Password(vars.PGPASSWORD)
 
 		logger.Info(fmt.Sprintf("Embedded PostgreSQL running on %s:%s", vars.PGHOST, vars.PGPORT))
 	}
 
-	db := embeddedpostgres.NewDatabase(
-		embeddedpostgres.DefaultConfig().
-			Version(embeddedpostgres.V14).
-			BinariesPath(filepath.Join(pgRootDir, "bin")).
-			DataPath(filepath.Join(pgRootDir, "data")).
-			RuntimePath(filepath.Join(pgRootDir, "runtime")).
-			Username(vars.PGUSER).
-			Database(vars.PGDATABASE).
-			UseUnixSocket(unixSocketDir).
-			Port(pgPort).
-			Password(vars.PGPASSWORD).
-			StartTimeout(120 * time.Second).
-			Logger(debugLogLinesWriter(logger, "postgres output line")),
-	)
+	db := embeddedpostgres.NewDatabase(config)
 	if err := db.Start(); err != nil {
 		return noopStop, nil, err
 	}

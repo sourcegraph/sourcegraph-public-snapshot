@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -37,9 +38,11 @@ func Init(logger log.Logger) CleanupFunc {
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
 	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
 
-	// POSTGRES database, specifying a non-default port to avoid conflicting with developer's
-	// local servers, if they happen to have PostgreSQL running on their machines.
-	setDefaultEnv(logger, "PGPORT", "5434")
+	if runtime.GOOS == "windows" {
+		// POSTGRES database, specifying a non-default port to avoid conflicting with developer's
+		// local servers, if they happen to have PostgreSQL running on their machines.
+		setDefaultEnv(logger, "PGPORT", "5434")
+	}
 
 	// GITSERVER_EXTERNAL_ADDR is used by gitserver to identify itself in the
 	// list in SRC_GIT_SERVERS.
