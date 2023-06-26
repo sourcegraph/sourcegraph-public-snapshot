@@ -21,45 +21,45 @@ func Fg256Color(code int) Style { return Style{fmt.Sprintf("\033[38;5;%dm", code
 func Bg256Color(code int) Style { return Style{fmt.Sprintf("\033[48;5;%dm", code)} }
 
 var (
-	styleReset      = &Style{"\033[0m"}
-	styleLogo       = Fg256Color(57)
-	stylePending    = Fg256Color(4)
-	styleWarning    = Fg256Color(124)
-	styleFailure    = CombineStyles(styleBold, Fg256Color(196))
-	styleSuccess    = Fg256Color(2)
-	styleSuggestion = Fg256Color(244)
+	StyleReset      = &Style{"\033[0m"}
+	StyleLogo       = Fg256Color(57)
+	StylePending    = Fg256Color(4)
+	StyleWarning    = Fg256Color(124)
+	StyleFailure    = CombineStyles(StyleBold, Fg256Color(196))
+	StyleSuccess    = Fg256Color(2)
+	StyleSuggestion = Fg256Color(244)
 
-	styleBold      = Style{"\033[1m"}
-	styleItalic    = Style{"\033[3m"}
-	styleUnderline = Style{"\033[4m"}
+	StyleBold      = Style{"\033[1m"}
+	StyleItalic    = Style{"\033[3m"}
+	StyleUnderline = Style{"\033[4m"}
 
 	// Search-specific colors.
-	styleSearchQuery         = Fg256Color(68)
-	styleSearchBorder        = Fg256Color(239)
-	styleSearchLink          = Fg256Color(237)
-	styleSearchRepository    = Fg256Color(23)
-	styleSearchFilename      = Fg256Color(69)
-	styleSearchMatch         = CombineStyles(Fg256Color(0), Bg256Color(11))
-	styleSearchLineNumbers   = Fg256Color(69)
-	styleSearchCommitAuthor  = Fg256Color(2)
-	styleSearchCommitSubject = Fg256Color(68)
-	styleSearchCommitDate    = Fg256Color(23)
+	StyleSearchQuery         = Fg256Color(68)
+	StyleSearchBorder        = Fg256Color(239)
+	StyleSearchLink          = Fg256Color(237)
+	StyleSearchRepository    = Fg256Color(23)
+	StyleSearchFilename      = Fg256Color(69)
+	StyleSearchMatch         = CombineStyles(Fg256Color(0), Bg256Color(11))
+	StyleSearchLineNumbers   = Fg256Color(69)
+	StyleSearchCommitAuthor  = Fg256Color(2)
+	StyleSearchCommitSubject = Fg256Color(68)
+	StyleSearchCommitDate    = Fg256Color(23)
 
-	styleWhiteOnPurple  = CombineStyles(Fg256Color(255), Bg256Color(55))
-	styleGreyBackground = CombineStyles(Fg256Color(0), Bg256Color(242))
+	StyleWhiteOnPurple  = CombineStyles(Fg256Color(255), Bg256Color(55))
+	StyleGreyBackground = CombineStyles(Fg256Color(0), Bg256Color(242))
 
 	// Search alert specific colors.
-	styleSearchAlertTitle               = Fg256Color(124)
-	styleSearchAlertDescription         = Fg256Color(124)
-	styleSearchAlertProposedTitle       = Style{""}
-	styleSearchAlertProposedQuery       = Fg256Color(69)
-	styleSearchAlertProposedDescription = Style{""}
+	StyleSearchAlertTitle               = Fg256Color(124)
+	StyleSearchAlertDescription         = Fg256Color(124)
+	StyleSearchAlertProposedTitle       = Style{""}
+	StyleSearchAlertProposedQuery       = Fg256Color(69)
+	StyleSearchAlertProposedDescription = Style{""}
 
-	styleLinesDeleted = Fg256Color(196)
-	styleLinesAdded   = Fg256Color(2)
+	StyleLinesDeleted = Fg256Color(196)
+	StyleLinesAdded   = Fg256Color(2)
 
 	// Colors
-	styleGrey   = Fg256Color(8)
-	styleYellow = Fg256Color(220)
-	styleOrange = Fg256Color(202)
+	StyleGrey   = Fg256Color(8)
+	StyleYellow = Fg256Color(220)
+	StyleOrange = Fg256Color(202)
 )
