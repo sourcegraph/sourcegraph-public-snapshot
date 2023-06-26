@@ -1,4 +1,4 @@
-import React, { FunctionComponent, useEffect, useMemo, useState } from 'react'
+import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiAlertOctagram, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
@@ -133,6 +133,23 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
         {}
     )
 
+    const exportDrift = useCallback(() => {
+        if (!data) {
+            return
+        }
+
+        const content = JSON.stringify(data.site.upgradeReadiness.schemaDrift)
+
+        // Followed this advice on SO :shrug:
+        // https://stackoverflow.com/questions/44656610/download-a-string-as-txt-file-in-react
+
+        const element = document.createElement('a')
+        element.download = 'drift.json'
+        element.href = URL.createObjectURL(new Blob([content], { type: 'application/json' }))
+        document.body.append(element)
+        element.click()
+    }, [data])
+
     const [setAutoUpgrade] = useMutation<SetAutoUpgradeResult, SetAutoUpgradeVariables>(SET_AUTO_UPGRADE)
     const [autoUpgradeEnabled, setAutoUpgradeEnabled] = useState(data?.site.autoUpgradeEnabled)
     const handleToggle = async (): Promise<void> => {
@@ -209,10 +226,28 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
                     <hr className="my-3" />
                     <div className="d-flex flex-row justify-content-between">
                         <H3>Schema drift</H3>
-                        <Button onClick={() => refetch()} variant="primary" size="sm" aria-label="refresh drift check">
-                            {' '}
-                            Refresh{' '}
-                        </Button>
+
+                        <div>
+                            {data.site.upgradeReadiness.schemaDrift.length > 0 && (
+                                <Button
+                                    onClick={() => exportDrift()}
+                                    variant="secondary"
+                                    size="sm"
+                                    aria-label="export schema drift"
+                                    className="mr-2"
+                                >
+                                    Export
+                                </Button>
+                            )}
+                            <Button
+                                onClick={() => refetch()}
+                                variant="primary"
+                                size="sm"
+                                aria-label="refresh drift check"
+                            >
+                                Refresh
+                            </Button>
+                        </div>
                     </div>
                     {data.site.upgradeReadiness.schemaDrift.length > 0 ? (
                         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded} openByDefault={false}>
