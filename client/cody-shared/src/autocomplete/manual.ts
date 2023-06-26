@@ -1,9 +1,108 @@
+import { CodebaseContext } from '../codebase-context'
 import { SourcegraphNodeCompletionsClient } from '../sourcegraph-api/completions/nodeClient'
 import { Message } from '../sourcegraph-api/completions/types'
 
-import { Completion } from '.'
-import { ReferenceSnippet } from './context'
-import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, messagesToText } from './utils'
+import { Completion, CurrentDocumentContextWithLanguage, History, TextEditor } from '.'
+import { ReferenceSnippet, getContext } from './context'
+import { logCompletionEvent } from './logger'
+import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, messagesToText, SNIPPET_WINDOW_SIZE } from './utils'
+
+const LOG_MANUAL = { type: 'manual' }
+
+export abstract class ManualCompletionService {
+    private promptTokens: number
+    protected maxPrefixTokens: number
+    protected maxSuffixTokens: number
+    private abortOpenManualCompletion: () => void = () => {}
+
+    constructor(
+        private textEditor: TextEditor,
+        private webviewErrorMessenger: (error: string) => Promise<void>,
+        private completionsClient: SourcegraphNodeCompletionsClient,
+        private history: History,
+        private codebaseContext: CodebaseContext,
+        private contextWindowTokens = 2048, // 8001
+        private charsPerToken = 4,
+        private responseTokens = 200,
+        private prefixPercentage = 0.6,
+        private suffixPercentage = 0.1
+    ) {
+        this.promptTokens = this.contextWindowTokens - this.responseTokens
+        this.maxPrefixTokens = Math.floor(this.promptTokens * this.prefixPercentage)
+        this.maxSuffixTokens = Math.floor(this.promptTokens * this.suffixPercentage)
+    }
+
+    protected tokToChar(tokens: number): number {
+        return tokens * this.charsPerToken
+    }
+
+    abstract getCurrentDocumentContext(): Promise<CurrentDocumentContextWithLanguage | null>
+    abstract emitCompletions(docContext: CurrentDocumentContextWithLanguage, completions: Completion[]): void
+
+    public async fetchAndShowManualCompletions(): Promise<void> {
+        this.abortOpenManualCompletion()
+        const abortController = new AbortController()
+        this.abortOpenManualCompletion = () => abortController.abort()
+
+        const docContext = await this.getCurrentDocumentContext()
+
+        if (docContext === null) {
+            console.error('not showing completions, no currently open doc')
+            return
+        }
+        const { prefix, suffix } = docContext
+
+        const remainingChars = this.tokToChar(this.promptTokens)
+
+        const completionNoSnippets = new ManualCompletionProvider(
+            this.completionsClient,
+            remainingChars,
+            this.responseTokens,
+            [],
+            prefix,
+            suffix,
+            '',
+            docContext.languageId
+        )
+        const emptyPromptLength = completionNoSnippets.emptyPromptLength()
+
+        const contextChars = this.tokToChar(this.promptTokens) - emptyPromptLength
+
+        const { context: similarCode } = await getContext({
+            currentEditor: this.textEditor,
+            prefix,
+            suffix,
+            history: this.history,
+            jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
+            maxChars: contextChars,
+            codebaseContext: this.codebaseContext,
+        })
+
+        const completer = new ManualCompletionProvider(
+            this.completionsClient,
+            remainingChars,
+            this.responseTokens,
+            similarCode,
+            prefix,
+            suffix,
+            '',
+            docContext.languageId
+        )
+
+        try {
+            logCompletionEvent('started', LOG_MANUAL)
+            const completions = await completer.generateCompletions(abortController.signal, 3)
+            this.emitCompletions(docContext, completions)
+            logCompletionEvent('suggested', LOG_MANUAL)
+        } catch (error) {
+            if (error.message === 'aborted') {
+                return
+            }
+
+            await this.webviewErrorMessenger(`FetchAndShowCompletions - ${error}`)
+        }
+    }
+}
 
 export class ManualCompletionProvider {
     constructor(

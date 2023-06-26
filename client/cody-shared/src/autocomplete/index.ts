@@ -12,6 +12,11 @@ export interface CurrentDocumentContext {
     nextNonEmptyLine: string
 }
 
+export interface CurrentDocumentContextWithLanguage extends CurrentDocumentContext {
+    languageId: string
+    markdownLanguage: string
+}
+
 export interface TextEditor {
     getOpenDocuments(): LightTextDocument[]
     getCurrentDocument(): LightTextDocument | null

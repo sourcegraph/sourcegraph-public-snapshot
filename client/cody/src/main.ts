@@ -13,7 +13,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { CodyCompletionItemProvider } from './autocomplete'
 import { CompletionsDocumentProvider } from './autocomplete/docprovider'
 import { VSCodeHistory } from './autocomplete/history'
-import { ManualCompletionService } from './autocomplete/manual'
+import { ManualCompletionServiceVSCode } from './autocomplete/manual'
 import { ChatViewProvider } from './chat/ChatViewProvider'
 import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
 import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
@@ -361,7 +361,7 @@ function createCompletionsProvider(
     disposables.push(vscode.workspace.registerTextDocumentContentProvider('cody', documentProvider))
 
     const history = new VSCodeHistory()
-    const manualCompletionService = new ManualCompletionService(
+    const manualCompletionService = new ManualCompletionServiceVSCode(
         webviewErrorMessenger,
         completionsClient,
         documentProvider,

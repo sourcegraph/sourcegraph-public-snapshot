@@ -31,8 +31,8 @@ export type Requests = {
     //             ....
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
-    // Client requests list of completions
-    'completions/execute': [null, null]
+    // Client requests manual completion
+    'completions/executeManual': [null, null]
 
     // ================
     // Server -> Client
