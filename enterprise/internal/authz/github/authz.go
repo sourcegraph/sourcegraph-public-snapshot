@@ -108,11 +108,8 @@ func NewAuthzProviders(
 		}
 
 		opts := database.ExternalAccountsDeleteOptions{
-			ClientIDsOpts: database.ClientIDsOpts{
-				ClientIDs: clientIDs,
-				Not:       true,
-			},
-			ServiceType: extsvc.TypeGitHub,
+			ExcludeClientIDs: clientIDs,
+			ServiceType:      extsvc.TypeGitHub,
 		}
 
 		_ = db.UserExternalAccounts().Delete(ctx, opts)

@@ -362,20 +362,15 @@ WHERE id = $1
 	return err
 }
 
-type ClientIDsOpts struct {
-	ClientIDs []string
-	Not       bool
-}
-
 // ExternalAccountsDeleteOptions defines criteria that will be used to select
 // which accounts to soft delete.
 type ExternalAccountsDeleteOptions struct {
 	// A slice of ExternalAccountIDs
-	IDs           []int32
-	UserID        int32
-	AccountID     string
-	ServiceType   string
-	ClientIDsOpts ClientIDsOpts
+	IDs              []int32
+	UserID           int32
+	AccountID        string
+	ServiceType      string
+	ExcludeClientIDs []string
 }
 
 // Delete will soft delete all accounts matching the options combined using AND.
@@ -399,16 +394,12 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, opt ExternalAcco
 	if opt.ServiceType != "" {
 		conds = append(conds, sqlf.Sprintf("service_type=%s", opt.ServiceType))
 	}
-	if len(opt.ClientIDsOpts.ClientIDs) > 0 {
-		clientIDs := make([]*sqlf.Query, len(opt.ClientIDsOpts.ClientIDs))
-		for i, clientID := range opt.ClientIDsOpts.ClientIDs {
+	if len(opt.ExcludeClientIDs) > 0 {
+		clientIDs := make([]*sqlf.Query, len(opt.ExcludeClientIDs))
+		for i, clientID := range opt.ExcludeClientIDs {
 			clientIDs[i] = sqlf.Sprintf("%s", clientID)
 		}
-		if opt.ClientIDsOpts.Not {
-			conds = append(conds, sqlf.Sprintf("client_id NOT IN (%s)", sqlf.Join(clientIDs, ",")))
-		} else {
-			conds = append(conds, sqlf.Sprintf("client_id IN (%s)", sqlf.Join(clientIDs, ",")))
-		}
+		conds = append(conds, sqlf.Sprintf("client_id NOT IN (%s)", sqlf.Join(clientIDs, ",")))
 	}
 
 	// We only have the default deleted_at clause, do nothing
