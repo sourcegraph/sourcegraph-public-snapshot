@@ -135,7 +135,7 @@ func Test_convertGitCloneURLToCodebaseName(t *testing.T) {
 		//
 		// No clue why an HTTPS URL gets translated into a git@github.com format (or why it has a leading slash)
 		// but this exists in the wild so we should handle it ;)
-		{"git@github.com:/sourcegraph/handbook", autogold.Expect("github.com//sourcegraph/handbook")},
+		{"git@github.com:/sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.cloneURL, func(t *testing.T) {
