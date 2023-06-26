@@ -47,6 +47,8 @@ Executors deployed in kubernetes do not use [Firecracker](index.md#how-it-works)
 
 If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md) or [installing the binary](deploy_executors_binary.md) directly.
 
+
+<!--
 # Deploying Sourcegraph executors on Kubernetes
 
 <aside class="experimental">
@@ -191,3 +193,5 @@ Executors deployed on Kubernetes do not use [Firecracker](executors.md#how-it-wo
 
 If you have security concerns, consider deploying via [terraform](deploy_executors_terraform.md)
 or [installing the binary](deploy_executors_binary.md) directly.
+
+-->
