@@ -900,6 +900,13 @@ export async function getCodebaseContext(
     }
     const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
     const gitOutput = gitCommand.stdout.toString().trim()
+
+    if (config.codebase) {
+        void vscode.window.showInformationMessage(
+            `You have configured the repository name ${config.codebase} in your settings. Please remove that to use the current workspace repository.`
+        )
+    }
+
     // Get codebase from config or fallback to getting repository name from git clone URL
     const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
     if (!codebase) {
