@@ -33,18 +33,19 @@ type GRPCServer struct {
 func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
 	gs.Server.operations = gs.Server.ensureOperations()
 
-	var internalReq protocol.BatchLogRequest
-	internalReq.FromProto(req)
 	// Validate request parameters
-	if len(req.RepoCommits) == 0 {
+	if len(req.GetRepoCommits()) == 0 {
 		return &proto.BatchLogResponse{}, nil
 	}
-	if !strings.HasPrefix(req.Format, "--format=") {
+	if !strings.HasPrefix(req.GetFormat(), "--format=") {
 		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
 	}
 
+	var r protocol.BatchLogRequest
+	r.FromProto(req)
+
 	// Handle unexpected error conditions
-	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, internalReq)
+	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, r)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -99,10 +100,10 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 
 func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
 	// Log which which actor is accessing the repo.
-	accesslog.Record(ss.Context(), req.Repo,
-		log.String("treeish", req.Treeish),
-		log.String("format", req.Format),
-		log.Strings("path", req.Pathspecs),
+	accesslog.Record(ss.Context(), req.GetRepo(),
+		log.String("treeish", req.GetTreeish()),
+		log.String("format", req.GetFormat()),
+		log.Strings("path", req.GetPathspecs()),
 	)
 
 	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
@@ -118,7 +119,7 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		Args: []string{
 			"archive",
 			"--worktree-attributes",
-			"--format=" + req.Format,
+			"--format=" + req.GetFormat(),
 		},
 	}
 
@@ -349,10 +350,12 @@ func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 }
 
 func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
+	repositories := req.GetRepos()
+
 	resp := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(repositories)),
 	}
-	for _, repo := range req.Repos {
+	for _, repo := range repositories {
 		repoName := api.RepoName(repo)
 		result := gs.Server.repoCloneProgress(repoName)
 		resp.Results[repoName] = result
