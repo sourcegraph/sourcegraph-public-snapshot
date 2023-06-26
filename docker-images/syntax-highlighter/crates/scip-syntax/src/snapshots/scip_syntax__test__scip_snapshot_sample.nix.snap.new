@@ -1,0 +1,510 @@
+---
+source: crates/scip-syntax/src/lib.rs
+assertion_line: 113
+expression: dumped
+---
+  { lib, pkgs, ... }:
+//  ^^^ definition scip-ctags . . . 
+//       ^^^^ definition scip-ctags . . . 
+  let
+    lockBackground = builtins.path {
+//  ^^^^^^^^^^^^^^ definition scip-ctags lockBackground.
+//  ^^^^^^^^^^^^^^ definition scip-ctags . . . 
+      path = ./lock-background.jpg;
+//    ^^^^ definition scip-ctags path.
+      name = "slick-lock-background";
+//    ^^^^ definition scip-ctags name.
+    };
+  in
+  {
+    imports = [
+//  ^^^^^^^ definition scip-ctags imports.
+      ./hardware-configuration.nix
+    ];
+  
+    boot.loader.systemd-boot.enable = true;
+//  ^^^^ definition scip-ctags boot.
+//       ^^^^^^ definition scip-ctags loader.
+//              ^^^^^^^^^^^^ definition scip-ctags systemd-boot.
+//                           ^^^^^^ definition scip-ctags enable.
+    boot.loader.efi.canTouchEfiVariables = true;
+//  ^^^^ definition scip-ctags boot.
+//       ^^^^^^ definition scip-ctags loader.
+//              ^^^ definition scip-ctags efi.
+//                  ^^^^^^^^^^^^^^^^^^^^ definition scip-ctags canTouchEfiVariables.
+    boot.supportedFilesystems = [ "zfs" "ntfs" ];
+//  ^^^^ definition scip-ctags boot.
+//       ^^^^^^^^^^^^^^^^^^^^ definition scip-ctags supportedFilesystems.
+  
+    boot.kernel.sysctl."net.ipv4.conf.all.arp_ignore" = 1;
+//  ^^^^ definition scip-ctags boot.
+//       ^^^^^^ definition scip-ctags kernel.
+//              ^^^^^^ definition scip-ctags sysctl.
+    boot.kernel.sysctl."net.ipv4.conf.all.arp_announce" = 1;
+//  ^^^^ definition scip-ctags boot.
+//       ^^^^^^ definition scip-ctags kernel.
+//              ^^^^^^ definition scip-ctags sysctl.
+  
+    networking = {
+//  ^^^^^^^^^^ definition scip-ctags networking.
+      firewall.enable = false;
+//    ^^^^^^^^ definition scip-ctags firewall.
+//             ^^^^^^ definition scip-ctags enable.
+      nameservers = [ "1.1.1.1" "8.8.8.8" ];
+//    ^^^^^^^^^^^ definition scip-ctags nameservers.
+      hostName = "noah-nixos-desktop";
+//    ^^^^^^^^ definition scip-ctags hostName.
+      hostId = "8425e349";
+//    ^^^^^^ definition scip-ctags hostId.
+      networkmanager = {
+//    ^^^^^^^^^^^^^^ definition scip-ctags networkmanager.
+        enable = true;
+//      ^^^^^^ definition scip-ctags enable.
+        dns = "none";
+//      ^^^ definition scip-ctags dns.
+        extraConfig = ''
+//      ^^^^^^^^^^^ definition scip-ctags extraConfig.
+          [connection-wifi-wlp6s0]
+          match-device=interface-name:wlp6s0
+          ipv4.route-metric=10
+  
+          [connection-eth-eno1]
+          match-device=interface-name:eno1
+          ipv4.route-metric=100
+        '';
+      };
+      extraHosts = ''
+//    ^^^^^^^^^^ definition scip-ctags extraHosts.
+        127.0.0.1 sourcegraph.test
+      '';
+    };
+  
+    time.timeZone = "Europe/Dublin";
+//  ^^^^ definition scip-ctags time.
+//       ^^^^^^^^ definition scip-ctags timeZone.
+  
+    i18n.defaultLocale = "en_US.UTF-8";
+//  ^^^^ definition scip-ctags i18n.
+//       ^^^^^^^^^^^^^ definition scip-ctags defaultLocale.
+    #console = {
+    #  font = "Lat2-Terminus16";
+    #  keyMap = "us";
+    #  useXkbConfig = true; # use xkbOptions in tty.
+    #};
+  
+    fonts = {
+//  ^^^^^ definition scip-ctags fonts.
+      fonts = with pkgs; [
+//    ^^^^^ definition scip-ctags fonts.
+        noto-fonts
+        noto-fonts-cjk
+        noto-fonts-emoji
+        noto-fonts-emoji-blob-bin
+        joypixels
+        dejavu_fonts
+        fira-code
+        font-awesome
+        font-awesome_5
+        monostroom
+        code2000
+      ];
+      fontDir.enable = true;
+//    ^^^^^^^ definition scip-ctags fontDir.
+//            ^^^^^^ definition scip-ctags enable.
+      fontconfig = {
+//    ^^^^^^^^^^ definition scip-ctags fontconfig.
+        enable = true;
+//      ^^^^^^ definition scip-ctags enable.
+        hinting = {
+//      ^^^^^^^ definition scip-ctags hinting.
+          enable = true;
+//        ^^^^^^ definition scip-ctags enable.
+          autohint = false;
+//        ^^^^^^^^ definition scip-ctags autohint.
+          style = "hintslight";
+//        ^^^^^ definition scip-ctags style.
+        };
+        subpixel = {
+//      ^^^^^^^^ definition scip-ctags subpixel.
+          rgba = "rgb";
+//        ^^^^ definition scip-ctags rgba.
+          lcdfilter = "default";
+//        ^^^^^^^^^ definition scip-ctags lcdfilter.
+        };
+        defaultFonts = {inherit (import ./fonts.nix) monospace sansSerif emoji serif; };
+//      ^^^^^^^^^^^^ definition scip-ctags defaultFonts.
+      };
+    };
+  
+    services.zfs.autoSnapshot.enable = true;
+//  ^^^^^^^^ definition scip-ctags services.
+//           ^^^ definition scip-ctags zfs.
+//               ^^^^^^^^^^^^ definition scip-ctags autoSnapshot.
+//                            ^^^^^^ definition scip-ctags enable.
+    services.zfs.autoScrub.enable = true;
+//  ^^^^^^^^ definition scip-ctags services.
+//           ^^^ definition scip-ctags zfs.
+//               ^^^^^^^^^ definition scip-ctags autoScrub.
+//                         ^^^^^^ definition scip-ctags enable.
+  
+    location = {
+//  ^^^^^^^^ definition scip-ctags location.
+      latitude = 52.3379105;
+//    ^^^^^^^^ definition scip-ctags latitude.
+      longitude = -6.4560767;
+//    ^^^^^^^^^ definition scip-ctags longitude.
+    };
+  
+    services.geoclue2.enable = true;
+//  ^^^^^^^^ definition scip-ctags services.
+//           ^^^^^^^^ definition scip-ctags geoclue2.
+//                    ^^^^^^ definition scip-ctags enable.
+    services.redshift = {
+//  ^^^^^^^^ definition scip-ctags services.
+//           ^^^^^^^^ definition scip-ctags redshift.
+      enable = true;
+//    ^^^^^^ definition scip-ctags enable.
+      temperature.night = 4500;
+//    ^^^^^^^^^^^ definition scip-ctags temperature.
+//                ^^^^^ definition scip-ctags night.
+    };
+    services.xserver = {
+//  ^^^^^^^^ definition scip-ctags services.
+//           ^^^^^^^ definition scip-ctags xserver.
+      enable = true;
+//    ^^^^^^ definition scip-ctags enable.
+      exportConfiguration = true;
+//    ^^^^^^^^^^^^^^^^^^^ definition scip-ctags exportConfiguration.
+  
+      windowManager.i3 = {
+//    ^^^^^^^^^^^^^ definition scip-ctags windowManager.
+//                  ^^ definition scip-ctags i3.
+        enable = true;
+//      ^^^^^^ definition scip-ctags enable.
+        extraPackages = with pkgs; [
+//      ^^^^^^^^^^^^^ definition scip-ctags extraPackages.
+          dmenu
+          rofi
+          polybar
+        ];
+        extraSessionCommands = ''
+//      ^^^^^^^^^^^^^^^^^^^^ definition scip-ctags extraSessionCommands.
+          eval $(${pkgs.gnome3.gnome-keyring}/bin/gnome-keyring-daemon --daemonize --components=ssh,secrets)
+          export SSH_AUTH_SOCK
+        '';
+      };
+  
+      displayManager.defaultSession = "none+i3";
+//    ^^^^^^^^^^^^^^ definition scip-ctags displayManager.
+//                   ^^^^^^^^^^^^^^ definition scip-ctags defaultSession.
+      displayManager.lightdm = {
+//    ^^^^^^^^^^^^^^ definition scip-ctags displayManager.
+//                   ^^^^^^^ definition scip-ctags lightdm.
+        enable = true;
+//      ^^^^^^ definition scip-ctags enable.
+        greeter.enable = true;
+//      ^^^^^^^ definition scip-ctags greeter.
+//              ^^^^^^ definition scip-ctags enable.
+        greeters.slick = {
+//      ^^^^^^^^ definition scip-ctags greeters.
+//               ^^^^^ definition scip-ctags slick.
+          enable = true;
+//        ^^^^^^ definition scip-ctags enable.
+          draw-user-backgrounds = false;
+//        ^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags draw-user-backgrounds.
+          extraConfig = ''
+//        ^^^^^^^^^^^ definition scip-ctags extraConfig.
+            [Greeter]
+            background=${lockBackground}
+            stretch-background-across-monitors=false
+          '';
+        };
+      };
+  
+      dpi = 96;
+//    ^^^ definition scip-ctags dpi.
+      videoDrivers = [ "nvidia" ];
+//    ^^^^^^^^^^^^ definition scip-ctags videoDrivers.
+      screenSection = ''
+//    ^^^^^^^^^^^^^ definition scip-ctags screenSection.
+        Option "metamodes" "DP-4.8: 2560x1440_60 +0+0 {ForceCompositionPipeline=On, ForceFullCompositionPipeline=On}, HDMI-0: 1920x1080_60 +2560+360"
+      '';
+    };
+    services.picom.enable = true;
+//  ^^^^^^^^ definition scip-ctags services.
+//           ^^^^^ definition scip-ctags picom.
+//                 ^^^^^^ definition scip-ctags enable.
+    hardware.opengl.enable = true;
+//  ^^^^^^^^ definition scip-ctags hardware.
+//           ^^^^^^ definition scip-ctags opengl.
+//                  ^^^^^^ definition scip-ctags enable.
+    # hardware.nvidia.forceFullCompositionPipeline = true;
+  
+    # Configure keymap in X11
+    # services.xserver.layout = "us";
+    # services.xserver.xkbOptions = {
+    #   "eurosign:e";
+    #   "caps:escape" # map caps to escape.
+    # };
+  
+    services.printing = {
+//  ^^^^^^^^ definition scip-ctags services.
+//           ^^^^^^^^ definition scip-ctags printing.
+      enable = true;
+//    ^^^^^^ definition scip-ctags enable.
+      drivers = with pkgs; [ epson-escpr ];
+//    ^^^^^^^ definition scip-ctags drivers.
+    };
+  
+    sound.enable = true;
+//  ^^^^^ definition scip-ctags sound.
+//        ^^^^^^ definition scip-ctags enable.
+    hardware.pulseaudio.enable = true;
+//  ^^^^^^^^ definition scip-ctags hardware.
+//           ^^^^^^^^^^ definition scip-ctags pulseaudio.
+//                      ^^^^^^ definition scip-ctags enable.
+  
+    users.mutableUsers = false;
+//  ^^^^^ definition scip-ctags users.
+//        ^^^^^^^^^^^^ definition scip-ctags mutableUsers.
+    users.users.noah = {
+//  ^^^^^ definition scip-ctags users.
+//        ^^^^^ definition scip-ctags users.
+//              ^^^^ definition scip-ctags noah.
+      isNormalUser = true;
+//    ^^^^^^^^^^^^ definition scip-ctags isNormalUser.
+      extraGroups = [ "wheel" "networkmanager" "docker" "audio" ];
+//    ^^^^^^^^^^^ definition scip-ctags extraGroups.
+      shell = pkgs.fish;
+//    ^^^^^ definition scip-ctags shell.
+      home = "/home/noah";
+//    ^^^^ definition scip-ctags home.
+      createHome = true;
+//    ^^^^^^^^^^ definition scip-ctags createHome.
+      hashedPassword = "$y$jFT$4BKFwYX3OJFl9W6Md0cw./$fS16Nf1gFV3PecFbe5LfzCulv4OoLJFKz8nEfXi.pz0";
+//    ^^^^^^^^^^^^^^ definition scip-ctags hashedPassword.
+    };
+  
+    environment.sessionVariables = with pkgs; {
+//  ^^^^^^^^^^^ definition scip-ctags environment.
+//              ^^^^^^^^^^^^^^^^ definition scip-ctags sessionVariables.
+      JAVA_8_HOME = "${jdk8}";
+//    ^^^^^^^^^^^ definition scip-ctags JAVA_8_HOME.
+      JAVA_11_HOME = "${jdk11}";
+//    ^^^^^^^^^^^^ definition scip-ctags JAVA_11_HOME.
+      JAVA_17_HOME = "${jdk17}";
+//    ^^^^^^^^^^^^ definition scip-ctags JAVA_17_HOME.
+      JAVA_19_HOME = "${jdk19}";
+//    ^^^^^^^^^^^^ definition scip-ctags JAVA_19_HOME.
+      _JAVA_OPTIONS = "-Dawt.useSystemAAFontSettings=lcd";
+//    ^^^^^^^^^^^^^ definition scip-ctags _JAVA_OPTIONS.
+      JAVA_HOME = "${jdk11}";
+//    ^^^^^^^^^ definition scip-ctags JAVA_HOME.
+      RUST_SRC_PATH = "${pkgs.rust.packages.stable.rustPlatform.rustLibSrc}";
+//    ^^^^^^^^^^^^^ definition scip-ctags RUST_SRC_PATH.
+    };
+  
+    environment.pathsToLink = [ "/libexec" "/share/nix-direnv" ];
+//  ^^^^^^^^^^^ definition scip-ctags environment.
+//              ^^^^^^^^^^^ definition scip-ctags pathsToLink.
+    environment.systemPackages = with pkgs; [
+//  ^^^^^^^^^^^ definition scip-ctags environment.
+//              ^^^^^^^^^^^^^^ definition scip-ctags systemPackages.
+      vim
+      git
+      git-crypt
+      wget
+      coreutils
+      man
+      tree
+      mkpasswd
+      firefox
+      thunderbird
+      vscode
+      gparted
+      pass
+      browserpass
+      openssh
+      gnupg
+      pinentry
+      pinentry-gnome
+      discord
+      slack
+      jetbrains.idea-ultimate
+      jetbrains.idea-community
+      jdk8
+      jdk11
+      jdk17
+      jdk19
+      kotlin
+      go_1_19
+      gopls
+      python311
+      # bazel
+      nodejs-19_x
+      maven
+      gradle
+      synergy
+      kitty
+      nil
+      nix-index
+      cinnamon.nemo
+      cinnamon.mint-themes
+      (cinnamon.mint-y-icons.overrideAttrs (oldAttrs: {
+        pname = "mint-l-icons";
+//      ^^^^^ definition scip-ctags pname.
+        src = pkgs.fetchFromGitHub {
+//      ^^^ definition scip-ctags src.
+          owner = "linuxmint";
+//        ^^^^^ definition scip-ctags owner.
+          repo = "mint-l-icons";
+//        ^^^^ definition scip-ctags repo.
+          rev = "e9fd3cf2d3f3a22647e9a83da9b16538795fddbb";
+//        ^^^ definition scip-ctags rev.
+          sha256 = "sha256-RDozoknjXqzjQxLgOAaD/BH7hhi5mNlW+Vne93aEt0I=";
+//        ^^^^^^ definition scip-ctags sha256.
+        };
+      }))
+      htop
+      coursier
+      (adapta-gtk-theme.overrideAttrs (oldAttrs: {
+        version = "3.95.0.11-custom";
+//      ^^^^^^^ definition scip-ctags version.
+        src = pkgs.fetchFromGitHub {
+//      ^^^ definition scip-ctags src.
+          owner = "Strum355";
+//        ^^^^^ definition scip-ctags owner.
+          repo = "adapta-gtk-theme";
+//        ^^^^ definition scip-ctags repo.
+          rev = "26dcba1068bd2ce30328df44a911d14471dac030";
+//        ^^^ definition scip-ctags rev.
+          sha256 = "sha256-MHkR3sUNjeO9A751y3jCdyB4OJhBUZA1X/Sxtx8HOcM=";
+//        ^^^^^^ definition scip-ctags sha256.
+        };
+      }))
+      lxappearance
+      flameshot
+      gnome.zenity
+      gnome.gnome-keyring
+      gnome.file-roller
+      gnome.eog
+      playerctl
+      fzf
+      fishPlugins.foreign-env
+      fishPlugins.fzf-fish
+      fishPlugins.bobthefish
+      wdiff
+      diff-so-fancy
+      fontconfig
+      font-manager
+      vlc
+      nitrogen
+      xclip
+      unzip
+      file
+      gcc
+      clang
+      telegram-desktop
+      zoom-us
+      patchelf
+      direnv
+      nix-direnv
+      docker-compose
+      graphviz
+      jq
+    ];
+  
+    security.pam.services.lightdm.enableGnomeKeyring = true;
+//  ^^^^^^^^ definition scip-ctags security.
+//           ^^^ definition scip-ctags pam.
+//               ^^^^^^^^ definition scip-ctags services.
+//                        ^^^^^^^ definition scip-ctags lightdm.
+//                                ^^^^^^^^^^^^^^^^^^ definition scip-ctags enableGnomeKeyring.
+    services.gnome.gnome-keyring.enable = true;
+//  ^^^^^^^^ definition scip-ctags services.
+//           ^^^^^ definition scip-ctags gnome.
+//                 ^^^^^^^^^^^^^ definition scip-ctags gnome-keyring.
+//                               ^^^^^^ definition scip-ctags enable.
+  
+    programs = {
+//  ^^^^^^^^ definition scip-ctags programs.
+      gnupg.agent = {
+//    ^^^^^ definition scip-ctags gnupg.
+//          ^^^^^ definition scip-ctags agent.
+        enable = true;
+//      ^^^^^^ definition scip-ctags enable.
+      };
+      # nix-ld.enable = true;
+      # ssh.startAgent = true;
+      fish.enable = true;
+//    ^^^^ definition scip-ctags fish.
+//         ^^^^^^ definition scip-ctags enable.
+      browserpass.enable = true;
+//    ^^^^^^^^^^^ definition scip-ctags browserpass.
+//                ^^^^^^ definition scip-ctags enable.
+      dconf.enable = true;
+//    ^^^^^ definition scip-ctags dconf.
+//          ^^^^^^ definition scip-ctags enable.
+    };
+  
+    #services.passSecretService.enable = true;
+    # services.openssh.enable = true;
+  
+    virtualisation.docker = {
+//  ^^^^^^^^^^^^^^ definition scip-ctags virtualisation.
+//                 ^^^^^^ definition scip-ctags docker.
+      rootless.enable = true;
+//    ^^^^^^^^ definition scip-ctags rootless.
+//             ^^^^^^ definition scip-ctags enable.
+      enable = true;
+//    ^^^^^^ definition scip-ctags enable.
+    };
+  
+    nixpkgs.config.joypixels.acceptLicense = true;
+//  ^^^^^^^ definition scip-ctags nixpkgs.
+//          ^^^^^^ definition scip-ctags config.
+//                 ^^^^^^^^^ definition scip-ctags joypixels.
+//                           ^^^^^^^^^^^^^ definition scip-ctags acceptLicense.
+    nixpkgs.config.allowUnfree = true;
+//  ^^^^^^^ definition scip-ctags nixpkgs.
+//          ^^^^^^ definition scip-ctags config.
+//                 ^^^^^^^^^^^ definition scip-ctags allowUnfree.
+    nixpkgs.overlays = [
+//  ^^^^^^^ definition scip-ctags nixpkgs.
+//          ^^^^^^^^ definition scip-ctags overlays.
+      (self: super: { nix-direnv = super.nix-direnv.override { enableFlakes = true; }; })
+//                    ^^^^^^^^^^ definition scip-ctags nix-direnv.
+//                                                             ^^^^^^^^^^^^ definition scip-ctags enableFlakes.
+    ];
+    nix = {
+//  ^^^ definition scip-ctags nix.
+      settings = {
+//    ^^^^^^^^ definition scip-ctags settings.
+        experimental-features = [ "nix-command" "flakes" ];
+//      ^^^^^^^^^^^^^^^^^^^^^ definition scip-ctags experimental-features.
+        auto-optimise-store = true;
+//      ^^^^^^^^^^^^^^^^^^^ definition scip-ctags auto-optimise-store.
+        keep-outputs = true;
+//      ^^^^^^^^^^^^ definition scip-ctags keep-outputs.
+      };
+      gc.automatic = true;
+//    ^^ definition scip-ctags gc.
+//       ^^^^^^^^^ definition scip-ctags automatic.
+      optimise.automatic = true;
+//    ^^^^^^^^ definition scip-ctags optimise.
+//             ^^^^^^^^^ definition scip-ctags automatic.
+    };
+  
+    system.stateVersion = "22.11";
+//  ^^^^^^ definition scip-ctags system.
+//         ^^^^^^^^^^^^ definition scip-ctags stateVersion.
+    system.activationScripts.ldso = lib.stringAfter [ "usrbinenv" ] ''
+//  ^^^^^^ definition scip-ctags system.
+//         ^^^^^^^^^^^^^^^^^ definition scip-ctags activationScripts.
+//                           ^^^^ definition scip-ctags ldso.
+      mkdir -m 0755 -p /lib64
+      ln -sfn ${pkgs.glibc.out}/lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2.tmp
+      mv -f /lib64/ld-linux-x86-64.so.2.tmp /lib64/ld-linux-x86-64.so.2 # atomically replace
+    '';
+  }
+

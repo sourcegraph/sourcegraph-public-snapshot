@@ -109,4 +109,6 @@ mod test {
         test_scip_tags_go_constant,
         "go-const.go"
     );
+
+    generate_tags_and_snapshot!(All, test_scip_nix_diff, test_tags_nix_diff, "sample.nix");
 }

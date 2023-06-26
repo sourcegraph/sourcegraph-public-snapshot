@@ -1793,6 +1793,7 @@ dependencies = [
  "tree-sitter-jsonnet",
  "tree-sitter-kotlin",
  "tree-sitter-nickel",
+ "tree-sitter-nix",
  "tree-sitter-perl",
  "tree-sitter-pod",
  "tree-sitter-python",
@@ -2470,6 +2471,16 @@ dependencies = [
 name = "tree-sitter-nickel"
 version = "0.0.1"
 source = "git+https://github.com/nickel-lang/tree-sitter-nickel?rev=d6c7eeb751038f934b5b1aa7ff236376d0235c56#d6c7eeb751038f934b5b1aa7ff236376d0235c56"
+dependencies = [
+ "cc",
+ "tree-sitter",
+]
+
+[[package]]
+name = "tree-sitter-nix"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ae8c93b7dd2afcd9667daae048135be9ee268e9e3900f4d7d0556a63ec5336b1"
 dependencies = [
  "cc",
  "tree-sitter",

@@ -219,6 +219,7 @@ mod tags {
     create_tags_configuration!(rust, BundledParser::Rust, "rust");
     create_tags_configuration!(go, BundledParser::Go, "go");
     create_tags_configuration!(zig, BundledParser::Zig, "zig");
+    create_tags_configuration!(nix, BundledParser::Nix, "nix");
 
     pub fn get_tag_configuration(parser: &BundledParser) -> Option<&'static TagConfiguration> {
         match parser {
@@ -235,6 +236,7 @@ mod tags {
             BundledParser::Rust => Some(rust()),
             BundledParser::Go => Some(go()),
             BundledParser::Zig => Some(zig()),
+            BundledParser::Nix => Some(nix()),
             _ => None,
         }
     }
