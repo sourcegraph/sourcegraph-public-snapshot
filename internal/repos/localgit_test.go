@@ -120,11 +120,11 @@ func Test_convertGitCloneURLToCodebaseName(t *testing.T) {
 		cloneURL string
 		expect   autogold.Value
 	}{
-		{"", autogold.Expect(nil)},
-		{"https://github.com/sourcegraph/handbook", autogold.Expect(nil)},
-		{"https://github.com/sourcegraph/handbook.git", autogold.Expect(nil)},
-		{"git@github.com:sourcegraph/handbook", autogold.Expect(nil)},
-		{"github:sourcegraph/handbook", autogold.Expect(nil)},
+		{"", autogold.Expect("")},
+		{"https://github.com/sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"https://github.com/sourcegraph/handbook.git", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"git@github.com:sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"github:sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.cloneURL, func(t *testing.T) {
