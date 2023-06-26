@@ -1580,6 +1580,7 @@ WITH events AS (
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
     AND lower(name) like '%%cody%%'
+	AND name <> 'CodyVSCodeExtension:CodySavedLogin:executed'
 ),
 code_generation_keys AS (
   SELECT * FROM unnest(ARRAY[
