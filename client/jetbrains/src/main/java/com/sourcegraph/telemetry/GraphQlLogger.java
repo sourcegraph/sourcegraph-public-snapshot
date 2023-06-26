@@ -6,7 +6,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.api.GraphQlClient;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.config.SettingsComponent;
 import java.io.IOException;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
@@ -39,10 +38,7 @@ public class GraphQlLogger {
   private static void logEvent(
       Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
     String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
-    String accessToken =
-        ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
+    String accessToken = ConfigUtil.getProjectAccessToken(project);
     String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project);
     new Thread(
             () -> {

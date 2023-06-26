@@ -105,6 +105,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const codyChatStore = useCodyChat({
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
+        autoLoadScopeWithRepositories: isSourcegraphApp,
     })
     const {
         initializeNewChat,

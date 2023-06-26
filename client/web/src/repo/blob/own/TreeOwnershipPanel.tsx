@@ -89,8 +89,17 @@ export const TreeOwnershipPanel: React.FunctionComponent<OwnershipPanelProps & T
                 makeOwnerError={makeOwnerError}
                 refetch={refetch}
                 showAddOwnerButton={showAddOwnerButton}
+                canAssignOwners={canAssignOwners}
             />
         )
     }
-    return <OwnerList repoID={repoID} filePath={filePath} refetch={refetch} showAddOwnerButton={showAddOwnerButton} />
+    return (
+        <OwnerList
+            repoID={repoID}
+            filePath={filePath}
+            refetch={refetch}
+            showAddOwnerButton={showAddOwnerButton}
+            canAssignOwners={canAssignOwners}
+        />
+    )
 }

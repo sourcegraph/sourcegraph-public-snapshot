@@ -85,7 +85,7 @@ describe('getWords', () => {
 })
 
 describe('bestJaccardMatch', () => {
-    it('should return the best match', () => {
+    it('should return the best match in 5 line windows', () => {
         const matchText = [
             'foo',
             'bar',
@@ -118,7 +118,7 @@ describe('bestJaccardMatch', () => {
             )
         ).toEqual({
             score: 0.3,
-            content: ['quux', 'quuz', 'corge', 'grault', 'garply', 'waldo'].join('\n'),
+            content: ['corge', 'grault', 'garply', 'waldo', 'fred', 'plugh'].join('\n'),
         })
     })
 

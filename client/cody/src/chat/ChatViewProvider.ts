@@ -251,10 +251,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
-            case 'settings': {
+            case 'settings':
                 await this.authProvider.auth(message.serverEndpoint, message.accessToken, this.config.customHeaders)
                 break
-            }
             case 'insert':
                 await vscode.commands.executeCommand('cody.inline.insert', message.text)
                 break
