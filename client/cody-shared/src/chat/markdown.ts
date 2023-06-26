@@ -6,9 +6,9 @@ import { registerHighlightContributions, renderMarkdown as renderMarkdownCommon 
  * Supported URIs to render as links in outputted markdown.
  * - https?: Web
  * - vscode: VS Code URL scheme (open in editor)
- * - command: VS Code command scheme (e.g. command:workbench.action.goToLine)
+ * - command:cody.welcome: VS Code command scheme exception we add to support directly linking to the welcome guide from within the chat.
  */
-const ALLOWED_URI_REGEXP = /^((https?|vscode):\/\/[^\s#$./?].\S*|command:.*)$/i
+const ALLOWED_URI_REGEXP = /^((https?|vscode):\/\/[^\s#$./?].\S*|command:cody.welcome)$/i
 
 const DOMPURIFY_CONFIG = {
     ALLOWED_TAGS: [
