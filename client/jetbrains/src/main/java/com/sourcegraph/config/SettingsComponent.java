@@ -182,7 +182,6 @@ public class SettingsComponent {
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)
             .addComponent(codyAppComment, 2)
-            //            .addComponent(codyAppPanelContent, 1)
             .getPanel();
     JBLabel dotComComment =
         new JBLabel(
