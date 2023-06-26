@@ -38,7 +38,7 @@ The following snippet shows an example of a valid `CODEOWNERS` file.
   **Example**: `docs/` matches `/testing/docs/foo` and `/docs/foo/bar`, but does not match `/docs` or `/testing/docs`.
 
 
-The rules are considered independently and in order. Rules farther down the file take precedence. Only **one** rule matches.
+The rules are considered independently and in order. Rules farther down the file take precedence. Only **one** rule matches. So for instance for `/build/logs/log-1.txt` the owner will only be `alice@sourcegraph.com` and not `@text-team` since the `/build/logs/` rule will take precedence over `*.txt` rule.
 
 ## Limitations
 
@@ -68,4 +68,4 @@ Searches at specific commits will return any `CODEOWNERS` data that exists at th
 
 Read more on how to [manually ingest `CODEOWNERS` data](codeowners_ingestion.md) into your Sourcegraph instance.
 
-The docs detail how to use the UI or `src-cli` to upload `CODEOWNERS` files to Sourcegraph.
+The [docs](codeowners_ingestion.md) detail how to use the UI or `src-cli` to upload `CODEOWNERS` files to Sourcegraph.
