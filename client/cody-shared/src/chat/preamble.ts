@@ -81,7 +81,7 @@ export function getMultiRepoPreamble(codebases: string[]): Message[] {
             'I have access to files present in the following repositories:\n' +
                 codebases.map((name, index) => `${index + 1}. ${name}`).join('\n') +
                 '\\n I can answer questions about code and files present in all the above repositories. ' +
-                'If your ask a question about a repository which I do not have access to, I will ask you to add additional repositories to the chat context using the repositories selector below the input box to help me answer the question. ' +
+                'If you ask a question about a repository which I do not have access to, I will ask you to add additional repositories to the chat context using the repositories selector below the input box to help me answer the question. ' +
                 'If I have access to the repository but do not know the answer to the question, I will tell you I do not know and what context you need to provide me for me to answer the question.'
         )
     }
