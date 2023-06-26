@@ -1,4 +1,5 @@
 import { LRUCache } from 'lru-cache'
+import * as vscode from 'vscode'
 
 import { logEvent } from '../event-logger'
 
@@ -75,7 +76,11 @@ export function accept(id: string, lines: number): void {
     completionEvent.acceptedAt = Date.now()
 
     logSuggestionEvent()
-    logCompletionEvent('accepted', { ...completionEvent.params, lines })
+    logCompletionEvent('accepted', {
+        ...completionEvent.params,
+        lines,
+        otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
+    })
 }
 
 export function noResponse(id: string): void {
@@ -118,10 +123,21 @@ function logSuggestionEvent(): void {
             latency,
             displayDuration,
             read: forceRead || read,
+            otherCompletionProviderEnabled: otherCompletionProviderEnabled(),
         })
     })
 
     // Completions are kept in the LRU cache for longer. This is because they
     // can still become visible if e.g. they are served from the cache and we
     // need to retain the ability to mark them as seen
+}
+
+const otherCompletionProviders = [
+    'GitHub.copilot',
+    'GitHub.copilot-nightly',
+    'TabNine.tabnine-vscode',
+    'TabNine.tabnine-vscode-self-hosted-updater',
+]
+function otherCompletionProviderEnabled(): boolean {
+    return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
 }
