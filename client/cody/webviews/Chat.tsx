@@ -128,6 +128,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
+            helpMarkdown="See [Getting Started](command:cody.welcome) for tips and tricks."
         />
     )
 }

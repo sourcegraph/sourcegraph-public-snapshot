@@ -824,6 +824,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         webviewView.webview.options = {
             enableScripts: true,
             localResourceRoots: [webviewPath],
+            enableCommandUris: true,
         }
 
         // Create Webview using client/cody/index.html
