@@ -78,8 +78,9 @@ type OwnershipStatsStore interface {
 	// To find ownership for specific file tree, specify RepoID and Path in TreeLocationOpts.
 	QueryIndividualCounts(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)
 
-	// QueryAggregateCounts looks up ownership aggregate data for a file tree.
-	// At this point these include total count of files that are owned via CODEOWNERS.
+	// QueryAggregateCounts looks up ownership aggregate data for a file tree. At
+	// this point these include total count of files that are owned via CODEOWNERS
+	// and assigned ownership.
 	QueryAggregateCounts(context.Context, TreeLocationOpts) (PathAggregateCounts, error)
 }
 
@@ -226,6 +227,7 @@ func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLoc
 }
 
 const treeAggregateCountsFmtstr = `
+	WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = 'analytics' LIMIT 1)
 	SELECT
 		SUM(COALESCE(s.tree_codeowned_files_count, 0)),
 		SUM(COALESCE(s.tree_assigned_ownership_files_count, 0)),
@@ -233,7 +235,7 @@ const treeAggregateCountsFmtstr = `
 		MAX(s.last_updated_at)
 	FROM ownership_path_stats AS s
 	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
-	WHERE p.absolute_path = %s
+	WHERE p.absolute_path = %s AND p.repo_id NOT IN (SELECT repo.id FROM repo, signal_config WHERE repo.name ~~ ANY(signal_config.excluded_repo_patterns))
 `
 
 func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLocationOpts) (PathAggregateCounts, error) {
