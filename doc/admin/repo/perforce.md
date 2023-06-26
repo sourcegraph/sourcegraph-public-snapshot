@@ -182,7 +182,7 @@ To enable file-level permissions:
 - As a special case, commits in which a user does not have permissions to read any files are hidden. If a user can read a subset of files in a commit, only those files are shown.
 - [The host field from protections are not supported](#known-issues-and-limitations).
 - [file-level permissions must be disabled for Batch Changes to work](#known-issues-and-limitations).
-- Setting `authz.enforceForSiteAdmins` to `true` in the site configuration will enforce permissions for admin users. They may not be able to see repositories and their contents if their Sourcegraph user account email does not match with their email on the perforce server.
+- Setting `authz.enforceForSiteAdmins` to `true` in the site configuration will enforce permissions for admin users. They may not be able to see repositories and their contents if their Sourcegraph user account email does not match with their email on the Perforce server.
 
 ## Configuration
 
