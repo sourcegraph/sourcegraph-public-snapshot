@@ -1512,6 +1512,11 @@ type Query {
         Include repositories that are corrupt
         """
         corrupted: Boolean = false
+
+        """
+        Include repositories that has embeddings enabled
+        """
+        embeddingEnabled: Boolean
         """
         Return repositories that are associated with the given external service.
         """

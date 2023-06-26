@@ -691,6 +691,11 @@ type ReposListOptions struct {
 	// A repository is corrupt in the gitserver_repos table if it has a non-null value in gitserver_repos.corrupted_at
 	OnlyCorrupted bool
 
+	// EmbeddingEnabled, if true, will filter to only repos that do have an entry in the repo_embedding_jobs table,
+	// if false, will filter to only repos that do NOT have an entry in the repo_embedding_jobs table,
+	// if nil, will not filter on the repo_embedding_jobs table.
+	EmbeddingEnabled *bool
+
 	// MinLastChanged finds repository metadata or data that has changed since
 	// MinLastChanged. It filters against repos.UpdatedAt,
 	// gitserver.LastChanged and searchcontexts.UpdatedAt.
@@ -1098,6 +1103,14 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	}
 	if opt.OnlyPrivate {
 		where = append(where, sqlf.Sprintf("private"))
+	}
+
+	if opt.EmbeddingEnabled != nil {
+		not := "NOT"
+		if *opt.EmbeddingEnabled {
+			not = ""
+		}
+		where = append(where, sqlf.Sprintf(fmt.Sprintf("repo.id %s IN (SELECT DISTINCT repo_id FROM repo_embedding_jobs WHERE state IN ('queued', 'processing', 'completed'))", not)))
 	}
 
 	if len(opt.Names) > 0 {

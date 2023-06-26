@@ -30,6 +30,8 @@ type repositoryArgs struct {
 	Indexed    bool
 	NotIndexed bool
 
+	EmbeddingEnabled *bool
+
 	CloneStatus *string
 	FailedFetch bool
 	Corrupted   bool
@@ -56,6 +58,7 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 
 	opt.FailedFetch = args.FailedFetch
 	opt.OnlyCorrupted = args.Corrupted
+	opt.EmbeddingEnabled = args.EmbeddingEnabled
 
 	if !args.Cloned && !args.NotCloned {
 		return database.ReposListOptions{}, errors.New("excluding cloned and not cloned repos leaves an empty set")

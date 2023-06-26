@@ -37,6 +37,12 @@ const QUERY = gql`
         codeIntelligenceConfigurationPolicies(forEmbeddings: true) {
             totalCount
         }
+        repos: repositories(cloned: true) {
+            totalCount
+        }
+        reposWithEmbeddings: repositories(cloned: true, embeddingEnabled: true) {
+            totalCount
+        }
     }
 
     ${siteFlagFieldsFragment}
@@ -53,6 +59,14 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
 
     const showNoEmbeddingPoliciesAlert =
         window.context?.codyEnabled && data?.codeIntelligenceConfigurationPolicies.totalCount === 0
+
+    const reposCount = data?.repos.totalCount ?? 0
+    const reposWithEmbeddingsCount = data?.reposWithEmbeddings.totalCount ?? 0
+    const showIncreaseReposWithEmbeddingsAlert =
+        window.context?.codyEnabled &&
+        !showNoEmbeddingPoliciesAlert &&
+        reposCount > 0 &&
+        reposWithEmbeddingsCount / reposCount < 0.5
 
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
@@ -124,6 +138,24 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                         <strong>Warning!</strong> No embeddings policies have been configured. This will lead to poor
                         results from Cody, Sourcegraph’s AI assistant. Add an{' '}
                         <Link to="/site-admin/embeddings/configuration">embedding policy</Link>
+                    </div>
+                    .
+                </DismissibleAlert>
+            )}
+            {showIncreaseReposWithEmbeddingsAlert && authenticatedUser?.siteAdmin && (
+                <DismissibleAlert
+                    key="needs-more-repos-with-embeddings-alert"
+                    partialStorageKey="needs-more-repos-with-embeddings-alert"
+                    variant="warning"
+                    className={styles.alert}
+                >
+                    <div>
+                        <strong>Warning!</strong> Less than 50% of your active repositories are covered by your
+                        embedding policy. To provide the best experience to Cody AI assistant users, add more
+                        repositories to your{' '}
+                        <Link to="/site-admin/embeddings/configuration" className="text-nowrap">
+                            embedding policy
+                        </Link>
                     </div>
                     .
                 </DismissibleAlert>
