@@ -116,6 +116,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.disposables.push(
             vscode.window.onDidChangeActiveTextEditor(async () => {
                 await this.updateCodebaseContext()
+            }),
+            vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+                await this.updateCodebaseContext()
             })
         )
 
