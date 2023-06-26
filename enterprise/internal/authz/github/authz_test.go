@@ -150,8 +150,8 @@ func TestNewAuthzProviders(t *testing.T) {
 			assert.Empty(t, initResults.Problems)
 			assert.Empty(t, initResults.Warnings)
 			assert.Empty(t, initResults.InvalidConnections)
-			assert.True(t, calledDeleteOptions.Not)
-			assert.Contains(t, calledDeleteOptions.ClientIDs, clientID)
+			assert.True(t, calledDeleteOptions.ClientIDsOpts.Not)
+			assert.Contains(t, calledDeleteOptions.ClientIDsOpts.ClientIDs, clientID)
 		})
 
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
