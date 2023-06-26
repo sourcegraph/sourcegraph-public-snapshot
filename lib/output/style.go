@@ -7,6 +7,7 @@ import (
 
 type Style interface {
 	fmt.Stringer
+	lol()
 }
 
 func CombineStyles(styles ...Style) Style {
@@ -23,6 +24,7 @@ func Bg256Color(code int) Style { return &style{fmt.Sprintf("\033[48;5;%dm", cod
 type style struct{ code string }
 
 func (s *style) String() string { return s.code }
+func (s *style) lol()           {}
 
 var (
 	StyleReset      = &style{"\033[0m"}
