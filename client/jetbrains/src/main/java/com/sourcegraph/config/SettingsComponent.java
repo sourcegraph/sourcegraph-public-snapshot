@@ -42,6 +42,9 @@ public class SettingsComponent {
   private JBCheckBox isUrlNotificationDismissedCheckBox;
   private JBCheckBox areCompletionsEnabledCheckBox;
 
+  private JButton testCodyAppConnectionButton;
+  private JLabel testCodyAppConnectionLabel;
+
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
   }
@@ -175,10 +178,6 @@ public class SettingsComponent {
             UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     codyAppComment.setEnabled(isCodyAppInstalledAndConfigured);
-    //    JPanel codyAppPanelContent =
-    //        FormBuilder.createFormBuilder()
-    //            .addComponentToRightColumn(dotComAccessTokenComment, 1)
-    //            .getPanel();
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)

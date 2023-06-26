@@ -51,12 +51,9 @@ public class LocalAppManager {
 
   @NotNull
   public static Optional<String> getLocalAppAccessToken() {
-    Optional<String> token =
-        getLocalAppInfo()
-            .flatMap(appInfo -> Optional.ofNullable(appInfo.getToken()))
-            .filter(AuthorizationUtil::isValidAccessToken);
-    System.err.println("Local Cody app access token: " + token.orElse("none"));
-    return token;
+    return getLocalAppInfo()
+        .flatMap(appInfo -> Optional.ofNullable(appInfo.getToken()))
+        .filter(AuthorizationUtil::isValidAccessToken);
   }
 
   @NotNull
@@ -95,7 +92,7 @@ public class LocalAppManager {
                 + responseBody);
         return Optional.empty();
       } else {
-        System.err.println("Running local Cody app version: " + responseBody);
+        System.out.println("Running local Cody app version: " + responseBody);
         return Optional.of(responseBody);
       }
     } catch (ConnectException e) {
