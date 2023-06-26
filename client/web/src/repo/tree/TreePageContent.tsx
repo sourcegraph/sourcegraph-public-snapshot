@@ -54,7 +54,7 @@ import { canWriteRepoMetadata } from '../../util/rbac'
 import { OWNER_FIELDS, RECENT_CONTRIBUTOR_FIELDS, RECENT_VIEW_FIELDS } from '../blob/own/grapqlQueries'
 import { GitCommitNodeTableRow } from '../commits/GitCommitNodeTableRow'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
-import { getRefType } from '../utils'
+import { getRefType, isPerforceChangelistMappingEnabled } from '../utils'
 
 import { DiffStat, FilesCard, ReadmePreviewCard } from './TreePagePanels'
 
@@ -769,8 +769,7 @@ const Commits: React.FC<CommitsProps> = ({ repo, revision, filePath, tree }) => 
     const connection = node?.commit?.ancestors
 
     const revisionType =
-        window.context.experimentalFeatures.perforceChangelistMapping === 'enabled' &&
-        node?.sourceType === RepositoryType.PERFORCE_DEPOT
+        isPerforceChangelistMappingEnabled() && node?.sourceType === RepositoryType.PERFORCE_DEPOT
             ? '/-/changelists'
             : '/-/commits'
 

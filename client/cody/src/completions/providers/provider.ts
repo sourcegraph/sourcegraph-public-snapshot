@@ -3,8 +3,9 @@ import { ReferenceSnippet } from '../context'
 
 export interface ProviderConfig {
     /**
-     * A factory to create instances of the provider. This pattern allows us to inject provider
-     * specific parameters outside of the callers of the factory.
+     * A factory to create instances of the provider. This pattern allows us to
+     * inject provider specific parameters outside of the callers of the
+     * factory.
      */
     create(options: ProviderOptions): Provider
 
@@ -17,6 +18,11 @@ export interface ProviderConfig {
      * snippets and can be validated by the provider implementing it.
      */
     maximumContextCharacters: number
+
+    /**
+     * When set, multi-line completions will trigger more often. This is
+     */
+    enableExtendedMultilineTriggers: boolean
 
     /**
      * A string identifier used in event logs

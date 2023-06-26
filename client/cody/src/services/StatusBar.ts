@@ -4,7 +4,7 @@ import type { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
 import { getConfiguration } from '../configuration'
 
-import { SettingsOptionItems, FeedbackOptionItems } from './FeedbackOptions'
+import { FeedbackOptionItems } from './FeedbackOptions'
 
 export interface CodyStatusBar {
     dispose(): void
@@ -12,7 +12,7 @@ export interface CodyStatusBar {
 }
 
 const DEFAULT_TEXT = '$(cody-logo-heavy)'
-const DEFAULT_TOOLTIP = 'Cody Features Toggle'
+const DEFAULT_TOOLTIP = 'Cody Settings'
 
 export function createStatusBar(): CodyStatusBar {
     const statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right)
@@ -56,17 +56,18 @@ export function createStatusBar(): CodyStatusBar {
         const option = await vscode.window.showQuickPick(
             // These description should stay in sync with the settings in package.json
             [
+                { label: 'enable/disable features', kind: vscode.QuickPickItemKind.Separator },
                 createFeatureToggle(
                     'Code Autocomplete',
                     'Beta',
-                    'Enables inline code suggestions in your editor',
+                    'Enable Cody-powered code autocompletions',
                     'cody.autocomplete.enabled',
                     c => c.autocomplete
                 ),
                 createFeatureToggle(
                     'Inline Chat',
                     'Beta',
-                    'An inline way to explicitly ask questions and propose modifications to code',
+                    'Enable chatting and editing with Cody, directly in your code',
                     'cody.experimental.inline',
                     c => c.experimentalInline
                 ),
@@ -74,15 +75,20 @@ export function createStatusBar(): CodyStatusBar {
                 createFeatureToggle(
                     'Chat Suggestions',
                     'Experimental',
-                    'Adds suggestions of possible relevant messages in the chat window',
+                    'Enable automatically suggested chat questions',
                     'cody.experimental.chatPredictions',
                     c => c.experimentalChatPredictions,
                     true
                 ),
-                { label: 'cody feedback', kind: vscode.QuickPickItemKind.Separator },
+                { label: 'settings', kind: vscode.QuickPickItemKind.Separator },
+                {
+                    label: '$(gear) Cody Settings',
+                    async onSelect(): Promise<void> {
+                        await vscode.commands.executeCommand('cody.settings.extension')
+                    },
+                },
+                { label: 'feedback & support', kind: vscode.QuickPickItemKind.Separator },
                 ...FeedbackOptionItems,
-                { label: 'cody settings', kind: vscode.QuickPickItemKind.Separator },
-                ...SettingsOptionItems,
             ],
             {
                 placeHolder: 'Select an option',

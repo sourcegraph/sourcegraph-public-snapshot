@@ -30,11 +30,13 @@ interface GetContextResult {
     logSummary: {
         embeddings?: number
         local?: number
+        duration: number
     }
 }
 
 export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
     const { maxChars, isEmbeddingsContextEnabled } = options
+    const start = Date.now()
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
@@ -82,6 +84,7 @@ export async function getContext(options: GetContextOptions): Promise<GetContext
         logSummary: {
             ...(includedEmbeddingsMatches ? { embeddings: includedEmbeddingsMatches } : {}),
             ...(includedLocalMatches ? { local: includedLocalMatches } : {}),
+            duration: Date.now() - start,
         },
     }
 }
