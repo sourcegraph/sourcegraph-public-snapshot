@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { Client, Transcript, createClient } from '@sourcegraph/cody-shared/src/chat/client'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage, ChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import type { Editor } from '@sourcegraph/cody-shared/src/editor'
 import { CodySvg } from '@sourcegraph/cody-ui/src/utils/icons'
 import { ErrorLike, isErrorLike } from '@sourcegraph/common'
@@ -53,21 +53,34 @@ const editor: Editor = {
 export const App: React.FunctionComponent = () => {
     const [config, setConfig] = useConfig()
     const [messageInProgress, setMessageInProgress] = useState<ChatMessage | null>(null)
-    const [transcript, setTranscript] = useState<ChatMessage[]>([])
+    const [transcript, setTranscript] = useState<ChatTranscript | null>(null)
     const [formInput, setFormInput] = useState('')
     const [inputHistory, setInputHistory] = useState<string[] | []>([])
 
     const [client, setClient] = useState<Client | ErrorLike>()
+
     useEffect(() => {
         setMessageInProgress(null)
-        setTranscript([])
         createClient({
             config,
             setMessageInProgress,
-            setTranscript: (transcript: Transcript) => setTranscript(transcript.toChat()),
+            setTranscript: (transcript: Transcript) =>
+                setTranscript({
+                    id: transcript.id,
+                    messages: transcript.toChat(),
+                }),
             editor,
         }).then(setClient, setClient)
     }, [config])
+
+    useEffect(() => {
+        if (client && !isErrorLike(client)) {
+            setTranscript({
+                id: client.transcript.id,
+                messages: client.transcript.toChat(),
+            })
+        }
+    }, [client])
 
     const onSubmit = useCallback(
         (text: string) => {
@@ -97,19 +110,21 @@ export const App: React.FunctionComponent = () => {
                         {client.message}
                     </Alert>
                 ) : (
-                    <>
-                        <Chat
-                            messageInProgress={messageInProgress}
-                            transcript={transcript}
-                            contextStatus={{ codebase: config.codebase }}
-                            formInput={formInput}
-                            setFormInput={setFormInput}
-                            inputHistory={inputHistory}
-                            setInputHistory={setInputHistory}
-                            isCodyEnabled={true}
-                            onSubmit={onSubmit}
-                        />
-                    </>
+                    transcript && (
+                        <>
+                            <Chat
+                                messageInProgress={messageInProgress}
+                                transcript={transcript}
+                                contextStatus={{ codebase: config.codebase }}
+                                formInput={formInput}
+                                setFormInput={setFormInput}
+                                inputHistory={inputHistory}
+                                setInputHistory={setInputHistory}
+                                isCodyEnabled={true}
+                                onSubmit={onSubmit}
+                            />
+                        </>
+                    )
                 )}
             </main>
         </div>

@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage, ChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { isDefined } from '@sourcegraph/common'
 
 import { FileLinkProps } from './chat/ContextFiles'
@@ -14,7 +14,7 @@ import { TranscriptItemClassNames } from './chat/TranscriptItem'
 import styles from './Chat.module.css'
 
 interface ChatProps extends ChatClassNames {
-    transcript: ChatMessage[]
+    transcript: ChatTranscript
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
@@ -223,14 +223,17 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         [inputHistory, historyIndex, setFormInput, onChatSubmit, formInput, setMessageBeingEdited]
     )
 
-    const transcriptWithWelcome = useMemo<ChatMessage[]>(
-        () => [
-            {
-                speaker: 'assistant',
-                displayText: welcomeText(afterTips),
-            },
+    const transcriptWithWelcome = useMemo<ChatTranscript>(
+        () => ({
             ...transcript,
-        ],
+            messages: [
+                {
+                    speaker: 'assistant',
+                    displayText: welcomeText(afterTips),
+                },
+                ...transcript.messages,
+            ],
+        }),
         [afterTips, transcript]
     )
 

@@ -4,7 +4,7 @@ import { VSCodeButton, VSCodeTextArea } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage, ChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import {
     Chat as ChatUI,
     ChatUISubmitButtonProps,
@@ -24,7 +24,7 @@ interface ChatboxProps {
     messageInProgress: ChatMessage | null
     messageBeingEdited: boolean
     setMessageBeingEdited: (input: boolean) => void
-    transcript: ChatMessage[]
+    transcript: ChatTranscript
     contextStatus: ChatContextStatus | null
     formInput: string
     setFormInput: (input: string) => void

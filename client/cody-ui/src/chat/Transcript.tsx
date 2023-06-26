@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react'
 
 import classNames from 'classnames'
 
-import { ChatMessage, Transcript as TranscriptType } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatMessage, ChatTranscript } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import {
     ChatUITextAreaProps,
@@ -19,7 +19,7 @@ import styles from './Transcript.module.css'
 
 export const Transcript: React.FunctionComponent<
     {
-        transcript: TranscriptType
+        transcript: ChatTranscript
         messageInProgress: ChatMessage | null
         messageBeingEdited: boolean
         setMessageBeingEdited: (input: boolean) => void

@@ -3,7 +3,7 @@ import { Message } from '../../sourcegraph-api'
 
 import { TranscriptJSON } from '.'
 
-export interface Transcript {
+export interface ChatTranscript {
     id: string
     messages: ChatMessage[]
 }
