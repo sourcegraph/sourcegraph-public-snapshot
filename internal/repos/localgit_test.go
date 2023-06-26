@@ -125,6 +125,17 @@ func Test_convertGitCloneURLToCodebaseName(t *testing.T) {
 		{"https://github.com/sourcegraph/handbook.git", autogold.Expect("github.com/sourcegraph/handbook")},
 		{"git@github.com:sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
 		{"github:sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+
+		// Note: this "git@github.com:/sourcegraph/handbook" URL format comes from the following
+		// on Taylor's laptop:
+		//
+		//  git clone https://github.com/sourcegraph/handbook handbook-https
+		//  cd handbook-https/
+		//  git remote get-url origin
+		//
+		// No clue why an HTTPS URL gets translated into a git@github.com format (or why it has a leading slash)
+		// but this exists in the wild so we should handle it ;)
+		{"git@github.com:/sourcegraph/handbook", autogold.Expect("github.com//sourcegraph/handbook")},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.cloneURL, func(t *testing.T) {
