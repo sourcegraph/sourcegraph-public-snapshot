@@ -9,7 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -111,6 +113,25 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 	}
 
 	testutil.AssertGolden(t, filepath.Join("testdata", "sources", t.Name()), Update(t.Name()), repos)
+}
+
+func Test_convertGitCloneURLToCodebaseName(t *testing.T) {
+	testCases := []struct {
+		cloneURL string
+		expect   autogold.Value
+	}{
+		{"", autogold.Expect(nil)},
+		{"https://github.com/sourcegraph/handbook", autogold.Expect(nil)},
+		{"https://github.com/sourcegraph/handbook.git", autogold.Expect(nil)},
+		{"git@github.com:sourcegraph/handbook", autogold.Expect(nil)},
+		{"github:sourcegraph/handbook", autogold.Expect(nil)},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.cloneURL, func(t *testing.T) {
+			got := convertGitCloneURLToCodebaseName(tc.cloneURL)
+			tc.expect.Equal(t, got)
+		})
+	}
 }
 
 func gitInitBare(t *testing.T, path string) {
