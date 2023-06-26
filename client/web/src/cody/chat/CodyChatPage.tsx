@@ -105,6 +105,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const codyChatStore = useCodyChat({
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
+        autoLoadScopeWithRepositories: isSourcegraphApp,
     })
     const {
         initializeNewChat,
@@ -370,7 +371,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} />
+                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={isSourcegraphApp} />
                         </div>
 
                         {showMobileHistory && (
