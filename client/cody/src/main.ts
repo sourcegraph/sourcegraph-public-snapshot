@@ -258,14 +258,6 @@ const register = async (
                 query: 'cody.experimental.inline',
                 openToSide: true,
             })
-        }),
-        vscode.commands.registerCommand('cody.walkthrough.enableCodeAutocomplete', async () => {
-            await workspaceConfig.update('cody.autocomplete.enabled', true, vscode.ConfigurationTarget.Global)
-            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
-            return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.autocomplete.enabled',
-                openToSide: true,
-            })
         })
     )
 
