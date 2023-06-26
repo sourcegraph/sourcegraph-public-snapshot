@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.localapp;
 
+import com.sourcegraph.common.AuthorizationUtil;
 import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.Map;
@@ -51,7 +52,9 @@ public class LocalAppManager {
   @NotNull
   public static Optional<String> getLocalAppAccessToken() {
     Optional<String> token =
-        getLocalAppInfo().flatMap(appInfo -> Optional.ofNullable(appInfo.getToken()));
+        getLocalAppInfo()
+            .flatMap(appInfo -> Optional.ofNullable(appInfo.getToken()))
+            .filter(AuthorizationUtil::isValidAccessToken);
     System.err.println("Local Cody app access token: " + token.orElse("none"));
     return token;
   }

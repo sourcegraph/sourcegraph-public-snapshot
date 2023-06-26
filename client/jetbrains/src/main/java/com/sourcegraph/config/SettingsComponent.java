@@ -12,6 +12,7 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
+import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
@@ -106,7 +107,7 @@ public class SettingsComponent {
     addValidation(
         enterpriseAccessTokenTextField,
         () ->
-            !isValidAccessToken(enterpriseAccessTokenTextField.getText())
+            !AuthorizationUtil.isValidAccessToken(enterpriseAccessTokenTextField.getText())
                 ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
                 : null);
 
@@ -123,7 +124,7 @@ public class SettingsComponent {
     addValidation(
         dotComAccessTokenTextField,
         () ->
-            !isValidAccessToken(dotComAccessTokenTextField.getText())
+            !AuthorizationUtil.isValidAccessToken(dotComAccessTokenTextField.getText())
                 ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
                 : null);
 
@@ -410,12 +411,6 @@ public class SettingsComponent {
 
   private boolean isUrlValid(@NotNull String url) {
     return JsonSchemaConfigurable.isValidURL(url);
-  }
-
-  private boolean isValidAccessToken(@NotNull String accessToken) {
-    return accessToken.isEmpty()
-        || accessToken.length() == 40
-        || (accessToken.startsWith("sgp_") && accessToken.length() == 44);
   }
 
   @NotNull
