@@ -34,6 +34,9 @@ const QUERY = gql`
         site {
             ...SiteFlagFields
         }
+        codeIntelligenceConfigurationPolicies(forEmbeddings: true) {
+            totalCount
+        }
     }
 
     ${siteFlagFieldsFragment}
@@ -47,6 +50,9 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         fetchPolicy: 'cache-and-network',
     })
     const siteFlagsValue = data?.site
+
+    const showNoEmbeddingPoliciesAlert =
+        window.context?.codyEnabled && data?.codeIntelligenceConfigurationPolicies.totalCount === 0
 
     return (
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
@@ -102,6 +108,23 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                         <strong>Warning!</strong> This build uses data from the proxied API:{' '}
                         <Link className={styles.proxyLink} target="__blank" to={process.env.SOURCEGRAPH_API_URL}>
                             {process.env.SOURCEGRAPH_API_URL}
+                        </Link>
+                    </div>
+                    .
+                </DismissibleAlert>
+            )}
+            {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && (
+                <DismissibleAlert
+                    key="no-embeddings-policies-alert"
+                    partialStorageKey="no-embeddings-policies-alert"
+                    variant="danger"
+                    className={styles.alert}
+                >
+                    <div>
+                        <strong>Warning!</strong> No embeddings policies have been configured. This will lead to poor
+                        results from Cody, Sourcegraph’s AI assistant. You can create a policy{' '}
+                        <Link target="__blank" to="/site-admin/embeddings/configuration">
+                            {location.origin}/site-admin/embeddings/configuration
                         </Link>
                     </div>
                     .
