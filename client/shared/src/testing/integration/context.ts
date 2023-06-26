@@ -328,7 +328,18 @@ export const createSharedIntegrationTestContext = async <
                 )
             }
 
-            await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, new Error('Closing Puppeteer page timed out'))
+            /**
+             * We close the browser instance on every test completion via `after(() => driver?.close())`
+             * See the implementation details here: `client/shared/src/testing/driver.ts`.
+             *
+             * So it's OK to continue running tests even if `page.close()` times out.
+             * The issue of `page.close()` timing out is tracked here without a resolution:
+             * 1. https://github.com/puppeteer/puppeteer/issues/4882
+             * 2. https://github.com/puppeteer/puppeteer/issues/4104
+             */
+            await pTimeout(driver.page.close(), DISPOSE_ACTION_TIMEOUT, () =>
+                logger.warn('Closing Puppeteer page timed out')
+            )
             await pTimeout(polly.stop(), DISPOSE_ACTION_TIMEOUT, new Error('Stopping Polly timed out'))
         },
     }
