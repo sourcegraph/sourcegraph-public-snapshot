@@ -87,10 +87,9 @@ export class AuthProvider {
                 break
             }
             case 'app': {
-                if (!uri) {
-                    return
+                if (uri) {
+                    await this.appAuth(uri)
                 }
-                await this.appAuth(uri)
                 break
             }
             default: {
