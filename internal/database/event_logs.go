@@ -1597,6 +1597,8 @@ WITH events AS (
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
     AND lower(name) like '%%cody%%'
+	AND name not like '%CTA%'
+	AND name not like '%Cta%'
 	AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
 ),
 code_generation_keys AS (
