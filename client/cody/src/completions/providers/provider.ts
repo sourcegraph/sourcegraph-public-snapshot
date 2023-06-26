@@ -35,7 +35,6 @@ export interface ProviderOptions {
     suffix: string
     fileName: string
     languageId: string
-    snippets: ReferenceSnippet[]
     multilineMode: null | 'block'
     // Relative length to `maximumContextCharacters`
     responsePercentage: number
@@ -50,7 +49,6 @@ export abstract class Provider {
     protected suffix: string
     protected fileName: string
     protected languageId: string
-    protected snippets: ReferenceSnippet[]
     protected multilineMode: null | 'block'
     protected responsePercentage: number
     protected prefixPercentage: number
@@ -62,7 +60,6 @@ export abstract class Provider {
         suffix,
         fileName,
         languageId,
-        snippets,
         multilineMode,
         responsePercentage,
         prefixPercentage,
@@ -73,7 +70,6 @@ export abstract class Provider {
         this.suffix = suffix
         this.fileName = fileName
         this.languageId = languageId
-        this.snippets = snippets
         this.multilineMode = multilineMode
         this.responsePercentage = responsePercentage
         this.prefixPercentage = prefixPercentage
@@ -81,5 +77,5 @@ export abstract class Provider {
         this.n = n
     }
 
-    public abstract generateCompletions(abortSignal: AbortSignal): Promise<Completion[]>
+    public abstract generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]>
 }

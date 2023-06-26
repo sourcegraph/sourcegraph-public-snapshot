@@ -19,7 +19,7 @@ export class UnstableCodeGenProvider extends Provider {
         this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
     }
 
-    public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
         const params = {
             debug_ext_path: 'cody',
             lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.languageId)}|>`,
@@ -32,7 +32,7 @@ export class UnstableCodeGenProvider extends Provider {
             // divide it into two different batches.
             batch_size: makeEven(4),
             // TODO: Figure out the exact format to attach context
-            context: JSON.stringify(prepareContext(this.snippets, this.fileName)),
+            context: JSON.stringify(prepareContext(snippets, this.fileName)),
             completion_type: 'automatic',
         }
 

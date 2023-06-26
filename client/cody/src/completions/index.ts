@@ -171,17 +171,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             return toInlineCompletionItems(cachedCompletions.logId, cachedCompletions.completions)
         }
 
-        const { context: similarCode, logSummary: contextSummary } = await getContext({
-            currentEditor,
-            prefix,
-            suffix,
-            history: this.history,
-            jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
-            maxChars: this.promptChars,
-            codebaseContext: this.codebaseContext,
-            isEmbeddingsContextEnabled: this.isEmbeddingsContextEnabled,
-        })
-
         const completers: Provider[] = []
         let timeout: number
         // VS Code does not show completions if we are in the process of writing a word or if a
@@ -212,7 +201,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffix,
             fileName: path.normalize(vscode.workspace.asRelativePath(document.fileName ?? '')),
             languageId,
-            snippets: similarCode,
             responsePercentage: this.responsePercentage,
             prefixPercentage: this.prefixPercentage,
             suffixPercentage: this.suffixPercentage,
@@ -247,8 +235,26 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             )
         }
 
+        if (!this.disableTimeouts) {
+            await new Promise<void>(resolve => setTimeout(resolve, timeout))
+        }
+
         // We don't need to make a request at all if the signal is already aborted after the
         // debounce
+        if (abortController.signal.aborted) {
+            return []
+        }
+
+        const { context: similarCode, logSummary: contextSummary } = await getContext({
+            currentEditor,
+            prefix,
+            suffix,
+            history: this.history,
+            jaccardDistanceWindowSize: SNIPPET_WINDOW_SIZE,
+            maxChars: this.promptChars,
+            codebaseContext: this.codebaseContext,
+            isEmbeddingsContextEnabled: this.isEmbeddingsContextEnabled,
+        })
         if (abortController.signal.aborted) {
             return []
         }
@@ -270,12 +276,8 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             stopLoading()
         }
 
-        if (!this.disableTimeouts) {
-            await new Promise<void>(resolve => setTimeout(resolve, timeout))
-        }
-
         const completions = (
-            await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))
+            await Promise.all(completers.map(c => c.generateCompletions(abortController.signal, similarCode)))
         ).flat()
 
         // Shared post-processing logic

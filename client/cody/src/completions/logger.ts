@@ -10,6 +10,7 @@ interface CompletionEvent {
         contextSummary: {
             embeddings?: number
             local?: number
+            duration: number
         }
         languageId: string
     }

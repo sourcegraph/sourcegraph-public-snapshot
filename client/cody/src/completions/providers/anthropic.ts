@@ -5,6 +5,7 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { CompletionParameters } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { Completion } from '..'
+import { ReferenceSnippet } from '../context'
 import {
     OPENING_CODE_TAG,
     CLOSING_CODE_TAG,
@@ -80,13 +81,14 @@ export class AnthropicProvider extends Provider {
 
     // Creates the resulting prompt and adds as many snippets from the reference
     // list as possible.
-    protected createPrompt(): { messages: Message[]; prefix: PrefixComponents } {
+    protected createPrompt(snippets: ReferenceSnippet[]): { messages: Message[]; prefix: PrefixComponents } {
         const { messages: prefixMessages, prefix } = this.createPromptPrefix()
+
         const referenceSnippetMessages: Message[] = []
 
         let remainingChars = this.promptChars - this.emptyPromptLength()
 
-        for (const snippet of this.snippets) {
+        for (const snippet of snippets) {
             const snippetMessages: Message[] = [
                 {
                     speaker: 'human',
@@ -136,9 +138,9 @@ export class AnthropicProvider extends Provider {
         return completion.trimEnd()
     }
 
-    public async generateCompletions(abortSignal: AbortSignal, n?: number): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
         // Create prompt
-        const { messages: prompt } = this.createPrompt()
+        const { messages: prompt } = this.createPrompt(snippets)
         if (prompt.length > this.promptChars) {
             throw new Error('prompt length exceeded maximum alloted chars')
         }
@@ -166,7 +168,7 @@ export class AnthropicProvider extends Provider {
         }
 
         // Issue request
-        const responses = await batchCompletions(this.completionsClient, args, n || this.n, abortSignal)
+        const responses = await batchCompletions(this.completionsClient, args, this.n, abortSignal)
 
         // Post-process
         const ret = responses.map(resp => {
