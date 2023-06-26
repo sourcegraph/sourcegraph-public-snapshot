@@ -7,7 +7,12 @@ import (
 
 type Style interface {
 	fmt.Stringer
-	lol()
+
+	// isStyle is a sentinel method to differentiate styles from
+	// fmt.Stringers in type checks. Without being able to tell
+	// apart styles from regular stringify-able arguments makes
+	// it difficult to strip things lke colors on non-TTY outputs.
+	isStyle() bool
 }
 
 func CombineStyles(styles ...Style) Style {
@@ -24,7 +29,7 @@ func Bg256Color(code int) Style { return &style{fmt.Sprintf("\033[48;5;%dm", cod
 type style struct{ code string }
 
 func (s *style) String() string { return s.code }
-func (s *style) lol()           {}
+func (s *style) isStyle() bool  { return true }
 
 var (
 	StyleReset      = &style{"\033[0m"}
