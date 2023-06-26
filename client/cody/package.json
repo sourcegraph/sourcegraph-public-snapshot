@@ -389,6 +389,13 @@
         "icon": "$(sync~spin)"
       },
       {
+        "command": "cody.inline.new",
+        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
+        "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
+        "enablement": "!commentIsEmpty"
+      },
+      {
         "command": "cody.guardrails.debug",
         "category": "Cody",
         "title": "Guardrails Debug Attribution",
@@ -474,6 +481,11 @@
         "key": "ctrl+shift+t",
         "mac": "shift+cmd+t",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.inline.new",
+        "key": "ctrl+shift+c",
+        "when": "cody.activated && !editorReadonly"
       }
     ],
     "submenus": [

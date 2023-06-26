@@ -61,7 +61,7 @@ export class Fixup implements Recipe {
                 {
                     speaker: 'human',
                     text: promptText,
-                    displayText: 'Fixup request ' + humanChatInput,
+                    displayText: '**✨Fixup✨** ' + humanChatInput,
                 },
                 {
                     speaker: 'assistant',

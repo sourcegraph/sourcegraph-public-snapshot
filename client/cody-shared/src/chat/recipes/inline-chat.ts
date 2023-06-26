@@ -83,7 +83,7 @@ export class InlineAssist implements Recipe {
 
     // Prompt template for displaying the prompt to users in chat view
     public static readonly displayPrompt = `
-    \nQuestions based on the code below:\n\`\`\`\n{selectedText}\n\`\`\`\n`
+    \n\`\`\`\n{selectedText}\n\`\`\`\n`
 
     // Get context from editor
     private async getContextMessages(
