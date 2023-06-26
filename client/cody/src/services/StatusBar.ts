@@ -60,14 +60,14 @@ export function createStatusBar(): CodyStatusBar {
                 createFeatureToggle(
                     'Code Autocomplete',
                     'Beta',
-                    'Enables inline code suggestions in your editor',
+                    'Enable Cody-powered code autocompletions',
                     'cody.autocomplete.enabled',
                     c => c.autocomplete
                 ),
                 createFeatureToggle(
                     'Inline Chat',
                     'Beta',
-                    'An inline way to explicitly ask questions and propose modifications to code',
+                    'Enable starting chats, and requesting edits, directly from lines of code',
                     'cody.experimental.inline',
                     c => c.experimentalInline
                 ),
@@ -75,7 +75,7 @@ export function createStatusBar(): CodyStatusBar {
                 createFeatureToggle(
                     'Chat Suggestions',
                     'Experimental',
-                    'Adds suggestions of possible relevant messages in the chat window',
+                    'Enable automatically suggested chat questions',
                     'cody.experimental.chatPredictions',
                     c => c.experimentalChatPredictions,
                     true
