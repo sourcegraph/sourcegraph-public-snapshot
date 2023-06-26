@@ -16,7 +16,7 @@ export const FeedbackOptionItems = [
         },
     },
     {
-        label: '$(organization) Sourcegraph Discord Channel',
+        label: '$(organization) Cody Discord Channel',
         async onSelect(): Promise<void> {
             await vscode.env.openExternal(vscode.Uri.parse(DISCORD_URL.href))
         },
