@@ -34,7 +34,7 @@ This requires site-admin privileges.
       "cody.enabled": true
     }
     ```
-3. Setup a policy to automatically create embeddings for repositories: ["Configuring embeddings"](code_graph_context.md#configuring-embeddings)
+3. Set up a policy to automatically create embeddings for repositories: ["Configuring embeddings"](code_graph_context.md#configuring-embeddings)
 
 Cody is now fully set up on your instance!
 
