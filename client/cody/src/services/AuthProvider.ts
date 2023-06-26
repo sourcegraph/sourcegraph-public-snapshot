@@ -121,8 +121,11 @@ export class AuthProvider {
     public async appAuth(uri?: string): Promise<void> {
         const token = await this.secretStorage.get('SOURCEGRAPH_CODY_APP')
         if (token) {
-            await this.auth(LOCAL_APP_URL.href, token)
-            return
+            const authStatus = await this.auth(LOCAL_APP_URL.href, token)
+            const isLoggedIn = authStatus?.isLoggedIn
+            if (isLoggedIn) {
+                return
+            }
         }
         if (uri) {
             await vscode.env.openExternal(vscode.Uri.parse(uri))
