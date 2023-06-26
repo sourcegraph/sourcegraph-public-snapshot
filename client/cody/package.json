@@ -118,7 +118,7 @@
           {
             "id": "autocomplete",
             "title": "Code Autocomplete (Beta)",
-            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeAutocomplete)",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
             "media": {
               "markdown": "walkthroughs/autocomplete.md"
             }
@@ -361,11 +361,6 @@
         "title": "Show Inline Chat"
       },
       {
-        "command": "cody.walkthrough.enableCodeAutocomplete",
-        "category": "Cody Walkthrough",
-        "title": "Enable Code Completions"
-      },
-      {
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
@@ -598,10 +593,6 @@
           "when": "false"
         },
         {
-          "command": "cody.walkthrough.enableCodeAutocomplete",
-          "when": "false"
-        },
-        {
           "command": "cody.walkthrough.enableInlineAssist",
           "when": "false"
         }
@@ -814,7 +805,7 @@
           "order": 5,
           "type": "boolean",
           "markdownDescription": "Enables inline code suggestions in your editor.",
-          "default": false
+          "default": true
         },
         "cody.experimental.chatPredictions": {
           "order": 6,
