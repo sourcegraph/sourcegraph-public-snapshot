@@ -105,6 +105,17 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
 
+    const onLoginRedirect = useCallback(
+        (uri: string) => {
+            setConfig(null)
+            setEndpoint(null)
+            setAuthStatus(null)
+            setView('login')
+            vscodeAPI.postMessage({ command: 'auth', type: 'callback', endpoint: uri })
+        },
+        [setEndpoint, vscodeAPI]
+    )
+
     if (!view || !authStatus || !config) {
         return <LoadingPage />
     }
@@ -122,7 +133,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     appOS={config?.os}
                     appArch={config?.arch}
                     callbackScheme={config?.uriScheme}
-                    setEndpoint={setEndpoint}
+                    onLoginRedirect={onLoginRedirect}
                 />
             ) : (
                 <>
