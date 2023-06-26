@@ -23,6 +23,7 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+- Autocomplete: Improve completion quality. [pull/53720](https://github.com/sourcegraph/sourcegraph/pull/53720)
 - Autocomplete: Completions are now referred to as autocomplete
 - Improved the response quality when Cody is asked about a selected piece of code through the chat window. [pull/53742](https://github.com/sourcegraph/sourcegraph/pull/53742)
 - Refactored authentication process. [pull/53434](https://github.com/sourcegraph/sourcegraph/pull/53434)

@@ -14,8 +14,8 @@ import { getCurrentDocContext } from './document'
 import { History } from './history'
 import * as CompletionLogger from './logger'
 import { detectMultilineMode } from './multiline'
-import { postProcess } from './post-process'
 import { Provider, ProviderConfig } from './providers/provider'
+import { sharedPostProcess } from './shared-post-process'
 import { SNIPPET_WINDOW_SIZE, isAbortError } from './utils'
 
 interface CodyCompletionItemProviderConfig {
@@ -184,7 +184,6 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
 
         const completers: Provider[] = []
         let timeout: number
-        let multilineMode: null | 'block' = null
         // VS Code does not show completions if we are in the process of writing a word or if a
         // selected completion info is present (so something is selected from the completions
         // dropdown list based on the lang server) and the returned completion range does not
@@ -201,6 +200,7 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
         if (/\w/.test(sameLineSuffix)) {
             return []
         }
+
         // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
         // suggested method names from the language server instead.
         if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || sameLinePrefix.endsWith('.')) {
@@ -218,10 +218,16 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             suffixPercentage: this.suffixPercentage,
         }
 
-        if (
-            (multilineMode = detectMultilineMode(prefix, prevNonEmptyLine, sameLinePrefix, sameLineSuffix, languageId))
-        ) {
-            timeout = 200
+        const multilineMode = detectMultilineMode(
+            prefix,
+            prevNonEmptyLine,
+            sameLinePrefix,
+            sameLineSuffix,
+            languageId,
+            this.providerConfig.enableExtendedMultilineTriggers
+        )
+        if (multilineMode === 'block') {
+            timeout = 100
             completers.push(
                 this.providerConfig.create({
                     ...sharedProviderOptions,
@@ -229,19 +235,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
                     multilineMode,
                 })
             )
-        } else if (sameLinePrefix.trim() === '') {
-            // The current line is empty
-            timeout = 20
-            completers.push(
-                this.providerConfig.create({
-                    ...sharedProviderOptions,
-                    n: 3,
-                    multilineMode: null,
-                })
-            )
         } else {
             // The current line has a suffix
-            timeout = 200
+            timeout = 20
             completers.push(
                 this.providerConfig.create({
                     ...sharedProviderOptions,
@@ -282,15 +278,9 @@ export class CodyCompletionItemProvider implements vscode.InlineCompletionItemPr
             await Promise.all(completers.map(c => c.generateCompletions(abortController.signal)))
         ).flat()
 
-        // Post process
+        // Shared post-processing logic
         const processedCompletions = completions.map(completion =>
-            postProcess({
-                prefix,
-                suffix,
-                multiline: multilineMode !== null,
-                languageId,
-                completion,
-            })
+            sharedPostProcess({ prefix, suffix, multiline: multilineMode !== null, languageId, completion })
         )
 
         // Filter results
