@@ -310,8 +310,6 @@ func (s *userExternalAccountsStore) CreateUserAndSave(ctx context.Context, newUs
 }
 
 func (s *userExternalAccountsStore) Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) (err error) {
-	// permssync.SchedulePermsSync
-
 	encryptedAuthData, encryptedAccountData, keyID, err := s.encryptData(ctx, data)
 	if err != nil {
 		return
