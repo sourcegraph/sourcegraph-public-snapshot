@@ -92,15 +92,57 @@ async function getRelevantFiles(currentEditor: vscode.TextEditor, history: Histo
         })
     }
 
+    const visibleUris = vscode.window.visibleTextEditors.flatMap(e =>
+        e.document.uri.scheme === 'file' ? [e.document.uri] : []
+    )
+
     // Use tabs API to get current docs instead of `vscode.workspace.textDocuments`.
     // See related discussion: https://github.com/microsoft/vscode/issues/15178
     // See more info about the API: https://code.visualstudio.com/api/references/vscode-api#Tab
-    const uris = vscode.window.tabGroups.all
+    const allUris: vscode.Uri[] = vscode.window.tabGroups.all
         .flatMap(({ tabs }) => tabs.map(tab => (tab.input as any)?.uri))
         .filter(Boolean)
 
-    // Since documents are already opened, this function only gets references to them.
-    const docs = await Promise.all(uris.map(uri => uri && vscode.workspace.openTextDocument(uri)))
+    // To define an upper-bound for the number of files to take into consideration, we consider all
+    // active editor tabs and the 5 tabs (7 when there are no split views) that are open around it
+    // (so we include 2 or 3 tabs to the left to the right).
+    //
+    // @TODO(philipp-spiess): Consider files that are in the same directory or called similarly to
+    // be more relevant.
+    const uris: Map<string, vscode.Uri> = new Map()
+    const surroundingTabs = visibleUris.length <= 1 ? 3 : 2
+    for (const visibleUri of visibleUris) {
+        uris.set(visibleUri.toString(), visibleUri)
+        const index = allUris.findIndex(uri => uri.toString() === visibleUri.toString())
+
+        if (index === -1) {
+            continue
+        }
+
+        const start = Math.max(index - surroundingTabs, 0)
+        const end = Math.min(index + surroundingTabs, allUris.length - 1)
+
+        for (let j = start; j <= end; j++) {
+            uris.set(allUris[j].toString(), allUris[j])
+        }
+    }
+
+    const docs = (
+        await Promise.all(
+            [...uris.values()].map(async uri => {
+                if (!uri) {
+                    return []
+                }
+
+                try {
+                    return [await vscode.workspace.openTextDocument(uri)]
+                } catch (error) {
+                    console.error(error)
+                    return []
+                }
+            })
+        )
+    ).flat()
 
     for (const document of docs) {
         if (document.fileName.endsWith('.git')) {
