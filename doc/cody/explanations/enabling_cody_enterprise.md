@@ -36,7 +36,7 @@ This requires site-admin privileges.
     ```
 3. Setup a policy to automatically create embeddings for repositories: ["Configuring embeddings"](code_graph_context.md#configuring-embeddings)
 
-Cody is now fully setup on your instance!
+Cody is now fully set up on your instance!
 
 ### Step 2: Configure the VS Code extension
 
