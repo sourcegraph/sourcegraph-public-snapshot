@@ -52,7 +52,6 @@ import com.sourcegraph.cody.recipes.TranslateToLanguagePromptProvider;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -240,12 +239,7 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void addWelcomeMessage() {
-    boolean isEnterprise =
-        ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
-    String accessToken =
-        isEnterprise
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
+    String accessToken = ConfigUtil.getProjectAccessToken(project);
     String welcomeText =
         "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.";
     addMessageToChat(ChatMessage.createAssistantMessage(welcomeText));
@@ -430,15 +424,8 @@ class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .executeOnPooledThread(
             () -> {
-              boolean isEnterprise =
-                  ConfigUtil.getInstanceType(project)
-                      .equals(SettingsComponent.InstanceType.ENTERPRISE);
-              String instanceUrl =
-                  isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
-              String accessToken =
-                  isEnterprise
-                      ? ConfigUtil.getEnterpriseAccessToken(project)
-                      : ConfigUtil.getDotComAccessToken(project);
+              String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
+              String accessToken = ConfigUtil.getProjectAccessToken(project);
 
               String repoName = getRepoName(project, currentFile);
               String accessTokenOrEmpty = accessToken != null ? accessToken : "";
