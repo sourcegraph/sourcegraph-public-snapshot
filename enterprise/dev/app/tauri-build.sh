@@ -196,7 +196,7 @@ build() {
   do_updater_bundle="$3"
 
   # we only allow the updater build once we're in CI or see "SRC_APP_UPDATER_BUILD=1"
-  bundles="deb,appimage,app"
+  bundles="deb,appimage,app,dmg"
 
   echo "platform is: ${platform}"
 
@@ -220,7 +220,8 @@ build() {
   if [[ $(uname -s) == "Darwin" ]]; then
     # the dmg bundles the `app` bundle which has the updater, so we don't have to sign the dmg with tauri
     echo "--- :mac: Creating dmg bundle manually with :sparkles: fancy background"
-    create_dmg $version $platform
+    #create_dmg $version $platform
+    exit 4
   fi
 }
 
