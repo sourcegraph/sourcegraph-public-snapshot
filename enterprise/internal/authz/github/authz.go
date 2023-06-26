@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/sourcegraph/log"
 	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -35,6 +36,7 @@ type ExternalConnection struct {
 // to connection issues.
 func NewAuthzProviders(
 	ctx context.Context,
+	logger log.Logger,
 	db database.DB,
 	conns []*ExternalConnection,
 	authProviders []schema.AuthProviders,
@@ -112,7 +114,10 @@ func NewAuthzProviders(
 			ServiceType:      extsvc.TypeGitHub,
 		}
 
-		_ = db.UserExternalAccounts().Delete(ctx, opts)
+		err := db.UserExternalAccounts().Delete(ctx, opts)
+		if err != nil {
+			logger.Warn("Error while cleaning up user external accounts.", log.Error(err))
+		}
 	}
 
 	return initResults

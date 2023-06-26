@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -17,6 +18,7 @@ import (
 func TestNewAuthzProviders(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewMockDB()
+	logger := logtest.NoOp(t)
 
 	var calledDeleteOptions database.ExternalAccountsDeleteOptions
 	ueaStore := database.NewMockUserExternalAccountsStore()
@@ -28,6 +30,7 @@ func TestNewAuthzProviders(t *testing.T) {
 	t.Run("no authorization", func(t *testing.T) {
 		initResults := NewAuthzProviders(
 			ctx,
+			logger,
 			db,
 			[]*ExternalConnection{
 				{
@@ -56,6 +59,7 @@ func TestNewAuthzProviders(t *testing.T) {
 		t.Cleanup(licensing.TestingSkipFeatureChecks())
 		initResults := NewAuthzProviders(
 			ctx,
+			logger,
 			db,
 			[]*ExternalConnection{
 				{
@@ -91,6 +95,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
 				ctx,
+				logger,
 				db,
 				[]*ExternalConnection{
 					{
@@ -123,6 +128,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			clientID := "testClientID"
 			initResults := NewAuthzProviders(
 				ctx,
+				logger,
 				db,
 				[]*ExternalConnection{
 					{
@@ -158,6 +164,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			t.Cleanup(licensing.MockCheckFeatureError("failed"))
 			initResults := NewAuthzProviders(
 				ctx,
+				logger,
 				db,
 				[]*ExternalConnection{
 					{
@@ -188,6 +195,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			t.Cleanup(licensing.TestingSkipFeatureChecks())
 			initResults := NewAuthzProviders(
 				ctx,
+				logger,
 				db,
 				[]*ExternalConnection{
 					{
@@ -229,6 +237,7 @@ func TestNewAuthzProviders(t *testing.T) {
 			}
 			initResults := NewAuthzProviders(
 				ctx,
+				logger,
 				db,
 				[]*ExternalConnection{
 					{
