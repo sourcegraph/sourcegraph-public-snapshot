@@ -98,6 +98,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     }, [debugLog, errorMessages, view, vscodeAPI])
 
     const onLogout = useCallback(() => {
+        setConfig(null)
+        setEndpoint(null)
         setAuthStatus(null)
         setView('login')
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
