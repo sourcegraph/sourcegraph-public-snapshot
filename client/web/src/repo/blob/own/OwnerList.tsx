@@ -94,6 +94,7 @@ interface OwnerListProps {
     filePath: string
     refetch: any
     showAddOwnerButton?: boolean
+    canAssignOwners?: boolean
 }
 
 export const OwnerList: FC<OwnerListProps> = ({
@@ -105,6 +106,7 @@ export const OwnerList: FC<OwnerListProps> = ({
     filePath,
     refetch,
     showAddOwnerButton,
+    canAssignOwners,
 }) => {
     const [removeOwnerError, setRemoveOwnerError] = useState<Error | undefined>(undefined)
     const [openAddOwnerModal, setOpenAddOwnerModal] = useState<boolean>(false)
@@ -117,7 +119,7 @@ export const OwnerList: FC<OwnerListProps> = ({
     }, [])
 
     const addOwnerButton = (): JSX.Element | undefined =>
-        showAddOwnerButton ? (
+        canAssignOwners && showAddOwnerButton ? (
             <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
                 <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
             </Button>
@@ -135,7 +137,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                 )}
                 {removeOwnerError && (
                     <div className={styles.contents}>
-                        <ErrorAlert error={removeOwnerError} prefix="Error promoting an owner" className="mt-2" />
+                        <ErrorAlert error={removeOwnerError} prefix="Error removing an owner" className="mt-2" />
                     </div>
                 )}
                 <PageHeader className="mb-3" actions={addOwnerButton()}>
@@ -174,6 +176,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                                         setRemoveOwnerError={setRemoveOwnerError}
                                         isDirectory={isDirectory}
                                         refetch={refetch}
+                                        canRemoveOwner={canAssignOwners}
                                     />
                                 </Fragment>
                             ))}
@@ -222,6 +225,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                                             setRemoveOwnerError={setRemoveOwnerError}
                                             isDirectory={isDirectory}
                                             refetch={refetch}
+                                            canRemoveOwner={canAssignOwners}
                                         />
                                     </Fragment>
                                 )
