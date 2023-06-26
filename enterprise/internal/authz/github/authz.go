@@ -100,6 +100,21 @@ func NewAuthzProviders(
 		initResults.Providers = append(initResults.Providers, p)
 	}
 
+	if len(githubAuthProviders) > 0 {
+		// We delete all existing user external accounts that have no client IDs in common with the providers
+		clientIDs := make([]string, len(githubAuthProviders))
+		for _, provider := range githubAuthProviders {
+			clientIDs = append(clientIDs, provider.ClientID)
+		}
+
+		opts := database.ExternalAccountsDeleteOptions{
+			ClientIDs: clientIDs,
+			Not: true,
+		}
+
+		_ = db.UserExternalAccounts().Delete(ctx, opts)
+	}
+
 	return initResults
 }
 

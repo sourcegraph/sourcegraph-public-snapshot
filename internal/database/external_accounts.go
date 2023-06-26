@@ -370,6 +370,8 @@ type ExternalAccountsDeleteOptions struct {
 	UserID      int32
 	AccountID   string
 	ServiceType string
+	ClientIDs   []string
+	Not         bool
 }
 
 // Delete will soft delete all accounts matching the options combined using AND.
@@ -393,16 +395,28 @@ func (s *userExternalAccountsStore) Delete(ctx context.Context, opt ExternalAcco
 	if opt.ServiceType != "" {
 		conds = append(conds, sqlf.Sprintf("service_type=%s", opt.ServiceType))
 	}
+	if len(opt.ClientIDs) > 0 {
+		clientIDs := make([]*sqlf.Query, len(opt.ClientIDs))
+		for i, clientID := range opt.ClientIDs {
+			clientIDs[i] = sqlf.Sprintf("%s", clientID)
+		}
+		conds = append(conds, sqlf.Sprintf("client_id IN (%s)", sqlf.Join(clientIDs, ",")))
+	}
 
 	// We only have the default deleted_at clause, do nothing
 	if len(conds) == 1 {
 		return nil
 	}
 
+	whereClause := sqlf.Join(conds, "AND")
+	if opt.Not {
+		whereClause = sqlf.Sprintf(`NOT (%s)`, whereClause)
+	}
+
 	q := sqlf.Sprintf(`
 UPDATE user_external_accounts
 SET deleted_at=now()
-WHERE %s`, sqlf.Join(conds, "AND"))
+WHERE %s`, whereClause)
 
 	err := s.Exec(ctx, q)
 

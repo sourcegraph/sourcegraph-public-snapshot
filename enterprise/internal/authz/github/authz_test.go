@@ -17,6 +17,14 @@ import (
 func TestNewAuthzProviders(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewMockDB()
+
+	var calledDeleteOptions database.ExternalAccountsDeleteOptions
+	ueaStore := database.NewMockUserExternalAccountsStore()
+	ueaStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, eado database.ExternalAccountsDeleteOptions) error {
+		calledDeleteOptions = eado
+		return nil
+	})
+	db.UserExternalAccountsFunc.SetDefaultReturn(ueaStore)
 	t.Run("no authorization", func(t *testing.T) {
 		initResults := NewAuthzProviders(
 			ctx,
@@ -108,6 +116,42 @@ func TestNewAuthzProviders(t *testing.T) {
 			assert.Empty(t, initResults.Problems)
 			assert.Empty(t, initResults.Warnings)
 			assert.Empty(t, initResults.InvalidConnections)
+		})
+
+		t.Run("user external account without matching client ID gets deleted", func(t *testing.T) {
+			t.Cleanup(licensing.TestingSkipFeatureChecks())
+			clientID := "testClientID"
+			initResults := NewAuthzProviders(
+				ctx,
+				db,
+				[]*ExternalConnection{
+					{
+						GitHubConnection: &types.GitHubConnection{
+							URN: "",
+							GitHubConnection: &schema.GitHubConnection{
+								Url:           schema.DefaultGitHubURL,
+								Authorization: &schema.GitHubAuthorization{},
+							},
+						},
+					},
+				},
+				[]schema.AuthProviders{{
+					// falls back to schema.DefaultGitHubURL
+					Github: &schema.GitHubAuthProvider{
+						ClientID: clientID,
+					},
+				}},
+				false,
+			)
+
+			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
+			assert.NotNil(t, initResults.Providers[0])
+
+			assert.Empty(t, initResults.Problems)
+			assert.Empty(t, initResults.Warnings)
+			assert.Empty(t, initResults.InvalidConnections)
+			assert.True(t, calledDeleteOptions.Not)
+			assert.Contains(t, calledDeleteOptions.ClientIDs, clientID)
 		})
 
 		t.Run("license does not have ACLs feature", func(t *testing.T) {
