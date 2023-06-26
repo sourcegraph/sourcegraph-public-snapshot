@@ -67,6 +67,7 @@ type UserExternalAccountsStore interface {
 	// Get gets information about the user external account.
 	Get(ctx context.Context, id int32) (*extsvc.Account, error)
 
+	// Insert creates the external account record in the database
 	Insert(ctx context.Context, userID int32, spec extsvc.AccountSpec, data extsvc.AccountData) error
 
 	List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error)

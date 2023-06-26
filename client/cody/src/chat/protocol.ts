@@ -148,3 +148,7 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
 export function isLocalApp(url: string): boolean {
     return new URL(url).origin === LOCAL_APP_URL.origin
 }
+
+export function isDotCom(url: string): boolean {
+    return new URL(url).origin === DOTCOM_URL.origin
+}

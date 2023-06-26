@@ -5,7 +5,6 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.wm.FocusWatcher;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
 import com.intellij.ui.content.Content;
@@ -15,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
   @Override
@@ -33,16 +31,8 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
         ContentFactory.SERVICE
             .getInstance()
             .createContent(toolWindowContent.getContentPanel(), "", false);
+    content.setPreferredFocusableComponent(toolWindowContent.getPreferredFocusableComponent());
     toolWindow.getContentManager().addContent(content);
-    new FocusWatcher() {
-      @Override
-      protected void focusedComponentChanged(Component focusedComponent, @Nullable AWTEvent cause) {
-        if (focusedComponent != null
-            && SwingUtilities.isDescendingFrom(focusedComponent, toolWindow.getComponent())) {
-          toolWindowContent.focusPromptInput();
-        }
-      }
-    }.install(toolWindow.getComponent());
     List<AnAction> titleActions = new ArrayList<>();
     createTitleActions(titleActions);
     if (!titleActions.isEmpty()) {

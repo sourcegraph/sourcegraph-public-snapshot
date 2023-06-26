@@ -90,7 +90,7 @@ const register = async (
     const disposables: vscode.Disposable[] = []
 
     await updateEventLogger(initialConfig, localStorage)
-    // Controller for inline assist
+    // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
     disposables.push(commentController.get())
 
@@ -166,7 +166,7 @@ const register = async (
     const statusBar = createStatusBar()
 
     disposables.push(
-        // Inline Assist Provider
+        // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
@@ -309,7 +309,7 @@ const register = async (
         }
     })
 
-    // Initiate inline assist when feature flag is on
+    // Initiate inline chat when feature flag is on
     if (initialConfig.experimentalInline) {
         commentController.get().commentingRangeProvider = {
             provideCommentingRanges: (document: vscode.TextDocument) => {

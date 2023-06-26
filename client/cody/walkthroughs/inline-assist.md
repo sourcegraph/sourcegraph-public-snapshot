@@ -1,4 +1,4 @@
-## Inline Assist (Experimental)
+## Inline Chat (Experimental)
 
 <video autoPlay muted loop playsInline>
     <source
@@ -7,4 +7,4 @@
     />
 </video>
 
-Talk to Cody directly within the context of your code. Use Inline Assist to ask Cody questions about lines of code while remaining in your editor flow. Want to make changes? Use the "/fix" command and Cody will automatically update the code for you.
+Talk to Cody directly within the context of your code. Use Inline Chat to ask Cody questions about lines of code while remaining in your editor flow. Want to make changes? Use the "/fix" command and Cody will automatically update the code for you.

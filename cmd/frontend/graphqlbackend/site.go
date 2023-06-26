@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	migratorshared "github.com/sourcegraph/sourcegraph/cmd/migrator/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -338,7 +337,7 @@ var devSchemaFactory = schemas.NewExpectedSchemaFactory(
 )
 
 var schemaFactories = append(
-	migratorshared.DefaultSchemaFactories,
+	schemas.DefaultSchemaFactories,
 	// Special schema factory for dev environment.
 	devSchemaFactory,
 )

@@ -162,11 +162,17 @@ func (s *repoPathStore) UpdateFileCounts(ctx context.Context, repoID api.RepoID,
 }
 
 const aggregateFileCountFmtstr = `
+	WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = 'analytics' LIMIT 1)
     SELECT SUM(COALESCE(p.tree_files_count, 0))
     FROM repo_paths AS p
-    WHERE p.absolute_path = %s
+    WHERE p.absolute_path = %s AND p.repo_id NOT IN (
+		SELECT repo.id FROM repo, signal_config WHERE repo.name ~~ ANY(signal_config.excluded_repo_patterns)
+	)
 `
 
+// AggregateFileCount shows total number of files which repo paths are added to
+// repo_paths table. As it is used by analytics, it considers the exclusions
+// added to analytics configuration.
 func (s *repoPathStore) AggregateFileCount(ctx context.Context, opts TreeLocationOpts) (int32, error) {
 	var qs []*sqlf.Query
 	qs = append(qs, sqlf.Sprintf(aggregateFileCountFmtstr, opts.Path))

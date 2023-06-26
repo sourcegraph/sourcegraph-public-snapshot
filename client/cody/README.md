@@ -12,42 +12,32 @@ For example, you can ask Cody:
 
   **Cody AI is in beta, and we’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/vscode)**!
 
-## Usage
-
-1. Install the [Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai).
-1. Open Cody (from the activity bar or by pressing <kbd>Alt+/</kbd>/<kbd>Opt+/</kbd>) and sign in.
-1. Start using it! Read on to learn about the chatbot, fixups, and recipes.
-
 ## Features
 
 <!-- NOTE: These should stay roughly in sync with doc/cody/index.md, although that page needs to be not specific to VS Code. -->
 
-- **🤖 Chatbot that knows _your_ code:** Writes code and answers questions with knowledge of your entire codebase, following your project's code conventions and architecture better than other AI code chatbots.
-- **✨ Fixup code:** Interactively writes and refactors code for you, based on quick natural-language instructions.
-- **📖 Recipes:** Generates unit tests, documentation, and more, with full codebase awareness.
+### 🤖 Ask Cody about anything in your codebase
 
-### 🤖 Chatbot that knows _your_ code
+Cody understands your entire codebase — not just your open files. Ask questions, insert code, and use the built-in recipes such as "Summarize recent code changes" and "Improve variable names".
 
-[**📽️ Demo**](https://twitter.com/beyang/status/1647744307045228544)
+![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-chat-may2023-optim.gif)
 
-To start chatting with Cody, click on the Cody icon in the activity bar (or press <kbd>Alt+/</kbd>/<kbd>Opt+/</kbd>, or run the `Cody: Focus on Chat View` command).
+### ✨ Tools for fixing and explaining code
 
-Cody tells you which code files it read to generate its response. (If Cody gives a wrong answer, please share feedback so we can improve it.)
+Cody can perform complex inline fixups, or answer questions inline. Interact with Cody within your code through Inline Assist, or use the "Fixup code from inline instructions" recipe for more involved fixups.
 
-### ✨ Fixup code
+![Example of using a fixup](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-fixup-may2023-optim.gif)
 
-[**📽️ Demo**](https://twitter.com/sqs/status/1647673013343780864)
+### 🔨 Let Cody write code for you
 
-Just sprinkle your code with instructions in natural language, select the code, and run `Cody: Fixup` (<kbd>Ctrl+Alt+/</kbd>/<kbd>Ctrl+Opt+/</kbd>). Cody will figure out what edits to make.
+Cody can provide real-time code completions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files and file history to predict what you're trying to implement and provide completions.
 
-Examples of the kinds of fixup instructions Cody can handle:
+![Example of using code completions](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif)
 
-- "Factor out any common helper functions" (when multiple functions are selected)
-- "Use the imported CSS module's class names"
-- "Extract the list item to a separate React component"
-- "Handle errors better"
-- "Add helpful debug log statements"
-- "Make this work" (seriously, it often works--try it!)
+## 🍿 See it in action
+
+- https://twitter.com/beyang/status/1647744307045228544
+- https://twitter.com/sqs/status/1647673013343780864
 
 ## 🍳 Built-in recipes
 

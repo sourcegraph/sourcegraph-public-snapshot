@@ -92,3 +92,20 @@
         margin-bottom: 0.5rem;
     }
 }
+
+.loading {
+    flex-basis: 50%;
+    flex-shrink: 0;
+    padding: 9.6rem 2.5rem 2.5rem;
+    background-color: var(--gray-02);
+    color: var(--text-muted);
+
+    &-text {
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    &-icon {
+        --icon-inline-size: 2rem;
+    }
+}
