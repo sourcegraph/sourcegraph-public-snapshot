@@ -25,6 +25,10 @@ The following factors also play a contributing role to the scale of data on a pa
 - How *deeply* your data retention policies retain individual SCIP indexes (the latest commit vs all commits on a branch)
 - How many repositories (or indexing targets) have received SCIP uploads (are there deprecated repos being indexed that will never be relevant to a user?)
 
-TODO - example configuration?
+## Sourcegraph.com's configuration
 
-Add example configuration for sg/sg, with detailed description of the chosen config, and why certain value where picked
+As an example, we detail relevant configuration for [Sourcegraph.com](https://sourcegraph.com).
+
+- We support auto-indexing on repositories matching `github.com/*` and `gitlab.com/*`, but only index the `HEAD` of these repositories as there are a massive number and indexing branches or tags of both code hosts would be infeasible. Matching indexes are retained indefinitely, but there is only one set of indexes covered by this policy per repository at any given time. This policy doesn't keep unnecessary data longer than necessary.
+- We support indexing of all tags of `jdk` with infinite retention to support precise navigation into Java ecosystem internals when individual repositories have precise intelligence.
+- Experimentally, we're indexing all tags of repositories matching `maven/*` to get quantitative measurements on the number of open-source Java projects we're able to infer build/indexing requirements from given only the repository contents.
