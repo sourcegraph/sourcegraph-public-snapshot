@@ -103,17 +103,26 @@ create_dmg() {
   if [[ -z ${arch} ]]; then
     arch=$(uname -m)
   fi
+  export CI="true"
 
-  ./enterprise/dev/app/dmg/bundle_dmg.sh \
-    --background $(pwd)/enterprise/dev/app/dmg/Folder-bg.png \
+  local args
+  args="--background $(pwd)/enterprise/dev/app/dmg/Folder-bg.png \
     --volname Cody \
     --icon Cody 215 200 \
     --app-drop-link 450 200 \
     --window-size 660 400 \
-    --hide-extension Cody.app --volicon $(pwd)/src-tauri/icons/icon.icns \
+    --hide-extension Cody.app --volicon $(pwd)/src-tauri/icons/icon.icns"
+
+  # when not in CI, pop the finder window up
+  # the option is called jenkins because that is how the script was written by tauri
+  if [[ ${CI:""} == "true" ]]; then
+    args="${args} --skip-jenkins"
+  fi
+
+  ./enterprise/dev/app/dmg/bundle_dmg.sh \
+    ${args} \
     ${target_dir}/Cody_${version}_${arch}.dmg \
     ${app_path}
-
 }
 
 cleanup_codesigning() {
@@ -196,7 +205,7 @@ build() {
   do_updater_bundle="$3"
 
   # we only allow the updater build once we're in CI or see "SRC_APP_UPDATER_BUILD=1"
-  bundles="deb,appimage,app,dmg"
+  bundles="deb,appimage,app"
 
   echo "platform is: ${platform}"
 
@@ -220,8 +229,7 @@ build() {
   if [[ $(uname -s) == "Darwin" ]]; then
     # the dmg bundles the `app` bundle which has the updater, so we don't have to sign the dmg with tauri
     echo "--- :mac: Creating dmg bundle manually with :sparkles: fancy background"
-    #create_dmg $version $platform
-    exit 4
+    create_dmg $version $platform
   fi
 }
 
