@@ -21,20 +21,22 @@ There are two steps required to enable Cody on your enterprise instance:
 
 > NOTE: Cody uses one or more third-party LLM (Large Language Model) providers. Make sure you review the [Cody usage and privacy notice](https://about.sourcegraph.com/terms/cody-notice). In particular, code snippets will be sent to a third-party language model provider when you use the Cody extension or when embeddings are enabled.
 
-Note that this requires site-admin privileges. First, configure your desired LLM provider:
+This requires site-admin privileges.
 
-- [Using Sourcegraph Cody Gateway](./cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise)
-- [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
+1. First, configure your desired LLM provider:
+    - Recommended: [Using Sourcegraph Cody Gateway](./cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise)
+    - [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
+2. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
-Once your provider is set up, make sure Cody is enabled in your site configuration:
+    ```json
+    {
+      // [...]
+      "cody.enabled": true
+    }
+    ```
+3. Set up a policy to automatically create embeddings for repositories: ["Configuring embeddings"](code_graph_context.md#configuring-embeddings)
 
-```json
-{
-  "cody.enabled": true,
-}
-```
-
-Cody can also be configured to use embeddings for code graph context to significantly improve the quality of its responses. This involves sending your entire codebase to a third-party service to generate a low-dimensional semantic representation, that is used for improved context fetching. See the [codebase-aware answers](#enabling-codebase-aware-answers) section for more.
+Cody is now fully set up on your instance!
 
 ### Step 2: Configure the VS Code extension
 
@@ -47,7 +49,7 @@ Now that Cody is turned on on your Sourcegraph instance, any user can configure 
 
 3. Reload VS Code, and open the Cody extension. Review and accept the terms.
 
-4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your instance, go to `settings` / `access token` (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
+4. Now you'll need to point the Cody extension to your Sourcegraph instance. On your Sourcegraph instance, click on **Settings**, then on **Access tokens** (`https://<your-instance>.sourcegraph.com/users/<your-instance>/settings/tokens`). Generate an access token, copy it, and set it in the Cody extension.
 
     <img width="1369" alt="image" src="https://user-images.githubusercontent.com/25070988/227510686-4afcb1f9-a3a5-495f-b1bf-6d661ba53cce.png">
 
