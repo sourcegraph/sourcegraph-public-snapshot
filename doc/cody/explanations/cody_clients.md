@@ -24,17 +24,27 @@ The Cody app also provides a chat interface for Cody. Use this interface to requ
 
 ## Cody IDE IDE extensions
 
-Cody also integrates directly into your IDE using plugins and extensions. Using Cody in your IDE allows it to also make inline fixes and autocomplete suggestions direclty in your code.
+Cody also integrates directly into your IDE using plugins and extensions. Using Cody in your IDE allows it to also make inline fixes and autocomplete suggestions directly in your code.
 
 Cody currently supports:
 
-- Visual Studio Code
-- IntelliJ
+- The JetBrains product family
+  - [Android Studio](https://developer.android.com/studio)
+  - [AppCode](https://www.jetbrains.com/objc/)
+  - [CLion](https://www.jetbrains.com/clion/)
+  - [GoLand](https://www.jetbrains.com/go/)
+  - [IntelliJ IDEA](https://www.jetbrains.com/idea/) (Community and Ultimate editions)
+  - [PhpStorm](https://www.jetbrains.com/phpstorm/)
+  - [PyCharm](https://www.jetbrains.com/pycharm/) (Community and Professional editions)
+  - [Rider](https://www.jetbrains.com/rider/)
+  - [RubyMine](https://www.jetbrains.com/ruby/)
+  - [WebStorm](https://www.jetbrains.com/webstorm/)
+- [Visual Studio Code](https://code.visualstudio.com/)
 
 Coming soon:
 
-- emacs
-- Neovim
+- [Emacs](https://www.gnu.org/software/emacs/)
+- [Neovim](https://neovim.io/)
 
 See the full feature comparison for Cody IDE extensions: 
 
@@ -65,8 +75,8 @@ See the full feature comparison for Cody IDE extensions:
         <td class="indexer-implemented-y">✓</td> <!-- Connect to the Cody app -->
       </tr>
       <tr>
-        <td>IntelliJ</td>
-        <td><a href="TODO">Download</a></td>
+        <td>JetBrains</td>
+        <td><a href="https://www.jetbrains.com/products/">Product list</a></td>
         <td><a href="#status-definitions" class="indexer-status">🟡</a></td>
         <td class="indexer-implemented-y">✓</td> <!-- Chat -->
         <td class="indexer-implemented-n">✗</td> <!-- Inline Chat -->
@@ -79,7 +89,7 @@ See the full feature comparison for Cody IDE extensions:
 </table>
 
 ### Status definitions
-An IDE extention status is:
+An IDE extension status is:
 
 - 🟢 _Generally Available_: Available as a normal product feature, no major features are absent.
 - 🟡 _Partially available_: Available, but not yet with full functionality. Still in active development.
