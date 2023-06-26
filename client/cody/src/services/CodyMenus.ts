@@ -90,6 +90,12 @@ export const LoginMenuOptionItems = [
         totalSteps: 2,
     },
     {
+        id: 'app',
+        label: 'Sign in to Cody App',
+        description: 'Cody App must be running locally',
+        totalSteps: 1,
+    },
+    {
         id: 'dotcom',
         label: 'Sign in to Sourcegraph.com',
         totalSteps: 0,

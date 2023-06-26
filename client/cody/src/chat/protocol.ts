@@ -21,7 +21,7 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'signin' | 'signout' | 'support' }
+    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app'; endpoint: string }
     | { command: 'abort' }
 
 /**

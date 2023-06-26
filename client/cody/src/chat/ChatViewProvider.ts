@@ -241,6 +241,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
+                if (message.type === 'app' && message.endpoint) {
+                    await this.authProvider.appAuth(message.endpoint)
+                    break
+                }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
@@ -632,6 +636,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
+     * Display app state in webview view that is used during Signin flow
+     */
+    private async sendLocalAppState(token: string | null): Promise<void> {
+        // Notify webview that app is installed
+        debug('ChatViewProvider:sendLocalAppState', 'isInstalled')
+        void this.webview?.postMessage({ type: 'app-state', isInstalled: true })
+        // Log user in if token is present and user is not logged in
+        if (token) {
+            debug('ChatViewProvider:sendLocalAppState', 'auth')
+            await this.authProvider.auth(LOCAL_APP_URL.href, token, this.config.customHeaders)
+        }
+    }
+
+    /**
      * Delete history from current chat history and local storage
      */
     private async deleteHistory(chatID: string): Promise<void> {
@@ -772,19 +790,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
     }
 
-    /**
-     * Display app state in webview view that is used during Signin flow
-     */
-    private async sendLocalAppState(token: string | null): Promise<void> {
-        // Notify webview that app is installed
-        debug('ChatViewProvider:sendLocalAppState', 'isInstalled')
-        void this.webview?.postMessage({ type: 'app-state', isInstalled: true })
-        // Log user in if token is present and user is not logged in
-        if (token) {
-            debug('ChatViewProvider:sendLocalAppState', 'auth')
-            await this.authProvider.auth(LOCAL_APP_URL.href, token, this.config.customHeaders)
-        }
-    }
     /**
      * Display error message in webview view as banner in chat view
      * It does not display error message as assistant response
