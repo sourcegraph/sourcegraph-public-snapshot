@@ -15,3 +15,8 @@ snapshot:
     }
 discovery:
   disable-cache: true
+percy:
+  # Defer uploading snapshots until the very end of the test suite.
+  # This allows many snapshots with the same name AND different widths to be merged together.
+  # This is useful for flaky client integration tests that can be retried automatically.
+  defer-uploads: true
