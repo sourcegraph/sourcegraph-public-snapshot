@@ -24,7 +24,7 @@ export function sharedPostProcess({
     if (multiline) {
         content = truncateMultilineCompletion(content, prefix, suffix, languageId)
     }
-    content = trimUntilSuffix(content, suffix)
+    content = trimUntilSuffix(content, prefix, suffix)
 
     return {
         ...completion,

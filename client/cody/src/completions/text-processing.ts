@@ -131,7 +131,7 @@ function trimSpace(s: string): TrimmedString {
  * Oftentimes, the last couple of lines of the completion may match against the suffix
  * (the code following the cursor).
  */
-export function trimUntilSuffix(insertion: string, suffix: string): string {
+export function trimUntilSuffix(insertion: string, prefix: string, suffix: string): string {
     insertion = insertion.trimEnd()
     let firstNonEmptySuffixLine = ''
     for (const line of suffix.split('\n')) {
@@ -147,8 +147,16 @@ export function trimUntilSuffix(insertion: string, suffix: string): string {
     const insertionLines = insertion.split('\n')
     let insertionEnd = insertionLines.length
     for (let i = 0; i < insertionLines.length; i++) {
-        const line = insertionLines[i]
-        if (line === firstNonEmptySuffixLine) {
+        let line = insertionLines[i]
+
+        // Include the current indentation of the prefix in the first line
+        if (i === 0) {
+            const lastNewlineOfPrefix = prefix.lastIndexOf('\n')
+            line = prefix.slice(lastNewlineOfPrefix + 1) + line
+        }
+
+        // Trim the end of the lines to avoid trailing whitespace causing issues
+        if (line.trimEnd() === firstNonEmptySuffixLine.trimEnd()) {
             insertionEnd = i
             break
         }
