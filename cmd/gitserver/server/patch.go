@@ -292,7 +292,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		if remoteURL.Scheme == "perforce" {
 			// the remote URL is a Perforce URL
 			// shelve the changelist instead of pushing to a Git host
-			cid, err := s.shelveChangelist(ctx, req, remoteURL, tmpGitPathEnv, altObjectsEnv)
+			cid, err := s.shelveChangelist(ctx, req, cmtHash, remoteURL, tmpGitPathEnv, altObjectsEnv)
 			if err != nil {
 				resp.SetError(repo, "", "", err)
 				return http.StatusInternalServerError, resp
@@ -360,7 +360,7 @@ func styleMessage(message string) bool {
 	return !strings.HasPrefix(message, "Change-Id: I")
 }
 
-func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
+func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
 
 	repo := string(req.Repo)
 	baseCommit := string(req.BaseCommit)
@@ -406,6 +406,12 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 		fmt.Sprintf("P4CLIENT=%s", p4client),
 	}...)
 
+	gitCmd := gitCommand{
+		ctx:        ctx,
+		workingDir: tmpClientDir,
+		env:        commonEnv,
+	}
+
 	p4Cmd := p4Command{
 		ctx:        ctx,
 		workingDir: tmpClientDir,
@@ -418,40 +424,19 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 		return cid, nil
 	}
 
-	// get the commit message from the base commit so that we can extract the base changelist id from it
-	cmd := exec.CommandContext(ctx, "git", "show", "--no-patch", "--pretty=format:%B", baseCommit)
-	cmd.Dir = tmpClientDir
-	cmd.Env = commonEnv
-
-	out, err := cmd.Output()
+	// extract the base changelist id from the base commit
+	baseCID, err := gitCmd.getChangelistIdFromCommit(baseCommit)
 	if err != nil {
-		errorMessage := "unable to retrieve base commit message"
+		errorMessage := "unable to get the base changelist id"
 		logger.Error(errorMessage, log.String("baseCommit", baseCommit), log.Error(err))
 		return "", errors.Wrap(err, "gitserver: "+errorMessage)
 	}
 
-	// extract the base changelist id from the commit message
-	baseCID, err := perforce.GetP4ChangelistID(string(out))
+	// get the list of files involved in the patch
+	fileList, err := gitCmd.getListOfFilesInCommit(patchCommit)
 	if err != nil {
-		errorMessage := "unable to retrieve base changelist id"
-		logger.Error(errorMessage, log.String("commitMessage", string(out)), log.Error(err))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
-	}
-
-	// get the list of files involved in the commit
-	cmd = exec.CommandContext(ctx, "git", "diff-tree", "--no-commit-id", "--name-only", "-r", baseCommit)
-	cmd.Dir = tmpClientDir
-	cmd.Env = commonEnv
-	out, err = cmd.CombinedOutput()
-	if err != nil {
-		errorMessage := "unable to retrieve files in base commit"
-		logger.Error(errorMessage, log.String("output", string(out)), log.Error(err))
-		return "", errors.Wrap(err, "gitserver: "+errorMessage)
-	}
-	fileList := strings.Split(strings.TrimSpace(string(out)), "\n")
-	if len(fileList) <= 0 {
-		errorMessage := "no files in base commit"
-		logger.Error(errorMessage, log.String("output", string(out)), log.String("baseCommit", baseCommit), log.Error(err))
+		errorMessage := "failed listing files in base commit"
+		logger.Error(errorMessage, log.String("patchCommit", patchCommit), log.Error(err))
 		return "", errors.Wrap(err, "gitserver: "+errorMessage)
 	}
 
@@ -493,10 +478,8 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	// 1. create an archive from the commit
 	// 2. pipe the archive to `tar -x` to extract it into the temp dir
 
-	// archive the commit
-	archiveCmd := exec.CommandContext(ctx, "git", "archive", "--format=tar", "--verbose", baseCommit)
-	archiveCmd.Dir = tmpClientDir
-	archiveCmd.Env = commonEnv
+	// archive the patch commit
+	archiveCmd := gitCmd.commandContext("archive", "--format=tar", "--verbose", patchCommit)
 
 	// connect the archive to the untar process
 	stdout, err := archiveCmd.StdoutPipe()
@@ -562,6 +545,53 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	// return the changelist id as a string - it'll be returned as a string to the caller in lieu of an int pointer
 	// because protobuf doesn't do scalar pointers
 	return cid, nil
+}
+
+type gitCommand struct {
+	ctx        context.Context
+	workingDir string
+	env        []string
+}
+
+func (g gitCommand) commandContext(args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(g.ctx, "git", args...)
+	cmd.Dir = g.workingDir
+	cmd.Env = g.env
+	return cmd
+}
+
+func (g gitCommand) getChangelistIdFromCommit(baseCommit string) (string, error) {
+	// get the commit message from the base commit so that we can parse the base changelist id from it
+	cmd := g.commandContext("show", "--no-patch", "--pretty=format:%B", baseCommit)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", errors.Wrap(err, "unable to retrieve base commit message")
+	}
+	// extract the base changelist id from the commit message
+	baseCID, err := perforce.GetP4ChangelistID(string(out))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to parse base changelist id from"+string(out))
+	}
+	return baseCID, nil
+}
+
+func (g gitCommand) getListOfFilesInCommit(baseCommit string) ([]string, error) {
+	cmd := g.commandContext("diff-tree", "--no-commit-id", "--name-only", "-r", baseCommit)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to retrieve files in base commit")
+	}
+	var fileList []string
+	for _, file := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		file = strings.TrimSpace(file)
+		if file != "" {
+			fileList = append(fileList, file)
+		}
+	}
+	if len(fileList) <= 0 {
+		return nil, errors.New("no files in base commit")
+	}
+	return fileList, nil
 }
 
 type p4Command struct {
@@ -738,9 +768,8 @@ func (p p4Command) shelveChangelistP4(changeForm string) (string, error) {
 	return matches[1], nil
 }
 
-// return the deepest error message
-// from a wrapped error
-// "deepest" is somewhat facetious, as it does only one unwrap
+// Return the deepest error message from a wrapped error.
+// "Deepest" is somewhat facetious, as it does only one unwrap.
 func digErrorMessage(err error) string {
 	if err == nil {
 		return ""
