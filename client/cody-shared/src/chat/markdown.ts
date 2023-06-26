@@ -54,6 +54,7 @@ export function renderCodyMarkdown(markdown: string): string {
     return renderMarkdownCommon(markdown, {
         breaks: true,
         dompurifyConfig: DOMPURIFY_CONFIG,
+        addTargetBlankToAllLinks: true,
     })
 }
 

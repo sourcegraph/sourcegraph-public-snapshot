@@ -93,6 +93,8 @@ interface OwnerListProps {
     repoID: string
     filePath: string
     refetch: any
+    showAddOwnerButton?: boolean
+    canAssignOwners?: boolean
 }
 
 export const OwnerList: FC<OwnerListProps> = ({
@@ -103,6 +105,8 @@ export const OwnerList: FC<OwnerListProps> = ({
     repoID,
     filePath,
     refetch,
+    showAddOwnerButton,
+    canAssignOwners,
 }) => {
     const [removeOwnerError, setRemoveOwnerError] = useState<Error | undefined>(undefined)
     const [openAddOwnerModal, setOpenAddOwnerModal] = useState<boolean>(false)
@@ -114,6 +118,12 @@ export const OwnerList: FC<OwnerListProps> = ({
         setOpenAddOwnerModal(false)
     }, [])
 
+    const addOwnerButton = (): JSX.Element | undefined =>
+        canAssignOwners && showAddOwnerButton ? (
+            <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
+                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
+            </Button>
+        ) : undefined
     if (data?.nodes && data.nodes.length) {
         const nodes = data.nodes
         const totalCount = data.totalOwners
@@ -127,26 +137,15 @@ export const OwnerList: FC<OwnerListProps> = ({
                 )}
                 {removeOwnerError && (
                     <div className={styles.contents}>
-                        <ErrorAlert error={removeOwnerError} prefix="Error promoting an owner" className="mt-2" />
+                        <ErrorAlert error={removeOwnerError} prefix="Error removing an owner" className="mt-2" />
                     </div>
                 )}
-                {totalCount === 0 ? (
-                    <NoOwnershipAlert isDirectory={isDirectory} />
-                ) : (
-                    <PageHeader
-                        path={[{ text: 'Owners' }]}
-                        className="mb-3"
-                        actions={
-                            <Button aria-label="Add an owner" variant="success" onClick={onClickAdd}>
-                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add owner
-                            </Button>
-                        }
-                    >
-                        <PageHeader.Heading className={styles.heading} as="h4">
-                            Owners
-                        </PageHeader.Heading>
-                    </PageHeader>
-                )}
+                <PageHeader className="mb-3" actions={addOwnerButton()}>
+                    <PageHeader.Heading className={styles.heading} as="h4">
+                        Owners
+                    </PageHeader.Heading>
+                </PageHeader>
+                {totalCount === 0 && <NoOwnershipAlert isDirectory={isDirectory} />}
                 <table className={styles.table}>
                     <thead>
                         <tr className="sr-only">
@@ -177,6 +176,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                                         setRemoveOwnerError={setRemoveOwnerError}
                                         isDirectory={isDirectory}
                                         refetch={refetch}
+                                        canRemoveOwner={canAssignOwners}
                                     />
                                 </Fragment>
                             ))}
@@ -191,8 +191,8 @@ export const OwnerList: FC<OwnerListProps> = ({
                                 <th colSpan={3}>
                                     <H4 className="mt-3 mb-2">Inference signals</H4>
                                     <Text className={styles.ownInferenceExplanation}>
-                                        These users have viewed or contributed to the file but are not registered owners
-                                        of the file.
+                                        These users have viewed or contributed to this part of the codebase but are not
+                                        registered owners.
                                     </Text>
                                 </th>
                             </tr>
@@ -225,6 +225,7 @@ export const OwnerList: FC<OwnerListProps> = ({
                                             setRemoveOwnerError={setRemoveOwnerError}
                                             isDirectory={isDirectory}
                                             refetch={refetch}
+                                            canRemoveOwner={canAssignOwners}
                                         />
                                     </Fragment>
                                 )
@@ -239,6 +240,11 @@ export const OwnerList: FC<OwnerListProps> = ({
     return (
         <div className={styles.contents}>
             <OwnExplanation />
+            <PageHeader className="mb-3" actions={addOwnerButton()}>
+                <PageHeader.Heading className={styles.heading} as="h4">
+                    Owners
+                </PageHeader.Heading>
+            </PageHeader>
             <NoOwnershipAlert isDirectory={isDirectory} />
         </div>
     )

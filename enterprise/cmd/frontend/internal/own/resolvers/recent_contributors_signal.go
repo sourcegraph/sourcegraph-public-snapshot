@@ -47,5 +47,5 @@ func (g *recentContributorOwnershipSignal) Title() (string, error) {
 }
 
 func (g *recentContributorOwnershipSignal) Description() (string, error) {
-	return "Owner is associated because they have contributed to this file in the last 90 days.", nil
+	return "Associated because they have contributed to this file in the last 90 days.", nil
 }

@@ -3,6 +3,7 @@
   // for the documentation about the extensions.json format
   "recommendations": [
     "sourcegraph.sourcegraph",
+    "sourcegraph.cody-ai",
     "editorconfig.editorconfig",
     "esbenp.prettier-vscode",
     "graphql.vscode-graphql",

@@ -109,15 +109,19 @@ export const unauthenticatedStatus = {
 export interface LocalEnv {
     // The operating system kind
     os: string
+    arch: string
+    homeDir?: string | undefined
+
     // The URL scheme the editor is registered to in the operating system
     uriScheme: string
     // The application name of the editor
     appName: string
-    arch: string
-    homeDir?: string | undefined
+    extensionVersion: string
+
+    // App Local State
+    hasAppJson: boolean
     isAppInstalled: boolean
     isAppRunning: boolean
-    extensionVersion: string
     // TODO: remove this once the experimental period for connect app is over
     isAppConnectEnabled: boolean
 }
@@ -131,4 +135,8 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
 
 export function isLocalApp(url: string): boolean {
     return new URL(url).origin === LOCAL_APP_URL.origin
+}
+
+export function isDotCom(url: string): boolean {
+    return new URL(url).origin === DOTCOM_URL.origin
 }

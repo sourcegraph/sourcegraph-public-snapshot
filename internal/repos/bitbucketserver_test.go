@@ -73,7 +73,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 			}
 
 			path := filepath.Join("testdata", "bitbucketserver-repos-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+			testutil.AssertGolden(t, path, Update(name), got)
 		})
 	}
 }
@@ -165,7 +165,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 			}
 
 			path := filepath.Join("testdata", "bitbucketserver-repos-exclude-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+			testutil.AssertGolden(t, path, Update(name), got)
 		})
 	}
 }
@@ -176,7 +176,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 
 	svc := &types.ExternalService{
 		Kind: extsvc.KindBitbucketServer,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.BitbucketServerConnection{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
 			Url:   "https://bitbucket.sgdev.org",
 			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 		})),
@@ -464,7 +464,7 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cli := bitbucketserver.NewTestClient(t, name, update(name))
+			cli := bitbucketserver.NewTestClient(t, name, Update(name))
 			s.client = cli
 
 			// This project has 2 repositories in it. that's why we expect 2
@@ -496,7 +496,7 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 			}
 
 			path := filepath.Join("testdata/authentic", "bitbucketserver-repos-"+name+".golden")
-			testutil.AssertGolden(t, path, update(name), got)
+			testutil.AssertGolden(t, path, Update(name), got)
 		})
 	}
 

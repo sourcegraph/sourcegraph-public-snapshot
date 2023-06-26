@@ -122,8 +122,10 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 		return computeBitbucketCloudBuildState(c.UpdatedAt, m, events)
 	case *azuredevops.AnnotatedPullRequest:
 		return computeAzureDevOpsBuildState(m)
-	case *gerritbatches.AnnotatedChange, *protocol.PerforceChangelistState:
-		// Gerrit and Perforce don't have builds built-in, its better to be explicit by still
+	case *gerritbatches.AnnotatedChange:
+		return computeGerritBuildState(m)
+	case *protocol.PerforceChangelistState:
+		// Perforce doesn't have builds built-in, its better to be explicit by still
 		// including this case for clarity.
 		return btypes.ChangesetCheckStateUnknown
 	}
@@ -305,6 +307,38 @@ func parseAzureDevOpsBuildState(s adobatches.PullRequestStatusState) btypes.Chan
 	case adobatches.PullRequestBuildStatusStatePending:
 		return btypes.ChangesetCheckStatePending
 	case adobatches.PullRequestBuildStatusStateSucceeded:
+		return btypes.ChangesetCheckStatePassed
+	default:
+		return btypes.ChangesetCheckStateUnknown
+	}
+}
+
+func computeGerritBuildState(ac *gerritbatches.AnnotatedChange) btypes.ChangesetCheckState {
+	stateMap := make(map[string]btypes.ChangesetCheckState)
+
+	// States from last sync.
+	for _, reviewer := range ac.Reviewers {
+		for key, val := range reviewer.Approvals {
+			if key != gerrit.CodeReviewKey {
+				stateMap[key] = parseGerritBuildState(val)
+			}
+		}
+	}
+
+	states := make([]btypes.ChangesetCheckState, 0, len(stateMap))
+	for _, v := range stateMap {
+		states = append(states, v)
+	}
+	return combineCheckStates(states)
+}
+
+func parseGerritBuildState(s string) btypes.ChangesetCheckState {
+	switch s {
+	case "-2", "-1":
+		return btypes.ChangesetCheckStateFailed
+	case " 0":
+		return btypes.ChangesetCheckStatePending
+	case "+2", "+1":
 		return btypes.ChangesetCheckStatePassed
 	default:
 		return btypes.ChangesetCheckStateUnknown
@@ -708,16 +742,21 @@ func computeSingleChangesetReviewState(c *btypes.Changeset) (s btypes.ChangesetR
 			//   0 : no score
 			//  -1 : needs changes
 			//  -2 : rejected
-			switch reviewer.Approvals.CodeReview {
-			case "+2", "+1":
-				states[btypes.ChangesetReviewStateApproved] = true
-			case " 0": // This isn't a typo, there is actually a space in the string.
-				states[btypes.ChangesetReviewStatePending] = true
-			case "-1", "-2":
-				states[btypes.ChangesetReviewStateChangesRequested] = true
-			default:
-				states[btypes.ChangesetReviewStatePending] = true
+			for key, val := range reviewer.Approvals {
+				if key == gerrit.CodeReviewKey {
+					switch val {
+					case "+2", "+1":
+						states[btypes.ChangesetReviewStateApproved] = true
+					case " 0": // This isn't a typo, there is actually a space in the string.
+						states[btypes.ChangesetReviewStatePending] = true
+					case "-1", "-2":
+						states[btypes.ChangesetReviewStateChangesRequested] = true
+					default:
+						states[btypes.ChangesetReviewStatePending] = true
+					}
+				}
 			}
+
 		}
 	case *protocol.PerforceChangelist:
 		states[btypes.ChangesetReviewStatePending] = true

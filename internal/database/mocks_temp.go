@@ -63561,6 +63561,9 @@ type MockUserExternalAccountsStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *UserExternalAccountsStoreListFunc
+	// ListForUsersFunc is an instance of a mock function object controlling
+	// the behavior of the method ListForUsers.
+	ListForUsersFunc *UserExternalAccountsStoreListForUsersFunc
 	// LookupUserAndSaveFunc is an instance of a mock function object
 	// controlling the behavior of the method LookupUserAndSave.
 	LookupUserAndSaveFunc *UserExternalAccountsStoreLookupUserAndSaveFunc
@@ -63639,6 +63642,11 @@ func NewMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 		},
 		ListFunc: &UserExternalAccountsStoreListFunc{
 			defaultHook: func(context.Context, ExternalAccountsListOptions) (r0 []*extsvc.Account, r1 error) {
+				return
+			},
+		},
+		ListForUsersFunc: &UserExternalAccountsStoreListForUsersFunc{
+			defaultHook: func(context.Context, []int32) (r0 map[int32][]*extsvc.Account, r1 error) {
 				return
 			},
 		},
@@ -63740,6 +63748,11 @@ func NewStrictMockUserExternalAccountsStore() *MockUserExternalAccountsStore {
 				panic("unexpected invocation of MockUserExternalAccountsStore.List")
 			},
 		},
+		ListForUsersFunc: &UserExternalAccountsStoreListForUsersFunc{
+			defaultHook: func(context.Context, []int32) (map[int32][]*extsvc.Account, error) {
+				panic("unexpected invocation of MockUserExternalAccountsStore.ListForUsers")
+			},
+		},
 		LookupUserAndSaveFunc: &UserExternalAccountsStoreLookupUserAndSaveFunc{
 			defaultHook: func(context.Context, extsvc.AccountSpec, extsvc.AccountData) (int32, error) {
 				panic("unexpected invocation of MockUserExternalAccountsStore.LookupUserAndSave")
@@ -63817,6 +63830,9 @@ func NewMockUserExternalAccountsStoreFrom(i UserExternalAccountsStore) *MockUser
 		},
 		ListFunc: &UserExternalAccountsStoreListFunc{
 			defaultHook: i.List,
+		},
+		ListForUsersFunc: &UserExternalAccountsStoreListForUsersFunc{
+			defaultHook: i.ListForUsers,
 		},
 		LookupUserAndSaveFunc: &UserExternalAccountsStoreLookupUserAndSaveFunc{
 			defaultHook: i.LookupUserAndSave,
@@ -64939,6 +64955,118 @@ func (c UserExternalAccountsStoreListFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c UserExternalAccountsStoreListFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// UserExternalAccountsStoreListForUsersFunc describes the behavior when the
+// ListForUsers method of the parent MockUserExternalAccountsStore instance
+// is invoked.
+type UserExternalAccountsStoreListForUsersFunc struct {
+	defaultHook func(context.Context, []int32) (map[int32][]*extsvc.Account, error)
+	hooks       []func(context.Context, []int32) (map[int32][]*extsvc.Account, error)
+	history     []UserExternalAccountsStoreListForUsersFuncCall
+	mutex       sync.Mutex
+}
+
+// ListForUsers delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUserExternalAccountsStore) ListForUsers(v0 context.Context, v1 []int32) (map[int32][]*extsvc.Account, error) {
+	r0, r1 := m.ListForUsersFunc.nextHook()(v0, v1)
+	m.ListForUsersFunc.appendCall(UserExternalAccountsStoreListForUsersFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListForUsers method
+// of the parent MockUserExternalAccountsStore instance is invoked and the
+// hook queue is empty.
+func (f *UserExternalAccountsStoreListForUsersFunc) SetDefaultHook(hook func(context.Context, []int32) (map[int32][]*extsvc.Account, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListForUsers method of the parent MockUserExternalAccountsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *UserExternalAccountsStoreListForUsersFunc) PushHook(hook func(context.Context, []int32) (map[int32][]*extsvc.Account, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UserExternalAccountsStoreListForUsersFunc) SetDefaultReturn(r0 map[int32][]*extsvc.Account, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int32) (map[int32][]*extsvc.Account, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UserExternalAccountsStoreListForUsersFunc) PushReturn(r0 map[int32][]*extsvc.Account, r1 error) {
+	f.PushHook(func(context.Context, []int32) (map[int32][]*extsvc.Account, error) {
+		return r0, r1
+	})
+}
+
+func (f *UserExternalAccountsStoreListForUsersFunc) nextHook() func(context.Context, []int32) (map[int32][]*extsvc.Account, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UserExternalAccountsStoreListForUsersFunc) appendCall(r0 UserExternalAccountsStoreListForUsersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// UserExternalAccountsStoreListForUsersFuncCall objects describing the
+// invocations of this function.
+func (f *UserExternalAccountsStoreListForUsersFunc) History() []UserExternalAccountsStoreListForUsersFuncCall {
+	f.mutex.Lock()
+	history := make([]UserExternalAccountsStoreListForUsersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UserExternalAccountsStoreListForUsersFuncCall is an object that describes
+// an invocation of method ListForUsers on an instance of
+// MockUserExternalAccountsStore.
+type UserExternalAccountsStoreListForUsersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[int32][]*extsvc.Account
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UserExternalAccountsStoreListForUsersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UserExternalAccountsStoreListForUsersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

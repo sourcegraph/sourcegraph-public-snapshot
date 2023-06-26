@@ -56,7 +56,8 @@
 
 .abort-button-container {
     display: flex;
-    width: 100%;
+    /* Remove the padding of the form container from the width */
+    width: calc(100% - 2rem);
     justify-content: center;
     align-items: center;
     position: absolute;

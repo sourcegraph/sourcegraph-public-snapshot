@@ -262,9 +262,16 @@ func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.H
 			return
 		}
 
-		u, err := getAPIUrl(req, code)
+		referer, err := url.Parse(req.Referer())
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Unexpected error when creating github API URL: %v", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Bad request, could not parse referer URL: %v, error: %v", req.Referer(), err), http.StatusInternalServerError)
+			return
+		}
+
+		apiURL, _ := github.APIRoot(referer)
+		u, err := url.JoinPath(apiURL.String(), "/app-manifests", code, "conversions")
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Unexpected error when building manifest endpoint URL: %v", err), http.StatusInternalServerError)
 			return
 		}
 
@@ -480,19 +487,6 @@ func generateRedirectURL(domain *string, installationID, appID *int, appName *st
 	default:
 		return fmt.Sprintf("/site-admin/github-apps?success=false&error=%s", url.QueryEscape(fmt.Sprintf("unsupported github apps domain: %v", parsedDomain)))
 	}
-}
-
-func getAPIUrl(req *http.Request, code string) (string, error) {
-	referer, err := url.Parse(req.Referer())
-	if err != nil {
-		return "", err
-	}
-	api := referer.Scheme + "://api." + referer.Host
-	u, err := url.JoinPath(api, "/app-manifests", code, "conversions")
-	if err != nil {
-		return "", err
-	}
-	return u, nil
 }
 
 var MockCreateGitHubApp func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error)

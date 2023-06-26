@@ -103,6 +103,16 @@ describe('renderMarkdown', () => {
         const input = '<a href="/" rel="evil" style="foo:bar">Link</a><script>alert("x")</script>'
         expect(renderMarkdown(input)).toBe('<p><a href="/">Link</a></p>')
     })
+    it('forbids target attribute on links', () => {
+        const input = '<a href="/" target="_blank">Link</a>'
+        expect(renderMarkdown(input)).toBe('<p><a href="/">Link</a></p>')
+    })
+    it('adds target="_blank" attribute on links with addTargetBlankToAllLinks: true', () => {
+        const input = '<a href="/">Link</a>'
+        expect(renderMarkdown(input, { addTargetBlankToAllLinks: true })).toBe(
+            '<p><a href="/" target="_blank" rel="noopener">Link</a></p>'
+        )
+    })
     test('forbids data URI links', () => {
         const input = '<a href="data:text/plain,foobar" download>D</a>\n[D2](data:text/plain,foobar)'
         expect(renderMarkdown(input)).toBe('<p><a download="">D</a>\n<a>D2</a></p>')

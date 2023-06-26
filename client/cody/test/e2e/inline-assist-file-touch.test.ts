@@ -3,7 +3,7 @@ import { expect } from '@playwright/test'
 import { sidebarExplorer, sidebarSignin } from './common'
 import { test } from './helpers'
 
-test.skip('start a fixup job from inline assist with valid auth', async ({ page, sidebar }) => {
+test.skip('start a fixup job from inline chat with valid auth', async ({ page, sidebar }) => {
     // Sign into Cody
     await sidebarSignin(page, sidebar)
 

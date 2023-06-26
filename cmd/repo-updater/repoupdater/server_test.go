@@ -17,6 +17,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"go.opentelemetry.io/otel/trace"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -1293,4 +1295,76 @@ func (t testSource) WithAuthenticator(_ auth.Authenticator) (repos.Source, error
 
 func (t testSource) ValidateAuthenticator(_ context.Context) error {
 	return t.fn()
+}
+
+func TestGrpcErrToStatus(t *testing.T) {
+	testCases := []struct {
+		description  string
+		input        error
+		expectedCode int
+	}{
+		{
+			description:  "nil error",
+			input:        nil,
+			expectedCode: http.StatusOK,
+		},
+		{
+			description:  "non-status error",
+			input:        errors.New("non-status error"),
+			expectedCode: http.StatusInternalServerError,
+		},
+
+		{
+			description:  "status error context.Canceled",
+			input:        context.Canceled,
+			expectedCode: http.StatusInternalServerError,
+		},
+		{
+			description:  "status error context.DeadlineExceeded",
+			input:        context.DeadlineExceeded,
+			expectedCode: http.StatusInternalServerError,
+		},
+		{
+			description:  "status error codes.NotFound",
+			input:        status.Errorf(codes.NotFound, "not found"),
+			expectedCode: http.StatusNotFound,
+		},
+		{
+			description:  "status error codes.Internal",
+			input:        status.Errorf(codes.Internal, "internal error"),
+			expectedCode: http.StatusInternalServerError,
+		},
+		{
+			description:  "status error codes.InvalidArgument",
+			input:        status.Errorf(codes.InvalidArgument, "invalid argument"),
+			expectedCode: http.StatusBadRequest,
+		},
+
+		{
+			description:  "status error codes.PermissionDenied",
+			input:        status.Errorf(codes.PermissionDenied, "permission denied"),
+			expectedCode: http.StatusUnauthorized,
+		},
+
+		{
+			description:  "status error codes.Unavailable",
+			input:        status.Errorf(codes.Unavailable, "unavailable"),
+			expectedCode: http.StatusServiceUnavailable,
+		},
+
+		{
+			description:  "status error codes.unimplemented",
+			input:        status.Errorf(codes.Unimplemented, "unimplemented"),
+			expectedCode: http.StatusNotImplemented,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			result := grpcErrToStatus(tc.input)
+			if result != tc.expectedCode {
+				t.Errorf("Expected status code %d, but got %d", tc.expectedCode, result)
+			}
+		})
+	}
 }

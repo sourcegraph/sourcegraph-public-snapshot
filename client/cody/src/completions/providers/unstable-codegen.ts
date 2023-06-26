@@ -53,7 +53,7 @@ export class UnstableCodeGenProvider extends Provider {
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
-            const completions: string[] = data.completions.map(c => c.completion)
+            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.multilineMode))
             log?.onComplete(completions)
 
             return completions.map(content => ({
@@ -68,6 +68,16 @@ export class UnstableCodeGenProvider extends Provider {
             throw error
         }
     }
+}
+
+function postProcess(content: string, multilineMode: null | 'block'): string {
+    // The model might return multiple lines for single line completions because
+    // we are only able to specify a token limit.
+    if (multilineMode === null && content.includes('\n')) {
+        content = content.slice(0, content.indexOf('\n'))
+    }
+
+    return content.trim()
 }
 
 // Handles some inconsistencies between the VS Code language ID and the model's
@@ -139,6 +149,7 @@ export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOpti
             return new UnstableCodeGenProvider(options, unstableCodeGenOptions)
         },
         maximumContextCharacters: contextWindowChars,
+        enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
     }
 }

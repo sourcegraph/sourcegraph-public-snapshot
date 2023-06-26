@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
 var root string
@@ -77,10 +78,11 @@ func InitGitserver() {
 			return filepath.Join(root, "remotes", string(name)), nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return &server.GitRepoSyncer{}, nil
+			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		DB:                      db,
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 
 	grpcServer := defaults.NewServer(logger)

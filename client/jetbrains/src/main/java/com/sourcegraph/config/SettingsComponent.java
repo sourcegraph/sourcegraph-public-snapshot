@@ -11,9 +11,12 @@ import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
+import com.sourcegraph.cody.localapp.LocalAppManager;
+import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.swing.*;
@@ -38,6 +41,9 @@ public class SettingsComponent {
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
   private JBCheckBox areCompletionsEnabledCheckBox;
+
+  private JButton testCodyAppConnectionButton;
+  private JLabel testCodyAppConnectionLabel;
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
@@ -64,12 +70,8 @@ public class SettingsComponent {
 
   @NotNull
   public InstanceType getInstanceType() {
-    return instanceTypeButtonGroup
-            .getSelection()
-            .getActionCommand()
-            .equals(InstanceType.DOTCOM.name())
-        ? InstanceType.DOTCOM
-        : InstanceType.ENTERPRISE;
+    return InstanceType.optionalValueOf(instanceTypeButtonGroup.getSelection().getActionCommand())
+        .orElse(InstanceType.ENTERPRISE);
   }
 
   public void setInstanceType(@NotNull InstanceType instanceType) {
@@ -80,7 +82,7 @@ public class SettingsComponent {
       button.setSelected(button.getActionCommand().equals(instanceType.name()));
     }
 
-    setEnterpriseSettingsEnabled(instanceType == InstanceType.ENTERPRISE);
+    setInstanceSettingsEnabled(instanceType);
   }
 
   @NotNull
@@ -108,7 +110,7 @@ public class SettingsComponent {
     addValidation(
         enterpriseAccessTokenTextField,
         () ->
-            !isValidAccessToken(enterpriseAccessTokenTextField.getText())
+            !AuthorizationUtil.isValidAccessToken(enterpriseAccessTokenTextField.getText())
                 ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
                 : null);
 
@@ -125,7 +127,7 @@ public class SettingsComponent {
     addValidation(
         dotComAccessTokenTextField,
         () ->
-            !isValidAccessToken(dotComAccessTokenTextField.getText())
+            !AuthorizationUtil.isValidAccessToken(dotComAccessTokenTextField.getText())
                 ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
                 : null);
 
@@ -143,8 +145,17 @@ public class SettingsComponent {
     // Set up radio buttons
     ActionListener actionListener =
         event ->
-            setEnterpriseSettingsEnabled(
-                event.getActionCommand().equals(InstanceType.ENTERPRISE.name()));
+            setInstanceSettingsEnabled(
+                InstanceType.optionalValueOf(event.getActionCommand())
+                    .orElse(InstanceType.ENTERPRISE));
+    JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
+    boolean isCodyAppInstalledAndConfigured =
+        LocalAppManager.isLocalAppInstalled()
+            && LocalAppManager.getLocalAppAccessToken().isPresent();
+    codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
+    codyAppRadioButton.setActionCommand(InstanceType.LOCAL_APP.name());
+    codyAppRadioButton.addActionListener(actionListener);
+    codyAppRadioButton.setEnabled(isCodyAppInstalledAndConfigured);
     JRadioButton sourcegraphDotComRadioButton = new JRadioButton("Use sourcegraph.com");
     sourcegraphDotComRadioButton.setMnemonic(KeyEvent.VK_C);
     sourcegraphDotComRadioButton.setActionCommand(InstanceType.DOTCOM.name());
@@ -154,10 +165,25 @@ public class SettingsComponent {
     enterpriseInstanceRadioButton.setActionCommand(InstanceType.ENTERPRISE.name());
     enterpriseInstanceRadioButton.addActionListener(actionListener);
     instanceTypeButtonGroup = new ButtonGroup();
+    instanceTypeButtonGroup.add(codyAppRadioButton);
     instanceTypeButtonGroup.add(sourcegraphDotComRadioButton);
     instanceTypeButtonGroup.add(enterpriseInstanceRadioButton);
 
-    // Assemble the two main panels
+    // Assemble the three main panels
+
+    JBLabel codyAppComment =
+        new JBLabel(
+            "Use Sourcegraph through the locally installed Cody App",
+            UIUtil.ComponentStyle.SMALL,
+            UIUtil.FontColor.BRIGHTER);
+    codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    codyAppComment.setEnabled(isCodyAppInstalledAndConfigured);
+    JPanel codyAppPanel =
+        FormBuilder.createFormBuilder()
+            .addComponent(codyAppRadioButton, 1)
+            .addComponent(codyAppComment, 2)
+            //            .addComponent(codyAppPanelContent, 1)
+            .getPanel();
     JBLabel dotComComment =
         new JBLabel(
             "Use sourcegraph.com to search public code",
@@ -224,7 +250,8 @@ public class SettingsComponent {
     // Assemble the main panel
     JPanel userAuthenticationPanel =
         FormBuilder.createFormBuilder()
-            .addComponent(dotComPanel)
+            .addComponent(codyAppPanel)
+            .addComponent(dotComPanel, 5)
             .addComponent(enterprisePanel, 5)
             .addLabeledComponent(customRequestHeadersLabel, customRequestHeadersTextField)
             .addTooltip("Any custom headers to send with every request to Sourcegraph.")
@@ -307,21 +334,34 @@ public class SettingsComponent {
     areCompletionsEnabledCheckBox.setSelected(value);
   }
 
-  private void setEnterpriseSettingsEnabled(boolean enable) {
-    urlTextField.setEnabled(enable);
-    enterpriseAccessTokenTextField.setEnabled(enable);
-    userDocsLinkComment.setEnabled(enable);
-    userDocsLinkComment.setCopyable(enable);
-    enterpriseAccessTokenLinkComment.setEnabled(enable);
-    enterpriseAccessTokenLinkComment.setCopyable(enable);
+  private void setInstanceSettingsEnabled(@NotNull InstanceType instanceType) {
+    // enterprise stuff
+    boolean isEnterprise = instanceType == InstanceType.ENTERPRISE;
+    urlTextField.setEnabled(isEnterprise);
+    enterpriseAccessTokenTextField.setEnabled(isEnterprise);
+    userDocsLinkComment.setEnabled(isEnterprise);
+    userDocsLinkComment.setCopyable(isEnterprise);
+    enterpriseAccessTokenLinkComment.setEnabled(isEnterprise);
+    enterpriseAccessTokenLinkComment.setCopyable(isEnterprise);
 
     // dotCom stuff
-    dotComAccessTokenTextField.setEnabled(!enable);
+    boolean isDotCom = instanceType == InstanceType.DOTCOM;
+    dotComAccessTokenTextField.setEnabled(isDotCom);
   }
 
   public enum InstanceType {
     DOTCOM,
     ENTERPRISE,
+    LOCAL_APP;
+
+    @NotNull
+    public static Optional<InstanceType> optionalValueOf(@NotNull String name) {
+      try {
+        return Optional.of(InstanceType.valueOf(name));
+      } catch (IllegalArgumentException e) {
+        return Optional.empty();
+      }
+    }
   }
 
   private void addValidation(
@@ -370,12 +410,6 @@ public class SettingsComponent {
 
   private boolean isUrlValid(@NotNull String url) {
     return JsonSchemaConfigurable.isValidURL(url);
-  }
-
-  private boolean isValidAccessToken(@NotNull String accessToken) {
-    return accessToken.isEmpty()
-        || accessToken.length() == 40
-        || (accessToken.startsWith("sgp_") && accessToken.length() == 44);
   }
 
   @NotNull
