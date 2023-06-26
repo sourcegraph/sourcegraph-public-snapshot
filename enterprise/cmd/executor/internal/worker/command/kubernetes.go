@@ -58,6 +58,7 @@ type KubernetesContainerOptions struct {
 	SecurityContext       KubernetesSecurityContext
 	SingleJobPod          bool
 	StepImage             string
+	GitCACert             string
 	JobVolume             KubernetesJobVolume
 }
 
@@ -560,9 +561,16 @@ func NewKubernetesSingleJob(
 	if repoOptions.RepositoryDirectory != "" {
 		repoDir = repoOptions.RepositoryDirectory
 	}
+
+	sslCAInfo := ""
+	if options.GitCACert != "" {
+		sslCAInfo = fmt.Sprintf("git config --global http.sslCAInfo %s; ", options.GitCACert)
+	}
+
 	setupArgs := []string{
 		"set -e; " +
 			fmt.Sprintf("mkdir -p %s; ", repoDir) +
+			sslCAInfo +
 			fmt.Sprintf("git -C %s init; ", repoDir) +
 			fmt.Sprintf("git -C %s remote add origin %s; ", repoDir, repoOptions.CloneURL) +
 			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
