@@ -70,7 +70,6 @@ func correlateSCIP(
 	root string,
 	getChildren pathexistence.GetChildrenFunc,
 ) (lsifstore.ProcessedSCIPData, error) {
-
 	indexSummary, err := aggregateExternalSymbolsAndPaths(&indexReader)
 	if err != nil {
 		return lsifstore.ProcessedSCIPData{}, err

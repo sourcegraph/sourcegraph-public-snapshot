@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strings"
 	"sync/atomic"
 	"time"
 
@@ -434,7 +433,7 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 
 	trySaveToDisk := func(r io.Reader) (gzipReadSeeker, *os.File, error) {
 		var indexReader gzipReadSeeker
-		tmpFilePattern := fmt.Sprintf("upload-%s-*.gz", strings.ReplaceAll(uploadFilename, "*", "_"))
+		tmpFilePattern := fmt.Sprintf("upload-%d-tmp.gz", uploadStats.ID)
 		tmpFile, err := os.CreateTemp("", tmpFilePattern)
 		if err != nil {
 			logger.Warn("Failed to create temporary file to save upload for streaming",
@@ -478,7 +477,7 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 	}
 	if indexReader.inner == nil {
 		if buf == nil {
-			// trySaveToDisk may return err == nil and cursor == nil,
+			// trySaveToDisk may return err == nil and indexReader.inner == nil,
 			// e.g. if it fails to create a temporary file.
 			// In that case, we haven't read the data yet.
 			if buf, err = readAllWithSizeHint(rc, compressedSizeHint); err != nil {
