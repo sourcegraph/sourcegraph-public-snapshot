@@ -118,7 +118,7 @@ describe('bestJaccardMatch', () => {
             )
         ).toEqual({
             score: 0.3,
-            content: ['quux', 'quuz', 'corge', 'grault', 'garply', 'waldo'].join('\n'),
+            content: ['corge', 'grault', 'garply', 'waldo', 'fred', 'plugh'].join('\n'),
         })
     })
 
