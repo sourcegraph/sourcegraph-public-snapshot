@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isLocalApp } from '../chat/protocol'
+import { isLocalApp, isDotCom } from '../chat/protocol'
 
 export interface LoginMenuItem {
     id: string
@@ -22,6 +22,9 @@ function getItemLabel(uri: string, current: boolean): string {
     if (isLocalApp(uri)) {
         return `${icon}Cody App`
     }
+    if (isDotCom(uri)) {
+        return `${icon}Sourcegraph.com`
+    }
     return `${icon}${uri}`
 }
 
@@ -37,6 +40,10 @@ export const AuthMenu = async (type: AuthMenuType, historyItems: string[]): Prom
                       description: type === 'signout' && i === 0 ? 'current' : '',
                       uri,
                   }))
+                  // We don't want to show App and Dot Com in previously used
+                  // signins, because they're already in the menu item, and
+                  // they use a different type of auth (callback URLs)
+                  .filter(({ uri }) => type !== 'signin' || (!isLocalApp(uri) && !isDotCom(uri)))
                   .reverse()
             : []
     const seperator = [{ label: type === 'signin' ? 'previously used' : 'current', kind: -1 }]
