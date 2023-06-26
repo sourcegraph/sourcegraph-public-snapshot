@@ -1,5 +1,5 @@
 import { CHARS_PER_TOKEN, MAX_AVAILABLE_PROMPT_LENGTH, MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
-import { truncateText } from '../../prompt/truncation'
+import { truncateText, isTextTruncated } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { getNormalizedLanguageName } from './helpers'
@@ -27,6 +27,9 @@ If you have no ideas because the code looks fine, feel free to say that it alrea
             selection.selectedText,
             Math.min(maxTokenCount, MAX_RECIPE_INPUT_TOKENS)
         )
+        if (isTextTruncated(selection.selectedText, truncatedSelectedText)) {
+            await context.editor.showWarningMessage('Truncated extra long selection so output may be incomplete.')
+        }
         const promptMessage = `${promptPrefix}\n\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\n\n${promptSuffix}`
 
         const displayText = `Find code smells in the following code: \n\`\`\`\n${selection.selectedText}\n\`\`\``

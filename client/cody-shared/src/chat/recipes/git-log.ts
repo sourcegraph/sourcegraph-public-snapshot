@@ -2,7 +2,7 @@ import { spawnSync } from 'child_process'
 import path from 'path'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
-import { truncateText } from '../../prompt/truncation'
+import { truncateText, isTextTruncated } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -71,13 +71,14 @@ export class GitHistory implements Recipe {
         }
 
         const truncatedGitLogOutput = truncateText(gitLogOutput, MAX_RECIPE_INPUT_TOKENS)
-        let truncatedLogMessage = ''
-        if (truncatedGitLogOutput.length < gitLogOutput.length) {
-            truncatedLogMessage = 'Truncated extra long git log output, so summary may be incomplete.'
+        if (isTextTruncated(gitLogOutput, truncatedGitLogOutput)) {
+            await context.editor.showWarningMessage(
+                'Truncated extra long git log output, so summary may be incomplete.'
+            )
         }
 
         const promptMessage = `Summarize these commits:\n${truncatedGitLogOutput}\n\nProvide your response in the form of a bulleted list. Do not mention the commit hashes.`
-        const assistantResponsePrefix = `Here is a summary of recent changes:\n${truncatedLogMessage}`
+        const assistantResponsePrefix = 'Here is a summary of recent changes:\n'
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {

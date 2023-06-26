@@ -9,7 +9,7 @@ import {
     MAX_RECIPE_SURROUNDING_TOKENS,
 } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
-import { truncateText } from '../../prompt/truncation'
+import { truncateText, isTextTruncated } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
@@ -64,7 +64,13 @@ export class FileTouch implements Recipe {
 
         const truncatedText = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
         const MAX_RECIPE_CONTENT_TOKENS = MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS * 2
-        const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_CONTENT_TOKENS)
+        const truncatedSelectedText = truncateText(
+            selection.selectedText,
+            Math.min(MAX_RECIPE_CONTENT_TOKENS, MAX_RECIPE_INPUT_TOKENS)
+        )
+        if (isTextTruncated(selection.selectedText, truncatedSelectedText)) {
+            await context.editor.showWarningMessage('Truncated extra long selection so output may be incomplete.')
+        }
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
