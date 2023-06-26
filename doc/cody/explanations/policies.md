@@ -1,6 +1,4 @@
-# Auto-indexing
-
-## Embeddings Policies
+# Embeddings Policies
 
 Embedding policies define which repositories are automatically scheduled for embedding.
 
