@@ -6,9 +6,13 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 )
 
 func AddGerritExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) (err error) {
@@ -43,5 +47,13 @@ func AddGerritExternalAccount(ctx context.Context, db database.DB, userID int32,
 	if err = db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, accountSpec, accountData); err != nil {
 		return err
 	}
+
+	logger := log.Scoped("AddGerritExternalAccount", "Add Gerrit External Account to existing user")
+	// Schedule a permission sync, since this is a new account for the user
+	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+		UserIDs:           []int32{userID},
+		Reason:            database.ReasonExternalAccountAdded,
+		TriggeredByUserID: userID,
+	})
 	return nil
 }
