@@ -85,7 +85,7 @@ describe('getWords', () => {
 })
 
 describe('bestJaccardMatch', () => {
-    it('should return the best match', () => {
+    it('should return the best match in 5 line windows', () => {
         const matchText = [
             'foo',
             'bar',
