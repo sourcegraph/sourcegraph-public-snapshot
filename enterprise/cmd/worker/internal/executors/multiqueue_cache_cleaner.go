@@ -5,6 +5,8 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -14,6 +16,7 @@ type multiqueueCacheCleaner struct {
 	queueNames []string
 	cache      *rcache.Cache
 	windowSize time.Duration
+	logger     log.Logger
 }
 
 var _ goroutine.Handler = &multiqueueCacheCleaner{}
@@ -29,6 +32,7 @@ func NewMultiqueueCacheCleaner(queueNames []string, cache *rcache.Cache, windowS
 			queueNames: queueNames,
 			cache:      cache,
 			windowSize: windowSize,
+			logger:     log.Scoped("multiqueue-cache-cleaner", "Periodically removes entries from the multiqueue dequeue cache that are older than the configured window size."),
 		},
 		goroutine.WithName("executors.multiqueue-cache-cleaner"),
 		goroutine.WithDescription("deletes entries from the dequeue cache older than the configured window"),
@@ -61,6 +65,13 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 					return errors.Newf("failed to delete hash item %s for key %s: expected successful delete but redis deleted nothing", key, queueName)
 				}
 			}
+			m.logger.Info("Handle",
+				log.Int("total_cached", len(all)),
+				log.Int64("timestampMillis", timestampMillis),
+				log.Time("t", t),
+				log.Time("interval", interval),
+				log.Bool("t_before_interval", t.Before(interval)),
+			)
 		}
 	}
 	return nil
