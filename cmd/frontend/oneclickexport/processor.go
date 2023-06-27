@@ -33,7 +33,7 @@ type SiteConfigProcessor struct {
 // Process function of SiteConfigProcessor loads site config, redacts the secrets
 // and stores it in a provided tmp directory dir
 func (s SiteConfigProcessor) Process(_ context.Context, _ ConfigRequest, dir string) {
-	siteConfig, err := conf.RedactSecrets(conf.Raw())
+	siteConfig, err := conf.RedactSecrets(conf.Raw(), false)
 	if err != nil {
 		s.logger.Error("error during site config redacting", log.Error(err))
 	}

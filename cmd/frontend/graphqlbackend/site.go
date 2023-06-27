@@ -92,10 +92,20 @@ func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 
 func (r *siteResolver) SiteID() string { return siteid.Get() }
 
-func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationResolver, error) {
+type SiteConfigurationArgs struct {
+	ReturnWhitelistedConfigForNonAdmins *bool
+}
+
+func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfigurationArgs) (*siteConfigurationResolver, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if args.ReturnWhitelistedConfigForNonAdmins != nil && *args.ReturnWhitelistedConfigForNonAdmins {
+			return &siteConfigurationResolver{
+				db:                                  r.db,
+				returnWhitelistedConfigForNonAdmins: *args.ReturnWhitelistedConfigForNonAdmins,
+			}, nil
+		}
 		return nil, err
 	}
 	return &siteConfigurationResolver{db: r.db}, nil
@@ -220,7 +230,8 @@ func (r *siteResolver) AppHasConnectedDotComAccount() bool {
 }
 
 type siteConfigurationResolver struct {
-	db database.DB
+	db                                  database.DB
+	returnWhitelistedConfigForNonAdmins bool
 }
 
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
@@ -236,17 +247,24 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	return config.ID, nil
 }
 
+// args *EffectiveContentsArgs
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// so only admins may view it. We optionally allow non-admins to view a set of whitelist
+	// configuration information if the `r.returnWhitelistedConfigForNonAdmins` is true
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil && !r.returnWhitelistedConfigForNonAdmins {
 		return "", err
 	}
-	siteConfig, err := conf.RedactSecrets(conf.Raw())
+	siteConfig, err := conf.RedactSecrets(conf.Raw(), r.returnWhitelistedConfigForNonAdmins)
 	return JSONCString(siteConfig.Site), err
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
 	contents, err := r.EffectiveContents(ctx)
 	if err != nil {
 		return nil, err

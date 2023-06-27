@@ -6875,7 +6875,7 @@ type Site implements SettingsSubject {
     """
     The site's configuration. Only visible to site admins.
     """
-    configuration: SiteConfiguration!
+    configuration(returnWhitelistedConfigForNonAdmins: Boolean): SiteConfiguration!
     """
     The site's latest site-wide settings (which are the second-lowest-precedence
     in the configuration cascade for a user).

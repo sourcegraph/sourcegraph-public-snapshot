@@ -9,6 +9,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -253,7 +254,7 @@ func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, authorU
 		return nil, ErrNewerEdit
 	}
 
-	redactedConf, err := conf.RedactAndHashSecrets(conftypes.RawUnified{Site: contents})
+	redactedConf, err := conf.RedactAndHashSecrets(conftypes.RawUnified{Site: contents}, false)
 	var redactedContents string
 	if err != nil {
 		// Do not fail here. Instead continue writing to DB with an empty value for

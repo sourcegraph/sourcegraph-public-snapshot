@@ -313,12 +313,18 @@ func UnredactSecrets(input string, raw conftypes.RawUnified) (string, error) {
 	return formattedSite, err
 }
 
-func RedactSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
-	return redactConfSecrets(raw, false)
+func RedactSecrets(raw conftypes.RawUnified, returnOnlyWhitelisted bool) (empty conftypes.RawUnified, err error) {
+	return redactConfSecrets(raw, false, returnOnlyWhitelisted)
 }
 
-func RedactAndHashSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified, err error) {
-	return redactConfSecrets(raw, true)
+func RedactAndHashSecrets(raw conftypes.RawUnified, returnOnlyWhitelisted bool) (empty conftypes.RawUnified, err error) {
+	return redactConfSecrets(raw, true, returnOnlyWhitelisted)
+}
+
+// 🚨 SECURITY: whitelistedSiteConfig contains configuration that are safe to display to
+// non-site admins.
+var whitelistedSiteConfig = []string{
+	"batchChanges.rolloutWindows",
 }
 
 // redactConfSecrets redacts defined list of secrets from the given configuration. It returns empty
@@ -326,7 +332,7 @@ func RedactAndHashSecrets(raw conftypes.RawUnified) (empty conftypes.RawUnified,
 // in the configuration.
 //
 // Updates to this function should also be reflected in the UnredactSecrets.
-func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty conftypes.RawUnified, err error) {
+func redactConfSecrets(raw conftypes.RawUnified, hashSecrets, returnOnlyWhitelisted bool) (empty conftypes.RawUnified, err error) {
 	getRedactedSecret := func(_ string) string { return redactedSecret }
 	if hashSecrets {
 		getRedactedSecret = func(secret string) string {
@@ -339,6 +345,19 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets bool) (empty confty
 	cfg, err := ParseConfig(raw)
 	if err != nil {
 		return empty, errors.Wrap(err, "parse config")
+	}
+
+	if returnOnlyWhitelisted {
+		r, err := json.Marshal(schema.SiteConfiguration{
+			BatchChangesRolloutWindows: cfg.BatchChangesRolloutWindows,
+		})
+		if err != nil {
+			return empty, err
+		}
+
+		return conftypes.RawUnified{
+			Site: string(r),
+		}, err
 	}
 
 	for _, ap := range cfg.AuthProviders {
