@@ -21,6 +21,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
@@ -64,6 +65,7 @@ import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
+import com.sourcegraph.config.SettingsConfigurable;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.BorderLayout;
@@ -312,9 +314,12 @@ class CodyToolWindowContent implements UpdatableChat {
     blankPanel.setBorder(margin);
     blankPanel.setOpaque(false);
     appNotInstalledPanel.add(blankPanel);
-    JPanel wrapperAppNotInstalledPanel = new JPanel(new BorderLayout());
+    JPanel wrapperAppNotInstalledPanel =
+        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
     wrapperAppNotInstalledPanel.setBorder(margin);
-    wrapperAppNotInstalledPanel.add(appNotInstalledPanel, BorderLayout.NORTH);
+    wrapperAppNotInstalledPanel.add(appNotInstalledPanel);
+    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
+    wrapperAppNotInstalledPanel.add(goToSettingsPanel);
     return wrapperAppNotInstalledPanel;
   }
 
@@ -342,10 +347,26 @@ class CodyToolWindowContent implements UpdatableChat {
     blankPanel.setBorder(margin);
     blankPanel.setOpaque(false);
     appNotRunningPanel.add(blankPanel);
-    JPanel wrapperAppNotInstalledPanel = new JPanel(new BorderLayout());
-    wrapperAppNotInstalledPanel.setBorder(margin);
-    wrapperAppNotInstalledPanel.add(appNotRunningPanel, BorderLayout.NORTH);
-    return wrapperAppNotInstalledPanel;
+    JPanel wrapperAppNotRunningPanel =
+        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+    wrapperAppNotRunningPanel.setBorder(margin);
+    wrapperAppNotRunningPanel.add(appNotRunningPanel);
+    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
+    wrapperAppNotRunningPanel.add(goToSettingsPanel);
+    return wrapperAppNotRunningPanel;
+  }
+
+  private JPanel createPanelWithGoToSettingsButton() {
+    JButton goToSettingsButton = new JButton("Sign in with an enterprise account");
+    goToSettingsButton.addActionListener(
+        e ->
+            ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class));
+    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(goToSettingsButton);
+    goToSettingsButton.setUI(buttonUI);
+    JPanel panelWithSettingsButton = new JPanel(new BorderLayout());
+    panelWithSettingsButton.setBorder(JBUI.Borders.empty(TEXT_MARGIN, 0));
+    panelWithSettingsButton.add(goToSettingsButton, BorderLayout.CENTER);
+    return panelWithSettingsButton;
   }
 
   private void executeRecipeWithPromptProvider(
