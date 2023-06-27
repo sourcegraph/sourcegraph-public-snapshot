@@ -244,12 +244,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 icon={mdiLinux}
                             />
 
-                            <Link
-                                to="/help"
-                                className={styles.otherOptions}
-                                target="_blank"
-                                rel="noopener"
-                            >
+                            <Link to="/help" className={styles.otherOptions} target="_blank" rel="noopener">
                                 Other options
                             </Link>
 
