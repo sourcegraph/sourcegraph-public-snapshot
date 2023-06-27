@@ -276,7 +276,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
 
                             <Text className={classNames('text-decoration-none', styles.downloadForWindows)}>
                                 <Icon
-                                    className={classNames('mr-2', styles.icon)}
+                                    className="mr-2"
                                     svgPath={mdiMicrosoftWindows}
                                     inline={false}
                                     aria-hidden={true}
