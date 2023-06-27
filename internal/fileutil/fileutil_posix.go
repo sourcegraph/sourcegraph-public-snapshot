@@ -3,6 +3,11 @@
 
 package fileutil
 
+import (
+	"os"
+	"path/filepath"
+)
+
 // RenameAndSync will do an os.Rename followed by fsync to ensure the rename
 // is recorded
 func RenameAndSync(oldpath, newpath string) error {
