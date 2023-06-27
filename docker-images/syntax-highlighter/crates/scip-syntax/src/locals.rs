@@ -8,7 +8,10 @@ use scip::{
 use scip_treesitter::{prelude::*, types::PackedRange};
 use tree_sitter::Node;
 
-use crate::languages::LocalConfiguration;
+use crate::{
+    languages::LocalConfiguration,
+    traversal::{ChildContainer, RangeContainer},
+};
 
 #[derive(Debug)]
 pub struct Scope<'a> {
@@ -39,6 +42,18 @@ impl<'a> Ord for Scope<'a> {
     }
 }
 
+impl<'a> RangeContainer for Scope<'a> {
+    fn range(&self) -> &PackedRange {
+        &self.range
+    }
+}
+
+impl<'a> ChildContainer for Scope<'a> {
+    fn children(&mut self) -> &mut Vec<Self> {
+        &mut self.children
+    }
+}
+
 impl<'a> Scope<'a> {
     pub fn new(scope: Node<'a>) -> Self {
         Self {
@@ -51,33 +66,18 @@ impl<'a> Scope<'a> {
     }
 
     pub fn insert_scope(&mut self, scope: Scope<'a>) {
-        if let Some(child) = self
-            .children
-            .iter_mut()
-            .find(|child| child.range.contains(&scope.range))
-        {
-            child.insert_scope(scope);
-        } else {
-            self.children.push(scope);
-        }
+        self.insert_item(scope, &mut |s, item| s.children.push(item))
     }
 
     pub fn insert_definition(&mut self, definition: Definition<'a>) {
-        // TODO: Probably should assert that this the root node?
         if definition.scope_modifier == ScopeModifier::Global {
             self.definitions.insert(definition.identifier, definition);
             return;
         }
 
-        if let Some(child) = self
-            .children
-            .iter_mut()
-            .find(|child| child.range.contains(&definition.range))
-        {
-            child.insert_definition(definition)
-        } else {
-            self.definitions.insert(definition.identifier, definition);
-        }
+        self.insert_item(definition, &mut |s, item| {
+            s.definitions.insert(item.identifier, item);
+        })
     }
 
     pub fn insert_reference(&mut self, reference: Reference<'a>) {
@@ -216,21 +216,6 @@ impl<'a> Scope<'a> {
             .for_each(|c| c.occurrences_for_children(def, symbol, occurrences));
     }
 
-    #[allow(dead_code)]
-    fn find_scopes_with(
-        &'a self,
-        scopes: &mut Vec<&Scope<'a>>,
-        // predicate: impl Fn(&Scope<'a>) -> bool,
-    ) {
-        if self.definitions.is_empty() {
-            scopes.push(self);
-        }
-
-        for child in &self.children {
-            child.find_scopes_with(scopes);
-        }
-    }
-
     pub fn display_scopes(&self) {
         self.rec_display_scopes(0);
     }
@@ -260,12 +245,24 @@ pub struct Definition<'a> {
     pub scope_modifier: ScopeModifier,
 }
 
+impl<'a> RangeContainer for Definition<'a> {
+    fn range(&self) -> &PackedRange {
+        &self.range
+    }
+}
+
 #[derive(Debug)]
 pub struct Reference<'a> {
     pub group: &'a str,
     pub identifier: &'a str,
     pub node: Node<'a>,
     pub range: PackedRange,
+}
+
+impl<'a> RangeContainer for Reference<'a> {
+    fn range(&self) -> &PackedRange {
+        &self.range
+    }
 }
 
 pub fn parse_tree<'a>(

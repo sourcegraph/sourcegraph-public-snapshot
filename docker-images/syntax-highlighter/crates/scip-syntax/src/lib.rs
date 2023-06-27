@@ -9,6 +9,8 @@ pub mod locals;
 pub mod symbols;
 pub mod ts_scip;
 
+mod traversal;
+
 pub fn get_symbols(parser: &BundledParser, source_bytes: &[u8]) -> Result<scip::types::Document> {
     let config = match crate::languages::get_tag_configuration(parser) {
         Some(config) => config,
