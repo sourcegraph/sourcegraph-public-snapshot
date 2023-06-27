@@ -1,7 +1,7 @@
 import { gql } from '@sourcegraph/http-client'
 
 export const ReposSelectorSearchQuery = gql`
-    query ReposSelectorSearch($query: String!) {
+    query ReposSelectorSearch($query: String!, $includeJobs: Boolean!) {
         repositories(query: $query, first: 10) {
             nodes {
                 id
@@ -11,7 +11,7 @@ export const ReposSelectorSearchQuery = gql`
                     id
                     serviceType
                 }
-                embeddingJobs(first: 1) {
+                embeddingJobs(first: 1) @include(if: $includeJobs) {
                     nodes {
                         id
                         state
@@ -24,7 +24,7 @@ export const ReposSelectorSearchQuery = gql`
 `
 
 export const ReposStatusQuery = gql`
-    query ReposStatus($repoNames: [String!]!, $first: Int!) {
+    query ReposStatus($repoNames: [String!]!, $first: Int!, $includeJobs: Boolean!) {
         repositories(names: $repoNames, first: $first) {
             nodes {
                 id
@@ -34,7 +34,7 @@ export const ReposStatusQuery = gql`
                     id
                     serviceType
                 }
-                embeddingJobs(first: 1) {
+                embeddingJobs(first: 1) @include(if: $includeJobs) {
                     nodes {
                         id
                         state
