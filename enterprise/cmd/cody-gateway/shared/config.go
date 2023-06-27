@@ -64,9 +64,6 @@ type Config struct {
 type TraceConfig struct {
 	Policy       policy.TracePolicy
 	GCPProjectID string
-
-	QueueSize int
-	Blocking  bool
 }
 
 func (c *Config) Load() {
@@ -118,8 +115,6 @@ func (c *Config) Load() {
 
 	c.Trace.Policy = policy.TracePolicy(c.Get("CODY_GATEWAY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
 	c.Trace.GCPProjectID = c.Get("CODY_GATEWAY_TRACE_GCP_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "Google Cloud Traces project ID.")
-	c.Trace.QueueSize = c.GetInt("CODY_GATEWAY_TRACE_QUEUE_SIZE", "2048", "Maximum spans to queue for export.")
-	c.Trace.Blocking = c.GetBool("CODY_GATEWAY_TRACE_BLOCKING", "true", "Never drop spans - block until span can be exported.")
 
 	c.ActorConcurrencyLimit.Percentage = float32(c.GetPercent("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_PERCENTAGE", "50", "The percentage of daily rate limit to be allowed as concurrent requests limit from an actor.")) / 100
 	c.ActorConcurrencyLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")
