@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
@@ -94,5 +95,30 @@ func TestLatestVersionHandler(t *testing.T) {
 			t.Errorf("expected location url %q but got %q", q.expectedURL, loc.String())
 		}
 	}
+}
 
+func Test_patchReleaseURL(t *testing.T) {
+	testCases := []struct {
+		finalURL string
+		expect   autogold.Value
+	}{
+		{
+			finalURL: "https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.21%2B1321.8c3a4999f2/Cody.2023.6.21%2B1321.8c3a4999f2.aarch64.app.tar.gz",
+			expect:   autogold.Expect("https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.21%2B1321.8c3a4999f2/Cody_2023.6.21%2B1321.8c3a4999f2_aarch64.dmg"),
+		},
+		{
+			finalURL: "https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.21%2B1321.8c3a4999f2/Cody.2023.6.21%2B1321.8c3a4999f2.x86_64.app.tar.gz",
+			expect:   autogold.Expect("https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.21%2B1321.8c3a4999f2/Cody_2023.6.21%2B1321.8c3a4999f2_x64.dmg"),
+		},
+		{
+			finalURL: "https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.21%2B1321.8c3a4999f2/cody_2023.6.21%2B1321.8c3a4999f2_amd64.AppImage.tar.gz",
+			expect:   autogold.Expect("https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.21%2B1321.8c3a4999f2/cody_2023.6.21%2B1321.8c3a4999f2_amd64.AppImage.tar.gz"),
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.finalURL, func(t *testing.T) {
+			got := patchReleaseURL(tc.finalURL)
+			tc.expect.Equal(t, got)
+		})
+	}
 }
