@@ -69,10 +69,16 @@ public class SettingsComponent {
     return panel;
   }
 
+  public static InstanceType getDefaultInstanceType() {
+    return LocalAppManager.isLocalAppInstalled() && LocalAppManager.isPlatformSupported()
+        ? InstanceType.LOCAL_APP
+        : InstanceType.DOTCOM;
+  }
+
   @NotNull
   public InstanceType getInstanceType() {
     return InstanceType.optionalValueOf(instanceTypeButtonGroup.getSelection().getActionCommand())
-        .orElse(InstanceType.ENTERPRISE);
+        .orElse(getDefaultInstanceType());
   }
 
   public void setInstanceType(@NotNull InstanceType instanceType) {
@@ -159,7 +165,7 @@ public class SettingsComponent {
         event ->
             setInstanceSettingsEnabled(
                 InstanceType.optionalValueOf(event.getActionCommand())
-                    .orElse(InstanceType.ENTERPRISE));
+                    .orElse(getDefaultInstanceType()));
     boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
     boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
     boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();

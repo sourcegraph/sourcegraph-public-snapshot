@@ -62,7 +62,7 @@ public class ConfigUtil {
                             return Optional.empty();
                           }
                         }))
-        .orElse(SettingsComponent.InstanceType.ENTERPRISE); // or default
+        .orElse(SettingsComponent.getDefaultInstanceType()); // or default
   }
 
   @NotNull
