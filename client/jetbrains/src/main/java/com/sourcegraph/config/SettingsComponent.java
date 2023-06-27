@@ -193,8 +193,7 @@ public class SettingsComponent {
     JBLabel codyAppComment =
         new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowInstallLocalAppLink =
-        !isLocalAppInstalled && isLocalAppPlatformSupported;
+    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
     JLabel installLocalAppComment =
         new JBLabel(
             "The local Cody App wasn't detected on this system, it seems it hasn't been installed yet.",

@@ -33,7 +33,7 @@ public class LocalAppManager {
                       + "/Library/Application Support/com.sourcegraph.cody/app.json")));
 
   public static boolean isLocalAppInstalled() {
-    return getLocalAppPaths().map(LocalAppPaths::anyPathExists).orElse(false);
+    return getLocalAppPaths().map(LocalAppPaths::isCodyInstalled).orElse(false);
   }
 
   @NotNull
