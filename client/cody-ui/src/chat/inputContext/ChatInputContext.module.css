@@ -1,120 +1,37 @@
 .container {
-    font-size: 90%;
     display: flex;
-    gap: 0.25rem;
+    align-items: center;
+    gap: 0.5rem;
     user-select: none;
 }
 
-.context-progress {
+.codebase,
+.file {
+    font-size: var(--vscode-editor-font-size, inherit);
+    margin: 0;
+}
+
+.codebase {
     display: flex;
-    gap: 0.25rem;
-    flex-direction: column;
-}
-
-.context-section {
-    display: flex;
-    gap: 0.25rem;
-}
-
-.progress-bar {
-    border-radius: 5rem;
-    background-color: var(--vscode-input-background, inherit);
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    height: 0.3rem;
-    position: relative;
-}
-
-.progress-bar-inner {
-    border-radius: 5rem;
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: linear-gradient(to right, #b200f8, #ff5543, #00cbec);
-}
-
-.progress-info {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    font-size: smaller;
-}
-
-.badge {
-    display: flex;
-    margin: 0;
-    padding-top: 0.15rem;
-    font-weight: normal;
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    opacity: 0.7;
-
-    gap: 0.25rem;
-}
-
-.items {
-    flex: 1;
-
-    font-size: 0.7rem;
-
-    display: flex;
-    gap: 0.75rem;
-    overflow: hidden;
-
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
-
-.item {
-    display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    overflow: hidden;
+    font-weight: normal;
 }
 
-.item-icon {
+.codebase-icon {
     width: 1rem;
     height: 1rem;
     flex-shrink: 0;
 }
 
-.item-text {
+.file,
+.codebase-label {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+    opacity: 0.7;
 }
 
-.index-present,
-.index-missing {
-    font-weight: bold;
-    display: flex;
-    align-items: center;
-}
-
-.indexStatus {
-    display: inline;
-    color: var(--vscode-list-warningForeground, inherit);
-}
-
-.info {
-    display: flex;
-    color: var(--vscode-textPreformat-foreground, inherit);
-}
-
-.danger {
-    display: flex;
+.errorColor {
     color: var(--vscode-errorForeground, inherit);
-}
-
-.success {
-    display: flex;
-    color: var(--vscode-textLink-foreground, inherit);
 }
