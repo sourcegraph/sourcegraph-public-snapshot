@@ -3,6 +3,8 @@
 
 package blobstore
 
+import "os"
+
 func fsync(path string) error {
 	f, err := os.Open(path)
 	if err != nil {

@@ -3,6 +3,8 @@
 
 package vcs
 
+import "strings"
+
 // String will return standard url.URL.String() if the url has a .Scheme set, but if
 // not it will produce an rsync format URL, eg `git@foo.com:foo/bar.git`
 func (u *URL) String() string {
