@@ -526,7 +526,7 @@ class CodyToolWindowContent implements UpdatableChat {
     } else {
       this.addMessageToChat(
           ChatMessage.createAssistantMessage(
-              "I'm sorry, something wet wrong. Please try again. The error message I got was: \""
+              "I'm sorry, something went wrong. Please try again. The error message I got was: \""
                   + errorMessage
                   + "\"."));
     }
