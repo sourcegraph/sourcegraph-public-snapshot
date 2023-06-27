@@ -167,7 +167,7 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 			db,
 			usagestats.Event{
 				EventName: eventName,
-				UserID:    act.UID,
+				UserID:    user.ID,
 				Argument:  args,
 				Source:    "BACKEND",
 			},
