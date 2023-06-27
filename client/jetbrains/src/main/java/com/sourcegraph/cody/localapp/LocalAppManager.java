@@ -1,6 +1,9 @@
 package com.sourcegraph.cody.localapp;
 
 import com.sourcegraph.common.AuthorizationUtil;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.Map;
@@ -103,5 +106,19 @@ public class LocalAppManager {
       e.printStackTrace();
       return Optional.empty();
     }
+  }
+
+  public static void runLocalApp() {
+    System.out.println("Running local Cody app...");
+    getLocalAppPaths()
+        .filter(paths -> !isLocalAppRunning()) // only run the app if it's not already running
+        .ifPresent(
+            p -> {
+              try {
+                Desktop.getDesktop().open(new File(p.codyAppFile.toString()));
+              } catch (IOException e) {
+                e.printStackTrace();
+              }
+            });
   }
 }
