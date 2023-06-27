@@ -205,7 +205,16 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                         {!isSourcegraphDotCom && isCTADismissed && (
                             <>
                                 {' '}
-                                <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.
+                                <Link
+                                    to={
+                                        isSourcegraphApp
+                                            ? 'https://docs.sourcegraph.com/cody#get-cody'
+                                            : '/help/cody#get-cody'
+                                    }
+                                >
+                                    Cody is more powerful in the IDE
+                                </Link>
+                                .
                             </>
                         )}
                     </>
