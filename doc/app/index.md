@@ -34,7 +34,11 @@ The Cody app is a free, lightweight, native desktop application that connects yo
 
 ## Installation
 
-Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.26%2B1328.bca7d2c3ed) to find the right download link for your operating system. The app is currently supported on MacOS (use _aarch64.dmg for Apple Silicon or _x64.dmg for Mac Intel) and Linux (_amd64.deb), and we're working on Windows support.
+Download the app: 
+- [MacOS (Apple Silicon)](https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin)
+- [MacOS (Intel)](https://sourcegraph.com/.api/app/latest?arch=x86_64&target=darwin)
+- [Linux](https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux)
+- Windows coming soon 
 
 ## Setup
 
