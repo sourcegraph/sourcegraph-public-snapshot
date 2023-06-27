@@ -10,7 +10,7 @@ A [standard upgrade](../../updates/index.md#upgrade-types) occurs between a Sour
 
 If you've [configured Docker Compose with a release branch](index.md#step-1-prepare-the-deployment-repository), please merge the upstream release tag for the next minor version into your `release` branch. In the following example, the release branch is being upgraded to v3.43.2.
 
-```bash
+```sh
 # first, checkout the release branch
 git checkout release
 # fetch updates
@@ -34,7 +34,7 @@ For each conflict, you need to reconcile any customizations you made with the up
 
 SSH into your instance and navigate to the appropriate folder:  
 
-```bash
+```sh
 # AWS
 cd /home/ec2-user/deploy-sourcegraph-docker/docker-compose
 # Azure, Digital Ocean, Google Cloud
@@ -43,21 +43,25 @@ cd /root/deploy-sourcegraph-docker/docker-compose
 
 Download all the latest docker images to your local docker daemon:
 
-```bash
-docker-compose pull --include-deps
+```sh
+$ docker-compose pull --include-deps
 ```
 
 Restart Docker Compose using the new minor version along with your customizations:
 
-```bash
-docker-compose up -d --remove-orphans
+```sh
+$ docker-compose up -d --remove-orphans
 ```
 
 ### Multi-version upgrades
 
+If you are upgrading to **Sourcegraph 5.1 or later**, we encourage you to perform an [**automatic multi-version upgrade**](../../updates/automatic.md). The following instructions are still applicable, just the manual version of what automatic multi-version upgrade do for you now (and therefore is valuable information during a bumpy upgrade).
+
+---
+
 > **⚠️ Attention:** please see our [cautionary note](../../updates/index.md#best-practices) on upgrades, if you have any concerns about running a multiversion upgrade, please reach out to us at [support@sourcegraph.com](emailto:support@sourcegraph.com) for advisement.
 
-To perform a multi-version upgrade on a Sourcegraph instance running on Docker compose follow the procedure below:
+To perform a **manual** multi-version upgrade on a Sourcegraph instance running on Docker compose follow the procedure below:
 
 1. **Check Upgrade Readiness**:
    - Check the [upgrade notes](../../updates/docker_compose.md#docker-compose-upgrade-notes) for the version range you're passing through.
@@ -65,16 +69,16 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker c
 
 2. **Disable Connections to the Database**:
    - Run the following command in the directory containing your `docker-compose.yaml` file.
-  ```
-  docker-compose stop && docker-compose up -d pgsql codeintel-db codeinsights-db
+  ```sh
+  $ docker-compose stop && docker-compose up -d pgsql codeintel-db codeinsights-db
   ```
 3. **Run Migrator with the `upgrade` command**:
    - The following procedure describes running migrator in brief, for more detailed instructions and available command flags see our [migrator docs](../../updates/migrator/migrator-operations.md#docker-compose).
     1. Set the migrator `image:` in your `docker-compose.yaml` to the **latest** release of `migrator`. **Example:**
     ```yaml
-      migrator:
-    container_name: migrator
-    image: 'index.docker.io/sourcegraph/migrator:5.0.4'
+    migrator:
+      container_name: migrator
+      image: 'index.docker.io/sourcegraph/migrator:5.0.4'
     ```
     > *Note: Always use the latest image version of migrator for migrator commands, except the startup command `up`*
     2. Set the migrator `command:` to `upgrade` you'll need to supply a `--to=` argument. **Example:**
@@ -83,7 +87,7 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker c
     ```
     > *Note: you may add the `--dry-run` flag to the `command:` to test things out before altering the dbs*
     3. Run migrator with `docker-compose up migrator` **Example:**
-    ```bash
+    ```sh
     $ ~/deploy-sourcegraph-docker/docker-compose/ docker-compose up migrator
     codeintel-db is up-to-date
     codeinsights-db is up-to-date
@@ -116,7 +120,6 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker c
 
 5. **Start your containers again**:
    - run `docker-compose up -d` in the folder containing your `docker-compose.yaml` file.
+   ```sh
+   $ docker-compose up -d
    ```
-   docker-compose up -d
-   ```
-   

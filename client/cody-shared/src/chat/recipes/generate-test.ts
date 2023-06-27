@@ -1,5 +1,5 @@
 import { MAX_RECIPE_INPUT_TOKENS, MAX_RECIPE_SURROUNDING_TOKENS } from '../../prompt/constants'
-import { truncateText, truncateTextStart } from '../../prompt/truncation'
+import { truncateText, truncateTextStart, isTextTruncated } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import {
@@ -23,9 +23,18 @@ export class GenerateTest implements Recipe {
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
         const truncatedPrecedingText = truncateTextStart(selection.precedingText, MAX_RECIPE_SURROUNDING_TOKENS)
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
-        const extension = getFileExtension(selection.fileName)
 
+        if (
+            isTextTruncated(selection.selectedText, truncatedSelectedText) ||
+            isTextTruncated(selection.precedingText, truncatedPrecedingText) ||
+            isTextTruncated(selection.followingText, truncatedFollowingText)
+        ) {
+            await context.editor.showWarningMessage('Truncated extra long selection so output may be incomplete.')
+        }
+
+        const extension = getFileExtension(selection.fileName)
         const languageName = getNormalizedLanguageName(selection.fileName)
+
         const promptMessage = `Generate a unit test in ${languageName} for the following code:\n\`\`\`${extension}\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const assistantResponsePrefix = `Here is the generated unit test:\n\`\`\`${extension}\n`
 

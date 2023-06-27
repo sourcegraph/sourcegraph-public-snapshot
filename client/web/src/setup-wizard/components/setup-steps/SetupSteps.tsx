@@ -227,12 +227,12 @@ export const SetupStepsHeader: FC<SetupStepsHeaderProps> = props => {
 export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
     const { className, ...attributes } = props
 
-    const { steps, activeStepIndex, setNextButtonPortal, setFooterPortal, onSkip, onPrevStep, onNextStep } =
+    const { steps, activeStepIndex, setNextButtonPortal, onSkip, onPrevStep, onNextStep } =
         useContext(SetupStepsContext)
 
     return (
         <footer {...attributes} className={classNames(styles.footer, className)}>
-            <div ref={setFooterPortal} className={styles.footerWidget} />
+            <FooterWidgetPortal className={styles.footerWidget} />
             <div className={styles.footerNavigation}>
                 <div className={styles.footerInnerNavigation}>
                     <Button variant="link" className={styles.footerSkip} onClick={onSkip}>
@@ -254,6 +254,12 @@ export const SetupStepsFooter: FC<HTMLAttributes<HTMLElement>> = props => {
             </div>
         </footer>
     )
+}
+
+export const FooterWidgetPortal: FC<HTMLAttributes<HTMLDivElement>> = attributes => {
+    const { setFooterPortal } = useContext(SetupStepsContext)
+
+    return <div ref={setFooterPortal} {...attributes} />
 }
 
 export const FooterWidget: FC<PropsWithChildren<{}>> = props => {

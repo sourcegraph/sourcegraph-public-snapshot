@@ -73,6 +73,8 @@ const enumToFilterValues = <T extends string>(enumeration: { [key in T]: T }): F
 }
 
 export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService }) => {
+    const isSourcegraphApp = window.context?.sourcegraphAppMode
+
     useEffect(() => {
         telemetryService.logPageView('SiteAdminCodyPage')
     }, [telemetryService])
@@ -111,10 +113,8 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
         return val === defaultStateFilterValue ? null : val
     }
 
-    const { loading, hasNextPage, fetchMore, refetchAll, connection, error } = useRepoEmbeddingJobsConnection(
-        query,
-        getStateFilterValue(filterValues)
-    )
+    const { loading, hasNextPage, fetchMore, refetchAll, refetchFirst, connection, error } =
+        useRepoEmbeddingJobsConnection(query, getStateFilterValue(filterValues))
 
     const [scheduleRepoEmbeddingJobs, { loading: repoEmbeddingJobsLoading, error: repoEmbeddingJobsError }] =
         useScheduleRepoEmbeddingJobs()
@@ -122,9 +122,9 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
     const onSubmit = useCallback(
         async (repoNames: string[]) => {
             await scheduleRepoEmbeddingJobs({ variables: { repoNames } })
-            refetchAll()
+            refetchFirst()
         },
-        [refetchAll, scheduleRepoEmbeddingJobs]
+        [refetchFirst, scheduleRepoEmbeddingJobs]
     )
 
     const form = useForm<RepoEmbeddingJobsFormValues>({
@@ -231,7 +231,12 @@ export const SiteAdminCodyPage: FC<SiteAdminCodyPageProps> = ({ telemetryService
                     {loading && !connection && <ConnectionLoading />}
                     <ConnectionList as="ul" className="list-group" aria-label="Repository embeddings jobs">
                         {connection?.nodes?.map(node => (
-                            <RepoEmbeddingJobNode key={node.id} {...node} onCancel={onCancel} />
+                            <RepoEmbeddingJobNode
+                                key={node.id}
+                                {...node}
+                                onCancel={onCancel}
+                                isSourcegraphApp={isSourcegraphApp}
+                            />
                         ))}
                     </ConnectionList>
                     {connection && (

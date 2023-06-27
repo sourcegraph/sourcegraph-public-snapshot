@@ -31,6 +31,12 @@ If you are logged into Sourcegraph.com, only public open source repositories on 
 
 If you’re connected to a Sourcegraph Enterprise instance, please ask your site admin to [Configure Code Graph Context](explanations/code_graph_context.md) for your Sourcegraph instance and then [Enable Cody](explanations/enabling_cody_enterprise.md) for your account.
 
+If you're connected to the Cody app, you can trigger indexing for a repository by navigating to Settings > Advanced settings > Embeddings jobs in the app. If your repo has no git remote, you'll need to follow the step below to set `Cody: Codebase` to the local path (eg, for `Users/myname/projects/myrepo` set `Cody: Codebase` to `myrepo`). 
+
 If you've completed the above and still seeing your codebase showing up as `NOT INDEXED`, try updating the `Cody: Codebase` (`cody.codebase`) setting in VS Code to the repository name as listed on your Sourcegraph instance.
 
 For more information, see [Generate Index to Enable Codebase-Aware Answers](explanations/indexing.md).
+
+### Signin fails on each VS Code restart
+
+If you are automatically signed out of Cody upon every VS Code restart due to keychain authentication issues, please follow the suggested steps detailed in the official VS Code docs on [troubleshooting keychain issues](https://code.visualstudio.com/docs/editor/settings-sync#_troubleshooting-keychain-issues) to resolve this.

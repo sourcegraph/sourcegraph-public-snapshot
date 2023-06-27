@@ -236,6 +236,7 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 			},
 			SingleJobPod: c.KubernetesSingleJobPod,
 			StepImage:    c.KubernetesSingleJobStepImage,
+			GitCACert:    c.KubernetesGitCACert,
 			JobVolume: command.KubernetesJobVolume{
 				Type:    command.KubernetesVolumeType(c.KubernetesJobVolumeType),
 				Size:    resource.MustParse(c.KubernetesJobVolumeSize),

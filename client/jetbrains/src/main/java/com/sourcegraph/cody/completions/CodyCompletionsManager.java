@@ -20,7 +20,7 @@ import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.NotificationActivity;
-import com.sourcegraph.config.SettingsComponent;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -63,6 +63,13 @@ public class CodyCompletionsManager {
     if (!ConfigUtil.areCodyCompletionsEnabled()) {
       return;
     }
+
+    /* Log the event */
+    Project project = editor.getProject();
+    if (project != null) {
+      GraphQlLogger.logCodyEvent(project, "autocomplete", "started");
+    }
+
     CancellationToken token = new CancellationToken();
     SourcegraphNodeCompletionsClient client =
         new SourcegraphNodeCompletionsClient(completionsService(editor), token);
@@ -161,7 +168,16 @@ public class CodyCompletionsManager {
                 ApplicationManager.getApplication()
                     .invokeLater(
                         () -> {
+                          /* Clear existing completions */
                           this.clearCompletions(editor);
+
+                          /* Log the event */
+                          Project project = editor.getProject();
+                          if (project != null) {
+                            GraphQlLogger.logCodyEvent(project, "autocomplete", "suggested");
+                          }
+
+                          /* Display completion */
                           inlayModel.addInlineElement(offset, true, renderer);
                         });
               } catch (Exception e) {
@@ -229,17 +245,14 @@ public class CodyCompletionsManager {
 
   private CompletionsService completionsService(Editor editor) {
     Project project = editor.getProject();
-    boolean isEnterprise =
-        ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
     String srcEndpoint = System.getenv("SRC_ENDPOINT");
     String instanceUrl =
         srcEndpoint != null
             ? srcEndpoint
-            : isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
-    String accessToken =
-        isEnterprise
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
+            : Optional.ofNullable(project)
+                .map(ConfigUtil::getSourcegraphUrl)
+                .orElse(ConfigUtil.DOTCOM_URL); // fallback to dotcom in case Project is null
+    String accessToken = ConfigUtil.getProjectAccessToken(project);
     if (!instanceUrl.endsWith("/")) {
       instanceUrl = instanceUrl + "/";
     }

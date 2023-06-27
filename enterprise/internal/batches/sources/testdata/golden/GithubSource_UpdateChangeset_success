@@ -9,6 +9,7 @@
   "HeadRefName": "always-open-pr",
   "BaseRefName": "master",
   "Number": 1,
+  "ReviewDecision": "REVIEW_REQUIRED",
   "Author": {
    "AvatarURL": "https://avatars.githubusercontent.com/u/1185253?u=35f048c505007991433b46c9c0616ccbcfbd4bff\u0026v=4",
    "Login": "mrnugget",

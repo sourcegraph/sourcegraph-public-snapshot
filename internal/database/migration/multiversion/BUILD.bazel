@@ -3,6 +3,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "multiversion",
     srcs = [
+        "autoupgrade.go",
         "drift.go",
         "plan.go",
         "run.go",
@@ -18,6 +19,7 @@ go_library(
         "//internal/database/migration/schemas",
         "//internal/database/migration/shared",
         "//internal/database/migration/store",
+        "//internal/env",
         "//internal/observation",
         "//internal/oobmigration",
         "//internal/oobmigration/migrations",

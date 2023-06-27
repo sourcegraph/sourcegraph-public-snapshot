@@ -1,7 +1,9 @@
 package internalerrs
 
 import (
+	"context"
 	"errors"
+	"fmt"
 	"sort"
 	"strings"
 	"testing"
@@ -442,6 +444,62 @@ func TestFindNonUTF8StringFields(t *testing.T) {
 
 			if diff := cmp.Diff(tt.expectedPaths, invalidFields, cmpopts.EquateEmpty()); diff != "" {
 				t.Fatalf("unexpected invalid fields (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestMassageIntoStatusErr(t *testing.T) {
+	testCases := []struct {
+		description string
+		input       error
+		expected    *status.Status
+		expectedOk  bool
+	}{
+		{
+			description: "nil error",
+			input:       nil,
+			expected:    nil,
+			expectedOk:  false,
+		},
+		{
+			description: "status error",
+			input:       status.Errorf(codes.InvalidArgument, "invalid argument"),
+			expected:    status.New(codes.InvalidArgument, "invalid argument"),
+			expectedOk:  true,
+		},
+		{
+			description: "context.Canceled error",
+			input:       context.Canceled,
+			expected:    status.New(codes.Canceled, "context canceled"),
+			expectedOk:  true,
+		},
+		{
+			description: "context.DeadlineExceeded error",
+			input:       context.DeadlineExceeded,
+			expected:    status.New(codes.DeadlineExceeded, "context deadline exceeded"),
+			expectedOk:  true,
+		},
+		{
+			description: "non-status error",
+			input:       errors.New("non-status error"),
+			expected:    nil,
+			expectedOk:  false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.description, func(t *testing.T) {
+			result, ok := massageIntoStatusErr(tc.input)
+			if ok != tc.expectedOk {
+				t.Errorf("Expected ok to be %v, but got %v", tc.expectedOk, ok)
+			}
+
+			expectedStatusString := fmt.Sprintf("%s", tc.expected)
+			actualStatusString := fmt.Sprintf("%s", result)
+
+			if diff := cmp.Diff(expectedStatusString, actualStatusString); diff != "" {
+				t.Fatalf("Unexpected status string (-want +got):\n%s", diff)
 			}
 		})
 	}

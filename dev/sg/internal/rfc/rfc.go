@@ -175,6 +175,7 @@ type tokenHandler interface {
 	Exchange(ctx context.Context, code string,
 		opts ...oauth2.AuthCodeOption) (*oauth2.Token, error)
 	SetRedirectURL(*url.URL)
+	OpenURL(url string) error
 }
 
 type tokenHandlerImpl struct {
@@ -192,6 +193,10 @@ func (th *tokenHandlerImpl) AuthCodeURL(state string, opts ...oauth2.AuthCodeOpt
 func (th *tokenHandlerImpl) Exchange(ctx context.Context, code string,
 	opts ...oauth2.AuthCodeOption) (*oauth2.Token, error) {
 	return th.config.Exchange(ctx, code, opts...)
+}
+
+func (th *tokenHandlerImpl) OpenURL(url string) error {
+	return open.URL(url)
 }
 
 func NewTokenHandler(config *oauth2.Config) *tokenHandlerImpl {
@@ -220,7 +225,7 @@ func getTokenFromWeb(ctx context.Context, f authResponseHandlerFactory, config t
 	authURL := config.AuthCodeURL("state-token", oauth2.AccessTypeOffline)
 
 	out.Writef("Opening %s ...", authURL)
-	if err := open.URL(authURL); err != nil {
+	if err := config.OpenURL(authURL); err != nil {
 		return nil, err
 	}
 

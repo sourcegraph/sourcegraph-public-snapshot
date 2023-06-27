@@ -18,6 +18,7 @@ import (
 	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -161,6 +162,7 @@ func NewHandler(
 
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/app/check/update").Name(updatecheck.RouteAppUpdateCheck).Handler(trace.Route(updatecheck.AppUpdateHandler(logger)))
+		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
 	}

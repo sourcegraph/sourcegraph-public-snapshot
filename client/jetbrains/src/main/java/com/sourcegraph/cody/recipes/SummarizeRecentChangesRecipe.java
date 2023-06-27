@@ -14,7 +14,7 @@ import com.sourcegraph.cody.vcs.Last5ItemsFromCurrentFileFilterOption;
 import com.sourcegraph.cody.vcs.VcsCommitsMetadataLoader;
 import com.sourcegraph.cody.vcs.VcsFilter;
 import com.sourcegraph.cody.vcs.VcsLogFilterOptionsRegistry;
-import java.util.Collections;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.commons.lang.ArrayUtils;
@@ -71,12 +71,14 @@ public class SummarizeRecentChangesRecipe {
                             chat.activateChatTab();
                             chat.addMessageToChat(
                                 ChatMessage.createHumanMessage(
-                                    "", vcsFilter.getFilterDescription(), Collections.emptyList()));
+                                    "", vcsFilter.getFilterDescription()));
                             chat.addMessageToChat(
                                 ChatMessage.createAssistantMessage("No recent changes found."));
                           });
                   return;
                 }
+                GraphQlLogger.logCodyEvent(
+                    this.project, "summarize-recent-code-changes", "execute");
                 recipeRunner.runRecipe(
                     new SummarizeRecentChangesPromptProvider(vcsFilter.getFilterDescription()), it);
               });

@@ -39,5 +39,8 @@ func IsGRPCEnabled(ctx context.Context) bool {
 	if val, err := strconv.ParseBool(os.Getenv(envGRPCEnabled)); err == nil {
 		return val
 	}
-	return conf.Get().ExperimentalFeatures.EnableGRPC
+	if c := conf.Get(); c.ExperimentalFeatures != nil {
+		return c.ExperimentalFeatures.EnableGRPC
+	}
+	return false
 }

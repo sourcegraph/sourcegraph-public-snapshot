@@ -10,6 +10,7 @@ import (
 	"github.com/goware/urlx"
 	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 
 	gerritbatches "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/gerrit"
@@ -1371,19 +1372,35 @@ func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
 			return ChangesetEventKindAzureDevOpsPullRequestBuildPending, nil
 		}
 	case *gerrit.Reviewer:
-		switch e.Approvals.CodeReview {
-		case "+2":
-			return ChangesetEventKindGerritChangeApproved, nil
-		case "+1":
-			return ChangesetEventKindGerritChangeApprovedWithSuggestions, nil
-		case " 0": // Not a typo, this is how Gerrit displays a no score.
-			return ChangesetEventKindGerritChangeReviewed, nil
-		case "-1":
-			return ChangesetEventKindGerritChangeNeedsChanges, nil
-		case "-2":
-			return ChangesetEventKindGerritChangeRejected, nil
+		for key, val := range e.Approvals {
+			if key == gerrit.CodeReviewKey {
+				switch val {
+				case "+2":
+					return ChangesetEventKindGerritChangeApproved, nil
+				case "+1":
+					return ChangesetEventKindGerritChangeApprovedWithSuggestions, nil
+				case " 0": // Not a typo, this is how Gerrit displays a no score.
+					return ChangesetEventKindGerritChangeReviewed, nil
+				case "-1":
+					return ChangesetEventKindGerritChangeNeedsChanges, nil
+				case "-2":
+					return ChangesetEventKindGerritChangeRejected, nil
+				}
+			} else {
+				switch val {
+				case "+2", "+1":
+					return ChangesetEventKindGerritChangeBuildSucceeded, nil
+				case " 0": // Not a typo, this is how Gerrit displays a no score.
+					return ChangesetEventKindGerritChangeBuildPending, nil
+				case "-1", "-2":
+					return ChangesetEventKindGerritChangeBuildFailed, nil
+				default:
+					return ChangesetEventKindGerritChangeBuildPending, nil
+				}
+			}
 		}
 	}
+
 	return ChangesetEventKindInvalid, errors.Errorf("changeset eventkindfor unknown changeset event kind for %T", e)
 }
 
@@ -1525,7 +1542,10 @@ func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
 			ChangesetEventKindGerritChangeApprovedWithSuggestions,
 			ChangesetEventKindGerritChangeReviewed,
 			ChangesetEventKindGerritChangeNeedsChanges,
-			ChangesetEventKindGerritChangeRejected:
+			ChangesetEventKindGerritChangeRejected,
+			ChangesetEventKindGerritChangeBuildFailed,
+			ChangesetEventKindGerritChangeBuildPending,
+			ChangesetEventKindGerritChangeBuildSucceeded:
 			return new(gerrit.Reviewer), nil
 		}
 	}

@@ -1,3 +1,4 @@
+// TODO(burmudar): move this app update endpoint code to codyapp package
 package updatecheck
 
 import (
@@ -30,6 +31,12 @@ const ManifestBucketDev = "sourcegraph-app-dev"
 
 // ManifestName is the name of the manifest object that is in the ManifestBucket
 const ManifestName = "app.update.prod.manifest.json"
+
+// noUpdateConstraint clients on or prior to this version are using the "Sourcegraph App" version, which is the version prior to the
+// "Cody App" version which does not have search. Therefore, clients that match this constraint should be told that there is NOT a
+// new version for them to update to with the Tauri updater. Instead we will notify them with a banner in the app - which is not
+// part of the Tauri updater.
+var noUpdateConstraint = mustConstraint("<= 2023.6.13")
 
 type AppVersion struct {
 	Target  string
@@ -77,7 +84,11 @@ type GCSManifestResolver struct {
 }
 
 type StaticManifestResolver struct {
-	manifest AppUpdateManifest
+	Manifest AppUpdateManifest
+}
+
+func (m *AppUpdateManifest) GitHubReleaseTag() string {
+	return fmt.Sprintf("app-v%s", m.Version)
 }
 
 func (v *AppVersion) Platform() string {
@@ -85,7 +96,7 @@ func (v *AppVersion) Platform() string {
 	// x86_64-darwin
 	// x86_64-linux
 	// aarch64-darwin
-	return fmt.Sprintf("%s-%s", v.Arch, v.Target)
+	return PlatformString(v.Arch, v.Target)
 }
 
 func NewGCSManifestResolver(ctx context.Context, bucket, manifestName string) (UpdateManifestResolver, error) {
@@ -119,7 +130,7 @@ func (r *GCSManifestResolver) Resolve(ctx context.Context) (*AppUpdateManifest, 
 }
 
 func (r *StaticManifestResolver) Resolve(_ context.Context) (*AppUpdateManifest, error) {
-	return &r.manifest, nil
+	return &r.Manifest, nil
 }
 
 func NewAppUpdateChecker(logger log.Logger, resolver UpdateManifestResolver) *AppUpdateChecker {
@@ -250,6 +261,11 @@ func (checker *AppUpdateChecker) canUpdate(client *AppVersion, manifest *AppUpda
 		return false, err
 	}
 
+	// no updates for clients that match this constraint!
+	if noUpdateConstraint.Check(clientVersion) {
+		return false, nil
+	}
+
 	// if the manifest version is higher than then the clientVersion, then the client can upgrade
 	return manifestVersion.Compare(clientVersion) > 0, nil
 }
@@ -274,4 +290,20 @@ func AppUpdateHandler(logger log.Logger) http.HandlerFunc {
 	} else {
 		return NewAppUpdateChecker(logger, resolver).Handler()
 	}
+}
+
+func mustConstraint(c string) *semver.Constraints {
+	constraint, err := semver.NewConstraint(c)
+	if err != nil {
+		panic(fmt.Sprintf("invalid constraint %q: %v", c, err))
+	}
+
+	return constraint
+}
+
+func PlatformString(arch, target string) string {
+	if arch == "" || target == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s-%s", arch, target)
 }

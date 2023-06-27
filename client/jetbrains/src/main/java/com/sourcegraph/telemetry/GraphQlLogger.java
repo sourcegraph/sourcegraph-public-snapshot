@@ -6,7 +6,6 @@ import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.api.GraphQlClient;
 import com.sourcegraph.config.ConfigUtil;
-import com.sourcegraph.config.SettingsComponent;
 import java.io.IOException;
 import java.util.function.Consumer;
 import org.jetbrains.annotations.NotNull;
@@ -35,20 +34,37 @@ public class GraphQlLogger {
     }
   }
 
+  public static void logCodyEvents(
+      @NotNull Project project, @NotNull String componentName, @NotNull String[] actions) {
+    for (String action : actions) {
+      logCodyEvent(project, componentName, action);
+    }
+  }
+
+  public static void logCodyEvent(
+      @NotNull Project project, @NotNull String componentName, @NotNull String action) {
+    String anonymousUserId = ConfigUtil.getAnonymousUserId();
+    String eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
+    Event event =
+        new Event(
+            eventName,
+            anonymousUserId != null ? anonymousUserId : "",
+            ConfigUtil.getSourcegraphUrl(project),
+            null,
+            null);
+    logEvent(project, event, null);
+  }
+
   // This could be exposed later (as public), but currently, we don't use it externally.
   private static void logEvent(
-      Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
+      @NotNull Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
     String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
-    String accessToken =
-        ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
+    String accessToken = ConfigUtil.getProjectAccessToken(project);
     String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project);
     new Thread(
             () -> {
               String query =
-                  ""
-                      + "mutation LogEvents($events: [Event!]) {"
+                  "mutation LogEvents($events: [Event!]) {"
                       + "    logEvents(events: $events) { "
                       + "        alwaysNil"
                       + "    }"

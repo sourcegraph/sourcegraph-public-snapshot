@@ -41,10 +41,10 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
     const [scheduleEmbeddings, { loading }] = useScheduleRepoEmbeddingJobs()
     const [repositories, setRepositories] = useState<LocalRepository[]>([])
 
-    const handleNext = async (): Promise<void> => {
-        await scheduleEmbeddings({
+    const handleNext = (): void => {
+        scheduleEmbeddings({
             variables: { repoNames: repositories.map(repo => repo.name) },
-        })
+        }).catch(() => {})
         onNextStep()
     }
 
@@ -72,9 +72,9 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                 <Tooltip
                     content={
                         repositories.length > MAX_NUMBER_OF_REPOSITORIES
-                            ? `Select less repositores, Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos`
+                            ? `Select fewer repositories, Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos`
                             : repositories.length === 0
-                            ? 'Select at least one repo to continue'
+                            ? 'Select at least one repository to continue'
                             : undefined
                     }
                 >
@@ -98,7 +98,7 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                 >
                     {api => (
                         <PathsPickerActions
-                            disabled={repositories.length > MAX_NUMBER_OF_REPOSITORIES}
+                            disabled={repositories.length >= MAX_NUMBER_OF_REPOSITORIES}
                             className={styles.localRepositoriesButtonsGroup}
                             onPathsChange={api.addNewPaths}
                         />

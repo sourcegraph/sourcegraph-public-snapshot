@@ -5,6 +5,8 @@ go_library(
     name = "blobstore",
     srcs = [
         "blobstore.go",
+        "blobstore_posix.go",
+        "blobstore_windows.go",
         "multipart.go",
         "s3_routes.go",
         "s3_types.go",
