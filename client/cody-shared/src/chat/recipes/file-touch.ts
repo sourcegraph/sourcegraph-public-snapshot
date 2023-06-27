@@ -154,7 +154,7 @@ export class FileTouch implements Recipe {
     - Include all the import statements that are required for the new code to work.
     - If there are already content in the file with the same name, the new code will be appended to the file.
     - If my selected code is empty, it means I am working in an empty file.
-    - Do not remove code that is being used by the the shared filesd.
+    - Do not remove code that is being used by the the shared files.
     - Do not suggest code that are not related to any of the shared context.
     - Do not make up code, including function names, that could break the selected code.
     `
@@ -196,13 +196,17 @@ export class FileTouch implements Recipe {
             // Get the context from each file
             const fileName = vscode.Uri.joinPath(currentDirUri, file[0]).fsPath
             const fileUri = vscode.Uri.joinPath(currentDirUri, file[0])
-            const fileContent = await vscode.workspace.openTextDocument(fileUri)
-            const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
-            const contextMessage = getContextMessageWithResponse(
-                populateCurrentEditorContextTemplate(truncatedContent, fileName),
-                { fileName }
-            )
-            contextMessages.push(...contextMessage)
+            try {
+                const fileContent = await vscode.workspace.openTextDocument(fileUri)
+                const truncatedContent = truncateText(fileContent.getText(), MAX_CURRENT_FILE_TOKENS)
+                const contextMessage = getContextMessageWithResponse(
+                    populateCurrentEditorContextTemplate(truncatedContent, fileName),
+                    { fileName }
+                )
+                contextMessages.push(...contextMessage)
+            } catch (error) {
+                console.error(error)
+            }
         }
 
         return contextMessages
