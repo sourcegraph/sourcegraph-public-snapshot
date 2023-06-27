@@ -27,7 +27,7 @@ const APP_DESC = {
     getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     download: 'Download and run the Cody desktop app to configure your local code graph.',
     connectApp: 'Cody App detected. All that’s left to do is connect VS Code with Cody App.',
-    notAuthenticated: 'Waiting for setup to complete…',
+    notAuthenticated: 'Please complete the setup process in Cody App to continue.',
     notRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     comingSoon:
         'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
@@ -88,17 +88,20 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Get Started'}</h2>
             <p className={styles.openMessage}>{openMsg}</p>
             {!isAppInstalled && <p className={styles.openMessage}>{APP_DESC.download}</p>}
-            <ConnectApp
-                isAppInstalled={isAppInstalled}
-                vscodeAPI={vscodeAPI}
-                isOSSupported={isOSSupported}
-                appOS={appOS}
-                appArch={appArch}
-                isAppRunning={isAppRunning}
-                isAppAuthenticated={isAppAuthenticated}
-                callbackScheme={callbackScheme}
-            />
-            {isAppRunning && !isAppAuthenticated && <VSCodeButton onClick={onRefreshButtonClick}>Refresh</VSCodeButton>}
+            {isAppRunning && !isAppAuthenticated ? (
+                <VSCodeButton onClick={onRefreshButtonClick}>Refresh</VSCodeButton>
+            ) : (
+                <ConnectApp
+                    isAppInstalled={isAppInstalled}
+                    vscodeAPI={vscodeAPI}
+                    isOSSupported={isOSSupported}
+                    appOS={appOS}
+                    appArch={appArch}
+                    isAppRunning={isAppRunning}
+                    isAppAuthenticated={isAppAuthenticated}
+                    callbackScheme={callbackScheme}
+                />
+            )}
             {!isOSSupported && (
                 <small>
                     Sorry, {appOS} {appArch} is not yet supported.
