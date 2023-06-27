@@ -564,14 +564,14 @@ func NewKubernetesSingleJob(
 
 	sslCAInfo := ""
 	if options.GitCACert != "" {
-		sslCAInfo = fmt.Sprintf("git config --global http.sslCAInfo %s; ", options.GitCACert)
+		sslCAInfo = fmt.Sprintf("git config --local http.sslCAInfo %s; ", options.GitCACert)
 	}
 
 	setupArgs := []string{
 		"set -e; " +
 			fmt.Sprintf("mkdir -p %s; ", repoDir) +
-			sslCAInfo +
 			fmt.Sprintf("git -C %s init; ", repoDir) +
+			sslCAInfo +
 			fmt.Sprintf("git -C %s remote add origin %s; ", repoDir, repoOptions.CloneURL) +
 			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
 			fmt.Sprintf("git -C %s "+
