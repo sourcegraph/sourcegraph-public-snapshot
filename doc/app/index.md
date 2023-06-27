@@ -40,9 +40,9 @@ Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/t
 
 Follow the setup instructions to connect the app to your Sourcegraph.com account (or create one for free if you don't have an account yet) and add your local projects. 
 
-If you use VS Code, we recommend you follow the steps to download the VS Code extension, which enables Cody within your editor. If you already have the extension, use the settings gear in the Cody chat window in the editor to log out and log back in through the app. Cody in VS Code will then talk to your Sourcegraph app to answer questions.
+If you use VS Code or a JetBrains IDE, we recommend you follow the steps to download the extension, which enables Cody within your editor. (If you installed the extension before you downloaded the app, you'll see a prompt in your editor to download the app.) Cody in your editor will then talk to your Sourcegraph app to answer questions.
 
-Note: We're only supporting VS Code right now, but a Jetbrains extension is coming soon!
+Note: The JetBrains extension is still `Experimental`. 
 
 ### (Optional) batch changes & precise code intel
 
