@@ -190,7 +190,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					10001: userProps("u-new", "u-new@example.com"),
 				},
 				expCalledGrantPendingPermissions: true,
-				expCalledCreateUserSyncJob:       false,
+				expCalledCreateUserSyncJob:       true,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should NOT create user",
@@ -453,11 +453,13 @@ func TestGetAndSaveUser(t *testing.T) {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return nil
 		})
+		permsSyncJobsStore := database.NewMockPermissionSyncJobStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccountsStore)
 		db.AuthzFunc.SetDefaultReturn(database.NewMockAuthzStore())
 		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
 		_, _, err := GetAndSaveUser(
 			ctx,

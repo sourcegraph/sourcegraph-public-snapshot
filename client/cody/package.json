@@ -307,7 +307,7 @@
       {
         "command": "cody.manual-completions",
         "category": "Cody",
-        "title": "Open Completions Panel"
+        "title": "Open Autocomplete Panel (Experimental)"
       },
       {
         "command": "cody.settings.extension",
@@ -473,8 +473,8 @@
       },
       {
         "command": "cody.recipe.file-touch",
-        "key": "ctrl+shift+t",
-        "mac": "shift+cmd+t",
+        "key": "ctrl+alt+/",
+        "mac": "cmd+alt+/",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
       },
       {

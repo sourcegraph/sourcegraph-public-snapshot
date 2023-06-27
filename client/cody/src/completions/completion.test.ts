@@ -358,15 +358,15 @@ describe('Cody completions', () => {
             )
 
             expect(completions).toMatchInlineSnapshot(`
-            Array [
-              InlineCompletionItem {
-                "insertText": "
-                    const unsortedArray = [4,3,78,2,0,2]
-                    const sortedArray = bubbleSort(unsortedArray)
-                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
-              },
-            ]
-        `)
+                            Array [
+                              InlineCompletionItem {
+                                "insertText": "
+                                    const unsortedArray = [4,3,78,2,0,2]
+                                    const sortedArray = bubbleSort(unsortedArray)
+                                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
+                              },
+                            ]
+                    `)
         })
 
         it('cuts-off redundant closing brackets on the start indent level', async () => {
@@ -388,14 +388,14 @@ describe('Cody completions', () => {
             )
 
             expect(completions).toMatchInlineSnapshot(`
-            Array [
-              InlineCompletionItem {
-                "insertText": "const unsortedArray = [4,3,78,2,0,2]
-                    const sortedArray = bubbleSort(unsortedArray)
-                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
-              },
-            ]
-        `)
+                            Array [
+                              InlineCompletionItem {
+                                "insertText": "const unsortedArray = [4,3,78,2,0,2]
+                                    const sortedArray = bubbleSort(unsortedArray)
+                                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
+                              },
+                            ]
+                    `)
         })
 
         it('keeps the closing bracket', async () => {
@@ -406,14 +406,14 @@ describe('Cody completions', () => {
             ])
 
             expect(completions).toMatchInlineSnapshot(`
-            Array [
-              InlineCompletionItem {
-                "insertText": "{
-                console.log('Hello');
-            }",
-              },
-            ]
-        `)
+                            Array [
+                              InlineCompletionItem {
+                                "insertText": "{
+                                console.log('Hello');
+                            }",
+                              },
+                            ]
+                    `)
         })
 
         it('triggers a multi-line completion at the start of a block', async () => {
@@ -458,6 +458,30 @@ describe('Cody completions', () => {
                             console.log('foo1');
                         }",
                   },
+                  InlineCompletionItem {
+                    "insertText": "console.log('foo')",
+                  },
+                ]
+            `)
+        })
+
+        it('cuts-off completions when the next non-empty line matches', async () => {
+            const { completions } = await complete(
+                `
+                function() {
+                    ${CURSOR_MARKER}
+                    console.log('bar')
+                }`,
+                [
+                    createCompletionResponse(`
+                    console.log('foo')
+                        console.log('bar')
+                    }`),
+                ]
+            )
+
+            expect(completions).toMatchInlineSnapshot(`
+                Array [
                   InlineCompletionItem {
                     "insertText": "console.log('foo')",
                   },

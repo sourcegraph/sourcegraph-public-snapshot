@@ -61,6 +61,11 @@ All notable changes to Sourcegraph are documented in this file.
 - Latest repository clone/sync output is surfaced in the "Mirroring and cloning" page (`{REPO}/-/settings/mirror`). Added primarily to enable easier debugging of issues with Perforce depots, it can also be useful for other code hosts. [#51598](https://github.com/sourcegraph/sourcegraph/pull/51598)
 - New `file:has.contributor(...)` predicate for filtering files based on contributors. [#53206](https://github.com/sourcegraph/sourcegraph/pull/53206)
 - Added multi-repo scope selector for Cody on the web supporting unified context generation API which uses combination of embeddings search and keyword search as fallback for context generation. [53046](https://github.com/sourcegraph/sourcegraph/pull/53046)
+- Batch Changes can now sign commits for changesets published on GitHub code hosts via GitHub Apps. [#52333](https://github.com/sourcegraph/sourcegraph/pull/52333)
+- Added history of changes to the site configuration page. Site admins can now see information about changes made to the site configuration, by whom and when. [#49842](https://github.com/sourcegraph/sourcegraph/pull/49842)
+- For Perforce depots, users will now see the changelist ID (CL) instead of Git commit SHAs when visiting a depot or the view changelists page [#51195](https://github.com/sourcegraph/sourcegraph/pull/51195)
+- Visiting a specific CL will now use the CL ID in the URL instead of the commit SHA. Other areas affected by this change are browsing files at a specific CL, viewing a specific file changed as part of a specific CL. To enable this behaviour, site admins should set `"perforceChangelistMapping": "enabled"` under experimentalFeatures in the site configuration. Note that currently we process only one perforce depot at a time to map the commit SHAs to their CL IDs in the backend. In a subsequent release we will add support to process multiple depots in parallel. Other areas where currently commit SHAs are used will be updated in future releases. [#53253](https://github.com/sourcegraph/sourcegraph/pull/53253) [#53608](https://github.com/sourcegraph/sourcegraph/pull/53608) [#54051](https://github.com/sourcegraph/sourcegraph/pull/54051)
+- Added autoupgrading to automatically perform multi-version upgrades, without manual `migrator` invocations, through the `frontend` deployment. Please see the [documentation](https://docs.sourcegraph.com/admin/updates/automatic) for details. [#52242](https://github.com/sourcegraph/sourcegraph/pull/52242) [#53196](https://github.com/sourcegraph/sourcegraph/pull/53196)
 
 ### Changed
 
@@ -104,6 +109,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where commenting out redacted site-config secrets would re-add the secrets. [#53152](https://github.com/sourcegraph/sourcegraph/pull/53152)
 - Fixed an issue where SCIP packages would sometimes not be written to the database, breaking cross-repository jump to definition. [#53763](https://github.com/sourcegraph/sourcegraph/pull/53763)
 - Fixed an issue when adding a new user external account was not scheduling a new permission sync for the user. [#54144](https://github.com/sourcegraph/sourcegraph/pull/54144)
+- Adding a new user account now correctly schedules a permission sync for the user. [#54258](https://github.com/sourcegraph/sourcegraph/pull/54258)
+- Users/repos without an existing sync job in the permission_sync_jobs table are now scheduled properly. [#54278](https://github.com/sourcegraph/sourcegraph/pull/54278)
 
 ### Removed
 

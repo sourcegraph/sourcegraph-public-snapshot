@@ -27,6 +27,10 @@ public class LocalAppPaths {
         || pathExists(appJsonFile);
   }
 
+  public boolean isCodyInstalled() {
+    return pathExists(codyAppFile);
+  }
+
   private static boolean pathExists(Path path) {
     try {
       return path.toFile().exists();

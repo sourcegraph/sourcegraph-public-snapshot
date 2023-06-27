@@ -34,32 +34,25 @@ The Cody app is a free, lightweight, native desktop application that connects yo
 
 ## Installation
 
-Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.21%2B1321.8c3a4999f2) to find the right download link for your operating system. The app is currently supported on MacOS (use _aarch64.dmg for Apple Silicon or _x64.dmg for Mac Intel) and Linux (_amd64.deb), and we're working on Windows support.
+Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.26%2B1328.bca7d2c3ed) to find the right download link for your operating system. The app is currently supported on MacOS (use _aarch64.dmg for Apple Silicon or _x64.dmg for Mac Intel) and Linux (_amd64.deb), and we're working on Windows support.
 
 ## Setup
 
 Follow the setup instructions to connect the app to your Sourcegraph.com account (or create one for free if you don't have an account yet), add your local projects, and select up to 10 of those projects to build your code graph. The code graph helps Cody generate more accurate answers about your code by sending your code to Sourcegraph to create [embeddings](../cody/explanations/code_graph_context.md#embeddings). (This may take a few minutes, depending on the size of your repos.) We are working on making it so that *all* the projects you connect to your app get embeddings and bumping the cap up from 10.
 
-If you use VS Code, we recommend you follow the steps to download the VS Code extension, which enables Cody within your editor. If you already have the extension, use the settings gear in the Cody chat window in the editor to log out and log back in through the app. Cody in VS Code will then talk to your Sourcegraph app to answer questions.
+If you use VS Code, we recommend you follow the steps to download the VS Code extension, which enables Cody within your editor. (If you installed the extension before you downloaded the app, you'll see a prompt in your editor to download the app.) Cody in VS Code will then talk to your Sourcegraph app to answer questions.
 
 Note: We're only supporting VS Code right now, but a Jetbrains extension is coming soon!
 
-## Get help & give feedback
-
-Cody app is early stages. If you run into any trouble or have ideas/feedback, we'd love to hear from you!
-
-* [Join our community Discord](https://discord.com/invite/s2qDtYGnAE) for live help/discussion
-* [Create a GitHub issue](https://github.com/sourcegraph/app/issues/new)
-
 ## Upgrading
 
-We're shipping new releases of the app quickly, and you should get prompts to upgrade automatically. Let us know if you have any issues and we'll be happy to help.
+You'll get prompts to upgrade automatically. Let us know if you have any issues and we'll be happy to help.
 
-If you're on a version that's 2023.6.13 or older, we recommend you uninstall the app (see below) and download the most recent version in order to add your projects to your code graph during setup. Also note that these older versions of the app were called "Sourcegraph" and included Sourcegraph code search. Going forward, the app will be a Cody-only experience (and branded accordingly) so that we can focus on making Cody as useful and intuitive as possible.
+If you're on a version that's 2023.6.13 or older, we recommend you uninstall the app (see [Uninstallation](#uninstallation) below) and download the most recent version in order to add your projects to your code graph during setup. Also note that these older versions of the app were called "Sourcegraph" and included Sourcegraph code search. Going forward, the app will be a Cody-only experience (and branded accordingly) so that we can focus on making Cody as useful and intuitive as possible.
 
 ## Rate limiting
 
-There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as we continue development on [Cody Gateway](../cody/explanations/cody_gateway.md).
+There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as we continue development on [Cody Gateway](../cody/explanations/cody_gateway.md). If you'd like to use your own third-party LLM provider instead of Cody Gateway, you must create your own key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).  
 
 ### Cody Chat
 Interactions with Cody Chat (whether in the app UI or in the editor extension) are capped at 100 requests per day.
@@ -72,22 +65,24 @@ The setup experience allows users to select up to 10 repos for embeddings. Addit
 
 ## Uninstallation
 
-We're working on a better way to clear all data including webkit storage, but for now you can run the following command to uninstall the app:
+Select Troubleshooting > Clear data from the system tray and delete the app from your applications folder. If you're on an older version of the app and don't see a "Clear data" option, run: 
+
 ```bash
 rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody
 ```
 
 ## Troubleshooting
 
-Known issues:
-- The app is slow to load on initial install, due to Postgres issues we're working to tighten up.
-- In the app's Cody Chat UI, Cody will read N files to provide an answer. Those files are listed as hyperlinks, but they should not be.
-- In the settings dropdown in the app, there's an option for "Teams" that should not be there as the app is a single-player experience.
-- The cloud icon in the app UI always says "indexing" and refers to Sourcegraph code search, not projects that are being added to the app's code graph.
-
 See [App troubleshooting](troubleshooting.md)
 
 ## Release pipeline
 
 See [App release pipeline](release-pipeline.md)
+
+## Get help & give feedback
+
+Cody app is new and we're iterating on it quickly. If you run into any trouble or have ideas/feedback, we'd love to hear from you!
+
+* [Join our community Discord](https://discord.com/invite/s2qDtYGnAE) for live help/discussion
+* [Create a GitHub issue](https://github.com/sourcegraph/app/issues/new)
 

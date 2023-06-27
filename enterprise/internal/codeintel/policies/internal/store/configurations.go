@@ -358,19 +358,29 @@ func (s *store) DeleteConfigurationPolicyByID(ctx context.Context, id int) (err 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	protected, ok, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(deleteConfigurationPolicyByIDQuery, id)))
-	if err != nil {
-		return err
-	}
-	if !ok {
-		return errUnknownConfigurationPolicy
-	}
-	if protected {
-		return errIllegalConfigurationPolicyDelete
-	}
+	return s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+		protected, ok, err := basestore.ScanFirstBool(s.db.Query(ctx, sqlf.Sprintf(deleteConfigurationPolicyByIDQuery, id)))
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return errUnknownConfigurationPolicy
+		}
+		if protected {
+			return errIllegalConfigurationPolicyDelete
+		}
+		_, err = s.db.Query(ctx, sqlf.Sprintf(deleteConfigurationPoliciesRepositoryPatternLookup, id))
+		if err != nil {
+			return err
+		}
+		return nil
+	})
 
-	return nil
 }
+
+const deleteConfigurationPoliciesRepositoryPatternLookup = `
+	DELETE FROM lsif_configuration_policies_repository_pattern_lookup WHERE policy_id = %s
+`
 
 const deleteConfigurationPolicyByIDQuery = `
 WITH

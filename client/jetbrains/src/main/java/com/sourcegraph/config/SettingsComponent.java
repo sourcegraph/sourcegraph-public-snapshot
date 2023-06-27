@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
@@ -68,10 +69,16 @@ public class SettingsComponent {
     return panel;
   }
 
+  public static InstanceType getDefaultInstanceType() {
+    return LocalAppManager.isLocalAppInstalled() && LocalAppManager.isPlatformSupported()
+        ? InstanceType.LOCAL_APP
+        : InstanceType.DOTCOM;
+  }
+
   @NotNull
   public InstanceType getInstanceType() {
     return InstanceType.optionalValueOf(instanceTypeButtonGroup.getSelection().getActionCommand())
-        .orElse(InstanceType.ENTERPRISE);
+        .orElse(getDefaultInstanceType());
   }
 
   public void setInstanceType(@NotNull InstanceType instanceType) {
@@ -83,6 +90,17 @@ public class SettingsComponent {
     }
 
     setInstanceSettingsEnabled(instanceType);
+  }
+
+  private ActionLink simpleActionLink(String text, Runnable runnable) {
+    ActionLink actionLink =
+        new ActionLink(
+            text,
+            e -> {
+              runnable.run();
+            });
+    actionLink.setFont(UIUtil.getLabelFont(UIUtil.FontSize.SMALL));
+    return actionLink;
   }
 
   @NotNull
@@ -147,15 +165,16 @@ public class SettingsComponent {
         event ->
             setInstanceSettingsEnabled(
                 InstanceType.optionalValueOf(event.getActionCommand())
-                    .orElse(InstanceType.ENTERPRISE));
+                    .orElse(getDefaultInstanceType()));
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
+    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
-    boolean isCodyAppInstalledAndConfigured =
-        LocalAppManager.isLocalAppInstalled()
-            && LocalAppManager.getLocalAppAccessToken().isPresent();
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
     codyAppRadioButton.setActionCommand(InstanceType.LOCAL_APP.name());
     codyAppRadioButton.addActionListener(actionListener);
-    codyAppRadioButton.setEnabled(isCodyAppInstalledAndConfigured);
+    codyAppRadioButton.setEnabled(isLocalAppInstalled && isLocalAppAccessTokenConfigured);
     JRadioButton sourcegraphDotComRadioButton = new JRadioButton("Use sourcegraph.com");
     sourcegraphDotComRadioButton.setMnemonic(KeyEvent.VK_C);
     sourcegraphDotComRadioButton.setActionCommand(InstanceType.DOTCOM.name());
@@ -169,20 +188,48 @@ public class SettingsComponent {
     instanceTypeButtonGroup.add(sourcegraphDotComRadioButton);
     instanceTypeButtonGroup.add(enterpriseInstanceRadioButton);
 
-    // Assemble the three main panels
-
+    // Assemble the three main panels String platformName =
+    String platformName =
+        Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
+    String codyAppCommentText =
+        isLocalAppPlatformSupported
+            ? "Use Sourcegraph through the locally installed Cody App."
+            : platformName
+                + " is not yet supported by the local Cody App. Keep an eye on future updates!";
     JBLabel codyAppComment =
+        new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
+    codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
+    JLabel installLocalAppComment =
         new JBLabel(
-            "Use Sourcegraph through the locally installed Cody App",
+            "The local Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    codyAppComment.setEnabled(isCodyAppInstalledAndConfigured);
+    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    ActionLink installLocalAppLink =
+        simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
+    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
+    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
+    ActionLink runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
+    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
+    JLabel runLocalAppComment =
+        new JBLabel(
+            "The local Cody App seems to be installed, but it's not running, currently.",
+            UIUtil.ComponentStyle.SMALL,
+            UIUtil.FontColor.BRIGHTER);
+    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)
             .addComponent(codyAppComment, 2)
-            //            .addComponent(codyAppPanelContent, 1)
+            .addComponent(installLocalAppComment, 2)
+            .addComponent(installLocalAppLink, 2)
+            .addComponent(runLocalAppComment, 2)
+            .addComponent(runLocalAppLink, 2)
             .getPanel();
     JBLabel dotComComment =
         new JBLabel(

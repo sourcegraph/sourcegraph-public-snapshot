@@ -146,8 +146,8 @@ tasks {
         jvmArgs("-Djdk.module.illegalAccess.silent=true")
         systemProperty("cody-agent.trace-path", "$buildDir/sourcegraph/cody-agent-trace.json")
         systemProperty("cody-agent.directory", agentTargetDirectory.parent.toString())
-        val isAgentEnabled = findProperty("disableAgent") == "true"
-        systemProperty("cody-agent.enabled", (!isAgentEnabled).toString())
+        val isAgentEnabled = findProperty("enableAgent") == "true"
+        systemProperty("cody-agent.enabled", isAgentEnabled.toString())
     }
 
     // Configure UI tests plugin

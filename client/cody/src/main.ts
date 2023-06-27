@@ -241,7 +241,17 @@ const register = async (
         vscode.commands.registerCommand('cody.feedback', () =>
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
-        vscode.commands.registerCommand('cody.welcome', () =>
+        vscode.commands.registerCommand('cody.welcome', async () => {
+            // Hack: We have to run this twice to force VS Code to register the walkthrough
+            // Open issue: https://github.com/microsoft/vscode/issues/186165
+            await vscode.commands.executeCommand('workbench.action.openWalkthrough')
+            return vscode.commands.executeCommand(
+                'workbench.action.openWalkthrough',
+                'sourcegraph.cody-ai#welcome',
+                false
+            )
+        }),
+        vscode.commands.registerCommand('cody.welcome-mock', () =>
             vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
         ),
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
