@@ -34,7 +34,7 @@ Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** up
 
 **Multiversion**
 - Moves Sourcegraph multiple versions forward (`v5.0.0` to `v5.2.0`).
-- Requires downtime while the database schemas are rewritten and unfinished out-of-band migrations are applied
+- Requires downtime while the database schemas and rewritten and unfinished out-of-band migrations are applied
 - We currently support jumping from version `v3.20` or later to any future version.
 - **Sourcegraph App and AMIs do not yet support multiversion upgrades. We hope to improve this soon.**
 
