@@ -5,6 +5,8 @@ import com.intellij.openapi.command.WriteCommandAction;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.actionSystem.EditorAction;
 import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
+import com.intellij.openapi.project.Project;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -69,6 +71,13 @@ public class AcceptCodyCompletionAction extends EditorAction {
       if (completion == null) {
         return;
       }
+
+      /* Log the event */
+      Project project = editor.getProject();
+      if (project != null) {
+        GraphQlLogger.logCodyEvent(project, "autocomplete", "accepted");
+      }
+
       WriteCommandAction.runWriteCommandAction(
           editor.getProject(),
           "Accept Cody Completion",

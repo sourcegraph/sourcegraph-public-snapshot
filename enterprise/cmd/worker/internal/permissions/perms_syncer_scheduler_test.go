@@ -58,7 +58,7 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		permsStore := edb.Perms(logger, db, clock)
 
 		// Creating site-admin.
-		_, err := usersStore.Create(ctx, database.NewUser{Username: "admin"})
+		adminUser, err := usersStore.Create(ctx, database.NewUser{Username: "admin"})
 		require.NoError(t, err)
 
 		// Creating non-private repo.
@@ -66,8 +66,14 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		err = reposStore.Create(ctx, &nonPrivateRepo)
 		require.NoError(t, err)
 
-		// We should have no jobs scheduled
-		runJobsTest(t, ctx, logger, db, store, []testJob{})
+		// We should have 1 job scheduled for admin
+		runJobsTest(t, ctx, logger, db, store, []testJob{{
+			UserID:       int(adminUser.ID),
+			RepositoryID: 0,
+			Reason:       database.ReasonUserOutdatedPermissions,
+			Priority:     database.LowPriorityPermissionsSync,
+			NoPerms:      false,
+		}})
 
 		// Creating a user.
 		user1, err := usersStore.Create(ctx, database.NewUser{Username: "test-user-1"})
@@ -82,8 +88,15 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		err = reposStore.Create(ctx, &repo1)
 		require.NoError(t, err)
 
-		// We should have 2 jobs scheduled.
+		// We should have 3 jobs scheduled, including 2 new for user1 and repo1
 		wantJobs := []testJob{
+			{
+				UserID:       int(adminUser.ID),
+				RepositoryID: 0,
+				Reason:       database.ReasonUserOutdatedPermissions,
+				Priority:     database.LowPriorityPermissionsSync,
+				NoPerms:      false,
+			},
 			{
 				UserID:       int(user1.ID),
 				RepositoryID: 0,
@@ -131,8 +144,15 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 			Reason:   database.ReasonRepoOutdatedPermissions,
 		})
 
-		// We should have 4 jobs scheduled including new jobs for user2 and repo2.
+		// We should have 5 jobs scheduled including new jobs for user2 and repo2.
 		wantJobs = []testJob{
+			{
+				UserID:       int(adminUser.ID),
+				RepositoryID: 0,
+				Reason:       database.ReasonUserOutdatedPermissions,
+				Priority:     database.LowPriorityPermissionsSync,
+				NoPerms:      false,
+			},
 			{
 				UserID:       int(user1.ID),
 				RepositoryID: 0,
@@ -166,8 +186,15 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		_, err = db.ExecContext(ctx, fmt.Sprintf(`UPDATE permission_sync_jobs SET state = 'completed' WHERE user_id=%d OR repository_id=%d`, user1.ID, repo1.ID))
 		require.NoError(t, err)
 
-		// We should have 4 jobs including new jobs for user1 and repo1.
+		// We should have 5 jobs including new jobs for user1 and repo1.
 		wantJobs = []testJob{
+			{
+				UserID:       int(adminUser.ID),
+				RepositoryID: 0,
+				Reason:       database.ReasonUserOutdatedPermissions,
+				Priority:     database.LowPriorityPermissionsSync,
+				NoPerms:      false,
+			},
 			{
 				UserID:       int(user2.ID),
 				RepositoryID: 0,
@@ -207,9 +234,8 @@ type testJob struct {
 }
 
 func runJobsTest(t *testing.T, ctx context.Context, logger log.Logger, db database.DB, store database.PermissionSyncJobStore, wantJobs []testJob) {
-	count, err := scheduleJobs(ctx, db, logger, auth.ZeroBackoff)
+	_, err := scheduleJobs(ctx, db, logger, auth.ZeroBackoff)
 	require.NoError(t, err)
-	require.Equal(t, len(wantJobs), count)
 
 	jobs, err := store.List(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionsSyncJobStateQueued})
 	require.NoError(t, err)

@@ -20,6 +20,7 @@ import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.NotificationActivity;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,6 +63,13 @@ public class CodyCompletionsManager {
     if (!ConfigUtil.areCodyCompletionsEnabled()) {
       return;
     }
+
+    /* Log the event */
+    Project project = editor.getProject();
+    if (project != null) {
+      GraphQlLogger.logCodyEvent(project, "autocomplete", "started");
+    }
+
     CancellationToken token = new CancellationToken();
     SourcegraphNodeCompletionsClient client =
         new SourcegraphNodeCompletionsClient(completionsService(editor), token);
@@ -160,7 +168,16 @@ public class CodyCompletionsManager {
                 ApplicationManager.getApplication()
                     .invokeLater(
                         () -> {
+                          /* Clear existing completions */
                           this.clearCompletions(editor);
+
+                          /* Log the event */
+                          Project project = editor.getProject();
+                          if (project != null) {
+                            GraphQlLogger.logCodyEvent(project, "autocomplete", "suggested");
+                          }
+
+                          /* Display completion */
                           inlayModel.addInlineElement(offset, true, renderer);
                         });
               } catch (Exception e) {

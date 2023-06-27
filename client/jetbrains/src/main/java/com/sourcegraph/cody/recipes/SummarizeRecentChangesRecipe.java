@@ -14,6 +14,7 @@ import com.sourcegraph.cody.vcs.Last5ItemsFromCurrentFileFilterOption;
 import com.sourcegraph.cody.vcs.VcsCommitsMetadataLoader;
 import com.sourcegraph.cody.vcs.VcsFilter;
 import com.sourcegraph.cody.vcs.VcsLogFilterOptionsRegistry;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.Optional;
 import java.util.function.Supplier;
 import org.apache.commons.lang.ArrayUtils;
@@ -76,6 +77,8 @@ public class SummarizeRecentChangesRecipe {
                           });
                   return;
                 }
+                GraphQlLogger.logCodyEvent(
+                    this.project, "summarize-recent-code-changes", "execute");
                 recipeRunner.runRecipe(
                     new SummarizeRecentChangesPromptProvider(vcsFilter.getFilterDescription()), it);
               });

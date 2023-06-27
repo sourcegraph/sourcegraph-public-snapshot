@@ -22,7 +22,8 @@ pub struct NodeFilter {
 pub struct TagConfiguration {
     language: Language,
     query_text: String,
-    pub query: Query,
+    pub tag_query: Query,
+    pub sym_query: Query,
 
     // Handles #transform! predicates in queries
     transforms: HashMap<usize, Vec<Transform>>,
@@ -32,8 +33,8 @@ pub struct TagConfiguration {
 }
 
 impl TagConfiguration {
-    fn new(language: Language, query_text: &str) -> Self {
-        let first_line = query_text.lines().next();
+    fn new(language: Language, tag_query: &str, sym_query: Option<String>) -> Self {
+        let first_line = tag_query.lines().next();
         let query_text = match first_line {
             Some(line) if line.starts_with(";;include") => {
                 let (_, included_lang) =
@@ -43,12 +44,19 @@ impl TagConfiguration {
                 let parser = BundledParser::get_parser(included_lang).expect("valid language");
                 let configuration = get_tag_configuration(&parser).expect("valid config");
 
-                format!("{}\n{}", configuration.query_text, query_text)
+                format!("{}\n{}", configuration.query_text, tag_query)
             }
-            _ => query_text.to_string(),
+            _ => tag_query.to_string(),
         };
 
         let query = Query::new(language, &query_text).expect("to parse query");
+        let sym_query = match sym_query {
+            Some(text) => {
+                let text = format!("{query_text}\n{text}");
+                Query::new(language, &text).expect("to parse symbol query")
+            }
+            None => Query::new(language, &query_text).expect("to parse query"),
+        };
 
         let mut transforms = HashMap::new();
         let mut filters = HashMap::new();
@@ -133,7 +141,8 @@ impl TagConfiguration {
         Self {
             language,
             query_text,
-            query,
+            tag_query: query,
+            sym_query,
             transforms,
             filters,
         }
@@ -200,7 +209,19 @@ mod tags {
                 INSTANCE.get_or_init(|| {
                     let language = $parser.get_language();
                     let query = include_scip_query!($file, "scip-tags");
-                    TagConfiguration::new(language, query)
+                    TagConfiguration::new(language, query, None)
+                })
+            }
+        };
+        ($name:tt, $parser:path, $file:tt, $symbol_file:tt) => {
+            pub fn $name() -> &'static TagConfiguration {
+                static INSTANCE: OnceCell<TagConfiguration> = OnceCell::new();
+
+                INSTANCE.get_or_init(|| {
+                    let language = $parser.get_language();
+                    let query = include_scip_query!($file, "scip-tags");
+                    let sym_query = include_scip_query!($file, "scip-references").to_string();
+                    TagConfiguration::new(language, query, Some(sym_query))
                 })
             }
         };
@@ -217,7 +238,7 @@ mod tags {
     create_tags_configuration!(c_sharp, BundledParser::C_Sharp, "c_sharp");
     create_tags_configuration!(java, BundledParser::Java, "java");
     create_tags_configuration!(rust, BundledParser::Rust, "rust");
-    create_tags_configuration!(go, BundledParser::Go, "go");
+    create_tags_configuration!(go, BundledParser::Go, "go", "go");
     create_tags_configuration!(zig, BundledParser::Zig, "zig");
 
     pub fn get_tag_configuration(parser: &BundledParser) -> Option<&'static TagConfiguration> {
