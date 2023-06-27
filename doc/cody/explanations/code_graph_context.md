@@ -47,6 +47,20 @@ To use `excludedFilePathPatterns`, add it to your embeddings site config with a 
 }
 ```
 
+By default, the following patterns are excluded from embeddings:
+
+- *ignore" // Files like .gitignore, .eslintignore
+- .gitattributes
+- .mailmap
+- *.csv
+- *.svg
+- *.xml
+- \_\_fixtures\_\_/
+- node_modules/
+- testdata/
+- mocks/
+- vendor/
+
 > NOTE: The `excludedFilePathPatterns` setting is only available in Sourcegraph version `5.0.1` and later.
 
 ### Storing embedding indexes
@@ -173,6 +187,21 @@ A negative value disables the limit and all repositories are selected.
   "embeddings": {
     // [...]
     "policyRepositoryMatchLimit": 5000
+  }
+}
+```
+
+### Limitting the number of embeddings that can be generated
+
+The number of embeddings that can be generated per repo is limited to `embeddings.maxCodeEmbeddingsPerRepo` for code embeddings (default 3.072.000) or `embeddings.maxTextEmbeddingsPerRepo` (default 512.000) for text embeddings.
+
+Use the following site configuration to update the limits:
+
+```jsonc
+{
+  "embeddings": {
+    "maxCodeEmbeddingsPerRepo": 3072000,
+    "maxTextEmbeddingsPerRepo": 512000
   }
 }
 ```
