@@ -631,6 +631,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
+        await this.publishConfig()
         if (authStatus.siteVersion) {
             // Update codebase context
             const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
@@ -638,9 +639,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.codebaseContext = codebaseContext
                 await this.publishContextStatus()
             }
-            await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
         }
-        await this.publishConfig()
     }
 
     /**

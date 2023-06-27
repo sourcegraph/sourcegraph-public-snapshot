@@ -14,7 +14,6 @@ import {
     unauthenticatedStatus,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
 import { debug } from '../log'
 
@@ -147,9 +146,9 @@ export class AuthProvider {
     private async signout(endpoint: string): Promise<void> {
         await this.secretStorage.deleteToken(endpoint)
         await this.localStorage.deleteEndpoint()
-        await updateConfiguration('serverEndpoint', '')
         await this.auth(endpoint, null)
         this.authStatus.endpoint = ''
+        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 
     // Create Auth Status
@@ -202,6 +201,7 @@ export class AuthProvider {
         authStatus.isLoggedIn = isLoggedIn
         await this.storeAuthInfo(endpoint, token)
         await this.syncAuthStatus(authStatus)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
     }
 
@@ -284,9 +284,6 @@ export class AuthProvider {
         if (token) {
             await this.secretStorage.storeToken(endpoint, token)
         }
-        // Update cody.serverEndpoint in global config
-        const config = vscode.workspace.getConfiguration('cody')
-        await config.update('serverEndpoint', endpoint, vscode.ConfigurationTarget.Global)
         this.loadEndpointHistory()
         debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
     }
