@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//lib/errors",
         "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_ricochet2200_go_disk_usage_du//:du",
     ],
 )
 

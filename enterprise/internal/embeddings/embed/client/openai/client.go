@@ -13,12 +13,12 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
+func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 	return &openaiEmbeddingsClient{
+		httpClient:  httpClient,
 		dimensions:  config.Dimensions,
 		accessToken: config.AccessToken,
 		model:       config.Model,
@@ -27,6 +27,7 @@ func NewClient(config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 }
 
 type openaiEmbeddingsClient struct {
+	httpClient  *http.Client
 	model       string
 	dimensions  int
 	endpoint    string
@@ -48,6 +49,14 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 // In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
 // often hangs up when downloading large embedding responses.
 func (c *openaiEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+	for _, text := range texts {
+		if text == "" {
+			// The OpenAI API will return an error if any of the strings in texts is an empty string,
+			// so fail fast to avoid making tons of retryable requests.
+			return nil, errors.New("cannot generate embeddings for an empty string")
+		}
+	}
+
 	embeddings, err := c.getEmbeddings(ctx, texts)
 	if err == nil {
 		return embeddings, nil
@@ -86,33 +95,8 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 		}
 	}
 
-	request := openaiEmbeddingAPIRequest{Model: c.model, Input: augmentedTexts}
-
-	bodyBytes, err := json.Marshal(request)
+	response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: augmentedTexts})
 	if err != nil {
-		return nil, err
-	}
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewReader(bodyBytes))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
-
-	resp, err := httpcli.ExternalDoer.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
-	}
-
-	var response openaiEmbeddingAPIResponse
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 
@@ -128,10 +112,66 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 	dimensionality := len(response.Data[0].Embedding)
 	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
 	for _, embedding := range response.Data {
-		embeddings = append(embeddings, embedding.Embedding...)
+		if len(embedding.Embedding) != 0 {
+			embeddings = append(embeddings, embedding.Embedding...)
+		} else {
+			// HACK(camdencheek): Nondeterministically, the OpenAI API will
+			// occasionally send back a `null` for an embedding in the
+			// response. Try it again a few times and hope for the best.
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
+			if err != nil {
+				return nil, err
+			}
+			embeddings = append(embeddings, resp.Data[0].Embedding...)
+		}
 	}
 
 	return embeddings, nil
+}
+
+func (c *openaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {
+	for i := 0; i < retries; i++ {
+		response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: []string{input}})
+		if err != nil {
+			return nil, err
+		}
+		if len(response.Data) != 1 || len(response.Data[0].Embedding) == 0 {
+			continue
+		}
+		return response, nil
+	}
+	return nil, errors.Newf("null response for embedding after %d retries", retries)
+}
+
+func (c *openaiEmbeddingsClient) do(ctx context.Context, request openaiEmbeddingAPIRequest) (*openaiEmbeddingAPIResponse, error) {
+	bodyBytes, err := json.Marshal(request)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewReader(bodyBytes))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
+	}
+
+	var response openaiEmbeddingAPIResponse
+	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
+		return nil, err
+	}
+	return &response, nil
 }
 
 type openaiEmbeddingAPIRequest struct {
@@ -140,8 +180,10 @@ type openaiEmbeddingAPIRequest struct {
 }
 
 type openaiEmbeddingAPIResponse struct {
-	Data []struct {
-		Index     int       `json:"index"`
-		Embedding []float32 `json:"embedding"`
-	} `json:"data"`
+	Data []openaiEmbeddingAPIResponseData `json:"data"`
+}
+
+type openaiEmbeddingAPIResponseData struct {
+	Index     int       `json:"index"`
+	Embedding []float32 `json:"embedding"`
 }

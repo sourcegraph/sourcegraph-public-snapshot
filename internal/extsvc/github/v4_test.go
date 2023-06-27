@@ -310,7 +310,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-12",
+				HeadRefName:  "test-pr-02",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 			},
@@ -341,7 +341,7 @@ func TestCreatePullRequest(t *testing.T) {
 			input: &CreatePullRequestInput{
 				RepositoryID: "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
 				BaseRefName:  "master",
-				HeadRefName:  "test-pr-13",
+				HeadRefName:  "test-pr-15",
 				Title:        "This is a test PR, feel free to ignore",
 				Body:         "I'm opening this PR to test something. Please ignore.",
 				Draft:        true,
@@ -582,8 +582,8 @@ func TestMergePullRequest(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		pr := &PullRequest{
-			// https://github.com/sourcegraph/automation-testing/pull/488
-			ID: "PR_kwDODS5xec5JaPkU",
+			// https://github.com/sourcegraph/automation-testing/pull/506
+			ID: "PR_kwDODS5xec5TxsRF",
 		}
 
 		err := cli.MergePullRequest(context.Background(), pr, true)

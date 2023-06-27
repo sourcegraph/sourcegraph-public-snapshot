@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -29,11 +30,11 @@ func TestAttribution(t *testing.T) {
 	wantCount := localCount + dotcomCount
 	wantNames := append(genRepoNames("localrepo-", localCount), genRepoNames("dotcomrepo-", dotcomCount)...)
 
-	svc := &Service{
+	svc := NewService(observation.TestContextTB(t), ServiceOpts{
 		SearchClient:              mockSearchClient(t, localNames),
 		SourcegraphDotComClient:   mockDotComClient(t, dotcomNames),
 		SourcegraphDotComFederate: true,
-	}
+	})
 
 	result, err := svc.SnippetAttribution(ctx, "test", limit)
 	if err != nil {

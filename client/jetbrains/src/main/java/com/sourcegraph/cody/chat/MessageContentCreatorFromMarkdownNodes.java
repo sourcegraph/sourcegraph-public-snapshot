@@ -11,9 +11,12 @@ import com.intellij.openapi.editor.highlighter.EditorHighlighter;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
+import com.intellij.ui.ColorUtil;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
+import com.sourcegraph.cody.api.Speaker;
+import com.sourcegraph.cody.ui.HtmlViewer;
 import java.awt.*;
 import java.util.List;
 import java.util.Optional;
@@ -27,30 +30,33 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
-  private static final int TEXT_MARGIN = 14;
   private final HtmlRenderer htmlRenderer =
       HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
   private final JPanel messagePanel;
+  private final Speaker speaker;
   private final int gradientWidth;
   private StringBuilder htmlContent = new StringBuilder();
   private int textPaneIndex = 0;
   private JEditorPane textPane;
 
-  public MessageContentCreatorFromMarkdownNodes(JPanel messagePanel, int gradientWidth) {
+  public MessageContentCreatorFromMarkdownNodes(
+      JPanel messagePanel, Speaker speaker, int gradientWidth) {
     this.messagePanel = messagePanel;
+    this.speaker = speaker;
     this.gradientWidth = gradientWidth;
-    textPane = createNewEmptyTextPane();
+    createNewEmptyTextPane();
+  }
+
+  private void createNewEmptyTextPane() {
+    textPane = HtmlViewer.createHtmlViewer(getInlineCodeBackgroundColor());
+    messagePanel.add(textPane, textPaneIndex++);
   }
 
   @NotNull
-  private JEditorPane createNewEmptyTextPane() {
-    JEditorPane jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null);
-    jEditorPane.setFocusable(true);
-    jEditorPane.setMargin(
-        JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN)));
-    textPane = jEditorPane;
-    messagePanel.add(textPane, textPaneIndex++);
-    return jEditorPane;
+  private Color getInlineCodeBackgroundColor() {
+    return this.speaker == Speaker.ASSISTANT
+        ? ColorUtil.darker(UIUtil.getPanelBackground(), 3)
+        : ColorUtil.brighter(UIUtil.getPanelBackground(), 3);
   }
 
   @Override
@@ -117,7 +123,7 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
     editorPanel.setOpaque(false);
     messagePanel.add(editorPanel, BorderLayout.CENTER, textPaneIndex++);
     htmlContent = new StringBuilder();
-    textPane = createNewEmptyTextPane();
+    createNewEmptyTextPane();
   }
 
   @Override
@@ -227,5 +233,6 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
     editorSettings.setIndentGuidesShown(false);
     editorSettings.setLineNumbersShown(false);
     editorSettings.setUseSoftWraps(false);
+    editorSettings.setCaretRowShown(false);
   }
 }

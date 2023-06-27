@@ -1,37 +1,15 @@
-@import 'wildcard/src/global-styles/breakpoints';
-
 .root {
     display: flex;
     flex-direction: column;
-    padding: 4.5rem 3.5rem 0;
+    padding-top: 4.5rem;
     width: 100%;
     overflow: hidden;
-
-    // Tablet and "mobile" (small) layout
-    @media (--md-breakpoint-down) {
-        .content {
-            grid-template-areas:
-                'description description'
-                'actions actions';
-
-            margin-bottom: 2.5rem;
-        }
-
-        .image {
-            margin: auto -5rem 0;
-        }
-    }
-}
-
-.content {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    column-gap: 3rem;
-    grid-template-areas: 'description actions';
+    flex-shrink: 0;
+    flex-grow: 1;
 }
 
 .description {
-    grid-area: description;
+    padding: 0 3rem;
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
@@ -41,30 +19,45 @@
         color: var(--white);
     }
 
+    &-content {
+        display: flex;
+        gap: 1.5rem;
+    }
+
     &-text {
+        flex-basis: 50%;
+        flex-grow: 0;
         color: #dedede;
         font-size: 1.25rem;
-
-        &--small {
-            font-size: 1rem;
-        }
     }
 
     &-button {
+        flex-basis: 50%;
         align-self: flex-start;
-        margin-top: 1rem;
+
+        &[aria-disabled='true'] {
+            filter: brightness(0.75);
+
+            --btn-light-color-variant: var(--primary-3);
+        }
     }
 }
 
-.actions {
-    grid-area: actions;
-
-    &-button {
-        margin-top: 1rem;
-    }
+.image-wrapper {
+    flex-grow: 1;
+    position: relative;
+    margin: auto -3.5rem 0;
+    max-width: calc(100% + 7rem);
 }
 
 .image {
-    max-width: calc(100% + 10rem);
-    margin: auto -5rem 0;
+    max-width: 100%;
+    position: absolute;
+    bottom: 0;
+}
+
+.footer {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
 }

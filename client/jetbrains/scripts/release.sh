@@ -15,7 +15,7 @@ popd > /dev/null || exit
 pnpm build
 
 # Build the release candidate and publish it onto the registry
-./gradlew publishPlugin
+./gradlew -PforceAgentBuild=true publishPlugin
 
 # The release script automatically changes the README and moves the unreleased
 # section into a version numbered one. We don't care about this while we are

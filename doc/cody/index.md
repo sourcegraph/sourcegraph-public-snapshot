@@ -6,17 +6,14 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 
 ## Get Cody
 
-- **Sourcegraph Enterprise customers:** Contact your Sourcegraph technical advisor or [request enterprise access](https://about.sourcegraph.com/cody#cody-for-work) to use Cody on your existing Sourcegraph instance.
-- **Everyone:** Cody for open source code is available to all users with a Sourcegraph.com account. If you don't yet have a Sourcegraph.com account, you can [create one for free](https://sourcegraph.com/sign-up).
+- **Cody enterprise:** Contact your Sourcegraph technical advisor or [request enterprise access](https://about.sourcegraph.com/cody#cody-for-work) to use Cody on your existing Sourcegraph instance or try Cody with your team.
+- **Cody app:** Download the app to try Cody with the code you have locally for free. [Learn more.](../app/index.md)
 
-There are currently two ways to experience Cody:
-
-- In Sourcegraph itself
-- In your editor
+Cody is also available as an editor extension that can be connected to a Sourcegraph enterprise instance, the Cody app, or Sourcegraph.com (for open source code only):
   - [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
   - Jetbrains extension (coming soon)
 
-Cody is available as a [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai) and in the Sourcegraph web interface.
+See the full [breakdown of features available by client](client_feature_availability.md).
 
 <div class="getting-started">
   <a class="btn btn-primary text-center" href="quickstart">★ Cody quickstart</a>
@@ -84,6 +81,7 @@ See [Cody troubleshooting guide](troubleshooting.md).
 ## Explanations
 
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
+- [Enabling Cody for the Cody app](../app/index.md)
 - [Enabling Cody for open source Sourcegraph.com users](explanations/enabling_cody.md)
 - [Installing the Cody VS Code extension](explanations/installing_vs_code.md)
 - [Configuring code graph context](explanations/code_graph_context.md)

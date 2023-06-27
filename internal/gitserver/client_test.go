@@ -24,13 +24,12 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
@@ -48,6 +47,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -522,8 +522,9 @@ func TestClient_ArchiveReader(t *testing.T) {
 					return "", errors.Errorf("no remote for %s", test.name)
 				},
 				GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-					return &server.GitRepoSyncer{}, nil
+					return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 				},
+				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 			}
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -781,7 +782,7 @@ func createSimpleGitRepo(t *testing.T, root string) string {
 
 type mockP4ExecClient struct {
 	isEndOfStream bool
-	Err           string
+	Err           error
 	grpc.ClientStream
 }
 
@@ -790,8 +791,10 @@ func (m *mockP4ExecClient) Recv() (*proto.P4ExecResponse, error) {
 		return nil, io.EOF
 	}
 
-	if m.Err != "" {
-		return nil, status.Error(codes.Unknown, m.Err)
+	if m.Err != nil {
+		s, _ := status.FromError(m.Err)
+		return nil, s.Err()
+
 	}
 
 	response := &proto.P4ExecResponse{
@@ -812,7 +815,7 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 		user     string
 		password string
 		args     []string
-		err      string
+		err      error
 		wantBody string
 		wantErr  string
 	}
@@ -828,8 +831,18 @@ func TestClient_P4ExecGRPC(t *testing.T) {
 		},
 		{
 			name:    "error response",
-			err:     "example error",
+			err:     errors.New("example error"),
 			wantErr: "rpc error: code = Unknown desc = example error",
+		},
+		{
+			name:    "context cancellation",
+			err:     status.New(codes.Canceled, context.Canceled.Error()).Err(),
+			wantErr: context.Canceled.Error(),
+		},
+		{
+			name:    "context expiration",
+			err:     status.New(codes.DeadlineExceeded, context.DeadlineExceeded.Error()).Err(),
+			wantErr: context.DeadlineExceeded.Error(),
 		},
 	}
 
@@ -1060,10 +1073,11 @@ func TestClient_ResolveRevisions(t *testing.T) {
 			return remote, nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return &server.GitRepoSyncer{}, nil
+			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB:       db,
-		Perforce: perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
+		DB:                      db,
+		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1562,10 +1576,11 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (server.VCSSyncer, error) {
-			return &server.GitRepoSyncer{}, nil
+			return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB:         db,
-		CloneQueue: server.NewCloneQueue(observation.TestContextTB(t), list.New()),
+		DB:                      db,
+		CloneQueue:              server.NewCloneQueue(observation.TestContextTB(t), list.New()),
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))

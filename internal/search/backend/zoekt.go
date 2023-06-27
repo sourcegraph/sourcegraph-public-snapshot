@@ -103,10 +103,7 @@ func ZoektDial(endpoint string) zoekt.Streamer {
 // ZoektDialHTTP connects to a Searcher HTTP RPC server at address (host:port).
 func ZoektDialHTTP(endpoint string) zoekt.Streamer {
 	client := rpc.Client(endpoint)
-	streamClient := &zoektStream{
-		Searcher: client,
-		Client:   zoektstream.NewClient("http://"+endpoint, zoektHTTPClient),
-	}
+	streamClient := zoektstream.NewClient("http://"+endpoint, zoektHTTPClient).WithSearcher(client)
 	return NewMeteredSearcher(endpoint, streamClient)
 }
 
@@ -128,9 +125,4 @@ func ZoektDialGRPC(endpoint string) zoekt.Streamer {
 		client:   v1.NewWebserverServiceClient(conn),
 		dialErr:  err,
 	})
-}
-
-type zoektStream struct {
-	zoekt.Searcher
-	*zoektstream.Client
 }

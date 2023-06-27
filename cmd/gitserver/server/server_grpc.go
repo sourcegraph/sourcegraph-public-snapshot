@@ -33,18 +33,19 @@ type GRPCServer struct {
 func (gs *GRPCServer) BatchLog(ctx context.Context, req *proto.BatchLogRequest) (*proto.BatchLogResponse, error) {
 	gs.Server.operations = gs.Server.ensureOperations()
 
-	var internalReq protocol.BatchLogRequest
-	internalReq.FromProto(req)
 	// Validate request parameters
-	if len(req.RepoCommits) == 0 {
+	if len(req.GetRepoCommits()) == 0 {
 		return &proto.BatchLogResponse{}, nil
 	}
-	if !strings.HasPrefix(req.Format, "--format=") {
+	if !strings.HasPrefix(req.GetFormat(), "--format=") {
 		return nil, status.Error(codes.InvalidArgument, "format parameter expected to be of the form `--format=<git log format>`")
 	}
 
+	var r protocol.BatchLogRequest
+	r.FromProto(req)
+
 	// Handle unexpected error conditions
-	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, internalReq)
+	resp, err := gs.Server.batchGitLogInstrumentedHandler(ctx, r)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -99,10 +100,10 @@ func (gs *GRPCServer) Exec(req *proto.ExecRequest, ss proto.GitserverService_Exe
 
 func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverService_ArchiveServer) error {
 	// Log which which actor is accessing the repo.
-	accesslog.Record(ss.Context(), req.Repo,
-		log.String("treeish", req.Treeish),
-		log.String("format", req.Format),
-		log.Strings("path", req.Pathspecs),
+	accesslog.Record(ss.Context(), req.GetRepo(),
+		log.String("treeish", req.GetTreeish()),
+		log.String("format", req.GetFormat()),
+		log.Strings("path", req.GetPathspecs()),
 	)
 
 	if err := checkSpecArgSafety(req.GetTreeish()); err != nil {
@@ -118,7 +119,7 @@ func (gs *GRPCServer) Archive(req *proto.ArchiveRequest, ss proto.GitserverServi
 		Args: []string{
 			"archive",
 			"--worktree-attributes",
-			"--format=" + req.Format,
+			"--format=" + req.GetFormat(),
 		},
 	}
 
@@ -159,13 +160,24 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 
 		} else if errors.Is(err, ErrInvalidCommand) {
 			return status.New(codes.InvalidArgument, "invalid command").Err()
+		} else if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
 		}
 
 		return err
 	}
 
 	if execStatus.ExitStatus != 0 || execStatus.Err != nil {
-		s, err := status.New(codes.Unknown, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		gRPCStatus := codes.Unknown
+		if strings.Contains(execStatus.Err.Error(), "signal: killed") {
+			gRPCStatus = codes.Aborted
+		}
+
+		s, err := status.New(gRPCStatus, execStatus.Err.Error()).WithDetails(&proto.ExecStatusPayload{
 			StatusCode: int32(execStatus.ExitStatus),
 			Stderr:     execStatus.Stderr,
 		})
@@ -207,24 +219,25 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 }
 
 func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService_P4ExecServer) error {
-	var internalReq protocol.P4ExecRequest
-	internalReq.FromProto(req)
+	arguments := req.GetArgs()
 
-	if len(req.Args) < 1 {
+	if len(arguments) < 1 {
 		return status.Error(codes.InvalidArgument, "args must be greater than or equal to 1")
 	}
 
+	subCommand := arguments[0]
+
 	// Make sure the subcommand is explicitly allowed
-	allowlist := []string{"protects", "groups", "users", "group"}
+	allowlist := []string{"protects", "groups", "users", "group", "changes"}
 	allowed := false
-	for _, arg := range allowlist {
-		if req.Args[0] == arg {
+	for _, c := range allowlist {
+		if subCommand == c {
 			allowed = true
 			break
 		}
 	}
 	if !allowed {
-		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]))
+		return status.Error(codes.InvalidArgument, fmt.Sprintf("subcommand %q is not allowed", subCommand))
 	}
 
 	// Log which actor is accessing p4-exec.
@@ -232,15 +245,19 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 	// p4-exec is currently only used for fetching user based permissions information
 	// so, we don't have a repo name.
 	accesslog.Record(ss.Context(), "<no-repo>",
-		log.String("p4user", req.P4User),
-		log.String("p4port", req.P4Port),
-		log.Strings("args", req.Args),
+		log.String("p4user", req.GetP4User()),
+		log.String("p4port", req.GetP4Port()),
+		log.Strings("args", arguments),
 	)
 
 	// Make sure credentials are valid before heavier operation
-	err := p4testWithTrust(ss.Context(), req.P4Port, req.P4User, req.P4Passwd)
+	err := p4testWithTrust(ss.Context(), req.GetP4Port(), req.GetP4User(), req.GetP4Passwd())
 	if err != nil {
-		return status.Error(codes.InvalidArgument, fmt.Sprint(err))
+		if ctxErr := ss.Context().Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		return status.Error(codes.InvalidArgument, err.Error())
 	}
 
 	w := streamio.NewWriter(func(p []byte) error {
@@ -249,13 +266,23 @@ func (gs *GRPCServer) P4Exec(req *proto.P4ExecRequest, ss proto.GitserverService
 		})
 	})
 
-	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &internalReq, "unknown-grpc-client", w)
+	var r protocol.P4ExecRequest
+	r.FromProto(req)
 
+	return gs.doP4Exec(ss.Context(), gs.Server.Logger, &r, "unknown-grpc-client", w)
 }
 
 func (gs *GRPCServer) doP4Exec(ctx context.Context, logger log.Logger, req *protocol.P4ExecRequest, userAgent string, w io.Writer) error {
 	execStatus := gs.Server.p4Exec(ctx, logger, req, userAgent, w)
-	return execStatus.Err
+	if execStatus.Err != nil {
+		if ctxErr := ctx.Err(); ctxErr != nil {
+			return status.FromContextError(ctxErr).Err()
+		}
+
+		return execStatus.Err
+	}
+
+	return nil
 }
 
 func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteRequest) (*proto.ListGitoliteResponse, error) {
@@ -323,10 +350,12 @@ func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 }
 
 func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
+	repositories := req.GetRepos()
+
 	resp := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(repositories)),
 	}
-	for _, repo := range req.Repos {
+	for _, repo := range repositories {
 		repoName := api.RepoName(repo)
 		result := gs.Server.repoCloneProgress(repoName)
 		resp.Results[repoName] = result

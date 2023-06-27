@@ -35,6 +35,7 @@ export interface CodyChatStore
         | 'toggleIncludeInferredRepository'
         | 'toggleIncludeInferredFile'
         | 'abortMessageInProgress'
+        | 'fetchRepositoryNames'
     > {
     readonly transcriptHistory: TranscriptJSON[]
     readonly loaded: boolean
@@ -68,6 +69,7 @@ export const codyChatStoreMock: CodyChatStore = {
     toggleIncludeInferredRepository: () => {},
     toggleIncludeInferredFile: () => {},
     abortMessageInProgress: () => {},
+    fetchRepositoryNames: () => Promise.resolve([]),
 }
 
 interface CodyChatProps {
@@ -80,6 +82,7 @@ interface CodyChatProps {
         initializeNewChat: CodyClient['initializeNewChat']
     ) => void
     autoLoadTranscriptFromHistory?: boolean
+    autoLoadScopeWithRepositories?: boolean
 }
 
 const CODY_TRANSCRIPT_HISTORY_KEY = 'cody.chat.history'
@@ -91,6 +94,7 @@ export const useCodyChat = ({
     onEvent,
     onTranscriptHistoryLoad,
     autoLoadTranscriptFromHistory = true,
+    autoLoadScopeWithRepositories = false,
 }: CodyChatProps): CodyChatStore => {
     const [loadedTranscriptFromHistory, setLoadedTranscriptFromHistory] = useState(false)
     const [transcriptHistoryInternal, setTranscriptHistoryState] = useLocalStorage<TranscriptJSON[]>(
@@ -115,6 +119,7 @@ export const useCodyChat = ({
         submitMessage: submitMessageInternal,
         editMessage: editMessageInternal,
         executeRecipe: executeRecipeInternal,
+        fetchRepositoryNames,
         ...client
     } = useClient({
         config: initialConfig || {
@@ -147,56 +152,6 @@ export const useCodyChat = ({
         [transcriptHistory, transcript?.id, setTranscript, setScopeInternal, scope]
     )
 
-    const clearHistory = useCallback(() => {
-        if (client.config.needsEmailVerification) {
-            return
-        }
-
-        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
-
-        const newTranscript = initializeNewChatInternal()
-        if (newTranscript) {
-            setTranscriptHistoryState([newTranscript.toJSONEmpty()])
-        } else {
-            setTranscriptHistoryState([])
-        }
-    }, [client.config.needsEmailVerification, initializeNewChatInternal, setTranscriptHistoryState])
-
-    const deleteHistoryItem = useCallback(
-        (id: string): void => {
-            if (client.config.needsEmailVerification) {
-                return
-            }
-
-            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED)
-
-            setTranscriptHistoryState((history: TranscriptJSON[]) => {
-                const updatedHistory = [...history.filter(transcript => transcript.id !== id)]
-
-                if (transcript?.id === id) {
-                    if (updatedHistory.length === 0) {
-                        const newTranscript = initializeNewChatInternal()
-
-                        if (newTranscript) {
-                            updatedHistory.push(newTranscript.toJSONEmpty())
-                        }
-                    } else {
-                        setTranscript(Transcript.fromJSON(updatedHistory[0])).catch(() => null)
-                    }
-                }
-
-                return sortSliceTranscriptHistory(updatedHistory)
-            })
-        },
-        [
-            setTranscript,
-            client.config.needsEmailVerification,
-            initializeNewChatInternal,
-            transcript?.id,
-            setTranscriptHistoryState,
-        ]
-    )
-
     const updateTranscriptInHistory = useCallback(
         async (transcript: Transcript, transcriptScope?: TranscriptJSONScope) => {
             const transcriptJSON = await transcript.toJSON(transcriptScope || scope)
@@ -222,6 +177,104 @@ export const useCodyChat = ({
             )
         },
         [setTranscriptHistoryState, scope]
+    )
+
+    const clearHistory = useCallback(() => {
+        if (client.config.needsEmailVerification) {
+            return
+        }
+
+        eventLogger.log(EventName.CODY_CHAT_HISTORY_CLEARED)
+
+        const newTranscript = initializeNewChatInternal()
+        if (newTranscript) {
+            setTranscriptHistoryState([newTranscript.toJSONEmpty()])
+            if (autoLoadScopeWithRepositories) {
+                fetchRepositoryNames(10)
+                    .then(repositories => {
+                        const updatedScope = {
+                            includeInferredRepository: true,
+                            includeInferredFile: true,
+                            repositories,
+                            editor: scope.editor,
+                        }
+                        setScopeInternal(updatedScope)
+                        updateTranscriptInHistory(newTranscript, updatedScope).catch(() => null)
+                    })
+                    .catch(() => null)
+            }
+        } else {
+            setTranscriptHistoryState([])
+        }
+    }, [
+        client.config.needsEmailVerification,
+        initializeNewChatInternal,
+        setTranscriptHistoryState,
+        fetchRepositoryNames,
+        autoLoadScopeWithRepositories,
+        scope,
+        setScopeInternal,
+        updateTranscriptInHistory,
+    ])
+
+    const deleteHistoryItem = useCallback(
+        (id: string): void => {
+            if (client.config.needsEmailVerification) {
+                return
+            }
+
+            eventLogger.log(EventName.CODY_CHAT_HISTORY_ITEM_DELETED)
+
+            setTranscriptHistoryState((history: TranscriptJSON[]) => {
+                const updatedHistory = [...history.filter(transcript => transcript.id !== id)]
+
+                if (transcript?.id === id) {
+                    if (updatedHistory.length === 0) {
+                        const newTranscript = initializeNewChatInternal()
+
+                        if (newTranscript) {
+                            updatedHistory.push(newTranscript.toJSONEmpty())
+                            if (autoLoadScopeWithRepositories) {
+                                fetchRepositoryNames(10)
+                                    .then(repositories => {
+                                        const updatedScope = {
+                                            includeInferredRepository: true,
+                                            includeInferredFile: true,
+                                            repositories,
+                                            editor: scope.editor,
+                                        }
+                                        setScopeInternal(updatedScope)
+                                        updateTranscriptInHistory(newTranscript, updatedScope).catch(() => null)
+                                    })
+                                    .catch(() => null)
+                            }
+                        }
+                    } else {
+                        const transcriptToLoad = updatedHistory[0]
+
+                        setTranscript(Transcript.fromJSON(transcriptToLoad)).catch(() => null)
+
+                        if (transcriptToLoad.scope) {
+                            setScopeInternal({ ...scope, ...transcriptToLoad.scope })
+                        }
+                    }
+                }
+
+                return sortSliceTranscriptHistory(updatedHistory)
+            })
+        },
+        [
+            setTranscript,
+            setScopeInternal,
+            client.config.needsEmailVerification,
+            initializeNewChatInternal,
+            transcript?.id,
+            setTranscriptHistoryState,
+            fetchRepositoryNames,
+            autoLoadScopeWithRepositories,
+            scope,
+            updateTranscriptInHistory,
+        ]
     )
 
     const submitMessage = useCallback<typeof submitMessageInternal>(
@@ -257,10 +310,33 @@ export const useCodyChat = ({
 
         if (transcript) {
             pushTranscriptToHistory(transcript).catch(() => null)
+
+            if (autoLoadScopeWithRepositories) {
+                fetchRepositoryNames(10)
+                    .then(repositories => {
+                        const updatedScope = {
+                            includeInferredRepository: true,
+                            includeInferredFile: true,
+                            repositories,
+                            editor: scope.editor,
+                        }
+                        setScopeInternal(updatedScope)
+                        updateTranscriptInHistory(transcript, updatedScope).catch(() => null)
+                    })
+                    .catch(() => null)
+            }
         }
 
         return transcript
-    }, [initializeNewChatInternal, pushTranscriptToHistory])
+    }, [
+        initializeNewChatInternal,
+        pushTranscriptToHistory,
+        fetchRepositoryNames,
+        scope,
+        setScopeInternal,
+        autoLoadScopeWithRepositories,
+        updateTranscriptInHistory,
+    ])
 
     const executeRecipe = useCallback<typeof executeRecipeInternal>(
         async (recipeId, options): Promise<Transcript | null> => {
@@ -385,6 +461,7 @@ export const useCodyChat = ({
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
         abortMessageInProgress,
+        fetchRepositoryNames,
     }
 }
 

@@ -1,7 +1,17 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 
-import { mdiClose, mdiSend, mdiArrowDown, mdiPencil, mdiThumbUp, mdiThumbDown, mdiCheck } from '@mdi/js'
+import {
+    mdiClose,
+    mdiSend,
+    mdiArrowDown,
+    mdiPencil,
+    mdiThumbUp,
+    mdiThumbDown,
+    mdiCheck,
+    mdiStopCircleOutline,
+} from '@mdi/js'
 import classNames from 'classnames'
+import { useLocation } from 'react-router-dom'
 import useResizeObserver from 'use-resize-observer'
 
 import {
@@ -17,7 +27,7 @@ import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourceg
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
-import { isCodyEnabled, isEmailVerificationNeededForCody } from '../../isCodyEnabled'
+import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
 import { ScopeSelector } from '../ScopeSelector'
@@ -30,9 +40,10 @@ const onFeedbackSubmit = (feedback: string): void => eventLogger.log(`web:cody:f
 
 interface IChatUIProps {
     codyChatStore: CodyChatStore
+    isSourcegraphApp?: boolean
 }
 
-export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element => {
+export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp }): JSX.Element => {
     const {
         submitMessage,
         editMessage,
@@ -46,6 +57,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
         abortMessageInProgress,
+        fetchRepositoryNames,
     } = codyChatStore
 
     const [formInput, setFormInput] = useState('')
@@ -58,12 +70,30 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
     )
     const [messageBeingEdited, setMessageBeingEdited] = useState<boolean>(false)
 
+    useEffect(() => {
+        setMessageBeingEdited(false)
+    }, [transcript?.id])
+
     const onSubmit = useCallback((text: string) => submitMessage(text), [submitMessage])
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
     const scopeSelectorProps = useMemo(
-        () => ({ scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile }),
-        [scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile]
+        () => ({
+            scope,
+            setScope,
+            toggleIncludeInferredRepository,
+            toggleIncludeInferredFile,
+            fetchRepositoryNames,
+            isSourcegraphApp,
+        }),
+        [
+            scope,
+            setScope,
+            toggleIncludeInferredRepository,
+            toggleIncludeInferredFile,
+            fetchRepositoryNames,
+            isSourcegraphApp,
+        ]
     )
 
     if (!loaded) {
@@ -84,9 +114,9 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore }): JSX.Element =
                 setInputHistory={setInputHistory}
                 onSubmit={onSubmit}
                 submitButtonComponent={SubmitButton}
-                fileLinkComponent={FileLink}
+                fileLinkComponent={isSourcegraphApp ? AppFileLink : FileLink}
                 className={styles.container}
-                afterTips={transcriptHistory.length > 1 ? '' : CODY_TERMS_MARKDOWN}
+                afterMarkdown={transcriptHistory.length > 1 ? '' : CODY_TERMS_MARKDOWN}
                 transcriptItemClassName={styles.transcriptItem}
                 humanTranscriptItemClassName={styles.humanTranscriptItem}
                 transcriptItemParticipantClassName="text-muted"
@@ -119,9 +149,9 @@ interface IAbortMessageInProgressProps {
 const AbortMessageInProgress: React.FunctionComponent<IAbortMessageInProgressProps> = React.memo(
     function AbortMessageInProgressButton({ onAbortMessageInProgress }) {
         return (
-            <div className="d-flex justify-content-center w-100 mt-4 mb-2">
-                <Button onClick={onAbortMessageInProgress} variant="secondary" outline={true} size="sm">
-                    Stop generating
+            <div className="d-flex justify-content-center w-100 mb-1">
+                <Button onClick={onAbortMessageInProgress} variant="secondary" outline={false} size="sm">
+                    <Icon aria-label="Abort" svgPath={mdiStopCircleOutline} /> Stop generating
                 </Button>
             </div>
         )
@@ -194,7 +224,7 @@ const FeedbackButtons: React.FunctionComponent<FeedbackButtonsProps> = React.mem
                         <Icon aria-label="Thumbs up" svgPath={mdiThumbUp} />
                     </Button>
                     <Button
-                        title="Thumbs up"
+                        title="Thumbs down"
                         className="ml-1 p-1"
                         type="button"
                         onClick={() => onFeedbackBtnSubmit('negative')}
@@ -236,6 +266,15 @@ export const FileLink: React.FunctionComponent<FileLinkProps> = React.memo(funct
     ) : (
         <>{path}</>
     )
+})
+
+/**
+ * Since App doesn't support search UI we don't user link to the blob UI as we do
+ * in the standard FileLink component, instead at the moment we render just a plain text
+ * see https://github.com/sourcegraph/sourcegraph/issues/53776 for more details.
+ */
+export const AppFileLink: React.FunctionComponent<FileLinkProps> = React.memo(function AppFileLink({ path }) {
+    return <>{path}</>
 })
 
 interface AutoResizableTextAreaProps extends ChatUITextAreaProps {}
@@ -282,11 +321,19 @@ export const AutoResizableTextArea: React.FC<AutoResizableTextAreaProps> = React
         }
 
         return (
-            <Tooltip content={isEmailVerificationNeededForCody() ? 'Verify your email to use Cody.' : ''}>
+            <Tooltip
+                content={
+                    isSignInRequiredForCody()
+                        ? 'Sign in to get access to Cody.'
+                        : isEmailVerificationNeededForCody()
+                        ? 'Verify your email to use Cody.'
+                        : ''
+                }
+            >
                 <TextArea
                     ref={textAreaRef}
                     className={className}
-                    value={value}
+                    value={isSignInRequiredForCody() ? 'Sign in to get access to use Cody' : value}
                     onChange={handleChange}
                     rows={1}
                     autoFocus={false}
@@ -323,6 +370,8 @@ const NeedsEmailVerificationNotice: React.FunctionComponent = React.memo(
 )
 
 const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNotEnabledNoticeContent() {
+    const location = useLocation()
+
     return (
         <div className={classNames('p-3', styles.notEnabledBlock)}>
             <H2 className={classNames('d-flex gap-1 align-items-center mb-3', styles.codyMessageHeader)}>
@@ -331,8 +380,18 @@ const CodyNotEnabledNotice: React.FunctionComponent = React.memo(function CodyNo
             <div className="d-flex align-items-start">
                 <CodyNotEnabledIcon className="flex-shrink-0" />
                 <Text className="ml-2">
-                    Cody isn't available on this instance, but you can learn more about Cody{' '}
-                    <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                    {isSignInRequiredForCody() ? (
+                        <>
+                            <Link to={`/sign-in?returnTo=${location.pathname}`}>Sign in</Link> to get access to Cody.
+                            You can learn more about Cody{' '}
+                            <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                        </>
+                    ) : (
+                        <>
+                            Cody isn't available on this instance, but you can learn more about Cody{' '}
+                            <Link to="https://about.sourcegraph.com/cody?utm_source=server">here</Link>.
+                        </>
+                    )}
                 </Text>
             </div>
         </div>

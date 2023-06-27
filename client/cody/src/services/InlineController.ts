@@ -15,11 +15,13 @@ const initRange = new vscode.Range(initPost, initPost)
 export class InlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
-    private readonly label = 'Cody: File Chat'
-    private readonly threadLabel = 'Ask Cody...'
+    private readonly label = 'Cody: Inline Chat'
+    private readonly threadLabel =
+        '[TIPS] New Inline Chat: `ctrl + shift + c` | Submit: `cmd + enter` | Hide: `shift + esc`'
     private options = {
-        prompt: 'Click here to ask Cody.',
-        placeHolder: 'Ask Cody a question, or start with /fix to request edits (e.g. "/fix convert tabs to spaces")',
+        prompt: 'Cody Inline Chat - Ask Cody a question or request inline fix with `/fix` or `/touch`.',
+        placeHolder:
+            'Examples: "How can I improve this?", "/fix convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
     }
     private readonly codyIcon: vscode.Uri = getIconPath('cody', this.extensionPath)
     private readonly userIcon: vscode.Uri = getIconPath('user', this.extensionPath)
@@ -137,13 +139,15 @@ export class InlineController {
     /**
      * List response from Cody as comment
      */
-    public reply(replyText = 'There was an error.'): void {
-        if (!this.thread) {
+    public reply(text: string, error = false): void {
+        if (!this.thread || this.thread.state) {
             return
         }
+        const replyText = text
         const comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
         this.thread.comments = [...this.thread.comments, comment]
-        this.thread.canReply = true
+        this.thread.canReply = !error
+        this.thread.state = error ? 1 : 0
         const firstCommentId = this.thread.comments[0].label
         if (firstCommentId) {
             this.threads.set(firstCommentId, this.thread)
@@ -178,10 +182,10 @@ export class InlineController {
     }
 
     public async error(): Promise<void> {
-        if (!this.currentTaskId) {
-            return this.reply()
+        this.reply('Request failed. Please close this and try again.', true)
+        if (this.currentTaskId) {
+            await this.stopFixMode(true)
         }
-        await this.stopFixMode(true)
     }
     /**
      * Create code lense and initiate decorators for fix mode
@@ -192,10 +196,9 @@ export class InlineController {
         }
         const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
         lens.updateState(CodyTaskState.asking, thread.range)
-        lens.decorator.setState(CodyTaskState.asking, thread.range)
-        await lens.decorator.decorate(thread.range)
         this.codeLenses.set(comment.id, lens)
         this.currentTaskId = comment.id
+        void vscode.commands.executeCommand('workbench.action.collapseAllComments')
     }
     /**
      * Reset the selection range once replacement started by fixup has been completed
@@ -211,13 +214,15 @@ export class InlineController {
         const status = error ? CodyTaskState.error : CodyTaskState.fixed
         const lens = this.codeLenses.get(this.currentTaskId)
         lens?.updateState(status, range)
-        lens?.decorator.setState(status, range)
-        await lens?.decorator.decorate(range)
         if (this.thread) {
             this.thread.range = range
+            this.thread.state = error ? 1 : 0
         }
         this.currentTaskId = ''
-        logEvent('CodyVSCodeExtension:inline-assist:error')
+        logEvent('CodyVSCodeExtension:inline-assist:stopFixup')
+        if (!error) {
+            await vscode.commands.executeCommand('workbench.action.collapseAllComments')
+        }
     }
     /**
      * Get current selected lines from the comment thread.

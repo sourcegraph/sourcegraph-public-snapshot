@@ -32,8 +32,6 @@ export const Transcript: React.FunctionComponent<
         feedbackButtonsOnSubmit?: (text: string) => void
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
-        abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
-        onAbortMessageInProgress?: () => void
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -56,8 +54,6 @@ export const Transcript: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent,
     chatInputClassName,
-    abortMessageInProgressComponent,
-    onAbortMessageInProgress,
 }) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -80,11 +76,6 @@ export const Transcript: React.FunctionComponent<
                     top: transcriptContainerRef.current.scrollHeight,
                 })
             }
-
-            // scroll to the end when messages are loaded
-            transcriptContainerRef.current.scrollTo({
-                top: transcriptContainerRef.current.scrollHeight,
-            })
         }
     }, [transcript, transcriptContainerRef])
 
@@ -145,8 +136,6 @@ export const Transcript: React.FunctionComponent<
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
-                    abortMessageInProgressComponent={abortMessageInProgressComponent}
-                    onAbortMessageInProgress={onAbortMessageInProgress}
                 />
             )}
         </div>

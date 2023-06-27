@@ -46,6 +46,8 @@ type PathAggregateCounts struct {
 	// TotalOwnedFileCount is the total number of files in tree that have any ownership associated
 	// - either via CODEOWNERS or via assigned ownership.
 	TotalOwnedFileCount int
+	// UpdatedAt shows When statistics were last updated.
+	UpdatedAt time.Time
 }
 
 // TreeLocationOpts allows locating and aggregating statistics on file trees.
@@ -76,8 +78,9 @@ type OwnershipStatsStore interface {
 	// To find ownership for specific file tree, specify RepoID and Path in TreeLocationOpts.
 	QueryIndividualCounts(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)
 
-	// QueryAggregateCounts looks up ownership aggregate data for a file tree.
-	// At this point these include total count of files that are owned via CODEOWNERS.
+	// QueryAggregateCounts looks up ownership aggregate data for a file tree. At
+	// this point these include total count of files that are owned via CODEOWNERS
+	// and assigned ownership.
 	QueryAggregateCounts(context.Context, TreeLocationOpts) (PathAggregateCounts, error)
 }
 
@@ -87,7 +90,7 @@ type ownershipStats struct {
 	*basestore.Store
 }
 
-var codeownerQueryFmtstr = `
+const codeownerQueryFmtstr = `
 	WITH existing (id) AS (
 		SELECT a.id
 		FROM codeowners_owners AS a
@@ -103,7 +106,7 @@ var codeownerQueryFmtstr = `
 	SELECT id FROM inserted
 `
 
-var codeownerUpsertCountsFmtstr = `
+const codeownerUpsertCountsFmtstr = `
 	INSERT INTO codeowners_individual_stats (file_path_id, owner_id, tree_owned_files_count, updated_at)
 	VALUES (%s, %s, %s, %s)
 	ON CONFLICT (file_path_id, owner_id)
@@ -151,7 +154,7 @@ func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.
 	return totalRows, nil
 }
 
-var aggregateCountsUpdateFmtstr = `
+const aggregateCountsUpdateFmtstr = `
 	INSERT INTO ownership_path_stats (
 		file_path_id,
 		tree_codeowned_files_count,
@@ -199,13 +202,14 @@ func (s *ownershipStats) UpdateAggregateCounts(ctx context.Context, repoID api.R
 	return totalUpdates, err
 }
 
-var aggregateOwnershipFmtstr = `
+const aggregateOwnershipFmtstr = `
 	SELECT o.reference, SUM(COALESCE(s.tree_owned_files_count, 0))
 	FROM codeowners_individual_stats AS s
 	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
 	INNER JOIN codeowners_owners AS o ON o.id = s.owner_id
 	WHERE p.absolute_path = %s
 `
+
 var treeCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (PathCodeownersCounts, error) {
 	var cs PathCodeownersCounts
 	err := s.Scan(&cs.CodeownersReference, &cs.CodeownedFileCount)
@@ -222,14 +226,16 @@ func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLoc
 	return treeCountsScanner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
 }
 
-var treeAggregateCountsFmtstr = `
+const treeAggregateCountsFmtstr = `
+	WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = 'analytics' LIMIT 1)
 	SELECT
 		SUM(COALESCE(s.tree_codeowned_files_count, 0)),
 		SUM(COALESCE(s.tree_assigned_ownership_files_count, 0)),
-		SUM(COALESCE(s.tree_any_ownership_files_count, 0))
+		SUM(COALESCE(s.tree_any_ownership_files_count, 0)),
+		MAX(s.last_updated_at)
 	FROM ownership_path_stats AS s
 	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
-	WHERE p.absolute_path = %s
+	WHERE p.absolute_path = %s AND p.repo_id NOT IN (SELECT repo.id FROM repo, signal_config WHERE repo.name ~~ ANY(signal_config.excluded_repo_patterns))
 `
 
 func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLocationOpts) (PathAggregateCounts, error) {
@@ -242,6 +248,7 @@ func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLoca
 		&dbutil.NullInt{N: &cs.CodeownedFileCount},
 		&dbutil.NullInt{N: &cs.AssignedOwnershipFileCount},
 		&dbutil.NullInt{N: &cs.TotalOwnedFileCount},
+		&dbutil.NullTime{Time: &cs.UpdatedAt},
 	)
 	return cs, err
 }

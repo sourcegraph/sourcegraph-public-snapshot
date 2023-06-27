@@ -7,4 +7,6 @@ generated: operations.go
 bindings:
   DateTime:
     type: time.Time
+  BigInt:
+    type: github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom/genhelper.BigInt
 optional: pointer

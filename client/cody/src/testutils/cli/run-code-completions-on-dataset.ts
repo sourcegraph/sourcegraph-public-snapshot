@@ -34,8 +34,8 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
 
     const completionsClient = new SourcegraphNodeCompletionsClient(initialConfig, logger)
 
-    if (!initialConfig.experimentalSuggest) {
-        throw new Error('`cody.experimental.suggestions` is not true!')
+    if (!initialConfig.autocomplete) {
+        throw new Error('`cody.autocomplete` is not true!')
     }
 
     const history = new History()
@@ -44,16 +44,13 @@ async function initCompletionsProvider(): Promise<CodyCompletionItemProvider> {
         completionsClient,
         contextWindowTokens: 2048,
     })
-    const completionsProvider = new CodyCompletionItemProvider(
+    const completionsProvider = new CodyCompletionItemProvider({
         providerConfig,
+        statusBar: noopStatusBar,
         history,
-        noopStatusBar,
-        null as any,
-        undefined,
-        undefined,
-        undefined,
-        true // disable timeouts
-    )
+        codebaseContext: null as any,
+        disableTimeouts: true,
+    })
 
     return completionsProvider
 }

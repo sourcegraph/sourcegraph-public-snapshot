@@ -573,7 +573,8 @@ export function getRevision(branches?: string[], version?: string): string {
 
 export function getFileMatchUrl(fileMatch: ContentMatch | SymbolMatch | PathMatch): string {
     const revision = getRevision(fileMatch.branches, fileMatch.commit)
-    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${fileMatch.path}`
+    const encodedFilePath = fileMatch.path.split('/').map(encodeURIComponent).join('/')
+    return `/${fileMatch.repository}${revision ? '@' + revision : ''}/-/blob/${encodedFilePath}`
 }
 
 export function getRepoMatchLabel(repoMatch: RepositoryMatch): string {

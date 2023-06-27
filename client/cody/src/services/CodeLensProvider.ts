@@ -18,7 +18,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
 
     constructor(public id: string, private extPath: string, private thread: vscode.CommentThread) {
         this.provideCodeLenses = this.provideCodeLenses.bind(this)
-        this.decorator = new DecorationProvider(this.id, this.extPath)
+        this.decorator = new DecorationProvider(this.id, this.extPath, this.thread.uri)
         vscode.workspace.onDidChangeTextDocument(e => {
             if (e.document.uri.fsPath !== this.thread?.uri.fsPath) {
                 return
@@ -41,6 +41,8 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         })
         vscode.workspace.onDidCloseTextDocument(e => this.removeOnFSPath(e.uri))
         vscode.workspace.onDidSaveTextDocument(e => this.removeOnFSPath(e.uri))
+
+        this.updateState(CodyTaskState.asking, thread.range)
     }
 
     /**
@@ -49,7 +51,6 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
     public updateState(state: CodyTaskState, newRange: vscode.Range): void {
         this.status = state
         this.decorator.setState(state, newRange)
-        void this.decorator.decorate(newRange)
         this.selectionRange = newRange
         this._onDidChangeCodeLenses.fire()
     }
@@ -72,7 +73,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
      * Remove all lenses and decorations created for task
      */
     public remove(): void {
-        this.decorator.remove()
+        this.decorator.dispose()
         this.selectionRange = null
         this.status = CodyTaskState.idle
         this.thread.dispose()
@@ -90,7 +91,7 @@ export class CodeLensProvider implements vscode.CodeLensProvider {
         if (!document || !token || document.uri.fsPath !== this.thread.uri.fsPath) {
             return []
         }
-        this.decorator.setFileUri(this.thread.uri)
+
         return this.createCodeLenses()
     }
     /**
@@ -142,9 +143,21 @@ function getLenses(id: string, codeLensRange: vscode.Range, isPending: boolean):
         tooltip: 'Open Cody chat view',
         command: 'cody.focus',
     }
+    const accept = getInlineAcceptLens(id, codeLensRange)
     const undo = getInlineUndoLens(id, codeLensRange)
     const close = getInlineCloseLens(id, codeLensRange)
-    return isPending ? [title, close] : [title, undo, close]
+    return isPending ? [title, close] : [title, undo, accept]
+}
+
+function getInlineAcceptLens(id: string, codeLensRange: vscode.Range): vscode.CodeLens {
+    const lens = new vscode.CodeLens(codeLensRange)
+    lens.command = {
+        title: 'Accept',
+        tooltip: 'Accept update and remove decorations',
+        command: 'cody.inline.decorations.remove',
+        arguments: [id],
+    }
+    return lens
 }
 
 function getErrorLenses(id: string, codeLensRange: vscode.Range): vscode.CodeLens[] {

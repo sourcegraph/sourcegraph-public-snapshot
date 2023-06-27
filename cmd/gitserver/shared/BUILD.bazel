@@ -45,6 +45,7 @@ go_library(
         "//internal/requestclient",
         "//internal/service",
         "//internal/trace",
+        "//internal/wrexec",
         "//lib/errors",
         "//schema",
         "@com_github_json_iterator_go//:go",

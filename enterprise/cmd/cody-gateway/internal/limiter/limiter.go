@@ -43,8 +43,10 @@ type StaticLimiter struct {
 	// be updated if there is a significant deviance from the desired interval.
 	UpdateRateLimitTTL bool
 
-	NowFunc          func() time.Time
-	RateLimitAlerter func(usagePercentage float32, ttl time.Duration)
+	NowFunc func() time.Time
+
+	// RateLimitAlerter is always called with usageRatio whenever rate limits are acquired.
+	RateLimitAlerter func(ctx context.Context, usageRatio float32, ttl time.Duration)
 }
 
 // RetryAfterWithTTL consults the current TTL using the given identifier and
@@ -62,13 +64,15 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		l.LimiterName = "StaticLimiter"
 	}
 	intervalSeconds := l.Interval.Seconds()
+	var currentUsage int
 
 	// TODO: ctx is unused after this, but if a usage is added, we need
 	// to update this assignment - removed for now because of ineffassign
 	_, span := tracer.Start(ctx, l.LimiterName+".TryAcquire",
 		trace.WithAttributes(
 			attribute.Int64("limit", l.Limit),
-			attribute.Float64("intervalSeconds", intervalSeconds)))
+			attribute.Float64("intervalSeconds", intervalSeconds),
+			attribute.Int("currentUsage", currentUsage)))
 	defer func() {
 		span.RecordError(err)
 		span.End()
@@ -81,7 +85,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	}
 
 	// Check the current usage. If no record exists, redis will return 0.
-	currentUsage, err := l.Redis.GetInt(l.Identifier)
+	currentUsage, err = l.Redis.GetInt(l.Identifier)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to read rate limit counter")
 	}
@@ -96,7 +100,8 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		}
 
 		if l.RateLimitAlerter != nil {
-			go l.RateLimitAlerter(1, retryAfter.Sub(l.NowFunc()))
+			// Call with usage 1 for 100% (rate limit exceeded)
+			go l.RateLimitAlerter(backgroundContextWithSpan(ctx), 1, retryAfter.Sub(l.NowFunc()))
 		}
 
 		return nil, RateLimitExceededError{
@@ -165,9 +170,13 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		}
 
 		if l.RateLimitAlerter != nil {
-			go l.RateLimitAlerter(float32(currentUsage+usage)/float32(l.Limit), alertTTL)
+			go l.RateLimitAlerter(backgroundContextWithSpan(ctx), float32(currentUsage+usage)/float32(l.Limit), alertTTL)
 		}
 
 		return nil
 	}, nil
+}
+
+func backgroundContextWithSpan(ctx context.Context) context.Context {
+	return trace.ContextWithSpan(context.Background(), trace.SpanFromContext(ctx))
 }

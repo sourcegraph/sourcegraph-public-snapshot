@@ -49,6 +49,14 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
 }) => {
+    const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
+
+    const abortMessageInProgress = useCallback(() => {
+        abortMessageInProgressInternal()
+        vscodeAPI.postMessage({ command: 'abort' })
+        setAbortMessageInProgress(() => () => undefined)
+    }, [abortMessageInProgressInternal, vscodeAPI])
+
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {
             vscodeAPI.postMessage({ command: 'submit', text, submitType })
@@ -114,13 +122,32 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             copyButtonOnSubmit={onCopyBtnClick}
             suggestions={suggestions}
             setSuggestions={setSuggestions}
+            abortMessageInProgressComponent={AbortMessageInProgress}
+            onAbortMessageInProgress={abortMessageInProgress}
             // TODO: We should fetch this from the server and pass a pretty component
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
+            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
         />
     )
 }
+
+interface AbortMessageInProgressProps {
+    onAbortMessageInProgress: () => void
+}
+
+const AbortMessageInProgress: React.FunctionComponent<AbortMessageInProgressProps> = ({ onAbortMessageInProgress }) => (
+    <div className={classNames(styles.stopGeneratingButtonContainer)}>
+        <VSCodeButton
+            className={classNames(styles.stopGeneratingButton)}
+            onClick={onAbortMessageInProgress}
+            appearance="secondary"
+        >
+            <i className="codicon codicon-stop-circle" /> Stop generating
+        </VSCodeButton>
+    </div>
+)
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
@@ -181,7 +208,7 @@ const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
 
 const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ className, disabled, onClick }) => (
     <VSCodeButton
-        className={classNames(styles.submitButton, className)}
+        className={classNames(disabled ? styles.submitButtonDisabled : styles.submitButton, className)}
         appearance="icon"
         type="button"
         disabled={disabled}
@@ -192,12 +219,9 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
 )
 
 const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = ({ suggestion, onClick }) => (
-    <VSCodeButton className={styles.suggestionButton} appearance="secondary" type="button" onClick={onClick}>
-        <i className="codicon codicon-sparkle" slot="start">
-            {/* Fallback emoji because this icon is a new addition and doesn't seem to work for me? */}✨
-        </i>{' '}
+    <button className={styles.suggestionButton} type="button" onClick={onClick}>
         {suggestion}
-    </VSCodeButton>
+    </button>
 )
 
 const EditButton: React.FunctionComponent<EditButtonProps> = ({

@@ -41,6 +41,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		expUpdatedUsers                  map[int32][]database.UserUpdate
 		expCreatedUsers                  map[int32]database.NewUser
 		expCalledGrantPendingPermissions bool
+		expCalledCreateUserSyncJob       bool
 	}
 	type outerCase struct {
 		description string
@@ -146,6 +147,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
 			},
 			{
 				description: "ext acct doesn't exist, user with username exists but email doesn't exist",
@@ -171,6 +173,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should create user",
@@ -187,6 +190,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					10001: userProps("u-new", "u-new@example.com"),
 				},
 				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
 			},
 			{
 				description: "ext acct doesn't exist, username and email don't exist, should NOT create user",
@@ -211,6 +215,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					2: {ext("st1", "s1", "c1", "s1/u2")},
 				},
 				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
 			},
 			{
 				description: "ext acct doesn't exist, email and username match, authenticated",
@@ -225,6 +230,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
 			},
 			{
 				description: "ext acct doesn't exist, email matches but username doesn't, authenticated",
@@ -240,6 +246,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s1", "c1", "s1/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
 			},
 			{
 				description: "ext acct doesn't exist, email doesn't match existing user, authenticated",
@@ -258,6 +265,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s-new", "c1", "s-new/u1")},
 				},
 				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
 			},
 			{
 				description: "ext acct doesn't exist, user has same username, lookupByUsername=true",
@@ -272,6 +280,7 @@ func TestGetAndSaveUser(t *testing.T) {
 					1: {ext("st1", "s1", "c1", "doesnotexist")},
 				},
 				expCalledGrantPendingPermissions: true,
+				expCalledCreateUserSyncJob:       true,
 			},
 		},
 	}
@@ -412,6 +421,10 @@ func TestGetAndSaveUser(t *testing.T) {
 							t.Errorf("mismatched side-effect createdUsers, got != want, diff(-got, +want):\n%s", diff)
 						}
 
+						if c.expCalledCreateUserSyncJob != m.calledCreateUserSyncJob {
+							t.Fatalf("calledCreateUserSyncJob: want %v but got %v", c.expCalledGrantPendingPermissions, m.calledCreateUserSyncJob)
+						}
+
 						if c.expCalledGrantPendingPermissions != m.calledGrantPendingPermissions {
 							t.Fatalf("calledGrantPendingPermissions: want %v but got %v", c.expCalledGrantPendingPermissions, m.calledGrantPendingPermissions)
 						}
@@ -440,11 +453,13 @@ func TestGetAndSaveUser(t *testing.T) {
 			require.True(t, actor.FromContext(ctx).SourcegraphOperator, "the actor should be a Sourcegraph operator")
 			return nil
 		})
+		permsSyncJobsStore := database.NewMockPermissionSyncJobStore()
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccountsStore)
 		db.AuthzFunc.SetDefaultReturn(database.NewMockAuthzStore())
 		db.EventLogsFunc.SetDefaultReturn(eventLogsStore)
+		db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncJobsStore)
 
 		_, _, err := GetAndSaveUser(
 			ctx,
@@ -610,6 +625,9 @@ type mocks struct {
 
 	// calledGrantPendingPermissions tracks if database.Authz.GrantPendingPermissions method is called.
 	calledGrantPendingPermissions bool
+
+	// calledCreateUserSyncJob tracks if database.PermissionsSyncJobs.CreateUserSyncJob method is called.
+	calledCreateUserSyncJob bool
 }
 
 func (m *mocks) DB() database.DB {
@@ -627,11 +645,15 @@ func (m *mocks) DB() database.DB {
 	authzStore := database.NewMockAuthzStore()
 	authzStore.GrantPendingPermissionsFunc.SetDefaultHook(m.GrantPendingPermissions)
 
+	permsSyncStore := database.NewMockPermissionSyncJobStore()
+	permsSyncStore.CreateUserSyncJobFunc.SetDefaultHook(m.CreateUserSyncJobFunc)
+
 	db := database.NewMockDB()
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authzStore)
 	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
+	db.PermissionSyncJobsFunc.SetDefaultReturn(permsSyncStore)
 	return db
 }
 
@@ -769,6 +791,11 @@ func (m *mocks) Update(ctx context.Context, id int32, update database.UserUpdate
 // GrantPendingPermissions mocks database.Authz.GrantPendingPermissions
 func (m *mocks) GrantPendingPermissions(context.Context, *database.GrantPendingPermissionsArgs) error {
 	m.calledGrantPendingPermissions = true
+	return nil
+}
+
+func (m *mocks) CreateUserSyncJobFunc(context.Context, int32, database.PermissionSyncJobOpts) error {
+	m.calledCreateUserSyncJob = true
 	return nil
 }
 

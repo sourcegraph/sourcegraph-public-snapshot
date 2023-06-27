@@ -7,7 +7,7 @@ import {
 
 import { mockVSCodeExports } from '../testutils/vscode'
 
-import { CodyCompletionItemProvider, inlineCompletionsCache } from '.'
+import { CodyCompletionItemProvider } from '.'
 import { createProviderConfig } from './providers/anthropic'
 
 jest.mock('vscode', () => ({
@@ -94,16 +94,13 @@ async function complete(
         completionsClient,
         contextWindowTokens: 2048,
     })
-    const completionProvider = new CodyCompletionItemProvider(
+    const completionProvider = new CodyCompletionItemProvider({
         providerConfig,
-        null as any,
-        noopStatusBar,
-        null as any,
-        undefined,
-        undefined,
-        undefined,
-        true // disable timeouts
-    )
+        statusBar: noopStatusBar,
+        history: null as any,
+        codebaseContext: null as any,
+        disableTimeouts: true,
+    })
 
     if (!code.includes(CURSOR_MARKER)) {
         throw new Error('The test code must include a | to denote the cursor position')
@@ -177,29 +174,6 @@ function truncateMultilineString(string: string): string {
 }
 
 describe('Cody completions', () => {
-    beforeEach(() => inlineCompletionsCache.clear())
-
-    it('uses a simple prompt for small files', async () => {
-        const { requests } = await complete(`foo ${CURSOR_MARKER}`)
-
-        expect(requests).toHaveLength(3)
-        expect(requests[0]!.messages).toMatchInlineSnapshot(`
-            Array [
-              Object {
-                "speaker": "human",
-                "text": "Write some code",
-              },
-              Object {
-                "speaker": "assistant",
-                "text": "Here is some code:
-            \`\`\`
-            foo ",
-              },
-            ]
-        `)
-        expect(requests[0]!.stopSequences).toContain('\n')
-    })
-
     it('uses a more complex prompt for larger files', async () => {
         const { requests } = await complete(`
             class Range {
@@ -226,15 +200,11 @@ describe('Cody completions', () => {
         expect(messages[messages.length - 1]).toMatchInlineSnapshot(`
             Object {
               "speaker": "assistant",
-              "text": "\`\`\`
-                public start: Position
-                public end: Position
-
-                constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
-                    this.startLine = ",
+              "text": "Okay, here is some code: <CODE5711>constructor(startLine: number, startCharacter: number, endLine: number, endCharacter: number) {
+                    this.startLine =",
             }
         `)
-        expect(requests[0]!.stopSequences).toContain('\n')
+        expect(requests[0]!.stopSequences).toEqual(['\n\nHuman:', '</CODE5711>', '\n\n'])
     })
 
     it('does not make a request when in the middle of a word', async () => {
@@ -319,7 +289,7 @@ describe('Cody completions', () => {
     })
 
     it('filters out known-bad completion starts', async () => {
-        const { completions } = await complete(`one:\n${CURSOR_MARKER}`, [
+        const { completions } = await complete(`one:\n  ${CURSOR_MARKER}`, [
             createCompletionResponse('➕     1'),
             createCompletionResponse('\u200B   2'),
             createCompletionResponse('.      3'),
@@ -366,33 +336,86 @@ describe('Cody completions', () => {
                 ]
             `)
         })
-
-        it('removes odd indentation in multi-line completions', async () => {
-            const { completions } = await complete(
-                `
-                function test() {
-                    ${CURSOR_MARKER}
-                }`,
-                [createCompletionResponse(' foo()\n     bar()')]
-            )
-
-            expect(completions[0].insertText).toBe('foo()\n    bar()')
-        })
-
-        it('handles \t in multi-line completions', async () => {
-            const { completions } = await complete(
-                `
-                function test() {
-                \t${CURSOR_MARKER}
-                }`,
-                [createCompletionResponse(' foo()\n\t bar()')]
-            )
-
-            expect(completions[0].insertText).toBe('foo()\n\tbar()')
-        })
     })
 
     describe('multi-line completions', () => {
+        it('honors a leading new line in the completion', async () => {
+            const { completions } = await complete(
+                `
+            describe('bubbleSort', () => {
+                it('bubbleSort test case', () => {${CURSOR_MARKER}
+
+                })
+            })
+            `,
+                [
+                    createCompletionResponse(`  \n        const unsortedArray = [4,3,78,2,0,2]
+        const sortedArray = bubbleSort(unsortedArray)
+        expect(sortedArray).toEqual([0,2,2,3,4,78])
+    })
+})`),
+                ]
+            )
+
+            expect(completions).toMatchInlineSnapshot(`
+                            Array [
+                              InlineCompletionItem {
+                                "insertText": "
+                                    const unsortedArray = [4,3,78,2,0,2]
+                                    const sortedArray = bubbleSort(unsortedArray)
+                                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
+                              },
+                            ]
+                    `)
+        })
+
+        it('cuts-off redundant closing brackets on the start indent level', async () => {
+            const { completions } = await complete(
+                `
+            describe('bubbleSort', () => {
+                it('bubbleSort test case', () => {${CURSOR_MARKER}
+
+                })
+            })
+            `,
+                [
+                    createCompletionResponse(`const unsortedArray = [4,3,78,2,0,2]
+        const sortedArray = bubbleSort(unsortedArray)
+        expect(sortedArray).toEqual([0,2,2,3,4,78])
+    })
+})`),
+                ]
+            )
+
+            expect(completions).toMatchInlineSnapshot(`
+                            Array [
+                              InlineCompletionItem {
+                                "insertText": "const unsortedArray = [4,3,78,2,0,2]
+                                    const sortedArray = bubbleSort(unsortedArray)
+                                    expect(sortedArray).toEqual([0,2,2,3,4,78])",
+                              },
+                            ]
+                    `)
+        })
+
+        it('keeps the closing bracket', async () => {
+            const { completions } = await complete(`function printHello(${CURSOR_MARKER})`, [
+                createCompletionResponse(` {
+    console.log('Hello');
+}`),
+            ])
+
+            expect(completions).toMatchInlineSnapshot(`
+                            Array [
+                              InlineCompletionItem {
+                                "insertText": "{
+                                console.log('Hello');
+                            }",
+                              },
+                            ]
+                    `)
+        })
+
         it('triggers a multi-line completion at the start of a block', async () => {
             const { requests } = await complete(`function bubbleSort() {\n  ${CURSOR_MARKER}`)
 
@@ -442,18 +465,42 @@ describe('Cody completions', () => {
             `)
         })
 
+        it('cuts-off completions when the next non-empty line matches', async () => {
+            const { completions } = await complete(
+                `
+                function() {
+                    ${CURSOR_MARKER}
+                    console.log('bar')
+                }`,
+                [
+                    createCompletionResponse(`
+                    console.log('foo')
+                        console.log('bar')
+                    }`),
+                ]
+            )
+
+            expect(completions).toMatchInlineSnapshot(`
+                Array [
+                  InlineCompletionItem {
+                    "insertText": "console.log('foo')",
+                  },
+                ]
+            `)
+        })
+
         it('does not support multi-line completion on unsupported languages', async () => {
             const { requests } = await complete(`function looksLegit() {\n  ${CURSOR_MARKER}`, undefined, 'elixir')
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).toContain('\n')
+            expect(requests[0]!.stopSequences).toContain('\n\n')
         })
 
         it('requires an indentation to start a block', async () => {
             const { requests } = await complete(`function bubbleSort() {\n${CURSOR_MARKER}`)
 
             expect(requests).toHaveLength(3)
-            expect(requests[0]!.stopSequences).toContain('\n')
+            expect(requests[0]!.stopSequences).toContain('\n\n')
         })
 
         it('works with python', async () => {
@@ -484,6 +531,150 @@ describe('Cody completions', () => {
                         print(f\\"Multiple of 3: {i}\\")
                     else:
                         print(f\\"ODD {i}\\")"
+            `)
+        })
+
+        it('works with java', async () => {
+            const { completions, requests } = await complete(
+                `
+                for (int i = 0; i < 11; i++) {
+                    if (i % 2 == 0) {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    System.out.println(i);
+                        } else if (i % 3 == 0) {
+                            System.out.println("Multiple of 3: " + i);
+                        } else {
+                            System.out.println("ODD " + i);
+                        }
+                    }
+
+                    for (int i = 0; i < 12; i++) {
+                        System.out.println("unrelated");
+                    }`),
+                ],
+                'java'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "System.out.println(i);
+                    } else if (i % 3 == 0) {
+                        System.out.println(\\"Multiple of 3: \\" + i);
+                    } else {
+                        System.out.println(\\"ODD \\" + i);
+                    }"
+            `)
+        })
+
+        // TODO: Detect `}\nelse\n{` pattern for else skip logic
+        it('works with csharp', async () => {
+            const { completions, requests } = await complete(
+                `
+                for (int i = 0; i < 11; i++) {
+                    if (i % 2 == 0)
+                    {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    Console.WriteLine(i);
+                        }
+                        else if (i % 3 == 0)
+                        {
+                            Console.WriteLine("Multiple of 3: " + i);
+                        }
+                        else
+                        {
+                            Console.WriteLine("ODD " + i);
+                        }
+
+                    }
+
+                    for (int i = 0; i < 12; i++)
+                    {
+                        Console.WriteLine("unrelated");
+                    }`),
+                ],
+                'csharp'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "Console.WriteLine(i);
+                    }"
+            `)
+        })
+
+        it('works with c++', async () => {
+            const { completions, requests } = await complete(
+                `
+                for (int i = 0; i < 11; i++) {
+                    if (i % 2 == 0) {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    std::cout << i;
+                        } else if (i % 3 == 0) {
+                            std::cout << "Multiple of 3: " << i;
+                        } else  {
+                            std::cout << "ODD " << i;
+                        }
+                    }
+
+                    for (int i = 0; i < 12; i++) {
+                        std::cout << "unrelated";
+                    }`),
+                ],
+                'cpp'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "std::cout << i;
+                    } else if (i % 3 == 0) {
+                        std::cout << \\"Multiple of 3: \\" << i;
+                    } else  {
+                        std::cout << \\"ODD \\" << i;
+                    }"
+            `)
+        })
+
+        it('works with c', async () => {
+            const { completions, requests } = await complete(
+                `
+                for (int i = 0; i < 11; i++) {
+                    if (i % 2 == 0) {
+                        ${CURSOR_MARKER}`,
+                [
+                    createCompletionResponse(`
+                    printf("%d", i);
+                        } else if (i % 3 == 0) {
+                            printf("Multiple of 3: %d", i);
+                        } else {
+                            printf("ODD %d", i);
+                        }
+                    }
+
+                    for (int i = 0; i < 12; i++) {
+                        printf("unrelated");
+                    }`),
+                ],
+                'c'
+            )
+
+            expect(requests).toHaveLength(3)
+            expect(requests[0]!.stopSequences).not.toContain('\n')
+            expect(completions[0].insertText).toMatchInlineSnapshot(`
+                "printf(\\"%d\\", i);
+                    } else if (i % 3 == 0) {
+                        printf(\\"Multiple of 3: %d\\", i);
+                    } else {
+                        printf(\\"ODD %d\\", i);
+                    }"
             `)
         })
 

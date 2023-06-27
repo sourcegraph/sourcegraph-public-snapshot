@@ -37,7 +37,14 @@ export class CodebaseContext {
     private mergeContextResults(keywordResults: ContextResult[], filenameResults: ContextResult[]): ContextResult[] {
         // Just take the single most relevant filename suggestion for now. Otherwise, because our reranking relies solely
         // on filename, the filename results would dominate the keyword results.
-        return filenameResults.slice(-1).concat(keywordResults)
+        const merged = filenameResults.slice(-1).concat(keywordResults)
+
+        const uniques = new Map<string, ContextResult>()
+        for (const result of merged) {
+            uniques.set(result.fileName, result)
+        }
+
+        return Array.from(uniques.values())
     }
 
     /**
@@ -127,7 +134,10 @@ export class CodebaseContext {
             : populateCodeContextTemplate
 
         return groupedResults.results.flatMap<Message>(text =>
-            getContextMessageWithResponse(contextTemplateFn(text, groupedResults.file.fileName), groupedResults.file)
+            getContextMessageWithResponse(
+                contextTemplateFn(text, groupedResults.file.fileName, groupedResults.file.repoName),
+                groupedResults.file
+            )
         )
     }
 
@@ -148,15 +158,21 @@ export class CodebaseContext {
         }
 
         return results.flatMap(({ content, filePath, repoName, revision }) => {
-            const messageText = populateCodeContextTemplate(content, filePath)
+            const messageText = isMarkdownFile(filePath)
+                ? populateMarkdownContextTemplate(content, filePath, repoName)
+                : populateCodeContextTemplate(content, filePath, repoName)
+
             return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
         })
     }
 
     private async getLocalContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const keywordResults = this.getKeywordSearchResults(query, options)
-        const filenameResults = this.getFilenameSearchResults(query, options)
-        const combinedResults = this.mergeContextResults(await keywordResults, await filenameResults)
+        const keywordResultsPromise = this.getKeywordSearchResults(query, options)
+        const filenameResultsPromise = this.getFilenameSearchResults(query, options)
+
+        const [keywordResults, filenameResults] = await Promise.all([keywordResultsPromise, filenameResultsPromise])
+
+        const combinedResults = this.mergeContextResults(keywordResults, filenameResults)
         const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
         const messages = resultsToMessages(rerankedResults)
         return messages
@@ -223,7 +239,7 @@ function mergeConsecutiveResults(results: EmbeddingsSearchResult[]): string[] {
 
 function resultsToMessages(results: ContextResult[]): ContextMessage[] {
     return results.flatMap(({ content, fileName, repoName, revision }) => {
-        const messageText = populateCodeContextTemplate(content, fileName)
+        const messageText = populateCodeContextTemplate(content, fileName, repoName)
         return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
     })
 }

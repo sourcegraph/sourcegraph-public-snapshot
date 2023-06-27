@@ -105,6 +105,7 @@ public class SourcegraphProjectService
   }
 
   @Override
+  @Nullable
   public String getEnterpriseAccessToken() {
     // configuring enterpriseAccessToken overrides the deprecated accessToken field
     String configuredEnterpriseAccessToken =

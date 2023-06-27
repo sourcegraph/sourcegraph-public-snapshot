@@ -9,7 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -64,7 +66,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 		roots = append(roots, root)
 		repoPatterns = append(repoPatterns, &schema.LocalGitRepoPattern{Pattern: filepath.Join(root, config.pattern), Group: config.group})
 		for _, folder := range config.folders {
-			if err := os.MkdirAll(filepath.Join(root, folder), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Join(root, folder), 0o755); err != nil {
 				t.Fatal(err)
 			}
 		}
@@ -74,7 +76,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 
 	svc := types.ExternalService{
 		Kind: extsvc.VariantLocalGit.AsKind(),
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.LocalGitExternalService{
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.LocalGitExternalService{
 			Repos: repoPatterns,
 		})),
 	}
@@ -84,7 +86,7 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	repos, err := listAll(ctx, src)
+	repos, err := ListAll(ctx, src)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -104,12 +106,43 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 				for k := range repo.Sources {
 					repo.Sources[k].CloneURL = strings.Replace(repo.Sources[k].CloneURL, root, root_placeholder, 1)
 				}
+				repo.Metadata.(*extsvc.LocalGitMetadata).AbsRepoPath = strings.Replace(repo.Metadata.(*extsvc.LocalGitMetadata).AbsRepoPath, root, root_placeholder, 1)
 				break
 			}
 		}
 	}
 
-	testutil.AssertGolden(t, filepath.Join("testdata", "sources", t.Name()), update(t.Name()), repos)
+	testutil.AssertGolden(t, filepath.Join("testdata", "sources", t.Name()), Update(t.Name()), repos)
+}
+
+func Test_convertGitCloneURLToCodebaseName(t *testing.T) {
+	testCases := []struct {
+		cloneURL string
+		expect   autogold.Value
+	}{
+		{"", autogold.Expect("")},
+		{"https://github.com/sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"https://github.com/sourcegraph/handbook.git", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"git@github.com:sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"github:sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+
+		// Note: this "git@github.com:/sourcegraph/handbook" URL format comes from the following
+		// on Taylor's laptop:
+		//
+		//  git clone https://github.com/sourcegraph/handbook handbook-https
+		//  cd handbook-https/
+		//  git remote get-url origin
+		//
+		// No clue why an HTTPS URL gets translated into a git@github.com format (or why it has a leading slash)
+		// but this exists in the wild so we should handle it ;)
+		{"git@github.com:/sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.cloneURL, func(t *testing.T) {
+			got := convertGitCloneURLToCodebaseName(tc.cloneURL)
+			tc.expect.Equal(t, got)
+		})
+	}
 }
 
 func gitInitBare(t *testing.T, path string) {
@@ -132,7 +165,7 @@ func gitInitRepos(t *testing.T, names ...string) string {
 
 	for _, name := range names {
 		p := filepath.Join(root, name)
-		if err := os.MkdirAll(p, 0755); err != nil {
+		if err := os.MkdirAll(p, 0o755); err != nil {
 			t.Fatal(err)
 		}
 

@@ -26,6 +26,14 @@
       }
     },
     {
+      "name": "Launch sg rfc list",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/dev/sg",
+      "args": ["rfc", "list"]
+    },
+    {
       "name": "Launch VS Code Extension",
       "type": "extensionHost",
       "request": "launch",
@@ -53,6 +61,17 @@
       ],
       "sourceMaps": true,
       "outFiles": ["${workspaceRoot}/client/vscode/dist/webworker/*.js"]
+    },
+    {
+      "name": "Launch Sourcegraph Backend (for App)",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/enterprise/cmd/sourcegraph",
+      "env": {
+        "DEPLOY_TYPE": "app",
+        "INSECURE_DEV": "true"
+      }
     },
     {
       "type": "node",

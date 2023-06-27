@@ -20,6 +20,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'VirtualFile',
             url: '/new_file.md',
+            changelistURL: null,
         },
         newPath: 'new_file.md',
         oldPath: null,
@@ -37,6 +38,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'VirtualFile',
             url: '/deleted_file.md',
+            changelistURL: null,
         },
         newPath: null,
         oldPath: 'deleted_file.md',
@@ -54,6 +56,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'VirtualFile',
             url: '/new_file.md',
+            changelistURL: null,
         },
         newPath: 'new_file.md',
         oldPath: null,
@@ -71,6 +74,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'VirtualFile',
             url: '/deleted_file.md',
+            changelistURL: null,
         },
         newPath: null,
         oldPath: 'deleted_file.md',
@@ -92,6 +96,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'VirtualFile',
             url: '/existing_file.md',
+            changelistURL: null,
         },
         newPath: 'existing_file.md',
         oldPath: 'existing_file.md',
@@ -113,6 +118,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'GitBlob',
             url: 'http://test.test/gitblob',
+            changelistURL: null,
         },
         newPath: 'existing_git_file.md',
         oldPath: 'existing_git_file.md',
@@ -134,6 +140,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'VirtualFile',
             url: '/to.md',
+            changelistURL: null,
         },
         newPath: 'to.md',
         oldPath: 'from.md',
@@ -155,6 +162,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'VirtualFile',
             url: 'dir2/to.md',
+            changelistURL: null,
         },
         newPath: 'dir2/to.md',
         oldPath: 'dir1/from.md',
@@ -176,6 +184,7 @@ export const FILE_DIFF_NODES: FileDiffFields[] = [
         mostRelevantFile: {
             __typename: 'VirtualFile',
             url: '/to.md',
+            changelistURL: null,
         },
         newPath: 'to.md',
         oldPath: 'from.md',

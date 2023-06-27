@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/fatih/color"
@@ -37,6 +38,12 @@ func Init(logger log.Logger) CleanupFunc {
 	// INDEXED_SEARCH_SERVERS is empty (but defined) so that indexed search is disabled.
 	setDefaultEnv(logger, "INDEXED_SEARCH_SERVERS", "")
 
+	if runtime.GOOS == "windows" {
+		// POSTGRES database, specifying a non-default port to avoid conflicting with developer's
+		// local servers, if they happen to have PostgreSQL running on their machines.
+		setDefaultEnv(logger, "PGPORT", "5434")
+	}
+
 	// GITSERVER_EXTERNAL_ADDR is used by gitserver to identify itself in the
 	// list in SRC_GIT_SERVERS.
 	setDefaultEnv(logger, "GITSERVER_ADDR", "127.0.0.1:3178")
@@ -51,6 +58,9 @@ func Init(logger log.Logger) CleanupFunc {
 	// The syntax-highlighter might not be running, but this is a better default than an internal
 	// hostname.
 	setDefaultEnv(logger, "SRC_SYNTECT_SERVER", "http://localhost:9238")
+
+	// Code Insights does not run in App
+	setDefaultEnv(logger, "DISABLE_CODE_INSIGHTS", "true")
 
 	// Jaeger might not be running, but this is a better default than an internal hostname.
 	//
@@ -81,7 +91,7 @@ func Init(logger log.Logger) CleanupFunc {
 	setDefaultEnv(logger, "SYMBOLS_CACHE_DIR", filepath.Join(cacheDir, "symbols"))
 	setDefaultEnv(logger, "SEARCHER_CACHE_DIR", filepath.Join(cacheDir, "searcher"))
 
-	configDir, err := setupAppDir(os.Getenv("SRC_APP_CONFIG"), os.UserConfigDir)
+	configDir, err := SetupAppConfigDir()
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to setup user config directory. Please see log for more details")
 		logger.Fatal("failed to setup config directory", log.Error(err))
@@ -243,6 +253,10 @@ exec docker run --rm -i \
     --entrypoint /usr/local/bin/universal-ctags \
     slimsag/ctags:latest@sha256:dd21503a3ae51524ab96edd5c0d0b8326d4baaf99b4238dfe8ec0232050af3c7 "$@"
 `
+
+func SetupAppConfigDir() (string, error) {
+	return setupAppDir(os.Getenv("SRC_APP_CONFIG"), os.UserConfigDir)
+}
 
 func setupAppDir(root string, defaultDirFn func() (string, error)) (string, error) {
 	var base = root

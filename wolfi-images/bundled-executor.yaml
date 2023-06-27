@@ -10,15 +10,16 @@ contents:
     - ca-certificates
     - git
     - maven
-    - openjdk-11
+    - openjdk-11=11.0.20.4-r0 # TODO(will): Temporarily pinned to avoid bad signature
     - openjdk-11-default-jvm
     - python3
     - py3-pip
     - xmlstarlet@sourcegraph
+    - yq
 
 paths:
   - path: /usr/local/bin
     type: directory
     permissions: 0o755
 
-# MANUAL REBUILD: Wed Jun 14 15:27:52 BST 2023
+# MANUAL REBUILD: Thu Jun 22 13:43:35 BST 2023

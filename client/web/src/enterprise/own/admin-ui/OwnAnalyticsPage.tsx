@@ -1,5 +1,6 @@
 import { FC } from 'react'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { useQuery } from '@sourcegraph/http-client'
 import { Alert, BarChart, Card, ErrorAlert, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
@@ -39,25 +40,22 @@ export const OwnAnalyticsPage: FC = () => {
 const OwnAnalyticsPanel: FC = () => {
     const { data, loading, error } = useQuery<GetInstanceOwnStatsResult>(GET_INSTANCE_OWN_STATS, {})
 
-    if (!data?.instanceOwnershipStats?.totalFiles) {
-        return <>{error && <ErrorAlert prefix="Error getting own analytics" error={error} />}</>
-    }
+    const totalFiles = data?.instanceOwnershipStats.totalFiles || 0
+    const totalCodeownedFiles = data?.instanceOwnershipStats.totalCodeownedFiles || 0
+    const totalAssignedOwnershipFiles = data?.instanceOwnershipStats.totalAssignedOwnershipFiles || 0
+    const totalOwnedFiles = data?.instanceOwnershipStats.totalOwnedFiles || 0
 
-    const totalFiles = data.instanceOwnershipStats.totalFiles
-    const totalCodeownedFiles = data.instanceOwnershipStats.totalCodeownedFiles
-    const totalAssignedOwnershipFiles = data.instanceOwnershipStats.totalAssignedOwnershipFiles
-    const totalOwnedFiles = data.instanceOwnershipStats.totalOwnedFiles
-
-    const totalCodeownedFilesPercent = Math.round((totalCodeownedFiles / totalFiles) * 100)
-    const totalAssignedOwnershipFilesPercent = Math.round((totalAssignedOwnershipFiles / totalFiles) * 100)
-    const totalOwnedFilesPercent = Math.round((totalOwnedFiles / totalFiles) * 100)
+    // Use Math.max(totalFiles, 1) to make sure we do not divide by 0.
+    const totalCodeownedFilesPercent = Math.round((totalCodeownedFiles / Math.max(totalFiles, 1)) * 100)
+    const totalAssignedOwnershipFilesPercent = Math.round((totalAssignedOwnershipFiles / Math.max(totalFiles, 1)) * 100)
+    const totalOwnedFilesPercent = Math.round((totalOwnedFiles / Math.max(totalFiles, 1)) * 100)
 
     const ownSignalsData: OwnCoverageDatum[] = [
         {
             name: 'CODEOWNERS',
             count: totalCodeownedFilesPercent,
             fill: 'var(--info-2)',
-            tooltip: `Files owned through CODEOWNERS:${totalCodeownedFiles}/${totalFiles}`,
+            tooltip: `Files owned through CODEOWNERS: ${totalCodeownedFiles}/${totalFiles}`,
         },
         {
             name: 'Assigned ownership',
@@ -71,14 +69,13 @@ const OwnAnalyticsPanel: FC = () => {
             fill: 'var(--info-3)',
             tooltip: `Owned files: ${totalOwnedFiles}/${totalFiles}`,
         },
-        // TODO decide whether we remove or keep all files
-        {
-            name: 'All files',
-            count: 100,
-            fill: 'var(--text-muted)',
-            tooltip: 'Total number of files',
-        },
     ]
+
+    const lastUpdatedAt = data?.instanceOwnershipStats.updatedAt && (
+        <>
+            Last generated: <Timestamp date={data.instanceOwnershipStats.updatedAt} />
+        </>
+    )
 
     return (
         <>
@@ -100,6 +97,7 @@ const OwnAnalyticsPanel: FC = () => {
                                             width={width}
                                             height={300}
                                             data={ownSignalsData}
+                                            maxValueLowerBound={100}
                                             getDatumName={datum => datum.name}
                                             getDatumValue={datum => datum.count}
                                             getDatumColor={datum => datum.fill}
@@ -113,8 +111,8 @@ const OwnAnalyticsPanel: FC = () => {
                         )}
                     </Card>
                     <Text className="font-italic text-center mt-2">
-                        {/* TODO(#52826): Provide more precise information about how stale data is, and how often it refreshes. */}
-                        Data is generated periodically from CODEOWNERS files and repository contents.
+                        Data is generated periodically from CODEOWNERS files and repository contents.{' '}
+                        {lastUpdatedAt && lastUpdatedAt}
                     </Text>
                 </>
             )}

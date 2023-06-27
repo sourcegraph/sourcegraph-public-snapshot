@@ -47,8 +47,10 @@ export const TranscriptAction: React.FunctionComponent<{
                     {steps.map((step, index) => (
                         // eslint-disable-next-line react/no-array-index-key
                         <li key={index} className={styles.step}>
-                            {step.icon && <Icon svgPath={step.icon} className={styles.stepIcon} />} {step.verb}{' '}
-                            <span className={styles.stepObject}>{step.object}</span>
+                            {step.icon && <Icon svgPath={step.icon} className={styles.stepIcon} />}{' '}
+                            <span className={styles.stepObject}>
+                                {step.verb} {step.object}
+                            </span>
                         </li>
                     ))}
                 </ol>

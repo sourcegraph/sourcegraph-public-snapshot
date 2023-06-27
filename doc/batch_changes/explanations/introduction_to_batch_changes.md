@@ -31,8 +31,9 @@ The generic term **changeset** is used to refer to any of the following:
 - Bitbucket Server / Bitbucket Data Center and Bitbucket Data Center pull requests.
 - GitLab merge requests.
 - Bitbucket Cloud pull requests.
+- Gerrit changes.
+- <span class="badge badge-beta">Beta</span> Perforce changelists.
 - Phabricator diffs (not yet supported).
-- Gerrit changes (not yet supported).
 
 A single batch change can span many repositories and many code hosts.
 

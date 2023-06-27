@@ -40,17 +40,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onError(@NotNull Throwable error) {
-    if (error.getMessage().equals("Connection refused")) {
-      chat.addMessageToChat(
-          ChatMessage.createAssistantMessage(
-              "I'm sorry, I can't connect to the server. Please make sure that the server is running and try again."));
-    } else {
-      chat.addMessageToChat(
-          ChatMessage.createAssistantMessage(
-              "I'm sorry, something wet wrong. Please try again. The error message I got was: \""
-                  + error.getMessage()
-                  + "\"."));
-    }
+    chat.respondToErrorFromServer(error.getMessage());
     chat.finishMessageProcessing();
     System.err.println("Error: " + error);
   }

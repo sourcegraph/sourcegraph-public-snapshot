@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
@@ -342,7 +343,7 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}
@@ -890,7 +891,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}
@@ -904,7 +905,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"description": "Associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								},
@@ -916,7 +917,7 @@ func TestOwnership_WithSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"description": "Associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -1055,7 +1056,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"description": "Associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								},
@@ -1067,7 +1068,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"description": "Associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -1110,7 +1111,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent view",
-											"description": "Owner is associated because they have viewed this file in the last 90 days."
+											"description": "Associated because they have viewed this file in the last 90 days."
 										}
 									]
 								}
@@ -1148,7 +1149,7 @@ func TestTreeOwnershipSignals(t *testing.T) {
 									"reasons": [
 										{
 											"title": "recent contributor",
-											"description": "Owner is associated because they have contributed to this file in the last 90 days."
+											"description": "Associated because they have contributed to this file in the last 90 days."
 										}
 									]
 								}
@@ -1233,7 +1234,7 @@ func TestCommitOwnershipSignals(t *testing.T) {
 								"reasons": [
 									{
 										"title": "recent contributor",
-										"description": "Owner is associated because they have contributed to this file in the last 90 days."
+										"description": "Associated because they have contributed to this file in the last 90 days."
 									}
 								]
 							}
@@ -1590,7 +1591,7 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 											"description": "Owner is associated with a rule in a CODEOWNERS file.",
 											"codeownersFile": {
 												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own"
+												"url": "/github.com/sourcegraph/own/-/own/edit"
 											},
 											"ruleLineMatch": 1
 										}
@@ -2235,11 +2236,13 @@ func TestDisplayOwnershipStats(t *testing.T) {
 	fakeRepoPaths.AggregateFileCountFunc.SetDefaultReturn(350000, nil)
 	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
 	fakeOwnershipStats := database.NewMockOwnershipStatsStore()
+	updateTime := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
 	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
 		database.PathAggregateCounts{
 			CodeownedFileCount:         150000,
 			AssignedOwnershipFileCount: 20000,
 			TotalOwnedFileCount:        165000,
+			UpdatedAt:                  updateTime,
 		}, nil)
 	db.OwnershipStatsFunc.SetDefaultReturn(fakeOwnershipStats)
 	ctx := context.Background()
@@ -2255,15 +2258,17 @@ func TestDisplayOwnershipStats(t *testing.T) {
 					totalCodeownedFiles
 					totalOwnedFiles
 					totalAssignedOwnershipFiles
+					updatedAt
 				}
 			}`,
 		ExpectedResult: `
 			{
 				"instanceOwnershipStats": {
 					"totalFiles": 350000,
-					"totalCodeownedFiles" : 150000,
-					"totalOwnedFiles" : 165000,
-					"totalAssignedOwnershipFiles" : 20000
+					"totalCodeownedFiles": 150000,
+					"totalOwnedFiles": 165000,
+					"totalAssignedOwnershipFiles": 20000,
+					"updatedAt": "2023-01-01T00:00:00Z"
 				}
 			}`,
 	})

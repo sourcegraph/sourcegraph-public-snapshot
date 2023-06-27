@@ -6,17 +6,25 @@ import type {
     ConfigurationWithAccessToken,
 } from '@sourcegraph/cody-shared/src/configuration'
 
+import { DOTCOM_URL } from './chat/protocol'
+import { CONFIG_KEY, ConfigKeys } from './configuration-keys'
+import { logEvent } from './event-logger'
+import { LocalStorage } from './services/LocalStorageProvider'
 import { SecretStorage, getAccessToken } from './services/SecretStorageProvider'
+
+interface ConfigGetter {
+    get<T>(section: typeof CONFIG_KEY[ConfigKeys], defaultValue?: T): T
+}
 
 /**
  * All configuration values, with some sanitization performed.
  */
-export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'get'>): Configuration {
+export function getConfiguration(config: ConfigGetter): Configuration {
     const isTesting = process.env.CODY_TESTING === 'true'
 
     let debugRegex: RegExp | null = null
     try {
-        const debugPattern: string | null = config.get<string | null>('cody.debug.filter', null)
+        const debugPattern: string | null = config.get<string | null>(CONFIG_KEY.debugFilter, null)
         if (debugPattern) {
             if (debugPattern === '*') {
                 debugRegex = new RegExp('.*')
@@ -29,32 +37,42 @@ export function getConfiguration(config: Pick<vscode.WorkspaceConfiguration, 'ge
         debugRegex = new RegExp('.*')
     }
 
-    let completionsAdvancedProvider = config.get<'anthropic' | 'unstable-codegen'>(
-        'cody.completions.advanced.provider',
+    let autocompleteAdvancedProvider = config.get<'anthropic' | 'unstable-codegen' | 'unstable-huggingface'>(
+        CONFIG_KEY.autocompleteAdvancedProvider,
         'anthropic'
     )
-    if (completionsAdvancedProvider !== 'anthropic' && completionsAdvancedProvider !== 'unstable-codegen') {
-        completionsAdvancedProvider = 'anthropic'
+    if (
+        autocompleteAdvancedProvider !== 'anthropic' &&
+        autocompleteAdvancedProvider !== 'unstable-codegen' &&
+        autocompleteAdvancedProvider !== 'unstable-huggingface'
+    ) {
+        autocompleteAdvancedProvider = 'anthropic'
         void vscode.window.showInformationMessage(
-            "Unrecognized cody.completions.advanced.provider, defaulting to 'anthropic'"
+            `Unrecognized ${CONFIG_KEY.autocompleteAdvancedProvider}, defaulting to 'anthropic'`
         )
     }
 
     return {
-        serverEndpoint: sanitizeServerEndpoint(config.get('cody.serverEndpoint', '')),
-        codebase: sanitizeCodebase(config.get('cody.codebase')),
-        customHeaders: config.get<object>('cody.customHeaders', {}) as Record<string, string>,
-        useContext: config.get<ConfigurationUseContext>('cody.useContext') || 'embeddings',
-        debugEnable: config.get<boolean>('cody.debug.enable', false),
-        debugVerbose: config.get<boolean>('cody.debug.verbose', false),
+        serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
+        codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
+        customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
+        useContext: config.get<ConfigurationUseContext>(CONFIG_KEY.useContext) || 'embeddings',
+        debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
+        debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
-        experimentalSuggest: config.get('cody.experimental.suggestions', isTesting),
-        experimentalChatPredictions: config.get('cody.experimental.chatPredictions', isTesting),
-        experimentalInline: config.get('cody.experimental.inline', isTesting),
-        experimentalGuardrails: config.get('cody.experimental.guardrails', isTesting),
-        experimentalNonStop: config.get('cody.experimental.nonStop', isTesting),
-        completionsAdvancedProvider,
-        completionsAdvancedServerEndpoint: config.get<string | null>('cody.completions.advanced.serverEndpoint', null),
+        autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
+        experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
+        experimentalInline: config.get(CONFIG_KEY.experimentalInline, isTesting),
+        experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
+        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        autocompleteAdvancedProvider,
+        autocompleteAdvancedServerEndpoint: config.get<string | null>(
+            CONFIG_KEY.autocompleteAdvancedServerEndpoint,
+            null
+        ),
+        autocompleteAdvancedAccessToken: config.get<string | null>(CONFIG_KEY.autocompleteAdvancedAccessToken, null),
+        autocompleteAdvancedCache: config.get(CONFIG_KEY.autocompleteAdvancedCache, true),
+        autocompleteAdvancedEmbeddings: config.get(CONFIG_KEY.autocompleteAdvancedEmbeddings, true),
     }
 }
 
@@ -68,6 +86,16 @@ function sanitizeCodebase(codebase: string | undefined): string {
 }
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
+    if (!serverEndpoint) {
+        // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
+        // tests.
+        const isTesting = process.env.CODY_TESTING === 'true'
+        if (isTesting) {
+            return 'http://localhost:49300/'
+        }
+
+        return DOTCOM_URL.href
+    }
     const trailingSlashRegexp = /\/$/
     return serverEndpoint.trim().replace(trailingSlashRegexp, '')
 }
@@ -79,8 +107,71 @@ export async function updateConfiguration(configKey: string, configValue: string
     await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
 }
 
-export const getFullConfig = async (secretStorage: SecretStorage): Promise<ConfigurationWithAccessToken> => {
+export const getFullConfig = async (
+    secretStorage: SecretStorage,
+    localStorage?: LocalStorage
+): Promise<ConfigurationWithAccessToken> => {
     const config = getConfiguration(vscode.workspace.getConfiguration())
+    // Migrate endpoints to local storage
+    config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
+}
+
+// We run this callback on extension startup
+export async function migrateConfiguration(): Promise<void> {
+    let didMigrate = false
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.experimentalSuggestions,
+        CONFIG_KEY.autocompleteEnabled
+    )
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedProvider,
+        CONFIG_KEY.autocompleteAdvancedProvider
+    )
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedServerEndpoint,
+        CONFIG_KEY.autocompleteAdvancedServerEndpoint
+    )
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedAccessToken,
+        CONFIG_KEY.autocompleteAdvancedAccessToken
+    )
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedCache,
+        CONFIG_KEY.autocompleteAdvancedCache
+    )
+    didMigrate ||= await migrateDeprecatedConfigOption(
+        CONFIG_KEY.completionsAdvancedEmbeddings,
+        CONFIG_KEY.autocompleteAdvancedEmbeddings
+    )
+
+    if (didMigrate) {
+        logEvent('CodyVSCodeExtension:configMigrator:migrated')
+    }
+}
+
+async function migrateDeprecatedConfigOption(
+    oldKey: typeof CONFIG_KEY[ConfigKeys],
+    newKey: typeof CONFIG_KEY[ConfigKeys]
+): Promise<boolean> {
+    const config = vscode.workspace.getConfiguration()
+    const value = config.get(oldKey)
+    const inspect = config.inspect(oldKey)
+
+    if (inspect === undefined || value === inspect.defaultValue) {
+        return false
+    }
+
+    const scope =
+        inspect.workspaceFolderValue !== undefined
+            ? vscode.ConfigurationTarget.WorkspaceFolder
+            : inspect?.workspaceValue !== undefined
+            ? vscode.ConfigurationTarget.Workspace
+            : vscode.ConfigurationTarget.Global
+
+    await config.update(newKey, value, scope)
+    await config.update(oldKey, undefined, scope)
+
+    return true
 }

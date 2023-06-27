@@ -9,9 +9,6 @@ import (
 	"os"
 	"sort"
 	"sync"
-	"syscall"
-
-	"golang.org/x/sys/unix"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -84,7 +81,7 @@ func (c *zipCache) delete(path string, trace observation.TraceLogger) {
 		// For now, only log errors here.
 		// These calls shouldn't ever fail, and if they do,
 		// there's not much to do about it; best to just limp along.
-		if err := unix.Munmap(zf.Data); err != nil {
+		if err := unmap(zf.Data); err != nil {
 			log.Printf("failed to munmap %q: %v", zf.f.Name(), err)
 		}
 		if err := zf.f.Close(); err != nil {
@@ -126,14 +123,9 @@ func readZipFile(path string) (*zipFile, error) {
 		return nil, err
 	}
 
-	// mmap file
-	zf.Data, err = unix.Mmap(int(f.Fd()), 0, int(fi.Size()), syscall.PROT_READ, syscall.MAP_SHARED)
+	zf.Data, err = mmap(path, f, fi)
 	if err != nil {
 		return nil, err
-	}
-	if err := unix.Madvise(zf.Data, syscall.MADV_SEQUENTIAL); err != nil {
-		// best effort at optimization, so only log failures here
-		log.Printf("failed to madvise for %q: %v", path, err)
 	}
 
 	return zf, nil

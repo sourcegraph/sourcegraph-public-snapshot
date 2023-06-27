@@ -9,6 +9,7 @@
 }
 
 .input-row {
+    position: relative;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -46,6 +47,20 @@
 .suggestions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    flex-direction: row;
+    gap: 0.1rem;
     margin-bottom: 0.25rem;
+    /* This matches the button paddings, so the button text lines up with the input */
+    margin-left: -6px;
+}
+
+.abort-button-container {
+    display: flex;
+    /* Remove the padding of the form container from the width */
+    width: calc(100% - 2rem);
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    top: -2.5rem;
+    z-index: 100;
 }

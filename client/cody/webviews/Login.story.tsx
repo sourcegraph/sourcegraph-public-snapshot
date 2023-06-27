@@ -31,8 +31,8 @@ const validAuthStatus: AuthStatus = {
     siteHasCodyEnabled: true,
     siteVersion: '5.1.0',
 }
-
-const invalidAccessTokenAuthStatus: AuthStatus = { ...unauthenticatedStatus }
+const endpoint = 'https://example.com'
+const invalidAccessTokenAuthStatus: AuthStatus = { ...unauthenticatedStatus, endpoint }
 
 const requiresVerifiedEmailAuthStatus: AuthStatus = {
     ...defaultAuthStatus,
@@ -40,14 +40,28 @@ const requiresVerifiedEmailAuthStatus: AuthStatus = {
     requiresVerifiedEmail: true,
     siteHasCodyEnabled: true,
     siteVersion: '5.1.0',
+    endpoint,
 }
+
+const supportedAppOS = 'darwin'
+const supportedAppArch = 'arm64'
+const unsupportedAppOS = 'other-os'
+const unsupportedAppArch = 'other-arch'
 
 export default meta
 
 export const Simple: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login onLogin={() => {}} authStatus={validAuthStatus} isAppInstalled={false} vscodeAPI={vscodeAPI} />
+            <Login
+                authStatus={validAuthStatus}
+                isAppInstalled={false}
+                vscodeAPI={vscodeAPI}
+                onLoginRedirect={() => {}}
+                endpoint={endpoint}
+                appOS={supportedAppOS}
+                appArch={supportedAppArch}
+            />
         </div>
     ),
 }
@@ -56,10 +70,13 @@ export const InvalidLogin: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
             <Login
-                onLogin={() => {}}
                 authStatus={invalidAccessTokenAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
+                onLoginRedirect={() => {}}
+                endpoint={endpoint}
+                appOS={supportedAppOS}
+                appArch={supportedAppArch}
             />
         </div>
     ),
@@ -69,10 +86,13 @@ export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
             <Login
-                onLogin={() => {}}
                 authStatus={requiresVerifiedEmailAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
+                onLoginRedirect={() => {}}
+                endpoint={endpoint}
+                appOS={supportedAppOS}
+                appArch={supportedAppArch}
             />
         </div>
     ),
@@ -81,7 +101,31 @@ export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
 export const LoginWithAppInstalled: ComponentStoryObj<typeof Login> = {
     render: () => (
         <div style={{ background: 'rgb(28, 33, 40)' }}>
-            <Login onLogin={() => {}} authStatus={validAuthStatus} isAppInstalled={true} vscodeAPI={vscodeAPI} />
+            <Login
+                authStatus={validAuthStatus}
+                isAppInstalled={true}
+                vscodeAPI={vscodeAPI}
+                onLoginRedirect={() => {}}
+                endpoint={endpoint}
+                appOS={supportedAppOS}
+                appArch={supportedAppArch}
+            />
+        </div>
+    ),
+}
+
+export const UnsupportedAppOS: ComponentStoryObj<typeof Login> = {
+    render: () => (
+        <div style={{ background: 'rgb(28, 33, 40)' }}>
+            <Login
+                authStatus={validAuthStatus}
+                isAppInstalled={false}
+                vscodeAPI={vscodeAPI}
+                onLoginRedirect={() => {}}
+                endpoint={endpoint}
+                appOS={unsupportedAppOS}
+                appArch={unsupportedAppArch}
+            />
         </div>
     ),
 }

@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isLocalApp } from '../chat/protocol'
+
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export async function getAccessToken(secretStorage: SecretStorage): Promise<string | null> {
@@ -17,6 +19,8 @@ export async function getAccessToken(secretStorage: SecretStorage): Promise<stri
 export interface SecretStorage {
     get(key: string): Promise<string | undefined>
     store(key: string, value: string): Promise<void>
+    storeToken(endpoint: string, value: string): Promise<void>
+    deleteToken(endpoint: string): Promise<void>
     delete(key: string): Promise<void>
     onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable
 }
@@ -25,6 +29,9 @@ export class VSCodeSecretStorage implements SecretStorage {
     constructor(private secretStorage: vscode.SecretStorage) {}
 
     public async get(key: string): Promise<string | undefined> {
+        if (!key) {
+            return undefined
+        }
         const secret = await this.secretStorage.get(key)
         return secret
     }
@@ -35,12 +42,34 @@ export class VSCodeSecretStorage implements SecretStorage {
         }
     }
 
+    public async storeToken(endpoint: string, value: string): Promise<void> {
+        if (!value || !endpoint) {
+            return
+        }
+        if (isLocalApp(endpoint)) {
+            await this.store('SOURCEGRAPH_CODY_APP', value)
+        }
+        await this.store(endpoint, value)
+        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
+    }
+
+    public async deleteToken(endpoint: string): Promise<void> {
+        await this.secretStorage.delete(endpoint)
+        await this.secretStorage.delete(CODY_ACCESS_TOKEN_SECRET)
+    }
+
     public async delete(key: string): Promise<void> {
         await this.secretStorage.delete(key)
     }
 
     public onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable {
-        return this.secretStorage.onDidChange(event => callback(event.key))
+        return this.secretStorage.onDidChange(event => {
+            // Run callback on token changes for current endpoint only
+            if (event.key === CODY_ACCESS_TOKEN_SECRET) {
+                return callback(event.key)
+            }
+            return
+        })
     }
 }
 
@@ -70,6 +99,16 @@ export class InMemorySecretStorage implements SecretStorage {
         }
 
         return Promise.resolve()
+    }
+
+    public async storeToken(endpoint: string, value: string): Promise<void> {
+        await this.store(endpoint, value)
+        await this.store(CODY_ACCESS_TOKEN_SECRET, value)
+    }
+
+    public async deleteToken(endpoint: string): Promise<void> {
+        await this.delete(endpoint)
+        await this.delete(CODY_ACCESS_TOKEN_SECRET)
     }
 
     public async delete(key: string): Promise<void> {

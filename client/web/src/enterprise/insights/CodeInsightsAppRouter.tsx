@@ -30,7 +30,6 @@ const EditInsightLazyPage = lazyComponent(
 
 export interface CodeInsightsAppRouter extends TelemetryProps {
     authenticatedUser: AuthenticatedUser
-    isSourcegraphApp: boolean
 }
 
 const rootPagePathsToTab = {
@@ -40,7 +39,7 @@ const rootPagePathsToTab = {
 }
 
 export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter>(props => {
-    const { telemetryService, isSourcegraphApp } = props
+    const { telemetryService } = props
 
     const fetched = useLicense()
     const api = useApi()
@@ -51,42 +50,25 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
 
     return (
         <CodeInsightsBackendContext.Provider value={api}>
-            <GaConfirmationModal isSourcegraphApp={props.isSourcegraphApp} />
+            <GaConfirmationModal />
 
             <Routes>
                 <Route index={true} element={<CodeInsightsSmartRoutingRedirect />} />
 
-                <Route
-                    path="create/*"
-                    element={<CreationRoutes telemetryService={telemetryService} isSourcegraphApp={isSourcegraphApp} />}
-                />
+                <Route path="create/*" element={<CreationRoutes telemetryService={telemetryService} />} />
 
-                <Route
-                    path="dashboards/:dashboardId/edit"
-                    element={<EditDashboardPage isSourcegraphApp={isSourcegraphApp} />}
-                />
+                <Route path="dashboards/:dashboardId/edit" element={<EditDashboardPage />} />
 
                 <Route
                     path="add-dashboard"
-                    element={
-                        <InsightsDashboardCreationPage
-                            telemetryService={telemetryService}
-                            isSourcegraphApp={isSourcegraphApp}
-                        />
-                    }
+                    element={<InsightsDashboardCreationPage telemetryService={telemetryService} />}
                 />
 
                 {Object.entries(rootPagePathsToTab).map(([path, activeTab]) => (
                     <Route
                         key="hardcoded-key"
                         path={path}
-                        element={
-                            <CodeInsightsRootPage
-                                activeTab={activeTab}
-                                telemetryService={telemetryService}
-                                isSourcegraphApp={isSourcegraphApp}
-                            />
-                        }
+                        element={<CodeInsightsRootPage activeTab={activeTab} telemetryService={telemetryService} />}
                     />
                 ))}
 
@@ -95,22 +77,14 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     path="edit/:insightId"
                     element={<RedirectRoute getRedirectURL={({ params }) => `/insights/${params.insightId}/edit`} />}
                 />
-                <Route path=":insightId/edit" element={<EditInsightLazyPage isSourcegraphApp={isSourcegraphApp} />} />
+                <Route path=":insightId/edit" element={<EditInsightLazyPage />} />
 
                 <Route
                     // Deprecated URL, delete this in the 4.10
                     path="insight/:insightId"
                     element={<RedirectRoute getRedirectURL={({ params }) => `/insights/${params.insightId}`} />}
                 />
-                <Route
-                    path=":insightId"
-                    element={
-                        <CodeInsightIndependentPage
-                            telemetryService={telemetryService}
-                            isSourcegraphApp={isSourcegraphApp}
-                        />
-                    }
-                />
+                <Route path=":insightId" element={<CodeInsightIndependentPage telemetryService={telemetryService} />} />
 
                 <Route path="*" element={<NotFoundPage pageType="code insights" />} />
             </Routes>

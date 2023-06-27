@@ -8,23 +8,32 @@ Cody reads relevant code files to increase the accuracy and quality of the respo
 
 ### Embeddings
 
+> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
+> See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
+
 Embeddings are a semantic representation of text that allow us to create a search index over an entire codebase. The process of creating embeddings involves us splitting the entire codebase into searchable chunks and sending them to the external service specified in the site config for embedding. The final embedding index is stored in a managed object storage service.
 
 Embeddings for relevant code files must be enabled for each repository that you'd like Cody to have context on.
 
 ### Configuring embeddings
 
-> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
-> See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
+> NOTE: By default, no embeddings are created. Admins must choose which code is sent to the
+> third party LLM for embedding (currently OpenAI). Once Sourcegraph provides first party embeddings,
+> embeddings will be enabled for all repositories by default.
 
-Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md).
-After enabling Cody, navigate to **Site admin > Cody** (`/site-admin/cody`) and schedule repositories for embedding.
+Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
-> NOTE: By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
+> NOTE: Unless both completions and embeddings are configured, the `/site-admin/cody` page will not be available.
 
-<span class="virtual-br"></span>
+Embeddings will not be generated for any repo unless an admin takes action. There are two ways to do this.
 
-> NOTE: You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
+The recommended way of configuring embeddings is to use a policy. These are configured through the Admin UI using [policies](https://docs.sourcegraph.com/cody/explanations/policies). Policy based embeddings will be automatically updated based on the [update interval](#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings).
+
+ Admins can also [schedule one-time embeddings jobs for specific repositories](./schedule_one_off_embeddings_jobs.md). These one-off embeddings will not be automatically updated.
+
+Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](#incremental-embeddings) are enabled.
+
+> NOTE: Generating embeddings sends code snippets to a third-party language party provider. By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
 
 ### Excluding files from embeddings
 
@@ -43,6 +52,20 @@ To use `excludedFilePathPatterns`, add it to your embeddings site config with a 
   }
 }
 ```
+
+By default, the following patterns are excluded from embeddings:
+
+- *ignore" // Files like .gitignore, .eslintignore
+- .gitattributes
+- .mailmap
+- *.csv
+- *.svg
+- *.xml
+- \_\_fixtures\_\_/
+- node_modules/
+- testdata/
+- mocks/
+- vendor/
 
 > NOTE: The `excludedFilePathPatterns` setting is only available in Sourcegraph version `5.0.1` and later.
 
@@ -170,6 +193,21 @@ A negative value disables the limit and all repositories are selected.
   "embeddings": {
     // [...]
     "policyRepositoryMatchLimit": 5000
+  }
+}
+```
+
+### Limitting the number of embeddings that can be generated
+
+The number of embeddings that can be generated per repo is limited to `embeddings.maxCodeEmbeddingsPerRepo` for code embeddings (default 3.072.000) or `embeddings.maxTextEmbeddingsPerRepo` (default 512.000) for text embeddings.
+
+Use the following site configuration to update the limits:
+
+```jsonc
+{
+  "embeddings": {
+    "maxCodeEmbeddingsPerRepo": 3072000,
+    "maxTextEmbeddingsPerRepo": 512000
   }
 }
 ```

@@ -11,7 +11,7 @@
         - Version 2020.2 and 2020.3 have issues with adding custom HTTP headers to requests from within the JCEF view
              -> https://github.com/sourcegraph/sourcegraph/issues/37475#issuecomment-1171355831
     -->
-    <idea-version since-build="211.0" />
+    <idea-version since-build="212.0" />
 
     <depends>com.intellij.modules.platform</depends>
     <depends optional="true" config-file="plugin-git.xml">Git4Idea</depends>
@@ -44,6 +44,7 @@
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
         <notificationGroup id="Cody Sourcegraph access" displayType="BALLOON"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
 
 
         <!-- Code completions -->
@@ -55,6 +56,14 @@
         <projectService serviceImplementation="com.sourcegraph.cody.ui.SelectOptionManager"/>
 
     </extensions>
+
+    <applicationListeners>
+        <listener class="com.sourcegraph.cody.CodyAgentProjectListener" topic="com.intellij.openapi.project.ProjectManagerListener"/>
+        <listener class="com.sourcegraph.cody.CodyFileEditorListener" topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+        <!-- CodyAgentFocusListener is commented out since it doesn't seem possible to register a listener via plugin.xml.
+             We programmatically register a listener from CodyAgent instead. -->
+        <!-- <listener class="com.sourcegraph.cody.CodyAgentFocusListener" topic="com.intellij.openapi.editor.ex.FocusChangeListener"/> -->
+    </applicationListeners>
 
     <actions>
         <action
@@ -123,8 +132,14 @@
                 class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
         </action>
 
+        <action id="cody.refreshCodyAppDetection" icon="AllIcons.Actions.Refresh"
+                text="Refresh"
+                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection" internal="true">
+        </action>
+
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
+            <reference ref="cody.refreshCodyAppDetection"/>
         </group>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"

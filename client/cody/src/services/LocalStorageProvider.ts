@@ -4,63 +4,57 @@ import * as uuid from 'uuid'
 // import * as vscode from 'vscode'
 import { Memento } from 'vscode'
 
-import { OldUserLocalHistory, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     private KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
-    private KEY_LOCAL_HISTORY_MIGRATE = 'cody-local-chatHistory'
     private ANONYMOUS_USER_ID_KEY = 'sourcegraphAnonymousUid'
+    private LAST_USED_ENDPOINT = 'SOURCEGRAPH_CODY_ENDPOINT'
+    private CODY_ENDPOINT_HISTORY = 'SOURCEGRAPH_CODY_ENDPOINT_HISTORY'
 
     constructor(private storage: Memento) {}
 
-    public getChatHistory(): UserLocalHistory | null {
-        let history = this.storage.get<UserLocalHistory | null>(this.KEY_LOCAL_HISTORY, null)
-        if (this.storage.get(this.KEY_LOCAL_HISTORY_MIGRATE)) {
-            // We override history as these users will have never used the new history key, so there's
-            // no need to append - we can just set it outright
-            history = this.getMigratedHistory()
-            void this.storage.update(this.KEY_LOCAL_HISTORY_MIGRATE, null)
-        }
-        return history
+    public getEndpoint(): string | null {
+        return this.storage.get<string | null>(this.LAST_USED_ENDPOINT, null)
     }
 
-    public getMigratedHistory(): UserLocalHistory | null {
-        const chunks = <T>(a: T[], size: number): T[][] =>
-            Array.from(new Array(Math.ceil(a.length / size)), (_, i) => a.slice(i * size, i * size + size))
+    public async saveEndpoint(endpoint: string): Promise<void> {
+        if (!endpoint) {
+            return
+        }
+        try {
+            const uri = new URL(endpoint).href
+            await this.storage.update(this.LAST_USED_ENDPOINT, uri)
+            await this.addEndpointHistory(uri)
+        } catch (error) {
+            console.error(error)
+        }
+    }
 
-        const oldHistory = this.storage.get<OldUserLocalHistory | null>(this.KEY_LOCAL_HISTORY_MIGRATE, null)
-        return oldHistory
-            ? {
-                  chat: Object.fromEntries(
-                      Object.entries(oldHistory?.chat).map(([id, messages]) => [
-                          id,
-                          {
-                              id,
-                              // `Interaction.toChat()` flattens our messages into two elements
-                              // so we iterate through messages in two elements chunks to reverse this
-                              interactions: chunks(messages, 2).map(
-                                  ([humanMessage, assistantMessageAndContextFiles]) => ({
-                                      humanMessage,
-                                      assistantMessage: assistantMessageAndContextFiles,
-                                      fullContext: assistantMessageAndContextFiles.contextFiles
-                                          ? assistantMessageAndContextFiles.contextFiles.map(fileName => ({
-                                                speaker: 'assistant',
-                                                fileName,
-                                            }))
-                                          : [],
-                                      usedContextFiles: [],
-                                      // Timestamp not recoverable so we use the group timestamp
-                                      timestamp: id,
-                                  })
-                              ),
-                              lastInteractionTimestamp: id,
-                          },
-                      ])
-                  ),
-                  input: oldHistory.input,
-              }
-            : null
+    public async deleteEndpoint(): Promise<void> {
+        await this.storage.update(this.LAST_USED_ENDPOINT, null)
+    }
+
+    public getEndpointHistory(): string[] | null {
+        return this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
+    }
+
+    public async deleteEndpointHistory(): Promise<void> {
+        await this.storage.update(this.CODY_ENDPOINT_HISTORY, null)
+    }
+
+    private async addEndpointHistory(endpoint: string): Promise<void> {
+        const history = this.storage.get<string[] | null>(this.CODY_ENDPOINT_HISTORY, null)
+        const historySet = new Set(history)
+        historySet.delete(endpoint)
+        historySet.add(endpoint)
+        await this.storage.update(this.CODY_ENDPOINT_HISTORY, [...historySet])
+    }
+
+    public getChatHistory(): UserLocalHistory | null {
+        const history = this.storage.get<UserLocalHistory | null>(this.KEY_LOCAL_HISTORY, null)
+        return history
     }
 
     public async setChatHistory(history: UserLocalHistory): Promise<void> {

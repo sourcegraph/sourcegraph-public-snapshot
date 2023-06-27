@@ -58,6 +58,7 @@ type KubernetesContainerOptions struct {
 	SecurityContext       KubernetesSecurityContext
 	SingleJobPod          bool
 	StepImage             string
+	GitCACert             string
 	JobVolume             KubernetesJobVolume
 }
 
@@ -560,10 +561,17 @@ func NewKubernetesSingleJob(
 	if repoOptions.RepositoryDirectory != "" {
 		repoDir = repoOptions.RepositoryDirectory
 	}
+
+	sslCAInfo := ""
+	if options.GitCACert != "" {
+		sslCAInfo = fmt.Sprintf("git config --local http.sslCAInfo %s; ", options.GitCACert)
+	}
+
 	setupArgs := []string{
 		"set -e; " +
 			fmt.Sprintf("mkdir -p %s; ", repoDir) +
 			fmt.Sprintf("git -C %s init; ", repoDir) +
+			sslCAInfo +
 			fmt.Sprintf("git -C %s remote add origin %s; ", repoDir, repoOptions.CloneURL) +
 			fmt.Sprintf("git -C %s config --local gc.auto 0; ", repoDir) +
 			fmt.Sprintf("git -C %s "+
@@ -614,7 +622,6 @@ func NewKubernetesSingleJob(
 	}
 
 	for stepIndex, step := range specs {
-		fmt.Println("dir: ", step.Dir)
 		jobEnvs := newEnvVars(step.Env)
 
 		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), step.Key)
@@ -647,13 +654,8 @@ func NewKubernetesSingleJob(
 			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					NodeName:     options.NodeName,
-					NodeSelector: options.NodeSelector,
-					SecurityContext: &corev1.PodSecurityContext{
-						RunAsUser:  options.SecurityContext.RunAsUser,
-						RunAsGroup: options.SecurityContext.RunAsGroup,
-						FSGroup:    options.SecurityContext.FSGroup,
-					},
+					NodeName:              options.NodeName,
+					NodeSelector:          options.NodeSelector,
 					Affinity:              affinity,
 					RestartPolicy:         corev1.RestartPolicyNever,
 					Tolerations:           options.Tolerations,

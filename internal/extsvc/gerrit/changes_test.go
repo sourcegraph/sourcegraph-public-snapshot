@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 )
 
@@ -19,6 +22,18 @@ func TestClient_GetChange(t *testing.T) {
 	}
 
 	testutil.AssertGolden(t, "testdata/golden/GetChange.json", *update, resp)
+}
+
+func TestClient_GetChangeMultipleChanges(t *testing.T) {
+	cli, save := NewTestClient(t, "GetChangeMultipleChanges", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	// In order to recreate this tests you need to push two changes to two different branches using the same Chande-Id.
+	_, err := cli.GetChange(ctx, "I52bede3e6dd80b9048924d0416e5d1a7bf49cf5a")
+	assert.NotNil(t, err)
+	assert.True(t, errors.As(err, &MultipleChangesError{}))
 }
 
 func TestClient_WriteReviewComment(t *testing.T) {
@@ -46,6 +61,30 @@ func TestClient_AbandonChange(t *testing.T) {
 		t.Fatal(err)
 	}
 	testutil.AssertGolden(t, "testdata/golden/AbandonChange.json", *update, resp)
+}
+
+func TestClient_DeleteChange(t *testing.T) {
+	cli, save := NewTestClient(t, "DeleteChange", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	// A change can only be deleted once. To re-record this test, publish a new change and
+	// update the change ID.
+	// You will need the "delete own changes" permission in order to delete your change:
+	// https://gerrit-review.googlesource.com/Documentation/access-control.html#category_delete_own_changes
+	changeID := "I2e55bf947cc1fe96b2663f4d3fedaa992628f8d4"
+	err := cli.DeleteChange(ctx, changeID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Delete again to ensure that the change is not found.
+	err = cli.DeleteChange(ctx, changeID)
+	if err == nil {
+		t.Fatal("expected error, but got nil")
+	}
+	assert.ErrorContains(t, err, "code=404")
 }
 
 func TestClient_SubmitChange(t *testing.T) {
@@ -109,5 +148,33 @@ func TestClient_GetChangeReviews(t *testing.T) {
 		t.Fatal(err)
 	}
 	testutil.AssertGolden(t, "testdata/golden/GetChangeReviews.json", *update, resp)
+}
 
+func TestClient_MoveChange(t *testing.T) {
+	cli, save := NewTestClient(t, "MoveChange", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	resp, err := cli.MoveChange(ctx, "I8a43a17e679cf4ee3ba862e875746be2ed2215ec", MoveChangePayload{
+		DestinationBranch: "newest-batch",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	testutil.AssertGolden(t, "testdata/golden/MoveChange.json", *update, resp)
+}
+
+func TestClient_SetCommitMessage(t *testing.T) {
+	cli, save := NewTestClient(t, "SetCommitMessage", *update)
+	defer save()
+
+	ctx := context.Background()
+
+	err := cli.SetCommitMessage(ctx, "I8a43a17e679cf4ee3ba862e875746be2ed2215ec", SetCommitMessagePayload{
+		Message: "New commit message\n\nChange-Id: I8a43a17e679cf4ee3ba862e875746be2ed2215ec\n",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
 }

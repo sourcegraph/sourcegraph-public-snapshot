@@ -19,7 +19,6 @@ import {
 } from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
 import { useScrollToLocationHash } from '../../../../components/useScrollToLocationHash'
-import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
 import {
     DotComProductSubscriptionResult,
     DotComProductSubscriptionVariables,
@@ -104,9 +103,6 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
         setShowGenerate(false)
     }, [refetch, refetchRef])
 
-    // Feature flag only used as this is under development - will be enabled by default
-    const [codyGatewayMananagementUI] = useFeatureFlag('cody-gateway-management-ui')
-
     if (loading && !data) {
         return <LoadingSpinner />
     }
@@ -182,17 +178,15 @@ export const SiteAdminProductSubscriptionPage: React.FunctionComponent<React.Pro
                     </table>
                 </Container>
 
-                {codyGatewayMananagementUI && (
-                    <CodyServicesSection
-                        viewerCanAdminister={true}
-                        currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
-                        accessTokenError={errorForPath(error, accessTokenPath)}
-                        codyGatewayAccess={productSubscription.codyGatewayAccess}
-                        productSubscriptionID={productSubscription.id}
-                        productSubscriptionUUID={subscriptionUUID}
-                        refetchSubscription={refetch}
-                    />
-                )}
+                <CodyServicesSection
+                    viewerCanAdminister={true}
+                    currentSourcegraphAccessToken={productSubscription.currentSourcegraphAccessToken}
+                    accessTokenError={errorForPath(error, accessTokenPath)}
+                    codyGatewayAccess={productSubscription.codyGatewayAccess}
+                    productSubscriptionID={productSubscription.id}
+                    productSubscriptionUUID={subscriptionUUID}
+                    refetchSubscription={refetch}
+                />
 
                 <H3 className="d-flex align-items-center mt-5">
                     Licenses

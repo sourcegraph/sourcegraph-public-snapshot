@@ -105,6 +105,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const codyChatStore = useCodyChat({
         onTranscriptHistoryLoad,
         autoLoadTranscriptFromHistory: false,
+        autoLoadScopeWithRepositories: isSourcegraphApp,
     })
     const {
         initializeNewChat,
@@ -126,7 +127,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     const transcriptId = transcript?.id
 
     useEffect(() => {
-        if (!loaded || !transcriptId) {
+        if (!loaded || !transcriptId || !authenticatedUser || !isCodyEnabled()) {
             return
         }
         const idFromUrl = transcriptIdFromUrl(pathname)
@@ -136,7 +137,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                 replace: true,
             })
         }
-    }, [transcriptId, loaded, pathname, navigate])
+    }, [transcriptId, loaded, pathname, navigate, authenticatedUser])
 
     const [showMobileHistory, setShowMobileHistory] = useState<boolean>(false)
     // Close mobile history list when transcript changes
@@ -149,7 +150,13 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     }
 
     if (!authenticatedUser || !isCodyEnabled()) {
-        return <CodyMarketingPage isSourcegraphDotCom={isSourcegraphDotCom} context={context} />
+        return (
+            <CodyMarketingPage
+                isSourcegraphDotCom={isSourcegraphDotCom}
+                authenticatedUser={authenticatedUser}
+                context={context}
+            />
+        )
     }
 
     return (
@@ -195,7 +202,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <>
                         Cody answers code questions and writes code for you by leveraging your entire codebase and the
                         code graph.
-                        {!isSourcegraphDotCom && isCTADismissed && (
+                        {!isSourcegraphDotCom && !isSourcegraphApp && isCTADismissed && (
                             <>
                                 {' '}
                                 <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.
@@ -235,7 +242,12 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     <Icon aria-hidden={true} svgPath={mdiDelete} /> Clear all chats
                                 </MenuItem>
                                 <MenuDivider />
-                                <MenuLink as={Link} to="/help/cody" target="_blank" rel="noopener">
+                                <MenuLink
+                                    as={Link}
+                                    to={isSourcegraphApp ? 'https://docs.sourcegraph.com/app' : '/help/cody'}
+                                    target="_blank"
+                                    rel="noopener"
+                                >
                                     <Icon aria-hidden={true} svgPath={mdiOpenInNew} /> Cody Docs & FAQ
                                 </MenuLink>
                                 {authenticatedUser?.siteAdmin && (
@@ -364,7 +376,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                     New chat
                                 </Button>
                             </div>
-                            <ChatUI codyChatStore={codyChatStore} />
+                            <ChatUI codyChatStore={codyChatStore} isSourcegraphApp={true} />
                         </div>
 
                         {showMobileHistory && (

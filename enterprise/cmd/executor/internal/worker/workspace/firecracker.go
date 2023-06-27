@@ -7,7 +7,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
 
 	"github.com/c2h5oh/datasize"
 
@@ -59,7 +58,7 @@ func NewFirecrackerWorkspace(
 
 	// Unmount the workspace volume when done, we finished writing to it from the host.
 	defer func() {
-		if err2 := syscall.Unmount(tmpMountDir, 0); err2 != nil {
+		if err2 := unmount(tmpMountDir); err2 != nil {
 			err = errors.Append(err, err2)
 			return
 		}

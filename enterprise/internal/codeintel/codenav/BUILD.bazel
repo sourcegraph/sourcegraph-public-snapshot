@@ -37,6 +37,7 @@ go_library(
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@io_opentelemetry_go_otel//attribute",
+        "@org_golang_x_exp//slices",
     ],
 )
 
@@ -52,6 +53,7 @@ go_test(
         "service_implementations_test.go",
         "service_ranges_test.go",
         "service_references_test.go",
+        "service_snapshot_test.go",
         "service_stencil_test.go",
         "service_test.go",
     ],

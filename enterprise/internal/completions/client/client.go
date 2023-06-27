@@ -11,6 +11,14 @@ import (
 )
 
 func Get(endpoint string, provider conftypes.CompletionsProviderName, accessToken string) (types.CompletionsClient, error) {
+	client, err := getBasic(endpoint, provider, accessToken)
+	if err != nil {
+		return nil, err
+	}
+	return newObservedClient(client), nil
+}
+
+func getBasic(endpoint string, provider conftypes.CompletionsProviderName, accessToken string) (types.CompletionsClient, error) {
 	switch provider {
 	case conftypes.CompletionsProviderNameAnthropic:
 		return anthropic.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil

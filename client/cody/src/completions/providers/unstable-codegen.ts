@@ -1,6 +1,6 @@
 import { Completion } from '..'
 import { logger } from '../../log'
-// import { ReferenceSnippet } from '../context'
+import { ReferenceSnippet } from '../context'
 import { isAbortError } from '../utils'
 
 import { Provider, ProviderConfig, ProviderOptions } from './provider'
@@ -19,7 +19,7 @@ export class UnstableCodeGenProvider extends Provider {
         this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
     }
 
-    public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
         const params = {
             debug_ext_path: 'cody',
             lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.languageId)}|>`,
@@ -32,7 +32,8 @@ export class UnstableCodeGenProvider extends Provider {
             // divide it into two different batches.
             batch_size: makeEven(4),
             // TODO: Figure out the exact format to attach context
-            context: '', // prepareContext(this.snippets, this.fileName),
+            context: JSON.stringify(prepareContext(snippets, this.fileName)),
+            completion_type: 'automatic',
         }
 
         const log = logger.startCompletion({
@@ -52,7 +53,7 @@ export class UnstableCodeGenProvider extends Provider {
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
-            const completions: string[] = data.completions.map(c => c.completion)
+            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.multilineMode))
             log?.onComplete(completions)
 
             return completions.map(content => ({
@@ -67,6 +68,16 @@ export class UnstableCodeGenProvider extends Provider {
             throw error
         }
     }
+}
+
+function postProcess(content: string, multilineMode: null | 'block'): string {
+    // The model might return multiple lines for single line completions because
+    // we are only able to specify a token limit.
+    if (multilineMode === null && content.includes('\n')) {
+        content = content.slice(0, content.indexOf('\n'))
+    }
+
+    return content.trim()
 }
 
 // Handles some inconsistencies between the VS Code language ID and the model's
@@ -99,37 +110,37 @@ function makeEven(number: number): number {
     return number
 }
 
-// interface Context {
-//     current_file_path: string
-//     windows: {
-//         file_path: string
-//         text: string
-//         similarity: number
-//     }[]
-// }
-//
-// function prepareContext(snippets: ReferenceSnippet[], fileName: string): Context {
-//     const windows: Context['windows'] = []
-//
-//     // the model expects a similarly to rank the order and priority to insert
-//     // snippets. Since we already have ranked results and do not expose the
-//     // score, we can create an artificial score for simplicity.
-//     let similarity = 0.5
-//     for (const snippet of snippets) {
-//         // Slightly decrease similarity between subsequent windows
-//         similarity *= 0.99
-//         windows.push({
-//             file_path: snippet.fileName,
-//             text: snippet.content,
-//             similarity,
-//         })
-//     }
-//
-//     return {
-//         current_file_path: fileName,
-//         windows,
-//     }
-// }
+interface Context {
+    current_file_path: string
+    windows: {
+        file_path: string
+        text: string
+        similarity: number
+    }[]
+}
+
+function prepareContext(snippets: ReferenceSnippet[], fileName: string): Context {
+    const windows: Context['windows'] = []
+
+    // the model expects a similarly to rank the order and priority to insert
+    // snippets. Since we already have ranked results and do not expose the
+    // score, we can create an artificial score for simplicity.
+    let similarity = 0.5
+    for (const snippet of snippets) {
+        // Slightly decrease similarity between subsequent windows
+        similarity *= 0.99
+        windows.push({
+            file_path: snippet.fileName,
+            text: snippet.content,
+            similarity,
+        })
+    }
+
+    return {
+        current_file_path: fileName,
+        windows,
+    }
+}
 
 export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOptions): ProviderConfig {
     const contextWindowChars = 8_000 // ~ 2k token limit
@@ -138,6 +149,7 @@ export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOpti
             return new UnstableCodeGenProvider(options, unstableCodeGenOptions)
         },
         maximumContextCharacters: contextWindowChars,
+        enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
     }
 }
