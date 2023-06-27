@@ -294,7 +294,10 @@ class CodyToolWindowContent implements UpdatableChat {
     sendButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
     ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(sendButton);
     sendButton.setUI(buttonUI);
-    sendButton.addActionListener(e -> sendMessage(project));
+    sendButton.addActionListener(e -> {
+      GraphQlLogger.logClickEvent(this.project, "chat-question");
+      sendMessage(project);
+    });
     return sendButton;
   }
 
@@ -497,6 +500,7 @@ class CodyToolWindowContent implements UpdatableChat {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }
               }
+              GraphQlLogger.logExecutionEvent(this.project, "chat-question");
             });
   }
 
