@@ -192,6 +192,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
 
     const handleOrgChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setOrg(event.target.value), [])
     const toggleIsPublic = useCallback(() => setIsPublic(isPublic => !isPublic), [])
+    const cancelUrl = `/site-admin/${appDomain === GitHubAppDomain.BATCHES ? 'batch-changes' : 'github-apps'}`
 
     return (
         <>
@@ -300,7 +301,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                     <Button variant="primary" onClick={createState} disabled={!!nameError || !!urlError}>
                         Create Github App
                     </Button>
-                    <ButtonLink className="ml-3" to="/site-admin/github-apps" variant="secondary">
+                    <ButtonLink className="ml-3" to={cancelUrl} variant="secondary">
                         Cancel
                     </ButtonLink>
                 </div>
