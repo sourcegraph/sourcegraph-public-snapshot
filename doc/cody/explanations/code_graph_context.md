@@ -23,7 +23,7 @@ Embeddings will not be generated for any repo unless an admin takes action. Ther
 
 The recommended way of configuring embeddings is to use a policy. These are configured through the Admin UI using [policies](https://docs.sourcegraph.com/cody/explanations/policies). Policy based embeddings will be automatically updated based on the [update interval](#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings).
 
-To run a one-time embeddings job, an admin can manually schedule specific repositories for embedding by navigating to **Site admin > Cody** (`/site-admin/cody`) and entering the names of the repositories that should be embeded. Manual embeddings are useful for one-off embeddings or to run an embeddings job immediately. These will not be automatically updated.
+ Admins can also [schedule one-time embeddings jobs for specific repositories](./schedule_one_off_embeddings_jobs.md). These one-off embeddings will not be automatically updated.
 
 Whether created manually or through a policy, embeddings will be generated incrementally if [incremental updates](#incremental-embeddings) are enabled.
 
