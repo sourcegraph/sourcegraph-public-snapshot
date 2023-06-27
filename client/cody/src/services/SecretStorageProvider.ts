@@ -29,6 +29,9 @@ export class VSCodeSecretStorage implements SecretStorage {
     constructor(private secretStorage: vscode.SecretStorage) {}
 
     public async get(key: string): Promise<string | undefined> {
+        if (!key) {
+            return undefined
+        }
         const secret = await this.secretStorage.get(key)
         return secret
     }
