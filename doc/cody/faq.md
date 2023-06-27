@@ -58,6 +58,13 @@ There can be several reasons why a job is not showing up in the list of jobs:
 ### How do I stop a running embeddings job?
 
 Jobs in state _QUEUED_ or _PROCESSING_ can be canceled by admins from the **Cody > Embeddings Jobs** page. To cancel a job, click on the _Cancel_ button of the job you want to cancel. The job will be marked for cancellation. Note that, depending on the state of the job, it might take a few seconds or minutes for the job to actually be canceled.
+#### What are the reasons files are skipped?
+
+Files are skipped for the following reasons:
+
+- The file is too large (1 MB)
+- The file path matches an [exclusion pattern](./explanations/code_graph_context.md#excluding-files-from-embeddings)
+- We have already generated more than [`embeddings.maxCodeEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) or [`embeddings.maxTextEmbeddingsPerRepo`](./explanations/code_graph_context.md#limitting-the-number-of-embeddings-that-can-be-generated) embeddings for the repo.
 
 ### Third party dependencies
 
