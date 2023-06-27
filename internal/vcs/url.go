@@ -129,7 +129,7 @@ func parseFile(rawurl string) (*URL, error) {
 		return nil, errors.Errorf("no file scheme found in %q", rawurl)
 	}
 	return &URL{
-		format: formatLocal,
+		format: formatStdlib,
 		URL: url.URL{
 			Scheme: "file",
 			Path:   strings.TrimPrefix(rawurl, "file://"),
