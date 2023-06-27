@@ -14,6 +14,7 @@ export const enum EventName {
     CODY_CHAT_SCOPE_INFERRED_REPO_DISABLED = 'web:codyChat:inferredRepoDisabled',
     CODY_CHAT_SCOPE_INFERRED_FILE_ENABLED = 'web:codyChat:inferredFileEnabled',
     CODY_CHAT_SCOPE_INFERRED_FILE_DISABLED = 'web:codyChat:inferredFileDisabled',
+    VIEW_GET_CODY = 'ViewGetCody',
 
     CODY_EDITOR_WIDGET_VIEWED = 'web:codyEditorWidget:viewed',
     CODY_SIDEBAR_CHAT_OPENED = 'web:codySidebar:chatOpened',
@@ -27,4 +28,9 @@ export const enum EventName {
     TRY_CODY_WEB_ONBOARDING_DISPLAYED = 'TryCodyWebOnboardingDisplayed',
     TRY_CODY_SIGNUP_INITIATED = 'CodySignUpInitiated',
     SPEAK_TO_AN_ENGINEER_CTA = 'SpeakToACodyEngineerCTA',
+    SIGNUP_INITIATED = 'SignupInitiated',
+
+    JOIN_IDE_WAITLIST = 'JoinIDEWaitlist',
+    DOWNLOAD_IDE = 'DownloadIDE',
+    DOWNLOAD_APP = 'DownloadApp',
 }

@@ -1,6 +1,13 @@
 import { useEffect, useRef } from 'react'
 
-import { mdiEmailOutline, mdiMicrosoftVisualStudioCode, mdiChevronRight } from '@mdi/js'
+import {
+    mdiEmailOutline,
+    mdiMicrosoftVisualStudioCode,
+    mdiChevronRight,
+    mdiApple,
+    mdiLinux,
+    mdiMicrosoftWindows,
+} from '@mdi/js'
 import classNames from 'classnames'
 
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
@@ -14,7 +21,8 @@ import { SourcegraphContext } from '../jscontext'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
 
-import { BackgroundImage, Light, IntellijIcon, EmacsIcon, NeovimIcon } from './components/GetCodyPageIcon'
+import { DownloadAppButton } from './DownloadAppButton'
+import { BackgroundImage, Light, IntellijIcon, EmacsIcon, NeovimIcon, DashedLine } from './GetCodyPageIcon'
 
 import styles from './GetCodyPage.module.scss'
 
@@ -29,36 +37,72 @@ interface GetCodyPageProps {
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
-const SOURCEGRAPH_MAC_DMG =
-    'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.13%2B1311.1af08ae774/Sourcegraph_2023.6.13+1311.1af08ae774_aarch64.dmg'
+const SOURCEGRAPH_MAC_SILICON =
+    'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.26%2B1328.bca7d2c3ed/Cody_2023.6.26+1328.bca7d2c3ed_aarch64.dmg'
+
+const SOURCEGRAPH_MAC_INTEL =
+    'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.26%2B1328.bca7d2c3ed/Cody_2023.6.26+1328.bca7d2c3ed_x64.dmg'
+
+const SOURCEGRAPH_LINUX =
+    'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.26%2B1328.bca7d2c3ed/cody_2023.6.26+1328.bca7d2c3ed_amd64.deb'
 
 const onClickCTAButton = (type: string): void =>
-    eventLogger.log(EventName.TRY_CODY_SIGNUP_INITIATED, { type, source: 'get-cody' }, { type, page: 'get-cody' })
+    eventLogger.log(EventName.SIGNUP_INITIATED, { type, source: 'get-started' })
+
+const logEvent = (eventName: string, type?: string, source?: string): void =>
+    eventLogger.log(eventName, { type, source })
 
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
-    const lightRef = useRef<HTMLDivElement>(null)
+    const lightLineRef = useRef<HTMLDivElement>(null)
+    const bulbRef = useRef<HTMLDivElement>(null)
+
     const scrollContainer = document.querySelector('main')
 
     useEffect(() => {
-        if (!scrollContainer || !lightRef.current) {
+        logEvent(EventName.VIEW_GET_CODY)
+    }, [])
+
+    useEffect(() => {
+        if (!scrollContainer || !lightLineRef.current) {
             return
         }
 
         const handleScroll = (): void => {
-            const lightElement = lightRef.current
-            const alignedElements = document.querySelectorAll('.get-cody-step')
+            if (!lightLineRef.current) {
+                return
+            }
 
-            if (lightElement) {
-                const lightBounds = lightElement.getBoundingClientRect()
+            const getCodySteps = document.querySelectorAll('.get-cody-step')
+            const offsetHeight = 243 // Initial height of line
+            const lineMaxAnimationOffsetHeight = 1972
+            const bulbMaxAnimationOffsetHeight = 1999
+            const bulbMinAnimationOffsetHeight = 1.875
+            const currentScrollOffset = scrollContainer.scrollTop
 
-                for (const alignedElement of alignedElements) {
-                    const elementBounds = alignedElement.getBoundingClientRect()
+            if (currentScrollOffset < lineMaxAnimationOffsetHeight) {
+                lightLineRef.current.style.height = `${currentScrollOffset + offsetHeight}px`
 
-                    if (elementBounds.top <= lightBounds.top && elementBounds.bottom >= lightBounds.top) {
-                        alignedElement.classList.add(styles.focusBackground)
-                    } else {
-                        alignedElement.classList.remove(styles.focusBackground)
-                    }
+                if (bulbRef.current) {
+                    bulbRef.current.style.marginTop = `${bulbMinAnimationOffsetHeight}rem`
+                    bulbRef.current.style.position = 'fixed'
+                }
+            } else if (bulbRef.current) {
+                lightLineRef.current.style.height = `${lineMaxAnimationOffsetHeight + offsetHeight}px`
+                bulbRef.current.style.position = 'absolute'
+                bulbRef.current.style.marginTop = `${bulbMaxAnimationOffsetHeight}px`
+            }
+
+            // Updates card background color, when item is in view and match position of bulb element.
+            const { bottom } = lightLineRef.current.getBoundingClientRect()
+
+            for (const getCodyStep of getCodySteps) {
+                const getCodyStepBounds = getCodyStep.getBoundingClientRect()
+
+                // Animation is with the range of a card
+                if (getCodyStepBounds.top <= bottom && getCodyStepBounds.bottom >= bottom) {
+                    getCodyStep.classList.add(styles.focusBackground)
+                } else {
+                    getCodyStep.classList.remove(styles.focusBackground)
                 }
             }
         }
@@ -95,9 +139,11 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                 </div>
 
                 <div className={styles.cardWrapper}>
-                    <div className={styles.dashedLine} />
-                    <div className={styles.lightLine} />
-                    <div ref={lightRef} className={styles.lightWrapper}>
+                    <div className={styles.dashedLine}>
+                        <DashedLine />
+                    </div>
+                    <div ref={lightLineRef} className={styles.lightLine} />
+                    <div ref={bulbRef} className={styles.lightWrapper}>
                         <Light className={styles.light} />
                     </div>
 
@@ -169,43 +215,87 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             your local repositories. Without the app, Cody only fetches context on the repository
                             currently open in your IDE.
                         </Text>
-                        <Link
-                            to={SOURCEGRAPH_MAC_DMG}
-                            className={classNames('text-decoration-none', styles.downloadForMacButton)}
-                        >
-                            Download for Mac <Badge className={classNames('ml-2', styles.betaBadge)}>Beta</Badge>
-                        </Link>
-                        <Text className={styles.appleSilicon}>
-                            Apple Silicon required.{' '}
+                        <div className={styles.downloadButtonWrapper}>
+                            <div className={classNames('d-flex flex-row flex-wrap', styles.downloadMacWrapper)}>
+                                <DownloadAppButton
+                                    to={SOURCEGRAPH_MAC_SILICON}
+                                    buttonText="Download for Mac (Apple Silicon)"
+                                    badgeText="Beta"
+                                    eventName={EventName.DOWNLOAD_APP}
+                                    eventType="Mac Silicon"
+                                    icon={mdiApple}
+                                />
+                                <DownloadAppButton
+                                    to={SOURCEGRAPH_MAC_INTEL}
+                                    buttonText="Download for Mac (Intel)"
+                                    badgeText="Beta"
+                                    eventName={EventName.DOWNLOAD_APP}
+                                    eventType="Mac Intel"
+                                    icon={mdiApple}
+                                />
+                            </div>
+
+                            <DownloadAppButton
+                                to={SOURCEGRAPH_LINUX}
+                                buttonText="Download for Linux"
+                                badgeText="Beta"
+                                eventName={EventName.DOWNLOAD_APP}
+                                eventType="Linux"
+                                icon={mdiLinux}
+                            />
+
                             <Link
                                 to="https://docs.sourcegraph.com/app"
-                                className={styles.appleSiliconLink}
+                                className={styles.otherOptions}
                                 target="_blank"
                                 rel="noopener"
                             >
-                                Other options.
+                                Other options
                             </Link>
-                        </Text>
-                        <Text className={styles.terms}>
-                            By using Sourcegraph, you agree to the{' '}
-                            <Link
-                                to="https://about.sourcegraph.com/terms/privacy"
-                                className={styles.termsLink}
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                privacy policy
-                            </Link>{' '}
-                            and{' '}
-                            <Link
-                                to="https://about.sourcegraph.com/terms"
-                                className={styles.termsLink}
-                                target="_blank"
-                                rel="noopener"
-                            >
-                                terms
-                            </Link>
-                        </Text>
+
+                            <Text className={styles.terms}>
+                                By using Sourcegraph, you agree to the{' '}
+                                <Link
+                                    to="https://about.sourcegraph.com/terms/privacy"
+                                    className={styles.termsLink}
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    privacy policy
+                                </Link>{' '}
+                                and{' '}
+                                <Link
+                                    to="https://about.sourcegraph.com/terms"
+                                    className={styles.termsLink}
+                                    target="_blank"
+                                    rel="noopener"
+                                >
+                                    terms
+                                </Link>
+                            </Text>
+
+                            <Text className={classNames('text-decoration-none', styles.downloadForWindows)}>
+                                <Icon
+                                    className={classNames('mr-2', styles.icon)}
+                                    svgPath={mdiMicrosoftWindows}
+                                    inline={false}
+                                    aria-hidden={true}
+                                />
+                                Download for Windows{' '}
+                                <Badge className={classNames('ml-2', styles.badge)}>Coming soon</Badge>
+                            </Text>
+
+                            <Text className={styles.downloadForWindowsDescription}>
+                                While the Cody app is not yet available for Windows, you can use the{' '}
+                                <Link
+                                    to="vscode:extension/sourcegraph.cody-ai"
+                                    className={styles.downloadForWindowsDescriptionLink}
+                                >
+                                    {' '}
+                                    Cody extension for VS Code
+                                </Link>
+                            </Text>
+                        </div>
                     </div>
 
                     {/* Install cody extension section */}
@@ -220,6 +310,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         <Link
                             to="vscode:extension/sourcegraph.cody-ai"
                             className={classNames('text-decoration-none', styles.downloadForVscode)}
+                            onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'VS Code')}
                         >
                             <Icon
                                 className={styles.vscodeIcon}
@@ -240,17 +331,17 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             <Text className={styles.comingSoonWrapperText}>Coming soon:</Text>
                             <div className={styles.joinWaitlistButtonWrapper}>
                                 <WaitListButton
-                                    to=""
+                                    to="https://info.sourcegraph.com/waitlist"
                                     icon={<IntellijIcon className={styles.joinWaitlistButtonIcon} />}
                                     title="IntelliJ"
                                 />
                                 <WaitListButton
-                                    to=""
+                                    to="https://info.sourcegraph.com/waitlist"
                                     icon={<NeovimIcon className={styles.joinWaitlistButtonIcon} />}
                                     title="Neovim"
                                 />
                                 <WaitListButton
-                                    to=""
+                                    to="https://info.sourcegraph.com/waitlist"
                                     icon={<EmacsIcon className={styles.joinWaitlistButtonIcon} />}
                                     title="Emacs"
                                 />
@@ -327,12 +418,18 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
 }
 
 const WaitListButton: React.FunctionComponent<WaitListButtonProps> = ({ title, to, icon }) => (
-    <Link to={to} className={classNames('text-decoration-none', styles.joinWaitlistButton)}>
+    <div className={classNames('text-decoration-none', styles.joinWaitlistButton)}>
         {icon}
         <span className={styles.joinWaitlistButtonTitle}>{title}</span>
-        <span className={styles.joinWaitlistButtonLinkText}>
+        <Link
+            to={to}
+            onClick={() => logEvent(EventName.JOIN_IDE_WAITLIST, title)}
+            target="_blank"
+            className={styles.joinWaitlistButtonLinkText}
+            rel="noopener"
+        >
             Join the waitlist
             <Icon className="ml-2" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
-        </span>
-    </Link>
+        </Link>
+    </div>
 )

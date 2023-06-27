@@ -1,7 +1,8 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .page-wrapper {
-    background: radial-gradient(50% 23.6% at 100% 0%, rgba(161, 18, 255, 0.14) 0%, rgba(15, 17, 26, 0) 100%), var(--black);
+    background: radial-gradient(133.61% 44.45% at 41.22% 0%, rgba(161, 18, 255, 0.24) 0%, rgba(15, 17, 26, 0) 100%),
+        radial-gradient(50% 23.6% at 100% -0%, rgba(161, 18, 255, 0.14) 0%, rgba(15, 17, 26, 0) 100%), #0f111a;
     height: fit-content;
     width: 100%;
     position: relative;
@@ -52,12 +53,22 @@
     .card {
         padding: 3rem 3.5rem;
         max-width: 1171px;
-        background: radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
+        background: radial-gradient(
+            63.3% 72.11% at 95.66% -10.78%,
+            rgba(255, 255, 255, 0.13) 0%,
+            rgba(255, 255, 255, 0) 100%
+        );
         border: 1px solid rgba(255, 255, 255, 0.1);
         border-radius: 0.5rem;
 
         &:hover {
-            background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)), radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%), radial-gradient(92.93% 92.93% at 50% 50%, rgba(161, 18, 255, 0.25) 0%, rgba(161, 18, 255, 0) 100%);
+            background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
+                radial-gradient(
+                    63.3% 72.11% at 95.66% -10.78%,
+                    rgba(255, 255, 255, 0.13) 0%,
+                    rgba(255, 255, 255, 0) 100%
+                ),
+                radial-gradient(92.93% 92.93% at 50% 50%, rgba(161, 18, 255, 0.25) 0%, rgba(161, 18, 255, 0) 100%);
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 0 40px -12px rgba(161, 18, 255, 0.3);
             border-radius: 0.5rem;
@@ -66,14 +77,10 @@
 }
 
 .dashed-line {
-    width: 0.125rem;
-    height: 105.25rem;
-    background-image: linear-gradient(to bottom, transparent 50%,rgba(255, 255, 255, 0.10) 50%);
-    background-size: 0.0625rem 2.625rem;
     margin-left: -4.875rem;
     position: absolute;
 }
-  
+
 .card-title {
     font-size: 2.25rem;
     line-height: 2.6875rem;
@@ -103,6 +110,7 @@
         font-weight: 600;
         line-height: 120%;
         margin-bottom: 1.5rem;
+        color: var(--white);
         @media (--md-breakpoint-down) {
             font-size: 3rem;
             line-height: 3.625rem;
@@ -123,7 +131,7 @@
 
     .cody-lets-work-image {
         height: 6.3125rem;
-        width:  19.125rem;
+        width: 19.125rem;
     }
 }
 
@@ -144,11 +152,11 @@
         flex-wrap: wrap;
         gap: 0.5rem;
     }
-    
+
     .button-icon {
         margin-right: 0.065rem !important;
     }
-    
+
     .auth-button,
     .email-auth-button {
         text-align: center;
@@ -158,10 +166,10 @@
         margin-top: 0;
         margin-bottom: 0;
     }
-    
+
     .auth-button {
         background-color: var(--white) !important;
-        color:  var(--violet-07) !important;
+        color: var(--violet-07) !important;
 
         @media (--md-breakpoint-up) {
             width: 10rem;
@@ -171,10 +179,16 @@
             width: 11.75rem;
         }
         &:hover {
-            background: radial-gradient(101.36% 319.74% at 56.46% 72.22%, rgba(0, 84, 130, 0.2) 0%, rgba(161, 18, 255, 0.2) 36.46%, rgba(161, 18, 255, 0) 68.23%), var(--white);
+            background: radial-gradient(
+                    101.36% 319.74% at 56.46% 72.22%,
+                    rgba(0, 84, 130, 0.2) 0%,
+                    rgba(161, 18, 255, 0.2) 36.46%,
+                    rgba(161, 18, 255, 0) 68.23%
+                ),
+                var(--white);
         }
     }
-    
+
     .email-auth-button {
         background: rgba(255, 255, 255, 0.1);
         border: 1px solid rgba(255, 255, 255, 0.1);
@@ -189,14 +203,20 @@
         @media (--xs-breakpoint-down) {
             width: auto;
         }
-    
+
         svg {
             color: var(--email-icon-color);
             height: 1.125rem;
         }
 
         &:hover {
-            background: radial-gradient(101.36% 319.74% at 56.46% 72.22%, rgba(0, 84, 130, 0.2) 0%, rgba(161, 18, 255, 0.2) 36.46%, rgba(161, 18, 255, 0) 68.23%), rgba(255, 255, 255, 0.1);
+            background: radial-gradient(
+                    101.36% 319.74% at 56.46% 72.22%,
+                    rgba(0, 84, 130, 0.2) 0%,
+                    rgba(161, 18, 255, 0.2) 36.46%,
+                    rgba(161, 18, 255, 0) 68.23%
+                ),
+                rgba(255, 255, 255, 0.1);
         }
     }
 }
@@ -207,44 +227,53 @@
     color: transparent;
 }
 
-.download-for-mac-button {
+.download-button-wrapper {
     display: flex;
-    background: var(--white);
-    padding: 0.625rem 1rem;
-    box-shadow: 0 0 20px rgba(161, 18, 255, 0.7);
-    border-radius: 0.3125rem;
-    color: var(--violet-05);
-    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 5rem;
+
+    .download-mac-wrapper {
+        gap: 1rem;
+    }
+
+    .other-options {
+        font-size: 1.125rem;
+        line-height: 1.6875rem;
+        color: var(--gray-04);
+        text-decoration: underline;
+        margin-bottom: 0;
+    }
+}
+
+.download-for-windows {
+    display: flex;
+    padding: 1rem 1.5rem;
+    align-items: center;
+    gap: 1.5rem;
+    border-radius: 0.5rem;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    color: var(--white);
+    font-size: 1rem;
+    font-weight: 600;
+    line-height: 1.5rem;
+    margin-top: 4rem;
     width: fit-content;
-    margin-top: 3rem;
-    margin-bottom: 0.75rem;
 
-    @media (--md-breakpoint-down) {
-        width: 24rem;
-    }
-
-    @media (--sm-breakpoint-down) {
-        width: auto;
-    }
-
-    &:hover {
-        background: radial-gradient(101.36% 319.74% at 56.46% 72.22%, rgba(0, 84, 130, 0.2) 0%, rgba(161, 18, 255, 0.2) 36.46%, rgba(161, 18, 255, 0) 68.23%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, #FFFFFF;
-        color: var(--violet-05);
-    }
-
-    .beta-badge {
-        background: #DBDBFF;
-        color: #3826CC;
+    .badge {
+        background: #dbdbff;
+        color: #3826cc;
         border-radius: 0.375rem;
     }
 }
 
-.apple-silicon {
-    font-size: 1.125rem;
+.download-for-windows-description {
+    margin-top: 1rem;
     color: var(--gray-04);
-    margin-bottom: 0.75rem;
+    font-size: 1rem;
+    line-height: 120%;
 
-    .apple-silicon-link {
+    .download-for-windows-description-link {
         color: var(--gray-04);
         text-decoration: underline;
     }
@@ -253,17 +282,25 @@
 .download-for-vscode {
     display: flex;
     align-items: center;
-    background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)), radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
+    background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
+        radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
     border-radius: 0.5rem;
     padding: 1.5rem 2.5rem;
-    margin-top: 3rem;
+    margin-top: 5rem;
     margin-bottom: 1rem;
     width: fit-content;
 
     &:hover {
-        background: radial-gradient(72.81% 369.29% at 63.88% 64.06%, rgba(0, 84, 130, 0.2) 0%, rgba(161, 18, 255, 0.2) 36.46%, rgba(161, 18, 255, 0) 68.23%), linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)), radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
+        background: radial-gradient(
+                72.81% 369.29% at 63.88% 64.06%,
+                rgba(0, 84, 130, 0.2) 0%,
+                rgba(161, 18, 255, 0.2) 36.46%,
+                rgba(161, 18, 255, 0) 68.23%
+            ),
+            linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
+            radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%);
     }
 
     .download-for-vscode-text {
@@ -291,7 +328,7 @@
 
     .start-coding-with-me-img {
         width: fit-content;
-    
+
         @media (--md-breakpoint-down) {
             width: 26.5rem;
         }
@@ -354,7 +391,7 @@
             width: 30rem;
         }
         @media (--sm-breakpoint-down) {
-                width: auto;
+            width: auto;
         }
     }
 }
@@ -384,7 +421,7 @@
         @media (--xs-breakpoint-down) {
             width: auto;
         }
-    
+
         .join-waitlist-button-title {
             font-weight: 600;
             font-size: 1.5rem;
@@ -392,20 +429,22 @@
             color: var(--white);
             margin-left: 1rem;
         }
-    
+
         .join-waitlist-button-link-text {
             font-weight: 400;
             font-size: 1rem;
             line-height: 1.5rem;
             color: var(--gray-04);
             margin-left: 1.5rem;
+            background: none;
+            border: none;
 
             &:hover {
                 text-decoration-line: underline;
                 color: var(--violet-03);
             }
         }
-    
+
         .join-waitlist-button-icon {
             height: 2.375rem;
             width: 2.375rem;
@@ -420,7 +459,7 @@
     .terms-link {
         color: rgba(226, 195, 251, 0.7);
         text-decoration: underline;
-    
+
         &:hover {
             color: rgba(226, 195, 251, 0.7);
         }
@@ -444,7 +483,7 @@
     bottom: 0;
     right: 0;
     @media (--md-breakpoint-down) {
-        display: none;;
+        display: none;
     }
 }
 
@@ -478,27 +517,55 @@
     }
 
     .light {
-        margin-top: -6.25rem;
+        margin-top: 5.5rem;
     }
 }
 
 .light-line {
-    position: fixed;
+    position: absolute;
     margin-left: -4.875rem;
     margin-top: -6.25rem;
     width: 0.125rem;
-    height: 13.3125rem;
-    background: linear-gradient(270deg, rgba(161, 18, 255, 0.64) 0%, #A112FF 77.36%, rgba(161, 18, 255, 0.00) 100%);
+    height: 15.1875rem;
+    background: linear-gradient(270deg, rgba(161, 18, 255, 0.64) 0%, #a112ff 77.36%, rgba(161, 18, 255, 0) 100%);
+
     @media (--sm-breakpoint-down) {
         display: none;
     }
 }
 
+@keyframes fadeIn {
+    0% {
+        opacity: 0.4;
+    }
+    20% {
+        opacity: 0.5;
+    }
+    20% {
+        opacity: 0.6;
+    }
+    40% {
+        opacity: 0.7;
+    }
+    60% {
+        opacity: 0.8;
+    }
+    80% {
+        opacity: 0.9;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
 .focus-background {
     @media (--md-breakpoint-up) {
-        background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)), radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%) /* warning: gradient uses a rotation that is not supported by CSS and may not behave as expected */, radial-gradient(92.93% 92.93% at 50% 50%, rgba(161, 18, 255, 0.25) 0%, rgba(161, 18, 255, 0) 100%) !important;
+        background: linear-gradient(0deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.05)),
+            radial-gradient(63.3% 72.11% at 95.66% -10.78%, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 100%),
+            radial-gradient(92.93% 92.93% at 50% 50%, rgba(161, 18, 255, 0.25) 0%, rgba(161, 18, 255, 0) 100%) !important;
         border: 1px solid rgba(255, 255, 255, 0.1) !important;
         box-shadow: 0 0 40px -12px rgba(161, 18, 255, 0.3) !important;
         border-radius: 0.5rem !important;
+        animation: fadeIn 1s ease-in-out;
     }
 }

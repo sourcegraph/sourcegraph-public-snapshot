@@ -93,6 +93,39 @@ export const Light: React.FunctionComponent<React.PropsWithChildren<SVGProps<SVG
     </svg>
 )
 
+export const DashedLine: React.FunctionComponent<React.PropsWithChildren<SVGProps<SVGSVGElement>>> = (
+    props: SVGProps<SVGSVGElement>
+) => (
+    <svg width="2" height="1684" viewBox="0 0 2 1684" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+        <line
+            x1="1"
+            y1="1"
+            x2="0.999926"
+            y2="1683"
+            stroke="url(#paint0_linear_623_6722)"
+            strokeOpacity="0.41"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeDasharray="10 10"
+        />
+        <defs>
+            <linearGradient
+                id="paint0_linear_623_6722"
+                x1="-1.78867e-05"
+                y1="1733.49"
+                x2="-0.000145209"
+                y2="-21.701"
+                gradientUnits="userSpaceOnUse"
+            >
+                <stop stopColor="#343A4D" stopOpacity="0" />
+                <stop offset="0.100963" stopColor="#343A4D" />
+                <stop offset="0.77357" stopColor="#343A4D" />
+                <stop offset="1" stopColor="#343A4D" stopOpacity="0" />
+            </linearGradient>
+        </defs>
+    </svg>
+)
+
 export const IntellijIcon: React.FunctionComponent<React.PropsWithChildren<SVGProps<SVGSVGElement>>> = (
     props: SVGProps<SVGSVGElement>
 ) => (
