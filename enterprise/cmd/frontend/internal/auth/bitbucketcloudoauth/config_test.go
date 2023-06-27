@@ -71,7 +71,55 @@ func TestParseConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "2 Bitbucket Cloud configs with the same Url",
+			name: "2 Bitbucket Cloud configs with the same Url and client IDs",
+			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				AuthProviders: []schema.AuthProviders{{
+					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
+						ClientKey:    "myclientid",
+						ClientSecret: "myclientsecret",
+						DisplayName:  "Bitbucket Cloud",
+						Type:         extsvc.TypeBitbucketCloud,
+						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
+					},
+				}, {
+					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
+						ClientKey:    "myclientid",
+						ClientSecret: "myclientsecret2",
+						DisplayName:  "Bitbucket Cloud Duplicate",
+						Type:         extsvc.TypeBitbucketCloud,
+						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
+					},
+				}},
+			}}},
+			wantProviders: []Provider{
+				{
+					BitbucketCloudAuthProvider: &schema.BitbucketCloudAuthProvider{
+						ClientKey:    "myclientid",
+						ClientSecret: "myclientsecret",
+						DisplayName:  "Bitbucket Cloud",
+						Type:         extsvc.TypeBitbucketCloud,
+						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
+					},
+					Provider: provider("https://bitbucket.org/", oauth2.Config{
+						ClientID:     "myclientid",
+						ClientSecret: "myclientsecret",
+						Endpoint: oauth2.Endpoint{
+							AuthURL:  "https://bitbucket.org/site/oauth2/authorize",
+							TokenURL: "https://bitbucket.org/site/oauth2/access_token",
+						},
+						Scopes: []string{"account", "email"},
+					}),
+				},
+			},
+			wantProblems: []string{
+				`Cannot have more than one auth provider with url "https://bitbucket.org/" and client ID "myclientid", only the first one will be used`,
+			},
+		},
+		{
+			name: "2 Bitbucket Cloud configs with the same Url but different client IDs",
 			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 				AuthProviders: []schema.AuthProviders{{
 					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
@@ -113,9 +161,25 @@ func TestParseConfig(t *testing.T) {
 						Scopes: []string{"account", "email"},
 					}),
 				},
-			},
-			wantProblems: []string{
-				`Cannot have more than one auth provider with url "https://bitbucket.org/", only the first one will be used`,
+				{
+					BitbucketCloudAuthProvider: &schema.BitbucketCloudAuthProvider{
+						ClientKey:    "myclientid2",
+						ClientSecret: "myclientsecret2",
+						DisplayName:  "Bitbucket Cloud Duplicate",
+						Type:         extsvc.TypeBitbucketCloud,
+						Url:          "https://bitbucket.org",
+						ApiScope:     "account,email",
+					},
+					Provider: provider("https://bitbucket.org/", oauth2.Config{
+						ClientID:     "myclientid2",
+						ClientSecret: "myclientsecret2",
+						Endpoint: oauth2.Endpoint{
+							AuthURL:  "https://bitbucket.org/site/oauth2/authorize",
+							TokenURL: "https://bitbucket.org/site/oauth2/access_token",
+						},
+						Scopes: []string{"account", "email"},
+					}),
+				},
 			},
 		},
 	}
