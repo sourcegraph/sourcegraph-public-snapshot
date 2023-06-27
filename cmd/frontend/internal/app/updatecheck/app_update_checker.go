@@ -83,7 +83,11 @@ type GCSManifestResolver struct {
 }
 
 type StaticManifestResolver struct {
-	manifest AppUpdateManifest
+	Manifest AppUpdateManifest
+}
+
+func (m *AppUpdateManifest) GitHubReleaseTag() string {
+	return fmt.Sprintf("app-v%s", m.Version)
 }
 
 func (v *AppVersion) Platform() string {
@@ -91,7 +95,7 @@ func (v *AppVersion) Platform() string {
 	// x86_64-darwin
 	// x86_64-linux
 	// aarch64-darwin
-	return fmt.Sprintf("%s-%s", v.Arch, v.Target)
+	return PlatformString(v.Arch, v.Target)
 }
 
 func NewGCSManifestResolver(ctx context.Context, bucket, manifestName string) (UpdateManifestResolver, error) {
@@ -125,7 +129,7 @@ func (r *GCSManifestResolver) Resolve(ctx context.Context) (*AppUpdateManifest, 
 }
 
 func (r *StaticManifestResolver) Resolve(_ context.Context) (*AppUpdateManifest, error) {
-	return &r.manifest, nil
+	return &r.Manifest, nil
 }
 
 func NewAppUpdateChecker(logger log.Logger, resolver UpdateManifestResolver) *AppUpdateChecker {
@@ -294,4 +298,11 @@ func mustConstraint(c string) *semver.Constraints {
 	}
 
 	return constraint
+}
+
+func PlatformString(arch, target string) string {
+	if arch == "" || target == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s-%s", arch, target)
 }
