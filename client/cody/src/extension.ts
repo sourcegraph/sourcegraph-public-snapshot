@@ -9,12 +9,6 @@ export function activate(context: vscode.ExtensionContext): ExtensionApi {
     const api = new ExtensionApi()
     PromptMixin.add(languagePromptMixin(vscode.env.language))
 
-    if (process.env.CODY_FOCUS_ON_STARTUP) {
-        setTimeout(() => {
-            void vscode.commands.executeCommand('cody.chat.focus')
-        }, 250)
-    }
-
     start(context)
         .then(disposable => {
             if (!context.globalState.get('extension.hasActivatedPreviously')) {
