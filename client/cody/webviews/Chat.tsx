@@ -89,6 +89,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
+    const onChatButtonClick = useCallback(
+        (which: string) => {
+            vscodeAPI.postMessage({ command: 'chat-button', action: which })
+        },
+        [vscodeAPI]
+    )
+
     return (
         <ChatUI
             messageInProgress={messageInProgress}
@@ -128,7 +135,15 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
+            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips.
+
+To get started, select some code and run one of Cody's recipes:"
+            gettingStartedButtons={[
+                { label: 'Explain Code (High Level)', action: 'explain-code-high-level' },
+                { label: 'Smell Code', action: 'find-code-smells' },
+                { label: 'Fixup code from inline instructions', action: 'fixup' },
+            ]}
+            onChatButtonClick={onChatButtonClick}
         />
     )
 }

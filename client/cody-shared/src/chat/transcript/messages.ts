@@ -3,9 +3,15 @@ import { Message } from '../../sourcegraph-api'
 
 import { TranscriptJSON } from '.'
 
+export interface ChatButton {
+    label: string
+    action: string
+}
+
 export interface ChatMessage extends Message {
     displayText?: string
     contextFiles?: ContextFile[]
+    buttons?: ChatButton[]
 }
 
 export interface InteractionMessage extends Message {
