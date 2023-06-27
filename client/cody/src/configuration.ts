@@ -87,6 +87,13 @@ function sanitizeCodebase(codebase: string | undefined): string {
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
     if (!serverEndpoint) {
+        // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
+        // tests.
+        const isTesting = process.env.CODY_TESTING === 'true'
+        if (isTesting) {
+            return 'http://localhost:49300/'
+        }
+
         return DOTCOM_URL.href
     }
     const trailingSlashRegexp = /\/$/
