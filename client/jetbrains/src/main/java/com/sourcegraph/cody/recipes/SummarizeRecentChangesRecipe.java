@@ -77,7 +77,7 @@ public class SummarizeRecentChangesRecipe {
                           });
                   return;
                 }
-                GraphQlLogger.logExecutionEvent(this.project, "summarize-recent-code-changes");
+                GraphQlLogger.logCodyEvent(this.project, "summarize-recent-code-changes", "execute");
                 recipeRunner.runRecipe(
                     new SummarizeRecentChangesPromptProvider(vcsFilter.getFilterDescription()), it);
               });

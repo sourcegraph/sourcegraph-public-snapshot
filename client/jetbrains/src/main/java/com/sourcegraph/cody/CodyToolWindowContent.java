@@ -109,39 +109,44 @@ class CodyToolWindowContent implements UpdatableChat {
     JButton explainCodeDetailedButton = createRecipeButton("Explain selected code (detailed)");
     explainCodeDetailedButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickAndExecutionEvents(this.project, "recipe:explain-code-detailed");
+          GraphQlLogger.logCodyEvents(this.project, "recipe:explain-code-detailed",
+              new String[]{"click", "execute"});
           executeRecipeWithPromptProvider(recipeRunner, new ExplainCodeDetailedPromptProvider());
         });
     JButton explainCodeHighLevelButton = createRecipeButton("Explain selected code (high level)");
     explainCodeHighLevelButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickAndExecutionEvents(this.project, "explain-code-high-level");
+          GraphQlLogger.logCodyEvents(this.project, "recipe:explain-code-high-level",
+              new String[]{"click", "execute"});
           executeRecipeWithPromptProvider(
               recipeRunner, new ExplainCodeHighLevelPromptProvider());
         });
     JButton generateUnitTestButton = createRecipeButton("Generate a unit test");
     generateUnitTestButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickAndExecutionEvents(this.project, "generate-unit-test");
+          GraphQlLogger.logCodyEvents(this.project, "recipe:generate-unit-test",
+              new String[]{"click", "execute"});
           executeRecipeWithPromptProvider(recipeRunner, new GenerateUnitTestPromptProvider());
         });
     JButton generateDocstringButton = createRecipeButton("Generate a docstring");
     generateDocstringButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickAndExecutionEvents(this.project, "generate-docstring");
+          GraphQlLogger.logCodyEvents(this.project, "recipe:generate-docstring",
+              new String[]{"click", "execute"});
           executeRecipeWithPromptProvider(recipeRunner, new GenerateDocStringPromptProvider());
         });
     JButton improveVariableNamesButton = createRecipeButton("Improve variable names");
     improveVariableNamesButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickAndExecutionEvents(this.project, "improve-variable-names");
+          GraphQlLogger.logCodyEvents(this.project, "recipe:improve-variable-names",
+              new String[]{"click", "execute"});
           executeRecipeWithPromptProvider(
               recipeRunner, new ImproveVariableNamesPromptProvider());
         });
     JButton translateToLanguageButton = createRecipeButton("Translate to different language");
     translateToLanguageButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickEvent(this.project, "translate-to-language");
+          GraphQlLogger.logCodyEvent(this.project, "recipe:translate-to-language", "click");
           runIfCodeSelected(
               (editorSelection) -> {
                 SelectOptionManager selectOptionManager =
@@ -150,7 +155,8 @@ class CodyToolWindowContent implements UpdatableChat {
                     project,
                     SupportedLanguages.LANGUAGE_NAMES,
                     (selectedLanguage) -> {
-                      GraphQlLogger.logExecutionEvent(this.project, "translate-to-language");
+                      GraphQlLogger.logCodyEvent(this.project, "recipe:translate-to-language",
+                          "execute");
                       recipeRunner.runRecipe(
                           new TranslateToLanguagePromptProvider(new Language(selectedLanguage)),
                           editorSelection);
@@ -160,13 +166,14 @@ class CodyToolWindowContent implements UpdatableChat {
     JButton gitHistoryButton = createRecipeButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickEvent(this.project, "summarize-recent-code-changes");
+          GraphQlLogger.logCodyEvent(this.project, "recipe:summarize-recent-code-changes", "click");
           new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges();
         });
     JButton findCodeSmellsButton = createRecipeButton("Smell code");
     findCodeSmellsButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickAndExecutionEvents(this.project, "smell-code");
+          GraphQlLogger.logCodyEvents(this.project, "recipe:smell-code",
+              new String[]{"click", "execute"});
           executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider());
         });
     // JButton fixupButton = createWideButton("Fixup code from inline instructions");
@@ -178,7 +185,8 @@ class CodyToolWindowContent implements UpdatableChat {
     JButton optimizeCodeButton = createRecipeButton("Optimize code");
     optimizeCodeButton.addActionListener(
         e -> {
-          GraphQlLogger.logClickAndExecutionEvents(this.project, "optimize-code");
+          GraphQlLogger.logCodyEvents(this.project, "recipe:optimize-code",
+              new String[]{"click", "execute"});
           executeRecipeWithPromptProvider(recipeRunner, new OptimizeCodePromptProvider());
         });
     recipesPanel.add(explainCodeDetailedButton);
@@ -295,7 +303,7 @@ class CodyToolWindowContent implements UpdatableChat {
     ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(sendButton);
     sendButton.setUI(buttonUI);
     sendButton.addActionListener(e -> {
-      GraphQlLogger.logClickEvent(this.project, "chat-question");
+      GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "click");
       sendMessage(project);
     });
     return sendButton;
@@ -500,7 +508,7 @@ class CodyToolWindowContent implements UpdatableChat {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }
               }
-              GraphQlLogger.logExecutionEvent(this.project, "chat-question");
+              GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "execute");
             });
   }
 

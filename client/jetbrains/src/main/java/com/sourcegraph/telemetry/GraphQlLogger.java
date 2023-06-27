@@ -34,23 +34,15 @@ public class GraphQlLogger {
     }
   }
 
-  public static void logClickAndExecutionEvents(Project project, String componentName) {
-    logClickEvent(project, componentName);
-    logExecutionEvent(project, componentName);
+  public static void logCodyEvents(@NotNull Project project, @NotNull String componentName, @NotNull String[] actions) {
+    for (String action : actions) {
+      logCodyEvent(project, componentName, action);
+    }
   }
 
-  public static void logClickEvent(Project project, String componentName) {
-    logRecipeEvent(project, componentName, false);
-  }
-
-  public static void logExecutionEvent(Project project, String componentName) {
-    logRecipeEvent(project, componentName, true);
-  }
-
-  private static void logRecipeEvent(Project project, String componentName, boolean executed) {
+  public static void logCodyEvent(@NotNull Project project, @NotNull String componentName, @NotNull String action) {
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
-    String eventName =
-        "CodyJetBrainsPlugin:" + componentName + ":" + (executed ? "executed" : "clicked");
+    String eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
     Event event = new Event(eventName, anonymousUserId != null ? anonymousUserId : "",
         ConfigUtil.getSourcegraphUrl(project), null, null);
     logEvent(project, event, null);
@@ -58,7 +50,7 @@ public class GraphQlLogger {
 
   // This could be exposed later (as public), but currently, we don't use it externally.
   private static void logEvent(
-      Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
+      @NotNull Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
     String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
     String accessToken = ConfigUtil.getProjectAccessToken(project);
     String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project);
