@@ -156,7 +156,7 @@ Ensure you have the following tools installed:
 
 Please refer to the [Sourcegraph Kustomize docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/kustomize) for the latest instructions.
 
-To include Native Kubernetes Executors, see [configure Sourcegraph with Kustomize](https://docs.sourcegraph.com/admin/deploy/kubernetes/configure) on how to specify the component.
+To include Native Kubernetes Executors, see [configure Sourcegraph with Kustomize](https://docs.sourcegraph.com/admin/deploy/kubernetes/configure) on how to specify the component (`components/executors/k8s`).
 
 #### Deployment via Helm
 
