@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
@@ -148,14 +149,13 @@ public class SettingsComponent {
             setInstanceSettingsEnabled(
                 InstanceType.optionalValueOf(event.getActionCommand())
                     .orElse(InstanceType.ENTERPRISE));
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
-    boolean isCodyAppInstalledAndConfigured =
-        LocalAppManager.isLocalAppInstalled()
-            && LocalAppManager.getLocalAppAccessToken().isPresent();
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
     codyAppRadioButton.setActionCommand(InstanceType.LOCAL_APP.name());
     codyAppRadioButton.addActionListener(actionListener);
-    codyAppRadioButton.setEnabled(isCodyAppInstalledAndConfigured);
+    codyAppRadioButton.setEnabled(isLocalAppInstalled && isLocalAppAccessTokenConfigured);
     JRadioButton sourcegraphDotComRadioButton = new JRadioButton("Use sourcegraph.com");
     sourcegraphDotComRadioButton.setMnemonic(KeyEvent.VK_C);
     sourcegraphDotComRadioButton.setActionCommand(InstanceType.DOTCOM.name());
@@ -170,18 +170,26 @@ public class SettingsComponent {
     instanceTypeButtonGroup.add(enterpriseInstanceRadioButton);
 
     // Assemble the three main panels
-
     JBLabel codyAppComment =
         new JBLabel(
             "Use Sourcegraph through the locally installed Cody App",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    codyAppComment.setEnabled(isCodyAppInstalledAndConfigured);
+    ActionLink installLocalAppLink =
+        new ActionLink(
+            "Download Cody App...",
+            e -> {
+              LocalAppManager.browseLocalAppInstallPage();
+            });
+    installLocalAppLink.setVisible(!isLocalAppInstalled);
+    installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
+    installLocalAppLink.setFont(UIUtil.getLabelFont(UIUtil.FontSize.SMALL));
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)
             .addComponent(codyAppComment, 2)
+            .addComponent(installLocalAppLink, 2)
             .getPanel();
     JBLabel dotComComment =
         new JBLabel(

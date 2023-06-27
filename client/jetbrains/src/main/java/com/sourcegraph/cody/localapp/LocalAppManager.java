@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.localapp;
 
+import com.intellij.ide.BrowserUtil;
 import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.*;
 import java.io.File;
@@ -120,5 +121,9 @@ public class LocalAppManager {
                 e.printStackTrace();
               }
             });
+  }
+
+  public static void browseLocalAppInstallPage() {
+    BrowserUtil.browse("https://about.sourcegraph.com/app");
   }
 }
