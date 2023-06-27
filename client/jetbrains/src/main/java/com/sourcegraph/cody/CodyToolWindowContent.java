@@ -163,14 +163,14 @@ class CodyToolWindowContent implements UpdatableChat {
     JButton gitHistoryButton = createRecipeButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(
         e -> {
-          GraphQlLogger.logCodyEvent(this.project, "recipe:summarize-recent-code-changes", "clicked");
+          GraphQlLogger.logCodyEvent(
+              this.project, "recipe:summarize-recent-code-changes", "clicked");
           new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges();
         });
     JButton findCodeSmellsButton = createRecipeButton("Smell code");
     findCodeSmellsButton.addActionListener(
         e -> {
-          GraphQlLogger.logCodyEvents(
-              this.project, "recipe:smell-code", new String[] {"clicked"});
+          GraphQlLogger.logCodyEvents(this.project, "recipe:smell-code", new String[] {"clicked"});
           executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider());
         });
     // JButton fixupButton = createWideButton("Fixup code from inline instructions");

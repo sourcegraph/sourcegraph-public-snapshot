@@ -14,24 +14,22 @@ import org.jetbrains.annotations.Nullable;
 public class GraphQlLogger {
   private static final Logger logger = Logger.getInstance(GraphQlLogger.class);
 
-  private static string eventParameters = "{serverEndpoint: \"" + ConfigUtil.getSourcegraphUrl(project) + "\"}";
-
   public static void logInstallEvent(Project project, Consumer<Boolean> callback) {
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
+    JsonObject eventParameters = getEventParameters(project);
     if (anonymousUserId != null) {
       Event event =
-          new Event(
-              "CodyInstalled", anonymousUserId, "", eventParameters, eventParameters);
+          new Event("CodyInstalled", anonymousUserId, "", eventParameters, eventParameters);
       logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
     }
   }
 
   public static void logUninstallEvent(Project project) {
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
+    JsonObject eventParameters = getEventParameters(project);
     if (anonymousUserId != null) {
       Event event =
-          new Event(
-              "CodyUninstalled", anonymousUserId,  "", eventParameters, eventParameters);
+          new Event("CodyUninstalled", anonymousUserId, "", eventParameters, eventParameters);
       logEvent(project, event, null);
     }
   }
@@ -47,6 +45,7 @@ public class GraphQlLogger {
       @NotNull Project project, @NotNull String componentName, @NotNull String action) {
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
     String eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
+    JsonObject eventParameters = getEventParameters(project);
     Event event =
         new Event(
             eventName,
@@ -55,6 +54,13 @@ public class GraphQlLogger {
             eventParameters,
             eventParameters);
     logEvent(project, event, null);
+  }
+
+  @NotNull
+  private static JsonObject getEventParameters(@NotNull Project project) {
+    JsonObject eventParameters = new JsonObject();
+    eventParameters.addProperty("serverEndpoint", ConfigUtil.getSourcegraphUrl(project));
+    return eventParameters;
   }
 
   // This could be exposed later (as public), but currently, we don't use it externally.
