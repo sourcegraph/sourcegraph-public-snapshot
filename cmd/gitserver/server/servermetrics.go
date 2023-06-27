@@ -18,24 +18,29 @@ import (
 )
 
 func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.DB) {
-	// test the latency of exec, which may increase under certain memory
-	// conditions
-	echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_echo_duration_seconds",
-		Help: "Duration of executing the echo command.",
-	})
-	prometheus.MustRegister(echoDuration)
-	go func(server *Server) {
-		for {
-			time.Sleep(10 * time.Second)
-			s := time.Now()
-			if err := exec.Command("echo").Run(); err != nil {
-				server.Logger.Warn("exec measurement failed", log.Error(err))
-				continue
+	if deploy.IsEchoMetricEnabled() {
+		s.Logger.Info("Enabling 'echo' metric")
+		// test the latency of exec, which may increase under certain memory
+		// conditions
+		echoDuration := prometheus.NewGauge(prometheus.GaugeOpts{
+			Name: "src_gitserver_echo_duration_seconds",
+			Help: "Duration of executing the echo command.",
+		})
+		prometheus.MustRegister(echoDuration)
+		go func(server *Server) {
+			for {
+				time.Sleep(10 * time.Second)
+				s := time.Now()
+				if err := exec.Command("echo").Run(); err != nil {
+					server.Logger.Warn("exec measurement failed", log.Error(err))
+					continue
+				}
+				echoDuration.Set(time.Since(s).Seconds())
 			}
-			echoDuration.Set(time.Since(s).Seconds())
-		}
-	}(s)
+		}(s)
+	} else {
+		s.Logger.Warn("Disabling 'echo' metric")
+	}
 
 	// report the size of the repos dir
 	if s.ReposDir == "" {

@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -499,6 +500,12 @@ func (s *Server) Handler() http.Handler {
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
 // background goroutine.
 func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
+	// TODO(nelsona): Figure out why we can't have repo cleanup on Windows
+	if !deploy.IsJanitorEnabled() {
+		s.Logger.Warn("Janitor is disabled")
+		return
+	}
+
 	for {
 		gitserverAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
 		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
