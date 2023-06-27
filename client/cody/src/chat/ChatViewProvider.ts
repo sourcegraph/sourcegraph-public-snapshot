@@ -244,7 +244,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 await this.executeRecipe(message.recipe)
                 break
             case 'auth':
-                if (message.type === 'app' && message.endpoint) {
+                if ((message.type === 'app' && message.endpoint) || message.type === 'app-poll') {
                     await this.authProvider.appAuth(message.endpoint)
                     break
                 }

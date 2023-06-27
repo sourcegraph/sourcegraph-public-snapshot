@@ -16,6 +16,7 @@ export const ErrorContainer: React.FunctionComponent<{
     isApp: {
         isInstalled: boolean
         isRunning: boolean
+        isAuthenticated: boolean
     }
     endpoint?: string | null
 }> = ({ authStatus, isApp, endpoint }) => {
@@ -34,9 +35,10 @@ export const ErrorContainer: React.FunctionComponent<{
         return null
     }
     // Errors for app are handled in the ConnectApp component
-    if (isApp.isInstalled && !isApp.isRunning) {
+    if (isApp.isInstalled && (!isApp.isRunning || !isApp.isAuthenticated)) {
         return null
     }
+
     // new users will not have an endpoint
     if (!endpoint) {
         return null

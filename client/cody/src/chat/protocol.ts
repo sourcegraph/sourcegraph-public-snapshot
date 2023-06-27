@@ -21,7 +21,7 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
+    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'app-poll' | 'callback'; endpoint?: string }
     | { command: 'abort' }
 
 /**
@@ -60,6 +60,7 @@ export const CODY_FEEDBACK_URL = new URL(
 export const LOCAL_APP_URL = new URL('http://localhost:3080')
 export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
+export const APP_OPEN_URL = new URL('sourcegraph://')
 // TODO: Update URLs to always point to the latest app release: https://github.com/sourcegraph/sourcegraph/issues/53511
 export const APP_DOWNLOAD_URLS: { [os: string]: { [arch: string]: string } } = {
     darwin: {

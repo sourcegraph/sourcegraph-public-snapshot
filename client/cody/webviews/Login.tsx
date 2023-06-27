@@ -27,6 +27,7 @@ const APP_DESC = {
     getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     download: 'Download and run the Cody desktop app to configure your local code graph.',
     connectApp: 'Cody App detected. All that’s left to do is connect VS Code with Cody App.',
+    notAuthenticated: 'Waiting for setup to complete…',
     notRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
     comingSoon:
         'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
@@ -44,6 +45,13 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     onLoginRedirect,
 }) => {
     const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
+    const isAppAuthenticated = Boolean(
+        isAppRunning && authStatus?.authenticated && (!authStatus.requiresVerifiedEmail || authStatus.hasVerifiedEmail)
+    )
+
+    const onRefreshButtonClick = useCallback(() => {
+        vscodeAPI.postMessage({ command: 'auth', type: 'app-poll' })
+    }, [vscodeAPI])
 
     const onFooterButtonClick = useCallback(
         (title: 'signin' | 'support') => {
@@ -52,8 +60,28 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         [vscodeAPI]
     )
 
-    const title = isAppInstalled ? (isAppRunning ? 'Connect with Cody App' : 'Cody App Not Running') : 'Get Started'
-    const openMsg = !isAppInstalled ? APP_DESC.getStarted : !isAppRunning ? APP_DESC.notRunning : APP_DESC.connectApp
+    let title: string
+    if (isAppInstalled) {
+        if (!isAppRunning) {
+            title = 'Cody App Not Running'
+        } else if (!isAppAuthenticated) {
+            title = 'Connected to Cody App'
+        } else {
+            title = 'Connect with Cody App'
+        }
+    } else {
+        title = 'Get Started'
+    }
+    let openMsg: string
+    if (!isAppInstalled) {
+        openMsg = APP_DESC.getStarted
+    } else if (!isAppRunning) {
+        openMsg = APP_DESC.notRunning
+    } else if (!isAppAuthenticated) {
+        openMsg = APP_DESC.notAuthenticated
+    } else {
+        openMsg = APP_DESC.connectApp
+    }
 
     const AppConnect: React.FunctionComponent = () => (
         <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : styles.greyGradient)}>
@@ -67,8 +95,10 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
                 appOS={appOS}
                 appArch={appArch}
                 isAppRunning={isAppRunning}
+                isAppAuthenticated={isAppAuthenticated}
                 callbackScheme={callbackScheme}
             />
+            {isAppRunning && !isAppAuthenticated && <VSCodeButton onClick={onRefreshButtonClick}>Refresh</VSCodeButton>}
             {!isOSSupported && (
                 <small>
                     Sorry, {appOS} {appArch} is not yet supported.
@@ -90,6 +120,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     const isApp = {
         isInstalled: endpoint === LOCAL_APP_URL.href && isAppInstalled,
         isRunning: isAppRunning,
+        isAuthenticated: isAppAuthenticated,
     }
     return (
         <div className={styles.container}>
