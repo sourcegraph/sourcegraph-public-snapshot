@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -64,8 +65,21 @@ func (l *latestVersion) Handler() http.HandlerFunc {
 			releaseURL = u
 		}
 
-		http.Redirect(w, r, releaseURL.String(), http.StatusSeeOther)
+		http.Redirect(w, r, patchReleaseURL(releaseURL.String()), http.StatusSeeOther)
 	}
+}
+
+// (Hack) patch the release URL so that Mac users get a DMG instead of a .tar.gz download
+func patchReleaseURL(u string) string {
+	if suffix := ".aarch64.app.tar.gz"; strings.HasSuffix(u, suffix) {
+		u = strings.ReplaceAll(u, "Cody.", "Cody_")
+		u = strings.ReplaceAll(u, suffix, "_aarch64.dmg")
+	}
+	if suffix := ".x86_64.app.tar.gz"; strings.HasSuffix(u, suffix) {
+		u = strings.ReplaceAll(u, "Cody.", "Cody_")
+		u = strings.ReplaceAll(u, suffix, "_x64.dmg")
+	}
+	return u
 }
 
 func newLatestVersion(logger log.Logger, resolver updatecheck.UpdateManifestResolver) *latestVersion {
