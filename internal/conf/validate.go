@@ -321,12 +321,6 @@ func RedactAndHashSecrets(raw conftypes.RawUnified, returnOnlyWhitelisted bool) 
 	return redactConfSecrets(raw, true, returnOnlyWhitelisted)
 }
 
-// 🚨 SECURITY: whitelistedSiteConfig contains configuration that are safe to display to
-// non-site admins.
-var whitelistedSiteConfig = []string{
-	"batchChanges.rolloutWindows",
-}
-
 // redactConfSecrets redacts defined list of secrets from the given configuration. It returns empty
 // configuration if any error occurs during redacting process to prevent accidental leak of secrets
 // in the configuration.
@@ -348,7 +342,12 @@ func redactConfSecrets(raw conftypes.RawUnified, hashSecrets, returnOnlyWhitelis
 	}
 
 	if returnOnlyWhitelisted {
+		// Another way to achieve this would be to use the `reflect` package to iterate through a slice
+		// of white listed fields in the `schema.SiteConfiguration` struct and populate the new instance of
+		// schema.SiteConfiguration with the fields contained in the slice, however I feel using `reflect` is
+		// an overkill
 		r, err := json.Marshal(schema.SiteConfiguration{
+			// 🚨 SECURITY: Only populate this struct with fields that are safe to display to non site-admins.
 			BatchChangesRolloutWindows: cfg.BatchChangesRolloutWindows,
 		})
 		if err != nil {
