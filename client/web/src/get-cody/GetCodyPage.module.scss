@@ -399,7 +399,6 @@
 .join-waitlist-button-wrapper {
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
     @media (--md-breakpoint-down) {
         flex-direction: column;
         gap: 1rem;
@@ -411,6 +410,7 @@
         border: 1px dashed rgba(255, 255, 255, 0.15);
         border-radius: 0.5rem;
         padding: 1rem 1.5rem;
+        margin-right:2rem;
         width: fit-content;
         align-items: center;
 
@@ -569,3 +569,12 @@
         animation: fadeIn 1s ease-in-out;
     }
 }
+
+.download-btn-wrapper {
+    display:flex;
+}
+
+.download-btn {
+    margin-right:2rem;
+}
+

@@ -22,7 +22,7 @@ import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
 
 import { DownloadAppButton } from './DownloadAppButton'
-import { BackgroundImage, Light, IntellijIcon, EmacsIcon, NeovimIcon, DashedLine } from './GetCodyPageIcon'
+import { BackgroundImage, IntellijIcon, EmacsIcon, NeovimIcon } from './GetCodyPageIcon'
 
 import styles from './GetCodyPage.module.scss'
 
@@ -50,66 +50,9 @@ const logEvent = (eventName: string, type?: string, source?: string): void =>
     eventLogger.log(eventName, { type, source })
 
 export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authenticatedUser, context }) => {
-    const lightLineRef = useRef<HTMLDivElement>(null)
-    const bulbRef = useRef<HTMLDivElement>(null)
-
-    const scrollContainer = document.querySelector('main')
-
     useEffect(() => {
         logEvent(EventName.VIEW_GET_CODY)
     }, [])
-
-    useEffect(() => {
-        if (!scrollContainer || !lightLineRef.current) {
-            return
-        }
-
-        const handleScroll = (): void => {
-            if (!lightLineRef.current) {
-                return
-            }
-
-            const getCodySteps = document.querySelectorAll('.get-cody-step')
-            const offsetHeight = 243 // Initial height of line
-            const lineMaxAnimationOffsetHeight = 1972
-            const bulbMaxAnimationOffsetHeight = 1999
-            const bulbMinAnimationOffsetHeight = 1.875
-            const currentScrollOffset = scrollContainer.scrollTop
-
-            if (currentScrollOffset < lineMaxAnimationOffsetHeight) {
-                lightLineRef.current.style.height = `${currentScrollOffset + offsetHeight}px`
-
-                if (bulbRef.current) {
-                    bulbRef.current.style.marginTop = `${bulbMinAnimationOffsetHeight}rem`
-                    bulbRef.current.style.position = 'fixed'
-                }
-            } else if (bulbRef.current) {
-                lightLineRef.current.style.height = `${lineMaxAnimationOffsetHeight + offsetHeight}px`
-                bulbRef.current.style.position = 'absolute'
-                bulbRef.current.style.marginTop = `${bulbMaxAnimationOffsetHeight}px`
-            }
-
-            // Updates card background color, when item is in view and match position of bulb element.
-            const { bottom } = lightLineRef.current.getBoundingClientRect()
-
-            for (const getCodyStep of getCodySteps) {
-                const getCodyStepBounds = getCodyStep.getBoundingClientRect()
-
-                // Animation is with the range of a card
-                if (getCodyStepBounds.top <= bottom && getCodyStepBounds.bottom >= bottom) {
-                    getCodyStep.classList.add(styles.focusBackground)
-                } else {
-                    getCodyStep.classList.remove(styles.focusBackground)
-                }
-            }
-        }
-
-        scrollContainer.addEventListener('scroll', handleScroll)
-
-        return () => {
-            scrollContainer.removeEventListener('scroll', handleScroll)
-        }
-    }, [scrollContainer])
 
     return (
         <div className={styles.pageWrapper}>
@@ -136,14 +79,6 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                 </div>
 
                 <div className={styles.cardWrapper}>
-                    <div className={styles.dashedLine}>
-                        <DashedLine />
-                    </div>
-                    <div ref={lightLineRef} className={styles.lightLine} />
-                    <div ref={bulbRef} className={styles.lightWrapper}>
-                        <Light className={styles.light} />
-                    </div>
-
                     {/* connect to cody section */}
                     {authenticatedUser && (
                         <div className={classNames(styles.card, 'get-cody-step', styles.focusBackground)}>
@@ -299,34 +234,50 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             If you’ve downloaded the app, it will prompt you to sign in to your Sourcegraph.com account,
                             connect your repositories, and connect your IDE extensions.
                         </Text>
-                        <Link
-                            to="vscode:extension/sourcegraph.cody-ai"
-                            className={classNames('text-decoration-none', styles.downloadForVscode)}
-                            onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'VS Code')}
-                        >
-                            <Icon
-                                className={styles.vscodeIcon}
-                                svgPath={mdiMicrosoftVisualStudioCode}
-                                inline={false}
-                                aria-hidden={true}
-                            />{' '}
-                            <span className={styles.downloadForVscodeText}>Install Cody for VS Code</span>
-                        </Link>
-                        <Link
-                            to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai#:~:text=Cody%20for%20VS%20Code%20is,not%20just%20your%20open%20files"
-                            className={classNames('text-decoration-none', styles.vscodeMarketplace)}
-                        >
-                            Or download on the VS Code Marketplace
-                            <Icon className="ml-2" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />
-                        </Link>
+                        <div className={classNames(styles.downloadBtnWrapper)}>
+                            <div className={classNames(styles.downloadBtn)}>
+                                <Link
+                                    to="vscode:extension/sourcegraph.cody-ai"
+                                    className={classNames('text-decoration-none', styles.downloadForVscode)}
+                                    onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'VS Code')}
+                                >
+                                    <Icon
+                                        className={styles.vscodeIcon}
+                                        svgPath={mdiMicrosoftVisualStudioCode}
+                                        inline={false}
+                                        aria-hidden={true}
+                                    />{' '}
+                                    <span className={styles.downloadForVscodeText}>Install Cody for VS Code</span>
+                                </Link>
+                                <Link
+                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai#:~:text=Cody%20for%20VS%20Code%20is,not%20just%20your%20open%20files"
+                                    className={classNames('text-decoration-none', styles.vscodeMarketplace)}
+                                >
+                                    Or download on the VS Code Marketplace
+                                    <Icon
+                                        className="ml-2"
+                                        svgPath={mdiChevronRight}
+                                        inline={false}
+                                        aria-hidden={true}
+                                    />
+                                </Link>
+                            </div>
+                            <div className={classNames(styles.downloadBtn)}>
+                                <Link
+                                    to="https://plugins.jetbrains.com/plugin/9682-sourcegraph"
+                                    className={classNames('text-decoration-none', styles.downloadForVscode)}
+                                    onClick={() => logEvent(EventName.DOWNLOAD_IDE, 'IntelliJ')}
+                                >
+                                    <span className={styles.vscodeIcon}>
+                                        <IntellijIcon className={styles.joinWaitlistButtonIcon} />
+                                    </span>
+                                    <span className={styles.downloadForVscodeText}>Install Cody for Intellij</span>
+                                </Link>
+                            </div>
+                        </div>
                         <div className={styles.comingSoonWrapper}>
                             <Text className={styles.comingSoonWrapperText}>Coming soon:</Text>
                             <div className={styles.joinWaitlistButtonWrapper}>
-                                <WaitListButton
-                                    to="https://info.sourcegraph.com/waitlist"
-                                    icon={<IntellijIcon className={styles.joinWaitlistButtonIcon} />}
-                                    title="IntelliJ"
-                                />
                                 <WaitListButton
                                     to="https://info.sourcegraph.com/waitlist"
                                     icon={<NeovimIcon className={styles.joinWaitlistButtonIcon} />}
