@@ -86,13 +86,13 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 You’ll need a Sourcegraph account to connect to Cody
                             </H2>
                             <Text className={classNames(styles.cardDescription, 'mb-4')}>
-                                Log in or Sign up for a Sourcegraph.com account.
+                                Log in or sign up for a Sourcegraph.com account.
                             </Text>
                             <div className={styles.authButtonsWrap}>
                                 <div className={styles.externalAuthWrapper}>
                                     <ExternalsAuth
                                         context={context}
-                                        githubLabel="Github"
+                                        githubLabel="GitHub"
                                         gitlabLabel="Gitlab"
                                         withCenteredText={true}
                                         onClick={onClickCTAButton}
