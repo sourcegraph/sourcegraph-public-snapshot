@@ -165,13 +165,11 @@ const AbortMessageInProgress: React.FunctionComponent<AbortMessageInProgressProp
     </div>
 )
 
-const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => {
-    return (
-        <VSCodeButton type="button" onClick={() => onClick(action)}>
-            {label}
-        </VSCodeButton>
-    )
-}
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => (
+    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton}>
+        {label}
+    </VSCodeButton>
+)
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
