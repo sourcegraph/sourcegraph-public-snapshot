@@ -132,8 +132,14 @@
                 class="com.sourcegraph.cody.chat.ResetCurrentConversationAction">
         </action>
 
+        <action id="cody.refreshCodyAppDetection" icon="AllIcons.Actions.Refresh"
+                text="Refresh"
+                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection" internal="true">
+        </action>
+
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
+            <reference ref="cody.refreshCodyAppDetection"/>
         </group>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"

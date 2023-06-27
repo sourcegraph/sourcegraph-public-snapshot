@@ -1,31 +1,27 @@
 package com.sourcegraph.cody.chat;
 
-import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
-
 import com.intellij.ide.highlighter.HighlighterFactory;
 import com.intellij.lang.Language;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.EditorSettings;
 import com.intellij.openapi.editor.colors.EditorColorsManager;
-import com.intellij.openapi.editor.colors.EditorColorsScheme;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.highlighter.EditorHighlighter;
 import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
-import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.ui.ColorUtil;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.api.Speaker;
+import com.sourcegraph.cody.ui.HtmlViewer;
 import java.awt.*;
 import java.util.List;
 import java.util.Optional;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.text.html.HTMLEditorKit;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
 import org.commonmark.node.Image;
@@ -48,30 +44,12 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
     this.messagePanel = messagePanel;
     this.speaker = speaker;
     this.gradientWidth = gradientWidth;
-    textPane = createNewEmptyTextPane();
+    createNewEmptyTextPane();
   }
 
-  @NotNull
-  private JEditorPane createNewEmptyTextPane() {
-    JEditorPane jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null);
-    jEditorPane.setEditorKit(new UIUtil.JBWordWrapHtmlEditorKit());
-    HTMLEditorKit htmlEditorKit = (HTMLEditorKit) jEditorPane.getEditorKit();
-    EditorColorsScheme schemeForCurrentUITheme =
-        EditorColorsManager.getInstance().getSchemeForCurrentUITheme();
-    String editorFontName = schemeForCurrentUITheme.getEditorFontName();
-    int editorFontSize = schemeForCurrentUITheme.getEditorFontSize();
-    String fontFamilyAndSize =
-        "font-family:'" + editorFontName + "'; font-size:" + editorFontSize + "pt;";
-    String backgroundColor =
-        "background-color: #" + ColorUtil.toHex(getInlineCodeBackgroundColor()) + ";";
-    htmlEditorKit.getStyleSheet().addRule("code { " + backgroundColor + fontFamilyAndSize + "}");
-    jEditorPane.setFocusable(true);
-    jEditorPane.setMargin(
-        JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN)));
-    jEditorPane.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);
-    textPane = jEditorPane;
+  private void createNewEmptyTextPane() {
+    textPane = HtmlViewer.createHtmlViewer(getInlineCodeBackgroundColor());
     messagePanel.add(textPane, textPaneIndex++);
-    return jEditorPane;
   }
 
   @NotNull
@@ -145,7 +123,7 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
     editorPanel.setOpaque(false);
     messagePanel.add(editorPanel, BorderLayout.CENTER, textPaneIndex++);
     htmlContent = new StringBuilder();
-    textPane = createNewEmptyTextPane();
+    createNewEmptyTextPane();
   }
 
   @Override
