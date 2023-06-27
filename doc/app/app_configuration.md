@@ -18,7 +18,7 @@ You must create your own key with Anthropic [here](https://console.anthropic.com
   },
   "embeddings": {
     "enabled": true,
-    "provider": "anthropic",
+    "provider": "openai",
     "accessToken": "<key>",
     "endpoint": "https://api.anthropic.com/v1/embeddings" // or "https://api.openai.com/v1/embeddings"
   },
