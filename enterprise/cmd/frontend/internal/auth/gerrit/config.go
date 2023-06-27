@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -35,19 +36,20 @@ type Provider struct {
 }
 
 func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.Problems) {
-	seen := make(map[string]struct{})
+	existingProviders := make(collections.Set[string])
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gerrit == nil {
 			continue
 		}
 
 		provider := parseProvider(pr.Gerrit)
-		if _, ok := seen[provider.ServiceID]; !ok {
-			ps = append(ps, provider)
-			seen[provider.ServiceID] = struct{}{}
-		} else {
+		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
 			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider with url %q", provider.ServiceID)))
+			continue
 		}
+
+		ps = append(ps, provider)
+		existingProviders.Add(provider.CachedInfo().UniqueID())
 	}
 
 	return ps, problems

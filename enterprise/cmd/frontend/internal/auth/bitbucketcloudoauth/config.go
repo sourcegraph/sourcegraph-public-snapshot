@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -49,7 +50,8 @@ type Provider struct {
 }
 
 func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
-	configured := map[string]struct{}{}
+	existingProviders := make(collections.Set[string])
+
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Bitbucketcloud == nil {
 			continue
@@ -61,7 +63,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			continue
 		}
 
-		if _, ok := configured[provider.ServiceID+":"+provider.CachedInfo().ClientID]; ok {
+		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
 			problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q and client ID %q, only the first one will be used`, provider.ServiceID, provider.CachedInfo().ClientID))...)
 			continue
 		}
@@ -70,7 +72,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			BitbucketCloudAuthProvider: pr.Bitbucketcloud,
 			Provider:                   provider,
 		})
-		configured[provider.ServiceID+":"+provider.CachedInfo().ClientID] = struct{}{}
+		existingProviders.Add(provider.CachedInfo().UniqueID())
 	}
 	return ps, problems
 }

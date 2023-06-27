@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -69,7 +70,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		return ps, problems
 	}
 
-	var configuredIDs []string
+	existingProviders := make(collections.Set[string])
 
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.AzureDevOps == nil {
@@ -85,13 +86,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			continue
 		}
 
-		var configured bool
-		for _, clientID := range configuredIDs {
-			if clientID == pr.AzureDevOps.ClientID {
-				configured = true
-			}
-		}
-		if configured {
+		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
 			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider for Azure Dev Ops with Client ID %q, only the first one will be used", pr.AzureDevOps.ClientID)))
 			continue
 		}
@@ -101,7 +96,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			Provider:                provider,
 		})
 
-		configuredIDs = append(configuredIDs, pr.AzureDevOps.ClientID)
+		existingProviders.Add(provider.CachedInfo().UniqueID())
 	}
 
 	return ps, problems
