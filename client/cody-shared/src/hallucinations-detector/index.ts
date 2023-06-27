@@ -120,12 +120,14 @@ export function findFilePaths(line: string): { fullMatch: string; pathMatch: str
 }
 
 const filePathCharacters = '[\\@\\*\\w\\/\\._-]'
+// The root path can not include a `/`
+const fileRootPathCharacters = '[\\@\\*\\w\\._-]'
 
 const filePathRegexpParts = [
     // File path can start with a `, ", ', or a whitespace
     '[`"\'\\s]?',
     // Capture a file path-like sequence.
-    `(\\/?${filePathCharacters}+\\/${filePathCharacters}+)`,
+    `(\\/?${fileRootPathCharacters}+\\/${filePathCharacters}+)`,
     //  File path can end with a `, ", ', ., or a whitespace.
     '[`"\'\\s\\.]?',
 ]

@@ -79,7 +79,10 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
 - [Cody App (experimental)](app/index.md)
-- [Own (experimental)](own/index.md)
+- [Own (beta)](own/index.md)
+  - [The CODEOWNERS format](own/codeowners_format.md)
+  - [CODEOWNERS ingestion](own/codeowners_ingestion.md)
+  - [Assigned ownership](own/assigned_ownership.md)
 - <br/>
 - [★ Search query syntax](code_search/reference/queries.md)
 - [★ Sourcegraph API](api/index.md)

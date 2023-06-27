@@ -234,6 +234,9 @@ importers:
       delay:
         specifier: ^4.4.1
         version: 4.4.1
+      detect-indent:
+        specifier: ^6.1.0
+        version: 6.1.0
       dompurify:
         specifier: ^3.0.1
         version: 3.0.1

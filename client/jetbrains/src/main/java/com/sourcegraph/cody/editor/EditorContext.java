@@ -1,8 +1,5 @@
 package com.sourcegraph.cody.editor;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class EditorContext {
@@ -53,11 +50,5 @@ public class EditorContext {
 
   public @Nullable String getFollowingText() {
     return followingText;
-  }
-
-  public @NotNull ArrayList<String> getCurrentFileContentAsArrayList() {
-    return currentFileContent != null
-        ? new ArrayList<>(Collections.singletonList(this.getCurrentFileContent()))
-        : new ArrayList<>();
   }
 }

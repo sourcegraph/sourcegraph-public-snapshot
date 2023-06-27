@@ -21,7 +21,22 @@ const EMAIL_VERIFICATION_QUERY = gql`
 `
 
 export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => {
+    const { onNextStep } = useContext(SetupStepsContext)
     const { emailCheck } = useQueryParameters(['emailCheck'])
+    const { loading } = useQuery(EMAIL_VERIFICATION_QUERY, {
+        skip: !emailCheck,
+        fetchPolicy: 'network-only',
+        onCompleted: data => {
+            const isEmailVerified = data?.user.hasVerifiedEmail
+
+            // In case if email has already verified we should
+            // skip the email verification state of the current step
+            // and navigate to the next step automatically
+            if (isEmailVerified) {
+                onNextStep()
+            }
+        },
+    })
 
     return (
         <div className={classNames(styles.root, className)}>
@@ -38,11 +53,18 @@ export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => {
                 />
             </div>
 
-            {emailCheck && <EmailCheckVerificationForm />}
-            {!emailCheck && <ConnectToSourcegraphComForm />}
+            {loading && <SigningInState />}
+            {!loading && emailCheck && <EmailCheckVerificationForm />}
+            {!loading && !emailCheck && <ConnectToSourcegraphComForm />}
         </div>
     )
 }
+
+const SigningInState: FC = () => (
+    <div className={styles.loading}>
+        <Text className={styles.loadingText}>Signing in…</Text> <LoadingSpinner className={styles.loadingIcon} />
+    </div>
+)
 
 const EmailCheckVerificationForm: FC = () => {
     const { onNextStep } = useContext(SetupStepsContext)
@@ -63,10 +85,10 @@ const EmailCheckVerificationForm: FC = () => {
                 onClick={onNextStep}
             >
                 {hasEmailBeenVerified ? (
-                    <>Email has verified, go to the next step →</>
+                    <>Email verified, go to the next step →</>
                 ) : (
                     <>
-                        <LoadingSpinner /> Waiting for email to be verified
+                        <LoadingSpinner /> Waiting for email verification
                     </>
                 )}
             </Button>

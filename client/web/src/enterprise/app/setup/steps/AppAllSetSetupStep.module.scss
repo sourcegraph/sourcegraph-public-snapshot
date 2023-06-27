@@ -4,10 +4,12 @@
     padding-top: 4.5rem;
     width: 100%;
     overflow: hidden;
+    flex-shrink: 0;
+    flex-grow: 1;
 }
 
 .description {
-    padding: 0 3.5rem;
+    padding: 0 3rem;
     display: flex;
     flex-direction: column;
     margin-bottom: 2rem;
@@ -32,10 +34,30 @@
     &-button {
         flex-basis: 50%;
         align-self: flex-start;
+
+        &[aria-disabled='true'] {
+            filter: brightness(0.75);
+
+            --btn-light-color-variant: var(--primary-3);
+        }
     }
+}
+
+.image-wrapper {
+    flex-grow: 1;
+    position: relative;
+    margin: auto -3.5rem 0;
+    max-width: calc(100% + 7rem);
 }
 
 .image {
     max-width: 100%;
-    margin: auto 0 0;
+    position: absolute;
+    bottom: 0;
+}
+
+.footer {
+    position: absolute;
+    width: 100%;
+    bottom: 0;
 }

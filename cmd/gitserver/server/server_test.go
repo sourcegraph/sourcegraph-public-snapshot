@@ -412,8 +412,8 @@ func TestServer_handleP4Exec(t *testing.T) {
 			}
 
 			_, err = readAll(stream)
-			if status.Code(err) != codes.Canceled {
-				t.Fatalf("expected codes.Cancelled error, got %v", err)
+			if !(errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled) {
+				t.Fatalf("expected context cancelation error, got %v", err)
 			}
 		})
 

@@ -121,6 +121,9 @@ const (
 	ChangesetEventKindGerritChangeReviewed                ChangesetEventKind = "gerrit:change:reviewed"
 	ChangesetEventKindGerritChangeNeedsChanges            ChangesetEventKind = "gerrit:change:needs_changes"
 	ChangesetEventKindGerritChangeRejected                ChangesetEventKind = "gerrit:change:rejected"
+	ChangesetEventKindGerritChangeBuildSucceeded          ChangesetEventKind = "gerrit:change:build_succeeded"
+	ChangesetEventKindGerritChangeBuildFailed             ChangesetEventKind = "gerrit:change:build_failed"
+	ChangesetEventKindGerritChangeBuildPending            ChangesetEventKind = "gerrit:change:build_pending"
 
 	ChangesetEventKindInvalid ChangesetEventKind = "invalid"
 )

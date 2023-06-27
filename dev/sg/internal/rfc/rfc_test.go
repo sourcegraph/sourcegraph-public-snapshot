@@ -155,6 +155,10 @@ func (th *mockConfig) Exchange(ctx context.Context, code string,
 	return th.token, nil
 }
 
+func (th *mockConfig) OpenURL(string) error {
+	return nil
+}
+
 func TestGetTokenFromWeb(t *testing.T) {
 	sendCode := make(chan string, 1)
 	sendError := make(chan error, 1)

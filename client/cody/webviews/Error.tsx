@@ -37,13 +37,14 @@ export const ErrorContainer: React.FunctionComponent<{
     if (isApp.isInstalled && !isApp.isRunning) {
         return null
     }
+    // new users will not have an endpoint
     if (!endpoint) {
-        return <p className={styles.error}>{AUTH_ERRORS.INVALID_URL}</p>
+        return null
     }
     const isInsiderBuild = siteVersion.length > 12 || siteVersion.includes('dev')
     const isVersionCompatible = isInsiderBuild || siteVersion >= '5.1.0'
     const isVersionBeforeCody = !isVersionCompatible && siteVersion < '5.0.0'
-    const prefix = `Failed: ${isApp ? 'Cody App' : endpoint}`
+    const prefix = `Failed: ${isApp.isRunning ? 'Cody App' : endpoint}`
     // When doesn't have a valid token
     if (showInvalidAccessTokenError) {
         return (

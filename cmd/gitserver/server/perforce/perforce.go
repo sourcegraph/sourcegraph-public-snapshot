@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -71,7 +72,7 @@ func NewService(ctx context.Context, obctx *observation.Context, logger log.Logg
 // experimental config for PerforceChangelistMapping is enabled and if the repo belongs to a code
 // host of type PERFORCE.
 func (s *Service) EnqueueChangelistMappingJob(job *changelistMappingJob) {
-	if conf.Get().ExperimentalFeatures.PerforceChangelistMapping != "enabled" {
+	if c := conf.Get(); c.ExperimentalFeatures == nil || c.ExperimentalFeatures.PerforceChangelistMapping != "enabled" {
 		return
 	}
 

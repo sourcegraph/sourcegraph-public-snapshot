@@ -60,7 +60,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
-        autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, isTesting),
+        autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         experimentalInline: config.get(CONFIG_KEY.experimentalInline, isTesting),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
@@ -140,7 +140,7 @@ export async function migrateConfiguration(): Promise<void> {
     )
 
     if (didMigrate) {
-        logEvent('ConfigMigrator:migrated')
+        logEvent('CodyVSCodeExtension:configMigrator:migrated')
     }
 }
 

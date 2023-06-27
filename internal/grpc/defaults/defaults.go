@@ -12,6 +12,7 @@ import (
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -59,6 +60,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 			otelgrpc.StreamClientInterceptor(),
 			internalerrs.PrometheusStreamClientInterceptor,
 			internalerrs.LoggingStreamClientInterceptor(logger),
+			contextconv.StreamClientInterceptor,
 		),
 		grpc.WithChainUnaryInterceptor(
 			grpc_prometheus.UnaryClientInterceptor(metrics),
@@ -68,6 +70,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 			otelgrpc.UnaryClientInterceptor(),
 			internalerrs.PrometheusUnaryClientInterceptor,
 			internalerrs.LoggingUnaryClientInterceptor(logger),
+			contextconv.UnaryClientInterceptor,
 		),
 	}
 
@@ -111,6 +114,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
 			propagator.StreamServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.StreamServerInterceptor(),
+			contextconv.StreamServerInterceptor,
 		),
 		grpc.ChainUnaryInterceptor(
 			internalgrpc.NewUnaryPanicCatcher(logger),
@@ -120,6 +124,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
 			propagator.UnaryServerPropagator(policy.ShouldTracePropagator{}),
 			otelgrpc.UnaryServerInterceptor(),
+			contextconv.UnaryServerInterceptor,
 		),
 	}
 
