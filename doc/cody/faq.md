@@ -37,7 +37,6 @@ Yes. Sourcegraph is needed both to retrieve context and as a proxy for the LLM p
 
 Embeddings are one of the many ways Sourcegraph uses to retrieve relevant code to feed the large language model as context. Embeddings / vector search are complementary to other strategies. While it matches really well semantically ("what is this code about, what does it do?"), it drops syntax and other important precise matching info. Sourcegraph's overall approach is to blend results from multiple sources to provide the best answer possible.
 
-
 #### When using embeddings, are permissions enforced? Does Cody get fed code that the users doesn't have access to?
 
 Permissions are enforced when using embeddings. Today, Sourcegraph only uses embeddings search on a single repo, first checking that the users has access.
@@ -47,6 +46,18 @@ In the future, here are the steps that Sourcegraph will follow:
 - determine which repo you have access to
 - query embeddings for each of those repo
 - pick the best results and send it back
+
+### I scheduled a one-off embeddings job but it is not showing up in the list of jobs. What happened?
+
+There can be several reasons why a job is not showing up in the list of jobs:
+
+- The repository is already queued or being processed
+- A job for the same repository and the same revision already completed successfully
+- Another job for the same repository has been queued for processing within the [embeddings.MinimumInterval](./explanations/code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window
+
+### How do I stop a running embeddings job?
+
+Jobs in state _QUEUED_ or _PROCESSING_ can be canceled by admins from the **Cody > Embeddings Jobs** page. To cancel a job, click on the _Cancel_ button of the job you want to cancel. The job will be marked for cancellation. Note that, depending on the state of the job, it might take a few seconds or minutes for the job to actually be canceled.
 
 ### Third party dependencies
 
