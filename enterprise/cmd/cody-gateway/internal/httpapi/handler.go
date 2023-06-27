@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
@@ -51,6 +52,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						),
 					),
 				),
+				otelhttp.WithPublicEndpoint(),
 			),
 		)
 	}
@@ -71,6 +73,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						),
 					),
 				),
+				otelhttp.WithPublicEndpoint(),
 			),
 		)
 
@@ -82,6 +85,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						embeddings.NewListHandler(),
 					),
 				),
+				otelhttp.WithPublicEndpoint(),
 			),
 		)
 
@@ -102,6 +106,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						),
 					),
 				),
+				otelhttp.WithPublicEndpoint(),
 			),
 		)
 	}
