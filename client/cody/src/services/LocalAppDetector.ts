@@ -30,7 +30,6 @@ export class LocalAppDetector implements vscode.Disposable {
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
         // Only Mac is supported for now
         this.isSupported = this.localEnv.os === 'darwin' && this.localEnv.homeDir !== undefined
-        void this.init()
     }
 
     public async getProcessInfo(isLoggedIn = false): Promise<LocalEnv> {
@@ -41,7 +40,7 @@ export class LocalAppDetector implements vscode.Disposable {
         return this.localEnv
     }
 
-    private async init(): Promise<void> {
+    public async init(): Promise<void> {
         this.dispose()
         debug('LocalAppDetector:init:', 'initializing')
         const homeDir = this.localEnv.homeDir

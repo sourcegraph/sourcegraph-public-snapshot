@@ -60,7 +60,13 @@ export class VSCodeSecretStorage implements SecretStorage {
     }
 
     public onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable {
-        return this.secretStorage.onDidChange(event => callback(event.key))
+        return this.secretStorage.onDidChange(event => {
+            // Run callback on token changes for current endpoint only
+            if (event.key === CODY_ACCESS_TOKEN_SECRET) {
+                return callback(event.key)
+            }
+            return
+        })
     }
 }
 
