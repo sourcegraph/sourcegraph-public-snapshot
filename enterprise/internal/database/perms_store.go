@@ -1602,18 +1602,16 @@ func (s *permsStore) getCutoffClause(age time.Duration) *sqlf.Query {
 		return sqlf.Sprintf("TRUE")
 	}
 	cutoff := s.clock().Add(-1 * age)
-	return sqlf.Sprintf("finished_at < %s", cutoff)
+	return sqlf.Sprintf("finished_at < %s OR finished_at IS NULL", cutoff)
 }
 
 const usersWithOldestPermsQuery = `
-WITH user_sync_jobs AS (
-	SELECT DISTINCT ON(user_id) user_id, finished_at FROM permission_sync_jobs
-	INNER JOIN users ON users.id = user_id AND users.deleted_at IS NULL
-		WHERE user_id IS NOT NULL
-	ORDER BY user_id ASC, finished_at DESC
-)
-SELECT user_id, finished_at FROM user_sync_jobs
-WHERE %s
+SELECT u.id as user_id, MAX(p.finished_at) as finished_at
+FROM users u
+LEFT JOIN permission_sync_jobs p ON u.id = p.user_id AND p.user_id IS NOT NULL
+WHERE u.deleted_at IS NULL AND (%s)
+GROUP BY u.id
+ORDER BY finished_at ASC NULLS FIRST, user_id ASC
 LIMIT %d;
 `
 
@@ -1626,14 +1624,12 @@ func (s *permsStore) UserIDsWithOldestPerms(ctx context.Context, limit int, age 
 }
 
 const reposWithOldestPermsQuery = `
-WITH repo_sync_jobs AS (
-	SELECT DISTINCT ON(repository_id) repository_id, finished_at FROM permission_sync_jobs
-	INNER JOIN repo ON repo.id = repository_id AND repo.deleted_at IS NULL
-		WHERE repository_id IS NOT NULL
-	ORDER BY repository_id ASC, finished_at DESC
-)
-SELECT repository_id, finished_at FROM repo_sync_jobs
-WHERE %s
+SELECT r.id as repo_id, MAX(p.finished_at) as finished_at
+FROM repo r
+LEFT JOIN permission_sync_jobs p ON r.id = p.repository_id AND p.repository_id IS NOT NULL
+WHERE r.private AND r.deleted_at IS NULL AND (%s)
+GROUP BY r.id
+ORDER BY finished_at ASC NULLS FIRST, repo_id ASC
 LIMIT %d;
 `
 
