@@ -59,7 +59,7 @@ export const ChatInputContext: React.FunctionComponent<{
     return (
         <div className={classNames(styles.container, className)}>
             <AppCodebaseState
-                codebase={contextStatus.codebase || 'Codebase Missing'}
+                codebase={contextStatus.codebase || 'Invalid Codebase'}
                 state={contextStatus.mode && contextStatus.connection ? 'COMPLETED' : 'ERRORED'}
             />
             {items.length > 0 && (
@@ -99,7 +99,7 @@ const AppCodebaseState: React.FunctionComponent<{
     state: string
 }> = ({ codebase, state }) => {
     const embeddedState =
-        codebase === 'Codebase Missing'
+        codebase === 'Invalid Codebase'
             ? ItemsByState.MISSING
             : state === 'COMPLETED'
             ? ItemsByState.COMPLETED

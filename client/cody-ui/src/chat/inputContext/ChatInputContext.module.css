@@ -1,11 +1,50 @@
 .container {
     font-size: 90%;
     display: flex;
-    flex-direction: column;
-    align-content: flex-start;
-    /* align-items: flex-end; */
     gap: 0.25rem;
     user-select: none;
+}
+
+.context-progress {
+    display: flex;
+    gap: 0.25rem;
+    flex-direction: column;
+}
+
+.context-section {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.progress-bar {
+    border-radius: 5rem;
+    background-color: var(--vscode-input-background, inherit);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    height: 0.3rem;
+    position: relative;
+}
+
+.progress-bar-inner {
+    border-radius: 5rem;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: linear-gradient(to right, #b200f8, #ff5543, #00cbec);
+}
+
+.progress-info {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: smaller;
 }
 
 .badge {
