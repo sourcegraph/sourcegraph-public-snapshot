@@ -220,6 +220,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendChatHistory()
                 await this.loadRecentChat()
                 await this.publishContextStatus()
+                await this.syncAuthStatus()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)

@@ -44,13 +44,15 @@ export class AuthProvider {
     // Sign into the last endpoint the user was signed into
     // if none, try signing in with App URL
     public async init(): Promise<void> {
-        const lastEndpoint = this.localStorage?.getEndpoint() || ''
-        this.authStatus.endpoint = lastEndpoint
-        debug('AuthProvider:init:lastEndpoint', lastEndpoint)
-        const tokenKey = isLocalApp(lastEndpoint) ? 'SOURCEGRAPH_CODY_APP' : lastEndpoint
-        const token = await this.secretStorage.get(tokenKey)
-        await this.auth(lastEndpoint, token || null)
-        await this.appDetector?.init()
+        const lastEndpoint = this.localStorage?.getEndpoint()
+        if (lastEndpoint) {
+            this.authStatus.endpoint = lastEndpoint
+            debug('AuthProvider:init:lastEndpoint', lastEndpoint)
+            const tokenKey = isLocalApp(lastEndpoint) ? 'SOURCEGRAPH_CODY_APP' : lastEndpoint
+            const token = await this.secretStorage.get(tokenKey)
+            await this.auth(lastEndpoint, token || null)
+        }
+        await this.appDetector.init()
     }
 
     // Display quickpick to select endpoint to sign in to
