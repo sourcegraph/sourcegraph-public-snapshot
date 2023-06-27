@@ -289,7 +289,7 @@ export class SourcegraphGraphQLAPIClient {
         publicArgument?: string | {}
     }): Promise<void | Error> {
         if (process.env.CODY_TESTING === 'true') {
-            console.log(`not logging ${event.event} in test mode`, this.config.serverEndpoint)
+            console.log(`not logging ${event.event} in test mode`)
             return
         }
         try {
