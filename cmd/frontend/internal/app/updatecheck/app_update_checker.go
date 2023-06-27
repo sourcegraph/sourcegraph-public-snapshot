@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"cloud.google.com/go/storage"
@@ -76,6 +77,14 @@ type UpdateManifestResolver interface {
 	Resolve(ctx context.Context) (*AppUpdateManifest, error)
 }
 
+type CachedManifestResolver struct {
+	logger   log.Logger
+	resolver UpdateManifestResolver
+	manifest *atomic.Value
+	duration time.Duration
+	done     chan bool
+}
+
 type GCSManifestResolver struct {
 	client       *storage.Client
 	bucket       string
@@ -92,6 +101,57 @@ func (v *AppVersion) Platform() string {
 	// x86_64-linux
 	// aarch64-darwin
 	return fmt.Sprintf("%s-%s", v.Arch, v.Target)
+}
+
+func NewCachedResolver(logger log.Logger, resolver UpdateManifestResolver, duration time.Duration) (UpdateManifestResolver, error) {
+	value, err := resolver.Resolve(context.Background())
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to fetch initial manifest for Cached Manifest Resolver")
+	}
+
+	var manifest atomic.Value
+	manifest.Store(value)
+
+	cache := &CachedManifestResolver{
+		logger:   logger,
+		resolver: resolver,
+		manifest: &manifest,
+		duration: duration,
+	}
+
+	cache.done = cache.startUpdater()
+
+	return cache, nil
+}
+
+func (c *CachedManifestResolver) startUpdater() chan bool {
+	done := make(chan bool)
+	ticker := time.NewTicker(c.duration)
+	logger := c.logger.Scoped("CachedManifestResolver", "caches the manifest and periodically fetches new manifests")
+	go func() {
+	Task:
+		for {
+			select {
+			case <-done:
+				break Task
+			case <-ticker.C:
+				v, err := c.resolver.Resolve(context.Background())
+				if err != nil {
+					logger.Error("failed to resolve update manifest", log.Error(err))
+					break
+				}
+				c.manifest.Swap(v)
+			}
+		}
+
+		ticker.Stop()
+	}()
+
+	return done
+}
+
+func (c *CachedManifestResolver) Resolve(ctx context.Context) (*AppUpdateManifest, error) {
+	return c.manifest.Load().(*AppUpdateManifest), nil
 }
 
 func NewGCSManifestResolver(ctx context.Context, bucket, manifestName string) (UpdateManifestResolver, error) {

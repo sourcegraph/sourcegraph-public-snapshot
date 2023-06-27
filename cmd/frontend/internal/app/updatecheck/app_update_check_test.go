@@ -252,6 +252,80 @@ func TestGCSResolver(t *testing.T) {
 
 }
 
+func TestCachedManifestResolver(t *testing.T) {
+	resolver := &MockResolver{
+		manifest: []*AppUpdateManifest{
+			{
+				Version: "3013.5.8", // set the year part of the version FAR ahead so that there is always a version to update to
+				Notes:   "This is a test",
+				PubDate: time.Date(2023, time.May, 1, 12, 0, 0, 0, &time.Location{}),
+				Platforms: map[string]AppLocation{
+					"x86_64-unknown-linux-gnu": {
+						Signature: "Yippy Kay YAY",
+						URL:       "https://example.com",
+					},
+				},
+			},
+			{
+				Version: "3023.5.8", // set the year part of the version FAR ahead so that there is always a version to update to
+				Notes:   "This is a test",
+				PubDate: time.Date(2023, time.May, 8, 12, 0, 0, 0, &time.Location{}),
+				Platforms: map[string]AppLocation{
+					"x86_64-unknown-linux-gnu": {
+						Signature: "Yippy Kay YAY",
+						URL:       "https://example.com",
+					},
+				},
+			},
+		},
+	}
+
+	r, err := NewCachedResolver(logtest.NoOp(t), resolver, 50*time.Millisecond)
+	if err != nil {
+		t.Fatalf("failed to create cached resolver: %v", err)
+	}
+
+	cache := r.(*CachedManifestResolver)
+
+	initialManifest := cache.manifest.Load().(*AppUpdateManifest)
+	if initialManifest == nil {
+		t.Errorf("expected cache resolver to have a value stored for manifest got nil")
+	}
+
+	if resolver.count < 1 {
+		t.Errorf("expected cache to have resolved the manifest at least once")
+	}
+
+	time.Sleep(55 * time.Millisecond)
+
+	if resolver.count < 2 {
+		t.Errorf("expected cache to have fetched manifest at least twice")
+	}
+
+	m, err := cache.Resolve(context.Background())
+	if err != nil {
+		t.Errorf("failed to resolve manifest from cache resolver: %v", err)
+	}
+
+	if m.Version != resolver.manifest[resolver.count-1].Version {
+		t.Errorf("cache manifest mismatch - wanted %q got %q", initialManifest.Version, m.Version)
+	}
+
+}
+
+type MockResolver struct {
+	count    int
+	manifest []*AppUpdateManifest
+}
+
+func (m *MockResolver) Resolve(ctx context.Context) (*AppUpdateManifest, error) {
+	idx := m.count % len(m.manifest)
+
+	m.count++
+
+	return m.manifest[idx], nil
+}
+
 func clientVersionRequest(t *testing.T, target, arch, version string) (*http.Request, error) {
 	t.Helper()
 	var v = url.Values{}
