@@ -20,4 +20,4 @@
 
 ## Best practices
 
-- [Guide to defining policies](policies_best_practices.md) as it relates to resource usage
+- [Guide to defining policies](./policies_resource_usage_best_practices.md) as it relates to resource usage
