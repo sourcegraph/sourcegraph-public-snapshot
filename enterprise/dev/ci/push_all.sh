@@ -75,7 +75,7 @@ fi
 # ok: v5.1.0-rc.5
 # no: v5.1.0-beta.1
 # no: v5.1.0-rc5
-if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(?:\-rc\.[0-9]+)?$ ]]; then
+if [[ "$BUILDKITE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(\-rc\.[0-9]+)?$ ]]; then
   dev_tags+=("${BUILDKITE_TAG:1}")
   prod_tags+=("${BUILDKITE_TAG:1}")
   push_prod=true
