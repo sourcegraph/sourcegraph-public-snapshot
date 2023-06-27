@@ -50,7 +50,15 @@ export const getPageKindFromPathName = (owner: string, projectName: string, path
  * Gets repo URL from on GitLab.
  */
 export const getGitlabRepoURL = (): string => {
-    const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a')
+    /**
+     * Attempt to extract the project URL from the DOM.
+     * Supports both the older UI (still used for logged-out users)
+     * and the newer UI (shown for logged-in users).
+     */
+    const projectLink =
+        document.querySelector<HTMLAnchorElement>('.context-header a') ||
+        document.querySelector<HTMLAnchorElement>('.breadcrumbs li:last-of-type a')
+
     if (!projectLink) {
         throw new Error('Unable to determine project name')
     }
