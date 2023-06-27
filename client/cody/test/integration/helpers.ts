@@ -16,6 +16,10 @@ export async function beforeIntegrationTest(): Promise<void> {
     const api = vscode.extensions.getExtension<ExtensionApi>('sourcegraph.cody-ai')
     assert.ok(api, 'extension not found')
 
+    // Configure extension.
+    const config = vscode.workspace.getConfiguration()
+    await config.update('cody.serverEndpoint', mockServer.SERVER_URL)
+
     // TODO(sqs): ensure this doesn't run the activate func multiple times
     await api?.activate()
 
@@ -23,9 +27,6 @@ export async function beforeIntegrationTest(): Promise<void> {
     // TODO(sqs)
     await new Promise(resolve => setTimeout(resolve, 200))
 
-    // Configure extension.
-    const config = vscode.workspace.getConfiguration()
-    await config.update('cody.serverEndpoint', mockServer.SERVER_URL)
     await ensureExecuteCommand('cody.test.token', [mockServer.VALID_TOKEN])
 }
 
