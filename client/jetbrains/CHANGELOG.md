@@ -14,7 +14,7 @@
 
 ### Security
 
-## [3.0.0-alpha.8]
+## [3.0.0-alpha.9]
 
 ### Added
 
