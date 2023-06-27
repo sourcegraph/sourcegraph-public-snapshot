@@ -1,4 +1,5 @@
 {
+  "cody.serverEndpoint": "http://localhost:49300",
   "cody.codebase": "http://localhost:49300",
   "cody.debug.enable": true,
   "cody.debug.verbose": true,
