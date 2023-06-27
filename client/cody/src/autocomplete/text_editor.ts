@@ -1,8 +1,8 @@
 import vscode, { Uri } from 'vscode'
 
-import { LightTextDocument, TextEditor } from '@sourcegraph/cody-shared/src/autocomplete'
+import { LightTextDocument, CompletionsTextEditor } from '@sourcegraph/cody-shared/src/autocomplete'
 
-export const textEditor: TextEditor = {
+export const textEditor: CompletionsTextEditor = {
     getOpenDocuments(): LightTextDocument[] {
         return vscode.workspace.textDocuments.map(doc => ({
             uri: doc.uri.toString(),

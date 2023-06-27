@@ -32,7 +32,7 @@ export interface ClientInit {
     setTranscript: (transcript: Transcript) => void
     editor: Editor
     initialTranscript?: Transcript
-    createCompletionsClient?: (config: CompletionsClientConfig) => SourcegraphCompletionsClient
+    completionsClient?: SourcegraphCompletionsClient
 }
 
 export interface Client {
@@ -46,6 +46,7 @@ export interface Client {
             humanChatInput?: string
         }
     ) => Promise<void>
+    onConfigurationChange: (config: ClientInitConfig) => Promise<void>
     reset: () => void
     codebaseContext: CodebaseContext
 }
@@ -56,25 +57,29 @@ export async function createClient({
     setTranscript,
     editor,
     initialTranscript,
-    createCompletionsClient = config => new SourcegraphBrowserCompletionsClient(config),
+    // createCompletionsClient = config => new SourcegraphBrowserCompletionsClient(config),
+    completionsClient,
 }: ClientInit): Promise<Client> {
     const fullConfig = { debugEnable: false, ...config }
 
-    const completionsClient = createCompletionsClient(fullConfig)
+    if (!completionsClient) {
+        completionsClient = new SourcegraphBrowserCompletionsClient(fullConfig)
+    }
+
     const chatClient = new ChatClient(completionsClient)
 
     const graphqlClient = new SourcegraphGraphQLAPIClient(fullConfig)
 
-    const repoId = config.codebase ? await graphqlClient.getRepoIdIfEmbeddingExists(config.codebase) : null
+    let repoId = config.codebase ? await graphqlClient.getRepoIdIfEmbeddingExists(config.codebase) : null
     if (isError(repoId)) {
         throw new Error(
             `Cody could not access the '${config.codebase}' repository on your Sourcegraph instance. Details: ${repoId.message}`
         )
     }
 
-    const embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
+    let embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
 
-    const codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
+    let codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
 
     const intentDetector = new SourcegraphIntentDetectorClient(graphqlClient)
 
@@ -163,6 +168,21 @@ export async function createClient({
             return executeRecipe('chat-question', { humanChatInput: text })
         },
         executeRecipe,
+        async onConfigurationChange(config) {
+            completionsClient!.onConfigurationChange({ debugEnable: false, ...config })
+            graphqlClient.onConfigurationChange(config)
+
+            repoId = config.codebase ? await graphqlClient.getRepoIdIfEmbeddingExists(config.codebase) : null
+            if (isError(repoId)) {
+                throw new Error(
+                    `Cody could not access the '${config.codebase}' repository on your Sourcegraph instance. Details: ${repoId.message}`
+                )
+            }
+
+            embeddingsSearch = repoId ? new SourcegraphEmbeddingsSearchClient(graphqlClient, repoId, true) : null
+
+            codebaseContext = new CodebaseContext(config, config.codebase, embeddingsSearch, null, null)
+        },
         reset() {
             isMessageInProgress = false
             transcript.reset()

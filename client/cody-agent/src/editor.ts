@@ -1,3 +1,7 @@
+import { relative } from 'path'
+import url from 'url'
+
+import { CompletionsTextEditor, LightTextDocument } from '@sourcegraph/cody-shared/src/autocomplete'
 import {
     ActiveTextEditor,
     ActiveTextEditorSelection,
@@ -10,7 +14,7 @@ import { Agent } from './agent'
 import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
 
-export class AgentEditor implements Editor {
+export class AgentEditor implements Editor, CompletionsTextEditor {
     public controllers?: ActiveTextEditorViewControllers | undefined
 
     constructor(private agent: Agent) {}
@@ -95,5 +99,37 @@ export class AgentEditor implements Editor {
 
     public showInputBox(): Promise<string | undefined> {
         throw new Error('Not implemented')
+    }
+
+    // Completions
+    // TODO: Unify, use file paths all over
+
+    public getOpenDocuments(): LightTextDocument[] {
+        return [...this.agent.documents.values()].map(_ => ({
+            uri: url.pathToFileURL(_.filePath).toString(),
+            languageId: 'TODO',
+        }))
+    }
+
+    public getCurrentDocument(): LightTextDocument | null {
+        throw new Error('Method not implemented.')
+    }
+
+    public getDocumentTextTruncated(uri: string): Promise<string | null> {
+        throw new Error('Method not implemented.')
+    }
+
+    public getDocumentRelativePath(uri: string): Promise<string | null> {
+        const rootPath = this.agent.workspaceRootPath
+
+        if (!rootPath) {
+            return Promise.resolve(null)
+        }
+
+        return Promise.resolve(relative(rootPath, url.parse(uri).pathname!))
+    }
+
+    public getTabSize(): number {
+        return 4
     }
 }

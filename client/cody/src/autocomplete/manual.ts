@@ -1,6 +1,7 @@
 import vscode from 'vscode'
 
-import { Completion, CurrentDocumentContextWithLanguage, History } from '@sourcegraph/cody-shared/src/autocomplete'
+import { History } from '@sourcegraph/cody-shared/src/autocomplete'
+import { logCompletionEvent } from '@sourcegraph/cody-shared/src/autocomplete/logger'
 import { ManualCompletionService } from '@sourcegraph/cody-shared/src/autocomplete/manual'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
@@ -9,23 +10,30 @@ import { CompletionsDocumentProvider } from './docprovider'
 import { getCurrentDocContext } from './document'
 import { textEditor } from './text_editor'
 
+const LOG_MANUAL = { type: 'manual' }
 const COMPLETIONS_URI = vscode.Uri.parse('cody:Completions.md')
 
 export class ManualCompletionServiceVSCode extends ManualCompletionService {
+    private abortOpenManualCompletion: () => void = () => {}
+
     constructor(
-        webviewErrorMessenger: (error: string) => Promise<void>,
+        private webviewErrorMessenger: (error: string) => Promise<void>,
         completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
         history: History,
         codebaseContext: CodebaseContext
     ) {
-        super(textEditor, webviewErrorMessenger, completionsClient, history, codebaseContext)
+        super(textEditor, completionsClient, history, codebaseContext)
     }
 
-    async getCurrentDocumentContext(): Promise<CurrentDocumentContextWithLanguage | null> {
+    async fetchAndShowManualCompletions(): Promise<void> {
+        this.abortOpenManualCompletion()
+        const abortController = new AbortController()
+        this.abortOpenManualCompletion = () => abortController.abort()
+
         const currentEditor = vscode.window.activeTextEditor
         if (!currentEditor || currentEditor?.document.uri.scheme === 'cody') {
-            return null
+            return
         }
 
         const filename = currentEditor.document.fileName
@@ -38,30 +46,42 @@ export class ManualCompletionServiceVSCode extends ManualCompletionService {
             viewColumn: 2,
         })
 
-        const ctx = getCurrentDocContext(
+        const docContext = getCurrentDocContext(
             currentEditor.document,
             currentEditor.selection.start,
             this.tokToChar(this.maxPrefixTokens),
             this.tokToChar(this.maxSuffixTokens)
         )
 
-        if (!ctx) {
-            return null
+        if (!docContext) {
+            return
         }
 
-        // TODO(beyang): make getCurrentDocContext fetch complete line prefix
-        return {
-            ...ctx,
+        const completer = await this.getManualCompletionProvider({
+            ...docContext,
             languageId: currentEditor.document.languageId,
             markdownLanguage: ext,
-        }
-    }
-
-    emitCompletions(docContext: CurrentDocumentContextWithLanguage, completions: Completion[]): void {
-        this.documentProvider.addCompletions(COMPLETIONS_URI, docContext.markdownLanguage, completions, {
-            suffix: '',
-            elapsedMillis: 0,
-            llmOptions: null,
         })
+
+        if (!completer) {
+            return
+        }
+
+        try {
+            logCompletionEvent('started', LOG_MANUAL)
+            const completions = await completer.generateCompletions(abortController.signal, 3)
+            this.documentProvider.addCompletions(COMPLETIONS_URI, ext, completions, {
+                suffix: '',
+                elapsedMillis: 0,
+                llmOptions: null,
+            })
+            logCompletionEvent('suggested', LOG_MANUAL)
+        } catch (error) {
+            if (error.message === 'aborted') {
+                return
+            }
+
+            await this.webviewErrorMessenger(`FetchAndShowCompletions - ${error}`)
+        }
     }
 }

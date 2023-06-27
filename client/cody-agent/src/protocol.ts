@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/consistent-type-definitions */
+import { Completion } from '@sourcegraph/cody-shared/src/autocomplete'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
@@ -32,7 +33,7 @@ export type Requests = {
     // client <-- chat/updateMessageInProgress --- server
     'recipes/execute': [ExecuteRecipeParams, null]
     // Client requests manual completion
-    'completions/executeManual': [null, null]
+    'completions/manual': [ManualCompletionParams, Completion[] | null]
 
     // ================
     // Server -> Client
@@ -119,6 +120,7 @@ export interface Range {
     end: Position
 }
 
+// TODO: Add language id
 export interface TextDocument {
     filePath: string
     content?: string
@@ -133,4 +135,8 @@ export interface RecipeInfo {
 export interface ExecuteRecipeParams {
     id: RecipeID
     humanChatInput: string
+}
+
+export interface ManualCompletionParams {
+    count: number
 }

@@ -1,4 +1,4 @@
-import { Completion, TextEditor } from '.'
+import { Completion, CompletionsTextEditor } from '.'
 import { truncateMultilineCompletion } from './multiline'
 
 const BAD_COMPLETION_START = /^(\p{Emoji_Presentation}|\u{200B}|\+ |- |. )+(\s)+/u
@@ -11,7 +11,7 @@ export function postProcess({
     multiline,
     completion,
 }: {
-    textEditor: TextEditor
+    textEditor: CompletionsTextEditor
     prefix: string
     suffix: string
     languageId: string

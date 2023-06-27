@@ -17,7 +17,7 @@ export interface CurrentDocumentContextWithLanguage extends CurrentDocumentConte
     markdownLanguage: string
 }
 
-export interface TextEditor {
+export interface CompletionsTextEditor {
     getOpenDocuments(): LightTextDocument[]
     getCurrentDocument(): LightTextDocument | null
     getDocumentTextTruncated(uri: string): Promise<string | null>

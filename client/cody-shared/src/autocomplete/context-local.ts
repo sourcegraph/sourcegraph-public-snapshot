@@ -1,6 +1,6 @@
 import path from 'path'
 
-import { History, TextEditor, LightTextDocument } from '.'
+import { History, CompletionsTextEditor, LightTextDocument } from '.'
 import { JaccardMatch, bestJaccardMatch } from './bestJaccardMatch'
 import type { ReferenceSnippet } from './context'
 
@@ -9,7 +9,7 @@ interface JaccardMatchWithFilename extends JaccardMatch {
 }
 
 interface Options {
-    currentEditor: TextEditor
+    currentEditor: CompletionsTextEditor
     history: History
     prefix: string
     jaccardDistanceWindowSize: number
@@ -55,7 +55,7 @@ interface FileContents {
  * For every file, we will load up to 10.000 lines to avoid OOMing when working with very large
  * files.
  */
-async function getRelevantFiles(currentEditor: TextEditor, history: History): Promise<FileContents[]> {
+async function getRelevantFiles(currentEditor: CompletionsTextEditor, history: History): Promise<FileContents[]> {
     const files: FileContents[] = []
 
     const curLang = currentEditor.getCurrentDocument()!.languageId

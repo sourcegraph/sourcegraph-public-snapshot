@@ -1,7 +1,7 @@
-import { TextEditor } from '.'
+import { CompletionsTextEditor } from '.'
 
 export function detectMultilineMode(
-    textEditor: TextEditor,
+    textEditor: CompletionsTextEditor,
     prefix: string,
     prevNonEmptyLine: string,
     sameLinePrefix: string,
@@ -27,7 +27,7 @@ export function detectMultilineMode(
 }
 
 export function truncateMultilineCompletion(
-    textEditor: TextEditor,
+    textEditor: CompletionsTextEditor,
     completion: string,
     hasOddIndentation: boolean,
     prefix: string,
@@ -101,7 +101,7 @@ export function truncateMultilineCompletion(
  * Since Cody can sometimes respond in a mix of tab and spaces, this function
  * normalizes the whitespace first using the currently enabled tabSize option.
  */
-function indentation(textEditor: TextEditor, line: string): number {
+function indentation(textEditor: CompletionsTextEditor, line: string): number {
     const tabSize = textEditor.getTabSize()
 
     const regex = line.match(/^[\t ]*/)

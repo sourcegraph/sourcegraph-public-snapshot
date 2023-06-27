@@ -2,22 +2,17 @@ import { CodebaseContext } from '../codebase-context'
 import { SourcegraphNodeCompletionsClient } from '../sourcegraph-api/completions/nodeClient'
 import { Message } from '../sourcegraph-api/completions/types'
 
-import { Completion, CurrentDocumentContextWithLanguage, History, TextEditor } from '.'
+import { Completion, CurrentDocumentContextWithLanguage, History, CompletionsTextEditor } from '.'
 import { ReferenceSnippet, getContext } from './context'
-import { logCompletionEvent } from './logger'
 import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, messagesToText, SNIPPET_WINDOW_SIZE } from './utils'
-
-const LOG_MANUAL = { type: 'manual' }
 
 export abstract class ManualCompletionService {
     private promptTokens: number
-    protected maxPrefixTokens: number
-    protected maxSuffixTokens: number
-    private abortOpenManualCompletion: () => void = () => {}
+    public maxPrefixTokens: number
+    public maxSuffixTokens: number
 
     constructor(
-        private textEditor: TextEditor,
-        private webviewErrorMessenger: (error: string) => Promise<void>,
+        private textEditor: CompletionsTextEditor,
         private completionsClient: SourcegraphNodeCompletionsClient,
         private history: History,
         private codebaseContext: CodebaseContext,
@@ -32,24 +27,18 @@ export abstract class ManualCompletionService {
         this.maxSuffixTokens = Math.floor(this.promptTokens * this.suffixPercentage)
     }
 
-    protected tokToChar(tokens: number): number {
+    public tokToChar(tokens: number): number {
         return tokens * this.charsPerToken
     }
 
-    abstract getCurrentDocumentContext(): Promise<CurrentDocumentContextWithLanguage | null>
-    abstract emitCompletions(docContext: CurrentDocumentContextWithLanguage, completions: Completion[]): void
-
-    public async fetchAndShowManualCompletions(): Promise<void> {
-        this.abortOpenManualCompletion()
-        const abortController = new AbortController()
-        this.abortOpenManualCompletion = () => abortController.abort()
-
-        const docContext = await this.getCurrentDocumentContext()
-
+    public async getManualCompletionProvider(
+        docContext: CurrentDocumentContextWithLanguage
+    ): Promise<ManualCompletionProvider | null> {
         if (docContext === null) {
             console.error('not showing completions, no currently open doc')
-            return
+            return null
         }
+
         const { prefix, suffix } = docContext
 
         const remainingChars = this.tokToChar(this.promptTokens)
@@ -89,18 +78,7 @@ export abstract class ManualCompletionService {
             docContext.languageId
         )
 
-        try {
-            logCompletionEvent('started', LOG_MANUAL)
-            const completions = await completer.generateCompletions(abortController.signal, 3)
-            this.emitCompletions(docContext, completions)
-            logCompletionEvent('suggested', LOG_MANUAL)
-        } catch (error) {
-            if (error.message === 'aborted') {
-                return
-            }
-
-            await this.webviewErrorMessenger(`FetchAndShowCompletions - ${error}`)
-        }
+        return completer
     }
 }
 

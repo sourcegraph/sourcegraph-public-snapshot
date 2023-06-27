@@ -5,12 +5,12 @@ import { LRUCache } from 'lru-cache'
 
 import { CodebaseContext } from '../codebase-context'
 
-import { TextEditor } from '.'
+import { CompletionsTextEditor } from '.'
 import type { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
 
 interface Options {
-    currentEditor: TextEditor
+    currentEditor: CompletionsTextEditor
     prefix: string
     suffix: string
     codebaseContext: CodebaseContext

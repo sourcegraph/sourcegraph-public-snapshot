@@ -1,6 +1,6 @@
 import { CodebaseContext } from '../codebase-context'
 
-import { History, TextEditor } from '.'
+import { History, CompletionsTextEditor } from '.'
 import { getContextFromEmbeddings } from './context-embeddings'
 import { getContextFromCurrentEditor } from './context-local'
 
@@ -13,7 +13,7 @@ export interface ReferenceSnippet {
 }
 
 interface GetContextOptions {
-    currentEditor: TextEditor
+    currentEditor: CompletionsTextEditor
     history: History
     prefix: string
     suffix: string
