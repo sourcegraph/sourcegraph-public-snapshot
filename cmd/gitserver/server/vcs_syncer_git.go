@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 
@@ -71,7 +72,10 @@ func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 }
 
 // CloneCommand returns the command to be executed for cloning a Git repository.
-func (s *GitRepoSyncer) Clone(ctx context.Context, remoteURL *vcs.URL, tmpPath string, output io.Writer) (err error) {
+//
+// TODO for next time. We are trying to make the code path from server.go
+// match up so that it behaves in the same way as CloneCommand.
+func (s *gitRepoSyncer) Clone(ctx context.Context, remoteURL *vcs.URL, tmpPath string, output io.Writer) (err error) {
 	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
 		return errors.Wrapf(err, "clone failed to create tmp dir")
 	}
@@ -82,7 +86,7 @@ func (s *GitRepoSyncer) Clone(ctx context.Context, remoteURL *vcs.URL, tmpPath s
 		return errors.Wrapf(&common.GitCommandError{Err: err}, "clone setup failed")
 	}
 
-	cmd, configRemoteOpt = s.fetchCommand(ctx, remoteURL)
+	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	cmd.Dir = tmpPath
 
 	// TODO: Should we do this inside fetchCommand?
@@ -91,13 +95,11 @@ func (s *GitRepoSyncer) Clone(ctx context.Context, remoteURL *vcs.URL, tmpPath s
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 
 	// TODO: Run the command
-	
-	runRemoteGitCommand(ctx, cmd, configRemoteOpts bool, progress io.Writer)
+
+	runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, output)
 
 	return nil
 }
-
-
 
 // Fetch tries to fetch updates of a Git repository.
 func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {

@@ -2246,33 +2246,42 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
 	}()
 
-	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
-	if err != nil {
-		return errors.Wrap(err, "get clone command")
-	}
-	if cmd.Env == nil {
-		cmd.Env = os.Environ()
-	}
-
-	// see issue #7322: skip LFS content in repositories with Git LFS configured
-	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
+	redactor := newURLRedactor(remoteURL)
 
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	redactor := newURLRedactor(remoteURL)
-
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
+	// TODO make this match up. We went on side missions last time.
+	if cloner, ok := syncer.(Cloner); ok {
+		err := cloner.Clone(ctx, remoteURL, tmpPath, pw)
+		if err != nil {
+			return errors.Wrap(err, "clone on vcssyncer")
+		}
+	} else {
+		cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
+		if err != nil {
+			return errors.Wrap(err, "get clone command")
+		}
+		if cmd.Env == nil {
+			cmd.Env = os.Environ()
+		}
 
+		// see issue #7322: skip LFS content in repositories with Git LFS configured
+		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
+		logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
+
+		output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
+
+		if err != nil {
+			return errors.Wrapf(err, "clone failed. Output: %s", redactor.redact(string(output)))
+		}
+	}
+
+	// TODO want to do this before returning error
 	// best-effort update the output of the clone
 	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
-
-	if err != nil {
-		return errors.Wrapf(err, "clone failed. Output: %s", redactor.redact(string(output)))
-	}
 
 	if testRepoCorrupter != nil {
 		testRepoCorrupter(ctx, tmp)

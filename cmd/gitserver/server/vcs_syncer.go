@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"os/exec"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
@@ -28,6 +29,22 @@ type VCSSyncer interface {
 	Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error)
 	// RemoteShowCommand returns the command to be executed for showing remote.
 	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
+}
+
+// Cloner is an interface that optionally implements how we want all Syncers
+// to work for Cloning. It is temporary until all Syncers implement it.
+type Cloner interface {
+	// Clone will clone remoteURL to tmpPath. The output of the clone commands
+	// will be written to output which will be reported back to the user
+	// (summarized to the last output line). The caller of Clone is
+	// responsible for redaction of remoteURL secrets in output. (and in
+	// err??)
+	//
+	// TODO maybe it should return output that has gone through a
+	// progressWriter? Alternatively we ensure call sites to Clone use a
+	// progressWriter on output. That might be the better approach since only
+	// CloneCommand currently sets a non-nil output on runRemoteGitCommand
+	Clone(ctx context.Context, remoteURL *vcs.URL, tmpPath string, output io.Writer) (err error)
 }
 
 type notFoundError struct{ error }
