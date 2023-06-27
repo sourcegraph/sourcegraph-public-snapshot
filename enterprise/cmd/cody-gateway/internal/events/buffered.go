@@ -6,9 +6,11 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -62,21 +64,35 @@ func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize int) *Buffe
 
 // LogEvent implements event.Logger by submitting the event to a buffer for processing.
 func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
+	// Track whether or not the event buffered, and how long it took.
+	_, span := tracer.Start(backgroundContextWithSpan(spanCtx), "bufferedLogger.LogEvent",
+		trace.WithAttributes(
+			attribute.String("source", event.Source),
+			attribute.String("event.name", string(event.Name))))
+	var buffered bool
+	defer func() {
+		span.SetAttributes(
+			attribute.Bool("event.buffered", buffered),
+			attribute.Int("buffer.backlog", len(l.bufferC)))
+		span.End()
+	}()
+
 	// If buffer is closed, make a best-effort attempt to log the event directly.
 	if l.bufferClosed.Load() {
-		trace.Logger(spanCtx, l.log).Warn("buffer is closed: logging event directly")
+		sgtrace.Logger(spanCtx, l.log).Warn("buffer is closed: logging event directly")
 		return l.handler.LogEvent(spanCtx, event)
 	}
 
 	select {
 	case l.bufferC <- bufferedEvent{spanCtx: spanCtx, Event: event}:
+		buffered = true
 		return nil
 
 	case <-time.After(l.timeout):
 		// The buffer is full, which is indicative of a problem. We try to
 		// submit the event immediately anyway, because we don't want to
 		// silently drop anything, and log an error so that we ge notified.
-		trace.Logger(spanCtx, l.log).
+		sgtrace.Logger(spanCtx, l.log).
 			Error("failed to queue event within timeout, submitting event directly",
 				log.Error(errors.New("buffer is full")), // real error needed for Sentry
 				log.Int("buffer.capacity", cap(l.bufferC)),
@@ -91,7 +107,7 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 func (l *BufferedLogger) Start() {
 	for event := range l.bufferC {
 		if err := l.handler.LogEvent(event.spanCtx, event.Event); err != nil {
-			trace.Logger(event.spanCtx, l.log).
+			sgtrace.Logger(event.spanCtx, l.log).
 				Error("failed to log buffered event", log.Error(err))
 		}
 	}
