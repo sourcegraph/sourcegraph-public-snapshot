@@ -20,7 +20,7 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
     return (
         <div className={classNames(styles.root, className)}>
             <div className={styles.description}>
-                <H1 className={styles.descriptionHeading}>You’re all set</H1>
+                <H1 className={styles.descriptionHeading}>Chatting with Cody</H1>
 
                 <div className={styles.descriptionContent}>
                     <Text className={styles.descriptionText}>
