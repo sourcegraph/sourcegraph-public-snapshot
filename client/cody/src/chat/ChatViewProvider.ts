@@ -381,7 +381,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         this.config.customHeaders
                     )
                 }
-                this.onCompletionEnd()
+                // We ignore embeddings errors in this instance because we're already showing an
+                // error message and don't want to overwhelm the user.
+                this.onCompletionEnd(true)
                 void this.editor.controllers.inline.error()
                 console.error(`Completion request failed: ${err}`)
             },
@@ -393,14 +395,16 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.cancelCompletionCallback = null
     }
 
-    private onCompletionEnd(): void {
+    private onCompletionEnd(ignoreEmbeddingsError: boolean = false): void {
         this.isMessageInProgress = false
         this.cancelCompletionCallback = null
         this.sendTranscript()
         void this.saveTranscriptToChatHistory()
         this.sendChatHistory()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', false)
-        this.logEmbeddingsSearchErrors()
+        if (!ignoreEmbeddingsError) {
+            this.logEmbeddingsSearchErrors()
+        }
         this.scheduleIdleRecipes()
     }
 
@@ -729,6 +733,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Send embedding connections or results error to output
      */
     private logEmbeddingsSearchErrors(): void {
+        console.log(this.int)
         if (this.config.useContext !== 'embeddings') {
             return
         }

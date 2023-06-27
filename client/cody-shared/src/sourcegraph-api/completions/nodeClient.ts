@@ -135,9 +135,14 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             }
         )
 
-        request.on('error', error => {
-            log?.onError(error.message)
-            cb.onError(error.message)
+        request.on('error', e => {
+            let message = e.message
+            if (message.includes('ECONNREFUSED')) {
+                message =
+                    'Could not connect to Cody. Please ensure that Cody app is running or that you are connected to the Sourcegraph server.'
+            }
+            log?.onError(message)
+            cb.onError(message)
         })
 
         request.write(JSON.stringify(params))
