@@ -48,7 +48,6 @@ func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.
 		} else {
 			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider with url %q", provider.ServiceID)))
 		}
-		ps = append(ps, provider)
 	}
 
 	return ps, problems
