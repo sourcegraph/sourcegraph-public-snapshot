@@ -193,7 +193,6 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     const handleOrgChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setOrg(event.target.value), [])
     const toggleIsPublic = useCallback(() => setIsPublic(isPublic => !isPublic), [])
     const cancelUrl = `/site-admin/${appDomain === GitHubAppDomain.BATCHES ? 'batch-changes' : 'github-apps'}`
-    console.log(cancelUrl, '<====')
 
     return (
         <>
