@@ -9,6 +9,7 @@ import { Button, Link, Icon, Code } from '@sourcegraph/wildcard'
 import { eventLogger } from '../../tracking/eventLogger'
 import { CommitMessageWithLinks } from '../commit/CommitMessageWithLinks'
 import { Linkified } from '../linkifiy/Linkified'
+import { isPerforceChangelistMappingEnabled } from '../utils'
 
 import { GitCommitNodeProps } from './GitCommitNode'
 import { GitCommitNodeByline } from './GitCommitNodeByline'
@@ -34,7 +35,7 @@ export const GitCommitNodeTableRow: React.FC<
     }, [showCommitMessageBody])
 
     const canonicalURL =
-        window.context.experimentalFeatures.perforceChangelistMapping && node.perforceChangelist?.canonicalURL
+        isPerforceChangelistMappingEnabled() && node.perforceChangelist?.canonicalURL
             ? node.perforceChangelist.canonicalURL
             : node.canonicalURL
 

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -18,8 +19,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/unpack"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -144,7 +148,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		t := time.Now()
 		// runRemoteGitCommand since one of our commands could be git push
-		out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
+		out, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
 
 		logger := logger.With(
 			log.String("prefix", prefix),
@@ -285,37 +289,49 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	}
 
 	if req.Push != nil {
-		cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
-		cmd.Dir = repoGitDir
-
-		// If the protocol is SSH and a private key was given, we want to
-		// use it for communication with the code host.
-		if remoteURL.IsSSH() && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
-			// We set up an agent here, which sets up a socket that can be provided to
-			// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
-			// it in the background.
-			// This is used to pass the private key to be used when pushing to the remote,
-			// without the need to store it on the disk.
-			agent, err := newSSHAgent(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+		if remoteURL.Scheme == "perforce" {
+			// the remote URL is a Perforce URL
+			// shelve the changelist instead of pushing to a Git host
+			cid, err := s.shelveChangelist(ctx, req, cmtHash, remoteURL, tmpGitPathEnv, altObjectsEnv)
 			if err != nil {
-				resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
+				resp.SetError(repo, "", "", err)
 				return http.StatusInternalServerError, resp
 			}
-			go agent.Listen()
-			// Make sure we shut this down once we're done.
-			defer agent.Close()
 
-			cmd.Env = append(
-				os.Environ(),
-				[]string{
-					fmt.Sprintf("SSH_AUTH_SOCK=%s", agent.Socket()),
-				}...,
-			)
-		}
+			resp.ChangelistId = cid
+		} else {
+			cmd = exec.CommandContext(ctx, "git", "push", "--force", remoteURL.String(), fmt.Sprintf("%s:%s", cmtHash, ref))
+			cmd.Dir = repoGitDir
 
-		if out, err = run(cmd, "pushing ref"); err != nil {
-			logger.Error("Failed to push", log.String("commit", cmtHash), log.String("output", string(out)))
-			return http.StatusInternalServerError, resp
+			// If the protocol is SSH and a private key was given, we want to
+			// use it for communication with the code host.
+			if remoteURL.IsSSH() && req.Push.PrivateKey != "" && req.Push.Passphrase != "" {
+				// We set up an agent here, which sets up a socket that can be provided to
+				// SSH via the $SSH_AUTH_SOCK environment variable and the goroutine to drive
+				// it in the background.
+				// This is used to pass the private key to be used when pushing to the remote,
+				// without the need to store it on the disk.
+				agent, err := newSSHAgent(logger, []byte(req.Push.PrivateKey), []byte(req.Push.Passphrase))
+				if err != nil {
+					resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: error creating ssh-agent"))
+					return http.StatusInternalServerError, resp
+				}
+				go agent.Listen()
+				// Make sure we shut this down once we're done.
+				defer agent.Close()
+
+				cmd.Env = append(
+					os.Environ(),
+					[]string{
+						fmt.Sprintf("SSH_AUTH_SOCK=%s", agent.Socket()),
+					}...,
+				)
+			}
+
+			if out, err = run(cmd, "pushing ref"); err != nil {
+				logger.Error("Failed to push", log.String("commit", cmtHash), log.String("output", string(out)))
+				return http.StatusInternalServerError, resp
+			}
 		}
 	}
 	resp.Rev = "refs/" + strings.TrimPrefix(ref, "refs/")
@@ -342,6 +358,428 @@ func stylizeCommitMessage(message string) string {
 
 func styleMessage(message string) bool {
 	return !strings.HasPrefix(message, "Change-Id: I")
+}
+
+func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommitFromPatchRequest, patchCommit string, remoteURL *vcs.URL, tmpGitPathEnv, altObjectsEnv string) (string, error) {
+
+	repo := string(req.Repo)
+	baseCommit := string(req.BaseCommit)
+
+	p4user, p4passwd, p4host, p4depot, _ := decomposePerforceRemoteURL(remoteURL)
+
+	if p4depot == "" {
+		// the remoteURL was constructed without a path to indicate the depot
+		// make a db call to fill that in
+		remoteURL, err := s.getRemoteURL(ctx, req.Repo)
+		if err != nil {
+			return "", errors.Wrap(err, "failed getting a remote url")
+		}
+		// and decompose again
+		_, _, _, p4depot, _ = decomposePerforceRemoteURL(remoteURL)
+	}
+
+	logger := s.Logger.Scoped("shelveChangelist", "").
+		With(
+			log.String("repo", repo),
+			log.String("baseCommit", baseCommit),
+			log.String("patchCommit", patchCommit),
+			log.String("targetRef", req.TargetRef),
+			log.String("depot", p4depot),
+		)
+
+	// use the name of the target branch as the perforce client name
+	p4client := strings.TrimPrefix(req.TargetRef, "refs/heads/")
+
+	// do all work in (another) temporary directory
+	tmpClientDir, err := s.tempDir("perforce-client-")
+	if err != nil {
+		return "", errors.Wrap(err, "gitserver: make tmp repo for Perforce client")
+	}
+	defer cleanUpTmpRepo(logger, tmpClientDir)
+
+	// we'll need these environment variables for subsequent commands
+	commonEnv := append(os.Environ(), []string{
+		tmpGitPathEnv,
+		altObjectsEnv,
+		fmt.Sprintf("P4PORT=%s", p4host),
+		fmt.Sprintf("P4USER=%s", p4user),
+		fmt.Sprintf("P4PASSWD=%s", p4passwd),
+		fmt.Sprintf("P4CLIENT=%s", p4client),
+	}...)
+
+	gitCmd := gitCommand{
+		ctx:        ctx,
+		workingDir: tmpClientDir,
+		env:        commonEnv,
+	}
+
+	p4Cmd := p4Command{
+		ctx:        ctx,
+		workingDir: tmpClientDir,
+		env:        commonEnv,
+	}
+
+	// check to see if there's a changelist for this target branch already
+	cid, err := p4Cmd.changeListIDFromClientSpecName(p4client)
+	if err == nil && cid != "" {
+		return cid, nil
+	}
+
+	// extract the base changelist id from the base commit
+	baseCID, err := gitCmd.getChangelistIdFromCommit(baseCommit)
+	if err != nil {
+		errorMessage := "unable to get the base changelist id"
+		logger.Error(errorMessage, log.String("baseCommit", baseCommit), log.Error(err))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// get the list of files involved in the patch
+	fileList, err := gitCmd.getListOfFilesInCommit(patchCommit)
+	if err != nil {
+		errorMessage := "failed listing files in base commit"
+		logger.Error(errorMessage, log.String("patchCommit", patchCommit), log.Error(err))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// format a description for the client spec and the changelist
+	// from the commit message(s)
+	// be sure to indent lines so that it fits the Perforce form format
+	desc := "batch change"
+	if len(req.CommitInfo.Messages) > 0 {
+		desc = strings.ReplaceAll(strings.Join(req.CommitInfo.Messages, "\n"), "\n", "\n\t")
+	}
+
+	// parse the depot path from the repo name
+	// depot := strings.SplitN()
+
+	// create a Perforce client spec to use for creating the changelist
+	err = p4Cmd.createClientSpec(p4depot, p4client, p4user, desc)
+	if err != nil {
+		errorMessage := "error creating a client spec"
+		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// get the files from the Perforce server
+	// mark them for editing
+	err = p4Cmd.cloneAndEditFiles(fileList, baseCID)
+	if err != nil {
+		errorMessage := "error getting files from depot"
+		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// delete the files involved with the batch change because the untar will not overwrite existing files
+	for _, fileName := range fileList {
+		os.RemoveAll(filepath.Join(tmpClientDir, fileName))
+	}
+
+	// overlay with files from the commit
+	// 1. create an archive from the commit
+	// 2. pipe the archive to `tar -x` to extract it into the temp dir
+
+	// archive the patch commit
+	archiveCmd := gitCmd.commandContext("archive", "--format=tar", "--verbose", patchCommit)
+
+	// connect the archive to the untar process
+	stdout, err := archiveCmd.StdoutPipe()
+	if err != nil {
+		errorMessage := "unable to read changed files"
+		logger.Error(errorMessage, log.Error(err))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	reader := bufio.NewReader(stdout)
+
+	// start the archive; it'll send stdout (the tar archive) to `unpack.Tar` via the `io.Reader`
+	if err := archiveCmd.Start(); err != nil {
+		errorMessage := "unable to read changed files"
+		logger.Error(errorMessage, log.Error(err))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	err = unpack.Tar(reader, tmpClientDir, unpack.Opts{SkipDuplicates: true})
+	if err != nil {
+		errorMessage := "unable to read changed files"
+		logger.Error(errorMessage, log.Error(err))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// make sure the untar process completes before moving on
+	if err := archiveCmd.Wait(); err != nil {
+		errorMessage := "unable to overlay changed files"
+		logger.Error(errorMessage, log.Error(err))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// ensure that there are changes to shelve
+	if changes, err := p4Cmd.areThereChangedFiles(); err != nil {
+		errorMessage := "unable to verify that there are changed files"
+		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	} else if !changes {
+		errorMessage := "no changes to shelve"
+		logger.Error(errorMessage, log.Error(errors.New(errorMessage)))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// submit the changes as a shelved changelist
+
+	// create a changelist form with the description
+	changeForm, err := p4Cmd.generateChangeForm(desc)
+	if err != nil {
+		errorMessage := "failed generating a change form"
+		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// feed the changelist form into `p4 shelve`
+	// capture the output to parse for a changelist id
+	cid, err = p4Cmd.shelveChangelist(changeForm)
+	if err != nil {
+		errorMessage := "failed shelving the changelist"
+		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
+		return "", errors.Wrap(err, "gitserver: "+errorMessage)
+	}
+
+	// return the changelist id as a string - it'll be returned as a string to the caller in lieu of an int pointer
+	// because protobuf doesn't do scalar pointers
+	return cid, nil
+}
+
+type gitCommand struct {
+	ctx        context.Context
+	workingDir string
+	env        []string
+}
+
+func (g gitCommand) commandContext(args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(g.ctx, "git", args...)
+	cmd.Dir = g.workingDir
+	cmd.Env = g.env
+	return cmd
+}
+
+func (g gitCommand) getChangelistIdFromCommit(baseCommit string) (string, error) {
+	// get the commit message from the base commit so that we can parse the base changelist id from it
+	cmd := g.commandContext("show", "--no-patch", "--pretty=format:%B", baseCommit)
+	out, err := cmd.Output()
+	if err != nil {
+		return "", errors.Wrap(err, "unable to retrieve base commit message")
+	}
+	// extract the base changelist id from the commit message
+	baseCID, err := perforce.GetP4ChangelistID(string(out))
+	if err != nil {
+		return "", errors.Wrap(err, "unable to parse base changelist id from"+string(out))
+	}
+	return baseCID, nil
+}
+
+func (g gitCommand) getListOfFilesInCommit(patchCommit string) ([]string, error) {
+	cmd := g.commandContext("diff-tree", "--no-commit-id", "--name-only", "-r", patchCommit)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return nil, errors.Wrap(err, "unable to retrieve files in base commit")
+	}
+	var fileList []string
+	for _, file := range strings.Split(strings.TrimSpace(string(out)), "\n") {
+		file = strings.TrimSpace(file)
+		if file != "" {
+			fileList = append(fileList, file)
+		}
+	}
+	if len(fileList) <= 0 {
+		return nil, errors.New("no files in base commit")
+	}
+	return fileList, nil
+}
+
+type p4Command struct {
+	ctx        context.Context
+	workingDir string
+	env        []string
+}
+
+func (p p4Command) commandContext(args ...string) *exec.Cmd {
+	cmd := exec.CommandContext(p.ctx, "p4", args...)
+	cmd.Dir = p.workingDir
+	cmd.Env = p.env
+	return cmd
+}
+
+// Uses `p4 changes` to see if there is a changelist already associated with the given client spec
+func (p p4Command) changeListIDFromClientSpecName(p4client string) (string, error) {
+	cmd := p.commandContext("changes",
+		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
+		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
+		"-l", // use a long listing, which includes the whole commit message
+		"-c", p4client,
+	)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", errors.Wrap(err, string(out))
+	}
+	pcl, err := perforce.ParseChangelistOutput(string(out))
+	if err != nil {
+		return "", errors.Wrap(err, string(out))
+	}
+	return pcl.ID, nil
+}
+
+const clientSpecForm = `Client:	%s
+Owner:	%s
+Description:
+	%s
+Root:	%s
+Options:	noallwrite noclobber nocompress unlocked nomodtime normdir
+SubmitOptions:	submitunchanged
+LineEnd:	local
+View:	%s... //%s/...
+`
+
+// Uses `p4 client` to create a client spec used to sync files with the depot
+// Returns an error if `p4 client` fails
+// error -> error from exec.Cmd
+// __|- error -> combined output from `p4 client`
+func (p p4Command) createClientSpec(p4depot, p4client, p4user, description string) error {
+	clientSpec := fmt.Sprintf(
+		clientSpecForm,
+		p4client,
+		p4user,
+		description,
+		p.workingDir,
+		p4depot,
+		p4client,
+	)
+	cmd := p.commandContext("client", "-i")
+	cmd.Stdin = bytes.NewReader([]byte(clientSpec))
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrap(err, string(out))
+	}
+	return nil
+}
+
+// clones/downloads given files at the given base changelist
+// returns an error if the sync or edit fails
+// error -> error from exec.Cmd
+// __|- error -> combined output from sync or edit
+func (p p4Command) cloneAndEditFiles(fileList []string, baseChangelistId string) error {
+	// want to specify the file at the base changelist revision
+	// build a slice of file names with the changelist id appended
+	filesWithCid := append([]string(nil), fileList...)
+	for i := 0; i < len(filesWithCid); i++ {
+		filesWithCid[i] = filesWithCid[i] + "@" + baseChangelistId
+	}
+	if err := p.cloneFiles(filesWithCid); err != nil {
+		return err
+	}
+	if err := p.editFiles(fileList); err != nil {
+		return err
+	}
+	return nil
+}
+
+// Uses `p4 sync` to copy/clone the given files from the depot to the local workspace
+// Returns an error if `p4 sync` fails
+// error -> error from exec.Cmd
+// __|- error -> combined output from `p4 sync`
+func (p p4Command) cloneFiles(filesWithCid []string) error {
+	cmd := p.commandContext("sync")
+	cmd.Args = append(cmd.Args, filesWithCid...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrap(err, string(out))
+	}
+	return nil
+}
+
+// Uses `p4 edit` to mark files as being edited
+// Returns an error if `p4 edit` fails
+// error -> error from exec.Cmd
+// __|- error -> combined output from `p4 edit`
+func (p p4Command) editFiles(fileList []string) error {
+	cmd := p.commandContext("edit")
+	cmd.Args = append(cmd.Args, fileList...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return errors.Wrap(err, string(out))
+	}
+	return nil
+}
+
+// Uses `p4 diff` to get a list of the files that have changed in the workspace
+// Returns true if the file list has 1+ files in it
+// Returns false if the file list is empty
+// Returns an error if `p4 diff` fails
+// error -> error from exec.Cmd
+// __|- error -> combined output from `p4 diff`
+func (p p4Command) areThereChangedFiles() (bool, error) {
+	// use p4 diff to list the changes
+	diffCmd := p.commandContext("diff", "-f", "-sa")
+
+	// capture the output of `p4 diff` and count the lines
+	// so that the output can be returned in an error message
+	out, err := diffCmd.CombinedOutput()
+	if err != nil {
+		return false, errors.Wrap(err, string(out))
+	}
+	return len(strings.Split(string(out), "\n")) > 0, nil
+}
+
+// Uses `p4 change -o` to generate a form for the default changelist
+// Injects the given `description` into the form.
+// All lines of `description` after the first must begin with a tab character.
+// Returns an error if `p4 change` fails
+// error -> error from exec.Cmd
+// __|- error -> combined output from `p4 change`
+func (p p4Command) generateChangeForm(description string) (string, error) {
+	cmd := p.commandContext("change", "-o")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", errors.Wrap(err, string(out))
+	}
+	// add the commit message to the change form
+	return strings.Replace(string(out), "<enter description here>", description, 1), nil
+}
+
+var cidPattern = lazyregexp.New(`Change (\d+) files shelved`)
+
+// Uses `p4 shelve` to shelve a changelist with the given form
+// Returns an error if `p4 shelve` fails
+// error -> error from exec.Cmd
+// __|- error -> combined output from `p4 shelve`
+// Returns an error if the output of `p4 shelve` does not contain a changelist id
+// error -> "p4 shelve output does not contain a changelist id"
+// __|- error -> combined output from `p4 shelve`
+func (p p4Command) shelveChangelist(changeForm string) (string, error) {
+	cmd := p.commandContext("shelve", "-i")
+	changeBuffer := bytes.Buffer{}
+	changeBuffer.Write([]byte(changeForm))
+	cmd.Stdin = &changeBuffer
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return "", errors.Wrap(err, string(out))
+	}
+	matches := cidPattern.FindStringSubmatch(string(out))
+	if len(matches) != 2 {
+		return "", errors.Wrap(errors.New("p4 shelve output does not contain a changelist id"), string(out))
+	}
+	return matches[1], nil
+}
+
+// Return the deepest error message from a wrapped error.
+// "Deepest" is somewhat facetious, as it does only one unwrap.
+func digErrorMessage(err error) string {
+	if err == nil {
+		return ""
+	}
+	msg := err.Error()
+	innerError := errors.Unwrap(err)
+	if innerError != nil {
+		msg = innerError.Error()
+	}
+	return msg
 }
 
 func cleanUpTmpRepo(logger log.Logger, path string) {

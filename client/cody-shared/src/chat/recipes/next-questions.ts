@@ -19,7 +19,7 @@ export class NextQuestions implements Recipe {
 
         const maxTokenCount =
             MAX_AVAILABLE_PROMPT_LENGTH - (promptPrefix.length + promptSuffix.length) / CHARS_PER_TOKEN
-        const truncatedText = truncateText(humanChatInput, maxTokenCount)
+        const truncatedText = truncateText(humanChatInput, Math.min(maxTokenCount, MAX_AVAILABLE_PROMPT_LENGTH))
         const promptMessage = `${promptPrefix}\n\n\`\`\`\n${truncatedText}\n\`\`\`\n\n${promptSuffix}`
 
         const assistantResponsePrefix = 'Sure, here are great follow-up discussion topics and learning ideas:\n\n - '
@@ -68,7 +68,7 @@ export class NextQuestions implements Recipe {
         }
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName),
+            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName, visibleContent.repoName),
             visibleContent
         )
     }

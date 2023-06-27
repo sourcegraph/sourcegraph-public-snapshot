@@ -8,6 +8,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/gitserver/protocol",
         "//internal/lazyregexp",
         "//lib/errors",
     ],
@@ -17,5 +18,9 @@ go_test(
     name = "perforce_test",
     srcs = ["changelist_test.go"],
     embed = [":perforce"],
-    deps = ["@com_github_stretchr_testify//require"],
+    deps = [
+        "//internal/gitserver/protocol",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_stretchr_testify//require",
+    ],
 )

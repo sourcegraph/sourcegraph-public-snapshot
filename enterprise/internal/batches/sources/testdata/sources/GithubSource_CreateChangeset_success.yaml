@@ -38,7 +38,7 @@ interactions:
       20) {\n        nodes {\n          id\n          status\n          conclusion\n        }\n      }\n    }\n  }\n  committedDate\n}\n\nfragment
       prCommit on PullRequestCommit {\n  commit {\n    ...commitWithChecks\n  }\n}\n\nfragment
       repo on Repository {\n  id\n  name\n  owner {\n    login\n  }\n}\n\nfragment
-      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  isDraft\n  author
+      pr on PullRequest {\n  id\n  title\n  body\n  state\n  url\n  number\n  createdAt\n  updatedAt\n  headRefOid\n  baseRefOid\n  headRefName\n  baseRefName\n  reviewDecision\n  isDraft\n  author
       {\n    ...actor\n  }\n  baseRepository {\n    ...repo\n  }\n  headRepository
       {\n    ...repo\n  }\n  participants(first: 100) {\n    nodes {\n      ...actor\n    }\n  }\n  labels(first:
       100) {\n    nodes {\n      ...label\n    }\n  }\n  commits(last: 1) {\n    nodes
@@ -49,7 +49,7 @@ interactions:
       READY_FOR_REVIEW_EVENT, CONVERT_TO_DRAFT_EVENT]) {\n    pageInfo {\n      hasNextPage\n      endCursor\n    }\n    nodes
       {\n      __typename\n      ...timelineItems\n    }\n  }\n}\nmutation\tCreatePullRequest($input:CreatePullRequestInput!)
       {\n  createPullRequest(input:$input) {\n    pullRequest {\n      ... pr\n    }\n  }\n}","variables":{"input":{"baseRefName":"master","body":"This
-      is the description of the test PR","draft":false,"headRefName":"test-pr-11","repositoryId":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","title":"This
+      is the description of the test PR","draft":false,"headRefName":"test-review-decision","repositoryId":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","title":"This
       is a test PR"}}}'
     form: {}
     headers:
@@ -62,9 +62,8 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"createPullRequest":{"pullRequest":{"id":"PR_kwDODS5xec5JOzXe","title":"This
-      is a test PR","body":"This is the description of the test PR","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/485","number":485,"createdAt":"2023-02-03T20:10:23Z","updatedAt":"2023-02-03T20:10:23Z","headRefOid":"6653600c1ddda040a235926e79e576900cb39848","baseRefOid":"1c94aaf85d51e9d016b8ce4639b9f022d94c52e6","headRefName":"test-pr-11","baseRefName":"master","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/8942601?u=d2ce1e7fb6b3178eefa92abc9e8a7eb835597466&v=4","login":"courier-new","url":"https://github.com/courier-new"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"6653600c1ddda040a235926e79e576900cb39848","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAACgfMAPw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAACgfMAVA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAACgfMAbw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAACgfMAfg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAACgfMAkw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2023-02-03T20:10:00Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABhhjmbcAH2gAzMTIyODYxNzE4Mjo2NjUzNjAwYzFkZGRhMDQwYTIzNTkyNmU3OWU1NzY5MDBjYjM5ODQ4"},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"6653600c1ddda040a235926e79e576900cb39848","message":"Update
-      README.md","messageHeadline":"Update README.md","committedDate":"2023-02-03T20:10:00Z","pushedDate":"2023-02-03T20:10:00Z","url":"https://github.com/sourcegraph/automation-testing/commit/6653600c1ddda040a235926e79e576900cb39848","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/19864447?v=4","email":"noreply@github.com","name":"GitHub","user":null}}}]}}}},"extensions":{"warnings":[{"type":"DEPRECATION","message":"The
+    body: '{"data":{"createPullRequest":{"pullRequest":{"id":"PR_kwDODS5xec5Twl1w","title":"This
+      is a test PR","body":"This is the description of the test PR","state":"OPEN","url":"https://github.com/sourcegraph/automation-testing/pull/492","number":492,"createdAt":"2023-06-23T15:36:26Z","updatedAt":"2023-06-23T15:36:26Z","headRefOid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","baseRefOid":"58dd8da9d9099a823c814c528b29b72c9b2ac98b","headRefName":"test-review-decision","baseRefName":"master","reviewDecision":"REVIEW_REQUIRED","isDraft":false,"author":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"},"baseRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"headRepository":{"id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","name":"automation-testing","owner":{"login":"sourcegraph"}},"participants":{"nodes":[{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"}]},"labels":{"nodes":[]},"commits":{"nodes":[{"commit":{"oid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","status":null,"checkSuites":{"nodes":[{"id":"CS_kwDODS5xec8AAAADNrcULQ","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcURA","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUXg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUcw","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}},{"id":"CS_kwDODS5xec8AAAADNrcUkg","status":"QUEUED","conclusion":null,"checkRuns":{"nodes":[]}}]},"committedDate":"2023-06-22T21:05:25Z"}}]},"timelineItems":{"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOnYyOpPPAAABiOTtHggH2gAzMTQwNTI0NjgzMjo3YzIzMmY3ZWM5YjhlNzE3ZmYyOTdlMzNmMmFiMDk1YTdlOTAyMDg1"},"nodes":[{"__typename":"PullRequestCommit","commit":{"oid":"7c232f7ec9b8e717ff297e33f2ab095a7e902085","message":"foobar","messageHeadline":"foobar","committedDate":"2023-06-22T21:05:25Z","pushedDate":"2023-06-22T21:05:29Z","url":"https://github.com/sourcegraph/automation-testing/commit/7c232f7ec9b8e717ff297e33f2ab095a7e902085","committer":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?v=4","email":"davetry@gmail.com","name":"davejrt","user":{"avatarUrl":"https://avatars.githubusercontent.com/u/2067825?u=c2e97ecd6b800634cf59ed862168e20c9fa7b57e&v=4","login":"davejrt","url":"https://github.com/davejrt"}}}}]}}}},"extensions":{"warnings":[{"type":"DEPRECATION","message":"The
       id MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM= is deprecated. Update your cache to use
       the next_global_id from the data payload.","data":{"legacy_global_id":"MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=","next_global_id":"R_kgDODS5xeQ"},"link":"https://docs.github.com"}]}}'
     headers:
@@ -80,7 +79,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 03 Feb 2023 20:10:24 GMT
+      - Fri, 23 Jun 2023 15:36:27 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -96,11 +95,11 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - DC2A:9445:EE6EE1:F6EC45:63DD6A2F
+      - CE3B:1674:12C1BBA:261BE5F:6495BBFA
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "81"
+      - "121"
       X-Xss-Protection:
       - "0"
     status: 200 OK

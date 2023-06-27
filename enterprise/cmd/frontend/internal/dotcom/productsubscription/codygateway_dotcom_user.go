@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -78,6 +81,10 @@ type dotcomCodyUserResolver struct {
 
 func (u *dotcomCodyUserResolver) Username() string {
 	return u.user.Username
+}
+
+func (u *dotcomCodyUserResolver) ID() graphql.ID {
+	return relay.MarshalID("User", u.user.ID)
 }
 
 func (u *dotcomCodyUserResolver) CodyGatewayAccess() graphqlbackend.CodyGatewayAccess {
@@ -203,7 +210,7 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 func allowedModels(scope types.CompletionsFeature) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
-		return []string{"anthropic/claude-v1"}
+		return []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"}
 	case types.CompletionsFeatureCode:
 		return []string{"anthropic/claude-instant-v1"}
 	default:

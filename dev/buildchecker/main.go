@@ -210,7 +210,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 		bkc := buildkite.NewClient(config.Client())
 
 		// Paginate results
-		var nextPage = 1
+		nextPage := 1
 		var pages int
 		log.Printf("request paging progress:")
 		for nextPage > 0 {
@@ -306,7 +306,7 @@ func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags
 	log.Printf("sending reports to %d reporters", len(reporters))
 	var mErrs error
 	for _, report := range reporters {
-		errors.Append(mErrs, report(ctx, *historyFlags, totals, incidents, flakes))
+		mErrs = errors.Append(mErrs, report(ctx, *historyFlags, totals, incidents, flakes))
 	}
 
 	log.Println("done!")

@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"crypto/subtle"
 	"encoding/base64"
+	"fmt"
 	"net/http"
 	"net/url"
 	"sync"
@@ -13,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/apptoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -80,7 +82,7 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 	}
 
 	return func(w http.ResponseWriter, r *http.Request) error {
-		secret := r.URL.Query().Get("secret")
+		secret := r.URL.Query().Get("s")
 		if secret == "" {
 			return handler(w, r)
 		}
@@ -101,6 +103,11 @@ func AppSignInMiddleware(db database.DB, handler func(w http.ResponseWriter, r *
 		}
 		if err := session.SetActor(w, r, &actor, 0, user.CreatedAt); err != nil {
 			return errors.Wrap(err, "Could not create new user session")
+		}
+
+		err = apptoken.CreateAppTokenFileIfNotExists(r.Context(), db, user.ID)
+		if err != nil {
+			fmt.Println("Error creating app token file", errors.Wrap(err, "Could not create app token file"))
 		}
 
 		// Success. Redirect to search or to "redirect" param if present.
@@ -170,7 +177,7 @@ func appSignInURL() string {
 	}
 	u.Path = "/sign-in"
 	query := u.Query()
-	query.Set("secret", secret)
+	query.Set("s", secret)
 	u.RawQuery = query.Encode()
 	return u.String()
 }

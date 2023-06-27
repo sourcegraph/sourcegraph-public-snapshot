@@ -24,7 +24,7 @@
 
 # Cody App
 
-The Cody app is a free, lightweight, native desktop application that connects your local code to our AI coding assistant, Cody. You can ask Cody questions about all the code you connect to your app in both the app interface and, if you connect the VS code extension, in your editor. 
+The Cody app is a free, lightweight, native desktop application that connects your local code to our AI coding assistant, Cody. You can ask Cody questions about all the code you connect to your app in both the app interface and, if you connect the VS code extension, in your editor.
 
 <div class="socials">
   <a href="https://discord.com/invite/s2qDtYGnAE"><img alt="Discord" src="discord.svg"></img></a>
@@ -34,11 +34,11 @@ The Cody app is a free, lightweight, native desktop application that connects yo
 
 ## Installation
 
-Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.16%2B1314.6c2d49d47c) to find the right download link for your operating system. The app is currently supported on MacOS and Linux, and we're working on Windows support.
+Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/tag/app-v2023.6.21%2B1321.8c3a4999f2) to find the right download link for your operating system. The app is currently supported on MacOS (use _aarch64.dmg for Apple Silicon or _x64.dmg for Mac Intel) and Linux (_amd64.deb), and we're working on Windows support.
 
 ## Setup
 
-Follow the setup instructions to connect the app to your Sourcegraph.com account (or create one for free if you don't have an account yet), add your local projects, and select up to 10 of those projects to build your code graph. The code graph helps Cody generate more accurate answers about your code by sending your code to Sourcegraph to create [embeddings](../cody/explanations/code_graph_context.md#embeddings). (This may take a few minutes, depending on the size of your repos.) We are working on making it so that *all* the projects you connect to your app get embeddings and bumping the cap up from 10.   
+Follow the setup instructions to connect the app to your Sourcegraph.com account (or create one for free if you don't have an account yet), add your local projects, and select up to 10 of those projects to build your code graph. The code graph helps Cody generate more accurate answers about your code by sending your code to Sourcegraph to create [embeddings](../cody/explanations/code_graph_context.md#embeddings). (This may take a few minutes, depending on the size of your repos.) We are working on making it so that *all* the projects you connect to your app get embeddings and bumping the cap up from 10.
 
 If you use VS Code, we recommend you follow the steps to download the VS Code extension, which enables Cody within your editor. If you already have the extension, use the settings gear in the Cody chat window in the editor to log out and log back in through the app. Cody in VS Code will then talk to your Sourcegraph app to answer questions.
 
@@ -62,25 +62,28 @@ If you're on a version that's 2023.6.13 or older, we recommend you uninstall the
 There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as we continue development on [Cody Gateway](../cody/explanations/cody_gateway.md).
 
 ### Cody Chat
-Interactions with Cody Chat (whether in the app UI or in the editor extension) are capped at 100 requests per day. 
+Interactions with Cody Chat (whether in the app UI or in the editor extension) are capped at 100 requests per day.
 
-### Completions
-Cody completions (autocomplete powered by Cody) are capped at 100 requests per day. Learn more about [Cody Completions](../cody/completions.md).
+### Code autocomplete
+Code autocomplete is capped at 1000 requests per day. Learn more about [Cody Completions](../cody/autocomplete.md).
 
 ### Embeddings
-The setup experience allows users to select up to 10 repos for embeddings. Additional repos can be added, and embeddings can be scheduled, under Settings > Advanced settings > Embedding jobs, but the number of additional repos supported will vary depending on size.  
+The setup experience allows users to select up to 10 repos for embeddings. Additional repos can be added, and embeddings can be scheduled, under Settings > Advanced settings > Embedding jobs, but the number of additional repos supported will vary depending on size.
 
 ## Uninstallation
 
-We're working on a better way to clear all data including webkit storage, but for now you can run `rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody` to uninstall the app.
+We're working on a better way to clear all data including webkit storage, but for now you can run the following command to uninstall the app:
+```bash
+rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody
+```
 
 ## Troubleshooting
 
-Known issues: 
-- The app is slow to load on initial install, due to Postgres issues we're working to tighten up. 
-- In the app's Cody Chat UI, Cody will read N files to provide an answer. Those files are listed as hyperlinks, but they should not be. 
-- In the settings dropdown in the app, there's an option for "Teams" that should not be there as the app is a single-player experience. 
-- The cloud icon in the app UI always says "indexing" and refers to Sourcegraph code search, not projects that are being added to the app's code graph. 
+Known issues:
+- The app is slow to load on initial install, due to Postgres issues we're working to tighten up.
+- In the app's Cody Chat UI, Cody will read N files to provide an answer. Those files are listed as hyperlinks, but they should not be.
+- In the settings dropdown in the app, there's an option for "Teams" that should not be there as the app is a single-player experience.
+- The cloud icon in the app UI always says "indexing" and refers to Sourcegraph code search, not projects that are being added to the app's code graph.
 
 See [App troubleshooting](troubleshooting.md)
 

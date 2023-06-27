@@ -26,7 +26,7 @@ public class ChatBubble extends JPanel {
     Node document = parser.parse(message.getDisplayText());
     MessageContentCreatorFromMarkdownNodes messageContentCreator =
         new MessageContentCreatorFromMarkdownNodes(
-            messagePanel, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+            messagePanel, message.getSpeaker(), ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
     document.accept(messageContentCreator);
     return messagePanel;
   }

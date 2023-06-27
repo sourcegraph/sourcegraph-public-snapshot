@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -84,14 +84,6 @@
         "description": "Discover how Cody can help you write and understand code faster.",
         "steps": [
           {
-            "id": "setup",
-            "title": "Setup Cody",
-            "description": "Get started by logging into Sourcegraph and setting up Cody.\n[Setup Cody](command:cody.walkthrough.showLogin)",
-            "media": {
-              "markdown": "walkthroughs/setup.md"
-            }
-          },
-          {
             "id": "chat",
             "title": "Ask Cody a Question",
             "description": "Cody writes code and answers questions using your own code graph as context.\n[Open Chat](command:cody.walkthrough.showChat)",
@@ -117,18 +109,18 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Assist (Experimental)",
-            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
+            "title": "Inline Chat (Experimental)",
+            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
             }
           },
           {
-            "id": "completions",
-            "title": "Code Completions (Experimental)",
-            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeCompletions)",
+            "id": "autocomplete",
+            "title": "Code Autocomplete (Beta)",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
             "media": {
-              "markdown": "walkthroughs/completions.md"
+              "markdown": "walkthroughs/autocomplete.md"
             }
           },
           {
@@ -291,29 +283,36 @@
         "title": "Codebase Context Search"
       },
       {
-        "command": "cody.set-access-token",
+        "command": "cody.test.token",
         "category": "Cody",
         "title": "Set Access Token"
       },
       {
-        "command": "cody.delete-access-token",
+        "command": "cody.settings.user",
         "category": "Cody",
-        "title": "Sign out"
+        "title": "User Settings",
+        "icon": "$(account)"
       },
       {
-        "command": "cody.clear-chat-history",
+        "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Clear chat history"
+        "title": "Sign Out…",
+        "icon": "$(sign-out)"
+      },
+      {
+        "command": "cody.auth.signin",
+        "category": "Cody",
+        "title": "Switch Account…"
       },
       {
         "command": "cody.manual-completions",
         "category": "Cody",
-        "title": "Open Completions Panel"
+        "title": "Open Autocomplete Panel (Experimental)"
       },
       {
-        "command": "cody.settings",
+        "command": "cody.settings.extension",
         "category": "Cody",
-        "title": "Settings",
+        "title": "Extension Settings",
         "group": "Cody",
         "icon": "$(gear)"
       },
@@ -359,24 +358,19 @@
       {
         "command": "cody.walkthrough.enableInlineAssist",
         "category": "Cody Walkthrough",
-        "title": "Show Inline Assist"
-      },
-      {
-        "command": "cody.walkthrough.enableCodeCompletions",
-        "category": "Cody Walkthrough",
-        "title": "Enable Code Completions"
+        "title": "Show Inline Chat"
       },
       {
         "command": "cody.comment.add",
         "title": "Ask Cody",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
         "title": "Remove Comment",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
@@ -384,10 +378,17 @@
       {
         "command": "cody.comment.load",
         "title": "Loading",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
+      },
+      {
+        "command": "cody.inline.new",
+        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
+        "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
+        "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.guardrails.debug",
@@ -475,6 +476,11 @@
         "key": "ctrl+shift+t",
         "mac": "shift+cmd+t",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.inline.new",
+        "key": "ctrl+shift+c",
+        "when": "cody.activated && !editorReadonly"
       }
     ],
     "submenus": [
@@ -487,7 +493,7 @@
       "commandPalette": [
         {
           "command": "cody.recipe.explain-code",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.context-search",
@@ -495,27 +501,27 @@
         },
         {
           "command": "cody.recipe.optimize-code",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.explain-code-high-level",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.file-touch",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.generate-unit-test",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.generate-docstring",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.translate-to-language",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.git-history",
@@ -523,16 +529,20 @@
         },
         {
           "command": "cody.recipe.fixup",
-          "when": "cody.activated"
+          "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.set-access-token",
+          "command": "cody.test.token",
           "when": "false"
         },
         {
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
+        },
+        {
+          "command": "cody.settings.user",
+          "when": "cody.activated && cody.test.inProgress"
         },
         {
           "command": "cody.comment.add",
@@ -563,8 +573,12 @@
           "when": "false"
         },
         {
+          "command": "cody.fixup.open",
+          "when": "false"
+        },
+        {
           "command": "cody.manual-completions",
-          "when": "config.cody.experimental.suggestions"
+          "when": "config.cody.autocomplete"
         },
         {
           "command": "cody.guardrails.debug",
@@ -588,10 +602,6 @@
         },
         {
           "command": "cody.walkthrough.showExplain",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.enableCodeCompletions",
           "when": "false"
         },
         {
@@ -665,22 +675,42 @@
         {
           "command": "cody.feedback",
           "when": "view == cody.chat",
-          "group": "navigation@3"
-        },
-        {
-          "command": "cody.settings",
-          "when": "view == cody.chat && cody.activated",
-          "group": "navigation@4"
+          "group": "7_cody@0"
         },
         {
           "command": "cody.welcome",
           "when": "view == cody.chat",
-          "group": "navigation@5"
+          "group": "7_cody@0"
+        },
+        {
+          "command": "cody.auth.signout",
+          "when": "view == cody.chat && cody.activated",
+          "group": "9_cody@2"
+        },
+        {
+          "command": "cody.auth.signin",
+          "when": "view == cody.chat && cody.activated",
+          "group": "9_cody@0"
+        },
+        {
+          "command": "cody.settings.user",
+          "when": "view == cody.chat && cody.activated && cody.test.inProgress",
+          "group": "navigation@3"
+        },
+        {
+          "command": "cody.settings.extension",
+          "when": "view == cody.chat",
+          "group": "8_cody@1"
         },
         {
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
+        },
+        {
+          "command": "workbench.action.reloadWindow",
+          "title": "Reload",
+          "group": "8_cody@0"
         }
       ],
       "editor/title": [
@@ -741,9 +771,9 @@
         "cody.serverEndpoint": {
           "order": 1,
           "type": "string",
-          "default": "https://sourcegraph.com",
-          "example": "https://example.sourcegraph.com",
-          "description": "URL to the Sourcegraph instance."
+          "format": "uri",
+          "description": "URL to the Sourcegraph instance.",
+          "examples": "https://example.sourcegraph.com"
         },
         "cody.codebase": {
           "order": 2,
@@ -779,10 +809,15 @@
           ]
         },
         "cody.experimental.suggestions": {
+          "type": "boolean",
+          "default": false,
+          "deprecationMessage": "Use `cody.autocomplete` instead"
+        },
+        "cody.autocomplete.enabled":{
           "order": 5,
           "type": "boolean",
-          "markdownDescription": "Enables experimental Cody completions in your editor.",
-          "default": false
+          "markdownDescription": "Enables inline code suggestions in your editor.",
+          "default": true
         },
         "cody.experimental.chatPredictions": {
           "order": 6,
@@ -792,9 +827,9 @@
         },
         "cody.experimental.inline": {
           "order": 7,
-          "title": "Cody Inline Assist",
+          "title": "Cody Inline Chat",
           "type": "boolean",
-          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
+          "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
           "default": false
         },
         "cody.experimental.guardrails": {
@@ -827,19 +862,45 @@
         "cody.completions.advanced.provider": {
           "type": "string",
           "default": "anthropic",
-          "markdownDescription": "Overwrite the provider used for generating code completions. Only supported values at the moment are `anthropic` (default) or `unstable-codegen`."
+          "deprecationMessage": "Use `cody.autocomplete.advanced.provider` instead"
+        },
+        "cody.autocomplete.advanced.provider": {
+          "type": "string",
+          "default": "anthropic",
+          "markdownDescription": "Overwrite the provider used for code autocomplete. Only supported values at the moment are `anthropic` (default), `unstable-codegen`, or `unstable-huggingface`."
         },
         "cody.completions.advanced.serverEndpoint": {
           "type": "string",
-          "markdownDescription": "Overwrite the server endpoint used for generating code completions. This is only supported with the `unstable-codegen` provider right now."
+          "deprecationMessage": "Use `cody.autocomplete.advanced.serverEndpoint` instead"
+        },
+        "cody.autocomplete.advanced.serverEndpoint": {
+          "type": "string",
+          "markdownDescription": "Overwrite the server endpoint used for code autocomplete. This is only supported with the `unstable-codegen` or `unstable-huggingface` provider."
+        },
+        "cody.completions.advanced.accessToken": {
+          "type": "string",
+          "deprecationMessage": "Use `cody.autocomplete.advanced.accessToken` instead"
+        },
+        "cody.autocomplete.advanced.accessToken": {
+          "type": "string",
+          "markdownDescription": "Overwrite the access token used for code autocomplete. This is only supported with the `unstable-huggingface` provider."
         },
         "cody.completions.advanced.cache": {
-          "order": 99,
           "type": "boolean",
           "default": true,
-          "markdownDescription": "Enables caching of code completions."
+          "deprecationMessage": "Use `cody.autocomplete.advanced.cache` instead"
+        },
+        "cody.autocomplete.advanced.cache": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Enables caching of code autocomplete."
         },
         "cody.completions.advanced.embeddings": {
+          "type": "boolean",
+          "default": true,
+          "deprecationMessage": "Use `cody.autocomplete.advanced.embeddings` instead"
+        },
+        "cody.autocomplete.advanced.embeddings": {
           "order": 99,
           "type": "boolean",
           "default": true,

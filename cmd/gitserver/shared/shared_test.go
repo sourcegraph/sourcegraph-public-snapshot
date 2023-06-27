@@ -79,7 +79,6 @@ func TestGetVCSSyncer(t *testing.T) {
 	repo := api.RepoName("foo/bar")
 	extsvcStore := database.NewMockExternalServiceStore()
 	repoStore := database.NewMockRepoStore()
-	depsSvc := new(dependencies.Service)
 
 	repoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
 		return &types.Repo{
@@ -104,7 +103,14 @@ func TestGetVCSSyncer(t *testing.T) {
 		}, nil
 	})
 
-	s, err := getVCSSyncer(context.Background(), extsvcStore, repoStore, depsSvc, repo, tempReposDir, tempCoursierCacheDir)
+	s, err := getVCSSyncer(context.Background(), &newVCSSyncerOpts{
+		externalServiceStore: extsvcStore,
+		repoStore:            repoStore,
+		depsSvc:              new(dependencies.Service),
+		repo:                 repo,
+		reposDir:             tempReposDir,
+		coursierCacheDir:     tempCoursierCacheDir,
+	})
 	if err != nil {
 		t.Fatal(err)
 	}

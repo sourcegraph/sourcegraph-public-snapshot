@@ -135,6 +135,12 @@ func (rf *RecordingCommandFactory) Update(shouldRecord ShouldRecordFunc, max int
 	rf.maxSize = max
 }
 
+// Disable will modify the RecordingCommandFactory so that from that point, it
+// will not record. This is a convenience around Update.
+func (rf *RecordingCommandFactory) Disable() {
+	rf.Update(nil, 0)
+}
+
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
 func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, name string, args ...string) *RecordingCmd {
 	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
@@ -146,4 +152,9 @@ func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logge
 func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *RecordingCmd {
 	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
+}
+
+// NewNoOpRecordingCommandFactory is a recording command factory that is intialised with a nil shouldRecord and maxSize 0. This is a helper for use in tests.
+func NewNoOpRecordingCommandFactory() *RecordingCommandFactory {
+	return &RecordingCommandFactory{shouldRecord: nil, maxSize: 0}
 }

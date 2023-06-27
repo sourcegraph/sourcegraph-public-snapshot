@@ -6,12 +6,12 @@ import { useSearchParams } from 'react-router-dom'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { Button, H1, Icon, Link, PageHeader, ProductStatusBadge, ButtonLink } from '@sourcegraph/wildcard'
 
+import { AddOwnerModal } from '../../components/own/AddOwnerModal'
 import { Page } from '../../components/Page'
 import { PageTitle } from '../../components/PageTitle'
 import { TreeOwnershipPanel } from '../../repo/blob/own/TreeOwnershipPanel'
 import { FilePathBreadcrumbs } from '../../repo/FilePathBreadcrumbs'
 
-import { AddOwnerModal } from './AddOwnerModal'
 import { RepositoryOwnAreaPageProps } from './RepositoryOwnEditPage'
 
 import styles from './RepositoryOwnPageContents.module.scss'

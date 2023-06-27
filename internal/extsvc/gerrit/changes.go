@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,6 +25,11 @@ func (c *client) GetChange(ctx context.Context, changeID string) (*Change, error
 	var change Change
 	resp, err := c.do(ctx, req, &change)
 	if err != nil {
+		// This is a fringe scenario where Gerrit has multiple changes with the same Change ID, we want
+		// to pass back a unique error explicitly.
+		if strings.Contains(err.Error(), "changes found for") {
+			return nil, MultipleChangesError{ID: changeID}
+		}
 		return nil, err
 	}
 
@@ -56,6 +62,30 @@ func (c *client) AbandonChange(ctx context.Context, changeID string) (*Change, e
 	}
 
 	return &change, nil
+}
+
+// DeleteChange permanently deletes a Gerrit change.
+func (c *client) DeleteChange(ctx context.Context, changeID string) error {
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID))
+	if err != nil {
+		return err
+	}
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("DELETE", reqURL.String(), nil)
+	if err != nil {
+		return err
+	}
+
+	resp, err := c.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	return nil
 }
 
 // SubmitChange submits a Gerrit change.
@@ -211,4 +241,66 @@ func (c *client) GetChangeReviews(ctx context.Context, changeID string) (*[]Revi
 	}
 
 	return &reviewers, nil
+}
+
+// MoveChange moves a Gerrit change to a different destination branch.
+func (c *client) MoveChange(ctx context.Context, changeID string, input MoveChangePayload) (*Change, error) {
+
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "move")
+	if err != nil {
+		return nil, err
+	}
+
+	reqURL := url.URL{Path: pathStr}
+
+	data, err := json.Marshal(input)
+	if err != nil {
+		return nil, err
+	}
+	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(data))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	var change Change
+	resp, err := c.do(ctx, req, &change)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	return &change, nil
+}
+
+// SetCommitMessage changes the commit message of a Gerrit change.
+func (c *client) SetCommitMessage(ctx context.Context, changeID string, input SetCommitMessagePayload) error {
+
+	pathStr, err := url.JoinPath("a/changes", url.PathEscape(changeID), "message")
+	if err != nil {
+		return err
+	}
+	data, err := json.Marshal(input)
+	if err != nil {
+		return err
+	}
+
+	reqURL := url.URL{Path: pathStr}
+	req, err := http.NewRequest("PUT", reqURL.String(), bytes.NewBuffer(data))
+	if err != nil {
+		return err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.do(ctx, req, nil)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode >= http.StatusBadRequest {
+		return errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+	return nil
 }

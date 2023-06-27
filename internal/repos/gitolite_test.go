@@ -16,7 +16,7 @@ func TestGitoliteSource(t *testing.T) {
 
 	svc := &types.ExternalService{
 		Kind:   extsvc.KindGitolite,
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitoliteConnection{})),
+		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitoliteConnection{})),
 	}
 
 	ctx := context.Background()

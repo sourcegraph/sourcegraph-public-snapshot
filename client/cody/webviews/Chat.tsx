@@ -49,9 +49,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     suggestions,
     setSuggestions,
 }) => {
+    const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
+
     const abortMessageInProgress = useCallback(() => {
+        abortMessageInProgressInternal()
         vscodeAPI.postMessage({ command: 'abort' })
-    }, [vscodeAPI])
+        setAbortMessageInProgress(() => () => undefined)
+    }, [abortMessageInProgressInternal, vscodeAPI])
 
     const onSubmit = useCallback(
         (text: string, submitType: 'user' | 'suggestion') => {
@@ -124,6 +128,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
+            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
         />
     )
 }
@@ -214,12 +219,9 @@ const SubmitButton: React.FunctionComponent<ChatUISubmitButtonProps> = ({ classN
 )
 
 const SuggestionButton: React.FunctionComponent<ChatUISuggestionButtonProps> = ({ suggestion, onClick }) => (
-    <VSCodeButton className={styles.suggestionButton} appearance="secondary" type="button" onClick={onClick}>
-        <i className="codicon codicon-sparkle" slot="start">
-            {/* Fallback emoji because this icon is a new addition and doesn't seem to work for me? */}✨
-        </i>{' '}
+    <button className={styles.suggestionButton} type="button" onClick={onClick}>
         {suggestion}
-    </VSCodeButton>
+    </button>
 )
 
 const EditButton: React.FunctionComponent<EditButtonProps> = ({

@@ -47,11 +47,6 @@ export class ChatQuestion implements Recipe {
     ): Promise<ContextMessage[]> {
         const contextMessages: ContextMessage[] = []
 
-        // Add selected text as context when available
-        if (selection?.selectedText) {
-            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
-        }
-
         const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
@@ -69,6 +64,11 @@ export class ChatQuestion implements Recipe {
             contextMessages.push(...ChatQuestion.getEditorContext(editor))
         }
 
+        // Add selected text as context when available
+        if (selection?.selectedText) {
+            contextMessages.push(...ChatQuestion.getEditorSelectionContext(selection))
+        }
+
         return contextMessages
     }
 
@@ -79,7 +79,7 @@ export class ChatQuestion implements Recipe {
         }
         const truncatedContent = truncateText(visibleContent.content, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName),
+            populateCurrentEditorContextTemplate(truncatedContent, visibleContent.fileName, visibleContent.repoName),
             visibleContent
         )
     }
@@ -87,7 +87,7 @@ export class ChatQuestion implements Recipe {
     public static getEditorSelectionContext(selection: ActiveTextEditorSelection): ContextMessage[] {
         const truncatedContent = truncateText(selection.selectedText, MAX_CURRENT_FILE_TOKENS)
         return getContextMessageWithResponse(
-            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName),
+            populateCurrentEditorSelectedContextTemplate(truncatedContent, selection.fileName, selection.repoName),
             selection
         )
     }

@@ -19,6 +19,8 @@ interface ScopeSelectorProps {
     setScope: (scope: CodyClientScope) => void
     toggleIncludeInferredRepository: () => void
     toggleIncludeInferredFile: () => void
+    fetchRepositoryNames: (count: number) => Promise<string[]>
+    isSourcegraphApp: boolean
 }
 
 export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function ScopeSelectorComponent({
@@ -26,6 +28,8 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
     setScope,
     toggleIncludeInferredRepository,
     toggleIncludeInferredFile,
+    fetchRepositoryNames,
+    isSourcegraphApp,
 }) {
     const [loadReposStatus, { data: newReposStatusData, previousData: previousReposStatusData }] = useLazyQuery<
         ReposStatusResult,
@@ -91,10 +95,15 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
         [scope, setScope]
     )
 
-    const resetScope = useCallback(() => {
+    const resetScope = useCallback(async (): Promise<void> => {
         eventLogger.log(EventName.CODY_CHAT_SCOPE_RESET)
-        setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
-    }, [scope, setScope])
+        if (!isSourcegraphApp) {
+            return setScope({ ...scope, repositories: [], includeInferredRepository: true, includeInferredFile: true })
+        }
+
+        const repositories = await fetchRepositoryNames(10)
+        return setScope({ ...scope, repositories, includeInferredRepository: true, includeInferredFile: true })
+    }, [scope, setScope, fetchRepositoryNames, isSourcegraphApp])
 
     return (
         <div className={styles.wrapper}>

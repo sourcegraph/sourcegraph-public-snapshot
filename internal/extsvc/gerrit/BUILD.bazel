@@ -37,6 +37,8 @@ go_test(
         "//internal/httptestutil",
         "//internal/lazyregexp",
         "//internal/testutil",
+        "//lib/errors",
         "@com_github_dnaeon_go_vcr//cassette",
+        "@com_github_stretchr_testify//assert",
     ],
 )

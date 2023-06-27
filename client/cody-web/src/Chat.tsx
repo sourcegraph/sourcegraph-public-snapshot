@@ -42,7 +42,7 @@ export const Chat: React.FunctionComponent<
         textAreaComponent={TextArea}
         submitButtonComponent={SubmitButton}
         fileLinkComponent={FileLink}
-        afterTips={CODY_TERMS_MARKDOWN}
+        afterMarkdown={CODY_TERMS_MARKDOWN}
         transcriptItemClassName={styles.transcriptItem}
         humanTranscriptItemClassName={styles.humanTranscriptItem}
         transcriptItemParticipantClassName={styles.transcriptItemParticipant}

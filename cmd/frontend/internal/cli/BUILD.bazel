@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "autoupgrade.go",
         "autoupgrade_progress.go",
+        "autoupgrade_servers.go",
         "config.go",
         "doc.go",
         "http.go",
@@ -48,7 +49,6 @@ go_library(
         "//internal/database/dbconn",
         "//internal/database/dbutil",
         "//internal/database/migration",
-        "//internal/database/migration/cliutil",
         "//internal/database/migration/multiversion",
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",

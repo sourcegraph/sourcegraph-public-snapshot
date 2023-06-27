@@ -3,6 +3,7 @@
 .form {
     margin: 2rem auto;
     padding-bottom: 3rem;
+    min-width: min(100%, 720px);
     max-width: 720px;
 
     @media (--md-breakpoint-down) {

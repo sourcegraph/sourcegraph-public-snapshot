@@ -11,14 +11,15 @@ import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.openapi.util.Key;
+import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.CodyCompatibility;
 import com.sourcegraph.cody.api.CompletionsService;
 import com.sourcegraph.cody.completions.prompt_library.*;
 import com.sourcegraph.cody.vscode.*;
+import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.NotificationActivity;
-import com.sourcegraph.config.SettingsComponent;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
@@ -142,6 +143,7 @@ public class CodyCompletionsManager {
               Optional<InlineCompletionItem> maybeItem =
                   result.items.stream()
                       .map(CodyCompletionsManager::removeUndesiredCharacters)
+                      .map(item -> normalizeIndentation(item, EditorUtils.indentOptions(editor)))
                       .map(
                           resultItem ->
                               postProcessInlineCompletionBasedOnDocumentContext(
@@ -166,6 +168,24 @@ public class CodyCompletionsManager {
                 e.printStackTrace();
               }
             });
+  }
+
+  // TODO: handle tabs in multiline completions when we add them
+  public static InlineCompletionItem normalizeIndentation(
+      @NotNull InlineCompletionItem item,
+      @NotNull CommonCodeStyleSettings.IndentOptions indentOptions) {
+    if (item.insertText.matches("^[\t ]*.+")) {
+      String withoutLeadingWhitespace = item.insertText.stripLeading();
+      String indentation =
+          item.insertText.substring(
+              0, item.insertText.length() - withoutLeadingWhitespace.length());
+      String newIndentation = EditorUtils.tabsToSpaces(indentation, indentOptions);
+      String newInsertText = newIndentation + withoutLeadingWhitespace;
+      int rangeDiff = item.insertText.length() - newInsertText.length();
+      Range newRange =
+          item.range.withEnd(item.range.end.withCharacter(item.range.end.character - rangeDiff));
+      return item.withInsertText(newInsertText).withRange(newRange);
+    } else return item;
   }
 
   public static InlineCompletionItem removeUndesiredCharacters(InlineCompletionItem item) {
@@ -208,17 +228,14 @@ public class CodyCompletionsManager {
 
   private CompletionsService completionsService(Editor editor) {
     Project project = editor.getProject();
-    boolean isEnterprise =
-        ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
     String srcEndpoint = System.getenv("SRC_ENDPOINT");
     String instanceUrl =
         srcEndpoint != null
             ? srcEndpoint
-            : isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
-    String accessToken =
-        isEnterprise
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
+            : Optional.ofNullable(project)
+                .map(ConfigUtil::getSourcegraphUrl)
+                .orElse(ConfigUtil.DOTCOM_URL); // fallback to dotcom in case Project is null
+    String accessToken = ConfigUtil.getProjectAccessToken(project);
     if (!instanceUrl.endsWith("/")) {
       instanceUrl = instanceUrl + "/";
     }

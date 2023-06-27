@@ -31,7 +31,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Tue, 07 Feb 2023 07:47:46 GMT
+      - Fri, 23 Jun 2023 19:25:01 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -47,17 +47,17 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - 1463:5E1F:CE225B:D22A94:63E20221
+      - E125:4AB7:158BCAD:2BE6E22:6495F18C
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4968"
+      - "4913"
       X-Ratelimit-Reset:
-      - "1675759612"
+      - "1687551677"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "32"
+      - "87"
       X-Xss-Protection:
       - "0"
     status: 200 OK

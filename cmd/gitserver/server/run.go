@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"sync"
 	"syscall"
 
 	"github.com/sourcegraph/log"
@@ -21,6 +22,18 @@ import (
 // unsetExitStatus is a sentinel value for an unknown/unset exit status.
 const unsetExitStatus = -10810
 
+// updateRunCommandMock sets the runCommand mock function for use in tests
+func updateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
+	runCommandMockMu.Lock()
+	defer runCommandMockMu.Unlock()
+
+	runCommandMock = mock
+}
+
+// runCommmandMockMu protects runCommandMock against simultaneous access across
+// multiple goroutines
+var runCommandMockMu sync.RWMutex
+
 // runCommandMock is set by tests. When non-nil it is run instead of
 // runCommand
 var runCommandMock func(context.Context, *exec.Cmd) (int, error)
@@ -28,9 +41,15 @@ var runCommandMock func(context.Context, *exec.Cmd) (int, error)
 // runCommand runs the command and returns the exit status. All clients of this function should set the context
 // in cmd themselves, but we have to pass the context separately here for the sake of tracing.
 func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
+	runCommandMockMu.RLock()
+
 	if runCommandMock != nil {
-		return runCommandMock(ctx, cmd.Unwrap())
+		code, err := runCommandMock(ctx, cmd.Unwrap())
+		runCommandMockMu.RUnlock()
+		return code, err
 	}
+	runCommandMockMu.RUnlock()
+
 	tr, _ := trace.New(ctx, "gitserver", "runCommand",
 		attribute.String("path", cmd.Unwrap().Path),
 		attribute.StringSlice("args", cmd.Unwrap().Args),
@@ -77,20 +96,11 @@ func runRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts
 		Bytes() []byte
 	}
 
-	logger := log.Scoped("runWith", "runWith runs the command after applying the remote options")
-
 	if progress != nil {
 		var pw progressWriter
-		r, w := io.Pipe()
-		defer w.Close()
-		mr := io.MultiWriter(&pw, w)
+		mr := io.MultiWriter(&pw, progress)
 		cmd.Unwrap().Stdout = mr
 		cmd.Unwrap().Stderr = mr
-		go func() {
-			if _, err := io.Copy(progress, r); err != nil {
-				logger.Error("error while copying progress", log.Error(err))
-			}
-		}()
 		b = &pw
 	} else {
 		var buf bytes.Buffer
@@ -113,6 +123,9 @@ var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
 // progressWriter is an io.Writer that writes to a buffer.
 // '\r' resets the write offset to the index after last '\n' in the buffer,
 // or the beginning of the buffer if a '\n' has not been written yet.
+//
+// This exists to remove intermediate progress reports from "git clone
+// --progress".
 type progressWriter struct {
 	// writeOffset is the offset in buf where the next write should begin.
 	writeOffset int

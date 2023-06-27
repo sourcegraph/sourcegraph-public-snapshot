@@ -7,15 +7,22 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.KeyboardShortcut;
+import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.fileEditor.TextEditor;
 import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.project.ProjectManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
+import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.agent.CodyAgentServer;
+import com.sourcegraph.cody.completions.CodyCompletionsManager;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.util.Arrays;
 import java.util.Objects;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
@@ -50,6 +57,12 @@ public class SettingsChangeListener implements Disposable {
               javaToJSBridge.callJS("pluginSettingsChanged", ConfigUtil.getConfigAsJson(project));
             }
 
+            // Notify Cody Agent about config changes.
+            CodyAgentServer agentServer = CodyAgent.getServer(project);
+            if (agentServer != null) {
+              agentServer.configurationDidChange(ConfigUtil.getAgentConfiguration(project));
+            }
+
             // Log install events
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
@@ -78,6 +91,19 @@ public class SettingsChangeListener implements Disposable {
                     ConfigUtil.setAuthenticationFailedLastTime(
                         status != ApiAuthenticator.ConnectionStatus.AUTHENTICATED);
                   });
+            }
+
+            // clear completions if freshly disabled
+            if (context.oldCodyCompletionsEnabled && !context.newCodyCompletionsEnabled) {
+              Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
+              CodyCompletionsManager codyCompletionsManager = CodyCompletionsManager.getInstance();
+              Arrays.stream(openProjects)
+                  .flatMap(
+                      project ->
+                          Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
+                  .filter(fileEditor -> fileEditor instanceof TextEditor)
+                  .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
+                  .forEach(codyCompletionsManager::clearCompletions);
             }
           }
         });

@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "beforeBuildCommand": "bash ./src-tauri/compose-assets.sh",
-    "devPath": "http://localhost:3080/sign-in?secret=foobar&returnTo=/",
+    "devPath": "http://localhost:3080/sign-in?s=foobar&returnTo=/",
     "distDir": "./assets",
     "withGlobalTauri": true
   },
@@ -32,7 +32,9 @@
         "open": "^(vscode:|https?:)|com.sourcegraph.cody/.*.log$"
       },
       "window": {
-        "startDragging": true
+        "startDragging": true,
+        "setSize": true,
+        "setResizable": true
       }
     },
     "systemTray": {
@@ -79,11 +81,13 @@
     },
     "windows": [
       {
-        "fullscreen": false,
-        "height": 768,
-        "resizable": true,
         "title": "Cody",
-        "width": 1024
+        "fullscreen": false,
+        "resizable": true,
+        "width": 1024,
+        "height": 768,
+        "minWidth": 360,
+        "minHeight": 620
       }
     ]
   }

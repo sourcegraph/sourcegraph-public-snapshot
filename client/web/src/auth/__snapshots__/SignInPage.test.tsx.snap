@@ -495,7 +495,7 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
             class="anchorLink"
             href="https://about.sourcegraph.com/app"
           >
-            download Sourcegraph app
+            download Cody app
           </a>
            or 
           <a

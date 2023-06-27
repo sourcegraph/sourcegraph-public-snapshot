@@ -13,18 +13,25 @@ pub fn show_window(app: &AppHandle, label: &str) {
 }
 
 /// Extracts the path from a URL that starts with the scheme followed by `://`.
-///
-/// # Examples
-///
-/// ```
-/// let url = "sourcegraph://settings";
-/// assert_eq!(extract_path_from_url(url), "/settings");
-///
-/// let url = "sourcegraph://user/admin";
-/// assert_eq!(extract_path_from_url(url), "/user/admin");
-/// ```
-pub fn extract_path_from_scheme_url<'a>(url: &'a str, scheme: &str) -> &'a str {
-    &url[(scheme.len() + 2)..]
+pub fn extract_path_from_scheme_url<'a>(url: &'a str, scheme: &str) -> Option<&'a str> {
+    // Ensure that the scheme is the one we expect
+    if !url.starts_with(scheme) {
+        return None;
+    }
+
+    // Ensure that there is enough path to extract
+    if url.len() < scheme.len() + 2 {
+        return None;
+    }
+
+    let tentative_path = &url[(scheme.len() + 2)..];
+
+    // Only allow paths that start with a slash
+    if tentative_path.starts_with('/') {
+        Some(tentative_path)
+    } else {
+        None
+    }
 }
 
 /// Checks if a URL starts with the scheme (sourcegraph://)
@@ -44,12 +51,11 @@ pub fn show_logs(app: &AppHandle) {
 
 pub fn prompt_to_clear_all_data(app: &AppHandle) {
     let window = app.get_window("main").unwrap();
-    let path_resolver = app.path_resolver();
     let app_clone = app.clone(); // Clone the app for use in the closure
 
     confirm(
         Some(&window),
-        "Sourcegraph",
+        "Cody",
         "This will remove all data.\nAre you sure?",
         move |answer| {
             if answer {
@@ -86,4 +92,36 @@ fn clear_local_storage(app: &AppHandle) {
     // Note that this will clear localStorage only for the current origin, which
     // is fine assuming the webview is still on localhost:3080.
     window.eval("localStorage.clear();").unwrap();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_path_from_scheme_url() {
+        let url = "sourcegraph://settings";
+        assert_eq!(
+            extract_path_from_scheme_url(url, "sourcegraph"),
+            Some("/settings")
+        );
+
+        let url = "sourcegraph://user/admin";
+        assert_eq!(
+            extract_path_from_scheme_url(url, "sourcegraph"),
+            Some("/user/admin")
+        );
+
+        let url = "sourcegraph:/http://example.com";
+        assert_eq!(extract_path_from_scheme_url(url, "sourcegraph"), None);
+
+        let url = "sourcegraph://";
+        assert_eq!(extract_path_from_scheme_url(url, "sourcegraph"), Some("/"));
+
+        let url = "sourcegraph:/";
+        assert_eq!(extract_path_from_scheme_url(url, "sourcegraph"), None);
+
+        let url = "sourcegraph:";
+        assert_eq!(extract_path_from_scheme_url(url, "sourcegraph"), None);
+    }
 }

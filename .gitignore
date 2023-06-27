@@ -77,6 +77,7 @@ pnpm-debug.log
 /ui/assets/*.br
 /ui/assets/*.gz
 /ui/assets/stats-*
+/ui/assets/enterprise/
 
 *.json.actual
 
@@ -201,3 +202,6 @@ index.scip
 # nix
 result
 result-*
+
+# Windows
+/enterprise/cmd/sourcegraph/__debug_bin.exe
