@@ -452,11 +452,16 @@ class CodyToolWindowContent implements UpdatableChat {
     promptInput.requestFocusInWindow();
 
     /* Insert Enter on Shift+Enter, Ctrl+Enter, Alt/Option+Enter, and Meta+Enter */
-    KeyboardShortcut SHIFT_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, SHIFT_DOWN_MASK), null);
-    KeyboardShortcut CTRL_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
-    KeyboardShortcut ALT_OR_OPTION_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), null);
-    KeyboardShortcut META_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, META_DOWN_MASK), null);
-    ShortcutSet INSERT_ENTER_SHORTCUT = new CustomShortcutSet(CTRL_ENTER, SHIFT_ENTER, META_ENTER, ALT_OR_OPTION_ENTER);
+    KeyboardShortcut SHIFT_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, SHIFT_DOWN_MASK), null);
+    KeyboardShortcut CTRL_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
+    KeyboardShortcut ALT_OR_OPTION_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), null);
+    KeyboardShortcut META_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, META_DOWN_MASK), null);
+    ShortcutSet INSERT_ENTER_SHORTCUT =
+        new CustomShortcutSet(CTRL_ENTER, SHIFT_ENTER, META_ENTER, ALT_OR_OPTION_ENTER);
     AnAction insertEnterAction =
         new DumbAwareAction() {
           @Override
