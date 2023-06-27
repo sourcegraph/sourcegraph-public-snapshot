@@ -571,7 +571,15 @@
 }
 
 .download-btn-wrapper {
-    display:flex;
+
+    @media (--md-breakpoint-up) {
+        display:flex;
+
+    }
+
+    @media (--xs-breakpoint-down) {
+        display:block;
+    }
 }
 
 .download-btn {
