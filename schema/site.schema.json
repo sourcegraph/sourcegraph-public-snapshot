@@ -388,7 +388,7 @@
           }
         },
         "enablePermissionsWebhooks": {
-          "description": "Enables webhook consumers to sync permissions from external services faster than the defaults schedule",
+          "description": "DEPRECATED: No longer has any effect.",
           "type": "boolean",
           "default": false,
           "!go": {
