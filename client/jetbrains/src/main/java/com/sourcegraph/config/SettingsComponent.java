@@ -86,6 +86,17 @@ public class SettingsComponent {
     setInstanceSettingsEnabled(instanceType);
   }
 
+  private ActionLink simpleActionLink(String text, Runnable runnable) {
+    ActionLink actionLink =
+        new ActionLink(
+            text,
+            e -> {
+              runnable.run();
+            });
+    actionLink.setFont(UIUtil.getLabelFont(UIUtil.FontSize.SMALL));
+    return actionLink;
+  }
+
   @NotNull
   private JPanel createAuthenticationPanel() {
     // Create URL field for the enterprise section
@@ -151,6 +162,7 @@ public class SettingsComponent {
                     .orElse(InstanceType.ENTERPRISE));
     boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
     boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
+    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
     codyAppRadioButton.setActionCommand(InstanceType.LOCAL_APP.name());
@@ -176,20 +188,30 @@ public class SettingsComponent {
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    boolean shouldShowInstallLocalAppLink =
+        !isLocalAppInstalled && LocalAppManager.isPlatformSupported();
     ActionLink installLocalAppLink =
-        new ActionLink(
-            "Download Cody App...",
-            e -> {
-              LocalAppManager.browseLocalAppInstallPage();
-            });
-    installLocalAppLink.setVisible(!isLocalAppInstalled);
+        simpleActionLink("Download Cody App...", LocalAppManager::browseLocalAppInstallPage);
+    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
     installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    installLocalAppLink.setFont(UIUtil.getLabelFont(UIUtil.FontSize.SMALL));
+    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
+    ActionLink runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
+    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
+    JLabel runLocalAppComment =
+        new JBLabel(
+            "The local Cody App seems to be installed, but it's not running, currently.",
+            UIUtil.ComponentStyle.SMALL,
+            UIUtil.FontColor.BRIGHTER);
+    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)
             .addComponent(codyAppComment, 2)
             .addComponent(installLocalAppLink, 2)
+            .addComponent(runLocalAppComment, 2)
+            .addComponent(runLocalAppLink, 2)
             .getPanel();
     JBLabel dotComComment =
         new JBLabel(
