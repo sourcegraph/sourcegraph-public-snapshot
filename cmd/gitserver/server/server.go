@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -499,6 +500,12 @@ func (s *Server) Handler() http.Handler {
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
 // background goroutine.
 func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
+	if runtime.GOOS == "windows" {
+		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
+		s.Logger.Warn("Janitor is disabled")
+		return
+	}
+
 	for {
 		gitserverAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
 		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
