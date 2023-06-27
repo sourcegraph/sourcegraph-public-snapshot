@@ -8,19 +8,36 @@ Sourcegraph supports [Perforce Helix](https://www.perforce.com/solutions/version
 
 As of Sourcegraph 5.1, there are new features for Perforce depots that need to be enabled.
 
-### Changelist Id in URLs
+### Changelist ID in URLs
 
 Add `"perforceChangelistMapping": "enabled",` to `experimentalFeatures` in the [site configuration](../config/site_config.md):
 
 ```json
 {
   "experimentalFeatures": {
-   "perforceChangelistMapping": "enabled",
+    "perforceChangelistMapping": "enabled"
   }
 }
 ```
 
-When it is enabled, Sourcegraph URLs for Perforce code hosts will use the Changelist Id instead of commit hashes.
+When enabled, URLs for Perforce code hosts will use the Changelist (CL) ID instead of commit SHAs. Areas that benefit from this at the moment are:
+
+- Viewing a specific CL
+- Viewing the files of a depot at a specific CL
+- Viewing a specific file added / removed / modified in a specific CL
+- Viewing the list of CLs
+
+#### Limitations
+
+While we are working to bring this feature to all areas of the Sourcegraph search experience in subsequent releases there are a few limitations that should be aware of while using this feature:
+
+- To support CLs in the URLs natively, Sourcegraph needs to perform background computation post clone / fetch of a depot by parsing each commit to retrieve the CL ID and store it in the `repo_commits_changelists` table
+- This background computation currently is performed on only one depot at a time and we are working to support this for multiple depots in parallel
+- Although it doesn't take hours to complete the mapping of commits to SHAs, it can take upto a few minutes the first time a new depot is added or this experimental configuration is enabled
+- When a background mapping job is running - the depot won't be actively serviceable as URLs to CL IDs may not resolve and users may see an error while interacting with the repo
+- As a result it's recommended that site admins use a maintenance window to enable this flag especially if they have a large number of Perforce depots or one or more large depots with hundreds of thousands of CLs
+- While removing a depot from a code host config will mark it as "deleted", the mapped information will **not** be deleted to prevent forced recomputation after an accidental removal of depot from a code host config
+- This experimental configuration can not be selectively enabled for a specific perforce depot
 
 ### Batch Changes support for Perforce depots
 
