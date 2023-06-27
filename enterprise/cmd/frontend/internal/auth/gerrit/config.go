@@ -2,6 +2,7 @@ package gerrit
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -34,12 +35,19 @@ type Provider struct {
 }
 
 func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.Problems) {
+	seen := make(map[string]struct{})
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gerrit == nil {
 			continue
 		}
 
 		provider := parseProvider(pr.Gerrit)
+		if _, ok := seen[provider.ServiceID]; !ok {
+			ps = append(ps, provider)
+			seen[provider.ServiceID] = struct{}{}
+		} else {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider with url %q", provider.ServiceID)))
+		}
 		ps = append(ps, provider)
 	}
 

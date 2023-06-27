@@ -1,6 +1,8 @@
 package bitbucketcloudoauth
 
 import (
+	"fmt"
+
 	"github.com/dghubble/gologin"
 	"github.com/sourcegraph/log"
 
@@ -59,11 +61,16 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			continue
 		}
 
+		if _, ok := configured[provider.ServiceID+":"+pr.Bitbucketcloud.ClientKey]; ok {
+			problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q, only the first one will be used`, provider.ServiceID))...)
+			continue
+		}
+
 		ps = append(ps, Provider{
 			BitbucketCloudAuthProvider: pr.Bitbucketcloud,
 			Provider:                   provider,
 		})
-		configured[provider.ServiceID] = struct{}{}
+		configured[provider.ServiceID+":"+pr.Bitbucketcloud.ClientKey] = struct{}{}
 	}
 	return ps, problems
 }

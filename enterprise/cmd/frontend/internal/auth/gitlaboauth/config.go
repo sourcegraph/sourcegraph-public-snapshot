@@ -1,6 +1,7 @@
 package gitlaboauth
 
 import (
+	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/log"
@@ -71,6 +72,18 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		provider, providerMessages := parseProvider(logger, db, callbackURL.String(), pr.Gitlab, pr)
 
 		problems = append(problems, conf.NewSiteProblems(providerMessages...)...)
+		if provider != nil {
+			alreadyExists := false
+			for _, p := range ps {
+				if p.CachedInfo().ServiceID == provider.ServiceID && p.CachedInfo().ClientID == provider.CachedInfo().ClientID {
+					problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q and client ID %q, only the first one will be used`, provider.ServiceID, provider.CachedInfo().ClientID))...)
+					alreadyExists = true
+				}
+			}
+			if alreadyExists {
+				continue
+			}
+		}
 		ps = append(ps, Provider{
 			GitLabAuthProvider: pr.Gitlab,
 			Provider:           provider,

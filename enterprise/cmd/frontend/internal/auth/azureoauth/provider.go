@@ -69,6 +69,8 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		return ps, problems
 	}
 
+	var configuredIDs []string
+
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.AzureDevOps == nil {
 			continue
@@ -83,10 +85,23 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			continue
 		}
 
+		var configured bool
+		for _, clientID := range configuredIDs {
+			if clientID == pr.AzureDevOps.ClientID {
+				configured = true
+			}
+		}
+		if configured {
+			problems = append(problems, conf.NewSiteProblem("Cannot have more than one auth provider for Azure Dev Ops, only the first one will be used"))
+			continue
+		}
+
 		ps = append(ps, Provider{
 			AzureDevOpsAuthProvider: pr.AzureDevOps,
 			Provider:                provider,
 		})
+
+		configuredIDs = append(configuredIDs, pr.AzureDevOps.ClientID)
 	}
 
 	return ps, problems
