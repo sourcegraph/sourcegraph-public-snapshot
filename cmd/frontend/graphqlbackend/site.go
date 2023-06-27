@@ -93,17 +93,17 @@ func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 func (r *siteResolver) SiteID() string { return siteid.Get() }
 
 type SiteConfigurationArgs struct {
-	ReturnWhitelistedConfigForNonAdmins *bool
+	ReturnSafeConfigsOnly *bool
 }
 
 func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfigurationArgs) (*siteConfigurationResolver, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if args.ReturnWhitelistedConfigForNonAdmins != nil && *args.ReturnWhitelistedConfigForNonAdmins {
+		if args.ReturnSafeConfigsOnly != nil && *args.ReturnSafeConfigsOnly {
 			return &siteConfigurationResolver{
-				db:                                  r.db,
-				returnWhitelistedConfigForNonAdmins: *args.ReturnWhitelistedConfigForNonAdmins,
+				db:                    r.db,
+				returnSafeConfigsOnly: *args.ReturnSafeConfigsOnly,
 			}, nil
 		}
 		return nil, err
@@ -230,8 +230,8 @@ func (r *siteResolver) AppHasConnectedDotComAccount() bool {
 }
 
 type siteConfigurationResolver struct {
-	db                                  database.DB
-	returnWhitelistedConfigForNonAdmins bool
+	db                    database.DB
+	returnSafeConfigsOnly bool
 }
 
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
@@ -250,11 +250,11 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it. We optionally allow non-admins to view a set of whitelisted
-	// configuration information if `r.returnWhitelistedConfigForNonAdmins` is true
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil && !r.returnWhitelistedConfigForNonAdmins {
+	// configuration information if `r.returnSafeConfigsOnly` is true
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil && !r.returnSafeConfigsOnly {
 		return "", err
 	}
-	siteConfig, err := conf.RedactSecrets(conf.Raw(), r.returnWhitelistedConfigForNonAdmins)
+	siteConfig, err := conf.RedactSecrets(conf.Raw(), r.returnSafeConfigsOnly)
 	return JSONCString(siteConfig.Site), err
 }
 
