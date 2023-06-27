@@ -16,8 +16,6 @@ ldflags="-s -w"
 ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/version.version=${version}"
 ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)"
 ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app"
-ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.enableEchoMetric=no"
-ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.enableJanitor=no"
 
 echo "--- :go: Building Sourcegraph Backend (${version}) for platform: ${platform}"
 GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \

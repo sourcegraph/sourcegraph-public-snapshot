@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -41,7 +42,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -500,8 +500,8 @@ func (s *Server) Handler() http.Handler {
 // Janitor does clean up tasks over s.ReposDir and is expected to run in a
 // background goroutine.
 func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
-	// TODO(nelsona): Figure out why we can't have repo cleanup on Windows
-	if !deploy.IsJanitorEnabled() {
+	if runtime.GOOS == "windows" {
+		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
 		s.Logger.Warn("Janitor is disabled")
 		return
 	}

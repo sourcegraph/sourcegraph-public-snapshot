@@ -2,6 +2,7 @@ package server
 
 import (
 	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -18,7 +19,7 @@ import (
 )
 
 func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.DB) {
-	if deploy.IsEchoMetricEnabled() {
+	if runtime.GOOS != "windows" {
 		s.Logger.Info("Enabling 'echo' metric")
 		// test the latency of exec, which may increase under certain memory
 		// conditions
@@ -39,6 +40,7 @@ func (s *Server) RegisterMetrics(observationCtx *observation.Context, db dbutil.
 			}
 		}(s)
 	} else {
+		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
 		s.Logger.Warn("Disabling 'echo' metric")
 	}
 

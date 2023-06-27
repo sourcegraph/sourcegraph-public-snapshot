@@ -1,8 +1,6 @@
 package deploy
 
-import (
-	"os"
-)
+import "os"
 
 // Deploy type constants. Any changes here should be reflected in the DeployType type declared in client/web/src/jscontext.ts:
 // https://sourcegraph.com/search?q=r:github.com/sourcegraph/sourcegraph%24+%22type+DeployType%22
@@ -20,12 +18,7 @@ const (
 
 var mock string
 
-const metricIsEnabled = "yes"
-
-// These flags can be injected with `go build -ldflags "-X ..."`
-var forceType string                          // force a deploy type
-var enableEchoMetric string = metricIsEnabled // determines whether the 'echo' metric is enabled
-var enableJanitor string = metricIsEnabled    // determines whether the janitor is enabled
+var forceType string // force a deploy type (can be injected with `go build -ldflags "-X ..."`)
 
 // Type tells the deployment type.
 func Type() string {
@@ -124,14 +117,4 @@ func IsSingleBinary() bool {
 	// TODO(single-binary): check in the future if this is any single-binary deployment, not just
 	// app.
 	return Type() == App
-}
-
-// IsEchoMetricEnabled controls whether the 'echo' metric periodic probe runs.
-func IsEchoMetricEnabled() bool {
-	return enableEchoMetric == metricIsEnabled
-}
-
-// IsJanitorEnabled controls whether we will periodically clean local repos.
-func IsJanitorEnabled() bool {
-	return enableJanitor == metricIsEnabled
 }
