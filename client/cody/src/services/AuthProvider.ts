@@ -211,7 +211,14 @@ export class AuthProvider {
             return
         }
         this.authStatus = authStatus
-        await vscode.commands.executeCommand('cody.auth.sync', authStatus)
+        await this.announceNewAuthStatus()
+    }
+
+    public async announceNewAuthStatus(): Promise<void> {
+        if (this.authStatus.endpoint === 'init') {
+            return
+        }
+        await vscode.commands.executeCommand('cody.auth.sync', this.authStatus)
     }
 
     public async syncLocalAppState(token: string | null): Promise<void> {
