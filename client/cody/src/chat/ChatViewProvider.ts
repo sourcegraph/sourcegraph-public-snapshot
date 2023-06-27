@@ -33,7 +33,6 @@ import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
-import { LocalAppDetector } from '../services/LocalAppDetector'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
 import { TestSupport } from '../test-support'
@@ -46,7 +45,6 @@ import {
     WebviewMessage,
     defaultAuthStatus,
     LocalEnv,
-    LOCAL_APP_URL,
 } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
@@ -89,8 +87,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     // Codebase-context-related state
     private currentWorkspaceRoot: string
 
-    private localAppDetector: LocalAppDetector
-
     constructor(
         private extensionPath: string,
         private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
@@ -119,11 +115,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }),
             vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
-            })
+            }),
+            vscode.commands.registerCommand('cody.app.sync', () => this.syncLocalAppState()),
+            vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
         )
-
-        this.localAppDetector = new LocalAppDetector({ onChange: token => this.sendLocalAppState(token) })
-        this.disposables.push(this.localAppDetector)
+        this.authProvider.init().catch(error => console.log(error))
 
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
@@ -178,6 +174,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     public onConfigurationChange(newConfig: Config): void {
+        debug('ChatViewProvider:onConfigurationChange', '')
         this.config = newConfig
         this.configurationChangeEvent.fire()
     }
@@ -219,14 +216,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
+            case 'ready':
+                // The web view is ready to receive events. We need to make sure that it has an up
+                // to date config, even if it was already published
+                await this.authProvider.announceNewAuthStatus()
+                break
             case 'initialized':
                 debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 this.loadChatHistory()
-                this.publishContextStatus()
                 this.sendTranscript()
                 this.sendChatHistory()
                 await this.loadRecentChat()
-                this.publishConfig()
+                await this.publishContextStatus()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -454,7 +455,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         this.codebaseContext = codebaseContext
-        this.publishContextStatus()
+        await this.publishContextStatus()
     }
 
     public async executeRecipe(recipeId: RecipeID, humanChatInput: string = '', showTab = true): Promise<void> {
@@ -639,24 +640,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
-        await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
-        this.setWebviewView(authStatus.isLoggedIn ? 'chat' : 'login')
-        await this.webview?.postMessage({ type: 'login', authStatus })
-        this.sendEvent('auth', authStatus.isLoggedIn ? 'successfully' : 'failed')
+        await this.publishConfig()
+        if (authStatus.siteVersion) {
+            // Update codebase context
+            const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
+            if (codebaseContext) {
+                this.codebaseContext = codebaseContext
+                await this.publishContextStatus()
+            }
+        }
     }
 
     /**
      * Display app state in webview view that is used during Signin flow
      */
-    private async sendLocalAppState(token: string | null): Promise<void> {
+    public async syncLocalAppState(): Promise<void> {
         // Notify webview that app is installed
-        debug('ChatViewProvider:sendLocalAppState', 'isInstalled')
-        void this.webview?.postMessage({ type: 'app-state', isInstalled: true })
-        // Log user in if token is present and user is not logged in
-        if (token) {
-            debug('ChatViewProvider:sendLocalAppState', 'auth')
-            await this.authProvider.auth(LOCAL_APP_URL.href, token, this.config.customHeaders)
-        }
+        await this.webview?.postMessage({ type: 'app-state', isInstalled: true })
     }
 
     /**
@@ -710,10 +710,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Publish the current context status to the webview.
      */
-    private publishContextStatus(): void {
-        const send = (): void => {
+    private async publishContextStatus(): Promise<void> {
+        const send = async (): Promise<void> => {
             const editorContext = this.editor.getActiveTextEditor()
-            void this.webview?.postMessage({
+            await this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
                     mode: this.config.useContext,
@@ -726,7 +726,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             })
         }
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
-        send()
+        await send()
     }
 
     /**
@@ -747,13 +747,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Publish the config to the webview.
      */
-    private publishConfig(): void {
+    private async publishConfig(): Promise<void> {
         const send = async (): Promise<void> => {
             this.config = await getFullConfig(this.secretStorage, this.localStorage)
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
-            const localProcess = await this.localAppDetector.getProcessInfo(authStatus.isLoggedIn)
+            const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,
                 debugEnable: this.config.debugEnable,
@@ -767,7 +767,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
-        send().catch(error => console.error(error))
+        await send()
     }
 
     /**

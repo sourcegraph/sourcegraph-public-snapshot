@@ -188,7 +188,6 @@ const register = async (
             }
         }),
         // Auth
-        vscode.commands.registerCommand('cody.auth.sync', () => chatProvider.syncAuthStatus()),
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
@@ -270,9 +269,6 @@ const register = async (
             })
         })
     )
-
-    // Make sure all commands are registered before initializing the authProvider which sends info to webview.
-    await authProvider.init()
 
     let completionsProvider: vscode.Disposable | null = null
     if (initialConfig.autocomplete) {
