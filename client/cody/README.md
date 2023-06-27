@@ -30,9 +30,9 @@ Cody can perform complex inline fixups, or answer questions inline. Interact wit
 
 ### 🔨 Let Cody write code for you
 
-Cody can provide real-time code completions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files and file history to predict what you're trying to implement and provide completions.
+Cody can provide real-time code autocompletions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files, your file history, and your entire codebase to predict what you're trying to implement and provide suggestions.
 
-![Example of using code completions](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif)
+![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif)
 
 ## 🍿 See it in action
 
