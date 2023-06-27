@@ -54,7 +54,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         break
                     }
                     case 'config':
-                        console.log('config', message)
                         setConfig(message.config)
                         setIsAppInstalled(message.config.isAppInstalled)
                         setEndpoint(message.authStatus.endpoint)
@@ -120,8 +119,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         },
         [setEndpoint, vscodeAPI]
     )
-
-    console.log({ view, authStatus, config })
 
     if (!view || !authStatus || !config) {
         return <LoadingPage />
