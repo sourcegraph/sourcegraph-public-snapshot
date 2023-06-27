@@ -69,7 +69,7 @@ export function createStatusBar(): CodyStatusBar {
                     'Beta',
                     'Enable chatting and editing with Cody, directly in your code',
                     'cody.experimental.inline',
-                    c => c.experimentalInline
+                    c => c.inlineChat
                 ),
 
                 createFeatureToggle(

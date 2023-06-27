@@ -40,9 +40,22 @@ export class InlineController {
     private codeLenses: Map<string, CodeLensProvider> = new Map()
 
     constructor(private extensionPath: string) {
-        this.commentController = vscode.comments.createCommentController(this.id, this.label)
-        this.commentController.options = this.options
-
+        this.commentController = this.init()
+        // Toggle Inline Chat on Config Change
+        vscode.workspace.onDidChangeConfiguration(e => {
+            const config = vscode.workspace.getConfiguration('cody')
+            const isTesting = process.env.CODY_TESTING === 'true'
+            if (e.affectsConfiguration('cody')) {
+                // Inline Chat
+                const enableInlineChat = (config.get('inlineChat') as boolean) || isTesting
+                if (enableInlineChat) {
+                    this.commentController = this.init()
+                } else {
+                    this.dispose()
+                }
+                void vscode.commands.executeCommand('setContext', 'cody.inlineChat.enabled', enableInlineChat)
+            }
+        })
         // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
             if (
@@ -91,11 +104,29 @@ export class InlineController {
             vscode.commands.registerCommand('cody.inline.fix.undo', id => this.undo(id))
         )
     }
-
     /**
-     * Getter to return instance
+     * Create comment controller and set options
      */
-    public get(): vscode.CommentController {
+    public init(): vscode.CommentController {
+        if (this.commentController) {
+            return this.commentController
+        }
+        const commentController = vscode.comments.createCommentController(this.id, this.label)
+        commentController.options = this.options
+        commentController.commentingRangeProvider = {
+            provideCommentingRanges: (document: vscode.TextDocument) => {
+                const lineCount = document.lineCount
+                return [new vscode.Range(0, 0, lineCount - 1, 0)]
+            },
+        }
+        this._disposables.push(commentController)
+        void vscode.commands.executeCommand('setContext', 'cody.inlineChat.enabled', true)
+        return commentController
+    }
+    /**
+     * Getter to return comment controller
+     */
+    public get(): vscode.CommentController | null {
         return this.commentController
     }
     /**
