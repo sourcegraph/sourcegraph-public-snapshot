@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+
 	azuredevops2 "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 
@@ -534,26 +535,26 @@ func TestComputeReviewState(t *testing.T) {
 		want      btypes.ChangesetReviewState
 	}{
 		{
-			name:      "github - no events",
-			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			name:      "github - review required",
+			changeset: githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED"),
 			history:   []changesetStatesAtTime{},
 			want:      btypes.ChangesetReviewStatePending,
 		},
 		{
-			name:      "github - changeset older than events",
-			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			name:      "github - approved by codeowner",
+			changeset: githubChangeset(daysAgo(10), "OPEN", "APPROVED"),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), reviewState: btypes.ChangesetReviewStateApproved},
 			},
 			want: btypes.ChangesetReviewStateApproved,
 		},
 		{
-			name:      "github - changeset newer than events",
-			changeset: githubChangeset(daysAgo(0), "OPEN"),
+			name:      "github - requires changes",
+			changeset: githubChangeset(daysAgo(0), "OPEN", "CHANGES_REQUESTED"),
 			history: []changesetStatesAtTime{
-				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateApproved},
+				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateChangesRequested},
 			},
-			want: btypes.ChangesetReviewStateApproved,
+			want: btypes.ChangesetReviewStateChangesRequested,
 		},
 		{
 			name:      "bitbucketserver - no events",
@@ -685,13 +686,13 @@ func TestComputeExternalState(t *testing.T) {
 	}{
 		{
 			name:      "github - no events",
-			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			changeset: githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED"),
 			history:   []changesetStatesAtTime{},
 			want:      btypes.ChangesetExternalStateOpen,
 		},
 		{
 			name:      "github - changeset older than events",
-			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			changeset: githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED"),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateClosed},
 			},
@@ -699,7 +700,7 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "github - changeset newer than events",
-			changeset: githubChangeset(daysAgo(0), "OPEN"),
+			changeset: githubChangeset(daysAgo(0), "OPEN", "REVIEW_REQUIRED"),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
@@ -707,7 +708,7 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "github - changeset newer and deleted",
-			changeset: setDeletedAt(githubChangeset(daysAgo(0), "OPEN"), daysAgo(0)),
+			changeset: setDeletedAt(githubChangeset(daysAgo(0), "OPEN", "REVIEW_REQUIRED"), daysAgo(0)),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
@@ -715,13 +716,13 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "github draft - no events",
-			changeset: setDraft(githubChangeset(daysAgo(10), "OPEN")),
+			changeset: setDraft(githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED")),
 			history:   []changesetStatesAtTime{},
 			want:      btypes.ChangesetExternalStateDraft,
 		},
 		{
 			name:      "github draft - changeset older than events",
-			changeset: githubChangeset(daysAgo(10), "OPEN"),
+			changeset: githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED"),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateDraft},
 			},
@@ -729,7 +730,7 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "github draft - changeset newer than events",
-			changeset: setDraft(githubChangeset(daysAgo(0), "OPEN")),
+			changeset: setDraft(githubChangeset(daysAgo(0), "OPEN", "REVIEW_REQUIRED")),
 			history: []changesetStatesAtTime{
 				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
 			},
@@ -737,7 +738,7 @@ func TestComputeExternalState(t *testing.T) {
 		},
 		{
 			name:      "github draft closed",
-			changeset: setDraft(githubChangeset(daysAgo(1), "CLOSED")),
+			changeset: setDraft(githubChangeset(daysAgo(1), "CLOSED", "REVIEW_REQUIRED")),
 			history:   []changesetStatesAtTime{{t: daysAgo(2), externalState: btypes.ChangesetExternalStateClosed}},
 			want:      btypes.ChangesetExternalStateClosed,
 		},
@@ -994,11 +995,11 @@ func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *btypes
 	}
 }
 
-func githubChangeset(updatedAt time.Time, state string) *btypes.Changeset {
+func githubChangeset(updatedAt time.Time, state string, reviewDecision string) *btypes.Changeset {
 	return &btypes.Changeset{
 		ExternalServiceType: extsvc.TypeGitHub,
 		UpdatedAt:           updatedAt,
-		Metadata:            &github.PullRequest{State: state},
+		Metadata:            &github.PullRequest{State: state, ReviewDecision: reviewDecision},
 	}
 }
 
