@@ -61,8 +61,8 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			continue
 		}
 
-		if _, ok := configured[provider.ServiceID+":"+pr.Bitbucketcloud.ClientKey]; ok {
-			problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q, only the first one will be used`, provider.ServiceID))...)
+		if _, ok := configured[provider.ServiceID+":"+provider.CachedInfo().ClientID]; ok {
+			problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q and client ID %q, only the first one will be used`, provider.ServiceID, provider.CachedInfo().ClientID))...)
 			continue
 		}
 
@@ -70,7 +70,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			BitbucketCloudAuthProvider: pr.Bitbucketcloud,
 			Provider:                   provider,
 		})
-		configured[provider.ServiceID+":"+pr.Bitbucketcloud.ClientKey] = struct{}{}
+		configured[provider.ServiceID+":"+provider.CachedInfo().ClientID] = struct{}{}
 	}
 	return ps, problems
 }

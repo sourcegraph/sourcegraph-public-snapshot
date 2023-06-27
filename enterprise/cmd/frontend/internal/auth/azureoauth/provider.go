@@ -92,7 +92,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			}
 		}
 		if configured {
-			problems = append(problems, conf.NewSiteProblem("Cannot have more than one auth provider for Azure Dev Ops, only the first one will be used"))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider for Azure Dev Ops with Client ID %q, only the first one will be used", pr.AzureDevOps.ClientID)))
 			continue
 		}
 
