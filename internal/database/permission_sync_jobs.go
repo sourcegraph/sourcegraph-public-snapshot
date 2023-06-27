@@ -160,6 +160,7 @@ func (r PermissionsSyncJobReason) ResolveGroup() PermissionsSyncJobReasonGroup {
 		return PermissionsSyncJobReasonGroupSchedule
 	case ReasonUserEmailRemoved,
 		ReasonUserEmailVerified,
+		ReasonUserAdded,
 		ReasonUserAddedToOrg,
 		ReasonUserRemovedFromOrg,
 		ReasonUserAcceptedOrgInvite,
