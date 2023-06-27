@@ -57,7 +57,7 @@ export const Simple: ComponentStoryObj<typeof Login> = {
                 authStatus={validAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
-                setEndpoint={() => {}}
+                onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={supportedAppOS}
                 appArch={supportedAppArch}
@@ -73,7 +73,7 @@ export const InvalidLogin: ComponentStoryObj<typeof Login> = {
                 authStatus={invalidAccessTokenAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
-                setEndpoint={() => {}}
+                onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={supportedAppOS}
                 appArch={supportedAppArch}
@@ -89,7 +89,7 @@ export const UnverifiedEmailLogin: ComponentStoryObj<typeof Login> = {
                 authStatus={requiresVerifiedEmailAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
-                setEndpoint={() => {}}
+                onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={supportedAppOS}
                 appArch={supportedAppArch}
@@ -105,7 +105,7 @@ export const LoginWithAppInstalled: ComponentStoryObj<typeof Login> = {
                 authStatus={validAuthStatus}
                 isAppInstalled={true}
                 vscodeAPI={vscodeAPI}
-                setEndpoint={() => {}}
+                onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={supportedAppOS}
                 appArch={supportedAppArch}
@@ -121,7 +121,7 @@ export const UnsupportedAppOS: ComponentStoryObj<typeof Login> = {
                 authStatus={validAuthStatus}
                 isAppInstalled={false}
                 vscodeAPI={vscodeAPI}
-                setEndpoint={() => {}}
+                onLoginRedirect={() => {}}
                 endpoint={endpoint}
                 appOS={unsupportedAppOS}
                 appArch={unsupportedAppArch}

@@ -71,11 +71,11 @@ export class AuthProvider {
                     return
                 }
                 this.authStatus.endpoint = input.endpoint
-                await this.redirectToEndpointLogin(false)
+                await this.redirectToEndpointLogin(input.endpoint)
                 break
             }
             case 'dotcom':
-                await this.redirectToEndpointLogin(true)
+                await this.redirectToEndpointLogin(DOTCOM_URL.href)
                 break
             case 'token': {
                 const endpoint = uri || item.uri
@@ -234,9 +234,9 @@ export class AuthProvider {
     }
 
     // Open callback URL in browser to get token from instance
-    private async redirectToEndpointLogin(isDotCom: boolean): Promise<void> {
-        const uri = isDotCom ? DOTCOM_URL.href : this.authStatus.endpoint || ''
+    public async redirectToEndpointLogin(uri: string): Promise<void> {
         const endpoint = formatURL(uri)
+        const isDotComOrApp = uri === LOCAL_APP_URL.href || uri === DOTCOM_URL.href
         if (!endpoint) {
             return
         }
@@ -244,7 +244,7 @@ export class AuthProvider {
             .then(async res => {
                 // Read the string response body
                 const version = await res.text()
-                if (version < '5.1.0') {
+                if (!isDotComOrApp && version < '5.1.0') {
                     void this.signinMenu('token', uri)
                     return
                 }

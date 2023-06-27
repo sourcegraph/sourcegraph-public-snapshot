@@ -248,6 +248,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     await this.authProvider.appAuth(message.endpoint)
                     break
                 }
+                if (message.type === 'callback' && message.endpoint) {
+                    await this.authProvider.redirectToEndpointLogin(message.endpoint)
+                    break
+                }
                 // cody.auth.signin or cody.auth.signout
                 await vscode.commands.executeCommand(`cody.auth.${message.type}`)
                 break
