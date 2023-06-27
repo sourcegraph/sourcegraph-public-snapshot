@@ -328,7 +328,6 @@ export class InlineController {
 
 export class Comment implements vscode.Comment {
     public id: string
-    public label: string | undefined
     public body: string | vscode.MarkdownString
     public mode = vscode.CommentMode.Preview
     public author: vscode.CommentAuthorInformation
@@ -344,7 +343,6 @@ export class Comment implements vscode.Comment {
         this.id = timestamp.getTime().toString()
         this.body = this.markdown(input)
         this.author = { name, iconPath }
-        this.label = '#' + this.id
     }
 
     /**
