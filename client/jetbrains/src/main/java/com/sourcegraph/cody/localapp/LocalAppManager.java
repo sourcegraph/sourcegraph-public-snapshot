@@ -14,7 +14,7 @@ import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class LocalAppManager {
-  public static final String DEFAULT_LOCAL_APP_URL = "http://localhost:3080";
+  public static final String DEFAULT_LOCAL_APP_URL = "http://localhost:3080/";
   private static final Map<String, LocalAppPaths> appPathsByPlatform =
       Map.of(
           "darwin", // only support macOS for now
@@ -73,6 +73,7 @@ public class LocalAppManager {
   public static String getLocalAppUrl() {
     return getLocalAppInfo()
         .flatMap(appInfo -> Optional.ofNullable(appInfo.getEndpoint()))
+        .map(endpoint -> endpoint.endsWith("/") ? endpoint : endpoint + "/")
         .orElse(DEFAULT_LOCAL_APP_URL);
   }
 
