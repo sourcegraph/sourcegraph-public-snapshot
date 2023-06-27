@@ -119,7 +119,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             vscode.commands.registerCommand('cody.app.sync', () => this.syncLocalAppState()),
             vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
         )
-        this.authProvider.init().catch(() => {})
+        this.authProvider.init().catch(error => console.log(error))
 
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
@@ -223,7 +223,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendChatHistory()
                 await this.loadRecentChat()
                 await this.publishContextStatus()
-                await this.syncAuthStatus()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -746,10 +745,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
-            // This means the auth status is still init state
-            if (authStatus.endpoint && !authStatus.showInvalidAccessTokenError && !authStatus.authenticated) {
-                return
-            }
             const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
             const configForWebview: ConfigurationSubsetForWebview & LocalEnv = {
                 ...localProcess,

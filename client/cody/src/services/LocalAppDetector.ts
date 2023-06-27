@@ -42,7 +42,7 @@ export class LocalAppDetector implements vscode.Disposable {
 
     public async init(): Promise<void> {
         this.dispose()
-        debug('LocalAppDetector:init:', 'initializing')
+        debug('LocalAppDetector:init', 'initializing')
         const homeDir = this.localEnv.homeDir
         // if conditions are not met, this will be a noop
         if (!this.isSupported || !homeDir) {
