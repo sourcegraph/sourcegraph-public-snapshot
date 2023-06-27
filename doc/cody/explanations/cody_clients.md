@@ -22,7 +22,7 @@ The Cody app also provides a chat interface for Cody. Use this interface to requ
 
 [See more information about the app](../../app/index.md).
 
-## Cody IDE IDE extensions
+## Cody IDE extensions
 
 Cody also integrates directly into your IDE using plugins and extensions. Using Cody in your IDE allows it to also make inline fixes and autocomplete suggestions directly in your code.
 
