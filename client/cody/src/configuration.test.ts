@@ -50,7 +50,7 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.guardrails':
                         return true
-                    case 'cody.experimental.inline':
+                    case 'cody.inlineChat':
                         return true
                     case 'cody.experimental.nonStop':
                         return true

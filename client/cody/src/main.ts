@@ -260,10 +260,10 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
         vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
-            await workspaceConfig.update('cody.experimental.inline', true, vscode.ConfigurationTarget.Global)
+            await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.experimental.inline',
+                query: 'cody.inlineChat',
                 openToSide: true,
             })
         })

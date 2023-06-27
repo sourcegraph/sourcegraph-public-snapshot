@@ -819,18 +819,18 @@
           "markdownDescription": "Enables inline code suggestions in your editor.",
           "default": true
         },
-        "cody.experimental.chatPredictions": {
+        "cody.inlineChat": {
           "order": 6,
-          "type": "boolean",
-          "default": false,
-          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
-        },
-        "cody.experimental.inline": {
-          "order": 7,
           "title": "Cody Inline Chat",
           "type": "boolean",
           "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
           "default": false
+        },
+        "cody.experimental.chatPredictions": {
+          "order": 7,
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
         "cody.experimental.guardrails": {
           "order": 8,
