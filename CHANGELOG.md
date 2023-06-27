@@ -110,6 +110,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where SCIP packages would sometimes not be written to the database, breaking cross-repository jump to definition. [#53763](https://github.com/sourcegraph/sourcegraph/pull/53763)
 - Fixed an issue when adding a new user external account was not scheduling a new permission sync for the user. [#54144](https://github.com/sourcegraph/sourcegraph/pull/54144)
 - Adding a new user account now correctly schedules a permission sync for the user. [#54258](https://github.com/sourcegraph/sourcegraph/pull/54258)
+- Users/repos without an existing sync job in the permission_sync_jobs table are now scheduled properly. [#54278](https://github.com/sourcegraph/sourcegraph/pull/54278)
 
 ### Removed
 
