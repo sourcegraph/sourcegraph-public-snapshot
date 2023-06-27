@@ -57,7 +57,7 @@ There can be several reasons why a job is not showing up in the list of jobs:
 
 ### How do I stop a running embeddings job?
 
-Jobs in state **queued** or **processing** can be canceled by admins from the **Cody > Embeddings Jobs** page. To cancel a job, click on the _Cancel_ button of the job you want to cancel. The job will be marked for cancellation. Note that, depending on the state of the job, it might take a few seconds or minutes for the job to actually be canceled.
+Jobs in state _QUEUED_ or _PROCESSING_ can be canceled by admins from the **Cody > Embeddings Jobs** page. To cancel a job, click on the _Cancel_ button of the job you want to cancel. The job will be marked for cancellation. Note that, depending on the state of the job, it might take a few seconds or minutes for the job to actually be canceled.
 
 ### Third party dependencies
 
