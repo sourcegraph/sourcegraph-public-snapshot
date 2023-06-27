@@ -48,7 +48,7 @@ Note: We're only supporting VS Code right now, but a Jetbrains extension is comi
 
 You'll get prompts to upgrade automatically. Let us know if you have any issues and we'll be happy to help.
 
-If you're on a version that's 2023.6.13 or older, we recommend you uninstall the app (select Troubleshooting > Clear data in the system tray) and download the most recent version in order to add your projects to your code graph during setup. Also note that these older versions of the app were called "Sourcegraph" and included Sourcegraph code search. Going forward, the app will be a Cody-only experience (and branded accordingly) so that we can focus on making Cody as useful and intuitive as possible.
+If you're on a version that's 2023.6.13 or older, we recommend you uninstall the app (see [Uninstallation](#uninstallation) below) and download the most recent version in order to add your projects to your code graph during setup. Also note that these older versions of the app were called "Sourcegraph" and included Sourcegraph code search. Going forward, the app will be a Cody-only experience (and branded accordingly) so that we can focus on making Cody as useful and intuitive as possible.
 
 ## Rate limiting
 
@@ -65,7 +65,11 @@ The setup experience allows users to select up to 10 repos for embeddings. Addit
 
 ## Uninstallation
 
-Select Troubleshooting > Clear data from the system tray and delete the app from your applications folder. 
+Select Troubleshooting > Clear data from the system tray and delete the app from your applications folder. If you're on an older version of the app and don't see a "Clear data" option, run: 
+
+```bash
+rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody
+```
 
 ## Troubleshooting
 

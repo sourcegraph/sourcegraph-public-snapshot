@@ -80,6 +80,13 @@ We highly recommend deploying Sourcegraph on Kubernetes with Kustomize due to th
 
 >NOTE: Given the technical knowledge required to deploy and maintain on Kubernetes, teams without these resources should contact their Sourcegraph representative at [sales@sourcegraph.com](mailto:sales@sourcegraph.com) to discuss alternative deployment options.
 
+### Local machines
+
+**For setting up non-production environments on local machines.**
+
+  - [Docker Compose](docker-compose/index.md) - Install Sourcegraph on Docker Compose
+  - [Docker Single Container](docker-single-container/index.md) - Install Sourcegraph using a single Docker container
+
 ### ARM / ARM64 support
 
 Running Sourcegraph on ARM / ARM64 images is not supported for production deployments.
