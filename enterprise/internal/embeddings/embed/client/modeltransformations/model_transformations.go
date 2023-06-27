@@ -30,13 +30,14 @@ func ApplyModelTransformationsForDocuments(documents []string, model string) []s
 	_, replaceNewlines := modelsWithoutNewlines[model]
 	hasE5Prefix := isE5LikeModel(model)
 
-	transformedDocuments := documents
-	for idx, text := range transformedDocuments {
+	transformedDocuments := make([]string, len(documents))
+	for idx, document := range documents {
+		transformedDocuments[idx] = document
 		if hasE5Prefix {
-			transformedDocuments[idx] = E5_DOCUMENT_PREFIX + text
+			transformedDocuments[idx] = E5_DOCUMENT_PREFIX + transformedDocuments[idx]
 		}
 		if replaceNewlines {
-			transformedDocuments[idx] = strings.ReplaceAll(text, "\n", " ")
+			transformedDocuments[idx] = strings.ReplaceAll(transformedDocuments[idx], "\n", " ")
 		}
 	}
 	return transformedDocuments
