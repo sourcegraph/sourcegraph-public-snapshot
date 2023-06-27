@@ -9,7 +9,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/testutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -111,6 +113,36 @@ func TestLocalGitSource_ListRepos(t *testing.T) {
 	}
 
 	testutil.AssertGolden(t, filepath.Join("testdata", "sources", t.Name()), Update(t.Name()), repos)
+}
+
+func Test_convertGitCloneURLToCodebaseName(t *testing.T) {
+	testCases := []struct {
+		cloneURL string
+		expect   autogold.Value
+	}{
+		{"", autogold.Expect("")},
+		{"https://github.com/sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"https://github.com/sourcegraph/handbook.git", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"git@github.com:sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+		{"github:sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+
+		// Note: this "git@github.com:/sourcegraph/handbook" URL format comes from the following
+		// on Taylor's laptop:
+		//
+		//  git clone https://github.com/sourcegraph/handbook handbook-https
+		//  cd handbook-https/
+		//  git remote get-url origin
+		//
+		// No clue why an HTTPS URL gets translated into a git@github.com format (or why it has a leading slash)
+		// but this exists in the wild so we should handle it ;)
+		{"git@github.com:/sourcegraph/handbook", autogold.Expect("github.com/sourcegraph/handbook")},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.cloneURL, func(t *testing.T) {
+			got := convertGitCloneURLToCodebaseName(tc.cloneURL)
+			tc.expect.Equal(t, got)
+		})
+	}
 }
 
 func gitInitBare(t *testing.T, path string) {

@@ -4,12 +4,14 @@ import (
 	"context"
 	"net/url"
 	"os/exec"
+	"path"
 	"path/filepath"
 	"strings"
 
 	"github.com/grafana/regexp"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -188,12 +190,12 @@ func convertGitCloneURLToCodebaseName(cloneURL string) string {
 		return ""
 	}
 	// Handle common Git SSH URL format
-	match := regexp.MustCompile(`git@([^:]+):([\w-]+)\/([\w-]+)(\.git)?`).FindStringSubmatch(cloneURL)
+	match := regexp.MustCompile(`git@([^:]+):/?([\w-]+)\/([\w-]+)(\.git)?`).FindStringSubmatch(cloneURL)
 	if strings.HasPrefix(cloneURL, "git@") && len(match) > 0 {
 		host := match[1]
 		owner := match[2]
 		repo := match[3]
-		return host + "/" + owner + "/" + repo
+		return path.Join(host, strings.TrimPrefix(owner, "/"), repo)
 	}
 
 	buildName := func(prefix string, uri *url.URL) string {
