@@ -245,7 +245,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                             />
 
                             <Link
-                                to="https://docs.sourcegraph.com/app"
+                                to="/help"
                                 className={styles.otherOptions}
                                 target="_blank"
                                 rel="noopener"
