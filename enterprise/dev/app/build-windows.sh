@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
+version="$(./enterprise/dev/app/app-version.sh)"
+echo "Building version: ${version}"
+
 echo "--- :chrome: Building web"
 pnpm install
 NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 pnpm run build-web
 
+export PATH=$PATH:/c/msys64/ucrt64/bin
 platform="x86_64-pc-windows-msvc" # This is the name Tauri expects for the Windows executable
-version="$(./enterprise/dev/app/app_version.sh)"
 
 export GO111MODULE=on
 
@@ -15,7 +18,8 @@ ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/version.timesta
 ldflags="$ldflags -X github.com/sourcegraph/sourcegraph/internal/conf/deploy.forceType=app"
 
 echo "--- :go: Building Sourcegraph Backend (${version}) for platform: ${platform}"
-GOOS=windows GOARCH=amd64 go build \
+GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
+  go build \
   -o ".bin/sourcegraph-backend-${platform}.exe" \
   -trimpath \
   -tags dist \
