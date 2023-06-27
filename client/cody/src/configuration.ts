@@ -62,7 +62,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugFilter: debugRegex,
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
-        inlineChat: config.get(CONFIG_KEY.inlineChat, isTesting),
+        inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
         experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
         autocompleteAdvancedProvider,

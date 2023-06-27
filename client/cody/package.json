@@ -364,14 +364,14 @@
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
-        "when": "cody.activated && cody.inlineChat.enabled",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
         "title": "Remove Comment",
         "category": "Cody Inline Chat",
-        "when": "cody.activated && cody.inlineChat.enabled",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
       },
@@ -379,7 +379,7 @@
         "command": "cody.comment.load",
         "title": "Loading",
         "category": "Cody Inline Chat",
-        "when": "cody.activated && cody.inlineChat.enabled",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
       },
@@ -387,7 +387,7 @@
         "command": "cody.inline.new",
         "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
         "category": "Cody Inline Assist",
-        "when": "cody.activated && cody.inlineChat.enabled",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
@@ -630,7 +630,7 @@
         },
         {
           "command": "cody.recipe.inline-touch",
-          "when": "cody.activated && cody.inlineChat.enabled"
+          "when": "cody.activated && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.recipe.generate-unit-test",
@@ -725,24 +725,24 @@
         {
           "command": "cody.comment.add",
           "group": "inline",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.inlineChat.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.focus",
           "group": "inline",
-          "when": "!cody.activated && commentController =~ /^cody-inline/ && cody.inlineChat.enabled"
+          "when": "!cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
         }
       ],
       "comments/commentThread/title": [
         {
           "command": "cody.comment.delete",
           "group": "inline@1",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && cody.inlineChat.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.comment.load",
           "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && cody.inlineChat.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && config.cody.inlineChat.enabled"
         }
       ],
       "view/item/context": [
@@ -819,12 +819,12 @@
           "markdownDescription": "Enables inline code suggestions in your editor.",
           "default": true
         },
-        "cody.inlineChat": {
+        "cody.inlineChat.enabled": {
           "order": 6,
           "title": "Cody Inline Chat",
           "type": "boolean",
           "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
-          "default": false
+          "default": true
         },
         "cody.experimental.chatPredictions": {
           "order": 7,

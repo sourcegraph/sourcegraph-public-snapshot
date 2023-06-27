@@ -15,7 +15,7 @@ describe('getConfiguration', () => {
             autocomplete: true,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
-            inlineChat: false,
+            inlineChat: true,
             experimentalNonStop: false,
             customHeaders: {},
             debugEnable: false,
@@ -50,7 +50,7 @@ describe('getConfiguration', () => {
                         return true
                     case 'cody.experimental.guardrails':
                         return true
-                    case 'cody.inlineChat':
+                    case 'cody.inlineChat.enabled':
                         return true
                     case 'cody.experimental.nonStop':
                         return true

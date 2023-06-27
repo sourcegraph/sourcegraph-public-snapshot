@@ -27,7 +27,7 @@ export class InlineController {
     private readonly userIcon: vscode.Uri = getIconPath('user', this.extensionPath)
     private _disposables: vscode.Disposable[] = []
     // Constroller State
-    private commentController: vscode.CommentController
+    private commentController: vscode.CommentController | null = null
     public thread: vscode.CommentThread | null = null // a thread is a comment
     private threads = new Map<string, vscode.CommentThread>()
     private currentTaskId = ''
@@ -41,19 +41,20 @@ export class InlineController {
 
     constructor(private extensionPath: string) {
         this.commentController = this.init()
+        this._disposables.push(this.commentController)
         // Toggle Inline Chat on Config Change
         vscode.workspace.onDidChangeConfiguration(e => {
             const config = vscode.workspace.getConfiguration('cody')
-            const isTesting = process.env.CODY_TESTING === 'true'
             if (e.affectsConfiguration('cody')) {
                 // Inline Chat
-                const enableInlineChat = (config.get('inlineChat') as boolean) || isTesting
+                const enableInlineChat = config.get('inlineChat.enabled') as boolean
                 if (enableInlineChat) {
                     this.commentController = this.init()
-                } else {
-                    this.dispose()
+                    return
                 }
-                void vscode.commands.executeCommand('setContext', 'cody.inlineChat.enabled', enableInlineChat)
+                this.commentController?.dispose()
+                this.commentController = null
+                this.dispose()
             }
         })
         // Track last selection range in valid doc before an action is called
@@ -108,9 +109,7 @@ export class InlineController {
      * Create comment controller and set options
      */
     public init(): vscode.CommentController {
-        if (this.commentController) {
-            return this.commentController
-        }
+        this.commentController?.dispose()
         const commentController = vscode.comments.createCommentController(this.id, this.label)
         commentController.options = this.options
         commentController.commentingRangeProvider = {
@@ -119,8 +118,6 @@ export class InlineController {
                 return [new vscode.Range(0, 0, lineCount - 1, 0)]
             },
         }
-        this._disposables.push(commentController)
-        void vscode.commands.executeCommand('setContext', 'cody.inlineChat.enabled', true)
         return commentController
     }
     /**
@@ -133,6 +130,9 @@ export class InlineController {
      * Create a new thread (the first comment of a thread)
      */
     public create(humanInput: string): vscode.CommentReply | null {
+        if (!this.commentController) {
+            return null
+        }
         const editor = vscode.window.activeTextEditor
         if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
             return null

@@ -263,7 +263,7 @@ const register = async (
             await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.inlineChat',
+                query: 'cody.inlineChat.enabled',
                 openToSide: true,
             })
         })

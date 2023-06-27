@@ -68,7 +68,7 @@ export function createStatusBar(): CodyStatusBar {
                     'Inline Chat',
                     'Beta',
                     'Enable chatting and editing with Cody, directly in your code',
-                    'cody.inlineChat',
+                    'cody.inlineChat.enabled',
                     c => c.inlineChat
                 ),
 
