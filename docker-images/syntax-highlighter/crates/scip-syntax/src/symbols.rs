@@ -11,6 +11,7 @@ pub struct Scope {
     pub ident_range: PackedRange,
     pub scope_range: PackedRange,
     pub globals: Vec<Global>,
+    pub referrences: Vec<Reference>,
     pub children: Vec<Scope>,
     pub descriptors: Vec<Descriptor>,
     pub kind: symbol_information::Kind,
@@ -20,6 +21,13 @@ pub struct Scope {
 pub struct Global {
     pub range: PackedRange,
     pub enclosing: Option<PackedRange>,
+    pub descriptors: Vec<Descriptor>,
+    pub kind: symbol_information::Kind,
+}
+
+#[derive(Debug)]
+pub struct Reference {
+    pub range: PackedRange,
     pub descriptors: Vec<Descriptor>,
     pub kind: symbol_information::Kind,
 }
@@ -49,6 +57,18 @@ impl Scope {
         }
     }
 
+    pub fn insert_reference(&mut self, reference: Reference) {
+        if let Some(child) = self
+            .children
+            .iter_mut()
+            .find(|child| child.scope_range.contains(&reference.range))
+        {
+            child.insert_reference(reference)
+        } else {
+            self.referrences.push(reference);
+        }
+    }
+
     pub fn into_document(&mut self, hint: usize, base_descriptors: Vec<Descriptor>) -> Document {
         let mut descriptor_stack = base_descriptors;
 
@@ -56,14 +76,6 @@ impl Scope {
         let mut symbols = Vec::with_capacity(hint);
         self.traverse(true, &mut occurrences, &mut descriptor_stack, &mut symbols);
 
-        // let symbols = occurrences
-        //     .iter()
-        //     .map(|o| scip::types::SymbolInformation {
-        //         symbol: o.symbol.clone(),
-        //         ..Default::default()
-        //     })
-        //     .collect();
-        //
         Document {
             occurrences,
             symbols,
@@ -133,6 +145,21 @@ impl Scope {
             });
         }
 
+        for reference in &self.referrences {
+            let symbol = scip::symbol::format_symbol(scip::types::Symbol {
+                scheme: "scip-ctags".into(),
+                package: None.into(),
+                descriptors: reference.descriptors.clone(),
+                ..Default::default()
+            });
+
+            occurrences.push(scip::types::Occurrence {
+                range: reference.range.to_vec(),
+                symbol: symbol.clone(),
+                ..Default::default()
+            });
+        }
+
         self.children
             .iter()
             .for_each(|c| c.traverse(false, occurrences, descriptor_stack, symbols));
@@ -151,14 +178,13 @@ pub fn parse_tree<'a>(
     let mut cursor = tree_sitter::QueryCursor::new();
 
     let root_node = tree.root_node();
-    let capture_names = config.tag_query.capture_names();
+    let capture_names = config.sym_query.capture_names();
 
     let mut scopes = vec![];
     let mut globals = vec![];
+    let mut references = vec![];
 
-    let mut local_ranges = BitVec::<u8, Msb0>::repeat(false, source_bytes.len());
-
-    let matches = cursor.matches(&config.tag_query, root_node, source_bytes);
+    let matches = cursor.matches(&config.sym_query, root_node, source_bytes);
     for m in matches {
         if config.is_filtered(&m) {
             continue;
@@ -167,8 +193,8 @@ pub fn parse_tree<'a>(
         let mut node = None;
         let mut enclosing_node = None;
         let mut scope = None;
-        let mut local_range = None;
         let mut descriptors = vec![];
+        let mut reference = None;
         let mut kind = None;
 
         for capture in m.captures {
@@ -191,32 +217,19 @@ pub fn parse_tree<'a>(
                 enclosing_node = Some(capture.node);
             }
 
-            if capture_name.starts_with("local") {
-                local_range = Some(capture.node.byte_range());
-            }
-
             if capture_name.starts_with("kind") {
                 assert!(kind.is_none(), "declare only one kind per match");
                 kind = Some(capture_name)
+            }
+
+            if capture_name.starts_with("reference") {
+                assert!(reference.is_none(), "can only have one reference per match");
+                reference = Some(node)
             }
         }
 
         match node {
             Some(node) => {
-                // TODO: I think we may need to consider something like this at some point
-                // but for now it's fine. Just something I was thinking of while debugging
-                // an issue with go locals
-                //
-                // match scope {
-                //     Some(scope) if local_ranges[scope.node.start_byte()] => continue,
-                //     None if local_ranges[node.start_byte()] => continue,
-                //     _ => {}
-                // };
-
-                if local_ranges[node.start_byte()] {
-                    continue;
-                }
-
                 let kind = crate::ts_scip::captures_to_kind(&kind);
 
                 let descriptors = descriptors
@@ -232,6 +245,7 @@ pub fn parse_tree<'a>(
                         scope_range: scope_ident.node.into(),
                         globals: vec![],
                         children: vec![],
+                        referrences: vec![],
                         descriptors,
                         kind,
                     }),
@@ -259,25 +273,27 @@ pub fn parse_tree<'a>(
                                     });
                                 }
                             }
-                            None => globals.push(Global {
-                                range: node.into(),
-                                enclosing: enclosing_node.map(|n| n.into()),
-                                descriptors,
-                                kind,
-                            }),
+                            None => {
+                                if reference.is_some() {
+                                    references.push(Reference {
+                                        range: node.into(),
+                                        descriptors,
+                                        kind,
+                                    })
+                                } else {
+                                    globals.push(Global {
+                                        range: node.into(),
+                                        enclosing: enclosing_node.map(|n| n.into()),
+                                        descriptors,
+                                        kind,
+                                    })
+                                }
+                            }
                         }
                     }
                 }
             }
-            None => {
-                if local_range.is_none() {
-                    panic!("there must always be at least one descriptor (except for @local)");
-                }
-            }
-        }
-
-        if let Some(local_range) = local_range {
-            local_ranges.get_mut(local_range).unwrap().fill(true);
+            None => continue,
         }
     }
 
@@ -286,6 +302,7 @@ pub fn parse_tree<'a>(
         scope_range: root_node.into(),
         globals: vec![],
         children: vec![],
+        referrences: vec![],
         descriptors: vec![],
         kind: symbol_information::Kind::UnspecifiedKind,
     };
@@ -307,18 +324,21 @@ pub fn parse_tree<'a>(
         root.insert_global(m);
     }
 
+    while let Some(reference) = references.pop() {
+        root.insert_reference(reference)
+    }
+
     Ok((root, globals.len()))
 }
 
 #[cfg(test)]
-pub mod test {
-    use scip::types::Document;
-    use scip_treesitter::snapshot::{dump_document_with_config, SnapshotOptions};
+mod test {
+    use scip_treesitter::snapshot::dump_document;
     use scip_treesitter_languages::parsers::BundledParser;
 
     use super::*;
 
-    pub fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
+    fn parse_file_for_lang(config: &TagConfiguration, source_code: &str) -> Result<Document> {
         let source_bytes = source_code.as_bytes();
         let mut parser = config.get_parser();
         let tree = parser.parse(source_bytes, None).unwrap();
@@ -328,25 +348,12 @@ pub mod test {
     }
 
     #[test]
-    fn test_enclosing_range() -> Result<()> {
-        let config =
-            crate::languages::get_tag_configuration(&BundledParser::Go).expect("to have parser");
-        let source_code = include_str!("../testdata/scopes_of_go.go");
-        let doc = parse_file_for_lang(config, source_code)?;
-
-        // let dumped = dump_document(&doc, source_code)?;
-        let dumped = dump_document_with_config(
-            &doc,
-            source_code,
-            SnapshotOptions {
-                snapshot_range: None,
-                emit_syntax: scip_treesitter::snapshot::EmitSyntax::None,
-                emit_symbol: scip_treesitter::snapshot::EmitSymbol::Enclosing,
-            },
-        )?;
-
-        insta::assert_snapshot!(dumped);
-
+    fn generates_some_go_symbols() -> Result<()> {
+        let config = crate::languages::get_tag_configuration(&BundledParser::Go).unwrap();
+        let source_code = include_str!("../testdata/symbols.go");
+        let document = parse_file_for_lang(config, source_code)?;
+        let dumped = dump_document(&document, source_code)?;
+        insta::assert_snapshot!("generates_go_symbols", dumped);
         Ok(())
     }
 }
