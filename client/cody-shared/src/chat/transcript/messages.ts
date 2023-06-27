@@ -6,6 +6,7 @@ import { TranscriptJSON } from '.'
 export interface ChatButton {
     label: string
     action: string
+    onClick: (action: string) => void
 }
 
 export interface ChatMessage extends Message {

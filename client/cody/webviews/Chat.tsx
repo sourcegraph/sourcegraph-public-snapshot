@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import {
+    ChatButtonProps,
     Chat as ChatUI,
     ChatUISubmitButtonProps,
     ChatUISuggestionButtonProps,
@@ -139,11 +140,11 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
 
 To get started, select some code and run one of Cody's recipes:"
             gettingStartedButtons={[
-                { label: 'Explain Code (High Level)', action: 'explain-code-high-level' },
-                { label: 'Smell Code', action: 'find-code-smells' },
-                { label: 'Fixup code from inline instructions', action: 'fixup' },
+                { label: 'Explain Code (High Level)', action: 'explain-code-high-level', onClick: onChatButtonClick },
+                { label: 'Smell Code', action: 'find-code-smells', onClick: onChatButtonClick },
+                { label: 'Fixup code from inline instructions', action: 'fixup', onClick: onChatButtonClick },
             ]}
-            onChatButtonClick={onChatButtonClick}
+            ChatButtonComponent={ChatButton}
         />
     )
 }
@@ -163,6 +164,14 @@ const AbortMessageInProgress: React.FunctionComponent<AbortMessageInProgressProp
         </VSCodeButton>
     </div>
 )
+
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => {
+    return (
+        <VSCodeButton type="button" onClick={() => onClick(action)}>
+            {label}
+        </VSCodeButton>
+    )
+}
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
     className,
