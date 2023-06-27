@@ -180,4 +180,9 @@ export const vsCodeMocks = {
             path,
         }),
     },
+    extensions: {
+        getExtension() {
+            return undefined
+        },
+    },
 } as const

@@ -32,10 +32,10 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	d := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	// 1. Setup repo and paths:
-	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
+	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
 	// 2. Insert countsg:
 	iter := fakeCodeownersStats{
 		"": {
@@ -51,7 +51,7 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 		},
 	}
 	timestamp := time.Now()
-	updatedRows, err := d.OwnershipStats().UpdateIndividualCounts(ctx, repo.ID, iter, timestamp)
+	updatedRows, err := db.OwnershipStats().UpdateIndividualCounts(ctx, repo.ID, iter, timestamp)
 	require.NoError(t, err)
 	if got, want := updatedRows, 5; got != want {
 		t.Errorf("UpdateIndividualCounts, updated rows, got %d, want %d", got, want)
@@ -64,11 +64,11 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	d := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	// 1. Setup repos and paths:
-	repo1 := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
-	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
+	repo1 := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
+	repo2 := mustCreate(ctx, t, db, &types.Repo{Name: "a/c"})
 	// 2. Insert counts:
 	timestamp := time.Now()
 	iter1 := fakeCodeownersStats{
@@ -84,7 +84,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 		},
 	}
-	_, err := d.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, iter1, timestamp)
+	_, err := db.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, iter1, timestamp)
 	require.NoError(t, err)
 	iter2 := fakeCodeownersStats{
 		"": {
@@ -99,7 +99,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
 		},
 	}
-	_, err = d.OwnershipStats().UpdateIndividualCounts(ctx, repo2.ID, iter2, timestamp)
+	_, err = db.OwnershipStats().UpdateIndividualCounts(ctx, repo2.ID, iter2, timestamp)
 	require.NoError(t, err)
 	// 3. Query with or without aggregation:
 	t.Run("query single file", func(t *testing.T) {
@@ -108,7 +108,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			Path:   "file1",
 		}
 		var limitOffset *LimitOffset
-		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
 		want := []PathCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
@@ -121,7 +121,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			RepoID: repo1.ID,
 		}
 		var limitOffset *LimitOffset
-		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
 		want := []PathCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
@@ -132,7 +132,7 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 	t.Run("query whole instance", func(t *testing.T) {
 		opts := TreeLocationOpts{}
 		var limitOffset *LimitOffset
-		got, err := d.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
 		want := []PathCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 22}, // from both repos
@@ -161,10 +161,10 @@ func TestUpdateAggregateCountsSuccess(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	d := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	// 1. Setup repo and paths:
-	repo := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
+	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
 	// 2. Insert aggregate counts:
 	iter := fakeAggregateStatsIterator{
 		"": {
@@ -191,7 +191,7 @@ func TestUpdateAggregateCountsSuccess(t *testing.T) {
 		},
 	}
 	timestamp := time.Now()
-	updatedRows, err := d.OwnershipStats().UpdateAggregateCounts(ctx, repo.ID, iter, timestamp)
+	updatedRows, err := db.OwnershipStats().UpdateAggregateCounts(ctx, repo.ID, iter, timestamp)
 	require.NoError(t, err)
 	if got, want := updatedRows, len(iter); got != want {
 		t.Errorf("UpdateAggregateCounts, updated rows, got %d, want %d", got, want)
@@ -204,18 +204,18 @@ func TestQueryAggregateCounts(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	d := NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 	// 1. Setup repo and paths:
-	repo1 := mustCreate(ctx, t, d, &types.Repo{Name: "a/b"})
-	repo2 := mustCreate(ctx, t, d, &types.Repo{Name: "a/c"})
-	_ = mustCreate(ctx, t, d, &types.Repo{Name: "a/d"}) // No data for this repo
+	repo1 := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
+	repo2 := mustCreate(ctx, t, db, &types.Repo{Name: "a/c"})
+	_ = mustCreate(ctx, t, db, &types.Repo{Name: "a/d"}) // No data for this repo
 
 	t.Run("no data - query single repo", func(t *testing.T) {
 		opts := TreeLocationOpts{
 			RepoID: repo1.ID,
 		}
-		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
 		want := PathAggregateCounts{CodeownedFileCount: 0}
 		assert.DeepEqual(t, want, got)
@@ -223,7 +223,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 
 	t.Run("no data - query all", func(t *testing.T) {
 		opts := TreeLocationOpts{}
-		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
 		want := PathAggregateCounts{CodeownedFileCount: 0}
 		assert.DeepEqual(t, want, got)
@@ -251,7 +251,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			TotalOwnedFileCount:        1,
 		},
 	}
-	_, err := d.OwnershipStats().UpdateAggregateCounts(ctx, repo1.ID, repo1Counts, timestamp)
+	_, err := db.OwnershipStats().UpdateAggregateCounts(ctx, repo1.ID, repo1Counts, timestamp)
 	require.NoError(t, err)
 	repo2Counts := fakeAggregateStatsIterator{
 		"": { // Just the root data
@@ -259,7 +259,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			TotalOwnedFileCount: 10,
 		},
 	}
-	_, err = d.OwnershipStats().UpdateAggregateCounts(ctx, repo2.ID, repo2Counts, timestamp)
+	_, err = db.OwnershipStats().UpdateAggregateCounts(ctx, repo2.ID, repo2Counts, timestamp)
 	require.NoError(t, err)
 
 	// 3. Query aggregate counts:
@@ -268,7 +268,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			RepoID: repo1.ID,
 			Path:   "dir/file1.go",
 		}
-		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
 		want := PathAggregateCounts{
 			CodeownedFileCount:  1,
@@ -283,7 +283,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 			RepoID: repo1.ID,
 			Path:   "dir",
 		}
-		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
 		want := PathAggregateCounts{
 			CodeownedFileCount:         1,
@@ -298,7 +298,7 @@ func TestQueryAggregateCounts(t *testing.T) {
 		opts := TreeLocationOpts{
 			RepoID: repo1.ID,
 		}
-		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
 		want := PathAggregateCounts{
 			CodeownedFileCount:         1,
@@ -311,12 +311,27 @@ func TestQueryAggregateCounts(t *testing.T) {
 
 	t.Run("query whole instance", func(t *testing.T) {
 		opts := TreeLocationOpts{}
-		got, err := d.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
 		require.NoError(t, err)
 		want := PathAggregateCounts{
 			CodeownedFileCount:         11,
 			AssignedOwnershipFileCount: 1,
 			TotalOwnedFileCount:        12,
+			UpdatedAt:                  timestamp,
+		}
+		assert.DeepEqual(t, want, got)
+	})
+
+	t.Run("query whole instance with excluded repo in signal config", func(t *testing.T) {
+		err = SignalConfigurationStoreWith(db).UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "analytics", Enabled: true, ExcludedRepoPatterns: []string{"a/c"}})
+		require.NoError(t, err)
+		opts := TreeLocationOpts{}
+		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		require.NoError(t, err)
+		want := PathAggregateCounts{
+			CodeownedFileCount:         1,
+			AssignedOwnershipFileCount: 1,
+			TotalOwnedFileCount:        2,
 			UpdatedAt:                  timestamp,
 		}
 		assert.DeepEqual(t, want, got)

@@ -99,16 +99,7 @@ var App = conftypes.RawUnified{
 	},
 	"embeddings": {
 		"enabled": true,
-		"provider": "sourcegraph",
-		"incremental": true,
-		"excludedFilePathPatterns": [
-			"*.svg",
-			"*.png",
-			"*.jpeg",
-			"*.jpg",
-			"**/__mocks__/**",
-			"**/test/**"
-   	 	]
+		"provider": "sourcegraph"		
 	}
 }`,
 }

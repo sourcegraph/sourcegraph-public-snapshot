@@ -54,6 +54,17 @@ find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
 """
 
+# https://github.com/sourcegraph/sourcegraph/pull/54000 changes dependencies to reflect otel package changes,
+# which break old buildfiles.
+PATCH_OTEL_CMD = """_sed_binary="sed"
+if [ "$(uname)" == "Darwin" ]; then
+    _sed_binary="gsed"
+fi
+
+$_sed_binary -i 's|@io_opentelemetry_go_collector//exporter|@io_opentelemetry_go_collector_exporter//:exporter|' cmd/frontend/internal/app/otlpadapter/BUILD.bazel
+$_sed_binary -i 's|@io_opentelemetry_go_collector//receiver|@io_opentelemetry_go_collector_receiver//:receiver|' cmd/frontend/internal/app/otlpadapter/BUILD.bazel
+"""
+
 def back_compat_defs():
     # github.com/sourcegraph/scip and github.com/sourcegraph/conc both rely on a few
     # internal libraries from github.com/sourcegraph/sourcegraph/lib and their
@@ -96,8 +107,8 @@ def back_compat_defs():
         build_directives = [
             "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @sourcegraph_back_compat//lib/errors",
         ],
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/sourcegraph/conc",
+        build_file_proto_mode = "disable_global", importpath =
+        "github.com/sourcegraph/conc",
         sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=", # Need to be manually updated when bumping the back compat release target.
         version = "v0.2.0", # Need to be manually updated when bumping the back compat release target.
     )
@@ -126,6 +137,8 @@ def back_compat_defs():
             # "rm -Rf client",
             PATCH_ALL_GO_TESTS_CMD,
             PATCH_BUILD_FIXES_CMD,
+            PATCH_OTEL_CMD,
+
             # Seems to be affecting the root workspace somehow.
             # TODO(JH) Look into bzlmod.
             "rm .bazelversion",

@@ -1,63 +1,140 @@
-import { FC } from 'react'
+import { FC, useContext } from 'react'
 
+import { mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, H1, H2, Link, Text } from '@sourcegraph/wildcard'
+import { gql, useQuery } from '@sourcegraph/http-client'
+import { Button, H1, H2, Icon, Link, LoadingSpinner, Text } from '@sourcegraph/wildcard'
 
 import { EnterprisePageRoutes } from '../../../../routes.constants'
-import { StepComponentProps } from '../../../../setup-wizard/components'
+import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { useQueryParameters } from '../../../insights/hooks'
 
 import styles from './AppWelcomeSetupStep.module.scss'
 
-export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => (
-    <div className={classNames(styles.root, className)}>
-        <div className={styles.description}>
-            <H1 className={styles.descriptionHeading}>Welcome</H1>
-            <Text className={styles.descriptionText}>
-                Cody is an AI coding assistant that helps you read, write, and understand code 10x faster.
-            </Text>
+const EMAIL_VERIFICATION_QUERY = gql`
+    query EmailVerification {
+        user(username: "admin") {
+            hasVerifiedEmail
+        }
+    }
+`
 
-            <img
-                src="https://storage.googleapis.com/sourcegraph-assets/welcome.png"
-                alt=""
-                className={styles.descriptionImage}
-            />
+export const AppWelcomeSetupStep: FC<StepComponentProps> = ({ className }) => {
+    const { onNextStep } = useContext(SetupStepsContext)
+    const { emailCheck } = useQueryParameters(['emailCheck'])
+    const { loading } = useQuery(EMAIL_VERIFICATION_QUERY, {
+        skip: !emailCheck,
+        fetchPolicy: 'network-only',
+        onCompleted: data => {
+            const isEmailVerified = data?.user.hasVerifiedEmail
+
+            // In case if email has already verified we should
+            // skip the email verification state of the current step
+            // and navigate to the next step automatically
+            if (isEmailVerified) {
+                onNextStep()
+            }
+        },
+    })
+
+    return (
+        <div className={classNames(styles.root, className)}>
+            <div className={styles.description}>
+                <H1 className={styles.descriptionHeading}>Welcome</H1>
+                <Text className={styles.descriptionText}>
+                    Cody is an AI coding assistant that helps you read, write, and understand code 10x faster.
+                </Text>
+
+                <img
+                    src="https://storage.googleapis.com/sourcegraph-assets/welcome.png"
+                    alt=""
+                    className={styles.descriptionImage}
+                />
+            </div>
+
+            {loading && <SigningInState />}
+            {!loading && emailCheck && <EmailCheckVerificationForm />}
+            {!loading && !emailCheck && <ConnectToSourcegraphComForm />}
         </div>
+    )
+}
 
-        <div className={styles.actions}>
-            <H2 className={styles.actionsHeading}>You’ll need a Sourcegraph.com account in order to connect Cody.</H2>
+const SigningInState: FC = () => (
+    <div className={styles.loading}>
+        <Text className={styles.loadingText}>Signing in…</Text> <LoadingSpinner className={styles.loadingIcon} />
+    </div>
+)
 
+const EmailCheckVerificationForm: FC = () => {
+    const { onNextStep } = useContext(SetupStepsContext)
+    const { data } = useQuery(EMAIL_VERIFICATION_QUERY, { pollInterval: 3000 })
+    const hasEmailBeenVerified = data?.user.hasVerifiedEmail ?? false
+
+    return (
+        <div className={styles.emailForm}>
+            <Icon svgPath={mdiEmail} inline={false} aria-hidden={true} className={styles.emailFormIcon} />
+            <Text className={styles.emailFormText}>
+                You need to <b>verify your email</b> in order to use Cody
+            </Text>
             <Button
-                as={Link}
-                to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${EnterprisePageRoutes.AppSetup}/local-repositories`}
                 variant="primary"
                 size="lg"
+                disabled={!hasEmailBeenVerified}
                 className={styles.actionsButton}
-                target="_blank"
+                onClick={onNextStep}
             >
-                <SourcegraphLogo />
-                Connect to Sourcegraph.com
+                {hasEmailBeenVerified ? (
+                    <>Email verified, go to the next step →</>
+                ) : (
+                    <>
+                        <LoadingSpinner /> Waiting for email verification
+                    </>
+                )}
             </Button>
 
-            <Text className={styles.actionsFooter}>
-                <Text>
-                    Cody will send your code to Sourcegraph servers and our LLM provider, but we won’t retain your code
-                    and we won’t use it to train Cody either.
-                </Text>
-                By signing in, you’re connecting Cody to your app and agreeing to Sourcegraph’s Cody Usage Privacy
-                Notice.{' '}
-                <Link
-                    to="https://about.sourcegraph.com/terms/cody-notice"
-                    target="_blank"
-                    rel="noopener"
-                    className={styles.actionsTermLink}
-                >
-                    Sourcegraph’s Cody Usage Privacy Notice
-                </Link>
-                .
-            </Text>
+            <CodyInfo />
         </div>
+    )
+}
+
+const ConnectToSourcegraphComForm: FC = () => (
+    <div className={styles.actions}>
+        <H2 className={styles.actionsHeading}>You’ll need a Sourcegraph.com account in order to connect Cody.</H2>
+
+        <Button
+            as={Link}
+            to={`https://sourcegraph.com/user/settings/tokens/new/callback?requestFrom=APP&destination=${EnterprisePageRoutes.AppSetup}/welcome?emailCheck=true`}
+            variant="primary"
+            size="lg"
+            className={styles.actionsButton}
+            target="_blank"
+        >
+            <SourcegraphLogo />
+            Connect to Sourcegraph.com
+        </Button>
+
+        <CodyInfo />
     </div>
+)
+
+const CodyInfo: FC = () => (
+    <Text className={styles.actionsFooter}>
+        <Text>
+            Cody will send your code to Sourcegraph servers and our LLM provider, but we won’t retain your code and we
+            won’t use it to train Cody either.
+        </Text>
+        By signing in, you’re connecting Cody to your app and agreeing to Sourcegraph’s Cody Usage Privacy Notice.{' '}
+        <Link
+            to="https://about.sourcegraph.com/terms/cody-notice"
+            target="_blank"
+            rel="noopener"
+            className={styles.actionsTermLink}
+        >
+            Sourcegraph’s Cody Usage Privacy Notice
+        </Link>
+        .
+    </Text>
 )
 
 const SourcegraphLogo: FC = () => (

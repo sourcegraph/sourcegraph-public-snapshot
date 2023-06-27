@@ -182,6 +182,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
                 completions ->
                     completions.stream()
                         .flatMap(Collection::stream)
+                        .map(c -> PostProcess.postProcess(prefix, suffix, c))
                         .map(InlineCompletionItem::fromCompletion)
                         .collect(Collectors.toList()));
 

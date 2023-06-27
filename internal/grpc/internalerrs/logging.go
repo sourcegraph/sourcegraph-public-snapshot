@@ -194,8 +194,10 @@ func doLog(logger log.Logger, serviceName, methodName string, initialRequest *pr
 		return
 	}
 
-	s, ok := status.FromError(err)
+	s, ok := massageIntoStatusErr(err)
 	if !ok {
+		// If the error isn't a grpc error, we don't know how to handle it.
+		// Just return.
 		return
 	}
 

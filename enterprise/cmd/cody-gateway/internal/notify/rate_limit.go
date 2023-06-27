@@ -140,8 +140,6 @@ func handleNotify(
 	switch actorSource {
 	case codygateway.ActorSourceProductSubscription:
 		actorLink = fmt.Sprintf("<%[1]s/site-admin/dotcom/product/subscriptions/%[2]s|%[2]s>", dotcomURL, actorID)
-	case codygateway.ActorSourceDotcomUser:
-		actorLink = fmt.Sprintf("<%[1]s/users/%[2]s|%[2]s>", dotcomURL, actorID)
 	default:
 		actorLink = fmt.Sprintf("`%s`", actorID)
 	}

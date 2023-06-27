@@ -39,6 +39,7 @@ To edit the permissions granted to a role, click the role to expand it, then sel
 You can read about the specific permission types available for each RBAC-enabled product area below:
 
 - [Batch Changes](batch_changes.md)
+- [Ownership](ownership.md)
 
 > NOTE: While Batch Changes is the only RBAC-enabled product area today, we will be working on migrating other product areas in future releases of Sourcegraph. Please reach out to our [support team](mailto:support@sourcegraph.com) if you have further questions. 
 

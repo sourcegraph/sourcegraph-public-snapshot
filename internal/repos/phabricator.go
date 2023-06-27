@@ -212,7 +212,7 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, db database.DB, log
 				continue
 			}
 
-			repos, err := listAll(ctx, src)
+			repos, err := ListAll(ctx, src)
 			if err != nil {
 				logger.Error("Error fetching Phabricator repos", log.Error(err))
 				continue

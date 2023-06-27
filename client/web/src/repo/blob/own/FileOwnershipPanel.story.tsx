@@ -77,7 +77,7 @@ const response: FetchOwnershipResult = {
                                     __typename: 'RecentContributorOwnershipSignal',
                                     title: 'Recent Contributor',
                                     description:
-                                        'Owner is associated because they have contributed to this file in the last 90 days',
+                                        'Associated because they have contributed to this file in the last 90 days',
                                 },
                             ],
                         },
@@ -119,13 +119,12 @@ const response: FetchOwnershipResult = {
                                     __typename: 'RecentContributorOwnershipSignal',
                                     title: 'Recent Contributor',
                                     description:
-                                        'Owner is associated because they have contributed to this file in the last 90 days',
+                                        'Associated because they have contributed to this file in the last 90 days',
                                 },
                                 {
                                     __typename: 'RecentViewOwnershipSignal',
                                     title: 'Recent View',
-                                    description:
-                                        'Owner is associated because they have viewed this file in the last 90 days.',
+                                    description: 'Associated because they have viewed this file in the last 90 days.',
                                 },
                             ],
                         },
@@ -142,8 +141,7 @@ const response: FetchOwnershipResult = {
                                 {
                                     __typename: 'RecentViewOwnershipSignal',
                                     title: 'Recent View',
-                                    description:
-                                        'Owner is associated because they have viewed this file in the last 90 days.',
+                                    description: 'Associated because they have viewed this file in the last 90 days.',
                                 },
                             ],
                         },

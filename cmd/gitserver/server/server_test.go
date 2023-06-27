@@ -183,9 +183,10 @@ func TestExecRequest(t *testing.T) {
 			return "https://" + string(name) + ".git", nil
 		},
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return &GitRepoSyncer{}, nil
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB: db,
+		DB:                      db,
+		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 	}
 	h := s.Handler()
 
@@ -281,10 +282,11 @@ func TestServer_handleP4Exec(t *testing.T) {
 		logger := logtest.Scoped(t)
 
 		s := &Server{
-			Logger:            logger,
-			ObservationCtx:    observation.TestContextTB(t),
-			skipCloneForTests: true,
-			DB:                database.NewMockDB(),
+			Logger:                  logger,
+			ObservationCtx:          observation.TestContextTB(t),
+			skipCloneForTests:       true,
+			DB:                      database.NewMockDB(),
+			RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		}
 
 		server := defaults.NewServer(logger)
@@ -410,8 +412,8 @@ func TestServer_handleP4Exec(t *testing.T) {
 			}
 
 			_, err = readAll(stream)
-			if status.Code(err) != codes.Canceled {
-				t.Fatalf("expected codes.Cancelled error, got %v", err)
+			if !(errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled) {
+				t.Fatalf("expected context cancelation error, got %v", err)
 			}
 		})
 
@@ -714,7 +716,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		ReposDir:         repoDir,
 		GetRemoteURLFunc: staticGetRemoteURL(remote),
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return &GitRepoSyncer{}, nil
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              NewCloneQueue(obctx, list.New()),
@@ -723,7 +725,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		cloneLimiter:            limiter.NewMutable(1),
 		cloneableLimiter:        limiter.NewMutable(1),
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
-		recordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
+		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
 	}
 
@@ -1731,6 +1733,7 @@ func TestHandleBatchLog(t *testing.T) {
 				ObservationCtx:          observation.TestContextTB(t),
 				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
 				DB:                      database.NewMockDB(),
+				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 			}
 			h := server.Handler()
 

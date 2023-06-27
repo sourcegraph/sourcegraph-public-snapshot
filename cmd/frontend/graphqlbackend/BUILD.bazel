@@ -234,7 +234,6 @@ go_library(
         "//cmd/frontend/internal/processrestart",
         "//cmd/frontend/internal/search/logs",
         "//cmd/frontend/internal/siteid",
-        "//cmd/migrator/shared",
         "//enterprise/cmd/worker/shared/sourcegraphoperator",
         "//internal/actor",
         "//internal/adminanalytics",

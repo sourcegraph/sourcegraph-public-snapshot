@@ -216,9 +216,10 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*pro
 		req := proto.EnqueueRepoUpdateRequest{Repo: string(repo)}
 		resp, err := client.EnqueueRepoUpdate(ctx, &req)
 		if err != nil {
-			if st := status.Convert(err); st.Code() == codes.NotFound {
-				return nil, &repoNotFoundError{repo: string(repo), responseBody: st.Message()}
+			if s, ok := status.FromError(err); ok && s.Code() == codes.NotFound {
+				return nil, &repoNotFoundError{repo: string(repo), responseBody: s.Message()}
 			}
+
 			return nil, err
 		}
 

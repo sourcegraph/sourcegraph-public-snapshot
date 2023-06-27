@@ -86,6 +86,7 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
     // slide our window through matchText, keeping track of the best score and window so far
     let bestScore = jaccardDistance(targetCount, windowCount, bothCount)
     let bestWindow = [0, Math.min(windowSize, lines.length)]
+
     for (let i = 0; i < wordsForEachLine.length - windowSize; i++) {
         // subtract the words from the line we are scrolling past
         windowCount += subtract(windowWords, wordsForEachLine[i])
@@ -101,11 +102,15 @@ export function bestJaccardMatch(targetText: string, matchText: string, windowSi
         windowCount += windowIncrease
         bothCount += intersectionIncrease
 
-        // compute the jaccard distance between our target text and window
-        const score = jaccardDistance(targetCount, windowCount, bothCount)
-        if (score > bestScore) {
-            bestScore = score
-            bestWindow = [i + 1, i + windowSize + 1]
+        // We only do a Jaccard similarity every 5 lines to avoid excessive CPU burn. Since the
+        // windows are 50 lines, this should still give good results.
+        if (i % 5 === 0) {
+            // compute the jaccard distance between our target text and window
+            const score = jaccardDistance(targetCount, windowCount, bothCount)
+            if (score > bestScore) {
+                bestScore = score
+                bestWindow = [i + 1, i + windowSize + 1]
+            }
         }
     }
 
