@@ -299,28 +299,31 @@ func TestRedactConfSecrets(t *testing.T) {
 
 func TestRedactConfSecretsWithWhitelistConfig(t *testing.T) {
 	conf := `{
-		"executors.accessToken": "supersecret",
-		"executors.frontendURL": "http://host.docker.internal:3082",
-		// "batchChanges.rolloutWindows": "[{"rate": "unlimited"}]"
-	  }`
-
-	want := `{
-		"executors.accessToken": "supersecret",
-		"executors.frontendURL": "http://host.docker.internal:3082"
-	  }`
+  "executors.frontendURL": "http://host.docker.internal:3082",
+  "batchChanges.rolloutWindows": [{"rate": "unlimited"}]
+}`
 
 	testCases := []struct {
 		name                  string
 		returnOnlyWhitelisted bool
-		redactedFmtStr        string
+		want                  string
 	}{
 		{
 			name:                  "returnOnlyWhitelisted true",
 			returnOnlyWhitelisted: true,
+			want:                  `{"batchChanges.rolloutWindows":[{"rate":"unlimited"}]}`,
 		},
 		{
 			name:                  "returnOnlyWhitelisted false",
 			returnOnlyWhitelisted: false,
+			want: `{
+  "executors.frontendURL": "http://host.docker.internal:3082",
+  "batchChanges.rolloutWindows": [
+    {
+      "rate": "unlimited"
+    }
+  ]
+}`,
 		},
 	}
 
@@ -329,7 +332,7 @@ func TestRedactConfSecretsWithWhitelistConfig(t *testing.T) {
 			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, false, tc.returnOnlyWhitelisted)
 			require.NoError(t, err)
 
-			assert.Equal(t, want, redacted.Site)
+			assert.Equal(t, tc.want, redacted.Site)
 		})
 	}
 }
@@ -346,9 +349,8 @@ func TestRedactConfSecretsWithCommentedOutSecret(t *testing.T) {
 }`
 
 	testCases := []struct {
-		name           string
-		hashSecrets    bool
-		redactedFmtStr string
+		name        string
+		hashSecrets bool
 	}{
 		{
 			name:        "hashSecrets true",
