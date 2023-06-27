@@ -70,6 +70,35 @@ func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 	return cmd, nil
 }
 
+// CloneCommand returns the command to be executed for cloning a Git repository.
+func (s *GitRepoSyncer) Clone(ctx context.Context, remoteURL *vcs.URL, tmpPath string, output io.Writer) (err error) {
+	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "clone failed to create tmp dir")
+	}
+
+	cmd := exec.CommandContext(ctx, "git", "init", "--bare", ".")
+	cmd.Dir = tmpPath
+	if err := cmd.Run(); err != nil {
+		return errors.Wrapf(&common.GitCommandError{Err: err}, "clone setup failed")
+	}
+
+	cmd, configRemoteOpt = s.fetchCommand(ctx, remoteURL)
+	cmd.Dir = tmpPath
+
+	// TODO: Should we do this inside fetchCommand?
+	//
+	// see issue #7322: skip LFS content in repositories with Git LFS configured
+	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
+
+	// TODO: Run the command
+	
+	runRemoteGitCommand(ctx, cmd, configRemoteOpts bool, progress io.Writer)
+
+	return nil
+}
+
+
+
 // Fetch tries to fetch updates of a Git repository.
 func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
