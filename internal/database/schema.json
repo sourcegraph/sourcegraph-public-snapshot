@@ -21509,19 +21509,6 @@
           "Comment": ""
         },
         {
-          "Name": "license_check_token",
-          "Index": 11,
-          "TypeName": "bytea",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "license_expires_at",
           "Index": 8,
           "TypeName": "timestamp with time zone",
@@ -21539,6 +21526,19 @@
           "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "license_key_sha256",
+          "Index": 11,
+          "TypeName": "bytea",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -21667,12 +21667,12 @@
       ],
       "Indexes": [
         {
-          "Name": "product_licenses_license_check_token_idx",
+          "Name": "product_licenses_license_key_sha256_idx",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX product_licenses_license_check_token_idx ON product_licenses USING btree (license_check_token)",
+          "IndexDefinition": "CREATE UNIQUE INDEX product_licenses_license_key_sha256_idx ON product_licenses USING btree (license_key_sha256)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

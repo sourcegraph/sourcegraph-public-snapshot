@@ -113,7 +113,7 @@ func TestGetByToken(t *testing.T) {
 	require.NoError(t, err)
 
 	license := insertLicense(t, ctx, db, u, "key")
-	require.NotNil(t, license.LicenseCheckToken)
+	require.NotNil(t, license.LicenseKeySHA256)
 
 	tests := []struct {
 		name      string

@@ -4017,7 +4017,7 @@ CREATE TABLE product_licenses (
     license_expires_at timestamp with time zone,
     access_token_enabled boolean DEFAULT true NOT NULL,
     site_id uuid,
-    license_check_token bytea,
+    license_key_sha256 bytea,
     revoked_at timestamp with time zone,
     salesforce_sub_id text,
     salesforce_opp_id text,
@@ -6048,7 +6048,7 @@ CREATE UNIQUE INDEX permissions_unique_namespace_action ON permissions USING btr
 
 CREATE INDEX process_after_insights_query_runner_jobs_idx ON insights_query_runner_jobs USING btree (process_after);
 
-CREATE UNIQUE INDEX product_licenses_license_check_token_idx ON product_licenses USING btree (license_check_token);
+CREATE UNIQUE INDEX product_licenses_license_key_sha256_idx ON product_licenses USING btree (license_key_sha256);
 
 CREATE INDEX registry_extension_releases_registry_extension_id ON registry_extension_releases USING btree (registry_extension_id, release_tag, created_at DESC) WHERE (deleted_at IS NULL);
 

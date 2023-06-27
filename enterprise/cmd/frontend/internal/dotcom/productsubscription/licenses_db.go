@@ -29,7 +29,7 @@ type dbLicense struct {
 	LicenseExpiresAt         *time.Time
 	AccessTokenEnabled       bool
 	SiteID                   *string // UUID
-	LicenseCheckToken        []byte
+	LicenseKeySHA256         []byte
 	RevokedAt                *time.Time
 	RevokeReason             *string
 	SalesforceSubscriptionID *string
@@ -50,7 +50,7 @@ type dbLicenses struct {
 }
 
 const createLicenseQuery = `
-INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at, license_check_token, salesforce_sub_id, salesforce_opp_id)
+INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at, license_key_sha256, salesforce_sub_id, salesforce_opp_id)
 VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING id
 `
 
@@ -77,8 +77,7 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 		pq.Array(info.Tags),
 		dbutil.NewNullInt64(int64(info.UserCount)),
 		dbutil.NullTime{Time: expiresAt},
-		// TODO(@bobheadxi): Migrate to single hash
-		hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes([]byte(licenseKey))),
+		hashutil.ToSHA256Bytes([]byte(licenseKey)),
 		info.SalesforceSubscriptionID,
 		info.SalesforceOpportunityID,
 	).Scan(&id); err != nil {
@@ -118,7 +117,7 @@ func (s dbLicenses) GetByAccessToken(ctx context.Context, accessToken string) (*
 	if err != nil {
 		return nil, errTokenInvalid
 	}
-	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("license_check_token=%s", hashutil.ToSHA256Bytes([]byte(contents)))}, nil)
+	results, err := s.list(ctx, []*sqlf.Query{sqlf.Sprintf("license_key_sha256=%s", []byte(contents))}, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -233,7 +232,7 @@ SELECT
 	license_expires_at,
 	access_token_enabled,
 	site_id,
-	license_check_token,
+	license_key_sha256,
 	revoked_at,
 	revoke_reason,
 	salesforce_sub_id,
@@ -266,7 +265,7 @@ ORDER BY created_at DESC
 			&v.LicenseExpiresAt,
 			&v.AccessTokenEnabled,
 			&v.SiteID,
-			&v.LicenseCheckToken,
+			&v.LicenseKeySHA256,
 			&v.RevokedAt,
 			&v.RevokeReason,
 			&v.SalesforceSubscriptionID,

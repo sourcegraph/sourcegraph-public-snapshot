@@ -58,7 +58,7 @@ SELECT product_subscription_id
 FROM product_licenses
 WHERE
 	access_token_enabled=true
-	AND digest(license_key, 'sha256')=%s`,
+	AND license_key_sha256=%s`,
 		decoded,
 	)
 	subID, found, err := basestore.ScanFirstString(t.store.Query(ctx, query))

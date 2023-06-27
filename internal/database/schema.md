@@ -3273,14 +3273,14 @@ Indexes:
  license_expires_at      | timestamp with time zone |           |          | 
  access_token_enabled    | boolean                  |           | not null | true
  site_id                 | uuid                     |           |          | 
- license_check_token     | bytea                    |           |          | 
+ license_key_sha256      | bytea                    |           |          | 
  revoked_at              | timestamp with time zone |           |          | 
  salesforce_sub_id       | text                     |           |          | 
  salesforce_opp_id       | text                     |           |          | 
  revoke_reason           | text                     |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
-    "product_licenses_license_check_token_idx" UNIQUE, btree (license_check_token)
+    "product_licenses_license_key_sha256_idx" UNIQUE, btree (license_key_sha256)
 Foreign-key constraints:
     "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
 
