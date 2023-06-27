@@ -2109,8 +2109,8 @@ def go_dependencies():
         build_file_proto_mode = "disable_global",
         importpath = "github.com/fergusstrange/embedded-postgres",
         replace = "github.com/sourcegraph/embedded-postgres",
-        sum = "h1:WBKvD5L1KCrrVsjDRlLU3kiErfMdnDiD4Qbg9URTcAo=",
-        version = "v1.19.1-0.20230313141935-8f62b6947f2c",
+        sum = "h1:QcxHhicvH6TFpSmC3vZKWbwLSHmwy72+CESqjjaIsZA=",
+        version = "v1.19.1-0.20230624001757-345a8df15ded",
     )
 
     go_repository(

@@ -118,7 +118,7 @@
           {
             "id": "autocomplete",
             "title": "Code Autocomplete (Beta)",
-            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeAutocomplete)",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
             "media": {
               "markdown": "walkthroughs/autocomplete.md"
             }
@@ -307,7 +307,7 @@
       {
         "command": "cody.manual-completions",
         "category": "Cody",
-        "title": "Open Completions Panel"
+        "title": "Open Autocomplete Panel (Experimental)"
       },
       {
         "command": "cody.settings.extension",
@@ -361,11 +361,6 @@
         "title": "Show Inline Chat"
       },
       {
-        "command": "cody.walkthrough.enableCodeAutocomplete",
-        "category": "Cody Walkthrough",
-        "title": "Enable Code Completions"
-      },
-      {
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
@@ -387,6 +382,13 @@
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
+      },
+      {
+        "command": "cody.inline.new",
+        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
+        "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
+        "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.guardrails.debug",
@@ -474,6 +476,11 @@
         "key": "ctrl+shift+t",
         "mac": "shift+cmd+t",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.inline.new",
+        "key": "ctrl+shift+c",
+        "when": "cody.activated && !editorReadonly"
       }
     ],
     "submenus": [
@@ -595,10 +602,6 @@
         },
         {
           "command": "cody.walkthrough.showExplain",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.enableCodeAutocomplete",
           "when": "false"
         },
         {
@@ -814,7 +817,7 @@
           "order": 5,
           "type": "boolean",
           "markdownDescription": "Enables inline code suggestions in your editor.",
-          "default": false
+          "default": true
         },
         "cody.experimental.chatPredictions": {
           "order": 6,

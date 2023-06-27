@@ -4,6 +4,8 @@ import { findFilePaths, highlightTokens } from '.'
 
 const markdownText = `# Title
 
+This is a markdown [link](https://example.com)
+
 This is \`/some/hallucinated/file/path\`. Hosted on github.com/sourcegraph.
 
 Quoted "file/path.js". Unquoted hallucinated file/path/Class.java file.
@@ -20,6 +22,8 @@ This code client/cody-shared/test/ is usable.
 `
 
 const expectedHighlightedTokensText = `# Title
+
+This is a markdown [link](https://example.com)
 
 This is  <span class="token-file token-hallucinated" title="Hallucination detected: file does not exist">\`/some/hallucinated/file/path\`</span> . Hosted on github.com/sourcegraph.
 

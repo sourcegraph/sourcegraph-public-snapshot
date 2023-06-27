@@ -1,5 +1,7 @@
 # Client feature availability
 
+This represents the _current availability_. Notes on future availability and feature parity is coming soon.   
+
 | Subject                      | Description                                             | VS Code | JetBrains IDEs | Web UI | App |
 |-----------------------------|---------------------------------------------------------|:-:|:-:|:-:|:-:|
 |Chat                         | ChatGPT-like chat functionality                         |✅|✅|✅|✅|

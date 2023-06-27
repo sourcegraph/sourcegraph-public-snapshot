@@ -54,6 +54,7 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   @NotNull
   private JEditorPane createNewEmptyTextPane() {
     JEditorPane jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null);
+    jEditorPane.setEditorKit(new UIUtil.JBWordWrapHtmlEditorKit());
     HTMLEditorKit htmlEditorKit = (HTMLEditorKit) jEditorPane.getEditorKit();
     EditorColorsScheme schemeForCurrentUITheme =
         EditorColorsManager.getInstance().getSchemeForCurrentUITheme();

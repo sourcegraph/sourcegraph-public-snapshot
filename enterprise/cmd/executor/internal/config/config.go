@@ -81,6 +81,8 @@ type Config struct {
 	KubernetesAdditionalJobVolumes      []corev1.Volume
 	KubernetesAdditionalJobVolumeMounts []corev1.VolumeMount
 	KubernetesSingleJobStepImage        string
+	// TODO remove in 5.2 if we have moved to a custom image to do the setup work.
+	KubernetesGitCACert string
 
 	dockerAuthConfigStr                                          string
 	dockerAuthConfigUnmarshalError                               error
@@ -162,6 +164,7 @@ func (c *Config) Load() {
 	c.kubernetesAdditionalJobVolumes = c.GetOptional("KUBERNETES_ADDITIONAL_JOB_VOLUMES", "Additional volumes to associate with the Jobs. e.g. [{\"name\": \"my-volume\", \"configMap\": {\"name\": \"cluster-volume\"}}]")
 	c.kubernetesAdditionalJobVolumeMounts = c.GetOptional("KUBERNETES_ADDITIONAL_JOB_VOLUME_MOUNTS", "Volumes to mount to the Jobs. e.g. [{\"name\":\"my-volume\", \"mountPath\":\"/foo/bar\"}]")
 	c.KubernetesSingleJobStepImage = c.Get("KUBERNETES_SINGLE_JOB_STEP_IMAGE", "sourcegraph/batcheshelper:insiders", "The image to use for intermediate steps in the single job. Defaults to sourcegraph/batcheshelper:latest.")
+	c.KubernetesGitCACert = c.GetOptional("KUBERNETES_GIT_CA_CERT", "The CA certificate to use for git operations. If not set, the system CA bundle will be used. e.g. /path/to/ca.crt")
 
 	if c.QueueNamesStr != "" {
 		c.QueueNames = strings.Split(c.QueueNamesStr, ",")

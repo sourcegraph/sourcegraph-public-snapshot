@@ -6,7 +6,7 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
-import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -105,7 +105,6 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
-    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
 
     const {
         intentDetector,
@@ -115,6 +114,8 @@ const register = async (
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
+
+    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
 
     // Create chat webview
     const chatProvider = new ChatViewProvider(
@@ -176,6 +177,9 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
+        vscode.commands.registerCommand('cody.inline.new', () =>
+            vscode.commands.executeCommand('workbench.action.addComment')
+        ),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
@@ -184,7 +188,7 @@ const register = async (
             }
         }),
         // Auth
-        vscode.commands.registerCommand('cody.auth.sync', (state: AuthStatus) => chatProvider.syncAuthStatus(state)),
+        vscode.commands.registerCommand('cody.auth.sync', () => chatProvider.syncAuthStatus()),
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
@@ -238,7 +242,17 @@ const register = async (
         vscode.commands.registerCommand('cody.feedback', () =>
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
-        vscode.commands.registerCommand('cody.welcome', () =>
+        vscode.commands.registerCommand('cody.welcome', async () => {
+            // Hack: We have to run this twice to force VS Code to register the walkthrough
+            // Open issue: https://github.com/microsoft/vscode/issues/186165
+            await vscode.commands.executeCommand('workbench.action.openWalkthrough')
+            return vscode.commands.executeCommand(
+                'workbench.action.openWalkthrough',
+                'sourcegraph.cody-ai#welcome',
+                false
+            )
+        }),
+        vscode.commands.registerCommand('cody.welcome-mock', () =>
             vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
         ),
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
@@ -254,16 +268,11 @@ const register = async (
                 query: 'cody.experimental.inline',
                 openToSide: true,
             })
-        }),
-        vscode.commands.registerCommand('cody.walkthrough.enableCodeAutocomplete', async () => {
-            await workspaceConfig.update('cody.autocomplete.enabled', true, vscode.ConfigurationTarget.Global)
-            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
-            return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.autocomplete.enabled',
-                openToSide: true,
-            })
         })
     )
+
+    // Make sure all commands are registered before initializing the authProvider which sends info to webview.
+    await authProvider.init()
 
     let completionsProvider: vscode.Disposable | null = null
     if (initialConfig.autocomplete) {
