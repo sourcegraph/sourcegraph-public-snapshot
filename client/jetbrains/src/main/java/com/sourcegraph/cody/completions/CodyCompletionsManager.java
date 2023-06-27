@@ -68,7 +68,7 @@ public class CodyCompletionsManager {
     /* Log the event */
     Project project = editor.getProject();
     if (project != null) {
-      GraphQlLogger.logCodyEvent(project, "autocomplete", "started");
+      GraphQlLogger.logCodyEvent(project, "completion", "started");
     }
 
     CancellationToken token = new CancellationToken();
@@ -176,7 +176,7 @@ public class CodyCompletionsManager {
                           /* Log the event */
                           Project project = editor.getProject();
                           if (project != null) {
-                            GraphQlLogger.logCodyEvent(project, "autocomplete", "suggested");
+                            GraphQlLogger.logCodyEvent(project, "completion", "suggested");
                           }
 
                           /* Display completion */
