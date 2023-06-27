@@ -1,23 +1,29 @@
 .container {
     font-size: 90%;
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
+    flex-direction: column;
+    align-content: flex-start;
+    /* align-items: flex-end; */
+    gap: 0.25rem;
     user-select: none;
 }
 
 .badge {
+    display: flex;
     margin: 0;
     padding-top: 0.15rem;
     font-weight: normal;
     text-transform: uppercase;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
     opacity: 0.7;
-    flex-grow: 0 0;
+
+    gap: 0.25rem;
 }
 
 .items {
     flex: 1;
+
+    font-size: 0.7rem;
 
     display: flex;
     gap: 0.75rem;
@@ -50,9 +56,26 @@
 .index-present,
 .index-missing {
     font-weight: bold;
+    display: flex;
+    align-items: center;
 }
 
 .indexStatus {
     display: inline;
     color: var(--vscode-list-warningForeground, inherit);
+}
+
+.info {
+    display: flex;
+    color: var(--vscode-textPreformat-foreground, inherit);
+}
+
+.danger {
+    display: flex;
+    color: var(--vscode-errorForeground, inherit);
+}
+
+.success {
+    display: flex;
+    color: var(--vscode-textLink-foreground, inherit);
 }

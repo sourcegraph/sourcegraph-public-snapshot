@@ -1,6 +1,11 @@
 import React, { useMemo } from 'react'
 
-import { mdiFileDocumentOutline, mdiSourceRepository, mdiFileExcel } from '@mdi/js'
+import {
+    mdiFileDocumentOutline,
+    mdiDatabaseCheckOutline,
+    mdiDatabaseOffOutline,
+    mdiDatabaseAlertOutline,
+} from '@mdi/js'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
@@ -40,13 +45,6 @@ export const ChatInputContext: React.FunctionComponent<{
     const items: Pick<React.ComponentProps<typeof ContextItem>, 'icon' | 'text' | 'tooltip'>[] = useMemo(
         () =>
             [
-                contextStatus.codebase
-                    ? {
-                          icon: contextStatus.connection ? mdiSourceRepository : mdiFileExcel,
-                          text: basename(contextStatus.codebase.replace(/^(github|gitlab)\.com\//, '')),
-                          tooltip: contextStatus.connection ? contextStatus.codebase : warning,
-                      }
-                    : null,
                 contextStatus.filePath
                     ? {
                           icon: mdiFileDocumentOutline,
@@ -55,26 +53,15 @@ export const ChatInputContext: React.FunctionComponent<{
                       }
                     : null,
             ].filter(isDefined),
-        [contextStatus.codebase, contextStatus.connection, contextStatus.filePath, contextStatus.selection]
+        [contextStatus.filePath, contextStatus.selection]
     )
 
     return (
         <div className={classNames(styles.container, className)}>
-            {contextStatus.mode && contextStatus.connection ? (
-                <h3
-                    title="This repository’s code graph has been indexed by Cody"
-                    className={classNames(styles.badge, styles.indexPresent)}
-                >
-                    Indexed
-                </h3>
-            ) : contextStatus.supportsKeyword ? (
-                <h3 title={warning} className={classNames(styles.badge, styles.indexMissing)}>
-                    <a href="https://docs.sourcegraph.com/cody/troubleshooting#codebase-is-not-indexed">
-                        <span className={styles.indexStatus}>⚠ Not Indexed</span>
-                    </a>
-                </h3>
-            ) : null}
-
+            <AppCodebaseState
+                codebase={contextStatus.codebase || 'Codebase Missing'}
+                state={contextStatus.mode && contextStatus.connection ? 'COMPLETED' : 'ERRORED'}
+            />
             {items.length > 0 && (
                 <ul className={styles.items}>
                     {items.map(({ icon, text, tooltip }, index) => (
@@ -100,3 +87,39 @@ const ContextItem: React.FunctionComponent<{ icon: string; text: string; tooltip
         </span>
     </Tag>
 )
+
+const ItemsByState = {
+    COMPLETED: { tooltip: 'Indexed by Cody', icon: mdiDatabaseCheckOutline, type: 'success' },
+    MISSING: { tooltip: 'Please open a workspace folder.', icon: mdiDatabaseOffOutline, type: 'danger' },
+    ERRORED: { tooltip: warning, icon: mdiDatabaseAlertOutline, type: 'info' },
+}
+
+const AppCodebaseState: React.FunctionComponent<{
+    codebase: string
+    state: string
+}> = ({ codebase, state }) => {
+    const embeddedState =
+        codebase === 'Codebase Missing'
+            ? ItemsByState.MISSING
+            : state === 'COMPLETED'
+            ? ItemsByState.COMPLETED
+            : ItemsByState.ERRORED
+    const icon = embeddedState.icon
+    const tooltip = embeddedState.tooltip
+    const isDanger = embeddedState.type === 'danger'
+    const isInfo = embeddedState.type === 'info'
+
+    return (
+        <h3
+            title={tooltip}
+            className={classNames(
+                styles.badge,
+                styles.indexPresent,
+                isDanger ? styles.danger : isInfo ? styles.info : styles.success
+            )}
+        >
+            <Icon svgPath={icon} className={classNames(styles.itemIcon)} />
+            <span>{basename(codebase.replace(/^(github|gitlab)\.com\//, ''))}</span>
+        </h3>
+    )
+}
