@@ -19,7 +19,7 @@ The upgrade magic now happens when the new version is booted. In more detail, st
 
 ## Viewing progress
 
-During an automatic multi-version upgrade, we'll attempt to boot a status serve in the frontend container that is running (or blocking) on an active upgrade attempt. If there is an upgrade failure that affects the frontend, this status page will not be available and the `frontend` container logs should be viewed. Optimistically, the status server will also be unreachable in the case that an upgrade performs quickly enough that there's no time for the status server to start.
+During an automatic multi-version upgrade, we'll attempt to boot a status server in the frontend container that is running (or blocking) on an active upgrade attempt. If there is an upgrade failure that affects the frontend, this status page will not be available and the `frontend` container logs should be viewed. Optimistically, the status server will also be unreachable in the case that an upgrade performs quickly enough that there's no time for the status server to start.
 
 In the case that there's a migration failure, or an unfinished out-of-band migration that needs to be complete, the status server will be served instead of the normal Sourcegraph React app. The following screenshots show an upgrade from Sourcegraph v3.37.1 to Sourcegraph 5.0, in which the `frontend` schema is applying (or waiting to apply) a set of schema migrations, the `codeintel` schema has a pair of schema migration failures, and a single unfinished out-of-band migration is still actively being performed to completion.
 
