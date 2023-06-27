@@ -1,4 +1,4 @@
 # Installing Cody in Jetbrains (Experimental)
 
-Please visit the Jetbrains Marketplace for [installation instructions](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
+Please visit the JetBrains Marketplace for [installation instructions](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
 
