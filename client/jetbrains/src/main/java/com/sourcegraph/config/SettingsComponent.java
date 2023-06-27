@@ -163,6 +163,7 @@ public class SettingsComponent {
     boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
     boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
     boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
     codyAppRadioButton.setActionCommand(InstanceType.LOCAL_APP.name());
@@ -181,22 +182,26 @@ public class SettingsComponent {
     instanceTypeButtonGroup.add(sourcegraphDotComRadioButton);
     instanceTypeButtonGroup.add(enterpriseInstanceRadioButton);
 
-    // Assemble the three main panels
+    // Assemble the three main panels String platformName =
+    String platformName =
+        Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
+    String codyAppCommentText =
+        isLocalAppPlatformSupported
+            ? "Use Sourcegraph through the locally installed Cody App."
+            : platformName
+                + " is not yet supported by the local Cody App. Keep an eye on future updates!";
     JBLabel codyAppComment =
-        new JBLabel(
-            "Use Sourcegraph through the locally installed Cody App.",
-            UIUtil.ComponentStyle.SMALL,
-            UIUtil.FontColor.BRIGHTER);
+        new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     boolean shouldShowInstallLocalAppLink =
-        !isLocalAppInstalled && LocalAppManager.isPlatformSupported();
-      JLabel installLocalAppComment =
-          new JBLabel(
-              "The local Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
-              UIUtil.ComponentStyle.SMALL,
-              UIUtil.FontColor.BRIGHTER);
-      installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
-      installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+        !isLocalAppInstalled && isLocalAppPlatformSupported;
+    JLabel installLocalAppComment =
+        new JBLabel(
+            "The local Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
+            UIUtil.ComponentStyle.SMALL,
+            UIUtil.FontColor.BRIGHTER);
+    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     ActionLink installLocalAppLink =
         simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
     installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
