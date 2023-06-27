@@ -36,6 +36,7 @@ export class AuthProvider {
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage
     ) {
+        this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
         this.appDetector = new LocalAppDetector({ onChange: token => this.syncLocalAppState(token) })
     }
@@ -44,7 +45,6 @@ export class AuthProvider {
     // if none, try signing in with App URL
     public async init(): Promise<void> {
         const lastEndpoint = this.localStorage?.getEndpoint() || ''
-        this.authStatus.endpoint = lastEndpoint
         debug('AuthProvider:init:lastEndpoint', lastEndpoint)
         const tokenKey = isLocalApp(lastEndpoint) ? 'SOURCEGRAPH_CODY_APP' : lastEndpoint
         const token = await this.secretStorage.get(tokenKey)
