@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -285,43 +286,45 @@ func TestCachedManifestResolver(t *testing.T) {
 		t.Fatalf("failed to create cached resolver: %v", err)
 	}
 
-	cache := r.(*CachedManifestResolver)
-
-	initialManifest := cache.manifest.Load().(*AppUpdateManifest)
+	initialManifest, err := r.Resolve(context.Background())
+	if err != nil {
+		t.Errorf("failed to resolve manifest from cache resolver:%v", initialManifest)
+	}
 	if initialManifest == nil {
 		t.Errorf("expected cache resolver to have a value stored for manifest got nil")
 	}
 
-	if resolver.count < 1 {
+	if resolver.count.Load() < 1 {
 		t.Errorf("expected cache to have resolved the manifest at least once")
 	}
 
 	time.Sleep(55 * time.Millisecond)
 
-	if resolver.count < 2 {
+	if resolver.count.Load() < 2 {
 		t.Errorf("expected cache to have fetched manifest at least twice")
 	}
 
-	m, err := cache.Resolve(context.Background())
+	m, err := r.Resolve(context.Background())
 	if err != nil {
 		t.Errorf("failed to resolve manifest from cache resolver: %v", err)
 	}
 
-	if m.Version != resolver.manifest[resolver.count-1].Version {
+	if m.Version != resolver.manifest[1].Version {
 		t.Errorf("cache manifest mismatch - wanted %q got %q", initialManifest.Version, m.Version)
 	}
 
 }
 
 type MockResolver struct {
-	count    int
+	count    atomic.Int32
 	manifest []*AppUpdateManifest
 }
 
 func (m *MockResolver) Resolve(ctx context.Context) (*AppUpdateManifest, error) {
-	idx := m.count % len(m.manifest)
+	count := m.count.Load()
+	idx := int(count) % len(m.manifest)
 
-	m.count++
+	m.count.Store(count + 1)
 
 	return m.manifest[idx], nil
 }
