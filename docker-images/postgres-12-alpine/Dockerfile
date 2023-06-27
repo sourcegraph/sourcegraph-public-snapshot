@@ -23,7 +23,8 @@ RUN apk add --upgrade --no-cache \
     'libxml2>=2.9.14-r2' \
     'libgcrypt>=1.8.8' \
     'apk-tools>=2.12.7' \
-    'krb5-libs>=1.19.4-r0'
+    'krb5-libs>=1.19.4-r0' \
+    'ncurses-libs>=6.3_p20220521-r1'
 
 ENV POSTGRES_PASSWORD='' \
     POSTGRES_USER=sg \

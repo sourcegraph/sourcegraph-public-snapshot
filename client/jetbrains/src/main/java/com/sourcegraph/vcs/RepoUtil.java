@@ -61,7 +61,11 @@ public class RepoUtil {
       Logger.getInstance(RepoUtil.class).warn(message);
       err.printStackTrace();
     }
-    return new RepoInfo(vcsType, remoteUrl, remoteBranchName, relativePath);
+    return new RepoInfo(
+        vcsType,
+        remoteUrl,
+        remoteBranchName != null ? remoteBranchName : ConfigUtil.getDefaultBranchName(project),
+        relativePath);
   }
 
   private static String doReplacements(@NotNull Project project, @NotNull String remoteUrl) {
@@ -77,10 +81,21 @@ public class RepoUtil {
     return remoteUrlWithReplacements;
   }
 
-  @NotNull
+  // Returned format: github.com/sourcegraph/sourcegraph
+  // Must be called from non-EDT context
+  public static @NotNull String getRemoteRepoUrlWithoutScheme(
+      @NotNull Project project, @NotNull VirtualFile file) throws Exception {
+    String remoteUrl = getRemoteRepoUrl(project, file);
+    return remoteUrl
+        .substring(remoteUrl.indexOf('@') + 1)
+        .replaceFirst(":", "/")
+        .replaceFirst(".git$", "");
+  }
+
   // Returned format: git@github.com:sourcegraph/sourcegraph.git
-  public static String getRemoteRepoUrl(@NotNull Project project, @NotNull VirtualFile file)
-      throws Exception {
+  // Must be called from non-EDT context
+  public static @NotNull String getRemoteRepoUrl(
+      @NotNull Project project, @NotNull VirtualFile file) throws Exception {
     Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
     VCSType vcsType = getVcsType(project, file);
 

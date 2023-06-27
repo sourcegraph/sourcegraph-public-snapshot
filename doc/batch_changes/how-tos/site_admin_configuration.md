@@ -18,6 +18,7 @@
     * [Forks](../../admin/config/batch_changes.md#forks), which push branches created by Batch Changes onto forks of the upstream repository instead than the repository itself.
     * [Outgoing webhooks](../../admin/config/webhooks/outgoing.md), which publish events related to batch changes and changesets to enable deeper integrations with your other tools and systems.
     * [Auto-delete branch on merge/close](../../admin/config/batch_changes.md#automatically-delete-branches-on-merge-close), which automatically deletes branches created by Batch Changes when changesets are merged or closed.
+    * [Commit signing for GitHub](../../admin/config/batch_changes.md#commit-signing-for-github), which signs commits created by Batch Changes via a GitHub App <span class="badge badge-beta">Beta</span>.
 
 #### Disable Batch Changes
 - [Disable Batch Changes](../explanations/permissions_in_batch_changes.md#disabling-batch-changes).

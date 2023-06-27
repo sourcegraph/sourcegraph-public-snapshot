@@ -20,12 +20,13 @@ import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.NotificationActivity;
-import com.sourcegraph.config.SettingsComponent;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /** Responsible for triggering and clearing inline code completions. */
 public class CodyCompletionsManager {
@@ -40,7 +41,7 @@ public class CodyCompletionsManager {
   }
 
   @RequiresEdt
-  public void clearCompletions(Editor editor) {
+  public void clearCompletions(@NotNull Editor editor) {
     cancelCurrentJob();
     for (Inlay<?> inlay :
         editor.getInlayModel().getInlineElementsInRange(0, editor.getDocument().getTextLength())) {
@@ -59,10 +60,17 @@ public class CodyCompletionsManager {
         && isEditorSupported(editor);
   }
 
-  public void triggerCompletion(Editor editor, int offset) {
+  public void triggerCompletion(@NotNull Editor editor, int offset) {
     if (!ConfigUtil.areCodyCompletionsEnabled()) {
       return;
     }
+
+    /* Log the event */
+    Project project = editor.getProject();
+    if (project != null) {
+      GraphQlLogger.logCodyEvent(project, "completion", "started");
+    }
+
     CancellationToken token = new CancellationToken();
     SourcegraphNodeCompletionsClient client =
         new SourcegraphNodeCompletionsClient(completionsService(editor), token);
@@ -91,8 +99,9 @@ public class CodyCompletionsManager {
     }
   }
 
-  public static InlineCompletionItem postProcessInlineCompletionBasedOnDocumentContext(
-      InlineCompletionItem resultItem, CompletionDocumentContext documentCompletionContext) {
+  public static @NotNull InlineCompletionItem postProcessInlineCompletionBasedOnDocumentContext(
+      @NotNull InlineCompletionItem resultItem,
+      @NotNull CompletionDocumentContext documentCompletionContext) {
     String sameLineSuffix = documentCompletionContext.getSameLineSuffix();
     if (resultItem.insertText.endsWith(sameLineSuffix)) {
       // if the completion already has the same line suffix, we strip it
@@ -119,12 +128,12 @@ public class CodyCompletionsManager {
   }
 
   private CompletableFuture<Void> triggerCompletionAsync(
-      Editor editor,
+      @NotNull Editor editor,
       int offset,
-      CancellationToken token,
-      CodyCompletionItemProvider provider,
-      TextDocument textDocument,
-      CompletionDocumentContext documentCompletionContext) {
+      @NotNull CancellationToken token,
+      @NotNull CodyCompletionItemProvider provider,
+      @NotNull TextDocument textDocument,
+      @NotNull CompletionDocumentContext documentCompletionContext) {
     return provider
         .provideInlineCompletions(
             textDocument,
@@ -161,7 +170,16 @@ public class CodyCompletionsManager {
                 ApplicationManager.getApplication()
                     .invokeLater(
                         () -> {
+                          /* Clear existing completions */
                           this.clearCompletions(editor);
+
+                          /* Log the event */
+                          Project project = editor.getProject();
+                          if (project != null) {
+                            GraphQlLogger.logCodyEvent(project, "completion", "suggested");
+                          }
+
+                          /* Display completion */
                           inlayModel.addInlineElement(offset, true, renderer);
                         });
               } catch (Exception e) {
@@ -172,7 +190,7 @@ public class CodyCompletionsManager {
   }
 
   // TODO: handle tabs in multiline completions when we add them
-  public static InlineCompletionItem normalizeIndentation(
+  public static @NotNull InlineCompletionItem normalizeIndentation(
       @NotNull InlineCompletionItem item,
       @NotNull CommonCodeStyleSettings.IndentOptions indentOptions) {
     if (item.insertText.matches("^[\t ]*.+")) {
@@ -189,7 +207,8 @@ public class CodyCompletionsManager {
     } else return item;
   }
 
-  public static InlineCompletionItem removeUndesiredCharacters(InlineCompletionItem item) {
+  public static @NotNull InlineCompletionItem removeUndesiredCharacters(
+      @NotNull InlineCompletionItem item) {
     // no zero-width spaces or line separator chars, pls
     String newInsertText = item.insertText.replaceAll("[\u200b\u2028]", "");
     int rangeDiff = item.insertText.length() - newInsertText.length();
@@ -202,7 +221,7 @@ public class CodyCompletionsManager {
     return project != null && !project.isDisposed();
   }
 
-  private boolean isEditorSupported(Editor editor) {
+  private boolean isEditorSupported(@NotNull Editor editor) {
     if (editor.isDisposed()) {
       return false;
     }
@@ -219,7 +238,7 @@ public class CodyCompletionsManager {
     return isSupported;
   }
 
-  public static boolean isEditorInstanceSupported(Editor editor) {
+  public static boolean isEditorInstanceSupported(@NotNull Editor editor) {
     return !editor.isViewer()
         && !editor.isOneLineMode()
         && !(editor instanceof EditorWindow)
@@ -227,31 +246,24 @@ public class CodyCompletionsManager {
         && (!(editor instanceof EditorEx) || !((EditorEx) editor).isEmbeddedIntoDialogWrapper());
   }
 
-  private CompletionsService completionsService(Editor editor) {
-    Project project = editor.getProject();
-    boolean isEnterprise =
-        ConfigUtil.getInstanceType(project).equals(SettingsComponent.InstanceType.ENTERPRISE);
-    String srcEndpoint = System.getenv("SRC_ENDPOINT");
+  @Nullable
+  private CompletionsService completionsService(@NotNull Editor editor) {
+    Optional<Project> project = Optional.ofNullable(editor.getProject());
     String instanceUrl =
-        srcEndpoint != null
-            ? srcEndpoint
-            : isEnterprise ? ConfigUtil.getEnterpriseUrl(project) : "https://sourcegraph.com/";
-    String accessToken =
-        isEnterprise
-            ? ConfigUtil.getEnterpriseAccessToken(project)
-            : ConfigUtil.getDotComAccessToken(project);
-    if (!instanceUrl.endsWith("/")) {
-      instanceUrl = instanceUrl + "/";
+        Optional.ofNullable(System.getenv("SRC_ENDPOINT"))
+            .or(() -> project.map(ConfigUtil::getSourcegraphUrl))
+            .map(url -> url.endsWith("/") ? url : url + "/")
+            .orElse(ConfigUtil.DOTCOM_URL);
+    Optional<String> accessToken =
+        Optional.ofNullable(System.getenv("SRC_ACCESS_TOKEN"))
+            .or(
+                () ->
+                    project.flatMap(p -> Optional.ofNullable(ConfigUtil.getProjectAccessToken(p))))
+            .filter(StringUtils::isNotEmpty);
+    if (accessToken.isEmpty() && !ConfigUtil.isAccessTokenNotificationDismissed()) {
+      NotificationActivity.notifyAboutSourcegraphAccessToken(Optional.of(instanceUrl));
     }
-    if (accessToken == null) {
-      accessToken = System.getenv("SRC_ACCESS_TOKEN");
-    }
-    if (StringUtils.isEmpty(accessToken)) {
-      if (!ConfigUtil.isAccessTokenNotificationDismissed())
-        NotificationActivity.notifyAboutSourcegraphAccessToken(Optional.of(instanceUrl));
-      return null;
-    }
-    return new CompletionsService(instanceUrl, accessToken);
+    return accessToken.map(token -> new CompletionsService(instanceUrl, token)).orElse(null);
   }
 
   private void cancelCurrentJob() {

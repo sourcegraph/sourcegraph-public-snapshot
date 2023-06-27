@@ -8,15 +8,16 @@ import (
 	"github.com/sourcegraph/conc/pool"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
-// Service is an attribution service which searches for matches on snippets of
-// code.
-type Service struct {
+// ServiceOpts configures Service.
+type ServiceOpts struct {
 	// SearchClient is used to find attribution on the local instance.
 	SearchClient client.SearchClient
 
@@ -27,6 +28,27 @@ type Service struct {
 	// SourcegraphDotComFederate is true if this instance should also federate
 	// to sourcegraph.com.
 	SourcegraphDotComFederate bool
+}
+
+// Service is for the attribution service which searches for matches on
+// snippets of code.
+//
+// Use NewService to construct this value.
+type Service struct {
+	ServiceOpts
+
+	operations *operations
+}
+
+// NewService returns a service configured with observationCtx.
+//
+// Note: this registers metrics so should only be called once with the same
+// observationCtx.
+func NewService(observationCtx *observation.Context, opts ServiceOpts) *Service {
+	return &Service{
+		operations:  newOperations(observationCtx),
+		ServiceOpts: opts,
+	}
 }
 
 // SnippetAttributions is holds the collection of attributions for a snippet.
@@ -57,7 +79,15 @@ type SnippetAttributions struct {
 
 // SnippetAttribution will search the instances indexed code for code matching
 // snippet and return the attribution results.
-func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
+func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+	ctx, traceLogger, endObservation := c.operations.snippetAttribution.With(ctx, &err, observation.Args{
+		Attrs: []attribute.KeyValue{
+			attribute.Int("snippet.len", len(snippet)),
+			attribute.Int("limit", limit),
+		},
+	})
+	defer endObservationWithResult(traceLogger, endObservation, &result)()
+
 	// TODO(keegancsmith) how should we handle partial errors?
 	p := pool.New().WithContext(ctx).WithCancelOnError().WithFirstError()
 
@@ -108,7 +138,10 @@ func (c *Service) SnippetAttribution(ctx context.Context, snippet string, limit 
 	return &agg, nil
 }
 
-func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
+func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+	ctx, traceLogger, endObservation := c.operations.snippetAttributionLocal.With(ctx, &err, observation.Args{})
+	defer endObservationWithResult(traceLogger, endObservation, &result)()
+
 	const (
 		version    = "V3"
 		searchMode = search.Precise
@@ -177,7 +210,10 @@ func (c *Service) snippetAttributionLocal(ctx context.Context, snippet string, l
 	}, nil
 }
 
-func (c *Service) snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (*SnippetAttributions, error) {
+func (c *Service) snippetAttributionDotCom(ctx context.Context, snippet string, limit int) (result *SnippetAttributions, err error) {
+	ctx, traceLogger, endObservation := c.operations.snippetAttributionDotCom.With(ctx, &err, observation.Args{})
+	defer endObservationWithResult(traceLogger, endObservation, &result)()
+
 	resp, err := dotcom.SnippetAttribution(ctx, c.SourcegraphDotComClient, snippet, limit)
 	if err != nil {
 		return nil, err

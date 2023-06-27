@@ -5,6 +5,7 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
@@ -13,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/requestlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
 )
 
@@ -50,6 +52,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						),
 					),
 				),
+				otelhttp.WithPublicEndpoint(),
 			),
 		)
 	}
@@ -70,6 +73,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						),
 					),
 				),
+				otelhttp.WithPublicEndpoint(),
 			),
 		)
 
@@ -81,6 +85,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 						embeddings.NewListHandler(),
 					),
 				),
+				otelhttp.WithPublicEndpoint(),
 			),
 		)
 
@@ -95,12 +100,13 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 							rs,
 							config.RateLimitNotifier,
 							embeddings.ModelFactoryMap{
-								embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(config.OpenAIAccessToken),
+								embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpcli.ExternalClient, config.OpenAIAccessToken),
 							},
 							config.EmbeddingsAllowedModels,
 						),
 					),
 				),
+				otelhttp.WithPublicEndpoint(),
 			),
 		)
 	}

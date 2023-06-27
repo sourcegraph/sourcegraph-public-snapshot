@@ -9,6 +9,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -305,6 +306,8 @@ func (b *bag) add(k refKey) {
 // can point to them (also from the database), and the newly fetched
 // references are then linked back to the bag.
 func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) {
+	usersMap := make(map[*refContext]*userReferences)
+	var userBatch userReferencesBatch
 	for k, refCtx := range b.references {
 		if !refCtx.resolutionDone {
 			userRefs, teamRefs, err := k.fetch(ctx, db)
@@ -312,14 +315,14 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) {
 			if err != nil {
 				refCtx.appendErr(err)
 			}
-			// User resolved
+			// User resolved, adding to the map, to batch-augment them later.
 			if userRefs != nil {
+				// Checking added users in resolvedUsers map, but adding them to usersMap because
+				// we need to have the whole refContext.
 				if _, ok := b.resolvedUsers[userRefs.id]; !ok {
-					userRefs.augment(ctx, db)
-					b.resolvedUsers[userRefs.id] = userRefs
-					userRefs.linkBack(b)
+					usersMap[refCtx] = userRefs
+					userBatch = append(userBatch, userRefs)
 				}
-				refCtx.resolvedUserID = userRefs.id
 			}
 			// Team resolved
 			if teamRefs != nil {
@@ -332,6 +335,14 @@ func (b *bag) Resolve(ctx context.Context, db edb.EnterpriseDB) {
 				refCtx.resolvedTeamID = id
 			}
 		}
+	}
+	// Batch augment.
+	userBatch.augment(ctx, db)
+	// Post-augmentation actions.
+	for refCtx, userRefs := range usersMap {
+		b.resolvedUsers[userRefs.id] = userRefs
+		userRefs.linkBack(b)
+		refCtx.resolvedUserID = userRefs.id
 	}
 }
 
@@ -351,32 +362,52 @@ func (r *userReferences) appendErr(err error) {
 	r.errs = append(r.errs, err)
 }
 
-// augment fetches all the references for this user that are missing.
-// These can then be linked back into the bag using `linkBack`.
-// In order to call augment, `id`
-func (r *userReferences) augment(ctx context.Context, db edb.EnterpriseDB) {
-	// User references has to have an ID
-	if r.id == 0 {
-		r.appendErr(errors.New("userReferences needs id set for augmenting"))
+type userReferencesBatch []*userReferences
+
+// augment fetches all the references that are missing for all users in a batch.
+// These can then be linked back into the bag using `linkBack`. In order to call
+// augment, `id`.
+func (b userReferencesBatch) augment(ctx context.Context, db edb.EnterpriseDB) {
+	userIDsToFetchHandles := collections.NewSet[int32]()
+	for _, r := range b {
+		// User references has to have an ID.
+		if r.id == 0 {
+			r.appendErr(errors.New("userReferences needs id set for augmenting"))
+			continue
+		}
+		var err error
+		if r.user == nil {
+			r.user, err = db.Users().GetByID(ctx, r.id)
+			if err != nil {
+				r.appendErr(errors.Wrap(err, "augmenting user"))
+			}
+		}
+		// Just adding the user ID to the set for a batch request.
+		if len(r.codeHostHandles) == 0 {
+			userIDsToFetchHandles.Add(r.id)
+		}
+		if len(r.verifiedEmails) == 0 {
+			r.verifiedEmails, err = fetchVerifiedEmails(ctx, db, r.id)
+			if err != nil {
+				r.appendErr(errors.Wrap(err, "augmenting verified emails"))
+			}
+		}
+	}
+	if userIDsToFetchHandles.IsEmpty() {
 		return
 	}
-	var err error
-	if r.user == nil {
-		r.user, err = db.Users().GetByID(ctx, r.id)
-		if err != nil {
-			r.appendErr(errors.Wrap(err, "augmenting user"))
+	// Now we batch fetch all user accounts.
+	handlesByUser, err := batchFetchCodeHostHandles(ctx, db, userIDsToFetchHandles.Values())
+	if err != nil {
+		// Well, we need to append errors to all the references.
+		for _, r := range b {
+			r.appendErr(err)
 		}
+		return
 	}
-	if len(r.codeHostHandles) == 0 {
-		r.codeHostHandles, err = fetchCodeHostHandles(ctx, db, r.id)
-		if err != nil {
-			r.appendErr(errors.Wrap(err, "augmenting code host handles"))
-		}
-	}
-	if len(r.verifiedEmails) == 0 {
-		r.verifiedEmails, err = fetchVerifiedEmails(ctx, db, r.id)
-		if err != nil {
-			r.appendErr(errors.Wrap(err, "augmenting verified emails"))
+	for _, r := range b {
+		if handles, ok := handlesByUser[r.id]; ok {
+			r.codeHostHandles = handles
 		}
 	}
 }
@@ -393,11 +424,23 @@ func fetchVerifiedEmails(ctx context.Context, db edb.EnterpriseDB, userID int32)
 	return ms, nil
 }
 
-func fetchCodeHostHandles(ctx context.Context, db edb.EnterpriseDB, userID int32) ([]string, error) {
-	accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: userID})
+func batchFetchCodeHostHandles(ctx context.Context, db edb.EnterpriseDB, userIDs []int32) (map[int32][]string, error) {
+	accounts, err := db.UserExternalAccounts().ListForUsers(ctx, userIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, "UserExternalAccounts.List")
+		return nil, errors.Wrap(err, "UserExternalAccounts.ListForUsers")
 	}
+	handlesByUser := make(map[int32][]string)
+	for userID, accts := range accounts {
+		handles, err := fetchCodeHostHandles(ctx, accts)
+		if err != nil {
+			return nil, errors.Wrap(err, "augmenting code host handles")
+		}
+		handlesByUser[userID] = handles
+	}
+	return handlesByUser, nil
+}
+
+func fetchCodeHostHandles(ctx context.Context, accounts []*extsvc.Account) ([]string, error) {
 	codeHostHandles := make([]string, 0, len(accounts))
 	for _, account := range accounts {
 		serviceType := account.ServiceType

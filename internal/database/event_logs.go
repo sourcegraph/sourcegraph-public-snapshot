@@ -1565,6 +1565,23 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 	return events, nil
 }
 
+// List of events that don't meet the criteria of "active" usage of Cody.
+var nonActiveCodyEvents = []string{
+	"CodyVSCodeExtension:CodySavedLogin:executed",
+	"web:codyChat:tryOnPublicCode",
+	"web:codyEditorWidget:viewed",
+	"web:codyChat:pageViewed",
+	"CodyConfigurationPageViewed",
+	"ClickedOnTryCodySearchCTA",
+	"TryCodyWebOnboardingDisplayed",
+	"AboutGetCodyPopover",
+	"TryCodyWeb",
+	"CodySurveyToastViewed",
+	"SiteAdminCodyPageViewed",
+	"CodyUninstalled",
+	"SpeakToACodyEngineerCTA",
+}
+
 var aggregatedCodyUsageEventsQuery = `
 WITH events AS (
   SELECT
@@ -1580,6 +1597,9 @@ WITH events AS (
   WHERE
     timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
     AND lower(name) like '%%cody%%'
+    AND name not like '%%CTA%%'
+    AND name not like '%%Cta%%'
+    AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
 ),
 code_generation_keys AS (
   SELECT * FROM unnest(ARRAY[

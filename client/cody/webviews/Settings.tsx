@@ -6,7 +6,7 @@ import { isLocalApp } from '../src/chat/protocol'
 
 interface SettingsProps {
     onLogout: () => void
-    endpoint?: string
+    endpoint: string
     version?: string
 }
 

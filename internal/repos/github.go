@@ -590,6 +590,32 @@ func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *
 	return
 }
 
+// listAppInstallation returns all the repositories belonging to the authenticated GitHub App installation
+// by hitting the /installation/repositories endpoint.
+//
+// It returns an error if the request fails on the first page.
+func (s *GitHubSource) listAppInstallation(ctx context.Context, results chan *githubResult) (fail error) {
+	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
+		defer func() {
+			if err != nil && page == 1 {
+				fail, err = err, nil
+			}
+
+			remaining, reset, retry, _ := s.v3Client.ExternalRateLimiter().Get()
+			s.logger.Debug(
+				"github sync: ListInstallationRepositories",
+				log.Int("repos", len(repos)),
+				log.Int("rateLimitCost", cost),
+				log.Int("rateLimitRemaining", remaining),
+				log.Duration("rateLimitReset", reset),
+				log.Duration("retryAfter", retry),
+			)
+		}()
+		return s.v3Client.ListInstallationRepositories(ctx, page)
+	})
+	return
+}
+
 // listRepos returns the valid repositories from the given list of repository names.
 // This is done by hitting the /repos/:owner/:name endpoint for each of the given
 // repository names.
@@ -1134,8 +1160,8 @@ func (s *GitHubSource) listRepositoryQuery(ctx context.Context, query string, re
 	s.listSearch(ctx, query, results)
 }
 
-// listAllRepositories returns the repositories from the given `orgs`, `repos`, and
-// `repositoryQuery` config options excluding the ones specified by `exclude`.
+// listAllRepositories returns the repositories from the given `orgs`, `repos`,
+// `repositoryQuery`, and GitHubAppDetails config options, excluding the ones specified by `exclude`.
 func (s *GitHubSource) listAllRepositories(ctx context.Context, results chan *githubResult) {
 	s.listRepos(ctx, s.config.Repos, results)
 
@@ -1147,6 +1173,10 @@ func (s *GitHubSource) listAllRepositories(ctx context.Context, results chan *gi
 
 	for i := len(s.config.Orgs) - 1; i >= 0; i-- {
 		s.listOrg(ctx, s.config.Orgs[i], results)
+	}
+
+	if s.config.GitHubAppDetails != nil && s.config.GitHubAppDetails.CloneAllRepositories {
+		s.listAppInstallation(ctx, results)
 	}
 }
 

@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
-	migratorshared "github.com/sourcegraph/sourcegraph/cmd/migrator/shared"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -338,7 +337,7 @@ var devSchemaFactory = schemas.NewExpectedSchemaFactory(
 )
 
 var schemaFactories = append(
-	migratorshared.DefaultSchemaFactories,
+	schemas.DefaultSchemaFactories,
 	// Special schema factory for dev environment.
 	devSchemaFactory,
 )
@@ -565,3 +564,43 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 }
 
 func (r *siteResolver) IsCodyEnabled(ctx context.Context) bool { return cody.IsCodyEnabled(ctx) }
+
+func (r *siteResolver) CodyLLMConfiguration(ctx context.Context) *codyLLMConfigurationResolver {
+	c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
+	if c == nil {
+		return nil
+	}
+
+	return &codyLLMConfigurationResolver{config: c}
+}
+
+type codyLLMConfigurationResolver struct {
+	config *conftypes.CompletionsConfig
+}
+
+func (c *codyLLMConfigurationResolver) ChatModel() string { return c.config.ChatModel }
+func (c *codyLLMConfigurationResolver) ChatModelMaxTokens() *int32 {
+	if c.config.ChatModelMaxTokens != 0 {
+		max := int32(c.config.ChatModelMaxTokens)
+		return &max
+	}
+	return nil
+}
+
+func (c *codyLLMConfigurationResolver) FastChatModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) FastChatModelMaxTokens() *int32 {
+	if c.config.FastChatModelMaxTokens != 0 {
+		max := int32(c.config.FastChatModelMaxTokens)
+		return &max
+	}
+	return nil
+}
+
+func (c *codyLLMConfigurationResolver) CompletionModel() string { return c.config.FastChatModel }
+func (c *codyLLMConfigurationResolver) CompletionModelMaxTokens() *int32 {
+	if c.config.CompletionModelMaxTokens != 0 {
+		max := int32(c.config.CompletionModelMaxTokens)
+		return &max
+	}
+	return nil
+}

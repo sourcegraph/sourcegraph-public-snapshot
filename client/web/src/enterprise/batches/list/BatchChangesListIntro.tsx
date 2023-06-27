@@ -12,10 +12,12 @@ import styles from './BatchChangesListIntro.module.scss'
 
 export interface BatchChangesListIntroProps {
     isLicensed: boolean | undefined
+    viewerIsAdmin: boolean
 }
 
 export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChildren<BatchChangesListIntroProps>> = ({
     isLicensed,
+    viewerIsAdmin,
 }) => {
     if (isLicensed === undefined) {
         return null
@@ -25,14 +27,17 @@ export const BatchChangesListIntro: React.FunctionComponent<React.PropsWithChild
         <div className={classNames(styles.alertsRow)}>
             {isLicensed === true ? (
                 <div className={classNames(styles.alertsRowContent, 'flex-1 mb-3')}>
-                    <BatchChangesChangelogAlert />
+                    <BatchChangesChangelogAlert viewerIsAdmin={viewerIsAdmin} />
                 </div>
             ) : (
                 <>
                     <div className={classNames(styles.alertsRowContent, 'flex-1 mb-3')}>
                         <BatchChangesUnlicensedAlert />
                     </div>
-                    <BatchChangesChangelogAlert className={classNames(styles.alertsRowContent, 'flex-1 mb-3')} />
+                    <BatchChangesChangelogAlert
+                        viewerIsAdmin={viewerIsAdmin}
+                        className={classNames(styles.alertsRowContent, 'flex-1 mb-3')}
+                    />
                 </>
             )}
         </div>

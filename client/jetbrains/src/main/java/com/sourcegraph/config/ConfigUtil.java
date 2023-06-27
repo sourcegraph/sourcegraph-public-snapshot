@@ -5,8 +5,14 @@ import com.intellij.ide.plugins.IdeaPluginDescriptor;
 import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.cody.agent.ConnectionConfiguration;
+import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -15,14 +21,18 @@ public class ConfigUtil {
   public static final String DOTCOM_URL = "https://sourcegraph.com/";
 
   @NotNull
+  public static ConnectionConfiguration getAgentConfiguration(@NotNull Project project) {
+    return new ConnectionConfiguration()
+        .setServerEndpoint(getSourcegraphUrl(project))
+        .setAccessToken(getProjectAccessToken(project))
+        .setCustomHeaders(getCustomRequestHeadersAsMap(project));
+  }
+
+  @NotNull
   public static JsonObject getConfigAsJson(@NotNull Project project) {
     JsonObject configAsJson = new JsonObject();
     configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
-    configAsJson.addProperty(
-        "accessToken",
-        ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
-            ? ConfigUtil.getDotComAccessToken(project)
-            : ConfigUtil.getEnterpriseAccessToken(project));
+    configAsJson.addProperty("accessToken", ConfigUtil.getProjectAccessToken(project));
     configAsJson.addProperty(
         "customRequestHeadersAsString", ConfigUtil.getCustomRequestHeaders(project));
     configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
@@ -31,34 +41,37 @@ public class ConfigUtil {
   }
 
   @NotNull
-  public static SettingsComponent.InstanceType getInstanceType(Project project) {
-    // Project level
-    String projectLevelSetting = getProjectLevelConfig(project).getInstanceType();
-    if (projectLevelSetting != null && !projectLevelSetting.isEmpty()) {
-      return projectLevelSetting.equals(SettingsComponent.InstanceType.ENTERPRISE.name())
-          ? SettingsComponent.InstanceType.ENTERPRISE
-          : SettingsComponent.InstanceType.DOTCOM;
-    }
-
-    // Application level
-    String applicationLevelSetting = getApplicationLevelConfig().getInstanceType();
-    if (applicationLevelSetting != null && !applicationLevelSetting.isEmpty()) {
-      return applicationLevelSetting.equals(SettingsComponent.InstanceType.ENTERPRISE.name())
-          ? SettingsComponent.InstanceType.ENTERPRISE
-          : SettingsComponent.InstanceType.DOTCOM;
-    }
-
-    // User level or default
-    String enterpriseUrl = getEnterpriseUrl(project);
-    return (enterpriseUrl.equals("") || enterpriseUrl.startsWith(DOTCOM_URL))
-        ? SettingsComponent.InstanceType.DOTCOM
-        : SettingsComponent.InstanceType.ENTERPRISE;
+  public static SettingsComponent.InstanceType getInstanceType(@NotNull Project project) {
+    return Optional.ofNullable(getProjectLevelConfig(project).getInstanceType()) // Project level
+        .flatMap(SettingsComponent.InstanceType::optionalValueOf)
+        .or( // Application level
+            () ->
+                Optional.ofNullable(getApplicationLevelConfig().getInstanceType())
+                    .flatMap(SettingsComponent.InstanceType::optionalValueOf))
+        .or( // User level
+            () ->
+                Optional.of(getEnterpriseUrl(project))
+                    .filter(StringUtils::isNotEmpty)
+                    .flatMap(
+                        url -> {
+                          if (url.startsWith(DOTCOM_URL)) {
+                            return Optional.of(SettingsComponent.InstanceType.DOTCOM);
+                          } else if (url.startsWith(LocalAppManager.getLocalAppUrl())) {
+                            return Optional.of(SettingsComponent.InstanceType.LOCAL_APP);
+                          } else {
+                            return Optional.empty();
+                          }
+                        }))
+        .orElse(SettingsComponent.getDefaultInstanceType()); // or default
   }
 
   @NotNull
   public static String getSourcegraphUrl(@NotNull Project project) {
-    if (getInstanceType(project) == SettingsComponent.InstanceType.DOTCOM) {
+    SettingsComponent.InstanceType instanceType = getInstanceType(project);
+    if (instanceType == SettingsComponent.InstanceType.DOTCOM) {
       return DOTCOM_URL;
+    } else if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
+      return LocalAppManager.getLocalAppUrl();
     } else {
       String enterpriseUrl = getEnterpriseUrl(project);
       return !enterpriseUrl.isEmpty() ? enterpriseUrl : DOTCOM_URL;
@@ -82,6 +95,15 @@ public class ConfigUtil {
     // User level or default
     String userLevelUrl = UserLevelConfig.getSourcegraphUrl();
     return !userLevelUrl.equals("") ? addSlashIfNeeded(userLevelUrl) : "";
+  }
+
+  public static Map<String, String> getCustomRequestHeadersAsMap(@NotNull Project project) {
+    Map<String, String> result = new HashMap<>();
+    String[] pairs = getCustomRequestHeaders(project).split(",");
+    for (int i = 0; i + 1 < pairs.length; i = i + 2) {
+      result.put(pairs[i], pairs[i + 1]);
+    }
+    return result;
   }
 
   @NotNull
@@ -242,19 +264,40 @@ public class ConfigUtil {
     return Objects.requireNonNull(SourcegraphService.getInstance(project));
   }
 
-  public static String getEnterpriseAccessToken(Project project) {
-    // Project level → application level
-    String projectLevelAccessToken = getProjectLevelConfig(project).getEnterpriseAccessToken();
-    return projectLevelAccessToken != null
-        ? projectLevelAccessToken
-        : getApplicationLevelConfig().getEnterpriseAccessToken();
+  @Nullable
+  public static String getWorkspaceRoot(@NotNull Project project) {
+    if (project.getBasePath() != null) {
+      return project.getBasePath();
+    }
+    // The base path should only be null for the default project. The agent server assumes that the
+    // workspace root is not null, so we have to provide some default value. Feel free to change to
+    // something else than the home directory if this is causing problems.
+    return System.getProperty("user.home");
   }
 
-  public static String getDotComAccessToken(Project project) {
+  @Nullable
+  public static String getProjectAccessToken(@NotNull Project project) {
+    SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
+    if (instanceType == SettingsComponent.InstanceType.ENTERPRISE) {
+      return getEnterpriseAccessToken(project);
+    } else if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
+      return LocalAppManager.getLocalAppAccessToken().orElse(null);
+    } else {
+      return getDotComAccessToken(project);
+    }
+  }
+
+  @Nullable
+  public static String getEnterpriseAccessToken(Project project) {
     // Project level → application level
-    String projectLevelAccessToken = getProjectLevelConfig(project).getDotComAccessToken();
-    return projectLevelAccessToken != null
-        ? projectLevelAccessToken
-        : getApplicationLevelConfig().getDotComAccessToken();
+    return Optional.ofNullable(getProjectLevelConfig(project).getEnterpriseAccessToken())
+        .orElse(getApplicationLevelConfig().getEnterpriseAccessToken());
+  }
+
+  @Nullable
+  public static String getDotComAccessToken(@NotNull Project project) {
+    // Project level → application level
+    return Optional.ofNullable(getProjectLevelConfig(project).getDotComAccessToken())
+        .orElse(getApplicationLevelConfig().getDotComAccessToken());
   }
 }

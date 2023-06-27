@@ -6,7 +6,8 @@ import classNames from 'classnames'
 import { Badge, Button, H1, H3, Link, Text, Icon, BadgeVariantType } from '@sourcegraph/wildcard'
 
 import { tauriShellOpen } from '../../../../app/tauriIcpUtils'
-import { SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { FooterWidget, SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
+import { AppSetupProgressBar } from '../components/AppSetupProgressBar'
 
 import styles from './AppInstallExtensionsSetupStep.module.scss'
 
@@ -22,22 +23,24 @@ enum ExtensionStatus {
     Beta = 'Beta',
     ComingSoon = 'Coming soon',
     Unknown = 'Unknown',
+    Experimental = 'Experimental',
+    GA = '',
 }
 
 const EXTENSIONS: Extension[] = [
     {
         name: 'Visual Studio Code',
-        status: ExtensionStatus.Beta,
+        status: ExtensionStatus.GA,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/vscode-icon.png',
         docLink: null,
         extensionDeepLink: 'vscode:extension/sourcegraph.cody-ai',
     },
     {
         name: 'IntelliJ Idea',
-        status: ExtensionStatus.ComingSoon,
+        status: ExtensionStatus.Experimental,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/idea-icon.png',
         docLink: null,
-        extensionDeepLink: null,
+        extensionDeepLink: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph',
     },
     {
         name: 'NeoVim',
@@ -60,10 +63,10 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
     return (
         <div className={classNames(styles.root, className)}>
             <div className={styles.description}>
-                <H1 className={styles.descriptionHeading}>Meet the extensions</H1>
+                <H1 className={styles.descriptionHeading}>Install the extension</H1>
                 <Text className={styles.descriptionText}>
                     Ask Cody questions right within your editor. The Cody extension also has a fixup code feature,
-                    recipes, and experimental completions.
+                    recipes, and experimental autocomplete.
                 </Text>
 
                 <Button size="lg" variant="primary" className={styles.descriptionNext} onClick={() => onNextStep()}>
@@ -116,6 +119,10 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                     </Link>
                 </li>
             </ul>
+
+            <FooterWidget>
+                <AppSetupProgressBar />
+            </FooterWidget>
         </div>
     )
 }
@@ -123,6 +130,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
 function getBadgeStatus(status: ExtensionStatus): BadgeVariantType {
     switch (status) {
         case ExtensionStatus.Beta:
+        case ExtensionStatus.Experimental:
             return 'secondary'
         case ExtensionStatus.ComingSoon:
             return 'outlineSecondary'

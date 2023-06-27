@@ -36,6 +36,7 @@ var NonActiveUserEvents = []string{
 	"EmailVerified",
 	"ExternalAuthSignupFailed",
 	"ExternalAuthSignupSucceeded",
+	"CodyVSCodeExtension:CodySavedLogin:executed",
 }
 
 // LogEvent sends a payload representing an event to the api/telemetry endpoint.

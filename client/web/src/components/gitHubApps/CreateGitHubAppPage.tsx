@@ -31,11 +31,13 @@ export interface CreateGitHubAppPageProps {
      */
     pageTitle?: string
     /**
-     * The main description to show at the top of the page underneat the header. If
+     * The main description to show at the top of the page underneath the header. If
      * omitted, a generic introduction to GitHub Apps with a link to the docs will be
      * shown.
      */
     headerDescription?: React.ReactNode
+    /** An optional annotation to show in the page header. */
+    headerAnnotation?: React.ReactNode
     /** The domain the new GitHub App is meant to be used for in Sourcegraph. */
     appDomain: GitHubAppDomain
     /** The name to use for the new GitHub App. Defaults to "Sourcegraph". */
@@ -60,6 +62,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
     defaultPermissions,
     pageTitle = 'Create GitHub App',
     headerDescription,
+    headerAnnotation,
     appDomain,
     defaultAppName = 'Sourcegraph',
     baseURL,
@@ -189,6 +192,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
 
     const handleOrgChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => setOrg(event.target.value), [])
     const toggleIsPublic = useCallback(() => setIsPublic(isPublic => !isPublic), [])
+    const cancelUrl = `/site-admin/${appDomain === GitHubAppDomain.BATCHES ? 'batch-changes' : 'github-apps'}`
 
     return (
         <>
@@ -205,6 +209,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                         </>
                     )
                 }
+                annotation={headerAnnotation}
             />
             <Container className="mt-3">
                 {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}
@@ -283,7 +288,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                             Your GitHub App must be public if you want to install it on multiple organizations or user
                             accounts.{' '}
                             <Link
-                                to="/help/admin/external_service/github#mutliple-installations"
+                                to="/help/admin/external_service/github#multiple-installations"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >
@@ -296,7 +301,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                     <Button variant="primary" onClick={createState} disabled={!!nameError || !!urlError}>
                         Create Github App
                     </Button>
-                    <ButtonLink className="ml-3" to="/site-admin/github-apps" variant="secondary">
+                    <ButtonLink className="ml-3" to={cancelUrl} variant="secondary">
                         Cancel
                     </ButtonLink>
                 </div>

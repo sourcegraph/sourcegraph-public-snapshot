@@ -1,58 +1,42 @@
 .container {
-    font-size: 90%;
     display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 0.5rem;
     user-select: none;
 }
 
-.badge {
+.codebase,
+.file {
+    font-size: var(--vscode-editor-font-size, inherit);
     margin: 0;
-    padding-top: 0.15rem;
-    font-weight: normal;
-    text-transform: uppercase;
-    font-size: 0.7rem;
-    opacity: 0.7;
-    flex-grow: 0 0;
 }
 
-.items {
-    flex: 1;
-
+.codebase {
     display: flex;
-    gap: 0.75rem;
-    overflow: hidden;
-
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-}
-
-.item {
-    display: inline-flex;
     align-items: center;
     gap: 0.25rem;
-    overflow: hidden;
+    font-weight: normal;
 }
 
-.item-icon {
+.codebase-icon {
     width: 1rem;
     height: 1rem;
     flex-shrink: 0;
 }
 
-.item-text {
+.file,
+.codebase-label {
     white-space: nowrap;
     text-overflow: ellipsis;
     overflow: hidden;
+    opacity: 0.7;
 }
 
-.index-present,
-.index-missing {
-    font-weight: bold;
+.errorColor {
+    color: var(--vscode-errorForeground, inherit);
 }
 
-.indexStatus {
+.warningColor {
     display: inline;
     color: var(--vscode-list-warningForeground, inherit);
 }

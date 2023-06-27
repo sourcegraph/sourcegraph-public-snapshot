@@ -96,20 +96,11 @@ func runRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts
 		Bytes() []byte
 	}
 
-	logger := log.Scoped("runWith", "runWith runs the command after applying the remote options")
-
 	if progress != nil {
 		var pw progressWriter
-		r, w := io.Pipe()
-		defer w.Close()
-		mr := io.MultiWriter(&pw, w)
+		mr := io.MultiWriter(&pw, progress)
 		cmd.Unwrap().Stdout = mr
 		cmd.Unwrap().Stderr = mr
-		go func() {
-			if _, err := io.Copy(progress, r); err != nil {
-				logger.Error("error while copying progress", log.Error(err))
-			}
-		}()
 		b = &pw
 	} else {
 		var buf bytes.Buffer
@@ -132,6 +123,9 @@ var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
 // progressWriter is an io.Writer that writes to a buffer.
 // '\r' resets the write offset to the index after last '\n' in the buffer,
 // or the beginning of the buffer if a '\n' has not been written yet.
+//
+// This exists to remove intermediate progress reports from "git clone
+// --progress".
 type progressWriter struct {
 	// writeOffset is the offset in buf where the next write should begin.
 	writeOffset int

@@ -14,7 +14,7 @@ ts_project(
         "helpers.ts",
         "history.test.ts",
         "inline-assist.test.ts",
-        "inline-assist-file-touch.test.ts",
+        "inline-assist-inline-touch.test.ts",
         "task-controller.test.ts",
     ],
     tsconfig = "//client/cody:tsconfig",

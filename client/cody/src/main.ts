@@ -6,7 +6,7 @@ import { Configuration, ConfigurationWithAccessToken } from '@sourcegraph/cody-s
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { ChatViewProvider } from './chat/ChatViewProvider'
-import { AuthStatus, CODY_FEEDBACK_URL } from './chat/protocol'
+import { CODY_FEEDBACK_URL } from './chat/protocol'
 import { CodyCompletionItemProvider } from './completions'
 import { CompletionsDocumentProvider } from './completions/docprovider'
 import { History } from './completions/history'
@@ -16,7 +16,7 @@ import { createProviderConfig as createAnthropicProviderConfig } from './complet
 import { ProviderConfig } from './completions/providers/provider'
 import { createProviderConfig as createUnstableCodeGenProviderConfig } from './completions/providers/unstable-codegen'
 import { createProviderConfig as createUnstableHuggingFaceProviderConfig } from './completions/providers/unstable-huggingface'
-import { getConfiguration, getFullConfig } from './configuration'
+import { getConfiguration, getFullConfig, migrateConfiguration } from './configuration'
 import { VSCodeEditor } from './editor/vscode-editor'
 import { logEvent, updateEventLogger, eventLogger } from './event-logger'
 import { configureExternalServices } from './external-services'
@@ -41,6 +41,8 @@ import { TestSupport } from './test-support'
  * Start the extension, watching all relevant configuration and secrets for changes.
  */
 export async function start(context: vscode.ExtensionContext): Promise<vscode.Disposable> {
+    await migrateConfiguration()
+
     const secretStorage =
         process.env.CODY_TESTING === 'true' ? new InMemorySecretStorage() : new VSCodeSecretStorage(context.secrets)
     const localStorage = new LocalStorage(context.globalState)
@@ -88,9 +90,8 @@ const register = async (
     const disposables: vscode.Disposable[] = []
 
     await updateEventLogger(initialConfig, localStorage)
-    // Controller for inline assist
+    // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
-    disposables.push(commentController.get())
 
     const fixup = new FixupController()
     disposables.push(fixup)
@@ -103,7 +104,6 @@ const register = async (
     // Could we use the `initialConfig` instead?
     const workspaceConfig = vscode.workspace.getConfiguration()
     const config = getConfiguration(workspaceConfig)
-    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
 
     const {
         intentDetector,
@@ -113,6 +113,8 @@ const register = async (
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
     } = await configureExternalServices(initialConfig, rgPath, editor)
+
+    const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
 
     // Create chat webview
     const chatProvider = new ChatViewProvider(
@@ -164,7 +166,7 @@ const register = async (
     const statusBar = createStatusBar()
 
     disposables.push(
-        // Inline Assist Provider
+        // Inline Chat Provider
         vscode.commands.registerCommand('cody.comment.add', async (comment: vscode.CommentReply) => {
             const isFixMode = /^\/f(ix)?\s/i.test(comment.text.trimStart())
             await commentController.chat(comment, isFixMode)
@@ -174,6 +176,9 @@ const register = async (
         vscode.commands.registerCommand('cody.comment.delete', (thread: vscode.CommentThread) => {
             commentController.delete(thread)
         }),
+        vscode.commands.registerCommand('cody.inline.new', () =>
+            vscode.commands.executeCommand('workbench.action.addComment')
+        ),
         // Tests
         // Access token - this is only used in configuration tests
         vscode.commands.registerCommand('cody.test.token', async (args: any[]) => {
@@ -182,7 +187,6 @@ const register = async (
             }
         }),
         // Auth
-        vscode.commands.registerCommand('cody.auth.sync', (state: AuthStatus) => chatProvider.syncAuthStatus(state)),
         vscode.commands.registerCommand('cody.auth.signin', () => authProvider.signinMenu()),
         vscode.commands.registerCommand('cody.auth.signout', () => authProvider.signoutMenu()),
         vscode.commands.registerCommand('cody.auth.support', () => showFeedbackSupportQuickPick()),
@@ -221,7 +225,7 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false)),
+        vscode.commands.registerCommand('cody.recipe.inline-touch', () => executeRecipe('inline-touch', false)),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
@@ -236,7 +240,17 @@ const register = async (
         vscode.commands.registerCommand('cody.feedback', () =>
             vscode.env.openExternal(vscode.Uri.parse(CODY_FEEDBACK_URL.href))
         ),
-        vscode.commands.registerCommand('cody.welcome', () =>
+        vscode.commands.registerCommand('cody.welcome', async () => {
+            // Hack: We have to run this twice to force VS Code to register the walkthrough
+            // Open issue: https://github.com/microsoft/vscode/issues/186165
+            await vscode.commands.executeCommand('workbench.action.openWalkthrough')
+            return vscode.commands.executeCommand(
+                'workbench.action.openWalkthrough',
+                'sourcegraph.cody-ai#welcome',
+                false
+            )
+        }),
+        vscode.commands.registerCommand('cody.welcome-mock', () =>
             vscode.commands.executeCommand('workbench.action.openWalkthrough', 'sourcegraph.cody-ai#welcome', false)
         ),
         vscode.commands.registerCommand('cody.walkthrough.showLogin', () =>
@@ -245,26 +259,18 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
-        vscode.commands.registerCommand('cody.walkthrough.enableInlineAssist', async () => {
-            await workspaceConfig.update('cody.experimental.inline', true, vscode.ConfigurationTarget.Global)
+        vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
+            await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.experimental.inline',
-                openToSide: true,
-            })
-        }),
-        vscode.commands.registerCommand('cody.walkthrough.enableCodeCompletions', async () => {
-            await workspaceConfig.update('cody.experimental.suggestions', true, vscode.ConfigurationTarget.Global)
-            // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
-            return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.experimental.suggestions',
+                query: 'cody.inlineChat.enabled',
                 openToSide: true,
             })
         })
     )
 
     let completionsProvider: vscode.Disposable | null = null
-    if (initialConfig.experimentalSuggest) {
+    if (initialConfig.autocomplete) {
         completionsProvider = createCompletionsProvider(
             config,
             webviewErrorMessenger,
@@ -283,13 +289,10 @@ const register = async (
     disposables.push(disposeCompletions)
 
     vscode.workspace.onDidChangeConfiguration(event => {
-        if (
-            event.affectsConfiguration('cody.experimental.suggestions') ||
-            event.affectsConfiguration('cody.completions')
-        ) {
+        if (event.affectsConfiguration('cody.autocomplete')) {
             const config = getConfiguration(vscode.workspace.getConfiguration())
 
-            if (!config.experimentalSuggest) {
+            if (!config.autocomplete) {
                 completionsProvider?.dispose()
                 completionsProvider = null
                 return
@@ -310,15 +313,9 @@ const register = async (
         }
     })
 
-    // Initiate inline assist when feature flag is on
-    if (initialConfig.experimentalInline) {
-        commentController.get().commentingRangeProvider = {
-            provideCommentingRanges: (document: vscode.TextDocument) => {
-                const lineCount = document.lineCount
-                return [new vscode.Range(0, 0, lineCount - 1, 0)]
-            },
-        }
-        void vscode.commands.executeCommand('setContext', 'cody.inline-assist.enabled', true)
+    // Initiate inline chat when feature flag is on
+    if (!initialConfig.inlineChat) {
+        commentController.dispose()
     }
 
     if (initialConfig.experimentalGuardrails) {
@@ -375,16 +372,16 @@ function createCompletionsProvider(
         history,
         statusBar,
         codebaseContext,
-        isCompletionsCacheEnabled: config.completionsAdvancedCache,
-        isEmbeddingsContextEnabled: config.completionsAdvancedEmbeddings,
+        isCompletionsCacheEnabled: config.autocompleteAdvancedCache,
+        isEmbeddingsContextEnabled: config.autocompleteAdvancedEmbeddings,
     })
 
     disposables.push(
         vscode.commands.registerCommand('cody.manual-completions', async () => {
             await manualCompletionService.fetchAndShowManualCompletions()
         }),
-        vscode.commands.registerCommand('cody.completions.inline.accepted', ({ codyLogId }) => {
-            CompletionsLogger.accept(codyLogId)
+        vscode.commands.registerCommand('cody.autocomplete.inline.accepted', ({ codyLogId, codyLines }) => {
+            CompletionsLogger.accept(codyLogId, codyLines)
         }),
         vscode.languages.registerInlineCompletionItemProvider('*', completionsProvider)
     )
@@ -403,31 +400,31 @@ function createCompletionProviderConfig(
     completionsClient: SourcegraphNodeCompletionsClient
 ): ProviderConfig {
     let providerConfig: null | ProviderConfig = null
-    switch (config.completionsAdvancedProvider) {
+    switch (config.autocompleteAdvancedProvider) {
         case 'unstable-codegen': {
-            if (config.completionsAdvancedServerEndpoint !== null) {
+            if (config.autocompleteAdvancedServerEndpoint !== null) {
                 providerConfig = createUnstableCodeGenProviderConfig({
-                    serverEndpoint: config.completionsAdvancedServerEndpoint,
+                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
                 })
             }
 
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             webviewErrorMessenger(
-                'Provider `unstable-codegen` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+                'Provider `unstable-codegen` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
             )
             break
         }
         case 'unstable-huggingface': {
-            if (config.completionsAdvancedServerEndpoint !== null) {
+            if (config.autocompleteAdvancedServerEndpoint !== null) {
                 providerConfig = createUnstableHuggingFaceProviderConfig({
-                    serverEndpoint: config.completionsAdvancedServerEndpoint,
-                    accessToken: config.completionsAdvancedAccessToken,
+                    serverEndpoint: config.autocompleteAdvancedServerEndpoint,
+                    accessToken: config.autocompleteAdvancedAccessToken,
                 })
             }
 
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             webviewErrorMessenger(
-                'Provider `unstable-huggingface` can not be used without configuring `cody.completions.advanced.serverEndpoint`. Falling back to `anthropic`.'
+                'Provider `unstable-huggingface` can not be used without configuring `cody.autocomplete.advanced.serverEndpoint`. Falling back to `anthropic`.'
             )
             break
         }

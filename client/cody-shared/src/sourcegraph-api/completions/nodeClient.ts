@@ -12,69 +12,41 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
     public async complete(params: CompletionParameters, abortSignal: AbortSignal): Promise<CompletionResponse> {
         const log = this.logger?.startCompletion(params)
 
-        const requestFn = this.codeCompletionsEndpoint.startsWith('https://') ? https.request : http.request
-        const headersInstance = new Headers(this.config.customHeaders as HeadersInit)
-        headersInstance.set('Content-Type', 'application/json')
+        const headers = new Headers(this.config.customHeaders as HeadersInit)
         if (this.config.accessToken) {
-            headersInstance.set('Authorization', `token ${this.config.accessToken}`)
+            headers.set('Authorization', `token ${this.config.accessToken}`)
         }
-        const completion = await new Promise<CompletionResponse>((resolve, reject) => {
-            const req = requestFn(
-                this.codeCompletionsEndpoint,
-                {
-                    method: 'POST',
-                    headers: Object.fromEntries(headersInstance.entries()),
-                    // So we can send requests to the Sourcegraph local development instance, which has an incompatible cert.
-                    rejectUnauthorized: !this.config.debugEnable,
-                },
-                (res: http.IncomingMessage) => {
-                    let buffer = ''
 
-                    res.on('data', chunk => {
-                        if (!(chunk instanceof Buffer)) {
-                            throw new TypeError('expected chunk to be a Buffer')
-                        }
-                        buffer += chunk.toString()
-                    })
-                    res.on('end', () => {
-                        req.destroy()
-                        try {
-                            // When rate-limiting occurs, the response is an error message
-                            if (res.statusCode === 429) {
-                                reject(new Error(buffer))
-                            }
-
-                            const resp = JSON.parse(buffer) as CompletionResponse
-                            if (typeof resp.completion !== 'string' || typeof resp.stopReason !== 'string') {
-                                const message = `response does not satisfy CodeCompletionResponse: ${buffer}`
-                                log?.onError(message)
-                                reject(new Error(message))
-                            } else {
-                                log?.onComplete(resp)
-                                resolve(resp)
-                            }
-                        } catch (error) {
-                            const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${buffer}`
-                            log?.onError(message)
-                            reject(new Error(message))
-                        }
-                    })
-
-                    res.on('error', e => {
-                        req.destroy()
-                        reject(e)
-                    })
-                }
-            )
-            req.write(JSON.stringify(params))
-            req.end()
-
-            abortSignal.addEventListener('abort', () => {
-                req.destroy()
-                reject(new Error('aborted'))
-            })
+        const response = await fetch(this.codeCompletionsEndpoint, {
+            method: 'POST',
+            body: JSON.stringify(params),
+            headers,
+            signal: abortSignal,
         })
-        return completion
+
+        const result = await response.text()
+
+        // When rate-limiting occurs, the response is an error message
+        if (response.status === 429) {
+            throw new Error(result)
+        }
+
+        try {
+            const response = JSON.parse(result) as CompletionResponse
+
+            if (typeof response.completion !== 'string' || typeof response.stopReason !== 'string') {
+                const message = `response does not satisfy CodeCompletionResponse: ${result}`
+                log?.onError(message)
+                throw new Error(message)
+            } else {
+                log?.onComplete(response)
+                return response
+            }
+        } catch (error) {
+            const message = `error parsing response CodeCompletionResponse: ${error}, response text: ${result}`
+            log?.onError(message)
+            throw new Error(message)
+        }
     }
 
     public stream(params: CompletionParameters, cb: CompletionCallbacks): () => void {
@@ -162,6 +134,16 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
                 })
             }
         )
+
+        request.on('error', e => {
+            let message = e.message
+            if (message.includes('ECONNREFUSED')) {
+                message =
+                    'Could not connect to Cody. Please ensure that Cody app is running or that you are connected to the Sourcegraph server.'
+            }
+            log?.onError(message)
+            cb.onError(message)
+        })
 
         request.write(JSON.stringify(params))
         request.end()
