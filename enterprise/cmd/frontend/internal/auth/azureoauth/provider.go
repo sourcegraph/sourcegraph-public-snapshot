@@ -69,7 +69,6 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		return ps, problems
 	}
 
-	var configured bool
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.AzureDevOps == nil {
 			continue
@@ -84,19 +83,10 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			continue
 		}
 
-		// Currently Azure Dev Ops will work only against https://dev.azure.com. If we have more
-		// than one configuration for Azure Dev Ops auth provider, we want to fail early.
-		if configured {
-			problems = append(problems, conf.NewSiteProblem("Cannot have more than one auth provider for Azure Dev Ops, only the first one will be used"))
-			continue
-		}
-
 		ps = append(ps, Provider{
 			AzureDevOpsAuthProvider: pr.AzureDevOps,
 			Provider:                provider,
 		})
-
-		configured = true
 	}
 
 	return ps, problems

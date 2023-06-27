@@ -38,6 +38,7 @@ export const userExternalAccountFragment = gql`
         id
         serviceID
         serviceType
+        clientID
         publicAccountData {
             displayName
             login
@@ -54,6 +55,7 @@ export const USER_EXTERNAL_ACCOUNTS = gql`
                     id
                     serviceID
                     serviceType
+                    clientID
                     publicAccountData {
                         displayName
                         login
