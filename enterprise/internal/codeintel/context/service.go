@@ -263,19 +263,23 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				if occ.Symbol != pd.syntectName {
 					continue
 				}
+				fmt.Println("THIS is the EnclosingRange", occ.EnclosingRange)
+				if len(occ.EnclosingRange) > 0 {
+					r := scip.NewRange(occ.EnclosingRange)
+					fmt.Println("THIS is the CONTENT", documentAndText.Content)
+					c := strings.Split(string(documentAndText.Content), "\n")
+					snippet := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
 
-				r := scip.NewRange(occ.EnclosingRange)
-				c := strings.Split(string(documentAndText.Content), "\n")
-				snippet := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
-
-				preciseResponse = append(preciseResponse, &types.PreciseData{
-					SymbolName:        pd.symbolName,
-					SyntectDescriptor: pd.syntectName,
-					Repository:        l.Dump.RepositoryName,
-					SymbolRole:        0, // TODO
-					Confidence:        "PRECISE",
-					Text:              snippet,
-				})
+					preciseResponse = append(preciseResponse, &types.PreciseData{
+						SymbolName:        pd.symbolName,
+						SyntectDescriptor: pd.syntectName,
+						Repository:        l.Dump.RepositoryName,
+						SymbolRole:        0, // TODO
+						Confidence:        "PRECISE",
+						Text:              snippet,
+						FilePath:          l.Path,
+					})
+				}
 			}
 		}
 	}

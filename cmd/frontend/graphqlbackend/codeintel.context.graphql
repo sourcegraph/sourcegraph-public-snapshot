@@ -69,4 +69,8 @@ type PreciseContextData {
     The snippet of code of the symbol.
     """
     text: String!
+    """
+    The filepath of code snippet.
+    """
+    filepath: String!
 }

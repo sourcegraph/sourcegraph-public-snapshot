@@ -35,6 +35,7 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 			symbolRole:        c.SymbolRole,
 			confidence:        c.Confidence,
 			text:              c.Text,
+			filepath:          c.FilePath,
 		})
 	}
 	return &preciseContextResolver{context: resolvers}, nil
@@ -55,6 +56,7 @@ type preciseDataResolver struct {
 	symbolRole        int32
 	confidence        string
 	text              string
+	filepath          string
 }
 
 func (r *preciseDataResolver) Symbol() string            { return r.symbol }
@@ -63,3 +65,4 @@ func (r *preciseDataResolver) Repository() string        { return r.repository }
 func (r *preciseDataResolver) SymbolRole() int32         { return r.symbolRole }
 func (r *preciseDataResolver) Confidence() string        { return r.confidence }
 func (r *preciseDataResolver) Text() string              { return r.text }
+func (r *preciseDataResolver) FilePath() string          { return r.filepath }

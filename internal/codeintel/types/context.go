@@ -42,4 +42,5 @@ type PreciseData struct {
 	SymbolRole        int32
 	Confidence        string
 	Text              string
+	FilePath          string
 }
