@@ -34,17 +34,24 @@ public class GraphQlLogger {
     }
   }
 
-  public static void logCodyEvents(@NotNull Project project, @NotNull String componentName, @NotNull String[] actions) {
+  public static void logCodyEvents(
+      @NotNull Project project, @NotNull String componentName, @NotNull String[] actions) {
     for (String action : actions) {
       logCodyEvent(project, componentName, action);
     }
   }
 
-  public static void logCodyEvent(@NotNull Project project, @NotNull String componentName, @NotNull String action) {
+  public static void logCodyEvent(
+      @NotNull Project project, @NotNull String componentName, @NotNull String action) {
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
     String eventName = "CodyJetBrainsPlugin:" + componentName + ":" + action;
-    Event event = new Event(eventName, anonymousUserId != null ? anonymousUserId : "",
-        ConfigUtil.getSourcegraphUrl(project), null, null);
+    Event event =
+        new Event(
+            eventName,
+            anonymousUserId != null ? anonymousUserId : "",
+            ConfigUtil.getSourcegraphUrl(project),
+            null,
+            null);
     logEvent(project, event, null);
   }
 
@@ -55,31 +62,31 @@ public class GraphQlLogger {
     String accessToken = ConfigUtil.getProjectAccessToken(project);
     String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project);
     new Thread(
-        () -> {
-          String query =
-              "mutation LogEvents($events: [Event!]) {"
-                  + "    logEvents(events: $events) { "
-                  + "        alwaysNil"
-                  + "    }"
-                  + "}";
+            () -> {
+              String query =
+                  "mutation LogEvents($events: [Event!]) {"
+                      + "    logEvents(events: $events) { "
+                      + "        alwaysNil"
+                      + "    }"
+                      + "}";
 
-          JsonArray events = new JsonArray();
-          events.add(event.toJson());
-          JsonObject variables = new JsonObject();
-          variables.add("events", events);
+              JsonArray events = new JsonArray();
+              events.add(event.toJson());
+              JsonObject variables = new JsonObject();
+              variables.add("events", events);
 
-          try {
-            int responseStatusCode =
-                GraphQlClient.callGraphQLService(
-                        instanceUrl, accessToken, customRequestHeaders, query, variables)
-                    .getStatusCode();
-            if (callback != null) {
-              callback.accept(responseStatusCode);
-            }
-          } catch (IOException e) {
-            logger.info(e);
-          }
-        })
+              try {
+                int responseStatusCode =
+                    GraphQlClient.callGraphQLService(
+                            instanceUrl, accessToken, customRequestHeaders, query, variables)
+                        .getStatusCode();
+                if (callback != null) {
+                  callback.accept(responseStatusCode);
+                }
+              } catch (IOException e) {
+                logger.info(e);
+              }
+            })
         .start();
   }
 }
