@@ -15,6 +15,7 @@ contents:
     - python3
     - py3-pip
     - xmlstarlet@sourcegraph
+    - yq
 
 paths:
   - path: /usr/local/bin

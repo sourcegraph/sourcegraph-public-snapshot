@@ -27,3 +27,4 @@ create a new instance when it exits.
 - `pip`
 - Java 11 (OpenJDK)
 - Maven 3.6.3
+- `yq`

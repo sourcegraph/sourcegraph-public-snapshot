@@ -1,6 +1,6 @@
 # Enabling Cody with Sourcegraph.com
 
-Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody and connecting it to Sourcegraph.com. For private instances of Sourcegraph, see [this page about enabling Cody for Enterprise](enabling_cody_enterprise.md).
+Cody uses Sourcegraph to fetch relevant context to generate answers and code. These instructions walk through installing Cody in your editor and connecting it to Sourcegraph.com and is the best option if you're interested in using Cody on public code. To use Cody on your local code, download the [Cody App](../../app/index.md) or see [this page about enabling Cody for Enterprise](enabling_cody_enterprise.md).
 
 ## Initial setup
 
@@ -15,7 +15,7 @@ You're now ready to use Cody in VS Code!
 
 After installing, you can optionally use [code graph context](code_graph_context.md) to improve Cody's context of existing code. Note that code graph context is only available for public repositories on sourcegraph.com which have embeddings. [See the list](../embedded-repos.md) of repositories with embeddings and request any that you'd like to add by pinging a Sourcegraph team member in [Discord](https://discord.gg/8wJF5EdAyA).
 
-If you want to use Cody with code graph context on private code, consider moving to a Sourcegraph Enterprise instance.
+If you want to use Cody with code graph context on private code, consider downloading the [Cody App](../../app/index.md) or moving to a Sourcegraph Enterprise instance.
 
 ### Enable code graph context
 
