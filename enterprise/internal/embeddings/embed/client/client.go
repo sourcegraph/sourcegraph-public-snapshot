@@ -6,8 +6,10 @@ import (
 )
 
 type EmbeddingsClient interface {
-	// GetEmbeddingsWithRetries returns embeddings for the given texts.
-	GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error)
+	// GetQueryEmbeddingWithRetries returns embedding for the given query.
+	GetQueryEmbeddingWithRetries(ctx context.Context, query string, maxRetries int) ([]float32, error)
+	// GetDocumentEmbeddingsWithRetries returns embeddings for the documents.
+	GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error)
 	// GetDimensions returns the dimensionality of the embedding space.
 	GetDimensions() (int, error)
 	// GetModelIdentifier returns the identifier of the model used to generate embeddings. The format is

@@ -9,9 +9,9 @@ import (
 	"math"
 	"net/http"
 	"sort"
-	"strings"
 	"time"
 
+	mt "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -45,10 +45,18 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("openai/%s", c.model)
 }
 
-// GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
+func (c *openaiEmbeddingsClient) GetQueryEmbeddingWithRetries(ctx context.Context, query string, maxRetries int) ([]float32, error) {
+	return c.getEmbeddingsWithRetries(ctx, []string{mt.ApplyModelTransformationsForQuery(query, c.GetModelIdentifier())}, maxRetries)
+}
+
+func (c *openaiEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error) {
+	return c.getEmbeddingsWithRetries(ctx, mt.ApplyModelTransformationsForDocuments(documents, c.GetModelIdentifier()), maxRetries)
+}
+
+// getEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
 // In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
 // often hangs up when downloading large embedding responses.
-func (c *openaiEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+func (c *openaiEmbeddingsClient) getEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -80,22 +88,8 @@ func (c *openaiEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, t
 	return nil, err
 }
 
-var modelsWithoutNewlines = map[string]struct{}{
-	"text-embedding-ada-002": {},
-}
-
 func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
-	_, replaceNewlines := modelsWithoutNewlines[c.model]
-	augmentedTexts := texts
-	if replaceNewlines {
-		augmentedTexts = make([]string, len(texts))
-		// Replace newlines for certain (OpenAI) models, because they can negatively affect performance.
-		for idx, text := range texts {
-			augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
-		}
-	}
-
-	response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: augmentedTexts})
+	response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: texts})
 	if err != nil {
 		return nil, err
 	}
@@ -118,7 +112,7 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 			// HACK(camdencheek): Nondeterministically, the OpenAI API will
 			// occasionally send back a `null` for an embedding in the
 			// response. Try it again a few times and hope for the best.
-			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, texts[embedding.Index], 3)
 			if err != nil {
 				return nil, err
 			}

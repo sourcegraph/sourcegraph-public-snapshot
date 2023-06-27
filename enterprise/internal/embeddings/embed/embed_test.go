@@ -298,7 +298,15 @@ func (c *mockEmbeddingsClient) GetModelIdentifier() string {
 	return "mock/some-model"
 }
 
-func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetQueryEmbeddingWithRetries(_ context.Context, query string, _ int) ([]float32, error) {
+	dimensions, err := c.GetDimensions()
+	if err != nil {
+		return nil, err
+	}
+	return make([]float32, dimensions), nil
+}
+
+func (c *mockEmbeddingsClient) GetDocumentEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err

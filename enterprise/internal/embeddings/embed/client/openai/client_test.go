@@ -8,15 +8,16 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 func TestOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
 		client := NewClient(http.DefaultClient, &conftypes.EmbeddingsConfig{})
 		invalidTexts := []string{"a", ""} // empty string is invalid
-		_, err := client.GetEmbeddingsWithRetries(context.Background(), invalidTexts, 10)
+		_, err := client.GetDocumentEmbeddingsWithRetries(context.Background(), invalidTexts, 10)
 		require.ErrorContains(t, err, "empty string")
 	})
 
@@ -67,7 +68,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddingsWithRetries(context.Background(), []string{"a", "b"}, 0)
+		resp, err := client.GetDocumentEmbeddingsWithRetries(context.Background(), []string{"a", "b"}, 0)
 		require.NoError(t, err)
 		var expected []float32
 		{
@@ -119,7 +120,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		_, err := client.GetEmbeddingsWithRetries(context.Background(), []string{"a", "b"}, 0)
+		_, err := client.GetDocumentEmbeddingsWithRetries(context.Background(), []string{"a", "b"}, 0)
 		require.Error(t, err, "expected request to error on failed retry")
 	})
 }
