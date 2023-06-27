@@ -21,17 +21,57 @@ import (
 
 func TestSiteConfiguration(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		users := database.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-		db := database.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		t.Run("ReturnWhitelistedConfigForNonAdmins is false", func(t *testing.T) {
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx)
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+				ReturnWhitelistedConfigForNonAdmins: pointers.Ptr(false),
+			})
 
-		if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
-			t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
-		}
+			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
+				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
+			}
+		})
+
+		t.Run("ReturnWhitelistedConfigForNonAdmins is true", func(t *testing.T) {
+			users := database.NewMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
+			db := database.NewMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+
+			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+			r, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+				ReturnWhitelistedConfigForNonAdmins: pointers.Ptr(true),
+			})
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+
+			// all other fields except `EffectiveContents` should not be visible
+			_, err = r.ID(ctx)
+			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
+				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
+			}
+
+			_, err = r.History(ctx, nil)
+			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
+				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
+			}
+
+			_, err = r.ValidationMessages(ctx)
+			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
+				t.Fatalf("err: want %q but got %v", auth.ErrMustBeSiteAdmin, err)
+			}
+
+			_, err = r.EffectiveContents(ctx)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+		})
 	})
 }
 
@@ -39,7 +79,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx)
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}

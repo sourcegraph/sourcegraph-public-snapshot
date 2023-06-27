@@ -234,6 +234,7 @@ func TestRedactSecrets(t *testing.T) {
 				},
 			),
 		},
+		false,
 	)
 	require.NoError(t, err)
 
@@ -287,10 +288,47 @@ func TestRedactConfSecrets(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets)
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets, false)
 			require.NoError(t, err)
 
 			want := fmt.Sprintf(want, tc.redactedFmtStr)
+			assert.Equal(t, want, redacted.Site)
+		})
+	}
+}
+
+func TestRedactConfSecretsWithWhitelistConfig(t *testing.T) {
+	conf := `{
+		"executors.accessToken": "supersecret",
+		"executors.frontendURL": "http://host.docker.internal:3082",
+		// "batchChanges.rolloutWindows": "[{"rate": "unlimited"}]"
+	  }`
+
+	want := `{
+		"executors.accessToken": "supersecret",
+		"executors.frontendURL": "http://host.docker.internal:3082"
+	  }`
+
+	testCases := []struct {
+		name                  string
+		returnOnlyWhitelisted bool
+		redactedFmtStr        string
+	}{
+		{
+			name:                  "returnOnlyWhitelisted true",
+			returnOnlyWhitelisted: true,
+		},
+		{
+			name:                  "returnOnlyWhitelisted false",
+			returnOnlyWhitelisted: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, false, tc.returnOnlyWhitelisted)
+			require.NoError(t, err)
+
 			assert.Equal(t, want, redacted.Site)
 		})
 	}
@@ -324,7 +362,7 @@ func TestRedactConfSecretsWithCommentedOutSecret(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets)
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets, false)
 			require.NoError(t, err)
 
 			assert.Equal(t, want, redacted.Site)
@@ -340,6 +378,7 @@ func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
 		conftypes.RawUnified{
 			Site: fmt.Sprintf(cfgWithoutAuthProviders, executorsAccessToken),
 		},
+		false,
 	)
 	require.NoError(t, err)
 
