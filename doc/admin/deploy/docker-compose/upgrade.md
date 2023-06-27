@@ -55,7 +55,7 @@ $ docker-compose up -d --remove-orphans
 
 ### Multi-version upgrades
 
-If you are upgrading to **Sourcegraph 5.1 or later**, we encourage you to perform an [**automatic multi-version upgrade**](/admin/updates/automatic.md). The following procedure has been automated, but is still applicable should errors occur in an automated upgrade.
+If you are upgrading to **Sourcegraph 5.1 or later**, we encourage you to perform an [**automatic multi-version upgrade**](../../updates/automatic.md). The following procedure has been automated, but is still applicable should errors occur in an automated upgrade.
 
 ---
 
