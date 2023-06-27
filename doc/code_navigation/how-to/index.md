@@ -22,3 +22,4 @@
 
 - [Code intelligence policies resource usage best practices](./policies_resource_usage_best_practices.md)
 - [Combining SCIP uploads from CI/CD and auto-indexing](combining_scip_uploads_from_ci_cd_and_auto_indexing.md)
+- [Guide to defining policies](./policies_resource_usage_best_practices.md) as it relates to resource usage

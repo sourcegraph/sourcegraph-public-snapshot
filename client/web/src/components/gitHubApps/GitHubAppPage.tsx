@@ -42,9 +42,11 @@ interface Props extends TelemetryProps {
      * The parent breadcrumb item to show for this page in the header.
      */
     headerParentBreadcrumb: BreadcrumbItem
+    /** An optional annotation to show in the page header. */
+    headerAnnotation?: React.ReactNode
 }
 
-export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcrumb }) => {
+export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcrumb, headerAnnotation }) => {
     const { appID } = useParams()
     const navigate = useNavigate()
     const [removeModalOpen, setRemoveModalOpen] = useState<boolean>(false)
@@ -111,6 +113,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                                 ),
                             },
                         ]}
+                        annotation={headerAnnotation}
                         className="mb-3"
                         headingElement="h2"
                     />
@@ -177,7 +180,7 @@ export const GitHubAppPage: FC<Props> = ({ telemetryService, headerParentBreadcr
                             </AnchorLink>
                             . A private GitHub App can only be installed on the account that originally created it.{' '}
                             <Link
-                                to="/help/admin/external_service/github#mutliple-installations"
+                                to="/help/admin/external_service/github#multiple-installations"
                                 target="_blank"
                                 rel="noopener noreferrer"
                             >

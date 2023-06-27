@@ -133,7 +133,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		resp.SetError(repo, "", "", errors.Wrap(err, "gitserver: make tmp repo"))
 		return http.StatusInternalServerError, resp
 	}
-	//defer cleanUpTmpRepo(logger, tmpRepoDir)
+	defer cleanUpTmpRepo(logger, tmpRepoDir)
 
 	argsToString := func(args []string) string {
 		return strings.Join(args, " ")
@@ -382,6 +382,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 		With(
 			log.String("repo", repo),
 			log.String("baseCommit", baseCommit),
+			log.String("patchCommit", patchCommit),
 			log.String("targetRef", req.TargetRef),
 			log.String("depot", p4depot),
 		)
@@ -419,7 +420,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	}
 
 	// check to see if there's a changelist for this target branch already
-	cid, err := p4Cmd.changelistIdFromClientSpecNameP4(p4client)
+	cid, err := p4Cmd.changeListIDFromClientSpecName(p4client)
 	if err == nil && cid != "" {
 		return cid, nil
 	}
@@ -452,7 +453,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	// depot := strings.SplitN()
 
 	// create a Perforce client spec to use for creating the changelist
-	err = p4Cmd.createClientSpecP4(p4depot, p4client, p4user, desc)
+	err = p4Cmd.createClientSpec(p4depot, p4client, p4user, desc)
 	if err != nil {
 		errorMessage := "error creating a client spec"
 		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
@@ -461,17 +462,16 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 
 	// get the files from the Perforce server
 	// mark them for editing
-	err = p4Cmd.cloneAndEditFilesP4(fileList, baseCID)
+	err = p4Cmd.cloneAndEditFiles(fileList, baseCID)
 	if err != nil {
 		errorMessage := "error getting files from depot"
 		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
 		return "", errors.Wrap(err, "gitserver: "+errorMessage)
 	}
 
-	// delete the files involved with the batch change in case the batch change involves a file deletion
-	// ignore all errors for now; just assume that it's going to work
+	// delete the files involved with the batch change because the untar will not overwrite existing files
 	for _, fileName := range fileList {
-		os.RemoveAll(fileName)
+		os.RemoveAll(filepath.Join(tmpClientDir, fileName))
 	}
 
 	// overlay with files from the commit
@@ -513,7 +513,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	}
 
 	// ensure that there are changes to shelve
-	if changes, err := p4Cmd.areThereChangedFilesP4(); err != nil {
+	if changes, err := p4Cmd.areThereChangedFiles(); err != nil {
 		errorMessage := "unable to verify that there are changed files"
 		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
 		return "", errors.Wrap(err, "gitserver: "+errorMessage)
@@ -526,7 +526,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 	// submit the changes as a shelved changelist
 
 	// create a changelist form with the description
-	changeForm, err := p4Cmd.generateChangeFormP4(desc)
+	changeForm, err := p4Cmd.generateChangeForm(desc)
 	if err != nil {
 		errorMessage := "failed generating a change form"
 		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
@@ -535,7 +535,7 @@ func (s *Server) shelveChangelist(ctx context.Context, req protocol.CreateCommit
 
 	// feed the changelist form into `p4 shelve`
 	// capture the output to parse for a changelist id
-	cid, err = p4Cmd.shelveChangelistP4(changeForm)
+	cid, err = p4Cmd.shelveChangelist(changeForm)
 	if err != nil {
 		errorMessage := "failed shelving the changelist"
 		logger.Error(errorMessage, log.String("output", digErrorMessage(err)), log.Error(errors.New(errorMessage)))
@@ -575,8 +575,8 @@ func (g gitCommand) getChangelistIdFromCommit(baseCommit string) (string, error)
 	return baseCID, nil
 }
 
-func (g gitCommand) getListOfFilesInCommit(baseCommit string) ([]string, error) {
-	cmd := g.commandContext("diff-tree", "--no-commit-id", "--name-only", "-r", baseCommit)
+func (g gitCommand) getListOfFilesInCommit(patchCommit string) ([]string, error) {
+	cmd := g.commandContext("diff-tree", "--no-commit-id", "--name-only", "-r", patchCommit)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to retrieve files in base commit")
@@ -608,7 +608,7 @@ func (p p4Command) commandContext(args ...string) *exec.Cmd {
 }
 
 // Uses `p4 changes` to see if there is a changelist already associated with the given client spec
-func (p p4Command) changelistIdFromClientSpecNameP4(p4client string) (string, error) {
+func (p p4Command) changeListIDFromClientSpecName(p4client string) (string, error) {
 	cmd := p.commandContext("changes",
 		"-r",      // list in reverse order, which means that the given changelist id will be the first one listed
 		"-m", "1", // limit output to one record, so that the given changelist is the only one listed
@@ -641,7 +641,7 @@ View:	%s... //%s/...
 // Returns an error if `p4 client` fails
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 client`
-func (p p4Command) createClientSpecP4(p4depot, p4client, p4user, description string) error {
+func (p p4Command) createClientSpec(p4depot, p4client, p4user, description string) error {
 	clientSpec := fmt.Sprintf(
 		clientSpecForm,
 		p4client,
@@ -664,17 +664,17 @@ func (p p4Command) createClientSpecP4(p4depot, p4client, p4user, description str
 // returns an error if the sync or edit fails
 // error -> error from exec.Cmd
 // __|- error -> combined output from sync or edit
-func (p p4Command) cloneAndEditFilesP4(fileList []string, baseChangelistId string) error {
+func (p p4Command) cloneAndEditFiles(fileList []string, baseChangelistId string) error {
 	// want to specify the file at the base changelist revision
 	// build a slice of file names with the changelist id appended
 	filesWithCid := append([]string(nil), fileList...)
 	for i := 0; i < len(filesWithCid); i++ {
 		filesWithCid[i] = filesWithCid[i] + "@" + baseChangelistId
 	}
-	if err := p.cloneFilesP4(filesWithCid); err != nil {
+	if err := p.cloneFiles(filesWithCid); err != nil {
 		return err
 	}
-	if err := p.editFilesP4(fileList); err != nil {
+	if err := p.editFiles(fileList); err != nil {
 		return err
 	}
 	return nil
@@ -684,7 +684,7 @@ func (p p4Command) cloneAndEditFilesP4(fileList []string, baseChangelistId strin
 // Returns an error if `p4 sync` fails
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 sync`
-func (p p4Command) cloneFilesP4(filesWithCid []string) error {
+func (p p4Command) cloneFiles(filesWithCid []string) error {
 	cmd := p.commandContext("sync")
 	cmd.Args = append(cmd.Args, filesWithCid...)
 	out, err := cmd.CombinedOutput()
@@ -698,7 +698,7 @@ func (p p4Command) cloneFilesP4(filesWithCid []string) error {
 // Returns an error if `p4 edit` fails
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 edit`
-func (p p4Command) editFilesP4(fileList []string) error {
+func (p p4Command) editFiles(fileList []string) error {
 	cmd := p.commandContext("edit")
 	cmd.Args = append(cmd.Args, fileList...)
 	out, err := cmd.CombinedOutput()
@@ -714,7 +714,7 @@ func (p p4Command) editFilesP4(fileList []string) error {
 // Returns an error if `p4 diff` fails
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 diff`
-func (p p4Command) areThereChangedFilesP4() (bool, error) {
+func (p p4Command) areThereChangedFiles() (bool, error) {
 	// use p4 diff to list the changes
 	diffCmd := p.commandContext("diff", "-f", "-sa")
 
@@ -733,7 +733,7 @@ func (p p4Command) areThereChangedFilesP4() (bool, error) {
 // Returns an error if `p4 change` fails
 // error -> error from exec.Cmd
 // __|- error -> combined output from `p4 change`
-func (p p4Command) generateChangeFormP4(description string) (string, error) {
+func (p p4Command) generateChangeForm(description string) (string, error) {
 	cmd := p.commandContext("change", "-o")
 	out, err := cmd.CombinedOutput()
 	if err != nil {
@@ -752,7 +752,7 @@ var cidPattern = lazyregexp.New(`Change (\d+) files shelved`)
 // Returns an error if the output of `p4 shelve` does not contain a changelist id
 // error -> "p4 shelve output does not contain a changelist id"
 // __|- error -> combined output from `p4 shelve`
-func (p p4Command) shelveChangelistP4(changeForm string) (string, error) {
+func (p p4Command) shelveChangelist(changeForm string) (string, error) {
 	cmd := p.commandContext("shelve", "-i")
 	changeBuffer := bytes.Buffer{}
 	changeBuffer.Write([]byte(changeForm))

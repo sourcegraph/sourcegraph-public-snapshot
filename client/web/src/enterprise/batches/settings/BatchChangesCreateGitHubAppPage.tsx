@@ -2,7 +2,7 @@ import { useCallback } from 'react'
 
 import { useLocation } from 'react-router-dom'
 
-import { Link } from '@sourcegraph/wildcard'
+import { FeedbackBadge, Link } from '@sourcegraph/wildcard'
 
 import { CreateGitHubAppPage } from '../../../components/gitHubApps/CreateGitHubAppPage'
 import { GitHubAppDomain } from '../../../graphql-operations'
@@ -54,12 +54,12 @@ export const BatchChangesCreateGitHubAppPage: React.FunctionComponent = () => {
                 <>
                     Register a GitHub App to enable Sourcegraph to sign commits for Batch Change changesets on your
                     behalf.
-                    {/* TODO: Update me */}
-                    <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
+                    <Link to="/help/admin/config/batch_changes#commit-signing-for-github" className="ml-1">
                         See how GitHub App configuration works.
                     </Link>
                 </>
             }
+            headerAnnotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
             appDomain={GitHubAppDomain.BATCHES}
             defaultAppName="Sourcegraph Commit Signing"
             baseURL={baseURL?.length ? baseURL : undefined}
