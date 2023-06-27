@@ -45,13 +45,13 @@ export interface IRepo {
     externalRepository: {
         serviceType: string
     }
-    embeddingJobs: {
+    embeddingJobs?: {
         nodes: {
             id: string
             state: string
             failureMessage: string | null
         }[]
-    }
+    } | null
 }
 
 export const MAX_ADDITIONAL_REPOSITORIES = 10
@@ -105,7 +105,10 @@ export const RepositoriesSelectorPopover: React.FC<{
     useEffect(() => {
         if (searchTextDebounced) {
             /* eslint-disable no-console */
-            searchRepositories({ variables: { query: searchTextDebounced }, pollInterval: 5000 }).catch(console.error)
+            searchRepositories({
+                variables: { query: searchTextDebounced, includeJobs: !!window.context.currentUser?.siteAdmin },
+                pollInterval: 5000,
+            }).catch(console.error)
             /* eslint-enable no-console */
         }
     }, [searchTextDebounced, searchRepositories])
@@ -506,11 +509,19 @@ enum RepoEmbeddingStatus {
 }
 
 const getEmbeddingStatus = ({
+    embeddingExists,
     embeddingJobs,
 }: IRepo): { status: RepoEmbeddingStatus; tooltip: string; icon: string; className: string } => {
-    const job = embeddingJobs.nodes[0]
+    if (!embeddingJobs?.nodes.length) {
+        if (embeddingExists) {
+            return {
+                status: RepoEmbeddingStatus.INDEXED,
+                tooltip: 'Repository is indexed',
+                icon: mdiDatabaseCheckOutline,
+                className: '',
+            }
+        }
 
-    if (!job) {
         return {
             status: RepoEmbeddingStatus.NOT_INDEXED,
             tooltip: 'Repository is not indexed',
@@ -519,6 +530,7 @@ const getEmbeddingStatus = ({
         }
     }
 
+    const job = embeddingJobs.nodes[0]
     switch (job.state) {
         case 'QUEUED':
             return {
