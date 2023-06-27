@@ -37,14 +37,11 @@ interface GetCodyPageProps {
     context: Pick<SourcegraphContext, 'authProviders'>
 }
 
-const SOURCEGRAPH_MAC_SILICON =
-    'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.26%2B1328.bca7d2c3ed/Cody_2023.6.26+1328.bca7d2c3ed_aarch64.dmg'
+const SOURCEGRAPH_MAC_SILICON = 'https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin'
 
-const SOURCEGRAPH_MAC_INTEL =
-    'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.26%2B1328.bca7d2c3ed/Cody_2023.6.26+1328.bca7d2c3ed_x64.dmg'
+const SOURCEGRAPH_MAC_INTEL = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=darwin'
 
-const SOURCEGRAPH_LINUX =
-    'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.26%2B1328.bca7d2c3ed/cody_2023.6.26+1328.bca7d2c3ed_amd64.deb'
+const SOURCEGRAPH_LINUX = 'https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux'
 
 const onClickCTAButton = (type: string): void =>
     eventLogger.log(EventName.SIGNUP_INITIATED, { type, source: 'get-started' })
