@@ -41,7 +41,7 @@ public class ConfigUtil {
   }
 
   @NotNull
-  public static SettingsComponent.InstanceType getInstanceType(Project project) {
+  public static SettingsComponent.InstanceType getInstanceType(@NotNull Project project) {
     return Optional.ofNullable(getProjectLevelConfig(project).getInstanceType()) // Project level
         .flatMap(SettingsComponent.InstanceType::optionalValueOf)
         .or( // Application level
@@ -62,7 +62,7 @@ public class ConfigUtil {
                             return Optional.empty();
                           }
                         }))
-        .orElse(SettingsComponent.InstanceType.ENTERPRISE); // or default
+        .orElse(SettingsComponent.getDefaultInstanceType()); // or default
   }
 
   @NotNull
@@ -276,7 +276,7 @@ public class ConfigUtil {
   }
 
   @Nullable
-  public static String getProjectAccessToken(Project project) {
+  public static String getProjectAccessToken(@NotNull Project project) {
     SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
     if (instanceType == SettingsComponent.InstanceType.ENTERPRISE) {
       return getEnterpriseAccessToken(project);
@@ -290,18 +290,14 @@ public class ConfigUtil {
   @Nullable
   public static String getEnterpriseAccessToken(Project project) {
     // Project level → application level
-    String projectLevelAccessToken = getProjectLevelConfig(project).getEnterpriseAccessToken();
-    return projectLevelAccessToken != null
-        ? projectLevelAccessToken
-        : getApplicationLevelConfig().getEnterpriseAccessToken();
+    return Optional.ofNullable(getProjectLevelConfig(project).getEnterpriseAccessToken())
+        .orElse(getApplicationLevelConfig().getEnterpriseAccessToken());
   }
 
   @Nullable
-  public static String getDotComAccessToken(Project project) {
+  public static String getDotComAccessToken(@NotNull Project project) {
     // Project level → application level
-    String projectLevelAccessToken = getProjectLevelConfig(project).getDotComAccessToken();
-    return projectLevelAccessToken != null
-        ? projectLevelAccessToken
-        : getApplicationLevelConfig().getDotComAccessToken();
+    return Optional.ofNullable(getProjectLevelConfig(project).getDotComAccessToken())
+        .orElse(getApplicationLevelConfig().getDotComAccessToken());
   }
 }

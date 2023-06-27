@@ -83,7 +83,7 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
   private static class CodyDocumentListener implements BulkAwareDocumentListener {
     private final Editor editor;
 
-    public CodyDocumentListener(Editor editor) {
+    public CodyDocumentListener(@NotNull Editor editor) {
       this.editor = editor;
     }
 

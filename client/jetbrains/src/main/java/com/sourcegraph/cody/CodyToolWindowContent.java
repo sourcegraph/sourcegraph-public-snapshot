@@ -1,11 +1,13 @@
 package com.sourcegraph.cody;
 
 import static com.intellij.openapi.util.SystemInfoRt.isMac;
+import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
 import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
 import static java.awt.event.InputEvent.META_DOWN_MASK;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaTextAreaUI;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -19,6 +21,7 @@ import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
@@ -34,6 +37,8 @@ import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.chat.ChatUIConstants;
+import com.sourcegraph.cody.chat.ContentWithGradientBorder;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
@@ -41,6 +46,7 @@ import com.sourcegraph.cody.context.ContextGetter;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
+import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.prompts.Preamble;
 import com.sourcegraph.cody.prompts.Prompter;
 import com.sourcegraph.cody.prompts.SupportedLanguages;
@@ -56,12 +62,16 @@ import com.sourcegraph.cody.recipes.PromptProvider;
 import com.sourcegraph.cody.recipes.RecipeRunner;
 import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
 import com.sourcegraph.cody.recipes.TranslateToLanguagePromptProvider;
+import com.sourcegraph.cody.ui.HtmlViewer;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.SettingsComponent;
+import com.sourcegraph.config.SettingsConfigurable;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -75,7 +85,9 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JPanel;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
@@ -87,13 +99,18 @@ class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
   private static final int CHAT_TAB_INDEX = 0;
   private static final int RECIPES_TAB_INDEX = 1;
+  private final @NotNull CardLayout allContentLayout = new CardLayout();
+  private final @NotNull JPanel allContentPanel = new JPanel(allContentLayout);
   private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
   private final @NotNull JPanel messagesPanel = new JPanel();
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
   private final @NotNull Project project;
+  private final JPanel appNotInstalledPanel;
+  private final JPanel appNotRunningPanel;
   private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
+  private boolean isChatVisible = false;
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -243,8 +260,115 @@ class CodyToolWindowContent implements UpdatableChat {
     contentPanel.add(chatPanel, BorderLayout.CENTER);
     contentPanel.add(controlsPanel, BorderLayout.SOUTH);
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
+
+    appNotInstalledPanel = createAppNotInstalledPanel();
+    appNotRunningPanel = createAppNotRunningPanel();
+    allContentPanel.add(tabbedPane, "tabbedPane");
+    allContentPanel.add(appNotInstalledPanel, "appNotInstalledPanel");
+    allContentPanel.add(appNotRunningPanel, "appNotRunningPanel");
+    allContentLayout.show(allContentPanel, "appNotInstalledPanel");
+    updateVisibilityOfContentPanels();
     // Add welcome message
     addWelcomeMessage();
+  }
+
+  private void updateVisibilityOfContentPanels() {
+    if (LocalAppManager.isPlatformSupported()
+        && ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.LOCAL_APP) {
+      if (!LocalAppManager.isLocalAppInstalled()) {
+        allContentLayout.show(allContentPanel, "appNotInstalledPanel");
+        isChatVisible = false;
+      } else if (!LocalAppManager.isLocalAppRunning()) {
+        allContentLayout.show(allContentPanel, "appNotRunningPanel");
+        isChatVisible = false;
+      } else {
+        allContentLayout.show(allContentPanel, "tabbedPane");
+        isChatVisible = true;
+      }
+    } else {
+      allContentLayout.show(allContentPanel, "tabbedPane");
+      isChatVisible = true;
+    }
+  }
+
+  @NotNull
+  private JPanel createAppNotInstalledPanel() {
+    JPanel appNotInstalledPanel =
+        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+    JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
+    jEditorPane.setText(
+        "<html><body><h2>Get Started</h2>"
+            + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code."
+            + " Download and run the Cody desktop app to Configure your local code graph.</p><"
+            + "/body></html>");
+    appNotInstalledPanel.add(jEditorPane);
+    JButton downloadCodyAppButton = createMainButton("Download Cody App");
+    downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
+    downloadCodyAppButton.addActionListener(
+        e -> {
+          BrowserUtil.browse("https://about.sourcegraph.com/app");
+          updateVisibilityOfContentPanels();
+        });
+    Border margin = JBUI.Borders.empty(TEXT_MARGIN);
+    jEditorPane.setBorder(margin);
+    appNotInstalledPanel.add(downloadCodyAppButton);
+    JPanel blankPanel = new JPanel();
+    blankPanel.setBorder(margin);
+    blankPanel.setOpaque(false);
+    appNotInstalledPanel.add(blankPanel);
+    JPanel wrapperAppNotInstalledPanel =
+        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+    wrapperAppNotInstalledPanel.setBorder(margin);
+    wrapperAppNotInstalledPanel.add(appNotInstalledPanel);
+    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
+    wrapperAppNotInstalledPanel.add(goToSettingsPanel);
+    return wrapperAppNotInstalledPanel;
+  }
+
+  @NotNull
+  private JPanel createAppNotRunningPanel() {
+    JPanel appNotRunningPanel =
+        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+    JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
+    jEditorPane.setText(
+        "<html><body><h2>Cody App Not Running</h2>"
+            + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code.</p><"
+            + "/body></html>");
+    appNotRunningPanel.add(jEditorPane);
+    JButton downloadCodyAppButton = createMainButton("Open Cody App");
+    downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
+    downloadCodyAppButton.addActionListener(
+        e -> {
+          LocalAppManager.runLocalApp();
+          updateVisibilityOfContentPanels();
+        });
+    Border margin = JBUI.Borders.empty(TEXT_MARGIN);
+    jEditorPane.setBorder(margin);
+    appNotRunningPanel.add(downloadCodyAppButton);
+    JPanel blankPanel = new JPanel();
+    blankPanel.setBorder(margin);
+    blankPanel.setOpaque(false);
+    appNotRunningPanel.add(blankPanel);
+    JPanel wrapperAppNotRunningPanel =
+        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+    wrapperAppNotRunningPanel.setBorder(margin);
+    wrapperAppNotRunningPanel.add(appNotRunningPanel);
+    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
+    wrapperAppNotRunningPanel.add(goToSettingsPanel);
+    return wrapperAppNotRunningPanel;
+  }
+
+  private JPanel createPanelWithGoToSettingsButton() {
+    JButton goToSettingsButton = new JButton("Sign in with an enterprise account");
+    goToSettingsButton.addActionListener(
+        e ->
+            ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class));
+    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(goToSettingsButton);
+    goToSettingsButton.setUI(buttonUI);
+    JPanel panelWithSettingsButton = new JPanel(new BorderLayout());
+    panelWithSettingsButton.setBorder(JBUI.Borders.empty(TEXT_MARGIN, 0));
+    panelWithSettingsButton.add(goToSettingsButton, BorderLayout.CENTER);
+    return panelWithSettingsButton;
   }
 
   private void executeRecipeWithPromptProvider(
@@ -270,6 +394,15 @@ class CodyToolWindowContent implements UpdatableChat {
     JButton button = new JButton(text);
     button.setAlignmentX(Component.CENTER_ALIGNMENT);
     button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
+    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
+    button.setUI(buttonUI);
+    return button;
+  }
+
+  @NotNull
+  private static JButton createMainButton(@NotNull String text) {
+    JButton button = new JButton(text);
+    button.setAlignmentX(Component.CENTER_ALIGNMENT);
     ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
     button.setUI(buttonUI);
     return button;
@@ -436,6 +569,16 @@ class CodyToolWindowContent implements UpdatableChat {
               messagesPanel.revalidate();
               messagesPanel.repaint();
             });
+  }
+
+  @Override
+  public void refreshPanelsVisibility() {
+    this.updateVisibilityOfContentPanels();
+  }
+
+  @Override
+  public boolean isChatVisible() {
+    return this.isChatVisible;
   }
 
   private void sendMessage(@NotNull Project project) {
@@ -610,7 +753,7 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   public @NotNull JComponent getContentPanel() {
-    return tabbedPane;
+    return allContentPanel;
   }
 
   public void focusPromptInput() {

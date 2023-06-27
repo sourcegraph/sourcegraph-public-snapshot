@@ -1,6 +1,10 @@
 package com.sourcegraph.cody.localapp;
 
+import com.intellij.ide.BrowserUtil;
 import com.sourcegraph.common.AuthorizationUtil;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.Map;
@@ -23,13 +27,13 @@ public class LocalAppManager {
               Path.of("/Applications/Cody.app"),
               Path.of(
                   SystemUtils.getUserHome()
-                      + "/Library/Application Support/com.sourcegraph.cody/site.config.json"),
+                      + "/Library/Application Support/com.sourcegraph.cody/site-config.json"),
               Path.of(
                   SystemUtils.getUserHome()
                       + "/Library/Application Support/com.sourcegraph.cody/app.json")));
 
   public static boolean isLocalAppInstalled() {
-    return getLocalAppPaths().map(LocalAppPaths::anyPathExists).orElse(false);
+    return getLocalAppPaths().map(LocalAppPaths::isCodyInstalled).orElse(false);
   }
 
   @NotNull
@@ -103,5 +107,23 @@ public class LocalAppManager {
       e.printStackTrace();
       return Optional.empty();
     }
+  }
+
+  public static void runLocalApp() {
+    System.out.println("Running local Cody app...");
+    getLocalAppPaths()
+        .filter(paths -> !isLocalAppRunning()) // only run the app if it's not already running
+        .ifPresent(
+            p -> {
+              try {
+                Desktop.getDesktop().open(new File(p.codyAppFile.toString()));
+              } catch (IOException e) {
+                e.printStackTrace();
+              }
+            });
+  }
+
+  public static void browseLocalAppInstallPage() {
+    BrowserUtil.browse("https://about.sourcegraph.com/app");
   }
 }

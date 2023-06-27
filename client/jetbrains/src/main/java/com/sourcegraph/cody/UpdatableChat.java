@@ -20,5 +20,9 @@ public interface UpdatableChat {
 
   void resetConversation();
 
+  void refreshPanelsVisibility();
+
+  boolean isChatVisible();
+
   void activateChatTab();
 }
