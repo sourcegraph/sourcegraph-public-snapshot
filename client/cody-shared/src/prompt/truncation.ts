@@ -15,3 +15,13 @@ export function truncateTextStart(text: string, maxTokens: number): string {
     const maxLength = maxTokens * CHARS_PER_TOKEN
     return text.length <= maxLength ? text : text.slice(-maxLength - 1)
 }
+
+/**
+ * Checks if the text has been truncated
+ */
+export function isTextTruncated(text: string, truncateText: string): boolean {
+    if (truncateText.length < text.length) {
+        return true
+    }
+    return false
+}

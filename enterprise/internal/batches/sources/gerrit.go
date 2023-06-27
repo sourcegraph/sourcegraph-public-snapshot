@@ -178,7 +178,6 @@ func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
 }
 
 // UpdateChangeset can update Changesets.
-// Noop, Gerrit updates changes through git push directly
 func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
 	pr, err := s.client.GetChange(ctx, cs.ExternalID)
 	if err != nil {

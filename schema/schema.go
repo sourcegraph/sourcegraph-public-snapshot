@@ -805,7 +805,7 @@ type ExperimentalFeatures struct {
 	EnableGRPC bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
-	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
+	// EnablePermissionsWebhooks description: DEPRECATED: No longer has any effect.
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnableStorm description: Enables the Storm frontend architecture changes.
 	EnableStorm bool `json:"enableStorm,omitempty"`

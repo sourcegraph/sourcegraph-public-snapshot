@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isLocalApp } from '../chat/protocol'
+import { isLocalApp, isDotCom } from '../chat/protocol'
 
 export interface LoginMenuItem {
     id: string
@@ -21,6 +21,9 @@ function getItemLabel(uri: string, current: boolean): string {
     const icon = current ? '$(check) ' : ''
     if (isLocalApp(uri)) {
         return `${icon}Cody App`
+    }
+    if (isDotCom(uri)) {
+        return `${icon}Sourcegraph.com`
     }
     return `${icon}${uri}`
 }
@@ -69,17 +72,14 @@ export const AuthMenuOptions = {
     signin: {
         title: 'Other Sign in Options',
         placeholder: 'Select a sign in option',
-        ignoreFocusOut: true,
     },
     signout: {
         title: 'Sign Out',
         placeHolder: 'Select instance to sign out',
-        ignoreFocusOut: true,
     },
     switch: {
         title: 'Switch Account',
         placeHolder: 'Press Esc to cancel',
-        ignoreFocusOut: true,
     },
 }
 

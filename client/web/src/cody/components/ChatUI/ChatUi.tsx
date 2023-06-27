@@ -57,6 +57,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         toggleIncludeInferredRepository,
         toggleIncludeInferredFile,
         abortMessageInProgress,
+        fetchRepositoryNames,
     } = codyChatStore
 
     const [formInput, setFormInput] = useState('')
@@ -77,8 +78,22 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
     const onEdit = useCallback((text: string) => editMessage(text), [editMessage])
 
     const scopeSelectorProps = useMemo(
-        () => ({ scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile }),
-        [scope, setScope, toggleIncludeInferredRepository, toggleIncludeInferredFile]
+        () => ({
+            scope,
+            setScope,
+            toggleIncludeInferredRepository,
+            toggleIncludeInferredFile,
+            fetchRepositoryNames,
+            isSourcegraphApp,
+        }),
+        [
+            scope,
+            setScope,
+            toggleIncludeInferredRepository,
+            toggleIncludeInferredFile,
+            fetchRepositoryNames,
+            isSourcegraphApp,
+        ]
     )
 
     if (!loaded) {
@@ -101,7 +116,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 submitButtonComponent={SubmitButton}
                 fileLinkComponent={isSourcegraphApp ? AppFileLink : FileLink}
                 className={styles.container}
-                afterTips={transcriptHistory.length > 1 ? '' : CODY_TERMS_MARKDOWN}
+                afterMarkdown={transcriptHistory.length > 1 ? '' : CODY_TERMS_MARKDOWN}
                 transcriptItemClassName={styles.transcriptItem}
                 humanTranscriptItemClassName={styles.humanTranscriptItem}
                 transcriptItemParticipantClassName="text-muted"

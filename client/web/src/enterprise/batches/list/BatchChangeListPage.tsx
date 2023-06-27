@@ -177,7 +177,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <PageHeader.Breadcrumb icon={BatchChangesIcon}>Batch Changes</PageHeader.Breadcrumb>
                 </PageHeader.Heading>
             </PageHeader>
-            <BatchChangesListIntro isLicensed={isBatchChangesLicensed} />
+            <BatchChangesListIntro isLicensed={isBatchChangesLicensed} viewerIsAdmin={!!authenticatedUser?.siteAdmin} />
             {!isSourcegraphDotCom && canUseBatchChanges && (
                 <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             )}

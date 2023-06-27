@@ -76,11 +76,6 @@ export const Transcript: React.FunctionComponent<
                     top: transcriptContainerRef.current.scrollHeight,
                 })
             }
-
-            // scroll to the end when messages are loaded
-            transcriptContainerRef.current.scrollTo({
-                top: transcriptContainerRef.current.scrollHeight,
-            })
         }
     }, [transcript, transcriptContainerRef])
 

@@ -60,7 +60,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugEnable: config.get<boolean>(CONFIG_KEY.debugEnable, false),
         debugVerbose: config.get<boolean>(CONFIG_KEY.debugVerbose, false),
         debugFilter: debugRegex,
-        autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, isTesting),
+        autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         experimentalInline: config.get(CONFIG_KEY.experimentalInline, isTesting),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
@@ -87,6 +87,13 @@ function sanitizeCodebase(codebase: string | undefined): string {
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
     if (!serverEndpoint) {
+        // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
+        // tests.
+        const isTesting = process.env.CODY_TESTING === 'true'
+        if (isTesting) {
+            return 'http://localhost:49300/'
+        }
+
         return DOTCOM_URL.href
     }
     const trailingSlashRegexp = /\/$/
@@ -140,7 +147,7 @@ export async function migrateConfiguration(): Promise<void> {
     )
 
     if (didMigrate) {
-        logEvent('ConfigMigrator:migrated')
+        logEvent('CodyVSCodeExtension:configMigrator:migrated')
     }
 }
 

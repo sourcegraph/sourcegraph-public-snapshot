@@ -30,6 +30,7 @@ interface Props {
     setRemoveOwnerError: any
     isDirectory: boolean
     refetch: any
+    canRemoveOwner?: boolean
 }
 
 type OwnershipReason =
@@ -47,6 +48,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
     setRemoveOwnerError,
     isDirectory,
     refetch,
+    canRemoveOwner,
 }) => {
     const findEmail = (): string | undefined => {
         if (owner.__typename !== 'Person') {
@@ -117,7 +119,7 @@ export const FileOwnershipEntry: React.FunctionComponent<Props> = ({
                 <span className={containerStyles.editButtonColumn}>
                     <div className={containerStyles.removeAddButton}>
                         {makeOwnerButton ||
-                            (hasAssigned && (
+                            (canRemoveOwner && hasAssigned && (
                                 <RemoveOwnerButton
                                     onSuccess={refresh}
                                     onError={setRemoveOwnerError}

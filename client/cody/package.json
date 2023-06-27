@@ -109,8 +109,8 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Assist (Experimental)",
-            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
+            "title": "Inline Chat (Experimental)",
+            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
             }
@@ -118,7 +118,7 @@
           {
             "id": "autocomplete",
             "title": "Code Autocomplete (Beta)",
-            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeAutocomplete)",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
             "media": {
               "markdown": "walkthroughs/autocomplete.md"
             }
@@ -288,28 +288,26 @@
         "title": "Set Access Token"
       },
       {
+        "command": "cody.settings.user",
+        "category": "Cody",
+        "title": "User Settings",
+        "icon": "$(account)"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Sign Out",
+        "title": "Sign Out…",
         "icon": "$(sign-out)"
       },
       {
         "command": "cody.auth.signin",
         "category": "Cody",
-        "title": "Switch Account"
+        "title": "Switch Account…"
       },
       {
         "command": "cody.manual-completions",
         "category": "Cody",
-        "title": "Open Completions Panel"
-      },
-      {
-        "command": "cody.settings.user",
-        "category": "Cody",
-        "title": "User Settings",
-        "group": "Cody",
-        "icon": "$(account)",
-        "when": "cody.activated"
+        "title": "Open Autocomplete Panel (Experimental)"
       },
       {
         "command": "cody.settings.extension",
@@ -360,24 +358,19 @@
       {
         "command": "cody.walkthrough.enableInlineAssist",
         "category": "Cody Walkthrough",
-        "title": "Show Inline Assist"
-      },
-      {
-        "command": "cody.walkthrough.enableCodeAutocomplete",
-        "category": "Cody Walkthrough",
-        "title": "Enable Code Completions"
+        "title": "Show Inline Chat"
       },
       {
         "command": "cody.comment.add",
         "title": "Ask Cody",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
         "title": "Remove Comment",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
@@ -385,10 +378,17 @@
       {
         "command": "cody.comment.load",
         "title": "Loading",
-        "category": "Cody Inline Assist",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && cody.inline-assist.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
+      },
+      {
+        "command": "cody.inline.new",
+        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
+        "category": "Cody Inline Assist",
+        "when": "cody.activated && cody.inline-assist.enabled",
+        "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.guardrails.debug",
@@ -473,9 +473,14 @@
       },
       {
         "command": "cody.recipe.file-touch",
-        "key": "ctrl+shift+t",
-        "mac": "shift+cmd+t",
+        "key": "ctrl+alt+/",
+        "mac": "cmd+alt+/",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.inline.new",
+        "key": "ctrl+shift+c",
+        "when": "cody.activated && !editorReadonly"
       }
     ],
     "submenus": [
@@ -536,6 +541,10 @@
           "when": "!cody.activated"
         },
         {
+          "command": "cody.settings.user",
+          "when": "cody.activated && cody.test.inProgress"
+        },
+        {
           "command": "cody.comment.add",
           "when": "false"
         },
@@ -593,10 +602,6 @@
         },
         {
           "command": "cody.walkthrough.showExplain",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.enableCodeAutocomplete",
           "when": "false"
         },
         {
@@ -696,11 +701,6 @@
           "command": "cody.settings.extension",
           "when": "view == cody.chat",
           "group": "8_cody@1"
-        },
-        {
-          "command": "cody.settings.user",
-          "when": "view == cody.chat && cody.activated",
-          "group": "8_cody@0"
         },
         {
           "command": "cody.fixup.apply-all",
@@ -817,7 +817,7 @@
           "order": 5,
           "type": "boolean",
           "markdownDescription": "Enables inline code suggestions in your editor.",
-          "default": false
+          "default": true
         },
         "cody.experimental.chatPredictions": {
           "order": 6,
@@ -827,9 +827,9 @@
         },
         "cody.experimental.inline": {
           "order": 7,
-          "title": "Cody Inline Assist",
+          "title": "Cody Inline Chat",
           "type": "boolean",
-          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
+          "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
           "default": false
         },
         "cody.experimental.guardrails": {

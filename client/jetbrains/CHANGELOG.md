@@ -6,6 +6,8 @@
 
 - Background color and font of inline code blocks differs from regular text in message [#53761](https://github.com/sourcegraph/sourcegraph/pull/53761)
 - Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
+- Basic integration with the local Cody App [#54061](https://github.com/sourcegraph/sourcegraph/pull/54061)
+- Onboarding of the user when using local Cody App [#54298](https://github.com/sourcegraph/sourcegraph/pull/54298)
 
 ### Changed
 
@@ -20,6 +22,7 @@
 
 - Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
 - Fixed rendered completions being cleared after disabling them in settings [#53758](https://github.com/sourcegraph/sourcegraph/pull/53758)
+- Wrap long words in the chat message [#54244](https://github.com/sourcegraph/sourcegraph/pull/54244)
 
 ### Security
 

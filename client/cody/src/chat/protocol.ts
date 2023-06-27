@@ -9,6 +9,7 @@ import { View } from '../../webviews/NavBar'
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
+    | { command: 'ready' }
     | { command: 'initialized' }
     | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
@@ -21,7 +22,7 @@ export type WebviewMessage =
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
-    | { command: 'auth'; type: 'signin' | 'signout' | 'support' }
+    | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
     | { command: 'abort' }
 
 /**
@@ -85,7 +86,7 @@ export interface AuthStatus {
 }
 
 export const defaultAuthStatus = {
-    endpoint: DOTCOM_URL.href,
+    endpoint: '',
     isLoggedIn: false,
     showInvalidAccessTokenError: false,
     authenticated: false,
@@ -122,8 +123,6 @@ export interface LocalEnv {
     hasAppJson: boolean
     isAppInstalled: boolean
     isAppRunning: boolean
-    // TODO: remove this once the experimental period for connect app is over
-    isAppConnectEnabled: boolean
 }
 
 export function isLoggedIn(authStatus: AuthStatus): boolean {
@@ -134,5 +133,17 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
 }
 
 export function isLocalApp(url: string): boolean {
-    return new URL(url).origin === LOCAL_APP_URL.origin
+    try {
+        return new URL(url).origin === LOCAL_APP_URL.origin
+    } catch {
+        return false
+    }
+}
+
+export function isDotCom(url: string): boolean {
+    try {
+        return new URL(url).origin === DOTCOM_URL.origin
+    } catch {
+        return false
+    }
 }

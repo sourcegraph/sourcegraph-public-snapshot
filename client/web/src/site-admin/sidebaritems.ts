@@ -105,6 +105,7 @@ export const repositoriesGroup: SiteAdminSideBarGroup = {
             condition: isPackagesEnabled,
         },
     ],
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
 }
 
 export const usersGroup: SiteAdminSideBarGroup = {

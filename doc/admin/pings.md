@@ -1,6 +1,6 @@
 # Pings
 
-Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance (the URL is `https://sourcegraph.example.com/site-admin/pings`) or, for users of the Sourcegraph app, see [Sourcegraph app telemetry](#sourcegraph-app-telemetry). 
+Sourcegraph periodically sends a ping to Sourcegraph.com to help our product and customer teams. It sends only the high-level data below. It never sends code, repository names, usernames, or any other specific data. To learn more, go to the **Site admin > Pings** page on your instance (the URL is `https://sourcegraph.example.com/site-admin/pings`). 
 
 Sourcegraph will also periodically perform a license verification check, to verify the validity of the configured Sourcegraph license. Tampering with these checks, or preventing them from occuring, will cause Sourcegraph to disable many features until a successful check is completed. Certain Enterprise licenses can request to be exempt from these license verification checks.
 
@@ -201,17 +201,6 @@ Sourcegraph aggregates usage and performance metrics for some product features i
 - Aggregate daily, weekly, monthly repository metadata usage statistics
 </details>
 
-## Sourcegraph app telemetry
-
-We collect extremely limited telemetry from the Sourcegraph app to infer value to our users and send update notifications: 
-
-- Randomly generated site identifier
-- Deployment type (the Sourcegraph app)
-- Release version
-- Operating system
-- Total number of repositories added
-- Whether a user was active today (boolean) 
-
 ## CIDR Range for Sourcegraph
 
 Sourcegraph currently uses Cloudflare to provide web application security. You should allow access to all [Cloudflare IP ranges](https://www.cloudflare.com/ips/)
@@ -231,6 +220,17 @@ Sourcegraph only connects to Sourcegraph.com for three purposes:
 1. Legacy Sourcegraph extensions are fetched from Sourcegraph.com`s extension registry.
 
 There are no other automatic external connections to Sourcegraph.com (or any other site on the internet).
+
+## Connections to Sourcegraph.com via Cody app
+
+The Cody app connects to Sourcegraph.com to send a limited selection of the pings described above in order to infer value to our users and send update notifications. They include:  
+
+- Randomly generated site identifier
+- Deployment type (the Cody app)
+- Release version
+- Operating system
+- Total number of repositories added
+- Whether a user was active today (boolean) 
 
 ## Troubleshooting Pings
 
