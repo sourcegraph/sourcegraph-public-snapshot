@@ -45,7 +45,7 @@ New issues and feature requests can be filed through our [issue tracker](https:/
   `-PforceAgentBuild=true` flag when running Gradle. For example, `./gradlew :runIde -PforceAgentBuild=true`.
 - The Cody agent is disabled by default for local `./gradlew :runIde` task only.
   Use the `-PenableAgent=true` property to enable the Cody agent. For example, `./gradlew :runIde -PenableAgent=true`.
-  Unless the agent is enabled, the plugin falls back to the non-agent based implementation.
+  When the agent is disabled, the plugin falls back to the non-agent-based implementation.
 
 ## Publishing a new version
 
