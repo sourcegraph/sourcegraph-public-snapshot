@@ -131,6 +131,13 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		}
 		act.UID = user.ID
 
+		// Schedule a permission sync, since this is new user
+		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
+			UserIDs:           []int32{user.ID},
+			Reason:            database.ReasonUserAdded,
+			TriggeredByUserID: user.ID,
+		})
+
 		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 			UserID: user.ID,
 			Perm:   authz.Read,
