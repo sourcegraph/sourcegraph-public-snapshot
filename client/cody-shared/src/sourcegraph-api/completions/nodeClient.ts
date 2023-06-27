@@ -135,6 +135,11 @@ export class SourcegraphNodeCompletionsClient extends SourcegraphCompletionsClie
             }
         )
 
+        request.on('error', error => {
+            log?.onError(error.message)
+            cb.onError(error.message)
+        })
+
         request.write(JSON.stringify(params))
         request.end()
 
