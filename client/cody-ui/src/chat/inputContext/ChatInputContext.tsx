@@ -53,7 +53,7 @@ export const ChatInputContext: React.FunctionComponent<{
                     codebase={contextStatus.codebase}
                     tooltip="Repository is not indexed and has no embeddings"
                     icon={mdiDatabaseRemoveOutline}
-                    iconClassName={styles.errorColor}
+                    iconClassName={styles.warningColor}
                 />
             )}
             {contextStatus.filePath && (
@@ -70,15 +70,11 @@ const CodebaseState: React.FunctionComponent<{
     iconClassName?: string
     icon: string
     codebase?: string
-}> = ({ tooltip, iconClassName, icon, codebase }) => {
-    return (
-        <h3 title={tooltip} className={styles.codebase}>
-            <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
-            {codebase && (
-                <span className={styles.codebaseLabel}>
-                    {basename(codebase.replace(/^(github|gitlab)\.com\//, ''))}
-                </span>
-            )}
-        </h3>
-    )
-}
+}> = ({ tooltip, iconClassName, icon, codebase }) => (
+    <h3 title={tooltip} className={styles.codebase}>
+        <Icon svgPath={icon} className={classNames(styles.codebaseIcon, iconClassName)} />
+        {codebase && (
+            <span className={styles.codebaseLabel}>{basename(codebase.replace(/^(github|gitlab)\.com\//, ''))}</span>
+        )}
+    </h3>
+)
