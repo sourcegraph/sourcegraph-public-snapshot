@@ -23,22 +23,24 @@ enum ExtensionStatus {
     Beta = 'Beta',
     ComingSoon = 'Coming soon',
     Unknown = 'Unknown',
+    Experimental = 'Experimental',
+    GA = '',
 }
 
 const EXTENSIONS: Extension[] = [
     {
         name: 'Visual Studio Code',
-        status: ExtensionStatus.Beta,
+        status: ExtensionStatus.GA,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/vscode-icon.png',
         docLink: null,
         extensionDeepLink: 'vscode:extension/sourcegraph.cody-ai',
     },
     {
         name: 'IntelliJ Idea',
-        status: ExtensionStatus.ComingSoon,
+        status: ExtensionStatus.Experimental,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/idea-icon.png',
         docLink: null,
-        extensionDeepLink: null,
+        extensionDeepLink: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph',
     },
     {
         name: 'NeoVim',
@@ -128,6 +130,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
 function getBadgeStatus(status: ExtensionStatus): BadgeVariantType {
     switch (status) {
         case ExtensionStatus.Beta:
+        case ExtensionStatus.Experimental:
             return 'secondary'
         case ExtensionStatus.ComingSoon:
             return 'outlineSecondary'
