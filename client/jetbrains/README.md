@@ -22,13 +22,11 @@ Cody understands your entire codebase — not just your open files. Ask question
 
 ![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/Chat_IntelliJ_SS.jpg)
 
-
 ### 🔨 Let Cody write code for you
 
 Cody can provide real-time code autocompletions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files, your file history, and your entire codebase to predict what you're trying to implement and provide suggestions.
 
 ![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
-
 
 ## 🍳 Built-in recipes
 
@@ -50,7 +48,6 @@ _We also welcome also pull request contributions for new, useful recipes!_
 - [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
 - [Discord chat](https://discord.gg/s2qDtYGnAE)
 - [Twitter (@sourcegraph)](https://twitter.com/sourcegraph)
-
 
 ## License
 
