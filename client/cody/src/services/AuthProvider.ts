@@ -95,11 +95,8 @@ export class AuthProvider {
             default: {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
-                if (isLocalApp(selectedEndpoint)) {
-                    await this.appAuth(selectedEndpoint)
-                    return
-                }
-                const token = await this.secretStorage.get(selectedEndpoint)
+                const tokenKey = isLocalApp(selectedEndpoint) ? 'SOURCEGRAPH_CODY_APP' : selectedEndpoint
+                const token = await this.secretStorage.get(tokenKey)
                 const authState = await this.auth(selectedEndpoint, token || null)
                 if (!authState) {
                     return
@@ -127,9 +124,11 @@ export class AuthProvider {
                 return
             }
         }
-        if (uri) {
-            await vscode.env.openExternal(vscode.Uri.parse(uri))
+        if (!uri) {
+            await vscode.window.showErrorMessage('Sign in failed. Please make sure Cody App is running.')
+            return
         }
+        await vscode.env.openExternal(vscode.Uri.parse(uri))
     }
 
     // Display quickpick to select endpoint to sign out of
@@ -274,9 +273,6 @@ export class AuthProvider {
         await this.localStorage.saveEndpoint(endpoint)
         if (token) {
             await this.secretStorage.storeToken(endpoint, token)
-        }
-        if (token && isLocalApp(endpoint)) {
-            await this.secretStorage.storeToken('SOURCEGRAPH_CODY_APP', token)
         }
         this.loadEndpointHistory()
         debug('AuthProvider:storeAuthInfo:stored', endpoint || '')

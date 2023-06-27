@@ -222,11 +222,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'initialized':
                 debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 this.loadChatHistory()
-                this.publishContextStatus()
                 this.sendTranscript()
                 this.sendChatHistory()
                 await this.loadRecentChat()
-                this.publishConfig()
+                this.publishContextStatus()
+                await this.publishConfig()
                 break
             case 'submit':
                 await this.onHumanMessageSubmitted(message.text, message.submitType)
@@ -635,9 +635,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public async syncAuthStatus(): Promise<void> {
         const authStatus = this.authProvider.getAuthStatus()
+        debug('ChatViewProvider:syncAuthStatus', 'authStatus', { verbose: authStatus })
+        await this.publishConfig()
         await vscode.commands.executeCommand('setContext', 'cody.activated', authStatus.isLoggedIn)
-        this.setWebviewView(authStatus.isLoggedIn ? 'chat' : 'login')
-        await this.webview?.postMessage({ type: 'login', authStatus })
         this.sendEvent('auth', authStatus.isLoggedIn ? 'successfully' : 'failed')
     }
 
@@ -743,7 +743,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     /**
      * Publish the config to the webview.
      */
-    private publishConfig(): void {
+    public async publishConfig(): Promise<void> {
         const send = async (): Promise<void> => {
             this.config = await getFullConfig(this.secretStorage, this.localStorage)
 
@@ -763,7 +763,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
-        send().catch(error => console.error(error))
+        await send()
     }
 
     /**

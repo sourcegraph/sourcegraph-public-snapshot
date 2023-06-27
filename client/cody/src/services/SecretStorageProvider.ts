@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isLocalApp } from '../chat/protocol'
+
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export async function getAccessToken(secretStorage: SecretStorage): Promise<string | null> {
@@ -40,6 +42,9 @@ export class VSCodeSecretStorage implements SecretStorage {
     public async storeToken(endpoint: string, value: string): Promise<void> {
         if (!value || !endpoint) {
             return
+        }
+        if (isLocalApp(endpoint)) {
+            await this.store('SOURCEGRAPH_CODY_APP', value)
         }
         await this.store(endpoint, value)
         await this.store(CODY_ACCESS_TOKEN_SECRET, value)
