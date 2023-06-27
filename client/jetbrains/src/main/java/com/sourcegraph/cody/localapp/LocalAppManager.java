@@ -27,7 +27,7 @@ public class LocalAppManager {
               Path.of("/Applications/Cody.app"),
               Path.of(
                   SystemUtils.getUserHome()
-                      + "/Library/Application Support/com.sourcegraph.cody/site.config.json"),
+                      + "/Library/Application Support/com.sourcegraph.cody/site-config.json"),
               Path.of(
                   SystemUtils.getUserHome()
                       + "/Library/Application Support/com.sourcegraph.cody/app.json")));
