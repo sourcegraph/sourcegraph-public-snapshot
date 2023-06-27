@@ -111,7 +111,9 @@ __Note__: if you're wondering why the bucket names are different even though we 
 
 ### Automatically updating the manifest
 
-`sg` can be used to automatically take the update manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub and upload the manifest to bucket. Below is an example command:
+`sg` can be used to automatically update the manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub. Updating the manifest will set the new current version for download links as well as prompt users to upgrade the next time the App checks for  updates. To run the update-manifest command request the `Sourcegraph App Release Bucket access` bundle in Entitle. 
+
+Below is an example command:
 
 ```
 sg app update-manifest --bucket sourcegraph-app
@@ -122,4 +124,4 @@ If one first wants to check the manifest the `--no-upload` flag can be passed wh
 sg app update-manifest --bucket sourcegraph-app --no-upload
 ```
 
-Additionaly, the manifest will be updated with the release notes from the GitHub release. By doing this, clients that get notified of an update will see those notes.
+Additionally, the manifest will be updated with the release notes from the GitHub release. By doing this the release notes are presented to the user when they are notified of an available update.
