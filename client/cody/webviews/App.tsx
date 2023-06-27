@@ -96,6 +96,11 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     )
 
     useEffect(() => {
+        // Notify the extension host that we are ready to receive events
+        vscodeAPI.postMessage({ command: 'ready' })
+    }, [vscodeAPI])
+
+    useEffect(() => {
         if (!view) {
             vscodeAPI.postMessage({ command: 'initialized' })
         }

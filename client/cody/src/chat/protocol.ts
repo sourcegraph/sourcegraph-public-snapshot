@@ -9,6 +9,7 @@ import { View } from '../../webviews/NavBar'
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
+    | { command: 'ready' }
     | { command: 'initialized' }
     | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }

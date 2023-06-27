@@ -119,7 +119,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             vscode.commands.registerCommand('cody.app.sync', () => this.syncLocalAppState()),
             vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
         )
-        this.authProvider.init().catch(error => console.log(error))
 
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
@@ -216,6 +215,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
         switch (message.command) {
+            case 'ready':
+                await this.authProvider.init()
+                break
             case 'initialized':
                 debug('ChatViewProvider:onDidReceiveMessage:initialized', '')
                 this.loadChatHistory()
