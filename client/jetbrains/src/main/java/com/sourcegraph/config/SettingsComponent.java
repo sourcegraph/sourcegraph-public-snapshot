@@ -184,14 +184,21 @@ public class SettingsComponent {
     // Assemble the three main panels
     JBLabel codyAppComment =
         new JBLabel(
-            "Use Sourcegraph through the locally installed Cody App",
+            "Use Sourcegraph through the locally installed Cody App.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     boolean shouldShowInstallLocalAppLink =
         !isLocalAppInstalled && LocalAppManager.isPlatformSupported();
+      JLabel installLocalAppComment =
+          new JBLabel(
+              "The local Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
+              UIUtil.ComponentStyle.SMALL,
+              UIUtil.FontColor.BRIGHTER);
+      installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+      installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     ActionLink installLocalAppLink =
-        simpleActionLink("Download Cody App...", LocalAppManager::browseLocalAppInstallPage);
+        simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
     installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
     installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
     boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
@@ -209,6 +216,7 @@ public class SettingsComponent {
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)
             .addComponent(codyAppComment, 2)
+            .addComponent(installLocalAppComment, 2)
             .addComponent(installLocalAppLink, 2)
             .addComponent(runLocalAppComment, 2)
             .addComponent(runLocalAppLink, 2)
