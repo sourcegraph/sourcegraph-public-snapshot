@@ -1,3 +1,4 @@
+// TODO(burmudar): move this app update endpoint code to codyapp package
 package updatecheck
 
 import (
