@@ -186,7 +186,7 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		_, err = db.ExecContext(ctx, fmt.Sprintf(`UPDATE permission_sync_jobs SET state = 'completed' WHERE user_id=%d OR repository_id=%d`, user1.ID, repo1.ID))
 		require.NoError(t, err)
 
-		// We should have 4 jobs including new jobs for user1 and repo1.
+		// We should have 5 jobs including new jobs for user1 and repo1.
 		wantJobs = []testJob{
 			{
 				UserID:       int(adminUser.ID),
