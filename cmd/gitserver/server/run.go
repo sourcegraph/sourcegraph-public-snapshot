@@ -123,6 +123,9 @@ var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
 // progressWriter is an io.Writer that writes to a buffer.
 // '\r' resets the write offset to the index after last '\n' in the buffer,
 // or the beginning of the buffer if a '\n' has not been written yet.
+//
+// This exists to remove intermediate progress reports from "git clone
+// --progress".
 type progressWriter struct {
 	// writeOffset is the offset in buf where the next write should begin.
 	writeOffset int
