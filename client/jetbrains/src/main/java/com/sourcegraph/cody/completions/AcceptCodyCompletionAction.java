@@ -75,7 +75,7 @@ public class AcceptCodyCompletionAction extends EditorAction {
       /* Log the event */
       Project project = editor.getProject();
       if (project != null) {
-        GraphQlLogger.logCodyEvent(project, "autocomplete", "accepted");
+        GraphQlLogger.logCodyEvent(project, "completion", "accepted");
       }
 
       WriteCommandAction.runWriteCommandAction(

@@ -14,12 +14,14 @@ import org.jetbrains.annotations.Nullable;
 public class GraphQlLogger {
   private static final Logger logger = Logger.getInstance(GraphQlLogger.class);
 
+  private static string eventParameters = "{serverEndpoint: \"" + ConfigUtil.getSourcegraphUrl(project) + "\"}";
+
   public static void logInstallEvent(Project project, Consumer<Boolean> callback) {
     String anonymousUserId = ConfigUtil.getAnonymousUserId();
     if (anonymousUserId != null) {
       Event event =
           new Event(
-              "IDEInstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
+              "CodyInstalled", anonymousUserId, "", eventParameters, eventParameters);
       logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
     }
   }
@@ -29,7 +31,7 @@ public class GraphQlLogger {
     if (anonymousUserId != null) {
       Event event =
           new Event(
-              "IDEUninstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
+              "CodyUninstalled", anonymousUserId,  "", eventParameters, eventParameters);
       logEvent(project, event, null);
     }
   }
@@ -49,9 +51,9 @@ public class GraphQlLogger {
         new Event(
             eventName,
             anonymousUserId != null ? anonymousUserId : "",
-            ConfigUtil.getSourcegraphUrl(project),
-            null,
-            null);
+            "",
+            eventParameters,
+            eventParameters);
     logEvent(project, event, null);
   }
 
