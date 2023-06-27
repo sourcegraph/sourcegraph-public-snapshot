@@ -53,7 +53,7 @@ There can be several reasons why a job is not showing up in the list of jobs:
 
 - The repository is already queued or being processed
 - A job for the same repository and the same revision already completed successfully
-- Another job for the same repository has been queued for processing within the [embeddings.MinimumInterval](./code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window 
+- Another job for the same repository has been queued for processing within the [embeddings.MinimumInterval](./explanations/code_graph_context.md#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings) time window
 
 ### How do I stop a running embeddings job?
 
