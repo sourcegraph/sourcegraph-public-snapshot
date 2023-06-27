@@ -26,10 +26,17 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
-import com.intellij.util.ui.*;
+import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.api.Message;
-import com.sourcegraph.cody.chat.*;
+import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
+import com.sourcegraph.cody.chat.Chat;
+import com.sourcegraph.cody.chat.ChatBubble;
+import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.chat.ContextFilesMessage;
+import com.sourcegraph.cody.chat.Interaction;
+import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextGetter;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.editor.EditorContext;
@@ -52,6 +59,7 @@ import com.sourcegraph.cody.recipes.TranslateToLanguagePromptProvider;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.BorderLayout;
 import java.awt.Component;
@@ -98,57 +106,81 @@ class CodyToolWindowContent implements UpdatableChat {
 
     // Recipes panel
     RecipeRunner recipeRunner = new RecipeRunner(this.project, this);
-    JButton explainCodeDetailedButton = createWideButton("Explain selected code (detailed)");
+    JButton explainCodeDetailedButton = createRecipeButton("Explain selected code (detailed)");
     explainCodeDetailedButton.addActionListener(
-        e ->
-            executeRecipeWithPromptProvider(recipeRunner, new ExplainCodeDetailedPromptProvider()));
-    JButton explainCodeHighLevelButton = createWideButton("Explain selected code (high level)");
+        e -> {
+          GraphQlLogger.logClickAndExecutionEvents(this.project, "recipe:explain-code-detailed");
+          executeRecipeWithPromptProvider(recipeRunner, new ExplainCodeDetailedPromptProvider());
+        });
+    JButton explainCodeHighLevelButton = createRecipeButton("Explain selected code (high level)");
     explainCodeHighLevelButton.addActionListener(
-        e ->
-            executeRecipeWithPromptProvider(
-                recipeRunner, new ExplainCodeHighLevelPromptProvider()));
-    JButton generateUnitTestButton = createWideButton("Generate a unit test");
+        e -> {
+          GraphQlLogger.logClickAndExecutionEvents(this.project, "explain-code-high-level");
+          executeRecipeWithPromptProvider(
+              recipeRunner, new ExplainCodeHighLevelPromptProvider());
+        });
+    JButton generateUnitTestButton = createRecipeButton("Generate a unit test");
     generateUnitTestButton.addActionListener(
-        e -> executeRecipeWithPromptProvider(recipeRunner, new GenerateUnitTestPromptProvider()));
-    JButton generateDocstringButton = createWideButton("Generate a docstring");
+        e -> {
+          GraphQlLogger.logClickAndExecutionEvents(this.project, "generate-unit-test");
+          executeRecipeWithPromptProvider(recipeRunner, new GenerateUnitTestPromptProvider());
+        });
+    JButton generateDocstringButton = createRecipeButton("Generate a docstring");
     generateDocstringButton.addActionListener(
-        e -> executeRecipeWithPromptProvider(recipeRunner, new GenerateDocStringPromptProvider()));
-    JButton improveVariableNamesButton = createWideButton("Improve variable names");
+        e -> {
+          GraphQlLogger.logClickAndExecutionEvents(this.project, "generate-docstring");
+          executeRecipeWithPromptProvider(recipeRunner, new GenerateDocStringPromptProvider());
+        });
+    JButton improveVariableNamesButton = createRecipeButton("Improve variable names");
     improveVariableNamesButton.addActionListener(
-        e ->
-            executeRecipeWithPromptProvider(
-                recipeRunner, new ImproveVariableNamesPromptProvider()));
-    JButton translateToLanguageButton = createWideButton("Translate to different language");
+        e -> {
+          GraphQlLogger.logClickAndExecutionEvents(this.project, "improve-variable-names");
+          executeRecipeWithPromptProvider(
+              recipeRunner, new ImproveVariableNamesPromptProvider());
+        });
+    JButton translateToLanguageButton = createRecipeButton("Translate to different language");
     translateToLanguageButton.addActionListener(
-        e ->
-            runIfCodeSelected(
-                (editorSelection) -> {
-                  SelectOptionManager selectOptionManager =
-                      SelectOptionManager.getInstance(project);
-                  selectOptionManager.show(
-                      project,
-                      SupportedLanguages.LANGUAGE_NAMES,
-                      (selectedLanguage) ->
-                          recipeRunner.runRecipe(
-                              new TranslateToLanguagePromptProvider(new Language(selectedLanguage)),
-                              editorSelection));
-                }));
-    JButton gitHistoryButton = createWideButton("Summarize recent code changes");
+        e -> {
+          GraphQlLogger.logClickEvent(this.project, "translate-to-language");
+          runIfCodeSelected(
+              (editorSelection) -> {
+                SelectOptionManager selectOptionManager =
+                    SelectOptionManager.getInstance(project);
+                selectOptionManager.show(
+                    project,
+                    SupportedLanguages.LANGUAGE_NAMES,
+                    (selectedLanguage) -> {
+                      GraphQlLogger.logExecutionEvent(this.project, "translate-to-language");
+                      recipeRunner.runRecipe(
+                          new TranslateToLanguagePromptProvider(new Language(selectedLanguage)),
+                          editorSelection);
+                    });
+              });
+        });
+    JButton gitHistoryButton = createRecipeButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(
-        e ->
-            new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges());
-    JButton findCodeSmellsButton = createWideButton("Smell code");
+        e -> {
+          GraphQlLogger.logClickEvent(this.project, "summarize-recent-code-changes");
+          new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges();
+        });
+    JButton findCodeSmellsButton = createRecipeButton("Smell code");
     findCodeSmellsButton.addActionListener(
-        e -> executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider()));
+        e -> {
+          GraphQlLogger.logClickAndExecutionEvents(this.project, "smell-code");
+          executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider());
+        });
     // JButton fixupButton = createWideButton("Fixup code from inline instructions");
     // fixupButton.addActionListener(e -> recipeRunner.runFixup());
     // JButton contextSearchButton = createWideButton("Codebase context search");
     // contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
     // JButton releaseNotesButton = createWideButton("Generate release notes");
     // releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
-    JButton optimizeCodeButton = createWideButton("Optimize code");
+    JButton optimizeCodeButton = createRecipeButton("Optimize code");
     optimizeCodeButton.addActionListener(
-        e -> executeRecipeWithPromptProvider(recipeRunner, new OptimizeCodePromptProvider()));
+        e -> {
+          GraphQlLogger.logClickAndExecutionEvents(this.project, "optimize-code");
+          executeRecipeWithPromptProvider(recipeRunner, new OptimizeCodePromptProvider());
+        });
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -229,7 +261,7 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   @NotNull
-  private static JButton createWideButton(@NotNull String text) {
+  private JButton createRecipeButton(@NotNull String text) {
     JButton button = new JButton(text);
     button.setAlignmentX(Component.CENTER_ALIGNMENT);
     button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
@@ -496,10 +528,10 @@ class CodyToolWindowContent implements UpdatableChat {
       try {
         contextMessages =
             new ContextGetter(
-                    repoName,
-                    instanceUrl,
-                    accessTokenOrEmpty,
-                    ConfigUtil.getCustomRequestHeaders(project))
+                repoName,
+                instanceUrl,
+                accessTokenOrEmpty,
+                ConfigUtil.getCustomRequestHeaders(project))
                 .getContextMessages(humanMessage.getText(), 8, 2, true);
       } catch (IOException e) {
         this.addMessageToChat(
