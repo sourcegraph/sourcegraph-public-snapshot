@@ -79,40 +79,43 @@ public class CodyAgent implements Disposable {
     return getClient(project).server;
   }
 
-  public void initialize() {
+  public Future<Boolean> initialize() {
     if (!"true".equals(System.getProperty("cody-agent.enabled", "false"))) {
       logger.info("Cody agent is disabled due to system property '-Dcody-agent.enabled=false'");
-      return;
+      return CompletableFuture.completedFuture(false);
     }
     try {
       startListeningToAgent();
-      executorService.submit(
-          () -> {
-            try {
-              final CodyAgentServer server = Objects.requireNonNull(client.server);
-              ServerInfo info =
-                  server
-                      .initialize(
-                          new ClientInfo()
-                              .setName("JetBrains")
-                              .setVersion(ConfigUtil.getPluginVersion())
-                              .setWorkspaceRootPath(ConfigUtil.getWorkspaceRoot(project))
-                              .setConnectionConfiguration(
-                                  ConfigUtil.getAgentConfiguration(this.project)))
-                      .get();
-              logger.info("connected to Cody agent " + info.name);
-              server.initialized();
-              this.subscribeToFocusEvents();
-              this.initialized.complete(server);
-            } catch (Exception e) {
-              initializationErrorMessage =
-                  "failed to send 'initialize' JSON-RPC request Cody agent";
-              logger.error(initializationErrorMessage, e);
-            }
-          });
+      return executorService.submit(
+          (Callable<Boolean>)
+              () -> {
+                try {
+                  final CodyAgentServer server = Objects.requireNonNull(client.server);
+                  ServerInfo info =
+                      server
+                          .initialize(
+                              new ClientInfo()
+                                  .setName("JetBrains")
+                                  .setVersion(ConfigUtil.getPluginVersion())
+                                  .setWorkspaceRootPath(ConfigUtil.getWorkspaceRoot(project))
+                                  .setConnectionConfiguration(
+                                      ConfigUtil.getAgentConfiguration(this.project)))
+                          .get();
+                  logger.info("connected to Cody agent " + info.name);
+                  server.initialized();
+                  this.subscribeToFocusEvents();
+                  return this.initialized.complete(server);
+                } catch (Exception e) {
+                  initializationErrorMessage =
+                      "failed to send 'initialize' JSON-RPC request Cody agent";
+                  logger.error(initializationErrorMessage, e);
+                  return false;
+                }
+              });
     } catch (Exception e) {
       initializationErrorMessage = "unable to start Cody agent";
       logger.error(initializationErrorMessage, e);
+      return CompletableFuture.completedFuture(false);
     }
   }
 

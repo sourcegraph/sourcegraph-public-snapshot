@@ -62,6 +62,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -403,6 +405,25 @@ class CodyToolWindowContent implements UpdatableChat {
     sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
   }
 
+  private synchronized boolean wakeAgent(@NotNull Project project) {
+    if (!CodyAgent.isConnected(project))
+      return Optional.ofNullable(project.getService(CodyAgent.class))
+          .map(CodyAgent::initialize)
+          .map(
+              f -> {
+                try {
+                  boolean result = f.get(10, TimeUnit.SECONDS);
+                  System.out.println("Agent initialized: " + result);
+                    return result;
+                } catch (Exception e) {
+                  e.printStackTrace();
+                  return false;
+                }
+              })
+          .orElse(false);
+    else return true;
+  }
+
   private void sendMessage(@NotNull Project project, ChatMessage message, String responsePrefix) {
     if (!sendButton.isEnabled()) {
       return;
@@ -430,7 +451,7 @@ class CodyToolWindowContent implements UpdatableChat {
               String repoName = getRepoName(project, currentFile);
               String accessTokenOrEmpty = accessToken != null ? accessToken : "";
               Chat chat = new Chat(instanceUrl, accessTokenOrEmpty);
-              if (CodyAgent.isConnected(project)) {
+              if (CodyAgent.isConnected(project) || wakeAgent(project)) {
                 try {
                   chat.sendMessageViaAgent(
                       CodyAgent.getClient(project),
