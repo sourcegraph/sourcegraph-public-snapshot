@@ -2,9 +2,11 @@ import assert from 'assert'
 import { spawn } from 'child_process'
 import path from 'path'
 
+import { Completion } from '@sourcegraph/cody-shared/src/autocomplete'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 
 import { MessageHandler } from './jsonrpc'
+import { Range } from './protocol'
 
 export class TestClient extends MessageHandler {
     public async handshake() {
@@ -25,6 +27,27 @@ export class TestClient extends MessageHandler {
         return this.request('recipes/execute', {
             id,
             humanChatInput,
+        })
+    }
+
+    /**
+     * Returns file path
+     */
+    public openDocumentAt(ext: string, content: string, selection: Range): string {
+        const filePath = `/path/to/foo/${Math.random().toString(36).slice(2)}.${ext}`
+
+        this.notify('textDocument/didOpen', {
+            filePath,
+            content,
+            selection,
+        })
+
+        return filePath
+    }
+
+    public async getManualCompletions(): Promise<Completion[] | null> {
+        return this.request('completions/manual', {
+            count: 3,
         })
     }
 
@@ -73,6 +96,24 @@ describe('StandardAgent', () => {
     })
 
     it('sends back transcript updates and makes sense', () => streamingChatMessages, 20_000)
+
+    it('returns manual completions', async () => {
+        client.openDocumentAt(
+            'zig',
+            `//! Zig hello world
+
+const std = @import("std");
+
+pub fn main() 
+`,
+            {
+                start: { line: 4, character: 14 },
+                end: { line: 4, character: 14 },
+            }
+        )
+
+        console.log(await client.getManualCompletions())
+    }, 15_000)
 
     afterAll(async () => {
         await client.shutdownAndExit()

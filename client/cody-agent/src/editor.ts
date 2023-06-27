@@ -112,11 +112,26 @@ export class AgentEditor implements Editor, CompletionsTextEditor {
     }
 
     public getCurrentDocument(): LightTextDocument | null {
-        throw new Error('Method not implemented.')
+        const active = this.agent.activeDocumentFilePath
+
+        if (!active) {
+            return null
+        }
+
+        return {
+            uri: url.pathToFileURL(active).toString(),
+            languageId: 'TODO',
+        }
     }
 
     public getDocumentTextTruncated(uri: string): Promise<string | null> {
-        throw new Error('Method not implemented.')
+        const doc = this.agent.documents.get(url.fileURLToPath(uri))
+
+        if (!doc || !doc.content) {
+            return Promise.resolve(null)
+        }
+
+        return Promise.resolve(doc.content.slice(0, 100_000))
     }
 
     public getDocumentRelativePath(uri: string): Promise<string | null> {

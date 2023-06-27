@@ -50,11 +50,13 @@ export class Agent extends MessageHandler {
 
         this.manualCompletionsService = new Promise(resolve => {
             this.client?.then(client => {
-                new ManualCompletionServiceAgent(
-                    this.editor,
-                    this.completionsClient,
-                    new AgentHistory(),
-                    client.codebaseContext
+                resolve(
+                    new ManualCompletionServiceAgent(
+                        this.editor,
+                        this.completionsClient,
+                        new AgentHistory(),
+                        client.codebaseContext
+                    )
                 )
             })
         })
@@ -133,13 +135,18 @@ export class Agent extends MessageHandler {
                 return null
             }
 
-            const provider = await man.getManualCompletionProvider(ctx)
+            try {
+                const provider = await man.getManualCompletionProvider(ctx)
 
-            if (!provider) {
+                if (!provider) {
+                    return null
+                }
+
+                return provider.generateCompletions(new AbortController().signal, data.count)
+            } catch (e) {
+                console.error(e)
                 return null
             }
-
-            return provider.generateCompletions(new AbortController().signal, data.count)
         })
     }
 
