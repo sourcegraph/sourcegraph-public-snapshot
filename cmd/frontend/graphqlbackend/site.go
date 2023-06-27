@@ -247,11 +247,10 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 	return config.ID, nil
 }
 
-// args *EffectiveContentsArgs
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it. We optionally allow non-admins to view a set of whitelist
-	// configuration information if the `r.returnWhitelistedConfigForNonAdmins` is true
+	// so only admins may view it. We optionally allow non-admins to view a set of whitelisted
+	// configuration information if `r.returnWhitelistedConfigForNonAdmins` is true
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil && !r.returnWhitelistedConfigForNonAdmins {
 		return "", err
 	}
