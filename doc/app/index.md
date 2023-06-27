@@ -40,9 +40,9 @@ Check the [latest release](https://github.com/sourcegraph/sourcegraph/releases/t
 
 Follow the setup instructions to connect the app to your Sourcegraph.com account (or create one for free if you don't have an account yet), add your local projects, and select up to 10 of those projects to build your code graph. The code graph helps Cody generate more accurate answers about your code by sending your code to Sourcegraph to create [embeddings](../cody/explanations/code_graph_context.md#embeddings). (This may take a few minutes, depending on the size of your repos.) We are working on making it so that *all* the projects you connect to your app get embeddings and bumping the cap up from 10.
 
-If you use VS Code or IntelliJ, we recommend you follow the steps to download the extension, which enables Cody within your editor. (If you installed the extension before you downloaded the app, you'll see a prompt in your editor to download the app.) Cody in your editor will then talk to your Sourcegraph app to answer questions.
+If you use VS Code or a JetBrains IDE, we recommend you follow the steps to download the extension, which enables Cody within your editor. (If you installed the extension before you downloaded the app, you'll see a prompt in your editor to download the app.) Cody in your editor will then talk to your Sourcegraph app to answer questions.
 
-Note: The IntelliJ extension is still `Experimental`. 
+Note: The JetBrains extension is still `Experimental`. 
 
 ## Upgrading
 
