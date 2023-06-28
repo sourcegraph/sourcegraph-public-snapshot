@@ -20,6 +20,7 @@
 - Made sidebar refresh work for non-internal builds [#54348](https://github.com/sourcegraph/sourcegraph/pull/54358)
 - Don't display duplicated files in the "Read" section in the chat [#54363](https://github.com/sourcegraph/sourcegraph/pull/54363)
 - Repositories without configured git remotes are now available for Cody [#54370](https://github.com/sourcegraph/sourcegraph/pull/54370)
+- Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
 
 ### Security
 
