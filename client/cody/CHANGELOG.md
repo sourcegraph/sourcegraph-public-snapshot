@@ -15,6 +15,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+- Provide more information on Cody App, and improved the login page design for Enterprise customers. [pull/54362](https://github.com/sourcegraph/sourcegraph/pull/54362)
+
 ## [0.4.0]
 
 ### Added
