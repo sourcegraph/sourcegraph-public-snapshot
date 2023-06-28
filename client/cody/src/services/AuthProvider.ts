@@ -188,7 +188,7 @@ export class AuthProvider {
     public async auth(
         uri: string,
         token: string | null,
-        customHeaders = {}
+        customHeaders?: {} | null
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
         const endpoint = formatURL(uri) || ''
         const config = {
