@@ -32,6 +32,10 @@ export class MockIntentDetector implements IntentDetector {
     public isEditorContextRequired(input: string): boolean | Error {
         return this.mocks.isEditorContextRequired?.(input) ?? false
     }
+
+    public isOwnershipContextRequired(input: string): boolean {
+        return this.mocks.isOwnershipContextRequired?.(input) ?? false
+    }
 }
 
 export class MockKeywordContextFetcher implements KeywordContextFetcher {

@@ -72,8 +72,8 @@ query Repository($name: String!) {
 }`
 
 export const GET_CODY_CONTEXT_QUERY = `
-query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
-	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+query GetCodyContext($repos: [ID!]!, $query: String!, $numCodeResults: Int!, $numTextResults: Int!, $includeOwnershipContext: Boolean!) {
+	getCodyContext(repos: $repos, query: $query, codeResultsCount: $numCodeResults, textResultsCount: $numTextResults) {
 		... on FileChunkContext {
                         blob {
                                 path
@@ -84,6 +84,30 @@ query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $
                                 commit {
                                         id
                                         oid
+                                        subject @include(if: $includeOwnershipContext)
+                                        author @include(if: $includeOwnershipContext) {
+                                                date
+                                                person {
+                                                        name
+                                                }
+                                        }
+                                }
+                                ownership(first: 1) @include(if: $includeOwnershipContext) {
+                                        nodes {
+                                                reasons {
+                                                        __typename
+                                                }
+                                                owner {
+                                                        __typename
+                                                         ... on Person  {
+                                                                name
+                                                        }
+                                                        ... on Team {
+                                                                id
+                                                                name
+                                                        }
+                                                }
+                                        }
                                 }
                         }
 			startLine

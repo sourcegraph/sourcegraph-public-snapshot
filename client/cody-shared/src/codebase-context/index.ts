@@ -1,7 +1,12 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
 import { FilenameContextFetcher, KeywordContextFetcher, ContextResult } from '../local-context'
-import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
+import {
+    isMarkdownFile,
+    populateCodeContextTemplate,
+    populateMarkdownContextTemplate,
+    appendOwnerAndCommitInfo,
+} from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
 import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { UnifiedContextFetcher } from '../unified-context'
@@ -12,6 +17,7 @@ import { ContextMessage, ContextFile, getContextMessageWithResponse } from './me
 export interface ContextSearchOptions {
     numCodeResults: number
     numTextResults: number
+    includeOwnershipContext?: boolean
 }
 
 export class CodebaseContext {
@@ -146,21 +152,22 @@ export class CodebaseContext {
             return []
         }
 
-        const results = await this.unifiedContextFetcher.getContext(
-            query,
-            options.numCodeResults,
-            options.numTextResults
-        )
+        const results = await this.unifiedContextFetcher.getContext(query, options)
 
         if (isError(results)) {
             console.error('Error retrieving context:', results)
             return []
         }
 
-        return results.flatMap(({ content, filePath, repoName, revision }) => {
-            const messageText = isMarkdownFile(filePath)
-                ? populateMarkdownContextTemplate(content, filePath, repoName)
-                : populateCodeContextTemplate(content, filePath, repoName)
+        return results.flatMap(({ content, filePath, repoName, revision, commit, owner }) => {
+            const messageText = appendOwnerAndCommitInfo(
+                isMarkdownFile(filePath)
+                    ? populateMarkdownContextTemplate(content, filePath, repoName)
+                    : populateCodeContextTemplate(content, filePath, repoName),
+                filePath,
+                owner,
+                commit
+            )
 
             return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
         })

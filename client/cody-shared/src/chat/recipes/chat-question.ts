@@ -48,12 +48,14 @@ export class ChatQuestion implements Recipe {
         const contextMessages: ContextMessage[] = []
 
         const isCodebaseContextRequired = firstInteraction || (await intentDetector.isCodebaseContextRequired(text))
+        const isOwnershipContextRequired = intentDetector.isOwnershipContextRequired(text)
 
         this.debug('ChatQuestion:getContextMessages', 'isCodebaseContextRequired', isCodebaseContextRequired)
         if (isCodebaseContextRequired) {
             const codebaseContextMessages = await codebaseContext.getContextMessages(text, {
                 numCodeResults: 12,
                 numTextResults: 3,
+                includeOwnershipContext: isOwnershipContextRequired,
             })
             contextMessages.push(...codebaseContextMessages)
         }

@@ -75,3 +75,51 @@ export function isMarkdownFile(filePath: string): boolean {
 function getExtension(filePath: string): string {
     return path.extname(filePath).slice(1)
 }
+
+const OWNER_INFO_TEMPLATE =
+    'The owner and the right {subject} to contact for any help regarding the file `{filePath}` is {owner}, as they {reason}.'
+const COMMIT_INFO_TEMPLATE =
+    'The file `{filePath}` was last edited in commit `{commitId}` by `{author}` on `{date}`. The subject of the commit was `{subject}`.'
+
+export const OWNERSHIP_REASON_MAP: Record<string, string> = {
+    CodeOwnersFileEntry: 'are listed in the CODEOWNERS file',
+    AssignedOwner: 'are assigned as the owner of the file',
+    RecentViewOwnershipSignal: 'recently viewed the file',
+    RecentContributorOwnershipSignal: 'recently contributed to the file',
+}
+
+export function appendOwnerAndCommitInfo(
+    base: string,
+    filePath: string,
+    owner?: {
+        reason?: string
+        type: 'Person' | 'Team'
+        name: string
+    },
+    commit?: { oid: string; date: string; subject: string; author: string }
+): string {
+    let prompt = base
+
+    if (commit) {
+        prompt =
+            prompt +
+            '\n' +
+            COMMIT_INFO_TEMPLATE.replace('{filePath}', filePath)
+                .replace('{commitId}', commit.oid)
+                .replace('{subject}', commit.subject)
+                .replace('{author}', commit.author)
+                .replace('{date}', commit.date)
+    }
+
+    if (owner) {
+        prompt =
+            prompt +
+            '\n' +
+            OWNER_INFO_TEMPLATE.replace('{filePath}', filePath)
+                .replace('{subject}', owner.type.toLowerCase())
+                .replace('{owner}', owner.name)
+                .replace('{reason}', OWNERSHIP_REASON_MAP[owner.reason || 'CodeOwnersFileEntry'])
+    }
+
+    return prompt
+}

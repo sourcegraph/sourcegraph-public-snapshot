@@ -309,7 +309,12 @@ export const useCodyChat = ({
         const transcript = initializeNewChatInternal()
 
         if (transcript) {
-            pushTranscriptToHistory(transcript).catch(() => null)
+            pushTranscriptToHistory(transcript, {
+                ...scope,
+                repositories: [],
+                includeInferredRepository: true,
+                includeInferredFile: true,
+            }).catch(() => null)
 
             if (autoLoadScopeWithRepositories) {
                 fetchRepositoryNames(10)

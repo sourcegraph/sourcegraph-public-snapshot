@@ -2,6 +2,7 @@ import fetch from 'isomorphic-fetch'
 
 import { buildGraphQLUrl } from '@sourcegraph/http-client'
 
+import { ContextSearchOptions } from '../../codebase-context'
 import { ConfigurationWithAccessToken } from '../../configuration'
 import { isError } from '../../utils'
 
@@ -83,6 +84,24 @@ interface CodyFileChunkContext {
         commit: {
             id: string
             oid: string
+            subject?: string
+            author?: {
+                date: string
+                person: {
+                    name: string
+                }
+            }
+        }
+        ownership?: {
+            nodes: {
+                reasons: {
+                    __typename: string
+                }[]
+                owner: {
+                    __typename: string
+                    name: string
+                }
+            }[]
         }
     }
     startLine: number
@@ -321,14 +340,13 @@ export class SourcegraphGraphQLAPIClient {
     public async getCodyContext(
         repos: string[],
         query: string,
-        codeResultsCount: number,
-        textResultsCount: number
+        options: ContextSearchOptions
     ): Promise<GetCodyContextResult[] | Error> {
         return this.fetchSourcegraphAPI<APIResponse<GetCodyContextResponse>>(GET_CODY_CONTEXT_QUERY, {
             repos,
             query,
-            codeResultsCount,
-            textResultsCount,
+            includeOwnershipContext: false,
+            ...options,
         }).then(response => extractDataOrError(response, data => data.getCodyContext))
     }
 
