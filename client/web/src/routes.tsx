@@ -34,6 +34,7 @@ const SurveyPage = lazyComponent(() => import('./marketing/page/SurveyPage'), 'S
 const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer')
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
+const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
@@ -163,6 +164,10 @@ export const routes: RouteObject[] = [
         // detect if we're inside the repo container reliably inside the Layout, we
         // expose this information in the handle object instead.
         handle: { isRepoContainer: true },
+    },
+    {
+        path: PageRoutes.GetCody,
+        element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
     },
 ]
 
