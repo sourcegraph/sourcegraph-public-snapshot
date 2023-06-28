@@ -12,20 +12,30 @@
 
 ### Fixed
 
+### Security
+
+## [3.0.2]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
 - Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
 
 ### Security
 
 ## [3.0.1]
 
-### Added
-
 ### Changed
 
 - Sending message on Enter rather than Ctrl/Cmd+Enter [#54331](https://github.com/sourcegraph/sourcegraph/pull/54331)
 - Updated name to Cody AI app [#54360](https://github.com/sourcegraph/sourcegraph/pull/54360)
-
-### Deprecated
 
 ### Removed
 
@@ -40,8 +50,6 @@
 - Don't display duplicated files in the "Read" section in the chat [#54363](https://github.com/sourcegraph/sourcegraph/pull/54363)
 - Repositories without configured git remotes are now available for Cody [#54370](https://github.com/sourcegraph/sourcegraph/pull/54370)
 - Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
-
-### Security
 
 ## [3.0.0]
 
