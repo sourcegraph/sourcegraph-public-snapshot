@@ -24,9 +24,16 @@ interface LoginProps {
 }
 
 const APP_DESC = {
-    getStarted: <>You can now use Cody with your own private code using the <a href="https://docs.sourcegraph.com/app">Cody desktop app</a>. Cody App allows you to index up to 10 local repositories, and lets you start Cody chats from anywhere.</>,
+    getStarted: (
+        <>
+            You can now use Cody with your own private code using the{' '}
+            <a href="https://docs.sourcegraph.com/app">Cody desktop app</a>. Cody App allows you to index up to 10 local
+            repositories, and lets you start Cody chats from anywhere.
+        </>
+    ),
     connectApp: 'Cody App detected. All that’s left to do is connect VS Code with Cody App.',
-    notRunning: 'It appears that Cody App is installed, but not running. Open Cody App to connect VS Code with Cody App.',
+    notRunning:
+        'It appears that Cody App is installed, but not running. Open Cody App to connect VS Code with Cody App.',
     comingSoon:
         'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
 }
