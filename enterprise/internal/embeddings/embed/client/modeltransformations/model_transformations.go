@@ -17,7 +17,7 @@ func isE5LikeModel(model string) bool {
 func ApplyModelTransformationsForQuery(query string, model string) string {
 	transformedQuery := query
 	if isE5LikeModel(model) {
-		transformedQuery = E5_QUERY_PREFIX + query
+		transformedQuery = E5_QUERY_PREFIX + transformedQuery
 	}
 	_, replaceNewlines := modelsWithoutNewlines[model]
 	if replaceNewlines {
