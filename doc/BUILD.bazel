@@ -1,0 +1,10 @@
+sh_test(
+    name = "test",
+    size = "small",
+    srcs = ["test.sh"],
+    args = ["$(location //dev/tools:docsite)"],
+    data = [
+        "//dev/tools:docsite",
+        "//doc/cli/references:doc_files"
+    ] + glob(["**/*"], ["test.sh"]),
+)
