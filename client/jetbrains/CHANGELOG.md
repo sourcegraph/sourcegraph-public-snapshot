@@ -13,6 +13,7 @@
 ### Fixed
 
 - telemetry is now being sent to both the current instance & dotcom (unless the current instance is dotcom, then just that) [#54347](https://github.com/sourcegraph/sourcegraph/pull/54347)
+- Don't display doubled messages about the error when trying to load context [#54345](https://github.com/sourcegraph/sourcegraph/pull/54345)
 
 ### Security
 

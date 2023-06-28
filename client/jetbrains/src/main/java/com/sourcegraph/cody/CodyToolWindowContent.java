@@ -687,11 +687,12 @@ class CodyToolWindowContent implements UpdatableChat {
                     ConfigUtil.getCustomRequestHeaders(project))
                 .getContextMessages(humanMessage.getText(), 8, 2, true);
       } catch (IOException e) {
-        this.addMessageToChat(
-            ChatMessage.createAssistantMessage(
-                "I didn't get a correct response. This is what I encountered while trying to get some context for your ask: \""
-                    + e.getMessage()
-                    + "\". I'll try to answer without further context."));
+        logger.warn(
+            "Unable to load context for message: "
+                + humanMessage.getText()
+                + ", in repo: "
+                + repoName,
+            e);
       }
     }
     return contextMessages;
