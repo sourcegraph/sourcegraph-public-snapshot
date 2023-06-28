@@ -115,6 +115,7 @@ const register = async (
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
+    await authProvider.init()
 
     // Create chat webview
     const chatProvider = new ChatViewProvider(

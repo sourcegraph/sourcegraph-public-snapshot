@@ -1,6 +1,6 @@
 .container {
     display: inline-block;
-    padding: 0.4rem 0.4rem 0.3rem 0.7rem;
+    padding: 0.4rem;
     font-size: 0.9rem;
     min-width: calc(100% - 1.1rem);
 }
@@ -9,7 +9,7 @@
     display: flex;
     flex-direction: column;
     align-self: stretch;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .open-close-button {

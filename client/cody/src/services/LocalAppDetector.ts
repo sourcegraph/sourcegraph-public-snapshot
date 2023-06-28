@@ -1,18 +1,18 @@
 import * as vscode from 'vscode'
 
 import { version } from '../../package.json'
-import { LOCAL_APP_URL, LocalEnv } from '../chat/protocol'
+import { LOCAL_APP_URL, LocalEnv, isOsSupportedByApp } from '../chat/protocol'
 import { debug } from '../log'
 
 import { AppJson, LOCAL_APP_LOCATIONS } from './LocalAppFsPaths'
+import { SecretStorage } from './SecretStorageProvider'
 
-type OnChangeCallback = (token: string | null) => Promise<void>
+type OnChangeCallback = (type: string) => Promise<void>
 /**
  * Detects whether the user has the Sourcegraph app installed locally.
  */
 export class LocalAppDetector implements vscode.Disposable {
     private localEnv: LocalEnv
-    private token: string | null = null
 
     // Check if the platform is supported and the user has a home directory
     private isSupported = false
@@ -24,12 +24,13 @@ export class LocalAppDetector implements vscode.Disposable {
     private _watchers: vscode.Disposable[] = []
     private onChange: OnChangeCallback
 
-    constructor(options: { onChange: OnChangeCallback }) {
+    constructor(private secretStorage: SecretStorage, options: { onChange: OnChangeCallback }) {
         this.onChange = options.onChange
         this.localEnv = envInit
         this.localAppMarkers = LOCAL_APP_LOCATIONS[this.localEnv.os]
         // Only Mac is supported for now
-        this.isSupported = this.localEnv.os === 'darwin' && this.localEnv.homeDir !== undefined
+        this.isSupported =
+            isOsSupportedByApp(this.localEnv.os, this.localEnv.arch) && this.localEnv.homeDir !== undefined
     }
 
     public async getProcessInfo(isLoggedIn = false): Promise<LocalEnv> {
@@ -97,15 +98,13 @@ export class LocalAppDetector implements vscode.Disposable {
         const token = appJson.token
         // Once the token is found, we can stop watching the files
         if (token?.length) {
-            debug('LocalAppDetector:fetchToken', 'found')
             this.localEnv.hasAppJson = true
             this.tokenFsPath = null
-            this.token = token
             await this.found('token')
+            await this.secretStorage.storeToken(LOCAL_APP_URL.href, token)
             await this.fetchServer()
-            return
         }
-        debug('LocalAppDetector:fetchToken', 'failed')
+        debug('LocalAppDetector:fetchToken', 'found')
     }
 
     // Check if App is running
@@ -119,8 +118,10 @@ export class LocalAppDetector implements vscode.Disposable {
             if (response.status === 200) {
                 debug('LocalAppDetector:fetchServer', 'found')
                 this.localEnv.isAppRunning = true
-                await this.found('server', this.token)
-                return
+                await this.found('server')
+            }
+            if (!this.localEnv.hasAppJson) {
+                await this.fetchToken()
             }
         } catch {
             debug('LocalAppDetector:fetchServer', 'failed')
@@ -128,12 +129,12 @@ export class LocalAppDetector implements vscode.Disposable {
         }
     }
 
-    // Notify the caller that the app has been found. send the token if it exists
+    // Notify the caller that the app has been found
     // NOTE: Call this function only when the app is found
-    private async found(type: 'app' | 'token' | 'server', token: string | null = null): Promise<void> {
-        await this.onChange(token)
-        debug('LocalAppDetector:found', type)
+    private async found(type: 'app' | 'token' | 'server'): Promise<void> {
         this.localEnv.isAppInstalled = true
+        await this.onChange(type)
+        debug('LocalAppDetector:found', type)
     }
 
     // We can dispose the file watcher when app is found or when user has logged in
