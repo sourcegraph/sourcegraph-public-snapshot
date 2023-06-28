@@ -1104,7 +1104,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 		client, err := c.ClientForRepo(repoCommits[0].Repo)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "getting gRPC client for repository %q", repoCommits[0].Repo)
 		}
 
 		g.Go(func() (err error) {
