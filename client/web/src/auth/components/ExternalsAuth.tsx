@@ -79,7 +79,11 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                 <Link
                     // Use absolute URL to force full-page reload (because the auth routes are
                     // handled by the backend router, not the frontend router).
-                    to={`${window.location.origin}${githubProvider.authenticationURL}` + redirect ? `&redirect=${redirect}` : ''}
+                    to={
+                        `${window.location.origin}${githubProvider.authenticationURL}` + redirect
+                            ? `&redirect=${redirect}`
+                            : ''
+                    }
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
