@@ -134,7 +134,7 @@
 
         <action id="cody.refreshCodyAppDetection" icon="AllIcons.Actions.Refresh"
                 text="Refresh"
-                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection" internal="true">
+                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection">
         </action>
 
         <group id="CodyChatActionsGroup">
