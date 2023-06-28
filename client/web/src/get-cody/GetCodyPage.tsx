@@ -177,12 +177,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                 icon={mdiLinux}
                             />
 
-                            <Link
-                                to="https://docs.sourcegraph.com/app"
-                                className={styles.otherOptions}
-                                target="_blank"
-                                rel="noopener"
-                            >
+                            <Link to="/help/app" className={styles.otherOptions} target="_blank" rel="noopener">
                                 Other options
                             </Link>
 
