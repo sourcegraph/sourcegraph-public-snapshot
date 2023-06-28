@@ -10,6 +10,8 @@
 
 ### Removed
 
+- Sourcegraph CLI's SRC_ENDPOINT and SRC_ACCESS_TOKEN env variables overrides for the local config got removed [#54369](https://github.com/sourcegraph/sourcegraph/pull/54369)
+
 ### Fixed
 
 - telemetry is now being sent to both the current instance & dotcom (unless the current instance is dotcom, then just that) [#54347](https://github.com/sourcegraph/sourcegraph/pull/54347)

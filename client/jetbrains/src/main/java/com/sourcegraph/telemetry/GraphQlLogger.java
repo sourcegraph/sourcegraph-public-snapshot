@@ -89,7 +89,6 @@ public class GraphQlLogger {
 
   private static void logDotcomEvent(
       @Nullable Consumer<Integer> callback, @NotNull String query, @NotNull JsonObject variables) {
-    System.out.println("logDotcomEvent");
     String instanceUrl = ConfigUtil.DOTCOM_URL;
     callGraphQlService(callback, instanceUrl, null, null, query, variables);
   }
@@ -99,7 +98,6 @@ public class GraphQlLogger {
       @NotNull String query,
       @NotNull JsonObject variables,
       @NotNull Project project) {
-    System.out.println("logInstanceEvent");
     String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
     String accessToken = ConfigUtil.getProjectAccessToken(project);
     String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project);
