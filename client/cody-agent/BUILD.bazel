@@ -22,7 +22,9 @@ ts_project(
     name = "cody-agent",
     srcs = [
         "src/agent.ts",
+        "src/completion/manual.ts",
         "src/editor.ts",
+        "src/history.ts",
         "src/index.ts",
         "src/jsonrpc.ts",
         "src/offsets.ts",
@@ -32,6 +34,7 @@ ts_project(
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
         "//:node_modules/@types/node",
+        "//:node_modules/url",
     ],
 )
 
