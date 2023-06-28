@@ -175,17 +175,17 @@ public class SettingsComponent {
     codyAppRadioButton.setActionCommand(InstanceType.LOCAL_APP.name());
     codyAppRadioButton.addActionListener(actionListener);
     codyAppRadioButton.setEnabled(isLocalAppInstalled && isLocalAppAccessTokenConfigured);
-    JRadioButton sourcegraphDotComRadioButton = new JRadioButton("Use sourcegraph.com");
-    sourcegraphDotComRadioButton.setMnemonic(KeyEvent.VK_C);
-    sourcegraphDotComRadioButton.setActionCommand(InstanceType.DOTCOM.name());
-    sourcegraphDotComRadioButton.addActionListener(actionListener);
+    JRadioButton dotcomRadioButton = new JRadioButton("Use sourcegraph.com");
+    dotcomRadioButton.setMnemonic(KeyEvent.VK_C);
+    dotcomRadioButton.setActionCommand(InstanceType.DOTCOM.name());
+    dotcomRadioButton.addActionListener(actionListener);
     JRadioButton enterpriseInstanceRadioButton = new JRadioButton("Use an enterprise instance");
     enterpriseInstanceRadioButton.setMnemonic(KeyEvent.VK_E);
     enterpriseInstanceRadioButton.setActionCommand(InstanceType.ENTERPRISE.name());
     enterpriseInstanceRadioButton.addActionListener(actionListener);
     instanceTypeButtonGroup = new ButtonGroup();
     instanceTypeButtonGroup.add(codyAppRadioButton);
-    instanceTypeButtonGroup.add(sourcegraphDotComRadioButton);
+    instanceTypeButtonGroup.add(dotcomRadioButton);
     instanceTypeButtonGroup.add(enterpriseInstanceRadioButton);
 
     // Assemble the three main panels String platformName =
@@ -193,16 +193,16 @@ public class SettingsComponent {
         Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
     String codyAppCommentText =
         isLocalAppPlatformSupported
-            ? "Use Sourcegraph through the locally installed Cody App."
+            ? "Use Sourcegraph through Cody App."
             : platformName
-                + " is not yet supported by the local Cody App. Keep an eye on future updates!";
+                + " is not yet supported by the Cody App. Keep an eye on future updates!";
     JBLabel codyAppComment =
         new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
     JLabel installLocalAppComment =
         new JBLabel(
-            "The local Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
+            "Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
     installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
@@ -217,7 +217,7 @@ public class SettingsComponent {
     runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
     JLabel runLocalAppComment =
         new JBLabel(
-            "The local Cody App seems to be installed, but it's not running, currently.",
+            "Cody App seems to be installed, but it's not running, currently.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
     runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
@@ -245,14 +245,14 @@ public class SettingsComponent {
     dotComPanelContent.setBorder(IdeBorderFactory.createEmptyBorder(JBUI.insets(1, 30, 0, 0)));
     JPanel dotComPanel =
         FormBuilder.createFormBuilder()
-            .addComponent(sourcegraphDotComRadioButton, 1)
+            .addComponent(dotcomRadioButton, 1)
             .addComponent(dotComComment, 2)
             .addComponent(dotComPanelContent, 1)
             .getPanel();
     JPanel enterprisePanelContent =
         FormBuilder.createFormBuilder()
             .addLabeledComponent(urlLabel, urlTextField, 1)
-            .addTooltip("If your company uses a private Sourcegraph instance, set its URL here")
+            .addTooltip("If your company uses a Sourcegraph enterprise instance, set its URL here")
             .addLabeledComponent(accessTokenLabel, enterpriseAccessTokenTextField, 1)
             .addComponentToRightColumn(userDocsLinkComment, 1)
             .addComponentToRightColumn(enterpriseAccessTokenLinkComment, 1)
@@ -281,7 +281,7 @@ public class SettingsComponent {
           String[] pairs = customRequestHeadersTextField.getText().split(",");
           if (pairs.length % 2 != 0) {
             return new ValidationInfo(
-                "Must be a comma-separated list of pairs", customRequestHeadersTextField);
+                "Must be a comma-separated list of string pairs", customRequestHeadersTextField);
           }
 
           for (int i = 0; i < pairs.length; i += 2) {

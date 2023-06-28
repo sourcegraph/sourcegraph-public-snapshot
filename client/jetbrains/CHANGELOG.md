@@ -10,7 +10,16 @@
 
 ### Removed
 
+- Sourcegraph CLI's SRC_ENDPOINT and SRC_ACCESS_TOKEN env variables overrides for the local config got removed [#54369](https://github.com/sourcegraph/sourcegraph/pull/54369)
+
 ### Fixed
+
+- telemetry is now being sent to both the current instance & dotcom (unless the current instance is dotcom, then just that) [#54347](https://github.com/sourcegraph/sourcegraph/pull/54347)
+- Don't display doubled messages about the error when trying to load context [#54345](https://github.com/sourcegraph/sourcegraph/pull/54345)
+- Now handling Null error messages in error logging properly [#54351](https://github.com/sourcegraph/sourcegraph/pull/54351)
+- Made sidebar refresh work for non-internal builds [#54348](https://github.com/sourcegraph/sourcegraph/pull/54358)
+- Don't display duplicated files in the "Read" section in the chat [#54363](https://github.com/sourcegraph/sourcegraph/pull/54363)
+- Repositories without configured git remotes are now available for Cody [#54370](https://github.com/sourcegraph/sourcegraph/pull/54370)
 
 ### Security
 

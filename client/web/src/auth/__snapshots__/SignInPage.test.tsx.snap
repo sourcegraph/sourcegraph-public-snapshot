@@ -415,7 +415,7 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/github/login?pc=f00bar"
+              href="/.auth/github/login?pc=f00bar&redirect=/get-cody"
             >
               <svg
                 aria-hidden="true"
@@ -438,7 +438,7 @@ exports[`SignInPage renders sign in page (dotcom) 1`] = `
           >
             <a
               class="anchorLink btn btnPrimary btnBlock"
-              href="/.auth/gitlab/login?pc=f00bar"
+              href="/.auth/gitlab/login?pc=f00bar&redirect=/get-cody"
             >
               <svg
                 aria-hidden="true"

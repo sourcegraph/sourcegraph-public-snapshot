@@ -4,6 +4,8 @@ import { APP_CALLBACK_URL, APP_DOWNLOAD_URLS, APP_LANDING_URL } from '../src/cha
 
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
+import styles from './ConnectApp.module.css'
+
 interface ConnectAppProps {
     vscodeAPI: VSCodeWrapper
     isAppInstalled: boolean
@@ -41,7 +43,7 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
         })
 
     return (
-        <div>
+        <div className={styles.buttonContainer}>
             <VSCodeButton
                 type="button"
                 disabled={!isOSSupported}

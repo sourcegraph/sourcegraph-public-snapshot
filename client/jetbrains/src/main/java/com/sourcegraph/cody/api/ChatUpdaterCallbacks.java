@@ -40,7 +40,8 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onError(@NotNull Throwable error) {
-    chat.respondToErrorFromServer(error.getMessage());
+    String message = error.getMessage();
+    chat.respondToErrorFromServer(message != null ? message : "");
     chat.finishMessageProcessing();
     System.err.println("Error: " + error);
   }

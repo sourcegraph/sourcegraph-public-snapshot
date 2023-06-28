@@ -114,7 +114,6 @@ The plugin works with all JetBrains IDEs, including:
   - If you use Sourcegraph.com, using an access token is optional (and only necessary to use Cody).
   - The configuration for an access token to use with Sourcegraph.com & a private instance is separate,
     you can switch between them on the fly.
-  - You can override the access token with the `SRC_ACCESS_TOKEN` environment variable.
   - See our [user docs](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) for a video guide on how to
     create an access token.
 - **Custom request headers**: Any custom headers to send with every request to Sourcegraph.

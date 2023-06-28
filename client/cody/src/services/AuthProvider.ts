@@ -17,7 +17,7 @@ import { newAuthStatus } from '../chat/utils'
 import { logEvent } from '../event-logger'
 import { debug } from '../log'
 
-import { AuthMenu, LoginStepInputBox, TokenInputBox } from './CodyMenus'
+import { AuthMenu, LoginStepInputBox, TokenInputBox } from './AuthMenus'
 import { LocalAppDetector } from './LocalAppDetector'
 import { LocalStorage } from './LocalStorageProvider'
 import { SecretStorage } from './SecretStorageProvider'
@@ -44,10 +44,10 @@ export class AuthProvider {
     // Sign into the last endpoint the user was signed into
     // if none, try signing in with App URL
     public async init(): Promise<void> {
-        const lastEndpoint = this.localStorage?.getEndpoint() || ''
+        const lastEndpoint = this.localStorage?.getEndpoint() || this.config.serverEndpoint
         debug('AuthProvider:init:lastEndpoint', lastEndpoint)
         const tokenKey = isLocalApp(lastEndpoint) ? 'SOURCEGRAPH_CODY_APP' : lastEndpoint
-        const token = await this.secretStorage.get(tokenKey)
+        const token = (await this.secretStorage.get(tokenKey)) || this.config.accessToken
         await this.auth(lastEndpoint, token || null)
         await this.appDetector.init()
     }
@@ -188,7 +188,7 @@ export class AuthProvider {
     public async auth(
         uri: string,
         token: string | null,
-        customHeaders = {}
+        customHeaders?: {} | null
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
         const endpoint = formatURL(uri) || ''
         const config = {
