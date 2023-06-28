@@ -10,7 +10,7 @@ As of Sourcegraph 5.1, there are new features for Perforce depots that need to b
 
 ### Changelist ID in URLs
 
-Note: It's recommended that site admins use a maintenance window to enable the `perforceChangelistMapping` flag especially if they have a large number of Perforce depots or one or more large depots with hundreds of thousands of changelists (see limitations below).
+Note: When enabling changelist IDs in URLs for the first time, Perforce depots can be unavailable for a few minutes on the Sourcegraph instance, due to the initial mapping of changelist IDs to generated commit ID happening in the background. If you have a large number of Perforce depots, we recommend proceeding with the following steps in a maintenance window in which you don't expect large amounts of traffic on your Sourcegraph instance.
 
 Add `"perforceChangelistMapping": "enabled",` to `experimentalFeatures` in the [site configuration](../config/site_config.md):
 
