@@ -65,6 +65,7 @@ ts_project(
         "src/editor/withPreselectedOptions.ts",
         "src/embeddings/client.ts",
         "src/embeddings/index.ts",
+        "src/graph-context/index.ts",
         "src/guardrails/client.ts",
         "src/guardrails/index.ts",
         "src/hallucinations-detector/index.ts",
