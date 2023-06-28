@@ -196,7 +196,6 @@ export class CodebaseContext {
         return results
     }
 
-    /** NOTE(auguste): not part of getContextMessages as this is more intricate; need to think of better abstraction */
     public async getGraphContextMessages(): Promise<ContextMessage[]> {
         // NOTE(auguste): I recommend checking out populateCodeContextTemplate and using
         // that in the long-term, but this will do for now :)

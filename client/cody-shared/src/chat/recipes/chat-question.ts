@@ -61,6 +61,8 @@ export class ChatQuestion implements Recipe {
                 numTextResults: 3,
             })
             contextMessages.push(...codebaseContextMessages)
+            // TODO: Put this in getContextMessages?
+            // Let's leave this here for now :)
             contextMessages.push(...(await codebaseContext.getGraphContextMessages()))
         }
 
