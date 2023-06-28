@@ -934,6 +934,7 @@ export async function getCodebaseContext(
         embeddingsSearch,
         new LocalKeywordContextFetcher(rgPath, editor, chatClient),
         new FilenameContextFetcher(rgPath, editor, chatClient),
+        null,
         undefined,
         getRerankWithLog(chatClient)
     )

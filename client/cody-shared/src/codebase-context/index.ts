@@ -1,5 +1,6 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
+import { GraphContextFetcher } from '../graph-context'
 import { FilenameContextFetcher, KeywordContextFetcher, ContextResult } from '../local-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
@@ -22,6 +23,7 @@ export class CodebaseContext {
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
+        private graph: GraphContextFetcher | null,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}
@@ -192,6 +194,53 @@ export class CodebaseContext {
         }
         const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
         return results
+    }
+
+    /** NOTE(auguste): not part of getContextMessages as this is more intricate; need to think of better abstraction */
+    public async getGraphContextMessages(): Promise<ContextMessage[]> {
+        // NOTE(auguste): I recommend checking out populateCodeContextTemplate and using
+        // that in the long-term, but this will do for now :)
+
+        if (!this.graph) {
+            return []
+        }
+
+        const contextMessages: ContextMessage[] = []
+        const preciseContext = await this.graph.getContext()
+
+        for (const context of preciseContext) {
+            contextMessages.push({
+                speaker: 'human',
+                file: {
+                    fileName: '',
+                    repoName: context.repository,
+                },
+                text: `Here is the code snippet: ${context.text}`,
+            })
+            contextMessages.push({ speaker: 'assistant', text: 'okay' })
+        }
+
+        return contextMessages
+
+        // contextMessages.push({
+        //     speaker: 'human',
+        //     file: {
+        //         fileName: 'filename',
+        //         repoName: 'repoName',
+        //         revision: 'revision',
+        //     },
+        //     text: `
+        //         Here is the path to the file ${test.data.search.results.results[0].file.path}.
+        //         The kind of the symbol is a ${test.data.search.results.results[0].symbols.kind}.
+        //         The name of the symbol is a ${test.data.search.results.results[0].symbols.name}.
+        //         It is located in ${test.data.search.results.results[0].symbols.url}
+        //         This is the content of the file ${test.data.search.results.results[0].file.content}.
+        //     `,
+        // })
+        // contextMessages.push({
+        //     speaker: 'assistant',
+        //     text: 'okay',
+        // })
     }
 }
 
