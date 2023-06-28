@@ -36,7 +36,7 @@ func (l *latestVersion) Handler() http.HandlerFunc {
 		query := r.URL.Query()
 		target := query.Get("target")
 		arch := query.Get("arch")
-		platform := PlatformString(arch, target) // x86_64-darwin
+		platform := platformString(arch, target) // x86_64-darwin
 
 		releaseURL, err := url.Parse(gitHubReleaseBaseURL)
 		if err != nil {

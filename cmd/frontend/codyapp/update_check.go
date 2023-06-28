@@ -96,7 +96,7 @@ func (v *AppVersion) Platform() string {
 	// x86_64-darwin
 	// x86_64-linux
 	// aarch64-darwin
-	return PlatformString(v.Arch, v.Target)
+	return platformString(v.Arch, v.Target)
 }
 
 func NewGCSManifestResolver(ctx context.Context, bucket, manifestName string) (UpdateManifestResolver, error) {
@@ -301,7 +301,7 @@ func mustConstraint(c string) *semver.Constraints {
 	return constraint
 }
 
-func PlatformString(arch, target string) string {
+func platformString(arch, target string) string {
 	if arch == "" || target == "" {
 		return ""
 	}
