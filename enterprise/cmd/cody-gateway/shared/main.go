@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -105,7 +106,13 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		obctx.Logger,
 		redispool.Cache,
 		dotcomURL.String(),
-		config.ActorRateLimitNotify.Thresholds,
+		notify.Thresholds{
+			// Detailed notifications for product subscriptions.
+			codygateway.ActorSourceProductSubscription: []int{90, 95, 100},
+			// No notifications for individual dotcom users - this can get quite
+			// spammy./
+			codygateway.ActorSourceDotcomUser: []int{},
+		},
 		config.ActorRateLimitNotify.SlackWebhookURL,
 		func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
 			return slack.PostWebhookCustomHTTPContext(ctx, url, otelhttp.DefaultClient, msg)
