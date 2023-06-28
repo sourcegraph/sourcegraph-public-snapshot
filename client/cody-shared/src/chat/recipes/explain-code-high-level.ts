@@ -20,7 +20,7 @@ export class ExplainCodeHighLevel implements Recipe {
         const truncatedFollowingText = truncateText(selection.followingText, MAX_RECIPE_SURROUNDING_TOKENS)
 
         const languageName = getNormalizedLanguageName(selection.fileName)
-        const promptMessage = `Explain the following ${languageName} code at a high level. Only include details that are essential to an overal understanding of what's happening in the code.\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
+        const promptMessage = `Explain the following ${languageName} code at a high level. Only include details that are essential to an overall understanding of what's happening in the code.\n\`\`\`\n${truncatedSelectedText}\n\`\`\`\n${MARKDOWN_FORMAT_PROMPT}`
         const displayText = `Explain the following code at a high level:\n\`\`\`\n${selection.selectedText}\n\`\`\``
 
         return new Interaction(
