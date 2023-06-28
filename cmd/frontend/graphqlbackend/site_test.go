@@ -73,6 +73,90 @@ func TestSiteConfiguration(t *testing.T) {
 			}
 		})
 	})
+
+	t.Run("authenticated as admin", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
+			ID:        1,
+			SiteAdmin: true,
+		}, nil)
+
+		siteConfig := &database.SiteConfig{
+			ID:               1,
+			AuthorUserID:     1,
+			Contents:         `{"batchChanges.rolloutWindows": [{"rate":"unlimited"}]}`,
+			RedactedContents: `{"batchChanges.rolloutWindows": [{"rate":"unlimited"}]}`,
+		}
+		conf := database.NewMockConfStore()
+		conf.SiteGetLatestFunc.SetDefaultReturn(siteConfig, nil)
+
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.ConfFunc.SetDefaultReturn(conf)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+
+		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
+			r, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+				ReturnSafeConfigsOnly: pointers.Ptr(false),
+			})
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+
+			sID, err := r.ID(ctx)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+			if sID != int32(siteConfig.ID) {
+				t.Fatalf("expected config ID to be %d, got %d", sID, int32(siteConfig.ID))
+			}
+
+			_, err = r.History(ctx, nil)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+
+			_, err = r.ValidationMessages(ctx)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+
+			_, err = r.EffectiveContents(ctx)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+		})
+
+		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
+			r, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+				ReturnSafeConfigsOnly: pointers.Ptr(true),
+			})
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+
+			_, err = r.ID(ctx)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+
+			_, err = r.History(ctx, nil)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+
+			_, err = r.ValidationMessages(ctx)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+
+			_, err = r.EffectiveContents(ctx)
+			if err != nil {
+				t.Fatalf("err: want nil but got %v", err)
+			}
+		})
+	})
 }
 
 func TestSiteConfigurationHistory(t *testing.T) {
