@@ -71,24 +71,30 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
-	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
-
 	// Supported actor/auth sources
-	sources := actor.NewSources(
-		anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit),
-		productsubscription.NewSource(
-			obctx.Logger,
-			rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
-			dotcomClient,
-			config.Dotcom.InternalMode,
-			config.ActorConcurrencyLimit,
-		),
-		dotcomuser.NewSource(obctx.Logger,
-			rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
-			dotcomClient,
-			config.ActorConcurrencyLimit,
-		),
-	)
+	sources := actor.NewSources(anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
+	if config.Dotcom.AccessToken != "" {
+		// dotcom-based actor sources only if an access token is provided for
+		// us to talk with the client
+		obctx.Logger.Info("dotcom-based actor sources are enabled")
+		dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+		sources.Add(
+			productsubscription.NewSource(
+				obctx.Logger,
+				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
+				dotcomClient,
+				config.Dotcom.InternalMode,
+				config.ActorConcurrencyLimit,
+			),
+			dotcomuser.NewSource(obctx.Logger,
+				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
+				dotcomClient,
+				config.ActorConcurrencyLimit,
+			),
+		)
+	} else {
+		obctx.Logger.Warn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-based actor sources are disabled")
+	}
 
 	authr := &auth.Authenticator{
 		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),

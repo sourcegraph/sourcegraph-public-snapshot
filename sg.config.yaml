@@ -300,11 +300,12 @@ commands:
     checkBinary: .bin/cody-gateway
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
-      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: foobar
+      # Set in override if you want to test local Cody Gateway: https://docs.sourcegraph.com/dev/how-to/cody_gateway
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ""
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
-      SRC_LOG_LEVEL: dbug
+      SRC_LOG_LEVEL: info
     watch:
       - lib
       - internal
