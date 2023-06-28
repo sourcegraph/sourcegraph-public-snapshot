@@ -56,7 +56,7 @@ func LangToFileRegexp(lang string) string {
 		patterns[i] = regexp.QuoteMeta(e) + "$"
 	}
 	for _, filename := range filenamesFromLanguage[lang] {
-		patterns = append(patterns, "^"+regexp.QuoteMeta(filename)+"$")
+		patterns = append(patterns, "(^|/)"+regexp.QuoteMeta(filename)+"$")
 	}
 	return UnionRegExps(patterns)
 }
