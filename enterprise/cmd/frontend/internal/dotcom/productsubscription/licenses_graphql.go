@@ -153,7 +153,7 @@ func (r ProductSubscriptionLicensingResolver) GenerateProductLicenseForSubscript
 
 func (r ProductSubscriptionLicensingResolver) ProductLicenses(ctx context.Context, args *graphqlbackend.ProductLicensesArgs) (graphqlbackend.ProductLicenseConnection, error) {
 	// 🚨 SECURITY: Only site admins may list product licenses.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if err := serviceAccountOrSiteAdmin(ctx, r.DB, true); err != nil {
 		return nil, err
 	}
 
