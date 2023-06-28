@@ -46,56 +46,56 @@ const codyPlatformCardItems = (
     icon: string | JSX.Element
     illustration: { dark: string; light: string }
 }[] => [
-    {
-        title: 'Knows your code',
-        description:
-            'Cody knows about your codebase and can use that knowledge to explain, generate, and improve your code.',
-        icon: mdiCodeBracesBox,
-        illustration: {
-            dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-knows-your-code-illustration-dark.png',
-            light: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-knows-your-code-illustration-light.png',
+        {
+            title: 'Knows your code',
+            description:
+                'Cody knows about your codebase and can use that knowledge to explain, generate, and improve your code.',
+            icon: mdiCodeBracesBox,
+            illustration: {
+                dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-knows-your-code-illustration-dark.png',
+                light: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-knows-your-code-illustration-light.png',
+            },
         },
-    },
-    {
-        title: 'More powerful in your IDE',
-        description: (
-            <>
-                The extensions combine an LLM with the context of your code to help you generate and fix code more
-                accurately. <Link to="/help/cody#get-cody">View supported IDEs</Link>.
-            </>
-        ),
-        icon: <IDEIcon />,
-        illustration: {
-            dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-vs-code-illustration-dark.png',
-            light: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-vs-code-illustration-light.png',
+        {
+            title: 'More powerful in your IDE',
+            description: (
+                <>
+                    The extensions combine an LLM with the context of your code to help you generate and fix code more
+                    accurately. <Link to="/help/cody#get-cody">View supported IDEs</Link>.
+                </>
+            ),
+            icon: <IDEIcon />,
+            illustration: {
+                dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-vs-code-illustration-dark.png',
+                light: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-vs-code-illustration-light.png',
+            },
         },
-    },
-    ...(isSourcegraphDotCom
-        ? [
-              {
-                  title: 'Try it on sourcegraph.com',
-                  description:
-                      'Cody explains, generates, convert code, and more within the context of public repositories.',
-                  icon: mdiGit,
-                  illustration: {
-                      dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-dark.png',
-                      light: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-light.png',
-                  },
-              },
-          ]
-        : [
-              {
-                  title: 'Recipes accelerate your flow',
-                  description:
-                      'Cody explains, generates, convert code, and more within the context of your repositories.',
-                  icon: mdiGit,
-                  illustration: {
-                      dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-dark.png',
-                      light: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-light.png',
-                  },
-              },
-          ]),
-]
+        ...(isSourcegraphDotCom
+            ? [
+                {
+                    title: 'Try it on sourcegraph.com',
+                    description:
+                        'Cody explains, generates, convert code, and more within the context of public repositories.',
+                    icon: mdiGit,
+                    illustration: {
+                        dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-dark.png',
+                        light: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-light.png',
+                    },
+                },
+            ]
+            : [
+                {
+                    title: 'Recipes accelerate your flow',
+                    description:
+                        'Cody explains, generates, convert code, and more within the context of your repositories.',
+                    icon: mdiGit,
+                    illustration: {
+                        dark: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-dark.png',
+                        light: 'https://storage.googleapis.com/sourcegraph-assets/app-images/cody-com-illustration-light.png',
+                    },
+                },
+            ]),
+    ]
 
 export interface CodyMarketingPageProps {
     isSourcegraphDotCom: boolean
@@ -164,6 +164,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                                 onClick={onClickCTAButton}
                                 ctaClassName={styles.authButton}
                                 iconClassName={styles.buttonIcon}
+                                redirect="/get-cody"
                             />
                         </div>
                         <Link to="https://sourcegraph.com/sign-up?showEmail=true">Or, continue with email</Link>

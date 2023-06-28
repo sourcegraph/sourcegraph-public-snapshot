@@ -17,6 +17,7 @@ interface ExternalsAuthProps {
     withCenteredText?: boolean
     ctaClassName?: string
     iconClassName?: string
+    redirect?: string
 }
 
 const GitlabColorIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({ className }) => (
@@ -58,6 +59,7 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
     withCenteredText,
     ctaClassName,
     iconClassName,
+    redirect,
 }) => {
     // Since this component is only intended for use on Sourcegraph.com, it's OK to hardcode
     // GitHub and GitLab auth providers here as they are the only ones used on Sourcegraph.com.
@@ -77,7 +79,7 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                 <Link
                     // Use absolute URL to force full-page reload (because the auth routes are
                     // handled by the backend router, not the frontend router).
-                    to={`${window.location.origin}${githubProvider.authenticationURL}`}
+                    to={`${window.location.origin}${githubProvider.authenticationURL}` + redirect ? `&redirect=${redirect}` : ''}
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
