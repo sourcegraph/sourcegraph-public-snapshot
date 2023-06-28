@@ -164,7 +164,6 @@ func getPreviouslyExecutedStep(path string, previousStep int) (execution.AfterSt
 
 func getAddSafe() (bool, error) {
 	addSafeString := os.Getenv("EXECUTOR_ADD_SAFE")
-	fmt.Println("EXECUTOR_ADD_SAFE:", addSafeString)
 	// Default to true for backwards compatibility.
 	if addSafeString == "" {
 		return true, nil

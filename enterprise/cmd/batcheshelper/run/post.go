@@ -34,7 +34,6 @@ func Post(
 	addSafe bool,
 ) error {
 	if addSafe {
-		fmt.Println("Adding safe files to git")
 		// Sometimes the files belong to different users. Mark the repository directory as safe.
 		if _, err := runner.Git(ctx, "", "config", "--global", "--add", "safe.directory", "/job/repository"); err != nil {
 			return errors.Wrap(err, "failed to mark repository directory as safe")
