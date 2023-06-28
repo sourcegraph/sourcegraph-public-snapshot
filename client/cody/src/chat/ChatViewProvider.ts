@@ -26,6 +26,7 @@ import { View } from '../../webviews/NavBar'
 import { getFullConfig } from '../configuration'
 import { VSCodeEditor } from '../editor/vscode-editor'
 import { logEvent } from '../event-logger'
+import { VSCodeGraphContextFetcher } from '../graph-context/graph-context-fetcher'
 import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
 import { debug } from '../log'
@@ -934,6 +935,7 @@ export async function getCodebaseContext(
         embeddingsSearch,
         new LocalKeywordContextFetcher(rgPath, editor, chatClient),
         new FilenameContextFetcher(rgPath, editor, chatClient),
+        new VSCodeGraphContextFetcher(client, editor),
         undefined,
         getRerankWithLog(chatClient)
     )
