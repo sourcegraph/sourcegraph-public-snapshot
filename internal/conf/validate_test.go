@@ -234,7 +234,6 @@ func TestRedactSecrets(t *testing.T) {
 				},
 			),
 		},
-		false,
 	)
 	require.NoError(t, err)
 
@@ -288,7 +287,7 @@ func TestRedactConfSecrets(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets, false)
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets)
 			require.NoError(t, err)
 
 			want := fmt.Sprintf(want, tc.redactedFmtStr)
@@ -297,44 +296,18 @@ func TestRedactConfSecrets(t *testing.T) {
 	}
 }
 
-func TestRedactConfSecretsWithWhitelistConfig(t *testing.T) {
+func TestReturnSafeConfig(t *testing.T) {
 	conf := `{
   "executors.frontendURL": "http://host.docker.internal:3082",
   "batchChanges.rolloutWindows": [{"rate": "unlimited"}]
 }`
 
-	testCases := []struct {
-		name                  string
-		returnOnlyWhitelisted bool
-		want                  string
-	}{
-		{
-			name:                  "returnOnlyWhitelisted true",
-			returnOnlyWhitelisted: true,
-			want:                  `{"batchChanges.rolloutWindows":[{"rate":"unlimited"}]}`,
-		},
-		{
-			name:                  "returnOnlyWhitelisted false",
-			returnOnlyWhitelisted: false,
-			want: `{
-  "executors.frontendURL": "http://host.docker.internal:3082",
-  "batchChanges.rolloutWindows": [
-    {
-      "rate": "unlimited"
-    }
-  ]
-}`,
-		},
-	}
+	want := `{"batchChanges.rolloutWindows":[{"rate":"unlimited"}]}`
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, false, tc.returnOnlyWhitelisted)
-			require.NoError(t, err)
+	redacted, err := ReturnSafeConfigs(conftypes.RawUnified{Site: conf})
+	require.NoError(t, err)
 
-			assert.Equal(t, tc.want, redacted.Site)
-		})
-	}
+	assert.Equal(t, want, redacted.Site)
 }
 
 func TestRedactConfSecretsWithCommentedOutSecret(t *testing.T) {
@@ -364,7 +337,7 @@ func TestRedactConfSecretsWithCommentedOutSecret(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets, false)
+			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets)
 			require.NoError(t, err)
 
 			assert.Equal(t, want, redacted.Site)
@@ -380,7 +353,6 @@ func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
 		conftypes.RawUnified{
 			Site: fmt.Sprintf(cfgWithoutAuthProviders, executorsAccessToken),
 		},
-		false,
 	)
 	require.NoError(t, err)
 

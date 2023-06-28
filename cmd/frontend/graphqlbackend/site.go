@@ -248,13 +248,20 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 }
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
+	//  returnSafeConfigsOnly determines whether to return a redacted version of the
+	// site configuration that removes sensitive information. If true, uses
+	// conf.ReturnSafeConfigs to return a redacted configuration. If false, checks if the
+	// current user is a site admin and returns the full unredacted configuration.
+	if r.returnSafeConfigsOnly {
+		safeConfig, err := conf.ReturnSafeConfigs(conf.Raw())
+		return JSONCString(safeConfig.Site), err
+	}
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
-	// so only admins may view it. We optionally allow non-admins to view a set of whitelisted
-	// configuration information if `r.returnSafeConfigsOnly` is true
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil && !r.returnSafeConfigsOnly {
+	// so only admins may view it.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
-	siteConfig, err := conf.RedactSecrets(conf.Raw(), r.returnSafeConfigsOnly)
+	siteConfig, err := conf.RedactSecrets(conf.Raw())
 	return JSONCString(siteConfig.Site), err
 }
 
