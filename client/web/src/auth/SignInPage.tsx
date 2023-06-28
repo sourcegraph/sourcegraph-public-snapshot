@@ -46,8 +46,8 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const [searchParams, setSearchParams] = useSearchParams()
     const isRequestAccessAllowed = checkRequestAccessAllowed(props.context)
 
+    let returnTo = getReturnTo(location)
     if (authenticatedUser) {
-        let returnTo = getReturnTo(location)
         if (context.sourcegraphDotComMode && returnTo === '/search') {
             returnTo = '/get-cody'
         }
@@ -134,7 +134,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                     /* eslint-disable react/no-array-index-key */
                     <div className="mb-2" key={index}>
                         <Button
-                            to={provider.authenticationURL}
+                            to={
+                                provider.authenticationURL +
+                                (context.sourcegraphDotComMode && returnTo === '/search' ? '&redirect=/get-cody' : '')
+                            }
                             display="block"
                             variant={showMoreProviders ? 'secondary' : 'primary'}
                             as={AnchorLink}
