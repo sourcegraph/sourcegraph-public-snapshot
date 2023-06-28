@@ -1,0 +1,9 @@
+sh_binary(
+    name = "docsite",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@docsite_darwin_amd64//file:downloaded"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@docsite_darwin_arm64//file:downloaded"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@docsite_linux_amd64//file:downloaded"],
+    }),
+    visibility = ["//doc:__pkg__"],
+)

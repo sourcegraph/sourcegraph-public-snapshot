@@ -976,10 +976,15 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
+	type clientAndError struct {
+		client  proto.GitserverServiceClient
+		dialErr error // non-nil if there was an error dialing the client
+	}
+
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
 	// callback. This function is invoked multiple times (and concurrently) in the loops below
 	// this function definition.
-	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
+	performLogRequestToShard := func(ctx context.Context, addr string, grpcClient clientAndError, repoCommits []api.RepoCommit) (err error) {
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
@@ -998,9 +1003,6 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			})
 		}()
 
-		uri := "http://" + addr + "/batch-log"
-		repoName := api.RepoName(strings.Join(repoNames, ",")) // only used to label spans
-
 		request := protocol.BatchLogRequest{
 			RepoCommits: repoCommits,
 			Format:      opts.Format,
@@ -1009,7 +1011,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var response protocol.BatchLogResponse
 
 		if internalgrpc.IsGRPCEnabled(ctx) {
-			client, err := c.ClientForRepo(repoName)
+			client, err := grpcClient.client, grpcClient.dialErr
 			if err != nil {
 				return err
 			}
@@ -1021,15 +1023,14 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 			response.FromProto(resp)
 			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
-
 		} else {
-
 			var buf bytes.Buffer
 			if err := json.NewEncoder(&buf).Encode(request); err != nil {
 				return err
 			}
 
-			resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+			uri := "http://" + addr + "/batch-log"
+			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), "POST", uri, buf.Bytes())
 			if err != nil {
 				return err
 			}
@@ -1111,10 +1112,17 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			return err
 		}
 
+		client, err := c.ClientForRepo(repoCommits[0].Repo)
+		if err != nil {
+			err = errors.Wrapf(err, "getting gRPC client for repository %q", repoCommits[0].Repo)
+		}
+
+		ce := clientAndError{client: client, dialErr: err}
+
 		g.Go(func() (err error) {
 			defer sem.Release(1)
 
-			return performLogRequestToShard(ctx, addr, repoCommits)
+			return performLogRequestToShard(ctx, addr, ce, repoCommits)
 		})
 	}
 
@@ -1558,16 +1566,16 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 // do performs a request to a gitserver instance based on the address in the uri
 // argument.
 //
-// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// repoForTracing parameter is optional. If it is provided, then "repo" attribute is added
 // to trace span.
-func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
+func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
 	}
 
 	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		attribute.String("repo", string(repoForTracing)),
 		attribute.String("method", method),
 		attribute.String("path", parsedURL.Path),
 	}})
@@ -1759,4 +1767,9 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
+}
+
+type clientAndError struct {
+	client proto.GitserverServiceClient
+	err    error
 }

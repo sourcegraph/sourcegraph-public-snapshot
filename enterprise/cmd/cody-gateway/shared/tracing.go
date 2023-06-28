@@ -30,7 +30,7 @@ func maybeEnableTracing(ctx context.Context, logger log.Logger, config TraceConf
 	policy.SetTracePolicy(config.Policy)
 	otel.SetTextMapPropagator(oteldefaults.Propagator())
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		logger.Warn("OpenTelemetry error", log.Error(err))
+		logger.Debug("OpenTelemetry error", log.Error(err))
 	}))
 
 	// Initialize exporter

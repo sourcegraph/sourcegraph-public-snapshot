@@ -311,7 +311,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                         </Text>
                         <div className={styles.ctaButtonWrapper}>
                             <Link
-                                to="https://about.sourcegraph.com/demo"
+                                to="https://about.sourcegraph.com/cody/pricing"
                                 className={classNames('text-decoration-none', styles.getCodyEnterpriseButton)}
                             >
                                 Get Cody for Enterprise
