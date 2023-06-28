@@ -5,10 +5,10 @@ import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public interface SourcegraphService {
+public interface CodyService {
   @NotNull
-  static SourcegraphProjectService getInstance(@NotNull Project project) {
-    return project.getService(SourcegraphProjectService.class);
+  static CodyProjectService getInstance(@NotNull Project project) {
+    return project.getService(CodyProjectService.class);
   }
 
   @Nullable

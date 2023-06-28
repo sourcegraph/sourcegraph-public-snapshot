@@ -13,8 +13,8 @@ import org.jetbrains.annotations.Nullable;
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
-public class SourcegraphApplicationService
-    implements PersistentStateComponent<SourcegraphApplicationService>, SourcegraphService {
+public class CodyApplicationService
+    implements PersistentStateComponent<CodyApplicationService>, CodyService {
   @Nullable public String instanceType;
   @Nullable public String url;
 
@@ -41,8 +41,8 @@ public class SourcegraphApplicationService
   // about an update
 
   @NotNull
-  public static SourcegraphApplicationService getInstance() {
-    return ApplicationManager.getApplication().getService(SourcegraphApplicationService.class);
+  public static CodyApplicationService getInstance() {
+    return ApplicationManager.getApplication().getService(CodyApplicationService.class);
   }
 
   @Nullable
@@ -139,12 +139,12 @@ public class SourcegraphApplicationService
   }
 
   @Nullable
-  public SourcegraphApplicationService getState() {
+  public CodyApplicationService getState() {
     return this;
   }
 
   @Override
-  public void loadState(@NotNull SourcegraphApplicationService settings) {
+  public void loadState(@NotNull CodyApplicationService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
     this.accessToken = settings.accessToken;

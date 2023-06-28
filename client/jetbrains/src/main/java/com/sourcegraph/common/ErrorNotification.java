@@ -14,7 +14,10 @@ public class ErrorNotification {
   public static void show(Project project, String errorMessage) {
     Notification notification =
         new Notification(
-            "Sourcegraph errors", "Sourcegraph", errorMessage, NotificationType.WARNING);
+            "Cody AI by Sourcegraph errors",
+            "Cody AI by Sourcegraph",
+            errorMessage,
+            NotificationType.WARNING);
     AnAction dismissAction =
         new DumbAwareAction("Dismiss") {
           @Override
@@ -22,7 +25,7 @@ public class ErrorNotification {
             notification.expire();
           }
         };
-    notification.setIcon(Icons.SourcegraphLogo);
+    notification.setIcon(Icons.CodyLogo);
     notification.addAction(dismissAction);
     Notifications.Bus.notify(notification);
     notification.notify(project);

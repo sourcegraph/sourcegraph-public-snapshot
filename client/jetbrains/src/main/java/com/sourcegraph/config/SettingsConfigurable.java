@@ -19,7 +19,7 @@ public class SettingsConfigurable implements Configurable {
   @Nls(capitalization = Nls.Capitalization.Title)
   @Override
   public String getDisplayName() {
-    return "Sourcegraph";
+    return "Cody AI by Sourcegraph";
   }
 
   @Override
@@ -69,8 +69,8 @@ public class SettingsConfigurable implements Configurable {
     PluginSettingChangeActionNotifier publisher =
         bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
 
-    SourcegraphApplicationService aSettings = SourcegraphApplicationService.getInstance();
-    SourcegraphProjectService pSettings = SourcegraphService.getInstance(project);
+    CodyApplicationService aSettings = CodyApplicationService.getInstance();
+    CodyProjectService pSettings = CodyService.getInstance(project);
 
     boolean oldCodyCompletionsEnabled = ConfigUtil.areCodyCompletionsEnabled();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
