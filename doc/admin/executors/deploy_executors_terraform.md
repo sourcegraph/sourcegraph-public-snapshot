@@ -26,10 +26,10 @@ module "executors" {
   executor_sourcegraph_external_url            = "<external url>"
   executor_sourcegraph_executor_proxy_password = "<shared secret>"
               
-{{/*  # Either:*/}}
+  # Either:
   executor_queue_name                          = "<codeintel | batches>"
-{{/*  # Or:*/}}
-{{/*  executor_queue_names                         = "codeintel,batches"*/}}
+  # Or:
+  executor_queue_names                         = "codeintel,batches"
                 
   executor_instance_tag                        = "<tag to filter in stackdriver monitoring>"
   executor_metrics_environment_label           = "<label to filter custom metrics>"
@@ -44,7 +44,7 @@ module "executors" {
 | `executor_sourcegraph_external_url`             | The public URL of your Sourcegraph instance. This corresponds to the `externalURL` value in your Sourcegraph instance’s site configuration and must be resolvable from the provisioned executor compute resources.                                                    |
 | `executor_sourcegraph_executor_proxy_password`  | The access token corresponding to the `executors.accessToken` in your Sourcegraph instance's site configuration.                                                                                                                                                      |
 | `executor_queue_name`                           | The single queue from which the executor should pull jobs - [`codeintel`](../../code_navigation/explanations/auto_indexing.md) or [`batches`](../../batch_changes/explanations/server_side.md). Either this or `executor_queue_names` must be set.                    |
-{{/*| `executor_queue_names`                          | The multiple queues from which the executor should pull jobs - one or more of [`codeintel`](../../code_navigation/explanations/auto_indexing.md) and [`batches`](../../batch_changes/explanations/server_side.md). Either this or `executor_queue_name` must be set. |*/}}
+| `executor_queue_names`                          | The multiple queues from which the executor should pull jobs - one or more of [`codeintel`](../../code_navigation/explanations/auto_indexing.md) and [`batches`](../../batch_changes/explanations/server_side.md). Either this or `executor_queue_name` must be set.  |
 | `executor_instance_tag`                         | A label tag to add to all the executors; can be used for filtering out the right instances in stackdriver monitoring                                                                                                                                                  |
 | `executor_metrics_environment_label`            | The value for environment by which to filter the custom metrics.                                                                                                                                                                                                      |
 
