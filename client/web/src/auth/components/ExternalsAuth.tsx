@@ -80,9 +80,8 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                     // Use absolute URL to force full-page reload (because the auth routes are
                     // handled by the backend router, not the frontend router).
                     to={
-                        `${window.location.origin}${githubProvider.authenticationURL}` + redirect
-                            ? `&redirect=${redirect}`
-                            : ''
+                        `${window.location.origin}${githubProvider.authenticationURL}` +
+                        (redirect ? `&redirect=${redirect}` : '')
                     }
                     className={classNames(
                         'text-decoration-none',
@@ -107,7 +106,10 @@ export const ExternalsAuth: React.FunctionComponent<React.PropsWithChildren<Exte
                 <Link
                     // Use absolute URL to force full-page reload (because the auth routes are
                     // handled by the backend router, not the frontend router).
-                    to={`${window.location.origin}${gitlabProvider.authenticationURL}`}
+                    to={
+                        `${window.location.origin}${gitlabProvider.authenticationURL}` +
+                        (redirect ? `&redirect=${redirect}` : '')
+                    }
                     className={classNames(
                         'text-decoration-none',
                         withCenteredText && 'd-flex justify-content-center',
