@@ -161,7 +161,7 @@ func NewHandler(
 	m.Get(apirouter.CodeInsightsDataExport).Handler(trace.Route(handlers.CodeInsightsDataExportHandler))
 
 	if envvar.SourcegraphDotComMode() {
-		m.Path("/app/check/update").Name(codyapp.RouteAppUpdateCheck).Handler(trace.Route(updatecheck.AppUpdateHandler(logger)))
+		m.Path("/app/check/update").Name(codyapp.RouteAppUpdateCheck).Handler(trace.Route(codyapp.AppUpdateHandler(logger)))
 		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
 		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))

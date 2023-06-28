@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -28,13 +26,6 @@ type AppLocation struct {
 	Signature string `json:"signature"`
 	URL       string `json:"url"`
 }
-
-type AppUpdateChecker struct {
-	logger           log.Logger
-	manifestResolver UpdateManifestResolver
-}
-
-type AppNoopUpdateChecker struct{}
 
 func (m *AppUpdateManifest) GitHubReleaseTag() string {
 	return fmt.Sprintf("app-v%s", m.Version)

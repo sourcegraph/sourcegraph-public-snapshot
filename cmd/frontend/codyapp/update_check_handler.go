@@ -41,6 +41,13 @@ type AppUpdateResponse struct {
 	URL       string    `json:"url"`
 }
 
+type AppUpdateChecker struct {
+	logger           log.Logger
+	manifestResolver UpdateManifestResolver
+}
+
+type AppNoopUpdateChecker struct{}
+
 func NewAppUpdateChecker(logger log.Logger, resolver UpdateManifestResolver) *AppUpdateChecker {
 	return &AppUpdateChecker{
 		logger:           logger.Scoped("app.update.checker", "Handler that handles sourcegraph app requests that check for updates"),
