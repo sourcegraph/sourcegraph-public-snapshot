@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
+
 ### Security
 
 ## [3.0.1]
