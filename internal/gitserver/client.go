@@ -976,10 +976,15 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	ctx, _, endObservation := c.operations.batchLog.With(ctx, &err, observation.Args{Attrs: opts.Attrs()})
 	defer endObservation(1, observation.Args{})
 
+	type clientAndError struct {
+		client  proto.GitserverServiceClient
+		dialErr error // non-nil if there was an error dialing the client
+	}
+
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
 	// callback. This function is invoked multiple times (and concurrently) in the loops below
 	// this function definition.
-	performLogRequestToShard := func(ctx context.Context, addr string, client proto.GitserverServiceClient, repoCommits []api.RepoCommit) (err error) {
+	performLogRequestToShard := func(ctx context.Context, addr string, grpcClient clientAndError, repoCommits []api.RepoCommit) (err error) {
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
@@ -1006,6 +1011,11 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var response protocol.BatchLogResponse
 
 		if internalgrpc.IsGRPCEnabled(ctx) {
+			client, err := grpcClient.client, grpcClient.dialErr
+			if err != nil {
+				return err
+			}
+
 			resp, err := client.BatchLog(ctx, request.ToProto())
 			if err != nil {
 				return err
@@ -1104,13 +1114,15 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 		client, err := c.ClientForRepo(repoCommits[0].Repo)
 		if err != nil {
-			return errors.Wrapf(err, "getting gRPC client for repository %q", repoCommits[0].Repo)
+			err = errors.Wrapf(err, "getting gRPC client for repository %q", repoCommits[0].Repo)
 		}
+
+		ce := clientAndError{client: client, dialErr: err}
 
 		g.Go(func() (err error) {
 			defer sem.Release(1)
 
-			return performLogRequestToShard(ctx, addr, client, repoCommits)
+			return performLogRequestToShard(ctx, addr, ce, repoCommits)
 		})
 	}
 
@@ -1755,4 +1767,9 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
+}
+
+type clientAndError struct {
+	client proto.GitserverServiceClient
+	err    error
 }
