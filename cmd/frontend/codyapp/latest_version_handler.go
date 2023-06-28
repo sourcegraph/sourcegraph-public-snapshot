@@ -15,6 +15,7 @@ import (
 // RouteCodyAppLatestVersion is the name of the route that that returns a URL where to download the latest Cody App version
 const RouteCodyAppLatestVersion = "codyapp.latest.version"
 
+// gitHubReleaseBaseURL is the base url we will use when redirecting to the page that lists all the releases for a tag
 const gitHubReleaseBaseURL = "https://github.com/sourcegraph/sourcegraph/releases/tag/"
 
 type latestVersion struct {
@@ -22,6 +23,14 @@ type latestVersion struct {
 	manifestResolver UpdateManifestResolver
 }
 
+// Handler handles requests that want to get the latest version of the app. The handler determines the latest version
+// by retrieving the Update manifest.
+//
+// If the requests has no query params, the client will be redirected to the GitHub releases page that lists all the releases.
+// If the request contains the query params arch (for architecture) and target(the client os) then the handler will inspect
+// the manifest platforms attribute and get the appropriate URL for the release that is suited for that architecture and os.
+//
+// Note: When the query param for target is "darwin", we alter the release url to be for the .dmg release.
 func (l *latestVersion) Handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

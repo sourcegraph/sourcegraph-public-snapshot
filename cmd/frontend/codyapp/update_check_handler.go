@@ -1,23 +1,18 @@
-// TODO(burmudar): move this app update endpoint code to codyapp package
 package codyapp
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
-	"cloud.google.com/go/storage"
 	"github.com/Masterminds/semver"
 	"github.com/sourcegraph/log"
-	"google.golang.org/api/option"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // RouteAppUpdateCheck is the name of the route that the Sourcegraph App will use to check if there are updates
@@ -38,12 +33,6 @@ const ManifestName = "app.update.prod.manifest.json"
 // part of the Tauri updater.
 var noUpdateConstraint = mustConstraint("<= 2023.6.13")
 
-type AppVersion struct {
-	Target  string
-	Version string
-	Arch    string
-}
-
 type AppUpdateResponse struct {
 	Version   string    `json:"version"`
 	Notes     string    `json:"notes,omitempty"`
@@ -52,105 +41,11 @@ type AppUpdateResponse struct {
 	URL       string    `json:"url"`
 }
 
-type AppUpdateManifest struct {
-	Version   string      `json:"version"`
-	Notes     string      `json:"notes"`
-	PubDate   time.Time   `json:"pub_date"`
-	Platforms AppPlatform `json:"platforms"`
-}
-
-type AppPlatform map[string]AppLocation
-
-type AppLocation struct {
-	Signature string `json:"signature"`
-	URL       string `json:"url"`
-}
-
-type AppUpdateChecker struct {
-	logger           log.Logger
-	manifestResolver UpdateManifestResolver
-}
-
-type AppNoopUpdateChecker struct{}
-
-type UpdateManifestResolver interface {
-	Resolve(ctx context.Context) (*AppUpdateManifest, error)
-}
-
-type GCSManifestResolver struct {
-	client       *storage.Client
-	bucket       string
-	manifestName string
-}
-
-type StaticManifestResolver struct {
-	Manifest AppUpdateManifest
-}
-
-func (m *AppUpdateManifest) GitHubReleaseTag() string {
-	return fmt.Sprintf("app-v%s", m.Version)
-}
-
-func (v *AppVersion) Platform() string {
-	// creates a platform with string with the following format
-	// x86_64-darwin
-	// x86_64-linux
-	// aarch64-darwin
-	return platformString(v.Arch, v.Target)
-}
-
-func NewGCSManifestResolver(ctx context.Context, bucket, manifestName string) (UpdateManifestResolver, error) {
-	client, err := storage.NewClient(ctx, option.WithScopes(storage.ScopeReadOnly))
-	if err != nil {
-		return nil, err
-	}
-
-	return &GCSManifestResolver{
-		client:       client,
-		bucket:       bucket,
-		manifestName: manifestName,
-	}, nil
-}
-
-func (r *GCSManifestResolver) Resolve(ctx context.Context) (*AppUpdateManifest, error) {
-	obj := r.client.Bucket(r.bucket).Object(r.manifestName)
-	reader, err := obj.NewReader(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	data, err := io.ReadAll(reader)
-	if err != nil {
-		return nil, err
-	}
-
-	manifest := AppUpdateManifest{}
-	err = json.Unmarshal(data, &manifest)
-	return &manifest, err
-}
-
-func (r *StaticManifestResolver) Resolve(_ context.Context) (*AppUpdateManifest, error) {
-	return &r.Manifest, nil
-}
-
 func NewAppUpdateChecker(logger log.Logger, resolver UpdateManifestResolver) *AppUpdateChecker {
 	return &AppUpdateChecker{
 		logger:           logger.Scoped("app.update.checker", "Handler that handles sourcegraph app requests that check for updates"),
 		manifestResolver: resolver,
 	}
-}
-
-func (a *AppVersion) validate() error {
-	if a.Target == "" {
-		return errors.New("target is empty")
-	}
-	if a.Version == "" {
-		return errors.New("version is empty")
-	}
-	if a.Arch == "" {
-		return errors.New("arch is empty")
-	}
-	return nil
 }
 
 func (checker *AppUpdateChecker) Handler() http.HandlerFunc {
@@ -299,11 +194,4 @@ func mustConstraint(c string) *semver.Constraints {
 	}
 
 	return constraint
-}
-
-func platformString(arch, target string) string {
-	if arch == "" || target == "" {
-		return ""
-	}
-	return fmt.Sprintf("%s-%s", arch, target)
 }
