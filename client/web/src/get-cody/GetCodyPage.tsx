@@ -80,7 +80,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
 
                 <div className={styles.cardWrapper}>
                     {/* connect to cody section */}
-                    {authenticatedUser && (
+                    {!authenticatedUser && (
                         <div className={classNames(styles.card, 'get-cody-step', styles.focusBackground)}>
                             <H2 className={classNames(styles.cardTitle, 'mb-4')}>
                                 You’ll need a Sourcegraph account to connect to Cody
