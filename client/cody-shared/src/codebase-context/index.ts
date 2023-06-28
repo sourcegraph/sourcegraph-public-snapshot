@@ -211,7 +211,7 @@ export class CodebaseContext {
             contextMessages.push({
                 speaker: 'human',
                 file: {
-                    fileName: '',
+                    fileName: context.filepath,
                     repoName: context.repository,
                 },
                 text: `Here is the code snippet: ${context.text}`,
