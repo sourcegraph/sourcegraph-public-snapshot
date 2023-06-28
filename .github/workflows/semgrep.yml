@@ -39,7 +39,7 @@ jobs:
       # Run the "semgrep ci" command on the command line of the docker image.
       - run: semgrep ci --sarif --output=semgrep.sarif
         env:
-           SEMGREP_RULES: p/golang,p/typescript,p/javascript,p/react,p/dockerfile,p/docker-compose,
+           SEMGREP_RULES: "p/golang p/typescript p/javascript p/react p/dockerfile p/docker-compose"
 
       # Upload SARIF file generated in previous step
       - name: Upload SARIF file
