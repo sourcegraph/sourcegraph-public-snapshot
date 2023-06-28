@@ -58,7 +58,7 @@ var Targets = []Target{
 		Name:        "docs",
 		Description: "Documentation checks",
 		Checks: []*linter{
-			runScript("Docsite lint", "dev/docsite.sh check"),
+			onlyLocal(bazelTest("Docsite lint (bazel)", "//doc:test")),
 		},
 	},
 	{
