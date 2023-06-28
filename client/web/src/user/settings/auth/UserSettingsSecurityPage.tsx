@@ -93,7 +93,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
 
     // auth providers by service ID
     const accountsByServiceID = accounts.fetched?.reduce((accumulator: AccountsByServiceID, account) => {
-        let accountArray = accumulator[account.serviceID] ?? []
+        const accountArray = accumulator[account.serviceID] ?? []
         accountArray.push(account)
         accumulator[account.serviceID] = accountArray
 
