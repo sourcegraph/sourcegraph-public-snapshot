@@ -1445,7 +1445,6 @@ ts_project(
         "src/setup-wizard/components/ProgressBar.tsx",
         "src/setup-wizard/components/SyncRepositoriesStep.tsx",
         "src/setup-wizard/components/index.ts",
-        "src/setup-wizard/components/local-repositories-step/LocalRepositoriesStep.tsx",
         "src/setup-wizard/components/local-repositories-step/helpers.ts",
         "src/setup-wizard/components/local-repositories-step/hooks.ts",
         "src/setup-wizard/components/local-repositories-step/index.ts",
