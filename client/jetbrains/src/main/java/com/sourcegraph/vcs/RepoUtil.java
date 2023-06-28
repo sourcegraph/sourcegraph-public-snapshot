@@ -68,6 +68,16 @@ public class RepoUtil {
         relativePath);
   }
 
+  @Nullable
+  public static String getSimpleRepositoryName(
+      @NotNull Project project, @NotNull VirtualFile file) {
+    Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
+    if (repository == null) {
+      return null;
+    }
+    return repository.getRoot().getName();
+  }
+
   private static String doReplacements(@NotNull Project project, @NotNull String remoteUrl) {
     String remoteUrlWithReplacements = remoteUrl;
     String r = ConfigUtil.getRemoteUrlReplacements(project);
