@@ -36,7 +36,7 @@ When enabled, URLs for Perforce code hosts will use the Changelist (CL) ID inste
 
 #### Mechanism
 
-To support CLs natively in the URLs, Sourcegraph performs background computation post clone / fetch of a depot by parsing each commit to retrieve the CL ID and store it in the `repo_commits_changelists` table. This is currently performed on only one depot at a time and we are working to support this for multiple depots in parallel in an upcoming release.
+To support CLs natively in the URLs, Sourcegraph performs background computation after syncing the contents of a depot. That's done by parsing each generated commit to retrieve the corresponding CL ID and store it in the `repo_commits_changelists` table. This is currently performed on only one depot at a time and we are working to support this for multiple depots in parallel in an upcoming release.
 
 Additionally, while removing a depot from a code host config will mark it as "deleted", the mapped information will **not** be deleted to prevent forced re-computation after an accidental removal of depot from a code host config. Similarly recloning a depot will **not** trigger a computation of all the CLs from the beginning of the depot's source control history. If site admins are recloning or deleting and re-adding a depot to Sourcegraph as a result of history rewrite of a depot in Perforce, they should get in [touch with us](mailto:support@sourcegraph.com) for next steps.
 
