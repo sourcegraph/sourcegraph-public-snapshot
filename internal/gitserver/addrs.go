@@ -122,6 +122,15 @@ func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) 
 	return c.clientFunc(conn), nil
 }
 
+func (c *testGitserverConns) ClientForAddr(addr string) (proto.GitserverServiceClient, error) {
+	conn, err := c.conns.ConnForAddr(addr)
+	if err != nil {
+		return nil, err
+	}
+
+	return c.clientFunc(conn), nil
+}
+
 func (c *testGitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
 	return c.conns.ConnForRepo(userAgent, repo)
 }
@@ -185,7 +194,10 @@ type GitserverConns struct {
 }
 
 func (g *GitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	addr := g.AddrForRepo(userAgent, repo)
+	return g.ConnForAddr(g.AddrForRepo(userAgent, repo))
+}
+
+func (g *GitserverConns) ConnForAddr(addr string) (*grpc.ClientConn, error) {
 	ce, ok := g.grpcConns[addr]
 	if !ok {
 		return nil, errors.Newf("no gRPC connection found for address %q", addr)
@@ -224,6 +236,14 @@ func (a *atomicGitServerConns) AddrForRepo(userAgent string, repo api.RepoName) 
 
 func (a *atomicGitServerConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
 	conn, err := a.get().ConnForRepo(userAgent, repo)
+	if err != nil {
+		return nil, err
+	}
+	return proto.NewGitserverServiceClient(conn), nil
+}
+
+func (a *atomicGitServerConns) ClientForAddr(addr string) (proto.GitserverServiceClient, error) {
+	conn, err := a.get().ConnForAddr(addr)
 	if err != nil {
 		return nil, err
 	}

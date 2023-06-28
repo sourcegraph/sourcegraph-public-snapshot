@@ -77,6 +77,8 @@ type ClientSource interface {
 	ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(userAgent string, repo api.RepoName) string
+	// ClientForAddr returns a Client for the given address.
+	ClientForAddr(addr string) (proto.GitserverServiceClient, error)
 	// Address the current list of gitserver addresses.
 	Addresses() []AddressWithClient
 }
@@ -466,6 +468,10 @@ func (c *clientImplementor) AddrForRepo(repo api.RepoName) string {
 
 func (c *clientImplementor) ClientForRepo(repo api.RepoName) (proto.GitserverServiceClient, error) {
 	return c.clientSource.ClientForRepo(c.userAgent, repo)
+}
+
+func (c *clientImplementor) ClientForAddr(addr string) (proto.GitserverServiceClient, error) {
+	return c.clientSource.ClientForAddr(addr)
 }
 
 func (c *clientImplementor) ConnForRepo(repo api.RepoName) (*grpc.ClientConn, error) {
@@ -998,8 +1004,6 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			})
 		}()
 
-		uri := "http://" + addr + "/batch-log"
-
 		request := protocol.BatchLogRequest{
 			RepoCommits: repoCommits,
 			Format:      opts.Format,
@@ -1008,9 +1012,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var response protocol.BatchLogResponse
 
 		if internalgrpc.IsGRPCEnabled(ctx) {
-			// Each of the repo names belong to the same shard - look up the address
-			// of the target gitserver shard from any one of them.
-			client, err := c.ClientForRepo(api.RepoName(repoNames[0]))
+			client, err := c.ClientForAddr(addr)
 			if err != nil {
 				return err
 			}
@@ -1022,14 +1024,13 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 			response.FromProto(resp)
 			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
-
 		} else {
-
 			var buf bytes.Buffer
 			if err := json.NewEncoder(&buf).Encode(request); err != nil {
 				return err
 			}
 
+			uri := "http://" + addr + "/batch-log"
 			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), "POST", uri, buf.Bytes())
 			if err != nil {
 				return err
