@@ -1096,6 +1096,9 @@ ts_project(
         "src/fuzzyFinder/SearchValue.ts",
         "src/fuzzyFinder/SearchValueRankingCache.ts",
         "src/fuzzyFinder/WordSensitiveFuzzySearch.ts",
+        "src/get-cody/DownloadAppButton.tsx",
+        "src/get-cody/GetCodyPage.tsx",
+        "src/get-cody/GetCodyPageIcon.tsx",
         "src/global/GlobalAlert.tsx",
         "src/global/GlobalAlerts.tsx",
         "src/global/Notices.tsx",
@@ -2064,6 +2067,7 @@ WEBPACK_CONFIG_DEPS = [
 BUNDLE_DATA_DEPS = [
     ":module_styles",
     ":package_styles",
+    "src/get-cody/SourceSans3VF-Upright.ttf.woff2",
 ]
 
 ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [

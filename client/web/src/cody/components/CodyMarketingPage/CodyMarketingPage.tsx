@@ -164,6 +164,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                                 onClick={onClickCTAButton}
                                 ctaClassName={styles.authButton}
                                 iconClassName={styles.buttonIcon}
+                                redirect="/get-cody"
                             />
                         </div>
                         <Link to="https://sourcegraph.com/sign-up?showEmail=true">Or, continue with email</Link>
