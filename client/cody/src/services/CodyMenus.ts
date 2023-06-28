@@ -102,6 +102,11 @@ export const LoginMenuOptionItems = [
         label: 'Sign in to Sourcegraph.com',
         totalSteps: 0,
     },
+    {
+        id: 'token',
+        label: 'Sign in with URL and Access Token',
+        totalSteps: 2,
+    },
 ]
 
 const LoginStepOptions = [
