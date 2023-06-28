@@ -767,7 +767,7 @@ class CodyToolWindowContent implements UpdatableChat {
     try {
       return RepoUtil.getRemoteRepoUrlWithoutScheme(project, currentFile);
     } catch (Exception e) {
-      return null;
+      return RepoUtil.getSimpleRepositoryName(project, currentFile);
     }
   }
 
