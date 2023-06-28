@@ -215,7 +215,7 @@ export const CodySurveyToast: React.FC<
         return null
     }
 
-    if (!showVerifyEmail && authenticatedUser) {
+    if (showVerifyEmail && authenticatedUser) {
         return (
             <CodyVerifyEmailToast
                 onNext={dismissVerifyEmail}
