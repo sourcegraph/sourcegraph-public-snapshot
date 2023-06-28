@@ -174,7 +174,7 @@ public class ConfigUtil {
 
   public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
     // Project level
-    SourcegraphProjectService settings = getProjectLevelConfig(project);
+    CodyProjectService settings = getProjectLevelConfig(project);
     settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
     settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
     settings.lastSearchPatternType =
@@ -242,26 +242,26 @@ public class ConfigUtil {
   }
 
   public static void setAuthenticationFailedLastTime(boolean value) {
-    SourcegraphApplicationService.getInstance().authenticationFailedLastTime = value;
+    CodyApplicationService.getInstance().authenticationFailedLastTime = value;
   }
 
   public static String getLastUpdateNotificationPluginVersion() {
-    return SourcegraphApplicationService.getInstance().getLastUpdateNotificationPluginVersion();
+    return CodyApplicationService.getInstance().getLastUpdateNotificationPluginVersion();
   }
 
   public static void setLastUpdateNotificationPluginVersionToCurrent() {
-    SourcegraphApplicationService.getInstance().lastUpdateNotificationPluginVersion =
+    CodyApplicationService.getInstance().lastUpdateNotificationPluginVersion =
         getPluginVersion();
   }
 
   @NotNull
-  private static SourcegraphApplicationService getApplicationLevelConfig() {
-    return Objects.requireNonNull(SourcegraphApplicationService.getInstance());
+  private static CodyApplicationService getApplicationLevelConfig() {
+    return Objects.requireNonNull(CodyApplicationService.getInstance());
   }
 
   @NotNull
-  private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
-    return Objects.requireNonNull(SourcegraphService.getInstance(project));
+  private static CodyProjectService getProjectLevelConfig(@NotNull Project project) {
+    return Objects.requireNonNull(CodyService.getInstance(project));
   }
 
   @Nullable

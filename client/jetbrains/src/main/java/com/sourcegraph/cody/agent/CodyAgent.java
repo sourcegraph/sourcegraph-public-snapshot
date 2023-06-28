@@ -142,7 +142,6 @@ public class CodyAgent implements Disposable {
 
   private static String agentBinaryName() {
     String os = SystemInfoRt.isMac ? "macos" : SystemInfoRt.isWindows ? "windows" : "linux";
-    @SuppressWarnings("MissingRecentApi")
     String arch = CpuArch.isArm64() ? "arm64" : "x64";
     return "agent-" + os + "-" + arch + binarySuffix();
   }
@@ -164,7 +163,7 @@ public class CodyAgent implements Disposable {
   private static File agentBinary() throws CodyAgentException {
     Path pluginPath = agentDirectory();
     if (pluginPath == null) {
-      throw new CodyAgentException("Sourcegraph plugin path not found");
+      throw new CodyAgentException("Cody AI by Sourcegraph plugin path not found");
     }
     Path binarySource = pluginPath.resolve("agent").resolve(agentBinaryName());
     if (!Files.isRegularFile(binarySource)) {

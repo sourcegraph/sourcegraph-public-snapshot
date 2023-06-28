@@ -7,7 +7,7 @@ public interface PluginSettingChangeActionNotifier {
 
   Topic<PluginSettingChangeActionNotifier> TOPIC =
       Topic.create(
-          "Sourcegraph plugin settings have changed", PluginSettingChangeActionNotifier.class);
+          "Cody AI by Sourcegraph plugin settings have changed", PluginSettingChangeActionNotifier.class);
 
   void beforeAction(@NotNull PluginSettingChangeContext context);
 

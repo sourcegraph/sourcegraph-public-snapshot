@@ -11,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 @State(
     name = "Config",
     storages = {@Storage("sourcegraph.xml")})
-public class SourcegraphProjectService
-    implements PersistentStateComponent<SourcegraphProjectService>, SourcegraphService {
+public class CodyProjectService
+    implements PersistentStateComponent<CodyProjectService>, CodyService {
   @Nullable public String instanceType;
   @Nullable public String url;
 
@@ -82,12 +82,12 @@ public class SourcegraphProjectService
 
   @Nullable
   @Override
-  public SourcegraphProjectService getState() {
+  public CodyProjectService getState() {
     return this;
   }
 
   @Override
-  public void loadState(@NotNull SourcegraphProjectService settings) {
+  public void loadState(@NotNull CodyProjectService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
     this.accessToken = settings.accessToken;
