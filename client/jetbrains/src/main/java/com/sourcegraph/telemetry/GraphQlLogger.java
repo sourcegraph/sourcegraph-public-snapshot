@@ -19,7 +19,7 @@ public class GraphQlLogger {
     JsonObject eventParameters = getEventParameters(project);
     if (anonymousUserId != null) {
       Event event =
-          new Event("CodyInstalled", anonymousUserId, "", eventParameters, eventParameters);
+          new Event("CodyJetBrainsPlugin:CodyInstalled", anonymousUserId, "", eventParameters, eventParameters);
       logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
     }
   }
@@ -29,7 +29,7 @@ public class GraphQlLogger {
     JsonObject eventParameters = getEventParameters(project);
     if (anonymousUserId != null) {
       Event event =
-          new Event("CodyUninstalled", anonymousUserId, "", eventParameters, eventParameters);
+          new Event("CodyJetBrainsPlugin:CodyUninstalled", anonymousUserId, "", eventParameters, eventParameters);
       logEvent(project, event, null);
     }
   }
