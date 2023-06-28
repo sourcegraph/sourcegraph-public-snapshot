@@ -82,6 +82,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Own (beta)](own/index.md)
   - [The CODEOWNERS format](own/codeowners_format.md)
   - [CODEOWNERS ingestion](own/codeowners_ingestion.md)
+  - [Configuration reference](own/configuration_reference.md)
   - [Assigned ownership](own/assigned_ownership.md)
 - <br/>
 - [★ Search query syntax](code_search/reference/queries.md)
