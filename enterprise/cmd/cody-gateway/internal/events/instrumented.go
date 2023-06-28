@@ -18,7 +18,7 @@ type instrumentedLogger struct {
 	Logger
 }
 
-var _ Logger = &DelayedLogger{}
+var _ Logger = &instrumentedLogger{}
 
 func (i *instrumentedLogger) LogEvent(spanCtx context.Context, event Event) error {
 	_, span := tracer.Start(backgroundContextWithSpan(spanCtx), fmt.Sprintf("%s.LogEvent", i.Scope),

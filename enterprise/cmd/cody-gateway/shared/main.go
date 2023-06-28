@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -53,23 +52,11 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		if err != nil {
 			return errors.Wrap(err, "create BigQuery event logger")
 		}
-
-		// If a buffer is configured, wrap in events.BufferedLogger
-		if config.BigQuery.EventBufferSize > 0 {
-			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger, config.BigQuery.EventBufferSize)
-		}
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
-
-		// Useful for testing event logging in a way that has latency that is
-		// somewhat similar to BigQuery.
-		if os.Getenv("CODY_GATEWAY_BUFFERED_LAGGY_EVENT_LOGGING_FUN_TIMES_MODE") == "true" {
-			eventLogger = events.NewBufferedLogger(
-				obctx.Logger,
-				events.NewDelayedLogger(eventLogger),
-				config.BigQuery.EventBufferSize)
-		}
 	}
+	// Always submit events in the background
+	eventLogger = events.NewNonBlockingLogger(obctx.Logger, eventLogger)
 
 	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
 

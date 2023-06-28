@@ -1,11 +1,9 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "events",
     srcs = [
-        "buffered.go",
-        "delayed.go",
+        "background.go",
         "events.go",
         "instrumented.go",
     ],
@@ -13,7 +11,6 @@ go_library(
     visibility = ["//enterprise/cmd/cody-gateway:__subpackages__"],
     deps = [
         "//internal/codygateway",
-        "//internal/goroutine",
         "//internal/trace",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
@@ -22,20 +19,5 @@ go_library(
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel//codes",
         "@io_opentelemetry_go_otel_trace//:trace",
-    ],
-)
-
-go_test(
-    name = "events_test",
-    srcs = ["buffered_test.go"],
-    deps = [
-        ":events",
-        "//lib/errors",
-        "@com_github_hexops_autogold_v2//:autogold",
-        "@com_github_sourcegraph_conc//:conc",
-        "@com_github_sourcegraph_log//:log",
-        "@com_github_sourcegraph_log//logtest",
-        "@com_github_stretchr_testify//assert",
-        "@com_github_stretchr_testify//require",
     ],
 )
