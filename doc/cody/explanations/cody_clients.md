@@ -53,7 +53,7 @@ This represents the _current availability_. Notes on future availability and fea
 |Recipes                      | Predefined prompts |✅|✅|✅|✖️|
 |Multi-repo context          | Prompts can gather context from up to 10 repositories |✖️|✖️|✅|✅|
 |Context selection            | Specify repos you want the prompt to gather context from|✖️|✖️|✅|✅|
-|Connect to Cody app            | IDE uses Cody app as context|✅|✅|✖️|n/a|
+|Connect to Cody app            | IDE uses Cody app as context|✅|✅|✖️||
 
 ### Cody with Sourcegraph Enterprise
 
