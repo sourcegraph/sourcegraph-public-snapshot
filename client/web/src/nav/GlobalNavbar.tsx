@@ -148,7 +148,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphApp && !isSourcegraphDotCom
     const showSearchNotebook = notebooksEnabled && !isSourcegraphApp && !isSourcegraphDotCom
     const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
-    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom // Batch changes are enabled on sourcegraph.com so users can see the Getting Started page
+    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
