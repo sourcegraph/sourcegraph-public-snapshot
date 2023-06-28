@@ -6,6 +6,9 @@
 
 ### Changed
 
+- Sending message on Enter rather than Ctrl/Cmd+Enter [#54331](https://github.com/sourcegraph/sourcegraph/pull/54331)
+- Updated name to Cody AI app [#54360](https://github.com/sourcegraph/sourcegraph/pull/54360)
+
 ### Deprecated
 
 ### Removed
