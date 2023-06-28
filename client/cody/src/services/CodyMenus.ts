@@ -111,7 +111,7 @@ export const LoginMenuOptionItems = [
 
 const LoginStepOptions = [
     {
-        prompt: 'Enter the URL to your Sourcegraph instance',
+        prompt: 'Enter the URL of the Sourcegraph instance',
         placeholder: 'https://sourcegraph.mycompany.com/',
         password: false,
         ignoreFocusOut: true,
@@ -120,7 +120,7 @@ const LoginStepOptions = [
         step: 1,
     },
     {
-        prompt: 'Access Token',
+        prompt: 'Paste your access token. To create an access token, go to "Settings" and then "Access tokens" on the Sourcegraph instance.',
         placeholder: 'Access Token',
         password: true,
         ignoreFocusOut: true,
