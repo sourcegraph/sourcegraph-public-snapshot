@@ -186,14 +186,6 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         return <EmptyChangesetListElement />
     }, [changesetFilters, onlyArchived, batchChangeState, isExecutionEnabled])
 
-    console.log(connection?.nodes, '<====', selected)
-
-    // define export function
-    // const exportChangesets = useCallback(() => {
-    //     // do the export magic here
-    //     // connection?.nodes
-    // }, [connection?.nodes])
-
     return (
         <Container>
             {!hideFilters && !showSelectRow && (
