@@ -141,7 +141,7 @@
             <reference ref="cody.refreshCodyAppDetection"/>
         </group>
 
-        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Cody AI by Sourcegraph"
+        <group id="SourcegraphEditor" icon="/icons/codyLogo.svg" popup="true" text="Cody AI by Sourcegraph"
                searchable="false">
             <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>
