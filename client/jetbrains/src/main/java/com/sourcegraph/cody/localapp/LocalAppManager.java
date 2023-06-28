@@ -110,7 +110,6 @@ public class LocalAppManager {
   }
 
   public static void runLocalApp() {
-    System.out.println("Running local Cody app...");
     getLocalAppPaths()
         .filter(paths -> !isLocalAppRunning()) // only run the app if it's not already running
         .ifPresent(
