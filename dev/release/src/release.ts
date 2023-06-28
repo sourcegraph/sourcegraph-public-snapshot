@@ -828,9 +828,9 @@ cc @${release.captainGitHubUsername}
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version.version} $i/.; done`,
-                            `${sed} -i 's/appVersion:.*/appVersion: "${release.version.version}"/g' charts/*/Chart.yaml`,
-                            `${sed} -i 's/version:.*/version: "${release.version.version}"/g' charts/*/Chart.yaml`,
+                            `find charts -name values.yaml -exec bash -c 'for file in "$1"; do path=$(echo $file | sed "s|/[^/]*$||"); sg ops update-images -kind helm -pin-tag ${release.version.version} $path; done' none {} \\;`,
+                            `find charts -name Chart.yaml | xargs ${sed} -i 's/appVersion:.*/appVersion: "${release.version.version}"/g'`,
+                            `find charts -name Chart.yaml | xargs ${sed} -i 's/version:.*/version: "${release.version.version}"/g'`,
                             './scripts/helm-docs.sh',
                         ],
                         ...prBodyAndDraftState([]),
