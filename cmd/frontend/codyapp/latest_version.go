@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 )
 
@@ -20,7 +19,7 @@ const gitHubReleaseBaseURL = "https://github.com/sourcegraph/sourcegraph/release
 
 type latestVersion struct {
 	logger           log.Logger
-	manifestResolver updatecheck.UpdateManifestResolver
+	manifestResolver UpdateManifestResolver
 }
 
 func (l *latestVersion) Handler() http.HandlerFunc {
@@ -37,7 +36,7 @@ func (l *latestVersion) Handler() http.HandlerFunc {
 		query := r.URL.Query()
 		target := query.Get("target")
 		arch := query.Get("arch")
-		platform := updatecheck.PlatformString(arch, target) // x86_64-darwin
+		platform := PlatformString(arch, target) // x86_64-darwin
 
 		releaseURL, err := url.Parse(gitHubReleaseBaseURL)
 		if err != nil {
@@ -82,7 +81,7 @@ func patchReleaseURL(u string) string {
 	return u
 }
 
-func newLatestVersion(logger log.Logger, resolver updatecheck.UpdateManifestResolver) *latestVersion {
+func newLatestVersion(logger log.Logger, resolver UpdateManifestResolver) *latestVersion {
 	return &latestVersion{
 		logger:           logger,
 		manifestResolver: resolver,
@@ -90,17 +89,17 @@ func newLatestVersion(logger log.Logger, resolver updatecheck.UpdateManifestReso
 }
 
 func LatestVersionHandler(logger log.Logger) http.HandlerFunc {
-	var bucket = updatecheck.ManifestBucket
+	var bucket = ManifestBucket
 
 	if deploy.IsDev(deploy.Type()) {
-		bucket = updatecheck.ManifestBucketDev
+		bucket = ManifestBucketDev
 	}
 
-	resolver, err := updatecheck.NewGCSManifestResolver(context.Background(), bucket, updatecheck.ManifestName)
+	resolver, err := NewGCSManifestResolver(context.Background(), bucket, ManifestName)
 	if err != nil {
 		logger.Error("failed to initialize GCS Manifest resolver",
 			log.String("bucket", bucket),
-			log.String("manifestName", updatecheck.ManifestName),
+			log.String("manifestName", ManifestName),
 			log.Error(err),
 		)
 		return func(w http.ResponseWriter, _ *http.Request) {
