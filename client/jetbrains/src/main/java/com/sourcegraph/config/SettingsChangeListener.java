@@ -118,7 +118,9 @@ public class SettingsChangeListener implements Disposable {
             "Cody AI by Sourcegraph: server access",
             "Cody AI by Sourcegraph: auth success",
             "Your Sourcegraph account has been connected to the Sourcegraph plugin. "
-                + "Open the Cody sidebar, or press " + altSShortcutText + " to open Sourcegraph.",
+                + "Open the Cody sidebar, or press "
+                + altSShortcutText
+                + " to open Sourcegraph.",
             NotificationType.INFORMATION);
     AnAction dismissAction =
         new DumbAwareAction("Dismiss") {

@@ -250,8 +250,7 @@ public class ConfigUtil {
   }
 
   public static void setLastUpdateNotificationPluginVersionToCurrent() {
-    CodyApplicationService.getInstance().lastUpdateNotificationPluginVersion =
-        getPluginVersion();
+    CodyApplicationService.getInstance().lastUpdateNotificationPluginVersion = getPluginVersion();
   }
 
   @NotNull
