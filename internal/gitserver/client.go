@@ -1009,7 +1009,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var response protocol.BatchLogResponse
 
 		if internalgrpc.IsGRPCEnabled(ctx) {
-			client, err := c.ClientForRepo(repoName)
+			client, err := c.ClientForRepo(api.RepoName(repoNames[0]))
 			if err != nil {
 				return err
 			}
