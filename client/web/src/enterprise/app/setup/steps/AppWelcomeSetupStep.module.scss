@@ -22,14 +22,16 @@
     flex-basis: 50%;
     display: flex;
     flex-direction: column;
-    padding: 6rem 3.5rem 0;
+    padding-top: 6rem;
 
     &-heading {
+        padding: 0 3rem;
         font-size: 2.25rem;
         color: var(--white);
     }
 
     &-text {
+        padding: 0 3rem;
         color: #dedede;
         font-size: 1.25rem;
         margin-bottom: 2rem;
@@ -37,9 +39,7 @@
 
     &-image {
         margin-top: auto;
-        max-width: calc(100% + 7rem);
-        margin-left: -3.5rem;
-        margin-right: -3.5rem;
+        max-width: 100%;
     }
 }
 
@@ -90,5 +90,22 @@
     &-text {
         font-size: 1.25rem;
         margin-bottom: 0.5rem;
+    }
+}
+
+.loading {
+    flex-basis: 50%;
+    flex-shrink: 0;
+    padding: 9.6rem 2.5rem 2.5rem;
+    background-color: var(--gray-02);
+    color: var(--text-muted);
+
+    &-text {
+        font-size: 1.25rem;
+        margin-bottom: 1.5rem;
+    }
+
+    &-icon {
+        --icon-inline-size: 2rem;
     }
 }

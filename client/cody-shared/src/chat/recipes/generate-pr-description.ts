@@ -40,7 +40,12 @@ export class PrDescription implements Recipe {
             prTemplateContent = readFileSync(templatePath).toString()
         }
 
-        const gitCommit = spawnSync('git', ['log', 'origin/HEAD..HEAD', logFormat], { cwd: dirPath })
+        const userEmail = spawnSync('git', ['config', 'user.email'], { cwd: dirPath })
+        const email = userEmail.stdout.toString().trim()
+
+        const gitCommit = spawnSync('git', ['log', `--author=<${email}>`, 'origin/HEAD..HEAD', logFormat], {
+            cwd: dirPath,
+        })
         const gitCommitOutput = gitCommit.stdout.toString().trim()
 
         if (!gitCommitOutput) {

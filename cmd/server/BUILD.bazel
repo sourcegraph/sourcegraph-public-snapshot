@@ -19,7 +19,16 @@ go_library(
 go_binary(
     name = "server",
     embed = [":server_lib"],
+    gotags = [
+        "netgo",
+        "dist",
+    ],
+    pure = "on",
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 pkg_tar(

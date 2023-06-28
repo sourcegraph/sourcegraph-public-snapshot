@@ -231,6 +231,7 @@ ts_project(
         "src/cody/components/HistoryList/HistoryList.tsx",
         "src/cody/components/HistoryList/index.tsx",
         "src/cody/components/RepoContainerEditor.ts",
+        "src/cody/components/ScopeSelector/Callout.tsx",
         "src/cody/components/ScopeSelector/RepositoriesSelectorPopover.tsx",
         "src/cody/components/ScopeSelector/ScopeSelector.tsx",
         "src/cody/components/ScopeSelector/backend.ts",
@@ -364,6 +365,7 @@ ts_project(
         "src/components/fuzzyFinder/FuzzyTabs.tsx",
         "src/components/fuzzyFinder/HighlightedLink.tsx",
         "src/components/fuzzyFinder/LazyFuzzyFinder.tsx",
+        "src/components/gitHubApps/AppLogo.tsx",
         "src/components/gitHubApps/AuthProviderMessage.tsx",
         "src/components/gitHubApps/CreateGitHubAppPage.tsx",
         "src/components/gitHubApps/GitHubAppCard.tsx",
@@ -390,6 +392,7 @@ ts_project(
         "src/enterprise/app/settings/AppSettingsArea.tsx",
         "src/enterprise/app/settings/local-repositories/LocalRepositoriesTab.tsx",
         "src/enterprise/app/setup/AppSetupWizard.tsx",
+        "src/enterprise/app/setup/components/AppSetupProgressBar.tsx",
         "src/enterprise/app/setup/steps/AppAllSetSetupStep.tsx",
         "src/enterprise/app/setup/steps/AppInstallExtensionsSetupStep.tsx",
         "src/enterprise/app/setup/steps/AppLocalRepositoriesSetupStep.tsx",
@@ -1093,6 +1096,9 @@ ts_project(
         "src/fuzzyFinder/SearchValue.ts",
         "src/fuzzyFinder/SearchValueRankingCache.ts",
         "src/fuzzyFinder/WordSensitiveFuzzySearch.ts",
+        "src/get-cody/DownloadAppButton.tsx",
+        "src/get-cody/GetCodyPage.tsx",
+        "src/get-cody/GetCodyPageIcon.tsx",
         "src/global/GlobalAlert.tsx",
         "src/global/GlobalAlerts.tsx",
         "src/global/Notices.tsx",
@@ -1439,7 +1445,6 @@ ts_project(
         "src/setup-wizard/components/ProgressBar.tsx",
         "src/setup-wizard/components/SyncRepositoriesStep.tsx",
         "src/setup-wizard/components/index.ts",
-        "src/setup-wizard/components/local-repositories-step/LocalRepositoriesStep.tsx",
         "src/setup-wizard/components/local-repositories-step/helpers.ts",
         "src/setup-wizard/components/local-repositories-step/hooks.ts",
         "src/setup-wizard/components/local-repositories-step/index.ts",
@@ -2061,6 +2066,7 @@ WEBPACK_CONFIG_DEPS = [
 BUNDLE_DATA_DEPS = [
     ":module_styles",
     ":package_styles",
+    "src/get-cody/SourceSans3VF-Upright.ttf.woff2",
 ]
 
 ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [

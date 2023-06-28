@@ -26,7 +26,7 @@ To learn more about our release schedule see our [handbook](https://handbook.sou
 
 ### Upgrade types
 
-Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** upgrades. We generally recommend standard upgrades.
+Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** upgrades.
 
 **Standard** 
 - Moves Sourcegraph one version forward (`v5.0.0` to `v5.1.0`), *this is usually one minor version unless the next version released is a major version*.
@@ -34,10 +34,9 @@ Sourcegraph has two upgrade types. **Standard** upgrades and **Multiversion** up
 
 **Multiversion**
 - Moves Sourcegraph multiple versions forward (`v5.0.0` to `v5.2.0`).
-- Requires manual `migrator` operations
-- Requires downtime
+- Requires downtime while the database schemas and rewritten and unfinished out-of-band migrations are applied
 - We currently support jumping from version `v3.20` or later to any future version.
-- **Sourcegraph App and AMIs do not yet support multiversion upgrades. We hope to improve this soon.**
+- **AMIs do not yet support multiversion upgrades. We hope to improve this soon.**
 
 > *Note: Patch versions don't determine upgrade type -- you should always upgrade to the latest patch.*
 
@@ -74,8 +73,8 @@ It is highly recommended to:
 Sourcegraph upgrades take the following general form:
 1. Determine if your instance is ready to Upgrade (check upgrade notes)
 2. Merge the latest Sourcegraph release into your deployment manifests
-3. Run migrator by reapplying your manifests in a **standard upgrade** (migrator by default uses the `up` command), or by disabling services connected to your databases and running `migrator` with the `upgrade` argument in a **multiversion upgrade**.
-4. With upstream changes to your manifests merged, and schema migrations conducted by migrator your instance is ready to start.
+3. If updating more than a single minor version, perform an [**automatic multi-version upgrade**](./automatic.md) if targeting **Sourcegraph 5.1 or later**; [manual multi-verison upgrades](./migrator/migrator-operations.md) are required if upgrading to an earlier version, which requires shutting off the instance and invoking the `migrator` container or job to perform the database rewrite and application of unfinished out-of-band migrations
+4. With upstream changes to your manifests merged, start the new instance
 
 > Note: For more explicit steps, specific to your deployment see the operations guides linked below.
 

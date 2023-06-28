@@ -1,4 +1,4 @@
-import { FC, useCallback, useMemo } from 'react'
+import { FC, useCallback } from 'react'
 
 import { ApolloClient } from '@apollo/client'
 import { useNavigate } from 'react-router-dom'
@@ -17,7 +17,6 @@ import {
     SetupStepsHeader,
     SetupStepsContent,
     SetupStepsFooter,
-    LocalRepositoriesStep,
     RemoteRepositoriesStep,
     SyncRepositoriesStep,
 } from './components'
@@ -56,22 +55,10 @@ const CORE_STEPS: StepConfiguration[] = [
     },
 ]
 
-const SOURCEGRAPH_APP_STEPS = [
-    {
-        id: 'local-repositories',
-        name: 'Add local repositories',
-        path: '/setup/local-repositories',
-        component: LocalRepositoriesStep,
-    },
-    ...CORE_STEPS,
-]
-
-interface SetupWizardProps extends TelemetryProps {
-    isSourcegraphApp: boolean
-}
+interface SetupWizardProps extends TelemetryProps {}
 
 export const SetupWizard: FC<SetupWizardProps> = props => {
-    const { isSourcegraphApp, telemetryService } = props
+    const { telemetryService } = props
 
     const navigate = useNavigate()
     const [activeStepId, setStepId, status] = useTemporarySetting('setup.activeStepId')
@@ -81,7 +68,7 @@ export const SetupWizard: FC<SetupWizardProps> = props => {
     // about the setup wizard availability and redirect to the wizard if it wasn't skipped already.
     // eslint-disable-next-line no-restricted-syntax
     const [, setSkipWizardState] = useLocalStorage('setup.skipped', false)
-    const steps = useMemo(() => (isSourcegraphApp ? SOURCEGRAPH_APP_STEPS : CORE_STEPS), [isSourcegraphApp])
+    const steps = CORE_STEPS
 
     const handleStepChange = useCallback(
         (nextStep: StepConfiguration): void => {

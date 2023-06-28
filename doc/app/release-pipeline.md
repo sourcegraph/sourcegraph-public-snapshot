@@ -1,6 +1,6 @@
-# Sourcegraph App release pipeline
+# Cody App release pipeline
 
-The Sourcegraph App release pipeline utilizes buildkite to build and bundle Sourcegraph App for all current [supported platforms](#supported-platforms). The primary definition of the buildkite pipeline can be found at `.buildkite/pipeline.app.yml` in the Sourcegraph mono repo.
+The Cody App release pipeline utilizes buildkite to build and bundle Cody App for all current [supported platforms](#supported-platforms). The primary definition of the buildkite pipeline can be found at `.buildkite/pipeline.app.yml` in the Sourcegraph mono repo.
 
 ## Branches that trigger the release pipeline
 
@@ -16,7 +16,7 @@ For now the only difference between the two branches is how the release will be 
 
 ## Supported platforms
 
-Sourcegraph App currently supports the following platforms:
+Cody App currently supports the following platforms:
 
 - `x86_64-linux`
 - `x86_64-darwin` (also known as Intel Mac)
@@ -33,12 +33,12 @@ The pipeline is broken up into 3 stages:
 The above stages are accomplished by utilizing hosts across two cloud providers namely GCP and AWS.
 
 - For GCP we execute any step that doesn't require tooling specific APIs or tooling.
-  - Compiling and bundling of Sourcegraph App for Linux platform.
+  - Compiling and bundling of Cody App for Linux platform.
     - We **only** utilize Bazel to compile the Sourcegraph Backend.
   - Performing the GitHub release.
 - We use AWS to host a MacOS host, which we utilize for all Apple specific tooling and processes.
   - Code Signing.
-  - Compiling and bundling of Sourcegraph App for Intel Mac and Apple Silicon.
+  - Compiling and bundling of Cody App for Intel Mac and Apple Silicon.
     - We use Bazel to compile the Sourcegraph Backend for `aarch64-darwin`.
     - We use Go to compile the Sourcegraph Backend for `x86_64-darwin`.
 
@@ -100,7 +100,7 @@ Finally, once the release has been created the script will generate an `app.upda
 }
 ```
 
-The manifest will be available as an artefact on the `Create GitHub release` step of the pipeline. The manifest is used by Sourcegraph.com to tell Sourcegraph App clients checking in whether an update is available. Therefore, this manifest has to be uploaded to the following buckets depending on the use case:
+The manifest will be available as an artefact on the `Create GitHub release` step of the pipeline. The manifest is used by Sourcegraph.com to tell Cody App clients checking in whether an update is available. Therefore, this manifest has to be uploaded to the following buckets depending on the use case:
 
 - Production
   - Bucket [`sourcegraph-app`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/app/updatecheck/app_update_checker.go?L25): This bucket is available in the `sourcegraph-dev` project, and the manifest should have to following name [`app.update.prod.manifest.json`](https://sourcegraph.sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/cmd/frontend/internal/app/updatecheck/app_update_checker.go?L31).
@@ -111,7 +111,9 @@ __Note__: if you're wondering why the bucket names are different even though we 
 
 ### Automatically updating the manifest
 
-`sg` can be used to automatically take the update manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub and upload the manifest to bucket. Below is an example command:
+`sg` can be used to automatically update the manifest from the latest build on `app-release/stable` and corresponding latest release on GitHub. Updating the manifest will set the new current version for download links as well as prompt users to upgrade the next time the App checks for  updates. To run the update-manifest command request the `Sourcegraph App Release Bucket access` bundle in Entitle. 
+
+Below is an example command:
 
 ```
 sg app update-manifest --bucket sourcegraph-app
@@ -122,4 +124,4 @@ If one first wants to check the manifest the `--no-upload` flag can be passed wh
 sg app update-manifest --bucket sourcegraph-app --no-upload
 ```
 
-Additionaly, the manifest will be updated with the release notes from the GitHub release. By doing this, clients that get notified of an update will see those notes.
+Additionally, the manifest will be updated with the release notes from the GitHub release. By doing this the release notes are presented to the user when they are notified of an available update.

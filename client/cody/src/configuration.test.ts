@@ -12,10 +12,10 @@ describe('getConfiguration', () => {
             serverEndpoint: DOTCOM_URL.href,
             codebase: '',
             useContext: 'embeddings',
-            autocomplete: false,
+            autocomplete: true,
             experimentalChatPredictions: false,
             experimentalGuardrails: false,
-            experimentalInline: false,
+            inlineChat: true,
             experimentalNonStop: false,
             customHeaders: {},
             debugEnable: false,
@@ -45,12 +45,12 @@ describe('getConfiguration', () => {
                             'Proxy-Authenticate': 'Basic',
                         }
                     case 'cody.autocomplete.enabled':
-                        return true
+                        return false
                     case 'cody.experimental.chatPredictions':
                         return true
                     case 'cody.experimental.guardrails':
                         return true
-                    case 'cody.experimental.inline':
+                    case 'cody.inlineChat.enabled':
                         return true
                     case 'cody.experimental.nonStop':
                         return true
@@ -83,10 +83,10 @@ describe('getConfiguration', () => {
                 'Cache-Control': 'no-cache',
                 'Proxy-Authenticate': 'Basic',
             },
-            autocomplete: true,
+            autocomplete: false,
             experimentalChatPredictions: true,
             experimentalGuardrails: true,
-            experimentalInline: true,
+            inlineChat: true,
             experimentalNonStop: true,
             debugEnable: true,
             debugVerbose: true,

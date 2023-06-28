@@ -15,7 +15,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/multiversion"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
@@ -56,7 +55,7 @@ func tryAutoUpgrade(ctx context.Context, obsvCtx *observation.Context, ready ser
 	} else if err != nil {
 		return errors.Wrap(err, "autoupgradestore.GetAutoUpgrade")
 	}
-	if !dbShouldAutoUpgrade && !cliutil.EnvShouldAutoUpgrade {
+	if !dbShouldAutoUpgrade && !multiversion.EnvShouldAutoUpgrade {
 		return nil
 	}
 
@@ -195,12 +194,12 @@ func runMigration(
 		runner.ApplyPrivilegedMigrations,
 		nil, // only needed when ^ is NoopPrivilegedMigrations
 		true,
-		true,
+		multiversion.EnvAutoUpgradeSkipDrift,
 		false,
 		true,
 		false,
 		registerMigrators,
-		nil, // only needed for drift
+		schemas.DefaultSchemaFactories,
 		out,
 	)
 }

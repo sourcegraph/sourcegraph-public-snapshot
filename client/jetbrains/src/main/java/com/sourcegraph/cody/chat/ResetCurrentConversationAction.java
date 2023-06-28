@@ -10,6 +10,7 @@ import com.sourcegraph.common.ErrorNotification;
 import org.jetbrains.annotations.NotNull;
 
 public class ResetCurrentConversationAction extends DumbAwareAction {
+
   @Override
   public void actionPerformed(@NotNull AnActionEvent e) {
     Project project = e.getProject();
@@ -21,6 +22,17 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
         ServiceManager.getService(project, UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
     updatableChat.resetConversation();
+  }
+
+  @Override
+  public void update(@NotNull AnActionEvent e) {
+    Project project = e.getProject();
+    if (project != null) {
+      UpdatableChatHolderService updatableChatHolderService =
+          project.getService(UpdatableChatHolderService.class);
+      UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
+      e.getPresentation().setVisible(updatableChat.isChatVisible());
+    }
   }
 
   private static void displayUnableToResetConversationError() {

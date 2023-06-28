@@ -25,7 +25,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	attributionService := &attribution.Service{
+	opts := attribution.ServiceOpts{
 		SearchClient: client.New(observationCtx.Logger, db, enterpriseServices.EnterpriseSearchJobs),
 	}
 
@@ -38,12 +38,12 @@ func Init(
 		endpoint := "https://sourcegraph.com/.api/graphql"
 		accessToken := ""
 
-		attributionService.SourcegraphDotComFederate = true
-		attributionService.SourcegraphDotComClient = dotcom.NewClient(httpClient, endpoint, accessToken)
+		opts.SourcegraphDotComFederate = true
+		opts.SourcegraphDotComClient = dotcom.NewClient(httpClient, endpoint, accessToken)
 	}
 
 	enterpriseServices.GuardrailsResolver = &resolvers.GuardrailsResolver{
-		AttributionService: attributionService,
+		AttributionService: attribution.NewService(observationCtx, opts),
 	}
 
 	return nil

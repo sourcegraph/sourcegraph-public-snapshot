@@ -35,7 +35,7 @@ type updateManifestFlag struct {
 var manifestFlags updateManifestFlag
 var appCommand = &cli.Command{
 	Name:  "app",
-	Usage: "Manage releases and update manifests used to let Sourcegraph App clients know that a new update is available",
+	Usage: "Manage releases and update manifests used to let Cody App clients know that a new update is available",
 	UsageText: `
 # Update the updater manifest
 sg app update-manifest
@@ -50,7 +50,7 @@ sg app update-manifest --no-upload
 sg app update-manifest --update-signatures
 `,
 	Description: `
-Various commands to handle management of releases, and processes around Sourcegraph App.
+Various commands to handle management of releases, and processes around Cody App.
 
 `,
 	ArgsUsage: "",
@@ -92,7 +92,7 @@ Various commands to handle management of releases, and processes around Sourcegr
 					Usage:       "do everything except upload the final manifest",
 				},
 			},
-			Action: UpdateSourcegraphAppManifest,
+			Action: UpdateCodyAppManifest,
 		},
 	},
 }
@@ -112,13 +112,13 @@ type appLocation struct {
 	URL       string `json:"url"`
 }
 
-func UpdateSourcegraphAppManifest(ctx *cli.Context) error {
+func UpdateCodyAppManifest(ctx *cli.Context) error {
 	client, err := bk.NewClient(ctx.Context, std.Out)
 	if err != nil {
 		return err
 	}
 
-	pipeline := "sourcegraph-app-release"
+	pipeline := "cody-app-release"
 	branch := "app-release/stable"
 
 	var build *buildkite.Build
@@ -166,7 +166,7 @@ func UpdateSourcegraphAppManifest(ctx *cli.Context) error {
 	pending.Update(fmt.Sprintf("Retrieving GitHub release with tag %q", manifestFlags.tag))
 	release, err := getAppGitHubRelease(ctx.Context, githubClient, manifestFlags.tag)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get Sourcegraph App release with tag %q", manifestFlags.tag)
+		return errors.Wrapf(err, "failed to get Cody App release with tag %q", manifestFlags.tag)
 	}
 
 	var updateSignatures bool
@@ -230,9 +230,10 @@ func updateManifestFromRelease(manifest appUpdateManifest, release *github.Repos
 		// .tar.gz
 		// AND
 		// .tar.gz.sig
-		"aarch64-darwin": regexp.MustCompile("^Sourcegraph.*.aarch64.app.tar.gz"),
-		"x86_64-darwin":  regexp.MustCompile("^Sourcegraph.*.x86_64.app.tar.gz"),
-		"x86_64-linux":   regexp.MustCompile("^sourcegraph.*_amd64.AppImage.tar.gz"),
+		"aarch64-darwin": regexp.MustCompile("^Cody.*.aarch64.app.tar.gz"),
+		"x86_64-darwin":  regexp.MustCompile("^Cody.*.x86_64.app.tar.gz"),
+		// note the LOWERCASE cody
+		"x86_64-linux": regexp.MustCompile("^cody.*_amd64.AppImage.tar.gz"),
 	}
 
 	platformAssets := map[string][]*github.ReleaseAsset{
@@ -310,11 +311,11 @@ func getAppGitHubRelease(ctx context.Context, client *github.Client, tag string)
 	// if tag is empty, we take the latest release, otherwise we look for a release with the tag
 	if tag == "latest" {
 		releaseCompareFn = func(release *github.RepositoryRelease) bool {
-			return strings.Contains(release.GetName(), "Sourcegraph App")
+			return strings.Contains(release.GetName(), "Cody App")
 		}
 	} else {
 		releaseCompareFn = func(release *github.RepositoryRelease) bool {
-			return strings.Contains(release.GetName(), "Sourcegraph App") && release.GetTagName() == tag
+			return strings.Contains(release.GetName(), "Cody App") && release.GetTagName() == tag
 		}
 	}
 
@@ -326,7 +327,7 @@ func getAppGitHubRelease(ctx context.Context, client *github.Client, tag string)
 		}
 	}
 	if appRelease == nil {
-		return nil, errors.Newf("failed to find Sourcegraph App Release tag %q", tag)
+		return nil, errors.Newf("failed to find Cody App Release tag %q", tag)
 	}
 	return appRelease, nil
 }

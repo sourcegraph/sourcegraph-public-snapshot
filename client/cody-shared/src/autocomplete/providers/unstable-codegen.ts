@@ -19,7 +19,7 @@ export class UnstableCodeGenProvider extends Provider {
         this.serverEndpoint = unstableCodeGenOptions.serverEndpoint
     }
 
-    public async generateCompletions(abortSignal: AbortSignal): Promise<Completion[]> {
+    public async generateCompletions(abortSignal: AbortSignal, snippets: ReferenceSnippet[]): Promise<Completion[]> {
         const params = {
             debug_ext_path: 'cody',
             lang_prefix: `<|${mapVSCodeLanguageIdToModelId(this.languageId)}|>`,
@@ -32,7 +32,7 @@ export class UnstableCodeGenProvider extends Provider {
             // divide it into two different batches.
             batch_size: makeEven(4),
             // TODO: Figure out the exact format to attach context
-            context: JSON.stringify(prepareContext(this.snippets, this.fileName)),
+            context: JSON.stringify(prepareContext(snippets, this.fileName)),
             completion_type: 'automatic',
         }
 
@@ -53,7 +53,7 @@ export class UnstableCodeGenProvider extends Provider {
         try {
             const data = (await response.json()) as { completions: { completion: string }[] }
 
-            const completions: string[] = data.completions.map(c => c.completion)
+            const completions: string[] = data.completions.map(c => postProcess(c.completion, this.multilineMode))
             // log?.onComplete(completions)
 
             return completions.map(content => ({
@@ -70,7 +70,16 @@ export class UnstableCodeGenProvider extends Provider {
     }
 }
 
-// TODO(auguste): Abstract
+function postProcess(content: string, multilineMode: null | 'block'): string {
+    // The model might return multiple lines for single line completions because
+    // we are only able to specify a token limit.
+    if (multilineMode === null && content.includes('\n')) {
+        content = content.slice(0, content.indexOf('\n'))
+    }
+
+    return content.trim()
+}
+
 // Handles some inconsistencies between the VS Code language ID and the model's
 // required language identifier.
 function mapVSCodeLanguageIdToModelId(languageId: string): string {
@@ -140,6 +149,7 @@ export function createProviderConfig(unstableCodeGenOptions: UnstableCodeGenOpti
             return new UnstableCodeGenProvider(options, unstableCodeGenOptions)
         },
         maximumContextCharacters: contextWindowChars,
+        enableExtendedMultilineTriggers: false,
         identifier: PROVIDER_IDENTIFIER,
     }
 }

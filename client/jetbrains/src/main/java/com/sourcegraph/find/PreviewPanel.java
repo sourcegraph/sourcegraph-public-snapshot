@@ -164,7 +164,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     final Editor editor;
 
     SimpleEditorFileAction(String text, FileActionBase action, Editor editor) {
-      super(text, text, Icons.SourcegraphLogo);
+      super(text, text, Icons.CodyLogo);
       this.action = action;
       this.editor = editor;
     }

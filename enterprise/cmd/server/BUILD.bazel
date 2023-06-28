@@ -20,7 +20,16 @@ go_library(
 go_binary(
     name = "server",
     embed = [":server_lib"],
+    gotags = [
+        "netgo",
+        "dist",
+    ],
+    pure = "on",
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 pkg_tar(
@@ -172,6 +181,7 @@ oci_image(
         ":tar_postgres_reindex",
         ":tar_prom-wrapper",
         "//enterprise/cmd/gitserver:tar_p4_fusion_wrappers",
+        "//monitoring:generate_grafana_config_tar",
         "tar_image_test_scripts",
     ] + dependencies_tars(DEPS) + dependencies_tars(ZOEKT_DEPS),
     workdir = "/",

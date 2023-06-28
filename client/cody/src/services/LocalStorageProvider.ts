@@ -6,8 +6,6 @@ import { Memento } from 'vscode'
 
 import { UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
-import { updateConfiguration } from '../configuration'
-
 export class LocalStorage {
     // Bump this on storage changes so we don't handle incorrectly formatted data
     private KEY_LOCAL_HISTORY = 'cody-local-chatHistory-v2'
@@ -29,7 +27,6 @@ export class LocalStorage {
             const uri = new URL(endpoint).href
             await this.storage.update(this.LAST_USED_ENDPOINT, uri)
             await this.addEndpointHistory(uri)
-            await updateConfiguration('serverEndpoint', endpoint)
         } catch (error) {
             console.error(error)
         }

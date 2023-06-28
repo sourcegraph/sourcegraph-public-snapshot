@@ -805,7 +805,7 @@ type ExperimentalFeatures struct {
 	EnableGRPC bool `json:"enableGRPC,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visibility of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
-	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
+	// EnablePermissionsWebhooks description: DEPRECATED: No longer has any effect.
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnableStorm description: Enables the Storm frontend architecture changes.
 	EnableStorm bool `json:"enableStorm,omitempty"`
@@ -1046,6 +1046,8 @@ type GitHubAppDetails struct {
 	AppID int `json:"appID,omitempty"`
 	// BaseURL description: The base URL of the GitHub App.
 	BaseURL string `json:"baseURL,omitempty"`
+	// CloneAllRepositories description: Clone all repositories for this App installation.
+	CloneAllRepositories bool `json:"cloneAllRepositories,omitempty"`
 	// InstallationID description: The installation ID of this connection.
 	InstallationID int `json:"installationID,omitempty"`
 }

@@ -97,6 +97,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const needsRepositoryConfiguration = window.context?.needsRepositoryConfiguration
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp = useIsSignInOrSignUpPage()
+    const isGetCodyPage = location.pathname === PageRoutes.GetCody
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -147,7 +148,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} telemetryService={props.telemetryService} />
+                <LazySetupWizard telemetryService={props.telemetryService} />
             </Suspense>
         )
     }
@@ -200,7 +201,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     authenticatedUser={props.authenticatedUser}
                 />
             )}
-            {!isSiteInit && !isSignInOrUp && (
+            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && (
                 <GlobalNavbar
                     {...props}
                     routes={[]}

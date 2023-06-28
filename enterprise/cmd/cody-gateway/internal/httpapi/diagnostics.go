@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/hook"
 	"github.com/sourcegraph/log/output"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/auth"
@@ -96,8 +97,11 @@ func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret stri
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, "/-/") {
-			instrumentation.HTTPMiddleware("diagnostics", requestlogger.Middleware(baseLogger, handler)).
-				ServeHTTP(w, r)
+			instrumentation.HTTPMiddleware(
+				"diagnostics",
+				requestlogger.Middleware(baseLogger, handler),
+				otelhttp.WithPublicEndpoint(),
+			).ServeHTTP(w, r)
 			return
 		}
 

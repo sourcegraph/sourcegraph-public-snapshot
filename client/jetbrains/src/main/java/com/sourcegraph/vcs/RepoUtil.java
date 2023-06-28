@@ -10,6 +10,8 @@ import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.config.ConfigUtil;
 import git4idea.repo.GitRepository;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
@@ -61,7 +63,21 @@ public class RepoUtil {
       Logger.getInstance(RepoUtil.class).warn(message);
       err.printStackTrace();
     }
-    return new RepoInfo(vcsType, remoteUrl, remoteBranchName, relativePath);
+    return new RepoInfo(
+        vcsType,
+        remoteUrl,
+        remoteBranchName != null ? remoteBranchName : ConfigUtil.getDefaultBranchName(project),
+        relativePath);
+  }
+
+  @Nullable
+  public static String getSimpleRepositoryName(
+      @NotNull Project project, @NotNull VirtualFile file) {
+    Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
+    if (repository == null) {
+      return null;
+    }
+    return repository.getRoot().getName();
   }
 
   private static String doReplacements(@NotNull Project project, @NotNull String remoteUrl) {
@@ -77,10 +93,25 @@ public class RepoUtil {
     return remoteUrlWithReplacements;
   }
 
-  @NotNull
+  // Returned format: github.com/sourcegraph/sourcegraph
+  // Must be called from non-EDT context
+  public static @NotNull String getRemoteRepoUrlWithoutScheme(
+      @NotNull Project project, @NotNull VirtualFile file) throws Exception {
+    String remoteUrl = getRemoteRepoUrl(project, file);
+    String repoName;
+    try {
+      URL url = new URL(remoteUrl);
+      repoName = url.getHost() + url.getPath();
+    } catch (MalformedURLException e) {
+      repoName = remoteUrl.substring(remoteUrl.indexOf('@') + 1).replaceFirst(":", "/");
+    }
+    return repoName.replaceFirst(".git$", "");
+  }
+
   // Returned format: git@github.com:sourcegraph/sourcegraph.git
-  public static String getRemoteRepoUrl(@NotNull Project project, @NotNull VirtualFile file)
-      throws Exception {
+  // Must be called from non-EDT context
+  public static @NotNull String getRemoteRepoUrl(
+      @NotNull Project project, @NotNull VirtualFile file) throws Exception {
     Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
     VCSType vcsType = getVcsType(project, file);
 

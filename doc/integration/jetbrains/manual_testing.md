@@ -19,6 +19,12 @@ Same if any of the assertions fail.
 
 If there is a problem, we should either investigate right away (typically, if a developer does the manual testing), or create an issue with the error message / specifying which test case failed, and any additional helpful context.
 
+### Operating systems
+
+We test on macOS by default, but we should also test on Windows and Linux more often.
+We have three test instances to test the plugin on a Linux server, an Ubuntu Desktop machine, and on Windows Server. They are all on GCP, [here](https://console.cloud.google.com/compute/instances?cloudshell=true&project=david-veszelovszki-temp-env).
+- For the Windows instance, follow [this guide](https://www.snel.com/support/how-to-connect-to-your-server-via-rdp-on-macos/) to connect, then use the login/password you find in 1Password by the name "GCP: JetBrains plugin testing Windows". 
+
 ## Test cases
 
 ### Website-related features

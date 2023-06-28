@@ -23,14 +23,18 @@ interface GetContextOptions {
     isEmbeddingsContextEnabled?: boolean
 }
 
-export async function getContext(options: GetContextOptions): Promise<{
+interface GetContextResult {
     context: ReferenceSnippet[]
     logSummary: {
         embeddings?: number
         local?: number
+        duration: number
     }
-}> {
+}
+
+export async function getContext(options: GetContextOptions): Promise<GetContextResult> {
     const { maxChars, isEmbeddingsContextEnabled } = options
+    const start = Date.now()
 
     /**
      * The embeddings context is sync to retrieve to keep the completions latency minimal. If it's
@@ -78,6 +82,7 @@ export async function getContext(options: GetContextOptions): Promise<{
         logSummary: {
             ...(includedEmbeddingsMatches ? { embeddings: includedEmbeddingsMatches } : {}),
             ...(includedLocalMatches ? { local: includedLocalMatches } : {}),
+            duration: Date.now() - start,
         },
     }
 }

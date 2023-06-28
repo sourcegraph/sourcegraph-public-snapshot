@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.context.embeddings;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
@@ -16,16 +17,34 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class EmbeddingsSearcher {
-  public static @NotNull List<ContextMessage> getContextMessages(
-      @NotNull String codebase, @NotNull String query, int codeResultCount, int textResultCount)
+  private final @NotNull String instanceUrl;
+  private final @NotNull String accessToken;
+  private final @NotNull String customRequestHeaders;
+
+  public EmbeddingsSearcher(
+      @NotNull String instanceUrl,
+      @NotNull String accessToken,
+      @NotNull String customRequestHeaders) {
+    this.instanceUrl = instanceUrl;
+    this.accessToken = accessToken;
+    this.customRequestHeaders = customRequestHeaders;
+  }
+
+  /**
+   * @param repoName Like "github.com/sourcegraph/cody"
+   */
+  public @NotNull List<ContextMessage> getContextMessages(
+      @NotNull String repoName, @NotNull String query, int codeResultCount, int textResultCount)
       throws IOException {
     // Get repo ID
     String repoId;
-    repoId = EmbeddingsSearcher.getRepoIdIfEmbeddingExists(codebase);
+    repoId = getRepoIdIfEmbeddingExists(repoName);
+    if (repoId == null) { // Embedding does not exist
+      return new ArrayList<>();
+    }
 
     // Run embeddings search
-    EmbeddingsSearchResults results =
-        EmbeddingsSearcher.search(repoId, query, codeResultCount, textResultCount);
+    EmbeddingsSearchResults results = search(repoId, query, codeResultCount, textResultCount);
 
     // Concat results.getCodeResults() and results.getTextResults() into a single list
     List<EmbeddingsSearchResult> allResults = new ArrayList<>();
@@ -50,7 +69,7 @@ public class EmbeddingsSearcher {
     return messages;
   }
 
-  private static EmbeddingsSearchResults search(
+  private EmbeddingsSearchResults search(
       @NotNull String repoId, @NotNull String query, int codeResultsCount, int textResultsCount)
       throws IOException {
     // Prepare GraphQL query
@@ -79,7 +98,8 @@ public class EmbeddingsSearcher {
 
     // Call GraphQL service
     GraphQlResponse response =
-        GraphQlClient.callGraphQLService("TODO", "TODO", "TODO", graphQlQuery, variables); // TODO!
+        GraphQlClient.callGraphQLService(
+            instanceUrl, accessToken, customRequestHeaders, graphQlQuery, variables);
 
     // Parse response
     if (response.getStatusCode() != 200) {
@@ -100,9 +120,9 @@ public class EmbeddingsSearcher {
         }
 
         ArrayList<EmbeddingsSearchResult> codeResults =
-            convertRawResultsToSearchResults(embeddingsSearch.getAsJsonObject("codeResults"));
+            convertRawResultsToSearchResults(embeddingsSearch.getAsJsonArray("codeResults"));
         ArrayList<EmbeddingsSearchResult> textResults =
-            convertRawResultsToSearchResults(embeddingsSearch.getAsJsonObject("textResults"));
+            convertRawResultsToSearchResults(embeddingsSearch.getAsJsonArray("textResults"));
         return new EmbeddingsSearchResults(codeResults, textResults);
 
       } catch (JsonSyntaxException e) {
@@ -116,12 +136,12 @@ public class EmbeddingsSearcher {
    * works for both code and text results.
    */
   private static @NotNull ArrayList<EmbeddingsSearchResult> convertRawResultsToSearchResults(
-      @Nullable JsonObject rawResults) {
+      @Nullable JsonArray rawResults) {
     if (rawResults == null) {
       return new ArrayList<>();
     }
     ArrayList<EmbeddingsSearchResult> results = new ArrayList<>();
-    for (JsonElement result : rawResults.getAsJsonArray()) {
+    for (JsonElement result : rawResults) {
       JsonPrimitive repoName = ((JsonObject) result).getAsJsonPrimitive("repoName");
       JsonPrimitive revision = ((JsonObject) result).getAsJsonPrimitive("revision");
       String fileName = ((JsonObject) result).getAsJsonPrimitive("fileName").getAsString();
@@ -144,10 +164,10 @@ public class EmbeddingsSearcher {
    * Returns the repository ID if the repository exists and has an embedding, or null otherwise.
    *
    * @param repoName Like "github.com/sourcegraph/cody"
-   * @return base64-encoded repoID like "UmVwb3NpdG9yeTozNjgwOTI1MA=="
+   * @return base64-encoded repoID like "UmVwb3NpdG9yeTozN1gwOTI1MA=="
    * @throws IOException Thrown if we can't reach the server.
    */
-  private static @NotNull String getRepoIdIfEmbeddingExists(String repoName) throws IOException {
+  private @Nullable String getRepoIdIfEmbeddingExists(String repoName) throws IOException {
     String query =
         "query Repository($name: String!) {\n"
             + "    repository(name: $name) {\n"
@@ -158,25 +178,25 @@ public class EmbeddingsSearcher {
     JsonObject variables = new JsonObject();
     variables.add("name", new JsonPrimitive(repoName));
     GraphQlResponse response =
-        GraphQlClient.callGraphQLService("TODO", "TODO", "TODO", query, variables);
+        GraphQlClient.callGraphQLService(
+            instanceUrl, accessToken, customRequestHeaders, query, variables);
     if (response.getStatusCode() != 200) {
       throw new IOException("GraphQL request failed with status code " + response.getStatusCode());
     } else {
       try {
         JsonObject body = response.getBodyAsJson();
         JsonObject data = body.getAsJsonObject("data");
-        JsonObject repository = data.getAsJsonObject("repository");
-        if (repository == null) {
-          throw new IOException("GraphQL response is missing data.repository field");
-        } else {
-          boolean embeddingExists = repository.getAsJsonPrimitive("embeddingExists").getAsBoolean();
-          if (embeddingExists) {
-            return repository.getAsJsonPrimitive("id").getAsString();
-          } else {
-            throw new IOException("Repository does not have an embedding");
-          }
+        if (data.get("repository").isJsonNull()) { // Embedding does not exist
+          return null;
         }
-      } catch (JsonSyntaxException e) {
+        JsonObject repository = data.getAsJsonObject("repository");
+        boolean embeddingExists = repository.getAsJsonPrimitive("embeddingExists").getAsBoolean();
+        if (embeddingExists) {
+          return repository.getAsJsonPrimitive("id").getAsString();
+        } else {
+          return null;
+        }
+      } catch (JsonSyntaxException | ClassCastException e) {
         throw new IOException("GraphQL response is not valid JSON", e);
       }
     }

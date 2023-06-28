@@ -8,10 +8,6 @@ go_library(
     srcs = ["main.go"],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/migrator",
     visibility = ["//visibility:private"],
-    x_defs = {
-        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
-        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
-    },
     deps = [
         "//cmd/migrator/shared",
         "//internal/env",
@@ -25,6 +21,10 @@ go_binary(
     name = "migrator",
     embed = [":migrator_lib"],
     visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
 )
 
 genrule(
@@ -274,6 +274,9 @@ genrule(
         "schema-descriptions/v5.0.4-internal_database_schema.codeinsights.json",
         "schema-descriptions/v5.0.4-internal_database_schema.codeintel.json",
         "schema-descriptions/v5.0.4-internal_database_schema.json",
+        "schema-descriptions/v5.1.0-internal_database_schema.codeinsights.json",
+        "schema-descriptions/v5.1.0-internal_database_schema.codeintel.json",
+        "schema-descriptions/v5.1.0-internal_database_schema.json",
     ],
     cmd = "$(location generate.sh) $(@D)",
     tags = ["requires-network"],

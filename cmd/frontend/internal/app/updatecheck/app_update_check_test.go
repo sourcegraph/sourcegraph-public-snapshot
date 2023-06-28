@@ -114,7 +114,7 @@ func TestReadAppClientVersion(t *testing.T) {
 
 func TestAppUpdateCheckHandler(t *testing.T) {
 	var resolver = StaticManifestResolver{
-		manifest: AppUpdateManifest{
+		Manifest: AppUpdateManifest{
 			Version: "3023.5.8", // set the year part of the version FAR ahead so that there is always a version to update to
 			Notes:   "This is a test",
 			PubDate: time.Date(2023, time.May, 8, 12, 0, 0, 0, &time.Location{}),
@@ -128,7 +128,7 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 	}
 
 	t.Run("with static manifest resolver, and exact version", func(t *testing.T) {
-		req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", resolver.manifest.Version+"+1234.DEADBEEF")
+		req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", resolver.Manifest.Version+"+1234.DEADBEEF")
 		if err != nil {
 			t.Fatalf("failed to create client version request: %v", err)
 		}
@@ -171,14 +171,14 @@ func TestAppUpdateCheckHandler(t *testing.T) {
 			t.Fatalf("failed to decode AppUpdateManifest: %v", err)
 		}
 
-		if resolver.manifest.Version != updateResp.Version {
-			t.Errorf("Wanted %s manifest version, got %s", resolver.manifest.Version, updateResp.Version)
+		if resolver.Manifest.Version != updateResp.Version {
+			t.Errorf("Wanted %s manifest version, got %s", resolver.Manifest.Version, updateResp.Version)
 		}
-		if resolver.manifest.PubDate.String() != updateResp.PubDate.String() {
-			t.Errorf("Wanted %s manifest version, got %s", resolver.manifest.Version, updateResp.Version)
+		if resolver.Manifest.PubDate.String() != updateResp.PubDate.String() {
+			t.Errorf("Wanted %s manifest version, got %s", resolver.Manifest.Version, updateResp.Version)
 		}
 
-		if platform, ok := resolver.manifest.Platforms[clientVersion.Platform()]; !ok {
+		if platform, ok := resolver.Manifest.Platforms[clientVersion.Platform()]; !ok {
 			t.Fatalf("failed to get %q platform from manifest", clientVersion.Platform())
 		} else if updateResp.Signature != platform.Signature {
 			t.Errorf("signature mismatch. Got %q wanted %q", updateResp.Signature, platform.Signature)
