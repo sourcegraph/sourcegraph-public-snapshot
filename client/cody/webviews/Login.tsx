@@ -65,7 +65,6 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
         <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : styles.greyGradient)}>
             <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Download Cody App'}</h2>
             <p className={styles.openMessage}>{openMsg}</p>
-            {!isAppInstalled && <p className={styles.openMessage}>{APP_DESC.download}</p>}
             <ConnectApp
                 isAppInstalled={isAppInstalled}
                 vscodeAPI={vscodeAPI}
