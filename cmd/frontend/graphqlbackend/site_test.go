@@ -21,7 +21,7 @@ import (
 
 func TestSiteConfiguration(t *testing.T) {
 	t.Run("authenticated as non-admin", func(t *testing.T) {
-		t.Run("ReturnWhitelistedConfigForNonAdmins is false", func(t *testing.T) {
+		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
 			users := database.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 			db := database.NewMockDB()
@@ -29,7 +29,7 @@ func TestSiteConfiguration(t *testing.T) {
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
-				ReturnWhitelistedConfigForNonAdmins: pointers.Ptr(false),
+				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 
 			if err == nil || !errors.Is(err, auth.ErrMustBeSiteAdmin) {
@@ -37,7 +37,7 @@ func TestSiteConfiguration(t *testing.T) {
 			}
 		})
 
-		t.Run("ReturnWhitelistedConfigForNonAdmins is true", func(t *testing.T) {
+		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
 			users := database.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 			db := database.NewMockDB()
@@ -45,7 +45,7 @@ func TestSiteConfiguration(t *testing.T) {
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 			r, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
-				ReturnWhitelistedConfigForNonAdmins: pointers.Ptr(true),
+				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
 				t.Fatalf("err: want nil but got %v", err)

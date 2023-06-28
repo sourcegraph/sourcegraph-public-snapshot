@@ -42,6 +42,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
@@ -97,18 +98,24 @@ type SiteConfigurationArgs struct {
 }
 
 func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfigurationArgs) (*siteConfigurationResolver, error) {
+	var returnSafeConfigsOnly = pointers.Deref(args.ReturnSafeConfigsOnly, false)
+
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		if args.ReturnSafeConfigsOnly != nil && *args.ReturnSafeConfigsOnly {
-			return &siteConfigurationResolver{
-				db:                    r.db,
-				returnSafeConfigsOnly: *args.ReturnSafeConfigsOnly,
-			}, nil
+		//  returnSafeConfigsOnly determines whether to return a redacted version of the
+		// site configuration that removes sensitive information. If true, returns a
+		// siteConfigurationResolver that will return the redacted configuration. If
+		// false, returns an error.
+		//
+		// The only way a non-admin can access this field is when `returnSafeConfigsOnly`
+		// is set to true.
+		if returnSafeConfigsOnly {
+			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 		}
 		return nil, err
 	}
-	return &siteConfigurationResolver{db: r.db}, nil
+	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
