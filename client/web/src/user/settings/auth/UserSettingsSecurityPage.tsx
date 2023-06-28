@@ -113,7 +113,7 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
 
     const onAccountAdd = (): void => {
         refetch({ username: props.user.username })
-            .then(() => { })
+            .then(() => {})
             .catch(handleError)
     }
 
