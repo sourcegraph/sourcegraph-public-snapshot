@@ -47,7 +47,10 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const isRequestAccessAllowed = checkRequestAccessAllowed(props.context)
 
     if (authenticatedUser) {
-        const returnTo = getReturnTo(location)
+        let returnTo = getReturnTo(location)
+        if (context.sourcegraphDotComMode && returnTo === '/search') {
+            returnTo = '/get-cody'
+        }
         return <Navigate to={returnTo} replace={true} />
     }
 
