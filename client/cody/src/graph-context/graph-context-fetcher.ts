@@ -17,6 +17,7 @@ export class VSCodeGraphContextFetcher extends GraphContextFetcher {
         const commitID = gitOIDCommand.stdout.toString().trim()
 
         return Promise.resolve({
+            repository,
             repoName,
             commitID,
         })

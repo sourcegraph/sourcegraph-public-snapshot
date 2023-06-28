@@ -4,6 +4,7 @@ import { Editor } from '../editor'
 import { PreciseContextResult, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 
 export interface GitInfo {
+    repository: string
     repoName: string
     commitID: string
 }
@@ -24,10 +25,15 @@ export abstract class GraphContextFetcher {
         let preciseContext: PreciseContextResult[] = []
         const workspaceRoot = this.editor.getWorkspaceRootPath()
         if (workspaceRoot) {
-            const { repoName, commitID } = await this.getGitInfo(workspaceRoot)
-
+            const { repoName, repository, commitID } = await this.getGitInfo(workspaceRoot)
             const activeFile = trimPath(active.filePath, repoName)
-            const response = await this.graphqlClient.getPreciseContext(repoName, commitID, activeFile, active.content)
+
+            const response = await this.graphqlClient.getPreciseContext(
+                repository,
+                commitID,
+                activeFile,
+                active.content
+            )
             if (!isErrorLike(response)) {
                 preciseContext = response
             }
