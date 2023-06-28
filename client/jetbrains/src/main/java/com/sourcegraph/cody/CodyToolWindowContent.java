@@ -80,6 +80,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -508,12 +509,12 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   @Override
-  public void respondToErrorFromServer(@NotNull String errorMessage) {
-    if (errorMessage.equals("Connection refused")) {
+  public void respondToErrorFromServer(@Nullable String errorMessage) {
+    if (Objects.equals(errorMessage, "Connection refused")) {
       this.addMessageToChat(
           ChatMessage.createAssistantMessage(
               "I'm sorry, I can't connect to the server. Please make sure that the server is running and try again."));
-    } else if (errorMessage.startsWith("Got error response 401")) {
+    } else if (errorMessage != null && errorMessage.startsWith("Got error response 401")) {
       String invalidAccessTokenText =
           "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
               + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
