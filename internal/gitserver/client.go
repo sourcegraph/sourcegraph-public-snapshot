@@ -304,7 +304,7 @@ type Client interface {
 
 	// ReposStats will return a map of the ReposStats for each gitserver in a
 	// map. If we fail to fetch a stat from a gitserver, it won't be in the
-	// returned map and will be appended to the error. If no errors occur dialErr will
+	// returned map and will be appended to the error. If no errors occur err will
 	// be nil.
 	//
 	// Note: If the statistics for a gitserver have not been computed, the
