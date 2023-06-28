@@ -1008,6 +1008,8 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var response protocol.BatchLogResponse
 
 		if internalgrpc.IsGRPCEnabled(ctx) {
+			// Each of the repo names belong to the same shard - look up the address
+			// of the target gitserver shard from any one of them.
 			client, err := c.ClientForRepo(api.RepoName(repoNames[0]))
 			if err != nil {
 				return err
