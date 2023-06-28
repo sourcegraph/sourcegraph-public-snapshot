@@ -979,7 +979,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 	// Make a request to a single gitserver shard and feed the results to the user-supplied
 	// callback. This function is invoked multiple times (and concurrently) in the loops below
 	// this function definition.
-	performLogRequestToShard := func(ctx context.Context, addr string, repoCommits []api.RepoCommit) (err error) {
+	performLogRequestToShard := func(ctx context.Context, addr string, client proto.GitserverServiceClient, repoCommits []api.RepoCommit) (err error) {
 		var numProcessed int
 		repoNames := repoNamesFromRepoCommits(repoCommits)
 
@@ -998,8 +998,6 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			})
 		}()
 
-		uri := "http://" + addr + "/batch-log"
-
 		request := protocol.BatchLogRequest{
 			RepoCommits: repoCommits,
 			Format:      opts.Format,
@@ -1008,13 +1006,6 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		var response protocol.BatchLogResponse
 
 		if internalgrpc.IsGRPCEnabled(ctx) {
-			// Each of the repo names belong to the same shard - look up the address
-			// of the target gitserver shard from any one of them.
-			client, err := c.ClientForRepo(api.RepoName(repoNames[0]))
-			if err != nil {
-				return err
-			}
-
 			resp, err := client.BatchLog(ctx, request.ToProto())
 			if err != nil {
 				return err
@@ -1022,14 +1013,13 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 			response.FromProto(resp)
 			logger.AddEvent("read response", attribute.Int("numResults", len(response.Results)))
-
 		} else {
-
 			var buf bytes.Buffer
 			if err := json.NewEncoder(&buf).Encode(request); err != nil {
 				return err
 			}
 
+			uri := "http://" + addr + "/batch-log"
 			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), "POST", uri, buf.Bytes())
 			if err != nil {
 				return err
@@ -1112,10 +1102,15 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 			return err
 		}
 
+		client, err := c.ClientForRepo(repoCommits[0].Repo)
+		if err != nil {
+			return err
+		}
+
 		g.Go(func() (err error) {
 			defer sem.Release(1)
 
-			return performLogRequestToShard(ctx, addr, repoCommits)
+			return performLogRequestToShard(ctx, addr, client, repoCommits)
 		})
 	}
 
