@@ -95,7 +95,7 @@ There are two easy approaches to filtering the audit logs:
 - Message-based: we recommend going the JSON route, but if there's no easy way of parsing JSON using your SIEM or data processing stack, you can filter based on the following string: `auditId`.
 
 ### Cloud
-[Cloud](../cloud/index.md)
+[Cloud](../cloud/index.md#audit-logs)
 
 
 Audit Logs are a default feature for Cloud instances, with a standard retention policy of 30 days. Should you wish to
