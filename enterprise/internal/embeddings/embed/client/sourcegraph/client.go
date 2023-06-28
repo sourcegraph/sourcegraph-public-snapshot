@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
-	mt "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/modeltransformations"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -59,11 +59,11 @@ func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
 }
 
 func (c *sourcegraphEmbeddingsClient) GetQueryEmbeddingWithRetries(ctx context.Context, query string, maxRetries int) ([]float32, error) {
-	return c.getEmbeddingsWithRetries(ctx, []string{mt.ApplyModelTransformationsForQuery(query, c.GetModelIdentifier())}, maxRetries)
+	return c.getEmbeddingsWithRetries(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())}, maxRetries)
 }
 
 func (c *sourcegraphEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error) {
-	return c.getEmbeddingsWithRetries(ctx, mt.ApplyModelTransformationsForDocuments(documents, c.GetModelIdentifier()), maxRetries)
+	return c.getEmbeddingsWithRetries(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()), maxRetries)
 }
 
 // getEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.

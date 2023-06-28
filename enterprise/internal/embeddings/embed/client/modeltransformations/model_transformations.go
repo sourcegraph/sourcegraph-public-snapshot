@@ -14,7 +14,7 @@ func isE5LikeModel(model string) bool {
 	return strings.HasPrefix(model, "sourcegraph/scout") || strings.HasPrefix(model, "sourcegraph/e5")
 }
 
-func ApplyModelTransformationsForQuery(query string, model string) string {
+func ApplyToQuery(query string, model string) string {
 	transformedQuery := query
 	if isE5LikeModel(model) {
 		transformedQuery = E5_QUERY_PREFIX + transformedQuery
@@ -26,7 +26,7 @@ func ApplyModelTransformationsForQuery(query string, model string) string {
 	return transformedQuery
 }
 
-func ApplyModelTransformationsForDocuments(documents []string, model string) []string {
+func ApplyToDocuments(documents []string, model string) []string {
 	_, replaceNewlines := modelsWithoutNewlines[model]
 	hasE5Prefix := isE5LikeModel(model)
 
