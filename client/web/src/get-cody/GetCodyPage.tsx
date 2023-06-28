@@ -255,7 +255,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                     <span className={styles.downloadForVscodeText}>Install Cody for VS Code</span>
                                 </Link>
                                 <Link
-                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai#:~:text=Cody%20for%20VS%20Code%20is,not%20just%20your%20open%20files"
+                                    to="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai#:~:text=Cody%20for%20VS%20Code%20is,no%20problem%20for%20Cody."
                                     className={classNames('text-decoration-none', styles.vscodeMarketplace)}
                                 >
                                     Or download on the VS Code Marketplace
