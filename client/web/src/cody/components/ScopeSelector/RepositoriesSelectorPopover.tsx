@@ -512,16 +512,16 @@ const getEmbeddingStatus = ({
     embeddingExists,
     embeddingJobs,
 }: IRepo): { status: RepoEmbeddingStatus; tooltip: string; icon: string; className: string } => {
-    if (!embeddingJobs?.nodes.length) {
-        if (embeddingExists) {
-            return {
-                status: RepoEmbeddingStatus.INDEXED,
-                tooltip: 'Repository is indexed',
-                icon: mdiDatabaseCheckOutline,
-                className: '',
-            }
+    if (embeddingExists) {
+        return {
+            status: RepoEmbeddingStatus.INDEXED,
+            tooltip: 'Repository is indexed',
+            icon: mdiDatabaseCheckOutline,
+            className: '',
         }
+    }
 
+    if (!embeddingJobs?.nodes.length) {
         return {
             status: RepoEmbeddingStatus.NOT_INDEXED,
             tooltip: 'Repository is not indexed',
