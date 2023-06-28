@@ -2067,11 +2067,11 @@ WEBPACK_CONFIG_DEPS = [
 BUNDLE_DATA_DEPS = [
     ":module_styles",
     ":package_styles",
+    "src/get-cody/SourceSans3VF-Upright.ttf.woff2",
 ]
 
 ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
     # static assets imported in .ts
-    "src/get-cody/SourceSans3VF-Upright.ttf.woff2",
     "src/enterprise/productSubscription/ProductCertificate-background.png",
 
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
