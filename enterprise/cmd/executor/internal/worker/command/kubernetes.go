@@ -564,7 +564,7 @@ func NewKubernetesSingleJob(
 
 	sslCAInfo := ""
 	if options.GitCACert != "" {
-		sslCAInfo = fmt.Sprintf("git config --local http.sslCAInfo %s; ", options.GitCACert)
+		sslCAInfo = fmt.Sprintf("git -C %s config --local http.sslCAInfo %s; ", repoDir, options.GitCACert)
 	}
 
 	setupArgs := []string{
