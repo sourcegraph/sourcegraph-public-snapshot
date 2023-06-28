@@ -45,9 +45,6 @@ public class CodyProjectService
   @Override
   @Nullable
   public String getDotComAccessToken() {
-    if (dotComAccessToken == null) {
-      return System.getenv("SRC_ACCESS_TOKEN");
-    }
     return dotComAccessToken;
   }
 
@@ -110,10 +107,7 @@ public class CodyProjectService
     // configuring enterpriseAccessToken overrides the deprecated accessToken field
     String configuredEnterpriseAccessToken =
         StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
-    // defaulting to SRC_ACCESS_TOKEN env if nothing else was configured
-    return configuredEnterpriseAccessToken == null
-        ? System.getenv("SRC_ACCESS_TOKEN")
-        : configuredEnterpriseAccessToken;
+    return configuredEnterpriseAccessToken;
   }
 
   @Override
