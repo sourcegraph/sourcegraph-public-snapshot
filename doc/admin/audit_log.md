@@ -95,6 +95,7 @@ There are two easy approaches to filtering the audit logs:
 - Message-based: we recommend going the JSON route, but if there's no easy way of parsing JSON using your SIEM or data processing stack, you can filter based on the following string: `auditId`.
 
 ### Cloud
+[Cloud](../cloud/index.md)
 
 
 Audit Logs are a default feature for Cloud instances, with a standard retention policy of 30 days. Should you wish to
@@ -102,8 +103,6 @@ extend this period, please be aware that additional charges will apply. To reque
 your assigned Customer Engineer (CE) or send an email to Sourcegraph Support at support@sourcegraph.com.
 
 For requesting audit logs, please follow the above steps and contact your assigned Sourcegraph representative or our support team.
-
-For internal use, please use [this](https://github.com/sourcegraph/customer/issues/new?assignees=&labels=team%2Fcloud%2Cmi%2Faudit-log&projects=&template=managed-instance-audit-log.md&title=%24CUSTOMER%3A+Configure%2FRequest+Audit+logs) ticket format to request changes to Cloud Audit logs.
 
 
 ## Developing
