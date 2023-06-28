@@ -838,12 +838,6 @@
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
         },
-        "cody.experimental.nonStop": {
-          "order": 9,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
-        },
         "cody.debug.enable": {
           "order": 99,
           "type": "boolean",
