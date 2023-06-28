@@ -999,7 +999,6 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		}()
 
 		uri := "http://" + addr + "/batch-log"
-		repoName := api.RepoName(strings.Join(repoNames, ",")) // only used to label spans
 
 		request := protocol.BatchLogRequest{
 			RepoCommits: repoCommits,
@@ -1029,7 +1028,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 				return err
 			}
 
-			resp, err := c.do(ctx, repoName, "POST", uri, buf.Bytes())
+			resp, err := c.do(ctx, api.RepoName(strings.Join(repoNames, ",")), "POST", uri, buf.Bytes())
 			if err != nil {
 				return err
 			}
@@ -1558,16 +1557,16 @@ func (c *clientImplementor) httpPost(ctx context.Context, repo api.RepoName, op 
 // do performs a request to a gitserver instance based on the address in the uri
 // argument.
 //
-// Repo parameter is optional. If it is provided, then "repo" attribute is added
+// repoForTracing parameter is optional. If it is provided, then "repo" attribute is added
 // to trace span.
-func (c *clientImplementor) do(ctx context.Context, repo api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
+func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName, method, uri string, payload []byte) (resp *http.Response, err error) {
 	parsedURL, err := url.ParseRequestURI(uri)
 	if err != nil {
 		return nil, errors.Wrap(err, "do")
 	}
 
 	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		attribute.String("repo", string(repoForTracing)),
 		attribute.String("method", method),
 		attribute.String("path", parsedURL.Path),
 	}})
