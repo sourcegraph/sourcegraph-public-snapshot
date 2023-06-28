@@ -107,8 +107,6 @@ class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
   private final @NotNull Project project;
-  private final JPanel appNotInstalledPanel;
-  private final JPanel appNotRunningPanel;
   private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
@@ -262,8 +260,8 @@ class CodyToolWindowContent implements UpdatableChat {
     contentPanel.add(controlsPanel, BorderLayout.SOUTH);
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
-    appNotInstalledPanel = createAppNotInstalledPanel();
-    appNotRunningPanel = createAppNotRunningPanel();
+    JPanel appNotInstalledPanel = createAppNotInstalledPanel();
+    JPanel appNotRunningPanel = createAppNotRunningPanel();
     allContentPanel.add(tabbedPane, "tabbedPane");
     allContentPanel.add(appNotInstalledPanel, "appNotInstalledPanel");
     allContentPanel.add(appNotRunningPanel, "appNotRunningPanel");
