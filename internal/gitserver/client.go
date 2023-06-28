@@ -1747,7 +1747,7 @@ func revsToGitArgs(revSpecs []protocol.RevisionSpecifier) []string {
 // string. However, in the unlikely scenario that it fails to read the body, it will encode and
 // return the error message as a string.
 //
-// This allows us to use this function directly without yet another if dialErr != nil check. As a
+// This allows us to use this function directly without yet another if err != nil check. As a
 // result, this function should **only** be used when we're attempting to return the body's content
 // as part of an error. In such scenarios we don't need to return the potential error from reading
 // the body, but can get away with returning that error as a string itself.
