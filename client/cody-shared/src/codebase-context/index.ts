@@ -214,7 +214,19 @@ export class CodebaseContext {
                     fileName: context.filepath,
                     repoName: context.repository,
                 },
-                text: `Here is the code snippet: ${context.text}`,
+                text: `
+                As my coding assistant, use this context to help me answer the question asked:
+
+                Here is the precise snippet of code that is relevant to the current active file: ${context.text}
+
+                ## Instruction
+                - Do not enclose your answer with tags.
+                - Do not remove code that might be being used by the other part of the code that was not shared.
+                - Your answers and suggestions should based on the provided context only.
+                - Make references to other part of the shared code.
+                - Do not suggest code that are not related to any of the shared context.
+                - Do not suggest anything that would break the working code.
+                `,
             })
             contextMessages.push({ speaker: 'assistant', text: 'okay' })
         }
