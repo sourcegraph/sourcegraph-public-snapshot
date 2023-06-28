@@ -12,7 +12,6 @@ import git4idea.repo.GitRepository;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
@@ -100,16 +99,13 @@ public class RepoUtil {
       @NotNull Project project, @NotNull VirtualFile file) throws Exception {
     String remoteUrl = getRemoteRepoUrl(project, file);
     String repoName;
-      try {
-          URL url = new URL(remoteUrl);
-          repoName = url.getHost() + url.getPath();
-      } catch (MalformedURLException e) {
-          repoName = remoteUrl
-              .substring(remoteUrl.indexOf('@') + 1)
-              .replaceFirst(":", "/");
-      }
-    return repoName
-        .replaceFirst(".git$", "");
+    try {
+      URL url = new URL(remoteUrl);
+      repoName = url.getHost() + url.getPath();
+    } catch (MalformedURLException e) {
+      repoName = remoteUrl.substring(remoteUrl.indexOf('@') + 1).replaceFirst(":", "/");
+    }
+    return repoName.replaceFirst(".git$", "");
   }
 
   // Returned format: git@github.com:sourcegraph/sourcegraph.git
