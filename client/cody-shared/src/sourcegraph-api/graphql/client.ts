@@ -104,6 +104,7 @@ export interface PreciseContextResult {
     symbolRole: number
     confidence: string
     text: string
+    filepath: string
 }
 
 interface PreciseContextResponse {
@@ -120,6 +121,7 @@ interface PreciseDataContext {
     symbolRole: number
     confidence: string
     text: string
+    filepath: string
 }
 
 interface SearchAttributionResponse {

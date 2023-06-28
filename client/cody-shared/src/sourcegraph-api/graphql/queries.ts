@@ -172,6 +172,7 @@ query GetPreciseContext($input: PreciseContextInput!) {
             repository
             text
             confidence
+            filepath
         }
     }
 }
