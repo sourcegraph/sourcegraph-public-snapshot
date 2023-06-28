@@ -44,7 +44,7 @@ func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.
 
 		provider := parseProvider(pr.Gerrit)
 		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider with url %q", provider.ServiceID)))
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one Gerrit auth provider with url %q", provider.ServiceID)))
 			continue
 		}
 

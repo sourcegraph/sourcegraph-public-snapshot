@@ -52,15 +52,11 @@ const getNormalizedAccount = (
         name,
     }
 
-    for (let i = 0; i < providerAccounts.length; i++) {
-        const pAcc = providerAccounts[i]
-        if (pAcc && pAcc.clientID === authProvider.clientID) {
-            if (pAcc.publicAccountData) {
-                normalizedAccount.external = {
-                    id: pAcc.id,
-                    ...pAcc.publicAccountData,
-                }
-            }
+    const providerAccount = providerAccounts.find(acc => acc.clientID === authProvider.clientID)
+    if (providerAccount && providerAccount.publicAccountData) {
+        normalizedAccount.external = {
+            id: providerAccount.id,
+            ...providerAccount.publicAccountData,
         }
     }
 

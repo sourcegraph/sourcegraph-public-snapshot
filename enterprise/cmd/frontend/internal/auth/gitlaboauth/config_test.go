@@ -262,7 +262,7 @@ func TestParseConfig(t *testing.T) {
 				},
 			},
 			wantProblems: []string{
-				`Cannot have more than one auth provider with url "https://gitlab.com/" and client ID "my-client-id", only the first one will be used`,
+				`Cannot have more than one GitLab auth provider with url "https://gitlab.com/" and client ID "my-client-id", only the first one will be used`,
 			},
 		},
 		{

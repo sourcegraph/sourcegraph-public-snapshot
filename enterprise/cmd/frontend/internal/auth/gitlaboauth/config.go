@@ -78,7 +78,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		}
 
 		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
-			problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q and client ID %q, only the first one will be used`, provider.ServiceID, provider.CachedInfo().ClientID))...)
+			problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one GitLab auth provider with url %q and client ID %q, only the first one will be used`, provider.ServiceID, provider.CachedInfo().ClientID))...)
 			continue
 		}
 
