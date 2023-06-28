@@ -1,5 +1,6 @@
 import { LRUCache } from 'lru-cache'
-import * as vscode from 'vscode'
+
+// import * as vscode from 'vscode'
 
 // import { logEvent } from '../event-logger'
 
@@ -132,12 +133,13 @@ function logSuggestionEvent(): void {
     // need to retain the ability to mark them as seen
 }
 
-const otherCompletionProviders = [
-    'GitHub.copilot',
-    'GitHub.copilot-nightly',
-    'TabNine.tabnine-vscode',
-    'TabNine.tabnine-vscode-self-hosted-updater',
-]
+// const otherCompletionProviders = [
+//     'GitHub.copilot',
+//     'GitHub.copilot-nightly',
+//     'TabNine.tabnine-vscode',
+//     'TabNine.tabnine-vscode-self-hosted-updater',
+// ]
 function otherCompletionProviderEnabled(): boolean {
-    return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
+    // return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)
+    return false
 }

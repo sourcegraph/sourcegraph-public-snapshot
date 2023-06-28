@@ -33,7 +33,7 @@ export function detectMultilineMode(
         // Only trigger multiline suggestions for the beginning of blocks
         prefix.trim().at(prefix.trim().length - config.blockStart.length) === config.blockStart &&
         // Only trigger multiline suggestions when the new current line is indented
-        indentation(prevNonEmptyLine) < indentation(sameLinePrefix)
+        indentation(textEditor, prevNonEmptyLine) < indentation(textEditor, sameLinePrefix)
     ) {
         return 'block'
     }
@@ -77,9 +77,9 @@ function adjustIndentation(text: string, originalIndent: number, newIndent: numb
         .join('\n')
 }
 
-function ensureSameOrLargerIndentation(completion: string): string {
+function ensureSameOrLargerIndentation(textEditor: CompletionsTextEditor, completion: string): string {
     const indentAmount = detectIndent(completion).amount
-    const editorTabSize = getEditorTabSize()
+    const editorTabSize = getEditorTabSize(textEditor)
 
     if (editorTabSize > indentAmount) {
         return adjustIndentation(completion, indentAmount, editorTabSize)
@@ -117,12 +117,16 @@ function shouldIncludeClosingLineBasedOnBrackets(
  * Only include a closing line (e.g. `}`) if the block is empty yet if the block is already closed.
  * We detect this by looking at the indentation of the next non-empty line.
  */
-function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine: string, suffix: string): boolean {
+function shouldIncludeClosingLine(
+    textEditor: CompletionsTextEditor,
+    prefixIndentationWithFirstCompletionLine: string,
+    suffix: string
+): boolean {
     const includeClosingLineBasedOnBrackets = shouldIncludeClosingLineBasedOnBrackets(
         prefixIndentationWithFirstCompletionLine,
         suffix
     )
-    const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
+    const startIndent = indentation(textEditor, prefixIndentationWithFirstCompletionLine)
 
     const firstNewLineIndex = suffix.indexOf('\n') + 1
     const nextNonEmptyLine =
@@ -131,7 +135,7 @@ function shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine: stri
             .split('\n')
             .find(line => line.trim().length > 0) ?? ''
 
-    return indentation(nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
+    return indentation(textEditor, nextNonEmptyLine) < startIndent || includeClosingLineBasedOnBrackets
 }
 
 export function truncateMultilineCompletion(
@@ -150,7 +154,7 @@ export function truncateMultilineCompletion(
     // because we rely on the indentation size to cut off the completion.
     // TODO: add unit tests for this case. We need to update the indentation logic
     // used in unit tests for code samples.
-    const indentedCompletion = ensureSameOrLargerIndentation(completion)
+    const indentedCompletion = ensureSameOrLargerIndentation(textEditor, completion)
     const lines = indentedCompletion.split('\n')
 
     // We use a whitespace counting approach to finding the end of the
@@ -159,7 +163,7 @@ export function truncateMultilineCompletion(
     // spaces or tabs)
     const prefixLastNewline = prefix.lastIndexOf('\n')
     const prefixIndentationWithFirstCompletionLine = prefix.slice(prefixLastNewline + 1)
-    const startIndent = indentation(prefixIndentationWithFirstCompletionLine)
+    const startIndent = indentation(textEditor, prefixIndentationWithFirstCompletionLine)
     const hasEmptyCompletionLine = prefixIndentationWithFirstCompletionLine.trim() === ''
 
     // Normalize responses that start with a newline followed by the exact
@@ -169,7 +173,7 @@ export function truncateMultilineCompletion(
         lines[0] = lines[0].trimStart()
     }
 
-    const includeClosingLine = shouldIncludeClosingLine(prefixIndentationWithFirstCompletionLine, suffix)
+    const includeClosingLine = shouldIncludeClosingLine(textEditor, prefixIndentationWithFirstCompletionLine, suffix)
 
     let cutOffIndex = lines.length
     for (let i = 0; i < lines.length; i++) {
@@ -180,8 +184,8 @@ export function truncateMultilineCompletion(
         }
 
         if (
-            (indentation(line) <= startIndent && !hasEmptyCompletionLine) ||
-            (indentation(line) < startIndent && hasEmptyCompletionLine)
+            (indentation(textEditor, line) <= startIndent && !hasEmptyCompletionLine) ||
+            (indentation(textEditor, line) < startIndent && hasEmptyCompletionLine)
         ) {
             // When we find the first block below the start indentation, only
             // include it if it is an end block
