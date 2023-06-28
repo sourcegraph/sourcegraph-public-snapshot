@@ -11,7 +11,7 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 
 Cody is also available as an editor extension that can be connected to a Sourcegraph enterprise instance, the Cody app, or Sourcegraph.com (for open source code only):
   - [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  - Jetbrains extension (coming soon)
+  - JetBrains extension (coming soon)
 
 [Read more about the Cody clients, extensions, and plugins](explanations/cody_clients.md), including a full breakdown of features available by client. 
 
