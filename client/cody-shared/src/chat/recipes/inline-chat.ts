@@ -6,12 +6,12 @@ import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { ChatQuestion } from './chat-question'
-import { FileTouch } from './file-touch'
 import { Fixup } from './fixup'
 import { commandRegex } from './helpers'
+import { InlineTouch } from './inline-touch'
 import { Recipe, RecipeContext, RecipeID } from './recipe'
 
-export class InlineAssist implements Recipe {
+export class InlineChat implements Recipe {
     public id: RecipeID = 'inline-chat'
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
@@ -19,7 +19,7 @@ export class InlineAssist implements Recipe {
     public async getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null> {
         // Check if this is a touch request
         if (commandRegex.touch.test(humanChatInput)) {
-            return new FileTouch(this.debug).getInteraction(humanChatInput.replace(commandRegex.touch, ''), context)
+            return new InlineTouch(this.debug).getInteraction(humanChatInput.replace(commandRegex.touch, ''), context)
         }
 
         // Check if this is a fixup request
@@ -39,14 +39,13 @@ export class InlineAssist implements Recipe {
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
-        const promptText = InlineAssist.prompt
+        const promptText = InlineChat.prompt
             .replace('{humanInput}', truncatedText)
             .replace('{selectedText}', truncatedSelectedText)
             .replace('{fileName}', selection.fileName)
 
         // Text display in UI fpr human that includes the selected code
-        const displayText =
-            humanChatInput + InlineAssist.displayPrompt.replace('{selectedText}', selection.selectedText)
+        const displayText = humanChatInput + InlineChat.displayPrompt.replace('{selectedText}', selection.selectedText)
 
         return Promise.resolve(
             new Interaction(
@@ -83,7 +82,7 @@ export class InlineAssist implements Recipe {
 
     // Prompt template for displaying the prompt to users in chat view
     public static readonly displayPrompt = `
-    \nQuestions based on the code below:\n\`\`\`\n{selectedText}\n\`\`\`\n`
+    \n\`\`\`\n{selectedText}\n\`\`\`\n`
 
     // Get context from editor
     private async getContextMessages(

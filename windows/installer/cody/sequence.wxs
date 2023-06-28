@@ -76,7 +76,7 @@ Patch dialog sequence:
 
         <UIRef Id="WixUI_Common" />
 
-        <CustomAction Id="PrintEula" DllEntry="PrintEula" Return="check" Execute="immediate" BinaryRef="WixUiCa_X64"  />
-        <CustomAction Id="WixUIValidatePath" DllEntry="ValidatePath" Return="check" Execute="immediate" BinaryRef="WixUiCa_X64"  />
+        <CustomAction Id="PrintEula" DllEntry="PrintEula" Return="ignore" Execute="immediate" BinaryRef="WixUiCa_X64"  />
+        <CustomAction Id="WixUIValidatePath" DllEntry="ValidatePath" Return="ignore" Execute="immediate" BinaryRef="WixUiCa_X64"  />
     </Fragment>
 </Wix>

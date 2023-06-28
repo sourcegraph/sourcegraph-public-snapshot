@@ -1,10 +1,66 @@
 <!-- Plugin description -->
 
-# Sourcegraph for JetBrains IDEs
+# Cody AI by Sourcegraph
 
-- **New:** Search with Sourcegraph directly from inside the IDE
+Cody for JetBrains IDEs is an AI code assistant that can write code and answers questions across your entire codebase. It combines the power of large language models with Sourcegraph’s Code Graph API, generating deep knowledge of all of your code (and not just your open files). Large monorepos, multiple languages, and complex codebases are no problem for Cody.
+
+For example, you can ask Cody:
+
+- Where is the CI config for the web integration tests?
+- Write a new GraphQL resolver for the AuditLog
+- Why is the UserConnectionResolver giving an error "unknown user", and how do I fix it?
+- Add helpful debug log statements
+- Make this work _(seriously, it often works—try it!)_
+
+  **Cody AI for JetBrains IDEs is experimental right now, and we’d love your [feedback](https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&labels=cody,cody/jetbrains)**!
+
+## Features
+
+### 🤖 Ask Cody about anything in your codebase
+
+Cody understands your entire codebase — not just your open files. Ask questions, insert code, and use the built-in recipes such as "Summarize recent code changes" and "Improve variable names".
+
+![Example of chatting with Cody](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/Chat_IntelliJ_SS.jpg)
+
+### 🔨 Let Cody write code for you
+
+Cody can provide real-time code autocompletions as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files, your file history, and your entire codebase to predict what you're trying to implement and provide suggestions.
+
+![Example of using code autocomplete](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/AutoCompletion_IntelliJ_SS.jpg)
+
+## 🍳 Built-in recipes
+
+Select the recipes tab or right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
+
+- Explain code
+- Generate unit test
+- Generate docstring
+- Improve variable names
+- Translate to different language
+- Summarize recent code changes
+- Detect code smells
+- Generate release notes
+
+_We also welcome also pull request contributions for new, useful recipes!_
+
+## Feedback
+
+- [Issue tracker](https://github.com/sourcegraph/sourcegraph/issues)
+- [Discord chat](https://discord.gg/s2qDtYGnAE)
+- [Twitter (@sourcegraph)](https://twitter.com/sourcegraph)
+
+## License
+
+[Cody's code](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains) is open source (Apache License 2.0).
+
+## Code Search features
+
+- Search with Sourcegraph directly from inside the IDE
 - Instantly search in all open source repos and your private code
 - Peek into any remote repo in the IDE, without checking it out locally
+
+## URL sharing features
+
 - Create URLs to specific code blocks to share them with your teammates
 - Open your files on Sourcegraph
 
@@ -58,7 +114,6 @@ The plugin works with all JetBrains IDEs, including:
   - If you use Sourcegraph.com, using an access token is optional (and only necessary to use Cody).
   - The configuration for an access token to use with Sourcegraph.com & a private instance is separate,
     you can switch between them on the fly.
-  - You can override the access token with the `SRC_ACCESS_TOKEN` environment variable.
   - See our [user docs](https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token) for a video guide on how to
     create an access token.
 - **Custom request headers**: Any custom headers to send with every request to Sourcegraph.

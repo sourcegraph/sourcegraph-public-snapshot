@@ -30,7 +30,8 @@ interface ChatProps extends ChatClassNames {
     submitButtonComponent: React.FunctionComponent<ChatUISubmitButtonProps>
     suggestionButtonComponent?: React.FunctionComponent<ChatUISuggestionButtonProps>
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
-    afterTips?: string
+    helpMarkdown?: string
+    afterMarkdown?: string
     className?: string
     EditButtonContainer?: React.FunctionComponent<EditButtonProps>
     editButtonOnSubmit?: (text: string) => void
@@ -110,7 +111,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     submitButtonComponent: SubmitButton,
     suggestionButtonComponent: SuggestionButton,
     fileLinkComponent,
-    afterTips,
+    helpMarkdown,
+    afterMarkdown,
     className,
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
@@ -227,11 +229,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
         () => [
             {
                 speaker: 'assistant',
-                displayText: welcomeText(afterTips),
+                displayText: welcomeText({ helpMarkdown, afterMarkdown }),
             },
             ...transcript,
         ],
-        [afterTips, transcript]
+        [helpMarkdown, afterMarkdown, transcript]
     )
 
     return (
@@ -317,11 +319,18 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     )
 }
 
-function welcomeText(afterTips?: string): string {
-    return [
-        "Hello! I'm Cody. I can write code and answer questions for you. See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.",
-        afterTips,
-    ]
+interface WelcomeTextOptions {
+    /** Provide users with a way to quickly access Cody docs/help.*/
+    helpMarkdown?: string
+    /** Provide additional content to supplement the original message. Example: tips, privacy policy. */
+    afterMarkdown?: string
+}
+
+function welcomeText({
+    helpMarkdown = 'See [Cody documentation](https://docs.sourcegraph.com/cody) for help and tips.',
+    afterMarkdown,
+}: WelcomeTextOptions): string {
+    return ["Hello! I'm Cody. I can write code and answer questions for you. " + helpMarkdown, afterMarkdown]
         .filter(isDefined)
         .join('\n\n')
 }

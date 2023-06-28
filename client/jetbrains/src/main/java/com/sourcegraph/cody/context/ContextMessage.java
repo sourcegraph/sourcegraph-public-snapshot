@@ -6,7 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ContextMessage extends Message {
-  @Nullable private final ContextFile file;
+  private final @Nullable ContextFile file;
 
   public ContextMessage(
       @NotNull Speaker speaker, @NotNull String text, @Nullable ContextFile file) {
@@ -21,6 +21,10 @@ public class ContextMessage extends Message {
   public static @NotNull ContextMessage createHumanMessage(
       @NotNull String text, @NotNull ContextFile file) {
     return new ContextMessage(Speaker.HUMAN, text, file);
+  }
+
+  public static @NotNull ContextMessage createHumanMessage(@NotNull String text) {
+    return new ContextMessage(Speaker.HUMAN, text, null);
   }
 
   public static @NotNull ContextMessage createDefaultAssistantMessage() {

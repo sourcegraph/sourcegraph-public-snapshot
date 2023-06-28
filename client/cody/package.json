@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.2.5",
+  "version": "0.4.0",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -109,8 +109,8 @@
           },
           {
             "id": "inline-assist",
-            "title": "Inline Assist (Experimental)",
-            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Assist.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
+            "title": "Inline Chat (Experimental)",
+            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
             }
@@ -118,7 +118,7 @@
           {
             "id": "autocomplete",
             "title": "Code Autocomplete (Beta)",
-            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.\n[Enable in Settings](command:cody.walkthrough.enableCodeAutocomplete)",
+            "description": "Let Cody automatically write code for you. Start writing a comment or a line of code and Cody will suggest the next few lines.",
             "media": {
               "markdown": "walkthroughs/autocomplete.md"
             }
@@ -288,28 +288,26 @@
         "title": "Set Access Token"
       },
       {
+        "command": "cody.settings.user",
+        "category": "Cody",
+        "title": "User Settings",
+        "icon": "$(account)"
+      },
+      {
         "command": "cody.auth.signout",
         "category": "Cody",
-        "title": "Sign Out",
+        "title": "Sign Out…",
         "icon": "$(sign-out)"
       },
       {
         "command": "cody.auth.signin",
         "category": "Cody",
-        "title": "Switch Account"
+        "title": "Switch Account…"
       },
       {
         "command": "cody.manual-completions",
         "category": "Cody",
-        "title": "Open Completions Panel"
-      },
-      {
-        "command": "cody.settings.user",
-        "category": "Cody",
-        "title": "User Settings",
-        "group": "Cody",
-        "icon": "$(account)",
-        "when": "cody.activated"
+        "title": "Open Autocomplete Panel (Experimental)"
       },
       {
         "command": "cody.settings.extension",
@@ -358,37 +356,39 @@
         "title": "Show Explain"
       },
       {
-        "command": "cody.walkthrough.enableInlineAssist",
+        "command": "cody.walkthrough.enableInlineChat",
         "category": "Cody Walkthrough",
-        "title": "Show Inline Assist"
-      },
-      {
-        "command": "cody.walkthrough.enableCodeAutocomplete",
-        "category": "Cody Walkthrough",
-        "title": "Enable Code Completions"
+        "title": "Show Inline Chat"
       },
       {
         "command": "cody.comment.add",
         "title": "Ask Cody",
-        "category": "Cody Inline Assist",
-        "when": "cody.activated && cody.inline-assist.enabled",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
         "title": "Remove Comment",
-        "category": "Cody Inline Assist",
-        "when": "cody.activated && cody.inline-assist.enabled",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
       },
       {
         "command": "cody.comment.load",
         "title": "Loading",
-        "category": "Cody Inline Assist",
-        "when": "cody.activated && cody.inline-assist.enabled",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
+      },
+      {
+        "command": "cody.inline.new",
+        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
+        "category": "Cody Inline Assist",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
+        "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.guardrails.debug",
@@ -397,7 +397,7 @@
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.recipe.file-touch",
+        "command": "cody.recipe.inline-touch",
         "category": "Cody",
         "title": "Touch"
       },
@@ -472,10 +472,15 @@
         "when": "cody.activated && editorHasSelection && !editorReadonly"
       },
       {
-        "command": "cody.recipe.file-touch",
-        "key": "ctrl+shift+t",
-        "mac": "shift+cmd+t",
+        "command": "cody.recipe.inline-touch",
+        "key": "ctrl+alt+/",
+        "mac": "cmd+alt+/",
         "when": "cody.activated && editorTextFocus && !editorReadonly"
+      },
+      {
+        "command": "cody.inline.new",
+        "key": "ctrl+shift+c",
+        "when": "cody.activated && !editorReadonly"
       }
     ],
     "submenus": [
@@ -503,7 +508,7 @@
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.recipe.file-touch",
+          "command": "cody.recipe.inline-touch",
           "when": "cody.activated && editorHasSelection"
         },
         {
@@ -534,6 +539,10 @@
           "command": "cody.focus",
           "title": "Cody: Sign In",
           "when": "!cody.activated"
+        },
+        {
+          "command": "cody.settings.user",
+          "when": "cody.activated && cody.test.inProgress"
         },
         {
           "command": "cody.comment.add",
@@ -596,11 +605,7 @@
           "when": "false"
         },
         {
-          "command": "cody.walkthrough.enableCodeAutocomplete",
-          "when": "false"
-        },
-        {
-          "command": "cody.walkthrough.enableInlineAssist",
+          "command": "cody.walkthrough.enableInlineChat",
           "when": "false"
         }
       ],
@@ -624,8 +629,8 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.file-touch",
-          "when": "cody.activated && cody.inline-assist.enabled"
+          "command": "cody.recipe.inline-touch",
+          "when": "cody.activated && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.recipe.generate-unit-test",
@@ -698,11 +703,6 @@
           "group": "8_cody@1"
         },
         {
-          "command": "cody.settings.user",
-          "when": "view == cody.chat && cody.activated",
-          "group": "8_cody@0"
-        },
-        {
           "command": "cody.fixup.apply-all",
           "when": "cody.nonstop.fixups.enabled && view == cody.fixup.tree.view && cody.activated",
           "group": "navigation"
@@ -725,24 +725,24 @@
         {
           "command": "cody.comment.add",
           "group": "inline",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.inline-assist.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.focus",
           "group": "inline",
-          "when": "!cody.activated && commentController =~ /^cody-inline/ && cody.inline-assist.enabled"
+          "when": "!cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
         }
       ],
       "comments/commentThread/title": [
         {
           "command": "cody.comment.delete",
           "group": "inline@1",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && cody.inline-assist.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.comment.load",
           "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && cody.inline-assist.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && config.cody.inlineChat.enabled"
         }
       ],
       "view/item/context": [
@@ -817,20 +817,20 @@
           "order": 5,
           "type": "boolean",
           "markdownDescription": "Enables inline code suggestions in your editor.",
-          "default": false
+          "default": true
+        },
+        "cody.inlineChat.enabled": {
+          "order": 6,
+          "title": "Cody Inline Chat",
+          "type": "boolean",
+          "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
+          "default": true
         },
         "cody.experimental.chatPredictions": {
-          "order": 6,
+          "order": 7,
           "type": "boolean",
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
-        },
-        "cody.experimental.inline": {
-          "order": 7,
-          "title": "Cody Inline Assist",
-          "type": "boolean",
-          "markdownDescription": "Enables Cody Inline Assist, an inline way to explicitly ask questions and propose modifications to code.",
-          "default": false
         },
         "cody.experimental.guardrails": {
           "order": 8,

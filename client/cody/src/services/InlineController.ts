@@ -15,17 +15,19 @@ const initRange = new vscode.Range(initPost, initPost)
 export class InlineController {
     // Controller init
     private readonly id = 'cody-inline-chat'
-    private readonly label = 'Cody: File Chat'
-    private readonly threadLabel = 'Ask Cody...'
+    private readonly label = 'Cody: Inline Chat'
+    private readonly threadLabel =
+        '[TIPS] New Inline Chat: `ctrl + shift + c` | Submit: `cmd + enter` | Hide: `shift + esc`'
     private options = {
-        prompt: 'Click here to ask Cody.',
-        placeHolder: 'Ask Cody a question, or start with /fix to request edits (e.g. "/fix convert tabs to spaces")',
+        prompt: 'Cody Inline Chat - Ask Cody a question or request inline fix with `/fix` or `/touch`.',
+        placeHolder:
+            'Examples: "How can I improve this?", "/fix convert tabs to spaces", "/touch Create 5 different versions of this function". "What does this regex do?"',
     }
     private readonly codyIcon: vscode.Uri = getIconPath('cody', this.extensionPath)
     private readonly userIcon: vscode.Uri = getIconPath('user', this.extensionPath)
     private _disposables: vscode.Disposable[] = []
     // Constroller State
-    private commentController: vscode.CommentController
+    private commentController: vscode.CommentController | null = null
     public thread: vscode.CommentThread | null = null // a thread is a comment
     private threads = new Map<string, vscode.CommentThread>()
     private currentTaskId = ''
@@ -38,9 +40,23 @@ export class InlineController {
     private codeLenses: Map<string, CodeLensProvider> = new Map()
 
     constructor(private extensionPath: string) {
-        this.commentController = vscode.comments.createCommentController(this.id, this.label)
-        this.commentController.options = this.options
-
+        this.commentController = this.init()
+        this._disposables.push(this.commentController)
+        // Toggle Inline Chat on Config Change
+        vscode.workspace.onDidChangeConfiguration(e => {
+            const config = vscode.workspace.getConfiguration('cody')
+            if (e.affectsConfiguration('cody')) {
+                // Inline Chat
+                const enableInlineChat = config.get('inlineChat.enabled') as boolean
+                if (enableInlineChat) {
+                    this.commentController = this.init()
+                    return
+                }
+                this.commentController?.dispose()
+                this.commentController = null
+                this.dispose()
+            }
+        })
         // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
             if (
@@ -89,17 +105,34 @@ export class InlineController {
             vscode.commands.registerCommand('cody.inline.fix.undo', id => this.undo(id))
         )
     }
-
     /**
-     * Getter to return instance
+     * Create comment controller and set options
      */
-    public get(): vscode.CommentController {
+    public init(): vscode.CommentController {
+        this.commentController?.dispose()
+        const commentController = vscode.comments.createCommentController(this.id, this.label)
+        commentController.options = this.options
+        commentController.commentingRangeProvider = {
+            provideCommentingRanges: (document: vscode.TextDocument) => {
+                const lineCount = document.lineCount
+                return [new vscode.Range(0, 0, lineCount - 1, 0)]
+            },
+        }
+        return commentController
+    }
+    /**
+     * Getter to return comment controller
+     */
+    public get(): vscode.CommentController | null {
         return this.commentController
     }
     /**
      * Create a new thread (the first comment of a thread)
      */
     public create(humanInput: string): vscode.CommentReply | null {
+        if (!this.commentController) {
+            return null
+        }
         const editor = vscode.window.activeTextEditor
         if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
             return null
@@ -194,10 +227,9 @@ export class InlineController {
         }
         const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
         lens.updateState(CodyTaskState.asking, thread.range)
-        lens.decorator.setState(CodyTaskState.asking, thread.range)
-        await lens.decorator.decorate(thread.range)
         this.codeLenses.set(comment.id, lens)
         this.currentTaskId = comment.id
+        void vscode.commands.executeCommand('workbench.action.collapseAllComments')
     }
     /**
      * Reset the selection range once replacement started by fixup has been completed
@@ -213,14 +245,15 @@ export class InlineController {
         const status = error ? CodyTaskState.error : CodyTaskState.fixed
         const lens = this.codeLenses.get(this.currentTaskId)
         lens?.updateState(status, range)
-        lens?.decorator.setState(status, range)
-        await lens?.decorator.decorate(range)
         if (this.thread) {
             this.thread.range = range
             this.thread.state = error ? 1 : 0
         }
         this.currentTaskId = ''
-        logEvent('CodyVSCodeExtension:inline-assist:error')
+        logEvent('CodyVSCodeExtension:inline-assist:stopFixup')
+        if (!error) {
+            await vscode.commands.executeCommand('workbench.action.collapseAllComments')
+        }
     }
     /**
      * Get current selected lines from the comment thread.

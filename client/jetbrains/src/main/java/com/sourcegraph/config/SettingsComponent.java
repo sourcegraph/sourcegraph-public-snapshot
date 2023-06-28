@@ -4,6 +4,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.components.ActionLink;
 import com.intellij.ui.components.JBCheckBox;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.ui.components.JBTextField;
@@ -11,9 +12,12 @@ import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
+import com.sourcegraph.cody.localapp.LocalAppManager;
+import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.swing.*;
@@ -39,6 +43,9 @@ public class SettingsComponent {
   private JBCheckBox isUrlNotificationDismissedCheckBox;
   private JBCheckBox areCompletionsEnabledCheckBox;
 
+  private JButton testCodyAppConnectionButton;
+  private JLabel testCodyAppConnectionLabel;
+
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
   }
@@ -62,14 +69,16 @@ public class SettingsComponent {
     return panel;
   }
 
+  public static InstanceType getDefaultInstanceType() {
+    return LocalAppManager.isLocalAppInstalled() && LocalAppManager.isPlatformSupported()
+        ? InstanceType.LOCAL_APP
+        : InstanceType.DOTCOM;
+  }
+
   @NotNull
   public InstanceType getInstanceType() {
-    return instanceTypeButtonGroup
-            .getSelection()
-            .getActionCommand()
-            .equals(InstanceType.DOTCOM.name())
-        ? InstanceType.DOTCOM
-        : InstanceType.ENTERPRISE;
+    return InstanceType.optionalValueOf(instanceTypeButtonGroup.getSelection().getActionCommand())
+        .orElse(getDefaultInstanceType());
   }
 
   public void setInstanceType(@NotNull InstanceType instanceType) {
@@ -80,7 +89,18 @@ public class SettingsComponent {
       button.setSelected(button.getActionCommand().equals(instanceType.name()));
     }
 
-    setEnterpriseSettingsEnabled(instanceType == InstanceType.ENTERPRISE);
+    setInstanceSettingsEnabled(instanceType);
+  }
+
+  private ActionLink simpleActionLink(String text, Runnable runnable) {
+    ActionLink actionLink =
+        new ActionLink(
+            text,
+            e -> {
+              runnable.run();
+            });
+    actionLink.setFont(UIUtil.getLabelFont(UIUtil.FontSize.SMALL));
+    return actionLink;
   }
 
   @NotNull
@@ -108,7 +128,7 @@ public class SettingsComponent {
     addValidation(
         enterpriseAccessTokenTextField,
         () ->
-            !isValidAccessToken(enterpriseAccessTokenTextField.getText())
+            !AuthorizationUtil.isValidAccessToken(enterpriseAccessTokenTextField.getText())
                 ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
                 : null);
 
@@ -125,7 +145,7 @@ public class SettingsComponent {
     addValidation(
         dotComAccessTokenTextField,
         () ->
-            !isValidAccessToken(dotComAccessTokenTextField.getText())
+            !AuthorizationUtil.isValidAccessToken(dotComAccessTokenTextField.getText())
                 ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
                 : null);
 
@@ -143,21 +163,74 @@ public class SettingsComponent {
     // Set up radio buttons
     ActionListener actionListener =
         event ->
-            setEnterpriseSettingsEnabled(
-                event.getActionCommand().equals(InstanceType.ENTERPRISE.name()));
-    JRadioButton sourcegraphDotComRadioButton = new JRadioButton("Use sourcegraph.com");
-    sourcegraphDotComRadioButton.setMnemonic(KeyEvent.VK_C);
-    sourcegraphDotComRadioButton.setActionCommand(InstanceType.DOTCOM.name());
-    sourcegraphDotComRadioButton.addActionListener(actionListener);
+            setInstanceSettingsEnabled(
+                InstanceType.optionalValueOf(event.getActionCommand())
+                    .orElse(getDefaultInstanceType()));
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
+    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
+    JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
+    codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
+    codyAppRadioButton.setActionCommand(InstanceType.LOCAL_APP.name());
+    codyAppRadioButton.addActionListener(actionListener);
+    codyAppRadioButton.setEnabled(isLocalAppInstalled && isLocalAppAccessTokenConfigured);
+    JRadioButton dotcomRadioButton = new JRadioButton("Use sourcegraph.com");
+    dotcomRadioButton.setMnemonic(KeyEvent.VK_C);
+    dotcomRadioButton.setActionCommand(InstanceType.DOTCOM.name());
+    dotcomRadioButton.addActionListener(actionListener);
     JRadioButton enterpriseInstanceRadioButton = new JRadioButton("Use an enterprise instance");
     enterpriseInstanceRadioButton.setMnemonic(KeyEvent.VK_E);
     enterpriseInstanceRadioButton.setActionCommand(InstanceType.ENTERPRISE.name());
     enterpriseInstanceRadioButton.addActionListener(actionListener);
     instanceTypeButtonGroup = new ButtonGroup();
-    instanceTypeButtonGroup.add(sourcegraphDotComRadioButton);
+    instanceTypeButtonGroup.add(codyAppRadioButton);
+    instanceTypeButtonGroup.add(dotcomRadioButton);
     instanceTypeButtonGroup.add(enterpriseInstanceRadioButton);
 
-    // Assemble the two main panels
+    // Assemble the three main panels String platformName =
+    String platformName =
+        Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
+    String codyAppCommentText =
+        isLocalAppPlatformSupported
+            ? "Use Sourcegraph through Cody App."
+            : platformName
+                + " is not yet supported by the Cody App. Keep an eye on future updates!";
+    JBLabel codyAppComment =
+        new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
+    codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
+    JLabel installLocalAppComment =
+        new JBLabel(
+            "Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
+            UIUtil.ComponentStyle.SMALL,
+            UIUtil.FontColor.BRIGHTER);
+    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    ActionLink installLocalAppLink =
+        simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
+    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
+    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
+    ActionLink runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
+    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
+    JLabel runLocalAppComment =
+        new JBLabel(
+            "Cody App seems to be installed, but it's not running, currently.",
+            UIUtil.ComponentStyle.SMALL,
+            UIUtil.FontColor.BRIGHTER);
+    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
+    JPanel codyAppPanel =
+        FormBuilder.createFormBuilder()
+            .addComponent(codyAppRadioButton, 1)
+            .addComponent(codyAppComment, 2)
+            .addComponent(installLocalAppComment, 2)
+            .addComponent(installLocalAppLink, 2)
+            .addComponent(runLocalAppComment, 2)
+            .addComponent(runLocalAppLink, 2)
+            .getPanel();
     JBLabel dotComComment =
         new JBLabel(
             "Use sourcegraph.com to search public code",
@@ -172,14 +245,14 @@ public class SettingsComponent {
     dotComPanelContent.setBorder(IdeBorderFactory.createEmptyBorder(JBUI.insets(1, 30, 0, 0)));
     JPanel dotComPanel =
         FormBuilder.createFormBuilder()
-            .addComponent(sourcegraphDotComRadioButton, 1)
+            .addComponent(dotcomRadioButton, 1)
             .addComponent(dotComComment, 2)
             .addComponent(dotComPanelContent, 1)
             .getPanel();
     JPanel enterprisePanelContent =
         FormBuilder.createFormBuilder()
             .addLabeledComponent(urlLabel, urlTextField, 1)
-            .addTooltip("If your company uses a private Sourcegraph instance, set its URL here")
+            .addTooltip("If your company uses a Sourcegraph enterprise instance, set its URL here")
             .addLabeledComponent(accessTokenLabel, enterpriseAccessTokenTextField, 1)
             .addComponentToRightColumn(userDocsLinkComment, 1)
             .addComponentToRightColumn(enterpriseAccessTokenLinkComment, 1)
@@ -208,7 +281,7 @@ public class SettingsComponent {
           String[] pairs = customRequestHeadersTextField.getText().split(",");
           if (pairs.length % 2 != 0) {
             return new ValidationInfo(
-                "Must be a comma-separated list of pairs", customRequestHeadersTextField);
+                "Must be a comma-separated list of string pairs", customRequestHeadersTextField);
           }
 
           for (int i = 0; i < pairs.length; i += 2) {
@@ -224,7 +297,8 @@ public class SettingsComponent {
     // Assemble the main panel
     JPanel userAuthenticationPanel =
         FormBuilder.createFormBuilder()
-            .addComponent(dotComPanel)
+            .addComponent(codyAppPanel)
+            .addComponent(dotComPanel, 5)
             .addComponent(enterprisePanel, 5)
             .addLabeledComponent(customRequestHeadersLabel, customRequestHeadersTextField)
             .addTooltip("Any custom headers to send with every request to Sourcegraph.")
@@ -307,21 +381,34 @@ public class SettingsComponent {
     areCompletionsEnabledCheckBox.setSelected(value);
   }
 
-  private void setEnterpriseSettingsEnabled(boolean enable) {
-    urlTextField.setEnabled(enable);
-    enterpriseAccessTokenTextField.setEnabled(enable);
-    userDocsLinkComment.setEnabled(enable);
-    userDocsLinkComment.setCopyable(enable);
-    enterpriseAccessTokenLinkComment.setEnabled(enable);
-    enterpriseAccessTokenLinkComment.setCopyable(enable);
+  private void setInstanceSettingsEnabled(@NotNull InstanceType instanceType) {
+    // enterprise stuff
+    boolean isEnterprise = instanceType == InstanceType.ENTERPRISE;
+    urlTextField.setEnabled(isEnterprise);
+    enterpriseAccessTokenTextField.setEnabled(isEnterprise);
+    userDocsLinkComment.setEnabled(isEnterprise);
+    userDocsLinkComment.setCopyable(isEnterprise);
+    enterpriseAccessTokenLinkComment.setEnabled(isEnterprise);
+    enterpriseAccessTokenLinkComment.setCopyable(isEnterprise);
 
     // dotCom stuff
-    dotComAccessTokenTextField.setEnabled(!enable);
+    boolean isDotCom = instanceType == InstanceType.DOTCOM;
+    dotComAccessTokenTextField.setEnabled(isDotCom);
   }
 
   public enum InstanceType {
     DOTCOM,
     ENTERPRISE,
+    LOCAL_APP;
+
+    @NotNull
+    public static Optional<InstanceType> optionalValueOf(@NotNull String name) {
+      try {
+        return Optional.of(InstanceType.valueOf(name));
+      } catch (IllegalArgumentException e) {
+        return Optional.empty();
+      }
+    }
   }
 
   private void addValidation(
@@ -370,12 +457,6 @@ public class SettingsComponent {
 
   private boolean isUrlValid(@NotNull String url) {
     return JsonSchemaConfigurable.isValidURL(url);
-  }
-
-  private boolean isValidAccessToken(@NotNull String accessToken) {
-    return accessToken.isEmpty()
-        || accessToken.length() == 40
-        || (accessToken.startsWith("sgp_") && accessToken.length() == 44);
   }
 
   @NotNull

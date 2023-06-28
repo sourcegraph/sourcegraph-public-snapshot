@@ -4,6 +4,8 @@ import { APP_CALLBACK_URL, APP_DOWNLOAD_URLS, APP_LANDING_URL } from '../src/cha
 
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
+import styles from './ConnectApp.module.css'
+
 interface ConnectAppProps {
     vscodeAPI: VSCodeWrapper
     isAppInstalled: boolean
@@ -33,18 +35,19 @@ export const ConnectApp: React.FunctionComponent<ConnectAppProps> = ({
     callbackUri.searchParams.append('requestFrom', callbackScheme === 'vscode-insiders' ? 'CODY_INSIDERS' : 'CODY')
 
     // Use postMessage to open because it won't open otherwise due to the sourcegraph:// scheme.
-    const openLink = (url: string): void =>
+    const authApp = (url: string): void =>
         vscodeAPI.postMessage({
-            command: 'links',
-            value: url,
+            command: 'auth',
+            type: 'app',
+            endpoint: url,
         })
 
     return (
-        <div>
+        <div className={styles.buttonContainer}>
             <VSCodeButton
                 type="button"
                 disabled={!isOSSupported}
-                onClick={() => openLink(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}
+                onClick={() => authApp(isAppInstalled ? callbackUri.href : DOWNLOAD_URL)}
             >
                 <i className={'codicon codicon-' + buttonIcon} slot="start" />
                 {buttonText}

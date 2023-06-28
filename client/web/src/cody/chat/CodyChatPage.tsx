@@ -202,7 +202,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     <>
                         Cody answers code questions and writes code for you by leveraging your entire codebase and the
                         code graph.
-                        {!isSourcegraphDotCom && isCTADismissed && (
+                        {!isSourcegraphDotCom && !isSourcegraphApp && isCTADismissed && (
                             <>
                                 {' '}
                                 <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.

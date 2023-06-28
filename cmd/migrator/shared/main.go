@@ -23,14 +23,6 @@ const appName = "migrator"
 
 var out = output.NewOutput(os.Stdout, output.OutputOpts{})
 
-// DefaultSchemaFactories is a list of schema factories to be used in
-// non-exceptional cases.
-var DefaultSchemaFactories = []schemas.ExpectedSchemaFactory{
-	schemas.LocalExpectedSchemaFactory,
-	schemas.GitHubExpectedSchemaFactory,
-	schemas.GCSExpectedSchemaFactory,
-}
-
 func Start(logger log.Logger, registerEnterpriseMigrators store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
 	observationCtx := observation.NewContext(logger)
 
@@ -58,10 +50,10 @@ func Start(logger log.Logger, registerEnterpriseMigrators store.RegisterMigrator
 			cliutil.DownTo(appName, newRunner, outputFactory, false),
 			cliutil.Validate(appName, newRunner, outputFactory),
 			cliutil.Describe(appName, newRunner, outputFactory),
-			cliutil.Drift(appName, newRunner, outputFactory, false, DefaultSchemaFactories...),
+			cliutil.Drift(appName, newRunner, outputFactory, false, schemas.DefaultSchemaFactories...),
 			cliutil.AddLog(appName, newRunner, outputFactory),
-			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, DefaultSchemaFactories...),
-			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, DefaultSchemaFactories...),
+			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemas.DefaultSchemaFactories...),
+			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemas.DefaultSchemaFactories...),
 			cliutil.RunOutOfBandMigrations(appName, newRunner, outputFactory, registerMigrators),
 		},
 	}

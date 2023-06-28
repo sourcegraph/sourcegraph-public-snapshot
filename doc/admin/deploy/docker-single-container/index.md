@@ -14,7 +14,7 @@ It takes less than a minute to run and install Sourcegraph using Docker:
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:5.0.6</code></pre>
+<pre class="pre-wrap start-sourcegraph-command"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:5.1.0</code></pre>
 
 Once the server is ready (logo is displayed in the terminal), navigate to the hostname or IP address on port `7080`.  Create the admin account, then you'll be guided through setting up Sourcegraph for code searching and navigation.
 
@@ -46,7 +46,7 @@ For example, to mount a `.gitconfig`, create a file `/mnt/sourcegraph/config/git
 Alternatively you can create a new Docker image which inherits from Sourcegraph and then mutates the environment:
 
 ```dockerfile
-FROM sourcegraph/server:5.0.6
+FROM sourcegraph/server:5.1.0
 
 COPY gitconfig /etc/gitconfig
 COPY ssh /root/.ssh
@@ -86,26 +86,26 @@ This is required to [collect debug data](../../pprof.md).
 
 The docker run command for single-container Sourcegraph needs an additional publish flag to expose the debug port:
 
-```bash script
-docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:5.0.6
+```sh
+$ docker run --publish 7080:7080 --publish 127.0.0.1:3370:3370 --publish 127.0.0.1:6060:6060 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:5.1.0
 ```
 
 If Sourcegraph is deployed to a remote server, then access via an SSH tunnel using a tool
 such as [sshuttle](https://github.com/sshuttle/sshuttle) is required to establish a secure connection.
 To access the remote server using `sshuttle` from your local machine:
 
-```bash script
-sshuttle -r user@host 0/0
+```sh
+$ sshuttle -r user@host 0/0
 ```
 
 ### Environment variables
 
 Add the following to your docker run command:
 
-```
-docker run [...]
+```sh
+$ docker run [...]
 -e (YOUR CODE)
-sourcegraph/server:5.0.6
+sourcegraph/server:5.1.0
 ```
 
 ## Operation
@@ -116,16 +116,16 @@ sourcegraph/server:5.0.6
 
 Get the Docker container ID for Sourcegraph:
 
-```bash
-docker ps
+```sh
+$ docker ps
 CONTAINER ID        IMAGE
 d039ec989761        sourcegraph/server:VERSION
 ```
 
 Open a PostgreSQL interactive terminal:
 
-```bash
-docker container exec -it d039ec989761 psql -U postgres sourcegraph
+```sh
+$ docker container exec -it d039ec989761 psql -U postgres sourcegraph
 ```
 
 Run your SQL query:
@@ -170,8 +170,8 @@ To perform a multi-version upgrade on a Sourcegraph instance running on Docker S
 
 <p />
 
-```bash
-docker run \
+```sh
+$ docker run \
   --rm \
   --name migrator_${SG_VERSION} \
   -e PGHOST='pgsql' \
@@ -209,8 +209,8 @@ Let `${PATH}` be the directory mounted into `/var/opt/sourcegraph` of your insta
 
 For example, `${PATH}` is `~/.sourcegraph/data` in `-v ~/.sourcegraph/data:/var/opt/sourcegraph`.
 
-```bash
-docker run --rm -it \
+```sh
+$ docker run --rm -it \
   -v ${PATH}/postgresql:/data/pgdata-${PG_VERSION} \
   -u 70 \
   -p 5432:5432 \
@@ -243,7 +243,7 @@ To achieve better performance, you can do any of the following:
 
 - For better clone performance, clone the repository on your host machine and then [add it to Sourcegraph Server](../../repo/add.md#add-repositories-already-cloned-to-disk).
 - Try adding the `:delegated` suffix the data volume mount. [Learn more](https://github.com/docker/for-mac/issues/1592).
-  ```
+  ```sh
   --volume ~/.sourcegraph/data:/var/opt/sourcegraph:delegated
   ```
 
@@ -254,7 +254,7 @@ Sourcegraph can be **tested** on Windows 10 using roughly the same steps provide
 1. [Install Docker for Windows](https://docs.docker.com/docker-for-windows/install/)
 2. Using a command prompt, follow the same [installation steps provided above](#install-sourcegraph-with-docker) but remove the `--volume` arguments. For example by pasting this:
 
-<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:5.0.6</code></pre>
+<pre class="pre-wrap"><code>docker run<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> sourcegraph/server:5.1.0</code></pre>
 
 ### Low resource environments
 
@@ -297,8 +297,8 @@ To test new development builds of Sourcegraph (triggered by commits to `main`), 
 
 > WARNING: `insiders` builds may be unstable, so back up Sourcegraph's data and config (usually `~/.sourcegraph`) beforehand.
 
-```bash
-docker run --publish 7080:7080 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:insiders
+```sh
+$ docker run --publish 7080:7080 --rm --volume ~/.sourcegraph/config:/etc/sourcegraph --volume ~/.sourcegraph/data:/var/opt/sourcegraph sourcegraph/server:insiders
 ```
 
 To keep this up to date, run `docker pull sourcegraph/server:insiders` to pull in the latest image, and restart the container to access new changes.

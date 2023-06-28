@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { isLocalApp } from '../chat/protocol'
+import { isLocalApp, isDotCom } from '../chat/protocol'
 
 export interface LoginMenuItem {
     id: string
@@ -21,6 +21,9 @@ function getItemLabel(uri: string, current: boolean): string {
     const icon = current ? '$(check) ' : ''
     if (isLocalApp(uri)) {
         return `${icon}Cody App`
+    }
+    if (isDotCom(uri)) {
+        return `${icon}Sourcegraph.com`
     }
     return `${icon}${uri}`
 }
@@ -69,24 +72,29 @@ export const AuthMenuOptions = {
     signin: {
         title: 'Other Sign in Options',
         placeholder: 'Select a sign in option',
-        ignoreFocusOut: true,
     },
     signout: {
         title: 'Sign Out',
         placeHolder: 'Select instance to sign out',
-        ignoreFocusOut: true,
     },
     switch: {
         title: 'Switch Account',
         placeHolder: 'Press Esc to cancel',
-        ignoreFocusOut: true,
     },
 }
 
 export const LoginMenuOptionItems = [
     {
+        id: 'enterprise',
+        label: 'Sign in to Sourcegraph Enterprise instance',
+        description: 'v5.1 and above',
+        totalSteps: 1,
+        picked: true,
+    },
+    {
         id: 'token',
-        label: 'Sign in with URL and Access Token',
+        label: 'Sign in to Sourcegraph Enterprise instance via Access Token',
+        description: 'v5.0 and above',
         totalSteps: 2,
     },
     {
@@ -95,17 +103,15 @@ export const LoginMenuOptionItems = [
         totalSteps: 0,
     },
     {
-        id: 'enterprise',
-        label: 'Sign in to a Sourcegraph Enterprise Instance',
-        description: 'Instance must be v5.1 or higher',
-        totalSteps: 1,
-        picked: true,
+        id: 'token',
+        label: 'Sign in with URL and Access Token',
+        totalSteps: 2,
     },
 ]
 
 const LoginStepOptions = [
     {
-        prompt: 'Enter the URL to your Sourcegraph instance',
+        prompt: 'Enter the URL of the Sourcegraph instance',
         placeholder: 'https://sourcegraph.mycompany.com/',
         password: false,
         ignoreFocusOut: true,
@@ -114,7 +120,7 @@ const LoginStepOptions = [
         step: 1,
     },
     {
-        prompt: 'Access Token',
+        prompt: 'Paste your access token. To create an access token, go to "Settings" and then "Access tokens" on the Sourcegraph instance.',
         placeholder: 'Access Token',
         password: true,
         ignoreFocusOut: true,

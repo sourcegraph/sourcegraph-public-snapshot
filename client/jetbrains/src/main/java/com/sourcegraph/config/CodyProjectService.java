@@ -11,8 +11,8 @@ import org.jetbrains.annotations.Nullable;
 @State(
     name = "Config",
     storages = {@Storage("sourcegraph.xml")})
-public class SourcegraphProjectService
-    implements PersistentStateComponent<SourcegraphProjectService>, SourcegraphService {
+public class CodyProjectService
+    implements PersistentStateComponent<CodyProjectService>, CodyService {
   @Nullable public String instanceType;
   @Nullable public String url;
 
@@ -45,9 +45,6 @@ public class SourcegraphProjectService
   @Override
   @Nullable
   public String getDotComAccessToken() {
-    if (dotComAccessToken == null) {
-      return System.getenv("SRC_ACCESS_TOKEN");
-    }
     return dotComAccessToken;
   }
 
@@ -82,12 +79,12 @@ public class SourcegraphProjectService
 
   @Nullable
   @Override
-  public SourcegraphProjectService getState() {
+  public CodyProjectService getState() {
     return this;
   }
 
   @Override
-  public void loadState(@NotNull SourcegraphProjectService settings) {
+  public void loadState(@NotNull CodyProjectService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
     this.accessToken = settings.accessToken;
@@ -105,14 +102,12 @@ public class SourcegraphProjectService
   }
 
   @Override
+  @Nullable
   public String getEnterpriseAccessToken() {
     // configuring enterpriseAccessToken overrides the deprecated accessToken field
     String configuredEnterpriseAccessToken =
         StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
-    // defaulting to SRC_ACCESS_TOKEN env if nothing else was configured
-    return configuredEnterpriseAccessToken == null
-        ? System.getenv("SRC_ACCESS_TOKEN")
-        : configuredEnterpriseAccessToken;
+    return configuredEnterpriseAccessToken;
   }
 
   @Override

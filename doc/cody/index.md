@@ -11,7 +11,9 @@ Cody uses a combination of Sourcegraph's code graph and Large Language Models (L
 
 Cody is also available as an editor extension that can be connected to a Sourcegraph enterprise instance, the Cody app, or Sourcegraph.com (for open source code only):
   - [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  - JetBrains extension (coming soon)
+  - [JetBrains extension (Experimental)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
+
+See the full [breakdown of features available by client](client_feature_availability.md).
 
 [Read more about the Cody clients, extensions, and plugins](explanations/cody_clients.md), including a full breakdown of features available by client. 
 
@@ -35,7 +37,7 @@ Cody is also available as an editor extension that can be connected to a Sourceg
 
 [**📽️ Demo**](https://twitter.com/beyang/status/1647744307045228544)
 
-You can chat with Cody in VS Code or in the Sourcegraph sidebar.
+You can chat with Cody in the editor or in the Sourcegraph sidebar.
 
 Examples of the kinds of questions Cody can handle:
 
@@ -50,7 +52,7 @@ Cody tells you which code files it read to generate its response. (If Cody gives
 
 [**📽️ Demo**](https://twitter.com/sqs/status/1647673013343780864)
 
-In VS Code, just sprinkle your code with instructions in natural language, select the code, and run `Cody: Fixup` (<kbd>Ctrl+Alt+/</kbd>/<kbd>Ctrl+Opt+/</kbd>). Cody will figure out what edits to make.
+In your editor, just sprinkle your code with instructions in natural language, select the code, and run `Cody: Fixup` (<kbd>Ctrl+Alt+/</kbd>/<kbd>Ctrl+Opt+/</kbd>). Cody will figure out what edits to make.
 
 Examples of the kinds of fixup instructions Cody can handle:
 
@@ -63,7 +65,7 @@ Examples of the kinds of fixup instructions Cody can handle:
 
 ### 📖 Recipes
 
-In VS Code, select the recipes tab or  right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
+In your editor, select the recipes tab or  right-click on a selection of code and choose one of the `Ask Cody > ...` recipes, such as:
 
 - Explain code
 - Generate unit test
@@ -89,5 +91,6 @@ See [Cody troubleshooting guide](troubleshooting.md).
 - [Enabling Cody for the Cody app](../app/index.md)
 - [Enabling Cody for open source Sourcegraph.com users](explanations/enabling_cody.md)
 - [Installing the Cody VS Code extension](explanations/installing_vs_code.md)
+- [Installing the Jetbrains extension (experimental)](explanations/installing_jetbrains.md)
 - [Configuring code graph context](explanations/code_graph_context.md)
 - [Sourcegraph Cody Gateway](explanations/cody_gateway.md)

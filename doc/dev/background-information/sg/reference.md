@@ -1240,10 +1240,10 @@ Flags:
 
 ## sg app
 
-Manage releases and update manifests used to let Sourcegraph App clients know that a new update is available.
+Manage releases and update manifests used to let Cody App clients know that a new update is available.
 
 
-Various commands to handle management of releases, and processes around Sourcegraph App.
+Various commands to handle management of releases, and processes around Cody App.
 
 
 

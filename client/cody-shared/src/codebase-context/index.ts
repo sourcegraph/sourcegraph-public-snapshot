@@ -167,15 +167,24 @@ export class CodebaseContext {
     }
 
     private async getLocalContextMessages(query: string, options: ContextSearchOptions): Promise<ContextMessage[]> {
-        const keywordResultsPromise = this.getKeywordSearchResults(query, options)
-        const filenameResultsPromise = this.getFilenameSearchResults(query, options)
+        try {
+            const keywordResultsPromise = this.getKeywordSearchResults(query, options)
+            const filenameResultsPromise = this.getFilenameSearchResults(query, options)
 
-        const [keywordResults, filenameResults] = await Promise.all([keywordResultsPromise, filenameResultsPromise])
+            const [keywordResults, filenameResults] = await Promise.all([keywordResultsPromise, filenameResultsPromise])
 
-        const combinedResults = this.mergeContextResults(keywordResults, filenameResults)
-        const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
-        const messages = resultsToMessages(rerankedResults)
-        return messages
+            const combinedResults = this.mergeContextResults(keywordResults, filenameResults)
+            const rerankedResults = await (this.rerank ? this.rerank(query, combinedResults) : combinedResults)
+            const messages = resultsToMessages(rerankedResults)
+
+            this.embeddingResultsError = ''
+
+            return messages
+        } catch (error) {
+            console.error('Error retrieving local context:', error)
+            this.embeddingResultsError = `Error retrieving local context: ${error}`
+            return []
+        }
     }
 
     private async getKeywordSearchResults(query: string, options: ContextSearchOptions): Promise<ContextResult[]> {

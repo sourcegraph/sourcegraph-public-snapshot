@@ -6,10 +6,13 @@ import com.intellij.ide.plugins.PluginManagerCore;
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.agent.ConnectionConfiguration;
+import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.find.Search;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -38,34 +41,37 @@ public class ConfigUtil {
   }
 
   @NotNull
-  public static SettingsComponent.InstanceType getInstanceType(Project project) {
-    // Project level
-    String projectLevelSetting = getProjectLevelConfig(project).getInstanceType();
-    if (projectLevelSetting != null && !projectLevelSetting.isEmpty()) {
-      return projectLevelSetting.equals(SettingsComponent.InstanceType.ENTERPRISE.name())
-          ? SettingsComponent.InstanceType.ENTERPRISE
-          : SettingsComponent.InstanceType.DOTCOM;
-    }
-
-    // Application level
-    String applicationLevelSetting = getApplicationLevelConfig().getInstanceType();
-    if (applicationLevelSetting != null && !applicationLevelSetting.isEmpty()) {
-      return applicationLevelSetting.equals(SettingsComponent.InstanceType.ENTERPRISE.name())
-          ? SettingsComponent.InstanceType.ENTERPRISE
-          : SettingsComponent.InstanceType.DOTCOM;
-    }
-
-    // User level or default
-    String enterpriseUrl = getEnterpriseUrl(project);
-    return (enterpriseUrl.equals("") || enterpriseUrl.startsWith(DOTCOM_URL))
-        ? SettingsComponent.InstanceType.DOTCOM
-        : SettingsComponent.InstanceType.ENTERPRISE;
+  public static SettingsComponent.InstanceType getInstanceType(@NotNull Project project) {
+    return Optional.ofNullable(getProjectLevelConfig(project).getInstanceType()) // Project level
+        .flatMap(SettingsComponent.InstanceType::optionalValueOf)
+        .or( // Application level
+            () ->
+                Optional.ofNullable(getApplicationLevelConfig().getInstanceType())
+                    .flatMap(SettingsComponent.InstanceType::optionalValueOf))
+        .or( // User level
+            () ->
+                Optional.of(getEnterpriseUrl(project))
+                    .filter(StringUtils::isNotEmpty)
+                    .flatMap(
+                        url -> {
+                          if (url.startsWith(DOTCOM_URL)) {
+                            return Optional.of(SettingsComponent.InstanceType.DOTCOM);
+                          } else if (url.startsWith(LocalAppManager.getLocalAppUrl())) {
+                            return Optional.of(SettingsComponent.InstanceType.LOCAL_APP);
+                          } else {
+                            return Optional.empty();
+                          }
+                        }))
+        .orElse(SettingsComponent.getDefaultInstanceType()); // or default
   }
 
   @NotNull
   public static String getSourcegraphUrl(@NotNull Project project) {
-    if (getInstanceType(project) == SettingsComponent.InstanceType.DOTCOM) {
+    SettingsComponent.InstanceType instanceType = getInstanceType(project);
+    if (instanceType == SettingsComponent.InstanceType.DOTCOM) {
       return DOTCOM_URL;
+    } else if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
+      return LocalAppManager.getLocalAppUrl();
     } else {
       String enterpriseUrl = getEnterpriseUrl(project);
       return !enterpriseUrl.isEmpty() ? enterpriseUrl : DOTCOM_URL;
@@ -168,7 +174,7 @@ public class ConfigUtil {
 
   public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
     // Project level
-    SourcegraphProjectService settings = getProjectLevelConfig(project);
+    CodyProjectService settings = getProjectLevelConfig(project);
     settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
     settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
     settings.lastSearchPatternType =
@@ -236,26 +242,25 @@ public class ConfigUtil {
   }
 
   public static void setAuthenticationFailedLastTime(boolean value) {
-    SourcegraphApplicationService.getInstance().authenticationFailedLastTime = value;
+    CodyApplicationService.getInstance().authenticationFailedLastTime = value;
   }
 
   public static String getLastUpdateNotificationPluginVersion() {
-    return SourcegraphApplicationService.getInstance().getLastUpdateNotificationPluginVersion();
+    return CodyApplicationService.getInstance().getLastUpdateNotificationPluginVersion();
   }
 
   public static void setLastUpdateNotificationPluginVersionToCurrent() {
-    SourcegraphApplicationService.getInstance().lastUpdateNotificationPluginVersion =
-        getPluginVersion();
+    CodyApplicationService.getInstance().lastUpdateNotificationPluginVersion = getPluginVersion();
   }
 
   @NotNull
-  private static SourcegraphApplicationService getApplicationLevelConfig() {
-    return Objects.requireNonNull(SourcegraphApplicationService.getInstance());
+  private static CodyApplicationService getApplicationLevelConfig() {
+    return Objects.requireNonNull(CodyApplicationService.getInstance());
   }
 
   @NotNull
-  private static SourcegraphProjectService getProjectLevelConfig(@NotNull Project project) {
-    return Objects.requireNonNull(SourcegraphService.getInstance(project));
+  private static CodyProjectService getProjectLevelConfig(@NotNull Project project) {
+    return Objects.requireNonNull(CodyService.getInstance(project));
   }
 
   @Nullable
@@ -269,25 +274,29 @@ public class ConfigUtil {
     return System.getProperty("user.home");
   }
 
-  public static String getProjectAccessToken(Project project) {
-    return ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE
-        ? ConfigUtil.getEnterpriseAccessToken(project)
-        : ConfigUtil.getProjectAccessToken(project);
+  @Nullable
+  public static String getProjectAccessToken(@NotNull Project project) {
+    SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
+    if (instanceType == SettingsComponent.InstanceType.ENTERPRISE) {
+      return getEnterpriseAccessToken(project);
+    } else if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
+      return LocalAppManager.getLocalAppAccessToken().orElse(null);
+    } else {
+      return getDotComAccessToken(project);
+    }
   }
 
+  @Nullable
   public static String getEnterpriseAccessToken(Project project) {
     // Project level → application level
-    String projectLevelAccessToken = getProjectLevelConfig(project).getEnterpriseAccessToken();
-    return projectLevelAccessToken != null
-        ? projectLevelAccessToken
-        : getApplicationLevelConfig().getEnterpriseAccessToken();
+    return Optional.ofNullable(getProjectLevelConfig(project).getEnterpriseAccessToken())
+        .orElse(getApplicationLevelConfig().getEnterpriseAccessToken());
   }
 
-  public static String getDotComAccessToken(Project project) {
+  @Nullable
+  public static String getDotComAccessToken(@NotNull Project project) {
     // Project level → application level
-    String projectLevelAccessToken = getProjectLevelConfig(project).getDotComAccessToken();
-    return projectLevelAccessToken != null
-        ? projectLevelAccessToken
-        : getApplicationLevelConfig().getDotComAccessToken();
+    return Optional.ofNullable(getProjectLevelConfig(project).getDotComAccessToken())
+        .orElse(getApplicationLevelConfig().getDotComAccessToken());
   }
 }

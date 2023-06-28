@@ -34,77 +34,11 @@ A _team_ is a group of Sourcegraph users represented by a common handle, which i
 
 ## Code ownership
 
-Code ownership is defined as a strict ruleset. Files can be assigned to owners. 
-To define rulesets for code ownership, we make use of the `CODEOWNERS` format.
+<!-- TODO: There are 3 ways: add docs about inference as a second part of https://github.com/sourcegraph/sourcegraph/issues/53654 -->
+Code ownership is set in 2 different ways:
 
-### The `CODEOWNERS` format
-
-`CODEOWNERS` files contain a sequence of matching rules - a glob pattern and zero or more owners. 
-**A repository has at most one `CODEOWNERS` file.** 
-
-#### Specifying Owner information 
-
-Owners can be defined by a username/team name or an email address. 
-
-Using email addresses is generally recommended, as email addresses are most likely the same across different platforms, and are independent of a user having registered yet. 
-In Sourcegraph, a user can add multiple email addresses to their profile. All of those would match to the same user.
-
-For committed `CODEOWNERS` files, the usernames are usually the username **on the code host**, so they don't necessarily match with the Sourcegraph username. 
-This is a known limitation, and in the future, we will provide ways to map external code host names to Sourcegraph users. 
-For now, you can search for a user by their code host username, or switch to using emails in the `CODEOWNERS` files, which will work across both Sourcegraph and the code host.
-
-#### File format
-
-The following snippet shows an example of a valid `CODEOWNERS` file. 
-
-```
-*.txt @text-team
-# this is a comment explaining why Alice owns this
-/build/logs/ alice@sourcegraph.com 
-/cmd/**/test @qa-team @user
-```
-
-- Asterisk `*` is a wildcard that matches N tokens in a path segment.  
-**Example**: `doc/*/own` will match `doc/ref/own` and `doc/tutorial/own`, but not `doc/a/b/own`
-- Double `**` asterisk matches any sub-path.  
-**Example**: `doc/**/own` will match `doc/ref/own` and `doc/a/b/own`
-- Starting a pattern with `/` anchors matches at the repository root.  
-**Example**: `/docs/*` matches `/docs/a.md` and `/docs/b.md` but not `/src/docs/a.md`.
-- Trailing slash `/` matches any file within the directory tree (so it is equivalent to trailing `/**`).  
-**Example**: `docs/` matches `/testing/docs/foo` and `/docs/foo/bar`, but does not match `/docs` or `/testing/docs`.
-
-
-The rules are considered independently and in order. Rules farther down the file take precedence. Only **one** rule matches.
-
-#### Limitations
-
-- GitLab allows sections in `CODEOWNERS` files, these are not yet supported and section markers are ignored
-- [Code Owners for Bitbucket](https://marketplace.atlassian.com/apps/1218598/code-owners-for-bitbucket?tab=overview&hosting=cloud) inline defined groups are not yet supported
-
-To configure ownership in Sourcegraph, you have two options:
-
-### Committing a `CODEOWNERS` file to your repositories
-
-> Use this approach if you prefer versioned ownership data.
-
-You can simply commit a `CODEOWNERS` file at any of the following locations for it to be picked up automatically by Own:
-
-```
-CODEOWNERS
-.github/CODEOWNERS
-.gitlab/CODEOWNERS
-docs/CODEOWNERS
-```
-
-Searches at specific commits will return any `CODEOWNERS` data that exists at that specific commit.
-
-### Uploading a `CODEOWNERS` file to Sourcegraph
-
-> Use this approach if you don't want to commit `CODEOWNERS` files to your repos, or if you have an existing system that tracks ownership data and want to sync that data with Sourcegraph.
-
-Read more on how to [manually ingest `CODEOWNERS` data](codeowners_ingestion.md) into your Sourcegraph instance.
-
-The docs detail how to use the UI or `src-cli` to upload `CODEOWNERS` files to Sourcegraph.
+- [The `CODEOWNERS` format](codeowners_format.md)
+- [Assigned ownership](assigned_ownership.md)
 
 ## Limitations
 
@@ -117,8 +51,8 @@ The ownership information is available for browsing once ownership data is avail
 
 When displaying a source file, there is a bar above the file contents.
 
-*   On the left hand side, it displays the most recent change to the file.
-*   On the right hand side it displays the Own bar with at most 2 file owners. Any additional number of owners is also displayed.
+- On the left-hand side, it displays the most recent change to the file.
+- On the right-hand side it displays the Own bar with at most 2 file owners. Any additional number of owners is also displayed.
 
 ![File view showing own bar on the right hand side above the file contents](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view.png)
 
@@ -134,13 +68,13 @@ If any email information has been found for the owner, clicking the mail icon wi
 
 Code ownership is a first-class citizen in search. Ownership can be either a query input or a search result:
 
-*   `file:has.owner(user@example.com)` keeps only the search results associated with given user (here referred to by e-mail).
-*   `-file:has.owner(@username)` removes all results owned by specific user (here referred to by name).
+- `file:has.owner(user@example.com)` keeps only the search results associated with given user (here referred to by e-mail).
+- `-file:has.owner(@username)` removes all results owned by specific user (here referred to by name).
 
 Ownership predicate can also be used without parameters:
 
-*   `file:has.owner()` will only include files with an owner assigned to them.
-*   `-file:has.owner()` will only include files without an owner.
+-`file:has.owner()` will only include files with an owner assigned to them.
+-`-file:has.owner()` will only include files without an owner.
 
 When performing a search the `select:file.owners` predicate will return the owners for the result of that search.
 
