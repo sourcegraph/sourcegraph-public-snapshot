@@ -1,12 +1,20 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
+@font-face{
+    font-family: 'Source Sans 3 VF';
+    font-weight: 200 900;
+    font-style: normal;
+    font-stretch: normal;
+    src: url('./SourceSans3VF-Upright.ttf.woff2') format('woff2');
+}
+
 .page-wrapper {
     background: radial-gradient(133.61% 44.45% at 41.22% 0%, rgba(161, 18, 255, 0.24) 0%, rgba(15, 17, 26, 0) 100%),
         radial-gradient(50% 23.6% at 100% -0%, rgba(161, 18, 255, 0.14) 0%, rgba(15, 17, 26, 0) 100%), #0f111a;
     height: fit-content;
     width: 100%;
     position: relative;
-    font-family: 'Source Sans Pro';
+    font-family: 'Source Sans 3 VF', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 
     .page {
         max-width: 1360px;
