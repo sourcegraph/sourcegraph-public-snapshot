@@ -86,14 +86,14 @@ export const AuthMenuOptions = {
 export const LoginMenuOptionItems = [
     {
         id: 'enterprise',
-        label: 'Sign in to a Enterprise Instance',
+        label: 'Sign in to Sourcegraph Enterprise instance',
         description: 'v5.1 and above',
         totalSteps: 1,
         picked: true,
     },
     {
         id: 'token',
-        label: 'Sign in to a Enterprise Instance via Access Token',
+        label: 'Sign in to Sourcegraph Enterprise instance via Access Token',
         description: 'v5.0 and above',
         totalSteps: 2,
     },
