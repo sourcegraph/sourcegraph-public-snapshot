@@ -154,9 +154,10 @@ func (s *Sources) Worker(obCtx *observation.Context, rmux *redsync.Mutex, rootIn
 		routine: goroutine.NewPeriodicGoroutine(
 			context.Background(),
 			&sourcesSyncHandler{
-				logger:  logger.Scoped("handler", "handler for actor sources sync"),
-				rmux:    rmux,
-				sources: s,
+				logger:       logger.Scoped("handler", "handler for actor sources sync"),
+				rmux:         rmux,
+				sources:      s,
+				syncInterval: rootInterval,
 			},
 			goroutine.WithName("periodic.sourcesSync"),
 			goroutine.WithDescription("periodic sources sync worker"),
@@ -231,12 +232,19 @@ type sourcesSyncHandler struct {
 	logger  log.Logger
 	rmux    *redsync.Mutex
 	sources *Sources
+
+	syncInterval time.Duration
 }
 
 var _ goroutine.Handler = &sourcesSyncHandler{}
 
 func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
-	handleLogger := sgtrace.Logger(ctx, s.logger)
+	var cancel func()
+	ctx, cancel = context.WithTimeout(ctx, s.syncInterval)
+	defer cancel()
+
+	handleLogger := sgtrace.Logger(ctx, s.logger).
+		With(log.Duration("handle.timeout", s.syncInterval))
 
 	var skippedReason string
 	span := trace.SpanFromContext(ctx)
@@ -268,7 +276,8 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 			skippedReason = err.Error()
 
 			// Best-effort attempt to release the lock so that we don't get
-			// stuck
+			// stuck. If we are here we already think we "hold" the lock, so
+			// worth a shot.
 			_, _ = s.rmux.UnlockContext(ctx)
 
 			return err
