@@ -873,7 +873,22 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 	return &ins, nil
 }
 
-// GetAppInstallations fetches a list of GitHub App instalaltions for the
+// GetApp fetches a GitHub App for the authenticated GitHub App.
+//
+// API docs: https://docs.github.com/en/rest/apps/apps?apiVersion=2022-11-28#get-an-app
+func (c *V3Client) GetApp(ctx context.Context, appSlug string) bool {
+	var res httpResponseState
+	_, err := c.get(ctx, fmt.Sprintf("apps/%s", appSlug), &res)
+	if err != nil || res.statusCode != 200 {
+		return false
+	}
+	if res.statusCode == 200 {
+		return true
+	}
+	return false
+}
+
+// GetAppInstallations fetches a list of GitHub App installations for the
 // authenticated GitHub App.
 //
 // API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app

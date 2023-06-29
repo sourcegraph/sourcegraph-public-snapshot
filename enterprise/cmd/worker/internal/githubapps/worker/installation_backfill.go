@@ -51,9 +51,15 @@ func (g *githubAppInstallationWorker) Handle(ctx context.Context) error {
 			continue
 		}
 
-		sErrs := store.SyncInstallations(ctx, *app, g.logger, client)
-		if sErrs != nil && len(sErrs.Errors()) > 0 {
-			errs = errors.Append(errs, sErrs.Errors()...)
+		sAErrs := store.SyncApp(ctx, *app, g.logger, client)
+		if sAErrs != nil {
+			errs = errors.Append(errs, sAErrs)
+			return errs
+		}
+
+		sIErrs := store.SyncInstallations(ctx, *app, g.logger, client)
+		if sIErrs != nil && len(sIErrs.Errors()) > 0 {
+			errs = errors.Append(errs, sIErrs.Errors()...)
 		}
 	}
 
