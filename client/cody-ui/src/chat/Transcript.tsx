@@ -5,6 +5,7 @@ import classNames from 'classnames'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 
 import {
+    ChatButtonProps,
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
@@ -33,6 +34,7 @@ export const Transcript: React.FunctionComponent<
         copyButtonOnSubmit?: CopyButtonProps['copyButtonOnSubmit']
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         isTranscriptError: boolean
+        ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptContent({
     transcript,
@@ -56,6 +58,7 @@ export const Transcript: React.FunctionComponent<
     submitButtonComponent,
     chatInputClassName,
     isTranscriptError,
+    ChatButtonComponent,
 }) {
     const transcriptContainerRef = useRef<HTMLDivElement>(null)
     useEffect(() => {
@@ -118,6 +121,7 @@ export const Transcript: React.FunctionComponent<
                             showFeedbackButtons={index > 0 && transcript.length - index === 1 && !isTranscriptError}
                             submitButtonComponent={submitButtonComponent}
                             chatInputClassName={chatInputClassName}
+                            ChatButtonComponent={ChatButtonComponent}
                         />
                     )
             )}
@@ -138,6 +142,7 @@ export const Transcript: React.FunctionComponent<
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     submitButtonComponent={submitButtonComponent}
                     chatInputClassName={chatInputClassName}
+                    ChatButtonComponent={ChatButtonComponent}
                 />
             )}
         </div>

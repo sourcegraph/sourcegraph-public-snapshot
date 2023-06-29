@@ -299,6 +299,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
+            case 'chat-button': {
+                switch (message.action) {
+                    case 'explain-code-high-level':
+                    case 'find-code-smells':
+                    case 'generate-unit-test':
+                        void this.executeRecipe(message.action)
+                        break
+                    default:
+                        break
+                }
+                break
+            }
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }

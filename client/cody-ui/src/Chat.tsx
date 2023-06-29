@@ -3,7 +3,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 import classNames from 'classnames'
 
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
-import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
+import { ChatButton, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { isDefined } from '@sourcegraph/common'
 
 import { FileLinkProps } from './chat/ContextFiles'
@@ -32,6 +32,7 @@ interface ChatProps extends ChatClassNames {
     fileLinkComponent: React.FunctionComponent<FileLinkProps>
     helpMarkdown?: string
     afterMarkdown?: string
+    gettingStartedButtons?: ChatButton[]
     className?: string
     EditButtonContainer?: React.FunctionComponent<EditButtonProps>
     editButtonOnSubmit?: (text: string) => void
@@ -47,12 +48,19 @@ interface ChatProps extends ChatClassNames {
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
     isTranscriptError: boolean
+    ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
     inputRowClassName?: string
     chatInputContextClassName?: string
     chatInputClassName?: string
+}
+
+export interface ChatButtonProps {
+    label: string
+    action: string
+    onClick: (action: string) => void
 }
 
 export interface ChatUITextAreaProps {
@@ -114,6 +122,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     fileLinkComponent,
     helpMarkdown,
     afterMarkdown,
+    gettingStartedButtons,
     className,
     codeBlocksCopyButtonClassName,
     codeBlocksInsertButtonClassName,
@@ -140,6 +149,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
     isTranscriptError,
+    ChatButtonComponent,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -232,10 +242,11 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
             {
                 speaker: 'assistant',
                 displayText: welcomeText({ helpMarkdown, afterMarkdown }),
+                buttons: gettingStartedButtons,
             },
             ...transcript,
         ],
-        [helpMarkdown, afterMarkdown, transcript]
+        [helpMarkdown, afterMarkdown, gettingStartedButtons, transcript]
     )
 
     return (
@@ -271,6 +282,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     submitButtonComponent={SubmitButton}
                     chatInputClassName={chatInputClassName}
                     isTranscriptError={isTranscriptError}
+                    ChatButtonComponent={ChatButtonComponent}
                 />
             )}
 

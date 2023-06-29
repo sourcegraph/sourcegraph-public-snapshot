@@ -6,6 +6,7 @@ import classNames from 'classnames'
 import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import {
+    ChatButtonProps,
     Chat as ChatUI,
     ChatUISubmitButtonProps,
     ChatUISuggestionButtonProps,
@@ -91,6 +92,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
+    const onChatButtonClick = useCallback(
+        (which: string) => {
+            vscodeAPI.postMessage({ command: 'chat-button', action: which })
+        },
+        [vscodeAPI]
+    )
+
     return (
         <ChatUI
             messageInProgress={messageInProgress}
@@ -130,8 +138,16 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             // down here to render cody is disabled on the instance nicely.
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
-            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
             isTranscriptError={isTranscriptError}
+            helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips.
+
+To get started, select some code and run one of Cody's recipes:"
+            gettingStartedButtons={[
+                { label: 'Explain code (high level)', action: 'explain-code-high-level', onClick: onChatButtonClick },
+                { label: 'Smell code', action: 'find-code-smells', onClick: onChatButtonClick },
+                { label: 'Generate a unit test', action: 'generate-unit-test', onClick: onChatButtonClick },
+            ]}
+            ChatButtonComponent={ChatButton}
         />
     )
 }
@@ -150,6 +166,12 @@ const AbortMessageInProgress: React.FunctionComponent<AbortMessageInProgressProp
             <i className="codicon codicon-stop-circle" /> Stop generating
         </VSCodeButton>
     </div>
+)
+
+const ChatButton: React.FunctionComponent<ChatButtonProps> = ({ label, action, onClick }) => (
+    <VSCodeButton type="button" onClick={() => onClick(action)} className={styles.chatButton}>
+        {label}
+    </VSCodeButton>
 )
 
 const TextArea: React.FunctionComponent<ChatUITextAreaProps> = ({
