@@ -303,7 +303,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 switch (message.action) {
                     case 'explain-code-high-level':
                     case 'find-code-smells':
-                    case 'fixup':
+                    case 'generate-unit-test':
                         void this.executeRecipe(message.action)
                         break
                     default:
