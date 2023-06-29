@@ -161,7 +161,9 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
 
     const { sidebarSize, setSidebarSize: setCodySidebarSize } = useSidebarSize()
 
+    /* eslint-disable react-hooks/exhaustive-deps */
     const codySidebarSize = useMemo(() => sidebarSize, [isCodySidebarOpen])
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     useEffect(() => {
         const activeEditor = scope.editor.getActiveTextEditor()
