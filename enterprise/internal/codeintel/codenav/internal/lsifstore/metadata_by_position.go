@@ -100,9 +100,6 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		bundleID,
 	)
 
-	// debug := fmt.Sprintf("**********QUERY************* \n query: %s \n variables: %s", query.Query(sqlf.PostgresBindVar), query.Args())
-	// fmt.Println(debug)
-
 	documents, err := s.scanDocumentData(s.db.Query(ctx, query))
 	if err != nil {
 		return "", shared.Range{}, false, err
