@@ -57,7 +57,6 @@ fi
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
 """
 
 # https://github.com/sourcegraph/sourcegraph/pull/54000 changes dependencies to reflect otel package changes,
@@ -129,11 +128,11 @@ def back_compat_defs():
     )
 
     go_repository(
-        name = "back_compat_com_github_throttled_throttled_v2",
+        name = "back_compat_com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
-        importpath = "github.com/throttled/throttled/v2",
-        sum = "h1:DOkCb1el7NYzRoPb1pyeHVghsUoonVWEjmo34vrcp/8=",
-        version = "v2.9.0",
+        importpath = "github.com/sourcegraph/zoekt",
+        sum = "h1:zFLcZUQ74dCV/oIiQT3+db8kFPstAnvFDm7pd+tjZ+8=",
+        version = "v0.0.0-20230620185637-63241cb1b17a",
     )
 
 
@@ -147,7 +146,6 @@ def back_compat_defs():
         remote = "https://github.com/sourcegraph/sourcegraph.git",
         patches = [
             "//dev/backcompat/patches:back_compat_migrations.patch",
-            "//dev/backcompat/patches:ui_assets.patch",
             "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
             "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
         ],
