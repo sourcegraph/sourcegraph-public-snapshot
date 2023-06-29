@@ -6,27 +6,32 @@ set -eu -o pipefail
 # In production, packages are built using the CI pipeline.
 
 cd "$(dirname "${BASH_SOURCE[0]}")/../"
-cd "wolfi-packages"
+BASE_DIR=$(pwd)
 
-PACKAGE_DIR="local-repo/packages"
-KEY_DIR="local-repo/keys"
+PACKAGE_DIR="$BASE_DIR/wolfi-packages/local-repo/packages"
+ARCH="x86_64"
+KEY_DIR="$BASE_DIR/wolfi-packages/local-repo/keys"
+KEY_FILENAME="sourcegraph-dev-local.rsa"
+KEY_FILE="$KEY_DIR/$KEY_FILENAME"
 
-mkdir -p "$PACKAGE_DIR" "$KEY_DIR"
+mkdir -p "$PACKAGE_DIR/$ARCH" "$KEY_DIR"
 
 # Generate keys for local repository
-if [ ! -f "local-repo/keys/melange.rsa" ]; then
+if [ ! -f "$KEY_FILE" ]; then
   echo " 🗝️  Initializing keypair for local repo..."
   docker run \
-    -v "$PWD/local-repo/keys/":/keys \
-    cgr.dev/chainguard/melange keygen "/keys/melange.rsa"
+    -v "$KEY_DIR":/keys \
+    cgr.dev/chainguard/melange keygen "/keys/$KEY_FILENAME"
 
-  if [ -f "local-repo/keys/melange.rsa" ]; then
+  if [ -f "$KEY_FILE" ]; then
     echo " 🔐 Keypair initialized"
   else
     echo " ❗️ Error initializing keypair"
     exit 1
   fi
 fi
+
+cd "wolfi-packages"
 
 if [ $# -eq 0 ]; then
   echo "No arguments supplied - provide the melange YAML file to build e.g. ./local-build.sh coursier.yaml"
@@ -57,12 +62,15 @@ fi
 # Mounting /tmp can be useful for debugging: -v "$HOME/tmp":/tmp \
 docker run --privileged \
   -v "$tmpdir":/work \
-  -v "$PWD/$PACKAGE_DIR":/work/packages \
-  -v "$PWD/$KEY_DIR":/keys \
-  cgr.dev/chainguard/melange build "$file_name" --arch x86_64
+  -v "$PACKAGE_DIR":/work/packages \
+  -v "$KEY_DIR":/keys \
+  cgr.dev/chainguard/melange \
+  build "$file_name" \
+  --arch x86_64 \
+  --signing-key "/keys/$KEY_FILENAME"
 
+echo -e "\n"
 echo " ✅  Built package '$package_name' under '$PACKAGE_DIR'"
-echo " 🐳  Use in locally-built base images with '${package_name}@local'"
+echo " 🐳  Use this package in locally-built base images by adding the package '${package_name}@local'"
 
-# TODO: Sign packages
 # TODO: Preserve melange tmp dir on failure
