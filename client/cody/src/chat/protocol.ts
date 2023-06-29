@@ -76,6 +76,14 @@ export interface AuthStatus {
     requiresVerifiedEmail: boolean
     siteHasCodyEnabled: boolean
     siteVersion: string
+    configOverwrites?: {
+        chatModel?: string
+        chatModelMaxTokens?: number
+        fastChatModel?: string
+        fastChatModelMaxTokens?: number
+        completionModel?: string
+        completionModelMaxTokens?: number
+    }
 }
 
 export const defaultAuthStatus = {
@@ -90,6 +98,7 @@ export const defaultAuthStatus = {
 }
 
 export const unauthenticatedStatus = {
+    endpoint: '',
     isLoggedIn: false,
     showInvalidAccessTokenError: true,
     authenticated: false,

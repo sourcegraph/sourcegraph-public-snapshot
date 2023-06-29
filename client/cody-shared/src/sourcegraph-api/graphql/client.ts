@@ -21,6 +21,7 @@ import {
     CURRENT_SITE_HAS_CODY_ENABLED_QUERY,
     CURRENT_SITE_GRAPHQL_FIELDS_QUERY,
     GET_CODY_CONTEXT_QUERY,
+    CURRENT_SITE_CODY_LLM_CONFIGURATION,
 } from './queries'
 
 interface APIResponse<T> {
@@ -200,6 +201,23 @@ export class SourcegraphGraphQLAPIClient {
             extractDataOrError(response, data =>
                 data.currentUser ? { ...data.currentUser } : new Error('current user not found with verified email')
             )
+        )
+    }
+
+    public async getCodyLLMConfiguration(): Promise<
+        | undefined
+        | {
+              chatModel?: string
+              chatModelMaxTokens?: number
+              fastChatModel?: string
+              fastChatModelMaxTokens?: number
+              completionModel?: string
+              completionModelMaxTokens?: number
+          }
+        | Error
+    > {
+        return this.fetchSourcegraphAPI<APIResponse<any>>(CURRENT_SITE_CODY_LLM_CONFIGURATION, {}).then(response =>
+            extractDataOrError(response, data => data.site?.codyLLMConfiguration)
         )
     }
 

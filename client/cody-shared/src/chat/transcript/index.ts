@@ -173,6 +173,7 @@ export class Transcript {
             }
         }
 
+        console.log({ maxPromptLength })
         const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
         let truncatedMessages = truncatePrompt(messages, maxPromptLength - preambleTokensUsage)
 

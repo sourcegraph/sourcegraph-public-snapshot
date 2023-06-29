@@ -17,7 +17,7 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-import { MAX_AVAILABLE_PROMPT_LENGTH, SOLUTION_TOKEN_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -74,7 +74,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
 
-    private maxPromptLimit = MAX_AVAILABLE_PROMPT_LENGTH
     private transcript: Transcript = new Transcript()
 
     // Allows recipes to hook up subscribers to process sub-streams of bot output
@@ -118,12 +117,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }),
             vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
         )
-        const codyConfig = vscode.workspace.getConfiguration('cody')
-        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
-        const solutionLimit = codyConfig.get<number>('provider.limit.solution') || SOLUTION_TOKEN_LENGTH
-        if (tokenLimit) {
-            this.maxPromptLimit = tokenLimit - solutionLimit
-        }
     }
 
     private idleCallbacks_: (() => void)[] = []
@@ -502,7 +495,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase()),
-                    this.maxPromptLimit
+                    this.maxPromptTokens
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
@@ -535,7 +528,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.codebaseContext.getCodebase()),
-            this.maxPromptLimit
+            this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
@@ -884,6 +877,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             disposable.dispose()
         }
         this.disposables = []
+    }
+
+    private get maxPromptTokens(): number {
+        const authStatus = this.authProvider.getAuthStatus()
+
+        if (authStatus.configOverwrites?.chatModelMaxTokens) {
+            return authStatus.configOverwrites.chatModelMaxTokens - ANSWER_TOKENS
+        }
+
+        const codyConfig = vscode.workspace.getConfiguration('cody')
+        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
+        const solutionLimit = codyConfig.get<number>('provider.limit.solution') || ANSWER_TOKENS
+        if (tokenLimit && solutionLimit) {
+            return tokenLimit - solutionLimit
+        }
+
+        return DEFAULT_MAX_TOKENS - ANSWER_TOKENS
     }
 }
 
