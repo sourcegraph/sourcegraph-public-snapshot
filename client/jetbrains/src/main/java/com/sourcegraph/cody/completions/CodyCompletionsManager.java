@@ -85,7 +85,7 @@ public class CodyCompletionsManager {
             200,
             0.6,
             0.1);
-    TextDocument textDocument = new IntelliJTextDocument(editor);
+    TextDocument textDocument = new IntelliJTextDocument(editor, project);
     CompletionDocumentContext documentCompletionContext = textDocument.getCompletionContext(offset);
     if (documentCompletionContext.isCompletionTriggerValid()) {
       Callable<CompletableFuture<Void>> callable =

@@ -31,7 +31,7 @@ public class UserLevelConfig {
    * the `unstable-codegen` provider right now.
    */
   @Nullable
-  public static String getCompletionsProviderUrl() {
+  public static String getCompletionsServerEndpoint() {
     Properties properties = readProperties();
     String key = "cody.completions.advanced.serverEndpoint";
     return properties.getProperty(key, null);

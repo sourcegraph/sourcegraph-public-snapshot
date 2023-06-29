@@ -107,9 +107,17 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
 
     int remainingChars = tokToChar(promptTokens);
 
-    EndOfLineCompletionProvider completionNoSnippets =
+    CompletionProvider completionNoSnippets =
         endOfLineProvider(
-            completionsClient, remainingChars, responseTokens, List.of(), prefix, suffix, "\n", 1);
+            completionsClient,
+            remainingChars,
+            responseTokens,
+            List.of(),
+            prefix,
+            suffix,
+            "\n",
+            1,
+            document);
     int emptyPromptLength = completionNoSnippets.emptyPromptLength();
 
     List<ReferenceSnippet> similarCode = Collections.emptyList();
@@ -132,7 +140,8 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
               prefix,
               suffix,
               "",
-              2));
+              2,
+              document));
     } else if (context.triggerKind == InlineCompletionTriggerKind.Invoke
         || precedingLine.endsWith(".")) {
       return emptyResult();
@@ -147,7 +156,8 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
               prefix,
               suffix,
               "",
-              2));
+              2,
+              document));
       completers.add(
           endOfLineProvider(
               completionsClient,
@@ -157,7 +167,8 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
               prefix,
               suffix,
               "\n",
-              1));
+              1,
+              document));
     }
 
     // TODO: implement debouncing with a non-blocking way instead of `Thread.sleep()`
@@ -254,7 +265,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
     return new DocContext(prefix, suffix, prevLine, prevNonEmptyLine, nextNonEmptyLine);
   }
 
-  private EndOfLineCompletionProvider endOfLineProvider(
+  private CompletionProvider endOfLineProvider(
       SourcegraphNodeCompletionsClient completionsClient,
       int promptChars,
       int responseTokens,
@@ -262,28 +273,46 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
       String prefix,
       String suffix,
       String injectPrefix,
-      int defaultN) {
+      int defaultN,
+      TextDocument document) {
+    Function<Optional<String>, CompletionProvider> fallbackDefaultProvider =
+        (maybeErrorToLog) -> {
+          maybeErrorToLog.ifPresent(System.err::println);
+          return new EndOfLineCompletionProvider(
+              completionsClient,
+              promptChars,
+              responseTokens,
+              snippets,
+              prefix,
+              suffix,
+              injectPrefix,
+              defaultN);
+        };
     CompletionsProviderType providerType = UserLevelConfig.getCompletionsProviderType();
+    Optional<String> completionsServerEndpoint =
+        Optional.ofNullable(UserLevelConfig.getCompletionsServerEndpoint());
     if (providerType == CompletionsProviderType.UNSTABLE_CODEGEN) {
-      return new UnstableCodegenEndOfLineCompletionProvider(
-          completionsClient,
-          promptChars,
-          responseTokens,
-          snippets,
-          prefix,
-          suffix,
-          injectPrefix,
-          defaultN);
-    } else { // default
-      return new EndOfLineCompletionProvider(
-          completionsClient,
-          promptChars,
-          responseTokens,
-          snippets,
-          prefix,
-          suffix,
-          injectPrefix,
-          defaultN);
-    }
+      return completionsServerEndpoint
+          .map(
+              endpoint ->
+                  (CompletionProvider)
+                      new UnstableCodegenEndOfLineCompletionProvider(
+                          completionsClient,
+                          promptChars,
+                          responseTokens,
+                          snippets,
+                          prefix,
+                          suffix,
+                          injectPrefix,
+                          defaultN,
+                          document.fileName(),
+                          endpoint,
+                          document.getLanguageId()))
+          .orElseGet(
+              () ->
+                  fallbackDefaultProvider.apply(
+                      Optional.of(
+                          "Error: Cody: missing completions server endpoint, falling back to anthropic completions provider")));
+    } else return fallbackDefaultProvider.apply(Optional.empty());
   }
 }
