@@ -13,12 +13,12 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/own/background",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/shared/background",
         "//enterprise/internal/own",
         "//enterprise/internal/own/types",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/codeintel/shared/background",
         "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",

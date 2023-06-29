@@ -12,9 +12,9 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//enterprise/internal/batches/types",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/store",
         "//enterprise/internal/executor/types",
+        "//internal/codeintel/uploads/shared",
         "//internal/conf",
         "//internal/database",
         "//internal/executor",
@@ -48,9 +48,9 @@ go_test(
     deps = [
         ":handler",
         "//enterprise/internal/batches/types",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/store",
         "//enterprise/internal/executor/types",
+        "//internal/codeintel/uploads/shared",
         "//internal/conf",
         "//internal/database",
         "//internal/executor",

@@ -1,0 +1,26 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "lsifuploadstore",
+    srcs = [
+        "config.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/deploy",
+        "//internal/env",
+        "//internal/observation",
+        "//internal/uploadstore",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "lsifuploadstore_test",
+    timeout = "short",
+    srcs = ["config_test.go"],
+    embed = [":lsifuploadstore"],
+)

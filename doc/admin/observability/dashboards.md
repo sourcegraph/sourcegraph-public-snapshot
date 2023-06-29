@@ -22953,7 +22953,7 @@ Query: `count by(name) ((time() - container_last_seen{name=~"^(frontend|sourcegr
 
 ## Code Intelligence > Autoindexing
 
-<p class="subtitle">The service at `enterprise/internal/codeintel/autoindexing`.</p>
+<p class="subtitle">The service at `internal/codeintel/autoindexing`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-autoindexing/codeintel-autoindexing` on your Sourcegraph instance.
 
@@ -24346,7 +24346,7 @@ Query: `sum by (op)(increase(src_codeintel_autoindexing_janitor_expired_errors_t
 
 ## Code Intelligence > Code Nav
 
-<p class="subtitle">The service at `enterprise/internal/codeintel/codenav`.</p>
+<p class="subtitle">The service at internal/codeintel/codenav`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-codenav/codeintel-codenav` on your Sourcegraph instance.
 
@@ -24968,7 +24968,7 @@ Query: `sum by (op)(increase(src_codeintel_codenav_store_errors_total{job=~"^${s
 
 ## Code Intelligence > Policies
 
-<p class="subtitle">The service at `enterprise/internal/codeintel/policies`.</p>
+<p class="subtitle">The service at `internal/codeintel/policies`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-policies/codeintel-policies` on your Sourcegraph instance.
 
@@ -25459,7 +25459,7 @@ Query: `sum(increase(src_codeintel_background_policies_updated_total_total{job=~
 
 ## Code Intelligence > Ranking
 
-<p class="subtitle">The service at `enterprise/internal/codeintel/ranking`.</p>
+<p class="subtitle">The service at `internal/codeintel/ranking`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-ranking/codeintel-ranking` on your Sourcegraph instance.
 
@@ -27247,7 +27247,7 @@ Query: `sum by (op)(increase(src_codeintel_ranking_rank_janitor_errors_total{job
 
 ## Code Intelligence > Uploads
 
-<p class="subtitle">The service at `enterprise/internal/codeintel/uploads`.</p>
+<p class="subtitle">The service at `internal/codeintel/uploads`.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/codeintel-uploads/codeintel-uploads` on your Sourcegraph instance.
 
