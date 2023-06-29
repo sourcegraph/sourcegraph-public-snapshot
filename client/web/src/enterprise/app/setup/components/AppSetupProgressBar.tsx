@@ -63,7 +63,7 @@ export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
             <div className={styles.description}>
                 {hasDetails && (
                     <>
-                        <span>Generating embeddings for {data.embeddingsSetupProgress.currentRepository}</span>
+                        <span>Building the code graph for {data.embeddingsSetupProgress.currentRepository}</span>
                         <Text size="small" className={styles.percent}>
                             {data.embeddingsSetupProgress.currentRepositoryFilesProcessed} /{' '}
                             {data.embeddingsSetupProgress.currentRepositoryTotalFilesToProcess}
@@ -73,7 +73,7 @@ export const AppSetupProgressBar: FC<AppSetupProgressBarProps> = props => {
 
                 {!hasDetails && (
                     <>
-                        <span>Generating repositories embeddings</span>
+                        <span>Building the code graph</span>
                         <Text size="small" className={styles.percent}>
                             Loading files <LoadingSpinner />
                         </Text>

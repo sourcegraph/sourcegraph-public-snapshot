@@ -8,7 +8,7 @@ import { EmbeddingsSearchResult } from '../sourcegraph-api/graphql/client'
 import { UnifiedContextFetcher } from '../unified-context'
 import { isError } from '../utils'
 
-import { ContextMessage, ContextFile, getContextMessageWithResponse } from './messages'
+import { ContextMessage, ContextFile, getContextMessageWithResponse, ContextFileSource } from './messages'
 
 export interface ContextSearchOptions {
     numCodeResults: number
@@ -105,6 +105,7 @@ export class CodebaseContext {
         return groupResultsByFile(combinedResults)
             .reverse() // Reverse results so that they appear in ascending order of importance (least -> most).
             .flatMap(groupedResults => this.makeContextMessageWithResponse(groupedResults))
+            .map(message => contextMessageWithSource(message, 'embeddings'))
     }
 
     private async getEmbeddingSearchResults(
@@ -311,4 +312,11 @@ function resultsToMessages(results: ContextResult[]): ContextMessage[] {
         const messageText = populateCodeContextTemplate(content, fileName, repoName)
         return getContextMessageWithResponse(messageText, { fileName, repoName, revision })
     })
+}
+
+function contextMessageWithSource(message: ContextMessage, source: ContextFileSource): ContextMessage {
+    if (message.file) {
+        message.file.source = source
+    }
+    return message
 }
