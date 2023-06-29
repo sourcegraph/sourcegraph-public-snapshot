@@ -1,7 +1,9 @@
 package com.sourcegraph.cody.completions.prompt_library;
 
 import com.sourcegraph.cody.api.Promises;
+import com.sourcegraph.cody.completions.CompletionsProviderType;
 import com.sourcegraph.cody.vscode.*;
+import com.sourcegraph.config.UserLevelConfig;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
@@ -106,7 +108,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
     int remainingChars = tokToChar(promptTokens);
 
     EndOfLineCompletionProvider completionNoSnippets =
-        new EndOfLineCompletionProvider(
+        endOfLineProvider(
             completionsClient, remainingChars, responseTokens, List.of(), prefix, suffix, "\n", 1);
     int emptyPromptLength = completionNoSnippets.emptyPromptLength();
 
@@ -122,7 +124,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
     if (precedingLine.trim().equals("")) {
       //      waitMs = 500;
       completers.add(
-          new EndOfLineCompletionProvider(
+          endOfLineProvider(
               completionsClient,
               remainingChars,
               responseTokens,
@@ -137,7 +139,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
     } else {
       //      waitMs = 1000;
       completers.add(
-          new EndOfLineCompletionProvider(
+          endOfLineProvider(
               completionsClient,
               remainingChars,
               responseTokens,
@@ -147,7 +149,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
               "",
               2));
       completers.add(
-          new EndOfLineCompletionProvider(
+          endOfLineProvider(
               completionsClient,
               remainingChars,
               responseTokens,
@@ -250,5 +252,38 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
     String suffix = String.join("\n", Arrays.copyOfRange(suffixLines, 0, endLine));
 
     return new DocContext(prefix, suffix, prevLine, prevNonEmptyLine, nextNonEmptyLine);
+  }
+
+  private EndOfLineCompletionProvider endOfLineProvider(
+      SourcegraphNodeCompletionsClient completionsClient,
+      int promptChars,
+      int responseTokens,
+      List<ReferenceSnippet> snippets,
+      String prefix,
+      String suffix,
+      String injectPrefix,
+      int defaultN) {
+    CompletionsProviderType providerType = UserLevelConfig.getCompletionsProviderType();
+    if (providerType == CompletionsProviderType.UNSTABLE_CODEGEN) {
+      return new UnstableCodegenEndOfLineCompletionProvider(
+          completionsClient,
+          promptChars,
+          responseTokens,
+          snippets,
+          prefix,
+          suffix,
+          injectPrefix,
+          defaultN);
+    } else { // default
+      return new EndOfLineCompletionProvider(
+          completionsClient,
+          promptChars,
+          responseTokens,
+          snippets,
+          prefix,
+          suffix,
+          injectPrefix,
+          defaultN);
+    }
   }
 }
