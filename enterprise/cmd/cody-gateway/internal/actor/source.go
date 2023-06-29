@@ -66,6 +66,11 @@ func NewSources(sources ...Source) *Sources {
 	return &Sources{sources: sources}
 }
 
+// Add appends sources to the set.
+func (s *Sources) Add(sources ...Source) { s.sources = append(s.sources, sources...) }
+
+// Get attempts to retrieve an actor from any source that can provide it.
+// It returns the first non-ErrNotFromSource error encountered.
 func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 	var span trace.Span
 	ctx, span = tracer.Start(ctx, "Sources.Get")

@@ -3,7 +3,6 @@ package shared
 import (
 	"net/url"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -72,7 +71,8 @@ func (c *Config) Load() {
 	c.DiagnosticsSecret = c.Get("CODY_GATEWAY_DIAGNOSTICS_SECRET", "", "Secret for accessing diagnostics - "+
 		"should be used as 'Authorization: Bearer $secret' header when accessing diagnostics endpoints.")
 
-	c.Dotcom.AccessToken = c.Get("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN", "", "The Sourcegraph.com access token to be used.")
+	c.Dotcom.AccessToken = c.GetOptional("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN",
+		"The Sourcegraph.com access token to be used. If not provided, dotcom-based actor sources will be disabled.")
 	c.Dotcom.URL = c.Get("CODY_GATEWAY_DOTCOM_API_URL", "https://sourcegraph.com/.api/graphql", "Custom override for the dotcom API endpoint")
 	c.Dotcom.InternalMode = c.GetBool("CODY_GATEWAY_DOTCOM_INTERNAL_MODE", "false", "Only allow tokens associated with active internal and dev licenses to be used.") ||
 		c.GetBool("CODY_GATEWAY_DOTCOM_DEV_LICENSES_ONLY", "false", "DEPRECATED, use CODY_GATEWAY_DOTCOM_INTERNAL_MODE")
@@ -119,12 +119,6 @@ func (c *Config) Load() {
 	c.ActorConcurrencyLimit.Percentage = float32(c.GetPercent("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_PERCENTAGE", "50", "The percentage of daily rate limit to be allowed as concurrent requests limit from an actor.")) / 100
 	c.ActorConcurrencyLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")
 
-	thresholds := c.Get("CODY_GATEWAY_ACTOR_RATE_LIMIT_NOTIFY_THRESHOLDS", "90,95,100", "The comma-separated list of the percentage of the rate limit usage to trigger an notification.")
-	c.ActorRateLimitNotify.Thresholds = make([]int, 0, len(thresholds))
-	for _, str := range strings.Split(thresholds, ",") {
-		threshold, _ := strconv.ParseInt(strings.TrimSpace(str), 10, 64)
-		c.ActorRateLimitNotify.Thresholds = append(c.ActorRateLimitNotify.Thresholds, int(threshold))
-	}
 	c.ActorRateLimitNotify.SlackWebhookURL = c.Get("CODY_GATEWAY_ACTOR_RATE_LIMIT_NOTIFY_SLACK_WEBHOOK_URL", "", "The Slack webhook URL to send notifications to.")
 }
 
@@ -144,12 +138,6 @@ func (c *Config) Validate() error {
 
 	if len(c.AllowedEmbeddingsModels) == 0 {
 		c.AddError(errors.New("must provide allowed models for embeddings generation"))
-	}
-
-	for _, threshold := range c.ActorRateLimitNotify.Thresholds {
-		if threshold <= 0 || threshold > 100 {
-			c.AddError(errors.Errorf("threshold out of range %d, should be (0, 100]", threshold))
-		}
 	}
 
 	return nil
