@@ -2393,31 +2393,25 @@ func TestConfigurationHasWebhooks(t *testing.T) {
 
 func TestExternalServiceStore_recalculateFields(t *testing.T) {
 	tests := map[string]struct {
-		explicitPermsEnabled  bool
-		enforcePermissionsSet *bool
-		authorizationSet      bool
-		expectUnrestricted    bool
+		explicitPermsEnabled bool
+		authorizationSet     bool
+		expectUnrestricted   bool
 	}{
 		"default state": {
 			expectUnrestricted: true,
 		},
-		"only explicit perms set": {
+		"explicit perms set": {
 			explicitPermsEnabled: true,
 			expectUnrestricted:   false,
 		},
-		"only authorization set": {
+		"authorization set": {
 			authorizationSet:   true,
 			expectUnrestricted: false,
 		},
-		"enforcePermissions set to true": {
-			enforcePermissionsSet: pointers.Ptr(true),
-			expectUnrestricted:    false,
-		},
-		"false enforcePermissions overrides all settings": {
-			enforcePermissionsSet: pointers.Ptr(false),
-			authorizationSet:      true,
-			explicitPermsEnabled:  true,
-			expectUnrestricted:    true,
+		"authorization and explicit perms set": {
+			explicitPermsEnabled: true,
+			authorizationSet:     true,
+			expectUnrestricted:   false,
 		},
 	}
 
@@ -2442,11 +2436,6 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 			var err error
 			if tc.authorizationSet {
 				rawConfig, err = jsonc.Edit(rawConfig, struct{}{}, "authorization")
-				require.NoError(t, err)
-			}
-
-			if tc.enforcePermissionsSet != nil {
-				rawConfig, err = jsonc.Edit(rawConfig, *tc.enforcePermissionsSet, "enforcePermissions")
 				require.NoError(t, err)
 			}
 

@@ -1569,17 +1569,22 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 
 	// Only override the value of es.Unrestricted if `enforcePermissions` is set.
 	//
-	// The logic here seems a bit weird for backwards compatibility reasons:
-	// If the explicit permissions API is enabled by setting `"permissions.userMapping"`,
-	// then `enforcePermissions` will default to true.
-	// Otherwise, it will default to false.
-	// This way, previous behaviour of `permissions.userMapping` marking all code host connections
-	// as restricted is preserved.
+	// All code hosts apart from Azure DevOps use the `authorization` pattern for enforcing
+	// permissions. Instead of continuing to use this pattern for Azure DevOps, it is simpler to add
+	// a boolean which has an explicit name and describes what it does better.
+	//
+	// The end result: we start to break away from the `authorization` pattern with an additional
+	// check for this new field - `enforcePermissions`.
+	//
+	// For existing auth providers, this is forwards compatible. While at the same time if they also
+	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
 	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
-	if !envvar.SourcegraphDotComMode() && !enforcePermissions.Exists() && globals.PermissionsUserMapping().Enabled {
-		es.Unrestricted = false
-	} else if !envvar.SourcegraphDotComMode() && enforcePermissions.Exists() {
-		es.Unrestricted = !enforcePermissions.Bool()
+	if !envvar.SourcegraphDotComMode() {
+		if globals.PermissionsUserMapping().Enabled {
+			es.Unrestricted = false
+		} else if enforcePermissions.Exists() {
+			es.Unrestricted = !enforcePermissions.Bool()
+		}
 	}
 
 	hasWebhooks := false
