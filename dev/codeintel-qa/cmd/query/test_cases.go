@@ -203,7 +203,7 @@ func testProtosPagination() (fns []queryFunc) {
 		protos     = []Location{
 			l(processRepo, processHash, "types.go", 11, 5), // type Initializer interface {
 			l(processRepo, processHash, "types.go", 17, 5), // type Runner interface {
-			l(processRepo, processHash, "types.go", 25, 5), // type Stopper interface {
+			l(processRepo, processHash, "types.go", -5, 5), // type Stopper interface {
 		}
 	)
 	for p := 0; p < numProjects; p++ {
