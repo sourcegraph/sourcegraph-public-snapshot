@@ -12,8 +12,6 @@ import (
 type AWSCodeCommitConnection struct {
 	// AccessKeyID description: The AWS access key ID to use when listing and updating repositories from AWS CodeCommit. Must have the AWSCodeCommitReadOnly IAM policy.
 	AccessKeyID string `json:"accessKeyID"`
-	// EnforcePermissions description: A flag to enforce AWS Code Commit repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from AWS CodeCommit.
 	//
 	// Supports excluding by name ({"name": "git-codecommit.us-west-1.amazonaws.com/repo-name"}) or by ARN ({"id": "arn:aws:codecommit:us-west-1:999999999999:name"}).
@@ -301,8 +299,6 @@ type BitbucketCloudConnection struct {
 	AppPassword string `json:"appPassword"`
 	// Authorization description: If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "bitbucketcloud" with the same `url` field as specified in this `BitbucketCloudConnection`.
 	Authorization *BitbucketCloudAuthorization `json:"authorization,omitempty"`
-	// EnforcePermissions description: A flag to enforce Bitbucket Cloud repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from Bitbucket Cloud. Takes precedence over "teams" configuration.
 	//
 	// Supports excluding by name ({"name": "myorg/myrepo"}) or by UUID ({"uuid": "{fceb73c7-cef6-4abe-956d-e471281126bd}"}).
@@ -355,8 +351,6 @@ type BitbucketServerConnection struct {
 	Authorization *BitbucketServerAuthorization `json:"authorization,omitempty"`
 	// Certificate description: TLS certificate of the Bitbucket Server / Bitbucket Data Center instance. This is only necessary if the certificate is self-signed or signed by an internal CA. To get the certificate run `openssl s_client -connect HOST:443 -showcerts < /dev/null 2> /dev/null | openssl x509 -outform PEM`. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	Certificate string `json:"certificate,omitempty"`
-	// EnforcePermissions description: A flag to enforce Bitbucket Server repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Bitbucket Server / Bitbucket Data Center instance. Takes precedence over "repos" and "repositoryQuery".
 	//
 	// Supports excluding by name ({"name": "projectKey/repositorySlug"}) or by ID ({"id": 42}).
@@ -1000,8 +994,6 @@ type GerritAuthorization struct {
 type GerritConnection struct {
 	// Authorization description: If non-null, enforces Gerrit repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type "gerrit" with the same `url` field as specified in this `GerritConnection`.
 	Authorization *GerritAuthorization `json:"authorization,omitempty"`
-	// EnforcePermissions description: A flag to enforce Gerrit repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Password description: The password associated with the Gerrit username used for authentication.
 	Password string `json:"password"`
 	// Projects description: An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.
@@ -1099,8 +1091,6 @@ type GitHubConnection struct {
 	CloudDefault bool `json:"cloudDefault,omitempty"`
 	// CloudGlobal description: When set to true, this external service will be chosen as our 'Global' GitHub service. Only valid on Sourcegraph.com. Only one service can have this flag set.
 	CloudGlobal bool `json:"cloudGlobal,omitempty"`
-	// EnforcePermissions description: A flag to enforce GitHub repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this GitHub instance. Takes precedence over "orgs", "repos", and "repositoryQuery" configuration.
 	//
 	// Supports excluding by name ({"name": "owner/name"}) or by ID ({"id": "MDEwOlJlcG9zaXRvcnkxMTczMDM0Mg=="}).
@@ -1211,8 +1201,6 @@ type GitLabConnection struct {
 	CloudDefault bool `json:"cloudDefault,omitempty"`
 	// CloudGlobal description: When set to true, this external service will be chosen as our 'Global' GitLab service. Only valid on Sourcegraph.com. Only one service can have this flag set.
 	CloudGlobal bool `json:"cloudGlobal,omitempty"`
-	// EnforcePermissions description: A flag to enforce GitLab repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of projects to never mirror from this GitLab instance. Takes precedence over "projects" and "projectQuery" configuration. Supports excluding by name ({"name": "group/name"}) or by ID ({"id": 42}).
 	Exclude []*ExcludedGitLabProject `json:"exclude,omitempty"`
 	// GitURLType description: The type of Git URLs to use for cloning and fetching Git repositories on this GitLab instance.
@@ -1299,8 +1287,6 @@ type Github struct {
 
 // GitoliteConnection description: Configuration for a connection to Gitolite.
 type GitoliteConnection struct {
-	// EnforcePermissions description: A flag to enforce Gitolite repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror from this Gitolite instance. Supports excluding by exact name ({"name": "foo"}).
 	Exclude []*ExcludedGitoliteRepo `json:"exclude,omitempty"`
 	// Host description: Gitolite host that stores the repositories (e.g., git@gitolite.example.com, ssh://git@gitolite.example.com:2222/).
@@ -1687,8 +1673,6 @@ type OrganizationInvitations struct {
 
 // OtherExternalServiceConnection description: Configuration for a Connection to Git repositories for which an external service integration isn't yet available.
 type OtherExternalServiceConnection struct {
-	// EnforcePermissions description: A flag to enforce Azure DevOps repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Exclude description: A list of repositories to never mirror by name after applying repositoryPathPattern. Supports excluding by exact name ({"name": "myrepo"}) or regular expression ({"pattern": ".*secret.*"}).
 	Exclude []*ExcludedOtherRepo `json:"exclude,omitempty"`
 	Repos   []string             `json:"repos"`
@@ -1768,8 +1752,6 @@ type PerforceConnection struct {
 	Authorization *PerforceAuthorization `json:"authorization,omitempty"`
 	// Depots description: Depots can have arbitrary paths, e.g. a path to depot root or a subdirectory.
 	Depots []string `json:"depots,omitempty"`
-	// EnforcePermissions description: A flag to enforce Perforce repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// FusionClient description: Configuration for the experimental p4-fusion client
 	FusionClient *FusionClient `json:"fusionClient,omitempty"`
 	// MaxChanges description: Only import at most n changes when possible (git p4 clone --max-changes).
@@ -1818,8 +1800,6 @@ type Phabricator struct {
 
 // PhabricatorConnection description: Configuration for a connection to Phabricator.
 type PhabricatorConnection struct {
-	// EnforcePermissions description: A flag to enforce Phabricator repository access permissions
-	EnforcePermissions bool `json:"enforcePermissions,omitempty"`
 	// Repos description: The list of repositories available on Phabricator.
 	Repos []*Repos `json:"repos,omitempty"`
 	// Token description: API token for the Phabricator instance.

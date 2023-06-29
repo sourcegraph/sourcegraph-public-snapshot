@@ -160,11 +160,6 @@
       "description": "Deprecated and ignored field which will be removed entirely in the next release. GitHub repositories can no longer be enabled or disabled explicitly. Configure repositories to be mirrored via \"repos\", \"exclude\" and \"repositoryQuery\" instead.",
       "type": "boolean"
     },
-    "enforcePermissions": {
-      "description": "A flag to enforce GitHub repository access permissions",
-      "type": "boolean",
-      "default": false
-    },
     "authorization": {
       "title": "GitHubAuthorization",
       "description": "If non-null, enforces GitHub repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"github\" with the same `url` field as specified in this `GitHubConnection`.",
