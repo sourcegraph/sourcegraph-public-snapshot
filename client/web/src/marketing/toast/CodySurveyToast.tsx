@@ -7,7 +7,7 @@ import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage } from '@sourcegraph/wildcard'
+import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage, useCookieStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
@@ -176,9 +176,11 @@ export const useCodySurveyToast = (): {
     dismiss: () => void
     setShouldShowCodySurvey: (show: boolean) => void
 } => {
-    // we specifically use local storage as we want consistent value between when user is logged out and logged in / signed up
-    // eslint-disable-next-line no-restricted-syntax
-    const [shouldShowCodySurvey, setShouldShowCodySurvey] = useLocalStorage('cody.survey.show', false)
+    // we specifically use cookie storage as we want consistent value between when user is logged out and logged in / signed up
+    // as well as cross-domain such about.sourcegraph.com
+    const [shouldShowCodySurvey, setShouldShowCodySurvey] = useCookieStorage<boolean>('cody.survey.show', false, {
+        expires: 365,
+    })
     const [hasSubmitted, setHasSubmitted] = useTemporarySetting('cody.survey.submitted', false)
     const dismiss = useCallback(() => {
         setHasSubmitted(true)
@@ -193,7 +195,7 @@ export const useCodySurveyToast = (): {
 
     return {
         // we calculate "show" value based whether this a new signup and whether they already have submitted survey
-        show: !hasSubmitted && shouldShowCodySurvey,
+        show: !hasSubmitted && !!shouldShowCodySurvey,
         dismiss,
         setShouldShowCodySurvey,
     }
