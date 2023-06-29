@@ -862,7 +862,6 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 		if err != nil {
 			return nil, errors.Wrap(err, "lsifStore.Definitions")
 		}
-
 		if len(locations) > 0 {
 			// If we have a local definition, we won't find a better one and can exit early
 			return s.getUploadLocations(ctx, args, requestState, locations, true)

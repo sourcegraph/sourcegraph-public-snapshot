@@ -153,8 +153,7 @@ func (s *store) getLocations(
 	operation *observation.Operation,
 	bundleID int,
 	path string,
-	line, character int,
-	limit, offset int,
+	line, character, limit, offset int,
 ) (_ []shared.Location, _ int, err error) {
 	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("bundleID", bundleID),
