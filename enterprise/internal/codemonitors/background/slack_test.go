@@ -94,10 +94,10 @@ func TestSlackWebhook(t *testing.T) {
 }
 
 func TestTriggerTestSlackWebhookAction(t *testing.T) {
+	var gotB []byte
+	var gotErr error
 	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, err := io.ReadAll(r.Body)
-		require.NoError(t, err)
-		autogold.ExpectFile(t, autogold.Raw(b))
+		gotB, gotErr = io.ReadAll(r.Body)
 		w.WriteHeader(200)
 	}))
 	defer s.Close()
@@ -105,4 +105,7 @@ func TestTriggerTestSlackWebhookAction(t *testing.T) {
 	client := s.Client()
 	err := SendTestSlackWebhook(context.Background(), client, "My test monitor", s.URL)
 	require.NoError(t, err)
+
+	require.NoError(t, gotErr)
+	autogold.ExpectFile(t, autogold.Raw(gotB))
 }

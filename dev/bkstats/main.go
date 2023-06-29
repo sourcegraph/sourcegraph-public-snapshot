@@ -80,7 +80,7 @@ func main() {
 	nextPage := 0
 	for {
 		bs, resp, err := client.Builds.ListByPipeline("sourcegraph", pipeline, &buildkite.BuildsListOptions{
-			Branch: "main",
+			Branch: []string{"main"},
 			// Select all builds that finished on or after the beginning of the day ...
 			FinishedFrom: BoD(t),
 			// To those who were created before or on the end of the day.
