@@ -3,6 +3,7 @@ package lsifstore
 import (
 	"bytes"
 	"context"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -117,9 +118,10 @@ func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
+		parts := strings.Split(ex.Descriptor, "/")
 		explodedSymbols = append(
 			explodedSymbols,
-			"%"+ex.Descriptor+"%",
+			"%"+parts[len(parts)-1]+"%",
 		)
 	}
 
