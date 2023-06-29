@@ -52,6 +52,8 @@ The `bindID` value specifies how to uniquely identify users when setting permiss
 
 After you enable the permissions API, you must [set permissions](#setting-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
 
+> NOTE: Enabling the permissions API marks repositories as private by default, allowing you to manage access to all repositories manually. If, however, you would like to make all repositories for a specific code host connection Public, then you can set `"enforcePermissions": false` in that code host connection's configuration.
+
 > NOTE: If you were previously using [permissions syncing](./syncing.md), e.g. syncing permissions from Github, then those permissions are used as the initial state after enabling explicit permissions. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
 
 <span class="virtual-br"></span>
