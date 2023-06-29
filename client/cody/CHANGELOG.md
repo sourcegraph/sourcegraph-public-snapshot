@@ -10,7 +10,12 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
+- Inline Chat: Update keybind when condition to `editorFocus`.
+- Inline Touch: Create a new `.test.` file when `test` or `tests` is included in the instruction.
+
 ### Changed
+
+- Inline Touch: Remove Inline Touch from submenu and command palette. It can be started with `/touch` or `/t` from the Inline Chat due to current limitation.
 
 ## [0.4.2]
 
