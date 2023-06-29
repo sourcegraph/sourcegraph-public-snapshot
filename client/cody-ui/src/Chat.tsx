@@ -46,6 +46,8 @@ interface ChatProps extends ChatClassNames {
     abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
+    addRepoToAppPanel?: React.FunctionComponent<AddRepoToAppPanelProps>
+    addRepoToAppOnSubmit?: (text: string) => void
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -74,6 +76,11 @@ export interface ChatUISubmitButtonProps {
 export interface ChatUISuggestionButtonProps {
     suggestion: string
     onClick: (event: React.MouseEvent<HTMLButtonElement>) => void
+}
+
+export interface AddRepoToAppPanelProps {
+    repoName?: string
+    onClick: (text: string) => void
 }
 
 export interface EditButtonProps {
@@ -138,6 +145,8 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
+    addRepoToAppPanel: AddRepoToAppContainer,
+    addRepoToAppOnSubmit: AddRepoToAppOnSubmit,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -291,6 +300,12 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     </div>
                 )}
                 <div className={styles.textAreaContainer}>
+                    {AddRepoToAppContainer &&
+                        AddRepoToAppOnSubmit &&
+                        contextStatus?.isApp &&
+                        !contextStatus?.indexStatus?.queuedAt && (
+                            <AddRepoToAppContainer repoName={contextStatus?.codebase} onClick={AddRepoToAppOnSubmit} />
+                        )}
                     <TextArea
                         className={classNames(styles.chatInput, chatInputClassName)}
                         rows={inputRows}

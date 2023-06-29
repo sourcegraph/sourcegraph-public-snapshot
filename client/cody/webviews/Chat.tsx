@@ -15,6 +15,7 @@ import {
 } from '@sourcegraph/cody-ui/src/Chat'
 import { SubmitSvg } from '@sourcegraph/cody-ui/src/utils/icons'
 
+import { AddRepoToAppPanel } from './Components/AddCodebase'
 import { FileLink } from './FileLink'
 import { VSCodeWrapper } from './utils/VSCodeApi'
 
@@ -89,6 +90,13 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
         [vscodeAPI]
     )
 
+    const onAddRepoToAppBtnClick = useCallback(
+        (text: string) => {
+            vscodeAPI.postMessage({ command: 'app', type: 'addRepo', text })
+        },
+        [vscodeAPI]
+    )
+
     return (
         <ChatUI
             messageInProgress={messageInProgress}
@@ -129,6 +137,8 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
             helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
+            addRepoToAppPanel={AddRepoToAppPanel}
+            addRepoToAppOnSubmit={onAddRepoToAppBtnClick}
         />
     )
 }

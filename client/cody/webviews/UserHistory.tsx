@@ -1,5 +1,3 @@
-/* eslint-disable react/no-array-index-key */
-
 import { useCallback } from 'react'
 
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
@@ -33,22 +31,22 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
             if (userHistory) {
                 delete userHistory[chatID]
                 setUserHistory({ ...userHistory })
-                vscodeAPI.postMessage({ command: 'deleteHistory', chatID })
+                vscodeAPI.postMessage({ command: 'history', event: 'delete', chatID })
             }
         },
         [userHistory, setUserHistory, vscodeAPI]
     )
 
-    const onRemoveHistoryClick = useCallback(() => {
+    const onCleareHistoryClick = useCallback(() => {
         if (userHistory) {
-            vscodeAPI.postMessage({ command: 'removeHistory' })
+            vscodeAPI.postMessage({ command: 'history', event: 'clear', chatID: '' })
             setUserHistory(null)
             setInputHistory([])
         }
     }, [setInputHistory, userHistory, setUserHistory, vscodeAPI])
 
     function restoreMetadata(chatID: string): void {
-        vscodeAPI.postMessage({ command: 'restoreHistory', chatID })
+        vscodeAPI.postMessage({ command: 'history', event: 'restore', chatID })
         setView('chat')
     }
 
@@ -61,7 +59,7 @@ export const UserHistory: React.FunctionComponent<React.PropsWithChildren<Histor
                         <VSCodeButton
                             className={styles.clearButton}
                             type="button"
-                            onClick={onRemoveHistoryClick}
+                            onClick={onCleareHistoryClick}
                             disabled={!userHistory || !Object.keys(userHistory).length}
                         >
                             Clear History

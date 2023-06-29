@@ -209,7 +209,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.history', () => chatProvider.setWebviewView('history')),
         vscode.commands.registerCommand('cody.history.clear', async () => {
-            await chatProvider.clearHistory()
+            await chatProvider.handleChatHistory('clear', '')
         }),
         // Recipes
         vscode.commands.registerCommand('cody.recipe.explain-code', () => executeRecipe('explain-code-detailed')),

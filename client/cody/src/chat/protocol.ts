@@ -15,15 +15,14 @@ export type WebviewMessage =
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
     | { command: 'executeRecipe'; recipe: RecipeID }
     | { command: 'settings'; serverEndpoint: string; accessToken: string }
-    | { command: 'removeHistory' }
-    | { command: 'restoreHistory'; chatID: string }
-    | { command: 'deleteHistory'; chatID: string }
+    | { command: 'history'; event: string; chatID: string }
     | { command: 'links'; value: string }
     | { command: 'openFile'; filePath: string }
     | { command: 'edit'; text: string }
     | { command: 'insert'; text: string }
     | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
     | { command: 'abort' }
+    | { command: 'app'; type: string; text: string }
 
 /**
  * A message sent from the extension host to the webview.

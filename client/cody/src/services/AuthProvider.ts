@@ -52,10 +52,7 @@ export class AuthProvider {
         const lastEndpoint = this.localStorage?.getEndpoint() || this.config.serverEndpoint
         const token = (await this.secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         debug('AuthProvider:init:lastEndpoint', lastEndpoint)
-        const authState = await this.auth(lastEndpoint, token || null)
-        if (authState?.isLoggedIn) {
-            return
-        }
+        void this.auth(lastEndpoint, token || null)
     }
 
     // Display quickpick to select endpoint to sign in to
@@ -293,7 +290,6 @@ export class AuthProvider {
 
     // Store endpoint in local storage, token in secret storage, and update endpoint history
     private async storeAuthInfo(endpoint: string | null | undefined, token: string | null | undefined): Promise<void> {
-        debug('AuthProvider:storeAuthInfo:init', endpoint || '')
         if (!endpoint) {
             return
         }
@@ -302,7 +298,7 @@ export class AuthProvider {
             await this.secretStorage.storeToken(endpoint, token)
         }
         this.loadEndpointHistory()
-        debug('AuthProvider:storeAuthInfo:stored', endpoint || '')
+        debug('AuthProvider:storeAuthInfo:stored', endpoint)
     }
 }
 

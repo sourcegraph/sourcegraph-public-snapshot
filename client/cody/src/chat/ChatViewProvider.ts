@@ -20,6 +20,7 @@ import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { MAX_AVAILABLE_PROMPT_LENGTH, SOLUTION_TOKEN_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { RepoEmbeddingJobsConnection } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
@@ -45,6 +46,7 @@ import {
     WebviewMessage,
     defaultAuthStatus,
     LocalEnv,
+    isLocalApp,
 } from './protocol'
 import { getRecipe } from './recipes'
 import { convertGitCloneURLToCodebaseName } from './utils'
@@ -84,6 +86,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     private disposables: vscode.Disposable[] = []
 
+    private client = new SourcegraphGraphQLAPIClient(this.config)
+
     // Codebase-context-related state
     private currentWorkspaceRoot: string
 
@@ -103,21 +107,13 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (TestSupport.instance) {
             TestSupport.instance.chatViewProvider.set(this)
         }
+        this.disposables.push(vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus()))
         // chat id is used to identify chat session
         this.createNewChatID()
         this.disposables.push(this.configurationChangeEvent)
 
         // listen for vscode active editor change event
         this.currentWorkspaceRoot = ''
-        this.disposables.push(
-            vscode.window.onDidChangeActiveTextEditor(async () => {
-                await this.updateCodebaseContext()
-            }),
-            vscode.workspace.onDidChangeWorkspaceFolders(async () => {
-                await this.updateCodebaseContext()
-            }),
-            vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
-        )
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
         const solutionLimit = codyConfig.get<number>('provider.limit.solution') || SOLUTION_TOKEN_LENGTH
@@ -177,6 +173,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         if (authStatus.endpoint) {
             this.config.serverEndpoint = authStatus.endpoint
         }
+        this.client = new SourcegraphGraphQLAPIClient(newConfig)
         this.configurationChangeEvent.fire()
     }
 
@@ -192,27 +189,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         this.sendChatHistory()
     }
 
-    public async clearHistory(): Promise<void> {
-        this.chatHistory = {}
-        this.inputHistory = []
-        await this.localStorage.removeChatHistory()
-    }
-
     public async setAnonymousUserID(): Promise<void> {
         await this.localStorage.setAnonymousUserID()
-    }
-
-    /**
-     * Restores a session from a chatID
-     */
-    public async restoreSession(chatID: string): Promise<void> {
-        await this.saveTranscriptToChatHistory()
-        this.cancelCompletion()
-        this.currentChatID = chatID
-        this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
-        await this.transcript.toJSON()
-        this.sendTranscript()
-        this.sendChatHistory()
     }
 
     private async onDidReceiveMessage(message: WebviewMessage): Promise<void> {
@@ -266,17 +244,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'event':
                 this.sendEvent(message.event, message.value)
                 break
-            case 'removeHistory':
-                await this.clearHistory()
-                break
-            case 'restoreHistory':
-                await this.restoreSession(message.chatID)
-                break
-            case 'deleteHistory':
-                await this.deleteHistory(message.chatID)
+            case 'history':
+                await this.handleChatHistory(message.event, message.chatID)
                 break
             case 'links':
                 void this.openExternalLinks(message.value)
+                break
+            case 'app':
+                await this.client.codyAppAddRemoteCodeHost(message.text)
+                await this.publishContextStatus()
                 break
             case 'openFile': {
                 const rootPath = this.editor.getWorkspaceRootPath()
@@ -435,7 +411,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
     }
 
-    private async updateCodebaseContext(): Promise<void> {
+    // TODO: Move this into publishContextStatus.update()
+    public async updateCodebaseContext(): Promise<void> {
         if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
             // these are ephemeral
             return
@@ -652,13 +629,29 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
     }
 
-    /**
-     * Delete history from current chat history and local storage
-     */
-    private async deleteHistory(chatID: string): Promise<void> {
-        delete this.chatHistory[chatID]
-        await this.localStorage.deleteChatHistory(chatID)
-        this.sendChatHistory()
+    public async handleChatHistory(action: string, chatID: string): Promise<void> {
+        switch (action) {
+            case 'clear':
+                this.chatHistory = {}
+                this.inputHistory = []
+                await this.localStorage.removeChatHistory()
+                break
+            case 'delete':
+                // Delete history from current chat history and local storage
+                delete this.chatHistory[chatID]
+                await this.localStorage.deleteChatHistory(chatID)
+                this.sendChatHistory()
+            // Restores a session from a chatID
+            case 'restore':
+                await this.saveTranscriptToChatHistory()
+                this.cancelCompletion()
+                this.currentChatID = chatID
+                this.transcript = Transcript.fromJSON(this.chatHistory[chatID])
+                await this.transcript.toJSON()
+                this.sendTranscript()
+                this.sendChatHistory()
+            default:
+        }
     }
 
     /**
@@ -683,7 +676,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 (a, b) => +new Date(b[1].lastInteractionTimestamp) - +new Date(a[1].lastInteractionTimestamp)
             )
             const chatID = sortedChats[0][0]
-            await this.restoreSession(chatID)
+            await this.handleChatHistory('restore', chatID)
         }
     }
 
@@ -706,19 +699,46 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private async publishContextStatus(): Promise<void> {
         const send = async (): Promise<void> => {
             const editorContext = this.editor.getActiveTextEditor()
-            await this.webview?.postMessage({
-                type: 'contextStatus',
-                contextStatus: {
-                    mode: this.config.useContext,
-                    connection: this.codebaseContext.checkEmbeddingsConnection(),
-                    codebase: this.codebaseContext.getCodebase(),
-                    filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
-                    selection: editorContext ? editorContext.selection : undefined,
-                    supportsKeyword: true,
-                },
-            })
+            const indexStatus = await getEmbeddingJobState()
+            const contextStatus = {
+                mode: this.config.useContext,
+                connection: this.codebaseContext.checkEmbeddingsConnection(),
+                codebase: this.codebaseContext.getCodebase(),
+                filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+                selection: editorContext ? editorContext.selection : undefined,
+                supportsKeyword: true,
+                indexStatus,
+                isApp: isLocalApp(this.config.serverEndpoint),
+            }
+            await this.webview?.postMessage({ type: 'contextStatus', contextStatus })
         }
+        const update = async (): Promise<void> => {
+            const codebaseContext = await getCodebaseContext(this.config, this.rgPath, this.editor, this.chat)
+            if (!codebaseContext) {
+                return
+            }
+            this.codebaseContext = codebaseContext
+            await send()
+        }
+        const getEmbeddingJobState = async (): Promise<RepoEmbeddingJobsConnection | undefined> => {
+            const nodes = await this.client.codyAppGetEmbeddingJobConnection()
+            const codebase = this.codebaseContext.getCodebase()
+            if (isError(nodes) || !codebase) {
+                console.error('failed to get embedding job state')
+                return undefined
+            }
+            const repo =
+                nodes?.find(node => node.repo?.name === codebase) ||
+                nodes?.find(node => node.repo?.name.includes(codebase))
+            return repo || undefined
+        }
+        // send new context status on every change in doc to display selected line number and indexing progress if any
         this.disposables.push(vscode.window.onDidChangeTextEditorSelection(() => send()))
+        // update context on every change in config, active editor, and workspace folders
+        // since this is where we get the name for the codebase
+        this.disposables.push(vscode.window.onDidChangeActiveTextEditor(() => update()))
+        this.disposables.push(vscode.workspace.onDidChangeConfiguration(() => update()))
+        this.disposables.push(vscode.workspace.onDidChangeWorkspaceFolders(() => update()))
         await send()
     }
 
@@ -739,11 +759,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
     /**
      * Publish the config to the webview.
+     * Call when syncing authStatus or on config change.
      */
     private async publishConfig(): Promise<void> {
         const send = async (): Promise<void> => {
             this.config = await getFullConfig(this.secretStorage, this.localStorage)
-
             // check if the new configuration change is valid or not
             const authStatus = this.authProvider.getAuthStatus()
             const localProcess = await this.authProvider.appDetector.getProcessInfo(authStatus.isLoggedIn)
@@ -753,13 +773,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 serverEndpoint: this.config.serverEndpoint,
             }
 
-            // update codebase context on configuration change
-            await this.updateCodebaseContext()
             await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-            debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
+            debug('ChatViewProvider:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
-
-        this.disposables.push(this.configurationChangeEvent.event(() => send()))
         await send()
     }
 
@@ -909,7 +925,10 @@ export async function getCodebaseContext(
     const gitCommand = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: workspaceRoot })
     const gitOutput = gitCommand.stdout.toString().trim()
     // Get codebase from config or fallback to getting repository name from git clone URL
-    const codebase = config.codebase || convertGitCloneURLToCodebaseName(gitOutput)
+    const codebase =
+        config.codebase ||
+        convertGitCloneURLToCodebaseName(gitOutput) ||
+        vscode.workspace.workspaceFolders?.[0].uri.fsPath
     if (!codebase) {
         return null
     }
@@ -918,6 +937,7 @@ export async function getCodebaseContext(
     if (isError(repoId)) {
         const infoMessage = `Cody could not find embeddings for '${codebase}' on your Sourcegraph instance.\n`
         console.info(infoMessage)
+        debug('ChatViewProvider:getCodebaseContext', 'failed', { verbose: infoMessage })
         return null
     }
 

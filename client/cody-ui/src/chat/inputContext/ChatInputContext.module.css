@@ -1,5 +1,15 @@
 .container {
     display: flex;
+    flex-direction: column;
+    align-content: flex-start;
+
+    gap: 0.25rem;
+    user-select: none;
+    margin-bottom: 0.25rem;
+}
+
+.footer {
+    display: flex;
     align-items: center;
     gap: 0.5rem;
     user-select: none;
@@ -39,4 +49,50 @@
 .warningColor {
     display: inline;
     color: var(--vscode-list-warningForeground, inherit);
+}
+
+.infoColor {
+    color: var(--vscode-editorLightBulbAutoFix-foreground, inherit);
+}
+
+.context-progress {
+    display: flex;
+    gap: 0.25rem;
+    flex-direction: column;
+}
+
+.context-section {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.progress-bar {
+    border-radius: 5rem;
+    background-color: var(--vscode-input-background, inherit);
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    height: 0.3rem;
+    position: relative;
+}
+
+.progress-bar-inner {
+    border-radius: 5rem;
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: linear-gradient(to right, #b200f8, #ff5543, #00cbec);
+}
+
+.progress-info {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    font-size: smaller;
 }
