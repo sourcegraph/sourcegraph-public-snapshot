@@ -1113,7 +1113,7 @@
       "default": "disabled"
     },
     "permissions.userMapping": {
-      "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API.",
+      "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.",
       "type": "object",
       "additionalProperties": false,
       "properties": {

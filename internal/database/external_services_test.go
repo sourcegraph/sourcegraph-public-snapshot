@@ -2415,9 +2415,9 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 		},
 		"false enforcePermissions overrides all settings": {
 			enforcePermissionsSet: pointers.Ptr(false),
-			authorizationSet: true,
-			explicitPermsEnabled: true,
-			expectUnrestricted: true,
+			authorizationSet:      true,
+			explicitPermsEnabled:  true,
+			expectUnrestricted:    true,
 		},
 	}
 
