@@ -1,7 +1,6 @@
 package context
 
 import (
-	scipstore "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/scipstore"
 	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -19,7 +18,6 @@ func NewService(
 ) *Service {
 	return newService(
 		observationCtx,
-		scipstore.New(scopedContext("store", observationCtx), codeIntelDB),
 		repostore,
 		codenavSvc,
 		syntectClient,

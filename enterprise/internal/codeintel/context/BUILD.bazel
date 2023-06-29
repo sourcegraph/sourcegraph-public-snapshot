@@ -15,7 +15,6 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/codenav",
         "//enterprise/internal/codeintel/codenav/shared",
-        "//enterprise/internal/codeintel/context/internal/scipstore",
         "//enterprise/internal/codeintel/shared",
         "//enterprise/internal/codeintel/shared/symbols",
         "//enterprise/internal/codeintel/uploads/shared",
