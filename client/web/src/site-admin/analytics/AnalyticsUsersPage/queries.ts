@@ -42,25 +42,3 @@ export const USERS_STATISTICS = gql`
         }
     }
 `
-
-export const TOTAL_USERS = gql`
-    query UsersTotalCount {
-        site {
-            users {
-                totalCount
-            }
-        }
-    }
-`
-
-export const LICENSE_USER_LIMIT = gql`
-    query LicenseUserLimit {
-        site {
-            productSubscription {
-                license {
-                    userCount
-                }
-            }
-        }
-    }
-`
