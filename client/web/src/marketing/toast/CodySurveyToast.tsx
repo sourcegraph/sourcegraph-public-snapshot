@@ -7,7 +7,7 @@ import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage, useCookieStorage } from '@sourcegraph/wildcard'
+import { Checkbox, Form, H3, Modal, Text, Button, Icon, useCookieStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
@@ -195,7 +195,7 @@ export const useCodySurveyToast = (): {
 
     return {
         // we calculate "show" value based whether this a new signup and whether they already have submitted survey
-        show: !hasSubmitted && shouldShowCodySurvey,
+        show: !hasSubmitted && !!shouldShowCodySurvey,
         dismiss,
         setShouldShowCodySurvey,
     }
