@@ -32,6 +32,8 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 		if err != nil {
 			// Didn't even match to a source at all
 			if actor.IsErrNotFromSource(err) {
+				logger.Debug("received token with unknown source",
+					log.String("token", token)) // unknown token, log for debug purposes
 				response.JSONError(logger, w, http.StatusUnauthorized, err)
 				return
 			}
