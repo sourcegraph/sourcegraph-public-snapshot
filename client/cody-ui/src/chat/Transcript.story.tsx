@@ -50,6 +50,7 @@ export const Simple: ComponentStoryObj<typeof Transcript> = {
             transcriptItemParticipantClassName={styles.transcriptItemParticipant}
             transcriptActionClassName={styles.transcriptAction}
             copyButtonOnSubmit={args.copyButtonOnSubmit}
+            isTranscriptError={false}
         />
     ),
 }

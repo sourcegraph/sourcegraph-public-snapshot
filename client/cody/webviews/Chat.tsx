@@ -33,6 +33,7 @@ interface ChatboxProps {
     vscodeAPI: VSCodeWrapper
     suggestions?: string[]
     setSuggestions?: (suggestions: undefined | string[]) => void
+    isTranscriptError: boolean
 }
 
 export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>> = ({
@@ -48,6 +49,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
     vscodeAPI,
     suggestions,
     setSuggestions,
+    isTranscriptError,
 }) => {
     const [abortMessageInProgressInternal, setAbortMessageInProgress] = useState<() => void>(() => () => undefined)
 
@@ -129,6 +131,7 @@ export const Chat: React.FunctionComponent<React.PropsWithChildren<ChatboxProps>
             isCodyEnabled={true}
             codyNotEnabledNotice={undefined}
             helpMarkdown="See [Getting Started](command:cody.welcome) for help and tips."
+            isTranscriptError={isTranscriptError}
         />
     )
 }

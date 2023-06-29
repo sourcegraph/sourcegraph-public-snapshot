@@ -46,6 +46,7 @@ interface ChatProps extends ChatClassNames {
     abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
     onAbortMessageInProgress?: () => void
     isCodyEnabled: boolean
+    isTranscriptError: boolean
 }
 
 interface ChatClassNames extends TranscriptItemClassNames {
@@ -138,6 +139,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
     abortMessageInProgressComponent: AbortMessageInProgressButton,
     onAbortMessageInProgress = () => {},
     isCodyEnabled,
+    isTranscriptError,
 }) => {
     const [inputRows, setInputRows] = useState(5)
     const [historyIndex, setHistoryIndex] = useState(inputHistory.length)
@@ -268,6 +270,7 @@ export const Chat: React.FunctionComponent<ChatProps> = ({
                     copyButtonOnSubmit={copyButtonOnSubmit}
                     submitButtonComponent={SubmitButton}
                     chatInputClassName={chatInputClassName}
+                    isTranscriptError={isTranscriptError}
                 />
             )}
 

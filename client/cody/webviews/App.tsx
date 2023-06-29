@@ -37,6 +37,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [errorMessages, setErrorMessages] = useState<string[]>([])
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
+    const [isTranscriptError, setIsTranscriptError] = useState<boolean>(false)
 
     useEffect(
         () =>
@@ -77,10 +78,16 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'contextStatus':
                         setContextStatus(message.contextStatus)
                         break
-                    case 'errors':
-                        setErrorMessages([...errorMessages, message.errors].slice(-5))
-                        setDebugLog([...debugLog, message.errors])
+                    case 'errors': {
+                        console.log(message)
+                        if (message.isTranscriptError) {
+                            setIsTranscriptError(message.isTranscriptError)
+                        } else {
+                            setErrorMessages([...errorMessages, message.errors].slice(-5))
+                            setDebugLog([...debugLog, message.errors])
+                        }
                         break
+                    }
                     case 'view':
                         setView(message.messages)
                         break
@@ -176,6 +183,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             vscodeAPI={vscodeAPI}
                             suggestions={suggestions}
                             setSuggestions={setSuggestions}
+                            isTranscriptError={isTranscriptError}
                         />
                     )}
                 </>
