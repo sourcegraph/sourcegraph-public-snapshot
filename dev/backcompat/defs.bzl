@@ -54,17 +54,6 @@ find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
 """
 
-# https://github.com/sourcegraph/sourcegraph/pull/54000 changes dependencies to reflect otel package changes,
-# which break old buildfiles.
-PATCH_OTEL_CMD = """_sed_binary="sed"
-if [ "$(uname)" == "Darwin" ]; then
-    _sed_binary="gsed"
-fi
-
-$_sed_binary -i 's|@io_opentelemetry_go_collector//exporter|@io_opentelemetry_go_collector_exporter//:exporter|' cmd/frontend/internal/app/otlpadapter/BUILD.bazel
-$_sed_binary -i 's|@io_opentelemetry_go_collector//receiver|@io_opentelemetry_go_collector_receiver//:receiver|' cmd/frontend/internal/app/otlpadapter/BUILD.bazel
-"""
-
 def back_compat_defs():
     # github.com/sourcegraph/scip and github.com/sourcegraph/conc both rely on a few
     # internal libraries from github.com/sourcegraph/sourcegraph/lib and their
@@ -97,8 +86,8 @@ def back_compat_defs():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:fWPxLkDObzzKTGe9vb6wpzK0FYkwcfSxmxUBvAOc8aw=", # Need to be manually updated when bumping the back compat release target.
-        version = "v0.2.4-0.20221213205653-aa0e511dcfef", # Need to be manually updated when bumping the back compat release target.
+        sum = "h1:6PgJPdhDHRGskCu7+NxodNtX1z8umdC40QvoQt4FsP8=", # Need to be manually updated when bumping the back compat release target.
+        version = "v0.2.4-0.20230613194658-b62733841bc3", # Need to be manually updated when bumping the back compat release target.
     )
 
     # Same logic for this repository.
@@ -122,7 +111,7 @@ def back_compat_defs():
     git_repository(
         name = "sourcegraph_back_compat",
         remote = "https://github.com/sourcegraph/sourcegraph.git",
-        patches = ["//dev/backcompat/patches:back_compat_migrations.patch"],
+        patches = ["//dev/backcompat/patches:back_compat_migrations.patch", "//dev/backcompat/patches:ui_assets.patch"],
         patch_args = ["-p1"],
         commit = MINIMUM_UPGRADEABLE_VERSION_REF,
         patch_cmds = [
@@ -134,10 +123,10 @@ def back_compat_defs():
             # a backported fix  to make it buildable. That fix is merely about running `bazel configure`
             # and dropping the client folder.
             #
-            # "rm -Rf client",
+            "rm -Rf client",
+
             PATCH_ALL_GO_TESTS_CMD,
             PATCH_BUILD_FIXES_CMD,
-            PATCH_OTEL_CMD,
 
             # Seems to be affecting the root workspace somehow.
             # TODO(JH) Look into bzlmod.
