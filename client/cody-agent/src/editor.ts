@@ -127,7 +127,7 @@ export class AgentEditor implements Editor, CompletionsTextEditor {
     public getDocumentTextTruncated(uri: string): Promise<string | null> {
         const doc = this.agent.documents.get(url.fileURLToPath(uri))
 
-        if (!doc || !doc.content) {
+        if (!doc?.content) {
             return Promise.resolve(null)
         }
 

@@ -48,18 +48,7 @@ export class Agent extends MessageHandler {
             completionsClient: this.completionsClient,
         })
 
-        this.manualCompletionsService = new Promise(resolve => {
-            this.client?.then(client => {
-                resolve(
-                    new ManualCompletionServiceAgent(
-                        this.editor,
-                        this.completionsClient,
-                        new AgentHistory(),
-                        client.codebaseContext
-                    )
-                )
-            })
-        })
+        this.manualCompletionsService = this.createManualCompletionService()
 
         this.registerRequest('initialize', async client => {
             process.stderr.write(
@@ -67,7 +56,9 @@ export class Agent extends MessageHandler {
             )
             this.workspaceRootPath = client.workspaceRootPath
             if (client.connectionConfiguration) {
-                ;(await this.client).onConfigurationChange({ useContext: 'none', ...client.connectionConfiguration })
+                await (
+                    await this.client
+                ).onConfigurationChange({ useContext: 'none', ...client.connectionConfiguration })
             }
             return {
                 name: 'cody-agent',
@@ -100,7 +91,7 @@ export class Agent extends MessageHandler {
         })
 
         this.registerNotification('connectionConfiguration/didChange', async config => {
-            ;(await this.client).onConfigurationChange({ useContext: 'none', ...config })
+            await (await this.client).onConfigurationChange({ useContext: 'none', ...config })
         })
 
         this.registerRequest('recipes/list', () =>
@@ -142,12 +133,21 @@ export class Agent extends MessageHandler {
                     return null
                 }
 
-                return provider.generateCompletions(new AbortController().signal, data.count)
-            } catch (e) {
-                console.error(e)
+                return await provider.generateCompletions(new AbortController().signal, data.count)
+            } catch (error) {
+                console.error(error)
                 return null
             }
         })
+    }
+
+    private async createManualCompletionService(): Promise<ManualCompletionServiceAgent> {
+        return new ManualCompletionServiceAgent(
+            this.editor,
+            this.completionsClient,
+            new AgentHistory(),
+            (await this.client).codebaseContext
+        )
     }
 
     private getCurrentDocContext(
@@ -160,7 +160,7 @@ export class Agent extends MessageHandler {
 
         const doc = this.documents.get(this.activeDocumentFilePath)
 
-        if (!doc || !doc.selection || !doc.content) {
+        if (!doc?.selection || !doc?.content) {
             return null
         }
 
@@ -195,7 +195,7 @@ export class Agent extends MessageHandler {
     }
 }
 
-function positionToOffset(lines: string[], position: Position) {
+function positionToOffset(lines: string[], position: Position): number {
     let offset = 0
     for (let i = 0; i < position.line; i++) {
         offset += lines[i].length + 1

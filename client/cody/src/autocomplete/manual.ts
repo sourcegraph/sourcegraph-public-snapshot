@@ -26,7 +26,7 @@ export class ManualCompletionServiceVSCode extends ManualCompletionService {
         super(textEditor, completionsClient, history, codebaseContext)
     }
 
-    async fetchAndShowManualCompletions(): Promise<void> {
+    public async fetchAndShowManualCompletions(): Promise<void> {
         this.abortOpenManualCompletion()
         const abortController = new AbortController()
         this.abortOpenManualCompletion = () => abortController.abort()
