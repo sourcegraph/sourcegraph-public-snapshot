@@ -48,6 +48,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             const msgLength = message.messages.length - 1
                             setTranscript(message.messages.slice(0, msgLength))
                             setMessageInProgress(message.messages[msgLength])
+                            setIsTranscriptError(false)
                         } else {
                             setTranscript(message.messages)
                             setMessageInProgress(null)
@@ -79,7 +80,6 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                         setContextStatus(message.contextStatus)
                         break
                     case 'errors': {
-                        console.log(message)
                         if (message.isTranscriptError) {
                             setIsTranscriptError(message.isTranscriptError)
                         } else {

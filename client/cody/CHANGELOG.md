@@ -20,6 +20,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
+- Hide feedback button on error assistant response. [pull/54424](https://github.com/sourcegraph/sourcegraph/pull/54424)
+
 ### Changed
 
 ## [0.4.1]
