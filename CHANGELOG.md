@@ -37,7 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Known issues
 
-There is an issue with repository permissions not being enforced on Sourcegraph instances that are configured to use both explicit permissions and code hosts that do not support the authorization field. Customers using the explicit permissions API are advised to upgrade to v5.1.1 directly.
+There is an issue with Sourcegraph instances configured to use explicit permissions using permissions.userMapping in Site configuration, where repository permissions are not enforced. Customers using the explicit permissions API are advised to upgrade to v5.1.1 directly.
 
 ### Added
 
