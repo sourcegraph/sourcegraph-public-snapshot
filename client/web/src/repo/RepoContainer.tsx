@@ -34,7 +34,7 @@ import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
 import { RepoContainerEditor } from '../cody/components/RepoContainerEditor'
 import { CodySidebar } from '../cody/sidebar'
-import { useCodySidebar } from '../cody/sidebar/Provider'
+import { useCodySidebar, CODY_SIDEBAR_SIZES } from '../cody/sidebar/Provider'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -68,8 +68,6 @@ import { repoSettingsAreaPath } from './settings/routes'
 import styles from './RepoContainer.module.scss'
 
 const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
-
-const CODY_SIDEBAR_SIZES = { default: 350, max: 1200, min: 250 }
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -155,7 +153,6 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     )
 
     const {
-        sidebarSize: codySidebarSize,
         isSidebarOpen: isCodySidebarOpen,
         setIsSidebarOpen: setIsCodySidebarOpen,
         setSidebarSize: setCodySidebarSize,
@@ -502,7 +499,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         ariaLabel="Cody sidebar"
                         maxSize={CODY_SIDEBAR_SIZES.max}
                         minSize={CODY_SIDEBAR_SIZES.min}
-                        defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
+                        defaultSize={CODY_SIDEBAR_SIZES.default}
                         storageKey="size-cache-cody-sidebar"
                         onResize={setCodySidebarSize}
                     >
