@@ -172,7 +172,7 @@ export const TranscriptItem: React.FunctionComponent<
                 ) : null}
             </div>
             {message.buttons?.length && ChatButtonComponent && (
-                <div className={styles.actions}>{...message.buttons.map(ChatButtonComponent)}</div>
+                <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
             )}
             {showFeedbackButtons &&
                 FeedbackButtonsContainer &&
