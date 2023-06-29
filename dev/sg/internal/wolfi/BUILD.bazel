@@ -2,7 +2,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "wolfi",
-    srcs = ["update_hashes.go"],
+    srcs = [
+        "update_hashes.go"
+        "base-image.go",
+        "package.go",
+    ],
+
     importpath = "github.com/sourcegraph/sourcegraph/dev/sg/internal/wolfi",
     visibility = ["//dev/sg:__subpackages__"],
     deps = [
