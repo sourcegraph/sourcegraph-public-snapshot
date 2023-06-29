@@ -175,16 +175,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	for syntectName, names := range scipNamesBySyntectName {
 		for _, name := range names {
-			ident := name.GetIdentifier()
-
 			// TODO - these are duplicated and should also be batched
+			ident := name.GetIdentifier()
 			fmt.Printf("> Fetching definitions of %q\n", ident)
 
-			// for _, upload := range uploads {
-			// loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, ident, upload.ID, "definition_ranges")
-			// if err != nil {
-			// 	return nil, err
-			// }
 			ul, err := s.codenavSvc.RenameMe(ctx, requestArgs, reqState, []string{ident})
 			if err != nil {
 				return nil, err
@@ -195,7 +189,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				symbolName:  ident,
 				location:    ul,
 			})
-			// }
 		}
 	}
 

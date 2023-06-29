@@ -411,7 +411,7 @@ func (s *Service) gatherLocalLocations(
 
 		// consume locations
 		if len(locations) > 0 {
-			adjustedLocations, err := s.GetUploadLocations(
+			adjustedLocations, err := s.getUploadLocations(
 				ctx,
 				args,
 				requestState,
@@ -521,7 +521,7 @@ func (s *Service) gatherRemoteLocations(
 	cursor = cursor.BumpRemoteLocationOffset(len(locations), totalCount)
 
 	// Adjust locations back to target commit
-	adjustedLocations, err := s.GetUploadLocations(ctx, args, requestState, locations, includeFallbackLocations)
+	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations, includeFallbackLocations)
 	if err != nil {
 		return nil, Cursor{}, err
 	}

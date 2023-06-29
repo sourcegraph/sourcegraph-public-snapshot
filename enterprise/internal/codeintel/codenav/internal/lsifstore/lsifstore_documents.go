@@ -72,8 +72,6 @@ func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int,
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	// fmt.Println("This is my query >>>", query.Query(sqlf.PostgresBindVar), query.Args())
-
 	for rows.Next() {
 		var n types.SCIPNames
 		if err := rows.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor); err != nil {
