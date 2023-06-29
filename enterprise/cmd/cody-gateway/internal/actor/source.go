@@ -274,6 +274,7 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 			return err
 		}
 		// We've succesfully acquired the lock, continue!
+		span.SetAttributes(attribute.Bool("lock.acquired", true))
 
 	// If the lock has not yet expired
 	case lockExpire.After(time.Now()):
@@ -292,6 +293,7 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 			return err
 		}
 		// We've succesfully extended the lock, continue!
+		span.SetAttributes(attribute.Bool("lock.extended", true))
 	}
 
 	handleLogger.Info("Running sources sync")
