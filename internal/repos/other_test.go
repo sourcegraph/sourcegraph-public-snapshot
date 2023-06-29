@@ -66,6 +66,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}, {
 			URI:  "/repos/bar/baz",
 			Name: "/repos/bar/baz",
@@ -81,6 +82,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
+			Private:  true,
 		}},
 	}, {
 		name: "abs-file-path",
@@ -103,6 +105,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				RelativePath: "/repos/foo/.git",
 				AbsFilePath:  "/src/foo",
 			},
+			Private: true,
 		}},
 	}, {
 		name: "override",
@@ -123,6 +126,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}},
 	}, {
 		name: "immutable",
@@ -142,6 +146,7 @@ func TestSrcExpose_SrcExposeServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}},
 	}}
 
@@ -219,6 +224,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}, {
 			URI:  "/repos/bar/baz",
 			Name: "/repos/bar/baz",
@@ -234,6 +240,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/bar/baz/.git"},
+			Private:  true,
 		}},
 	}, {
 		name: "override",
@@ -254,6 +261,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}},
 	}, {
 		name: "immutable",
@@ -273,6 +281,7 @@ func TestSrcExpose_SrcServeLocalServer(t *testing.T) {
 				},
 			},
 			Metadata: &extsvc.OtherRepoMetadata{RelativePath: "/repos/foo/.git"},
+			Private:  true,
 		}},
 	}}
 
