@@ -61,7 +61,6 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 	for _, arg := range monikers {
 		symbolNames = append(symbolNames, arg.Identifier)
 
-		// fmt.Println("args.Identifier: ", arg.Identifier)
 		s, err := symbols.NewExplodedSymbol(arg.Identifier)
 		if err != nil {
 			return nil, 0, err
@@ -216,6 +215,14 @@ func (s *store) GetLocationByExplodedSymbol(
 	scipFieldName string,
 	path string,
 ) (locations []shared.Location, err error) {
+	ctx, _, endObservation := s.operations.getLocationByExplodedSymbol.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("symbolName", symbolName),
+		attribute.Int("bundleID", uploadID),
+		attribute.String("scipFieldName", scipFieldName),
+		attribute.String("path", path),
+	}})
+	defer endObservation(1, observation.Args{})
+
 	if symbolName != "" && !scip.IsLocalSymbol(symbolName) {
 		ex, err := symbols.NewExplodedSymbol(symbolName)
 		if err != nil {
