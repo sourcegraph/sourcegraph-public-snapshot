@@ -70,3 +70,5 @@ export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> 
 export const useCodySidebar = (): CodySidebarStore => useContext(CodySidebarContext) as CodySidebarStore
 
 export const CODY_SIDEBAR_SIZES = { default: 350, max: 1200, min: 250 }
+
+export { useSidebarSize }

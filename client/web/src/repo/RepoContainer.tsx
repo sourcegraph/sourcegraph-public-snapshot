@@ -34,7 +34,7 @@ import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
 import { RepoContainerEditor } from '../cody/components/RepoContainerEditor'
 import { CodySidebar } from '../cody/sidebar'
-import { useCodySidebar, CODY_SIDEBAR_SIZES } from '../cody/sidebar/Provider'
+import { useCodySidebar, useSidebarSize, CODY_SIDEBAR_SIZES } from '../cody/sidebar/Provider'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -155,10 +155,13 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     const {
         isSidebarOpen: isCodySidebarOpen,
         setIsSidebarOpen: setIsCodySidebarOpen,
-        setSidebarSize: setCodySidebarSize,
         scope,
         setEditorScope,
     } = useCodySidebar()
+
+    const { sidebarSize, setSidebarSize: setCodySidebarSize } = useSidebarSize()
+
+    const codySidebarSize = useMemo(() => sidebarSize, [isCodySidebarOpen])
 
     useEffect(() => {
         const activeEditor = scope.editor.getActiveTextEditor()
@@ -499,7 +502,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                         ariaLabel="Cody sidebar"
                         maxSize={CODY_SIDEBAR_SIZES.max}
                         minSize={CODY_SIDEBAR_SIZES.min}
-                        defaultSize={CODY_SIDEBAR_SIZES.default}
+                        defaultSize={codySidebarSize || CODY_SIDEBAR_SIZES.default}
                         storageKey="size-cache-cody-sidebar"
                         onResize={setCodySidebarSize}
                     >
