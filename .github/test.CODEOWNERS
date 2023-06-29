@@ -9,7 +9,7 @@
 /.github/workflows/renovate-downstream.yml     @bobheadxi
 /.github/workflows/renovate-downstream.json    @bobheadxi
 
-/client/branded/src/search-ui/components/** @limitedmage @fkling
+/client/branded/src/search-ui/components/** @fkling
 
 /client/jetbrains/** @vdavid @philipp-spiess
 
@@ -19,17 +19,13 @@
 
 /client/web/src/enterprise/batches/**/* @eseliger @courier-new @BolajiOlajide
 
-/client/web/src/enterprise/code-monitoring/**/* @limitedmage
-
 /client/web/src/enterprise/codeintel/**/* @efritz
 
 /client/web/src/enterprise/executors/**/* @efritz @eseliger
 
 /client/web/src/integration/batches* @eseliger @courier-new @BolajiOlajide
-/client/web/src/integration/search* @limitedmage
-/client/web/src/integration/code-monitoring* @limitedmage
 
-/client/web/src/search/**/* @limitedmage @fkling
+/client/web/src/search/**/* @fkling
 
 /cmd/blobstore/**/* @slimsag
 
