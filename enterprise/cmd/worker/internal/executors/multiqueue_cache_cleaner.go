@@ -49,11 +49,11 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 		}
 
 		for key := range all {
-			timestampMillis, err := strconv.ParseInt(key, 10, 64)
+			keyAsUnixNano, err := strconv.ParseInt(key, 10, 64)
 			if err != nil {
 				return err
 			}
-			t := time.Unix(0, timestampMillis*int64(time.Millisecond))
+			t := time.Unix(0, keyAsUnixNano)
 			interval := timeNow().Add(-m.windowSize)
 			if t.Before(interval) {
 				// expired cache entry, delete
@@ -66,8 +66,9 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 				}
 			}
 			m.logger.Info("Handle",
+				log.String("queueName", queueName),
 				log.Int("total_cached", len(all)),
-				log.Int64("timestampMillis", timestampMillis),
+				log.Int64("keyAsUnixNano", keyAsUnixNano),
 				log.Time("t", t),
 				log.Time("interval", interval),
 				log.Bool("t_before_interval", t.Before(interval)),
