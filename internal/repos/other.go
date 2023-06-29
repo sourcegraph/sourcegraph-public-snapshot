@@ -260,7 +260,8 @@ func (s OtherSource) srcExpose(ctx context.Context) ([]*types.Repo, bool, error)
 	loggedDeprecationError := false
 	for _, r := range data.Items {
 		repo := &types.Repo{
-			URI: r.URI,
+			URI:     r.URI,
+			Private: !s.svc.Unrestricted,
 		}
 		// The only required fields are URI and ClonePath
 		if r.URI == "" {
