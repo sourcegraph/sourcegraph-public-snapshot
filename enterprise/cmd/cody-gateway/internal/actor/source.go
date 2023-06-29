@@ -94,7 +94,10 @@ func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 		return actor, errors.Wrap(err, src.Name())
 	}
 
-	return nil, errors.New("no source found for token")
+	if token != "" {
+		return nil, ErrNotFromSource{Reason: "no source found for token"}
+	}
+	return nil, ErrNotFromSource{Reason: "no token provided"}
 }
 
 // SyncAll immediately runs a sync on all sources implementing SourceSyncer.
