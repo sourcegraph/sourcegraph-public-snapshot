@@ -5,7 +5,7 @@ set -euo pipefail
 # This script can be used to quickly build base images locally when working on image configs in this directory.
 # In production, base images are built using the CI pipeline.
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../"
 BASE_DIR=$(pwd)
 
 PACKAGE_DIR="$BASE_DIR/wolfi-packages/local-repo/packages"

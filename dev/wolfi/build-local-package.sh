@@ -5,7 +5,7 @@ set -eu -o pipefail
 # This script can be used to quickly build packages locally when working on package configs in this directory.
 # In production, packages are built using the CI pipeline.
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../"
+cd "$(dirname "${BASH_SOURCE[0]}")/../../"
 BASE_DIR=$(pwd)
 
 PACKAGE_DIR="$BASE_DIR/wolfi-packages/local-repo/packages"
