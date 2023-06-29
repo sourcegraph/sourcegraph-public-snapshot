@@ -195,7 +195,7 @@ export const useCodySurveyToast = (): {
 
     return {
         // we calculate "show" value based whether this a new signup and whether they already have submitted survey
-        show: !hasSubmitted && !!shouldShowCodySurvey,
+        show: !hasSubmitted && shouldShowCodySurvey,
         dismiss,
         setShouldShowCodySurvey,
     }
