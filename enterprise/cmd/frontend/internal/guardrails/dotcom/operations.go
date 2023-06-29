@@ -84,16 +84,9 @@ func (v *__SnippetAttributionInput) GetSnippet() string { return v.Snippet }
 // GetFirst returns __SnippetAttributionInput.First, and is useful for accessing the field via an interface.
 func (v *__SnippetAttributionInput) GetFirst() int { return v.First }
 
-// Searches the instances indexed code for code matching snippet.
-func SnippetAttribution(
-	ctx context.Context,
-	client graphql.Client,
-	snippet string,
-	first int,
-) (*SnippetAttributionResponse, error) {
-	req := &graphql.Request{
-		OpName: "SnippetAttribution",
-		Query: `
+// The query or mutation executed by SnippetAttribution.
+const SnippetAttribution_Operation = `
+# Searches the instances indexed code for code matching snippet.
 query SnippetAttribution ($snippet: String!, $first: Int!) {
 	snippetAttribution(snippet: $snippet, first: $first) {
 		totalCount
@@ -103,7 +96,18 @@ query SnippetAttribution ($snippet: String!, $first: Int!) {
 		}
 	}
 }
-`,
+`
+
+// Searches the instances indexed code for code matching snippet.
+func SnippetAttribution(
+	ctx context.Context,
+	client graphql.Client,
+	snippet string,
+	first int,
+) (*SnippetAttributionResponse, error) {
+	req := &graphql.Request{
+		OpName: "SnippetAttribution",
+		Query:  SnippetAttribution_Operation,
 		Variables: &__SnippetAttributionInput{
 			Snippet: snippet,
 			First:   first,

@@ -1099,16 +1099,10 @@ type __CheckDotcomUserAccessTokenInput struct {
 // GetToken returns __CheckDotcomUserAccessTokenInput.Token, and is useful for accessing the field via an interface.
 func (v *__CheckDotcomUserAccessTokenInput) GetToken() string { return v.Token }
 
-// CheckAccessToken returns traits of the product subscription associated with
-// the given access token.
-func CheckAccessToken(
-	ctx context.Context,
-	client graphql.Client,
-	token string,
-) (*CheckAccessTokenResponse, error) {
-	req := &graphql.Request{
-		OpName: "CheckAccessToken",
-		Query: `
+// The query or mutation executed by CheckAccessToken.
+const CheckAccessToken_Operation = `
+# CheckAccessToken returns traits of the product subscription associated with
+# the given access token.
 query CheckAccessToken ($token: String!) {
 	dotcom {
 		productSubscriptionByAccessToken(accessToken: $token) {
@@ -1147,7 +1141,18 @@ fragment RateLimitFields on CodyGatewayRateLimit {
 	limit
 	intervalSeconds
 }
-`,
+`
+
+// CheckAccessToken returns traits of the product subscription associated with
+// the given access token.
+func CheckAccessToken(
+	ctx context.Context,
+	client graphql.Client,
+	token string,
+) (*CheckAccessTokenResponse, error) {
+	req := &graphql.Request{
+		OpName: "CheckAccessToken",
+		Query:  CheckAccessToken_Operation,
 		Variables: &__CheckAccessTokenInput{
 			Token: token,
 		},
@@ -1166,16 +1171,10 @@ fragment RateLimitFields on CodyGatewayRateLimit {
 	return &data, err
 }
 
-// CheckDotcomUserAccessToken returns traits of the product subscription associated with
-// the given access token.
-func CheckDotcomUserAccessToken(
-	ctx context.Context,
-	client graphql.Client,
-	token string,
-) (*CheckDotcomUserAccessTokenResponse, error) {
-	req := &graphql.Request{
-		OpName: "CheckDotcomUserAccessToken",
-		Query: `
+// The query or mutation executed by CheckDotcomUserAccessToken.
+const CheckDotcomUserAccessToken_Operation = `
+# CheckDotcomUserAccessToken returns traits of the product subscription associated with
+# the given access token.
 query CheckDotcomUserAccessToken ($token: String!) {
 	dotcom {
 		codyGatewayDotcomUserByToken(token: $token) {
@@ -1207,7 +1206,18 @@ fragment RateLimitFields on CodyGatewayRateLimit {
 	limit
 	intervalSeconds
 }
-`,
+`
+
+// CheckDotcomUserAccessToken returns traits of the product subscription associated with
+// the given access token.
+func CheckDotcomUserAccessToken(
+	ctx context.Context,
+	client graphql.Client,
+	token string,
+) (*CheckDotcomUserAccessTokenResponse, error) {
+	req := &graphql.Request{
+		OpName: "CheckDotcomUserAccessToken",
+		Query:  CheckDotcomUserAccessToken_Operation,
 		Variables: &__CheckDotcomUserAccessTokenInput{
 			Token: token,
 		},
@@ -1226,13 +1236,8 @@ fragment RateLimitFields on CodyGatewayRateLimit {
 	return &data, err
 }
 
-func ListProductSubscriptions(
-	ctx context.Context,
-	client graphql.Client,
-) (*ListProductSubscriptionsResponse, error) {
-	req := &graphql.Request{
-		OpName: "ListProductSubscriptions",
-		Query: `
+// The query or mutation executed by ListProductSubscriptions.
+const ListProductSubscriptions_Operation = `
 query ListProductSubscriptions {
 	dotcom {
 		productSubscriptions {
@@ -1282,7 +1287,15 @@ fragment RateLimitFields on CodyGatewayRateLimit {
 	limit
 	intervalSeconds
 }
-`,
+`
+
+func ListProductSubscriptions(
+	ctx context.Context,
+	client graphql.Client,
+) (*ListProductSubscriptionsResponse, error) {
+	req := &graphql.Request{
+		OpName: "ListProductSubscriptions",
+		Query:  ListProductSubscriptions_Operation,
 	}
 	var err error
 
