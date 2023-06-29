@@ -8,8 +8,9 @@ import (
 
 const preciseIndexesQuery = `
 	query PreciseIndexes {
-		preciseIndexes(states: [COMPLETED]) {
+		preciseIndexes(states: [COMPLETED], first: 1000) {
 			nodes {
+				inputRoot
 				projectRoot {
 					repository {
 						name
@@ -23,11 +24,17 @@ const preciseIndexesQuery = `
 	}
 `
 
-func queryPreciseIndexes(ctx context.Context) (_ map[string][]string, err error) {
+type CommitAndRoot struct {
+	Commit string
+	Root   string
+}
+
+func queryPreciseIndexes(ctx context.Context) (_ map[string][]CommitAndRoot, err error) {
 	var payload struct {
 		Data struct {
 			PreciseIndexes struct {
 				Nodes []struct {
+					InputRoot   string `json:"inputRoot"`
 					ProjectRoot struct {
 						Repository struct {
 							Name string `json:"name"`
@@ -44,15 +51,16 @@ func queryPreciseIndexes(ctx context.Context) (_ map[string][]string, err error)
 		return nil, err
 	}
 
-	commitsByRepo := map[string][]string{}
+	rootsByCommitsByRepo := map[string][]CommitAndRoot{}
 	for _, node := range payload.Data.PreciseIndexes.Nodes {
+		root := node.InputRoot
 		projectRoot := node.ProjectRoot
 		name := projectRoot.Repository.Name
 		commit := projectRoot.Commit.OID
-		commitsByRepo[name] = append(commitsByRepo[name], commit)
+		rootsByCommitsByRepo[name] = append(rootsByCommitsByRepo[name], CommitAndRoot{commit, root})
 	}
 
-	return commitsByRepo, nil
+	return rootsByCommitsByRepo, nil
 }
 
 const definitionsQuery = `

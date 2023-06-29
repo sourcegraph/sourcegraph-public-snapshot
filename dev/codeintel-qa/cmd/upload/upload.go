@@ -25,7 +25,7 @@ type uploadMeta struct {
 // Uploads are performed concurrently given the limiter instance as well as the set of
 // flags supplied by the user. This function returns a slice of uploadMeta containing
 // the graphql identifier of the uploaded resources.
-func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]internal.ExtensionAndCommit, limiter *internal.Limiter) ([]uploadMeta, error) {
+func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]internal.ExtensionCommitAndRoot, limiter *internal.Limiter) ([]uploadMeta, error) {
 	n := 0
 	for _, commits := range extensionAndCommitsByRepo {
 		n += len(commits)
@@ -36,9 +36,10 @@ func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]inter
 	uploadCh := make(chan uploadMeta, n)
 
 	for repoName, extensionAndCommits := range extensionAndCommitsByRepo {
-		for i, extensionAndCommit := range extensionAndCommits {
-			commit := extensionAndCommit.Commit
-			extension := extensionAndCommit.Extension
+		for _, extensionCommitAndRoot := range extensionAndCommits {
+			commit := extensionCommitAndRoot.Commit
+			extension := extensionCommitAndRoot.Extension
+			root := extensionCommitAndRoot.Root
 
 			wg.Add(1)
 
@@ -53,7 +54,8 @@ func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]inter
 
 				fmt.Printf("[%5s] %s Uploading index for %s@%s\n", internal.TimeSince(start), internal.EmojiLightbulb, repoName, commit[:7])
 
-				graphqlID, err := upload(ctx, internal.MakeTestRepoName(repoName), commit, file)
+				cleanedRoot := strings.ReplaceAll(root, "_", "/")
+				graphqlID, err := upload(ctx, internal.MakeTestRepoName(repoName), commit, file, cleanedRoot)
 				if err != nil {
 					errCh <- err
 					return
@@ -66,7 +68,7 @@ func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]inter
 					repoName: repoName,
 					commit:   commit,
 				}
-			}(repoName, commit, fmt.Sprintf("%s.%d.%s.%s", strings.Replace(repoName, "/", ".", 1), i, commit, extension))
+			}(repoName, commit, fmt.Sprintf("%s.%s.%s.%s", strings.Replace(repoName, "/", ".", 1), commit, root, extension))
 		}
 	}
 
@@ -90,9 +92,9 @@ func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]inter
 
 // upload invokes `src code-intel upload` on the host and returns the graphql identifier of
 // the uploaded resource.
-func upload(ctx context.Context, repoName, commit, file string) (string, error) {
+func upload(ctx context.Context, repoName, commit, file, root string) (string, error) {
 	argMap := map[string]string{
-		"root":   "/",
+		"root":   root,
 		"repo":   repoName,
 		"commit": commit,
 		"file":   file,

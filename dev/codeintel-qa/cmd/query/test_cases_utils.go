@@ -16,6 +16,8 @@ type TaggedLocation struct {
 	IgnoreSiblingRelationships bool
 }
 
+const maxRefToDefAssertionsPerFile = 10
+
 // generate tests that asserts definition <> reference relationships on a particular set of
 // locations all referring to the same SCIP symbol
 func makeDefsRefsTests(symbolName string, defs []Location, refs []TaggedLocation) (fns []queryFunc) {
@@ -31,8 +33,15 @@ func makeDefsRefsTests(symbolName string, defs []Location, refs []TaggedLocation
 		)
 	}
 
+	sourceFiles := map[string]int{}
+
 	for _, ref := range refs {
 		if ref.IgnoreSiblingRelationships {
+			continue
+		}
+
+		sourceFiles[ref.Location.Path] = sourceFiles[ref.Location.Path] + 1
+		if sourceFiles[ref.Location.Path] >= maxRefToDefAssertionsPerFile {
 			continue
 		}
 

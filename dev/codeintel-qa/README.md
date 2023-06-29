@@ -26,6 +26,7 @@ SOURCEGRAPH_SUDO_TOKEN=<YOUR SOURCEGRAPH API ACCESS TOKEN>
 
 ```
   "repos": [
+    TODO
     "sourcegraph-testing/etcd",
     "sourcegraph-testing/tidb",
     "sourcegraph-testing/titan",
