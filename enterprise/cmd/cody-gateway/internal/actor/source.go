@@ -291,7 +291,6 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 
 			return err
 		}
-
 		// We've succesfully extended the lock, continue!
 	}
 
