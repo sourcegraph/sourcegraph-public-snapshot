@@ -103,7 +103,7 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		//  returnSafeConfigsOnly determines whether to return a redacted version of the
+		// returnSafeConfigsOnly determines whether to return a redacted version of the
 		// site configuration that removes sensitive information. If true, returns a
 		// siteConfigurationResolver that will return the redacted configuration. If
 		// false, returns an error.
