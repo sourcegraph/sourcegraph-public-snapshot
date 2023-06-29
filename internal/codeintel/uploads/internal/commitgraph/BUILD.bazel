@@ -1,0 +1,25 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "commitgraph",
+    srcs = [
+        "commit_graph.go",
+        "commit_graph_view.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/gitserver/gitdomain"],
+)
+
+go_test(
+    name = "commitgraph_test",
+    timeout = "short",
+    srcs = ["commit_graph_test.go"],
+    data = glob(["testdata/**"]),
+    embed = [":commitgraph"],
+    deps = [
+        "//internal/gitserver/gitdomain",
+        "@com_github_google_go_cmp//cmp",
+    ],
+)

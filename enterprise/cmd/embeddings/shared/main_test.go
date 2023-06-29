@@ -9,8 +9,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 )
 
@@ -335,5 +335,4 @@ func TestEmbeddingModelMismatch(t *testing.T) {
 			}
 		})
 	}
-
 }

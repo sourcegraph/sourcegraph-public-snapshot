@@ -1,0 +1,25 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "exporter",
+    srcs = [
+        "config.go",
+        "job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/exporter",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/ranking/internal/lsifstore",
+        "//internal/codeintel/ranking/internal/shared",
+        "//internal/codeintel/ranking/internal/store",
+        "//internal/codeintel/ranking/shared",
+        "//internal/codeintel/shared/background",
+        "//internal/codeintel/uploads/shared",
+        "//internal/conf",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)

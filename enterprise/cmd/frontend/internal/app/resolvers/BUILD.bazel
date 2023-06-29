@@ -8,11 +8,12 @@ go_library(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
         "//internal/auth",
         "//internal/database",
+        "//internal/embeddings",
+        "//internal/embeddings/background/repo",
+        "//internal/extsvc",
         "//internal/gitserver",
         "//internal/jsonc",
         "//internal/service/servegit",
@@ -21,5 +22,15 @@ go_library(
         "@com_github_graph_gophers_graphql_go//:graphql-go",
         "@com_github_sourcegraph_conc//pool",
         "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "resolvers_test",
+    srcs = ["progress_test.go"],
+    embed = [":resolvers"],
+    deps = [
+        "//internal/embeddings/background/repo",
+        "//lib/pointers",
     ],
 )

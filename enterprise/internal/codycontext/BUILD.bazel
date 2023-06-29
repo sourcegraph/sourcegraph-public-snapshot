@@ -7,9 +7,9 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/database",
-        "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/embed",
         "//internal/api",
+        "//internal/embeddings",
+        "//internal/embeddings/embed",
         "//internal/metrics",
         "//internal/observation",
         "//internal/search",

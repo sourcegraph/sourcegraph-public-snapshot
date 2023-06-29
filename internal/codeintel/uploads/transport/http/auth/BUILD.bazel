@@ -1,0 +1,47 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "auth",
+    srcs = [
+        "github.go",
+        "github_cache.go",
+        "gitlab.go",
+        "iface.go",
+        "middleware.go",
+        "util.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http/auth",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/database",
+        "//internal/errcode",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/github",
+        "//internal/observation",
+        "//internal/rcache",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_tomnomnom_linkheader//:linkheader",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "auth_test",
+    timeout = "short",
+    srcs = [
+        "github_test.go",
+        "gitlab_test.go",
+        "mocks_test.go",
+    ],
+    embed = [":auth"],
+    deps = [
+        "//internal/extsvc/github",
+        "//lib/errors",
+        "@com_github_tomnomnom_linkheader//:linkheader",
+    ],
+)
