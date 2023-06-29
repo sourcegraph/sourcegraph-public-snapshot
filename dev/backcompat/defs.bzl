@@ -45,13 +45,16 @@ PATCH_GO_TEST_CMDS = [
 # Join all individual go test patches into a single shell snippet.
 PATCH_ALL_GO_TESTS_CMD = "\n".join(PATCH_GO_TEST_CMDS)
 
-# Replaces all occurences of @com_github_sourcegraph_(scip|conc) by @back_compat_com_github_sourcegraph_(scip|conc).
+# Replaces all occurences of @com_github_sourcegraph_(scip|conc) and zoekt by @back_compat_com_github_sourcegraph_(scip|conc).
+# We need to do this, because the backcompat share the same deps as the current HEAD, so we need to handle deviations manually here.
+# It's annoying, but that's how we get cached back compat tests.
 PATCH_BUILD_FIXES_CMD = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
+find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
 """
 
 def back_compat_defs():
@@ -100,6 +103,14 @@ def back_compat_defs():
         "github.com/sourcegraph/conc",
         sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=", # Need to be manually updated when bumping the back compat release target.
         version = "v0.2.0", # Need to be manually updated when bumping the back compat release target.
+    )
+
+    go_repository(
+        name = "back_compat_com_github_sourcegraph_zoekt",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/sourcegraph/zoekt",
+        sum = "h1:zFLcZUQ74dCV/oIiQT3+db8kFPstAnvFDm7pd+tjZ+8=",
+        version = "v0.0.0-20230620185637-63241cb1b17a",
     )
 
 
