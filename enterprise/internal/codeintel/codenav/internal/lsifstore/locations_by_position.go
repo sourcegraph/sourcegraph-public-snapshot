@@ -649,8 +649,23 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 	}
 
 	symbolNames := make([]string, 0, len(monikers))
+	explodedSymbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
+		ex, err := symbols.NewExplodedSymbol(arg.Identifier)
+		if err != nil {
+			return nil, 0, err
+		}
+		explodedSymbols := fmt.Sprintf(
+			"%s$%s$%s$%s$%s",
+			base64.StdEncoding.EncodeToString([]byte(ex.Scheme)),
+			base64.StdEncoding.EncodeToString([]byte(ex.PackageManager)),
+			base64.StdEncoding.EncodeToString([]byte(ex.PackageName)),
+			base64.StdEncoding.EncodeToString([]byte(ex.PackageVersion)),
+			base64.StdEncoding.EncodeToString([]byte(ex.Descriptor)),
+		)
+
 		symbolNames = append(symbolNames, arg.Identifier)
+		explodedSymbolNames = append(explodedSymbolNames, explodedSymbols)
 	}
 
 	var skipConds []*sqlf.Query
@@ -667,6 +682,8 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 	query := sqlf.Sprintf(
 		minimalBulkMonikerResultsQuery,
 		pq.Array(symbolNames),
+		pq.Array(uploadIDs),
+		pq.Array(explodedSymbolNames),
 		pq.Array(uploadIDs),
 		sqlf.Sprintf(fieldName),
 		sqlf.Sprintf(fieldName),
