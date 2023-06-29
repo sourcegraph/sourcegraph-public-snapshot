@@ -2426,7 +2426,6 @@ func TestExternalServiceStore_recalculateFields(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			pmu := globals.PermissionsUserMapping()
-			fmt.Println(pmu)
 			t.Cleanup(func() {
 				globals.SetPermissionsUserMapping(pmu)
 			})
