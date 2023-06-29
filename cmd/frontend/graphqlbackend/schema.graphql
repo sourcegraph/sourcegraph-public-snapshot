@@ -6874,6 +6874,9 @@ type Site implements SettingsSubject {
     siteID: String!
     """
     The site's configuration. Only visible to site admins.
+
+    If returnSafeConfigsOnly is true, returns a subset of the configuration classified
+    as safe config.
     """
     configuration(returnSafeConfigsOnly: Boolean): SiteConfiguration!
     """
