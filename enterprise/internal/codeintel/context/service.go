@@ -75,6 +75,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	if err != nil {
 		return nil, err
 	}
+	if len(uploads) == 0 {
+		// no uploads, yes problems
+		return nil, nil
+	}
 
 	requestArgs := codenavtypes.RequestArgs{
 		RepositoryID: int(repo.ID),
