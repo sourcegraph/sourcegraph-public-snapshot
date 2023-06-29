@@ -11,7 +11,7 @@ public class URLBuilderTest {
 
   @Test
   @Disabled(
-      "This test tries to access intellij state which is not present in the unit test environment.")
+      "This test tries to access IntelliJ state which is not present in the unit test environment.")
   public void testBuildCommitUrl_AllValid() {
     String remoteUrl = "https://github.com/sourcegraph/sourcegraph-jetbrains.git";
 
