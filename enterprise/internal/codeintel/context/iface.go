@@ -12,6 +12,7 @@ import (
 type CodeNavService interface {
 	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []uploadsshared.Dump, err error)
 	GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error)
+	RenameMe(ctx context.Context, args codenavtypes.RequestArgs, requestState codenavtypes.RequestState, symbolNames []string) (_ []shared.UploadLocation, err error)
 	GetUploadLocations(ctx context.Context, args codenavtypes.RequestArgs, requestState codenavtypes.RequestState, locations []shared.Location, includeFallbackLocations bool) ([]shared.UploadLocation, error)
 	GetLocationByExplodedSymbol(ctx context.Context, symbolName string, uploadID int, scipFieldName string) (locations []shared.Location, err error)
 }

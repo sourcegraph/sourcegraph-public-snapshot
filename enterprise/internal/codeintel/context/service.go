@@ -180,22 +180,22 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			// TODO - these are duplicated and should also be batched
 			fmt.Printf("> Fetching definitions of %q\n", ident)
 
-			for _, upload := range uploads {
-				loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, ident, upload.ID, "definition_ranges")
-				if err != nil {
-					return nil, err
-				}
-				ul, err := s.codenavSvc.GetUploadLocations(ctx, requestArgs, reqState, loc, true)
-				if err != nil {
-					return nil, err
-				}
-
-				preciseDataList = append(preciseDataList, &preciseData{
-					syntectName: syntectName,
-					symbolName:  ident,
-					location:    ul,
-				})
+			// for _, upload := range uploads {
+			// loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, ident, upload.ID, "definition_ranges")
+			// if err != nil {
+			// 	return nil, err
+			// }
+			ul, err := s.codenavSvc.RenameMe(ctx, requestArgs, reqState, []string{ident})
+			if err != nil {
+				return nil, err
 			}
+
+			preciseDataList = append(preciseDataList, &preciseData{
+				syntectName: syntectName,
+				symbolName:  ident,
+				location:    ul,
+			})
+			// }
 		}
 	}
 

@@ -32,6 +32,25 @@ func (s *Service) NewGetDefinitions(
 	return locations, err
 }
 
+func (s *Service) RenameMe(
+	ctx context.Context,
+	args RequestArgs,
+	requestState RequestState,
+	symbolNames []string,
+) (_ []shared.UploadLocation, err error) {
+	locations, _, err := s.renameMe(
+		ctx, args, requestState, Cursor{},
+
+		s.operations.getDefinitions, // operation
+		"definitions",               // tableName
+		false,                       // includeReferencingIndexes
+		LocationExtractorFunc(s.lsifstore.ExtractDefinitionLocationsFromPosition),
+		symbolNames,
+	)
+
+	return locations, err
+}
+
 func (s *Service) NewGetReferences(
 	ctx context.Context,
 	args RequestArgs,
@@ -97,6 +116,69 @@ type LocationExtractorFunc func(ctx context.Context, locationKey lsifstore.Locat
 
 func (f LocationExtractorFunc) Extract(ctx context.Context, locationKey lsifstore.LocationKey) ([]shared.Location, []string, error) {
 	return f(ctx, locationKey)
+}
+
+// TODO
+func (s *Service) renameMe(
+	ctx context.Context,
+	args RequestArgs,
+	requestState RequestState,
+	cursor Cursor,
+	operation *observation.Operation,
+	tableName string,
+	includeReferencingIndexes bool,
+	extractor LocationExtractor,
+	symbolNames []string,
+) (allLocations []shared.UploadLocation, _ Cursor, err error) {
+	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", args.Path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("line", args.Line),
+		attribute.Int("character", args.Character),
+	}})
+	defer endObservation()
+
+	if cursor.Phase == "" {
+		cursor.Phase = "remote"
+	}
+
+	if len(cursor.SymbolNames) == 0 {
+		cursor.SymbolNames = symbolNames
+	}
+
+	for cursor.Phase != "done" {
+		trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
+
+		if len(allLocations) >= args.Limit {
+			// we've filled our page, exit with current results
+			break
+		}
+
+		var locations []shared.UploadLocation
+
+		// N.B.: cursor is purposefully re-assigned here
+		locations, cursor, err = s.gatherRemoteLocations(
+			ctx,
+			trace,
+			args,
+			requestState,
+			cursor,
+			tableName,
+			extractor,
+			includeReferencingIndexes,
+			nil,                          // visibleUploads,
+			args.Limit-len(allLocations), // remaining space in the page
+		)
+		if err != nil {
+			return nil, Cursor{}, err
+		}
+		allLocations = append(allLocations, locations...)
+	}
+
+	return allLocations, cursor, nil
 }
 
 func (s *Service) gatherLocations(
