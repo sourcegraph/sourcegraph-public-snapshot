@@ -27,13 +27,16 @@ export interface SecretStorage {
 
 export class VSCodeSecretStorage implements SecretStorage {
     constructor(private secretStorage: vscode.SecretStorage) {}
-
+    // Catch corrupted token in secret storage
     public async get(key: string): Promise<string | undefined> {
-        if (!key) {
-            return undefined
+        try {
+            if (key) {
+                return await this.secretStorage.get(key)
+            }
+        } catch (error) {
+            console.error('Failed to get token from Secret Storage', error)
         }
-        const secret = await this.secretStorage.get(key)
-        return secret
+        return undefined
     }
 
     public async store(key: string, value: string): Promise<void> {

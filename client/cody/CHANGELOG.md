@@ -12,6 +12,16 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Changed
 
+## [0.4.2]
+
+### Added
+
+- Add support for onboarding Cody App users on Intel Mac and Linux. [pull/54405](https://github.com/sourcegraph/sourcegraph/pull/54405)
+
+### Fixed
+
+### Changed
+
 ## [0.4.1]
 
 ### Fixed
