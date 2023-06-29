@@ -266,6 +266,11 @@ func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
 		if _, err = s.rmux.ExtendContext(ctx); err != nil {
 			err = errors.Wrap(err, "failed to extend claimed worker lock")
 			skippedReason = err.Error()
+
+			// Best-effort attempt to release the lock so that we don't get
+			// stuck
+			_, _ = s.rmux.UnlockContext(ctx)
+
 			return err
 		}
 		handleLogger.Debug("Extending held lock duration")
