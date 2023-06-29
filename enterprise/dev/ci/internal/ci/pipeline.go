@@ -284,7 +284,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// End-to-end tests
 		ops.Merge(operations.NewNamedSet("End-to-end tests",
-			codeIntelQA(c.candidateImageTag()),
 			executorsE2E(c.candidateImageTag()),
 			// testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))

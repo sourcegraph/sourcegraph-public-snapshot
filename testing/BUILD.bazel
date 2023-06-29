@@ -119,7 +119,5 @@ server_integration_test(
     ],
     port = "7082",
     runner_src = ":codeintel_integration_test.sh",
-    tags = [
-        "manual",
-    ],
+    tags = [],
 )
