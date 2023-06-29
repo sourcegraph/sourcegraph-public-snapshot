@@ -37,7 +37,7 @@ jobs:
       - uses: actions/checkout@v3
 
       # Run the "semgrep ci" command on the command line of the docker image.
-      - run: semgrep ci --sarif --output=semgrep.sarif
+      - run: semgrep ci --sarif --output=semgrep.sarif --verbose
         env:
            SEMGREP_RULES: "p/golang p/typescript p/javascript p/react p/dockerfile p/docker-compose"
 
