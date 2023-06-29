@@ -12,6 +12,8 @@
 
 ### Fixed
 
+- Preserve new lines in the human chat message [#54417](https://github.com/sourcegraph/sourcegraph/pull/54417)
+
 ### Security
 
 ## [3.0.2]
