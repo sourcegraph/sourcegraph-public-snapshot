@@ -55,4 +55,4 @@ You're now ready to use Cody! See our recommendations for getting started with u
 
 ## Congratulations!
 
-**You're now up-and-running with your very own AI code asisstant!** 🎉
+**You're now up-and-running with your very own AI code assistant!** 🎉
