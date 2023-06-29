@@ -373,7 +373,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-                if (err === 'aborted') {
+
+                if (isAbortError(err)) {
                     return
                 }
                 // Display error message as assistant response
@@ -958,4 +959,8 @@ export async function getCodebaseContext(
         undefined,
         getRerankWithLog(chatClient)
     )
+}
+
+function isAbortError(error: string): boolean {
+    return error === 'aborted' || error === 'socket hang up'
 }
