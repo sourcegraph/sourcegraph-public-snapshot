@@ -15,7 +15,28 @@ All notable changes to the Cody app are documented in this file.
 
 ## Unreleased
 
+- Added a new menu option to check for app updates.
+
+## v2023.6.28
+
+- Fixes a UI bug that can prevent users from deleting repos during the setup experience.
+
+## v2023.6.23
+
 - Locally added repositories will be named using the git remote if available. This allows better integration with the Cody editor extensions.
+- The setup experience now displays an indicator to show progress while building the code graph for the added repositories.
+
+## v2023.6.21
+
+- Simplifies the setup experience to combine local repo selection with embedding selection. The app will automatically generate embeddings for all connected repos (capped at 10).
+- Removed hyperlinks when Cody "reads N files".
+- Fixes a broken link to docs.
+
+## v2023.6.16
+
+- Introduces the "Cody-only" experience.
+- Introduces the ability to chat with Cody about multi repositories at once.
+- The setup experience now includes a step to "build your code graph" by selecting repos for embeddings generation.
 
 ## v2023.5.30
 
