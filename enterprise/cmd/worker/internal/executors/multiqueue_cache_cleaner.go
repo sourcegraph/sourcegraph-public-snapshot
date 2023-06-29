@@ -54,8 +54,8 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 				return err
 			}
 			t := time.Unix(0, keyAsUnixNano)
-			interval := timeNow().Add(-m.windowSize)
-			if t.Before(interval) {
+			maxAge := timeNow().Add(-m.windowSize)
+			if t.Before(maxAge) {
 				// expired cache entry, delete
 				deletedItems, err := m.cache.DeleteHashItem(queueName, key)
 				if err != nil {
@@ -64,15 +64,10 @@ func (m *multiqueueCacheCleaner) Handle(ctx context.Context) error {
 				if deletedItems == 0 {
 					return errors.Newf("failed to delete hash item %s for key %s: expected successful delete but redis deleted nothing", key, queueName)
 				}
+				m.logger.Debug("Deleted stale dequeue cache key", log.String("queue", queueName), log.String("key", key), log.String("dateTime", t.GoString()), log.String("maxAge", maxAge.GoString()))
+			} else {
+				m.logger.Debug("Preserved dequeue cache key", log.String("queue", queueName), log.String("key", key), log.String("dateTime", t.GoString()), log.String("maxAge", maxAge.GoString()))
 			}
-			m.logger.Info("Handle",
-				log.String("queueName", queueName),
-				log.Int("total_cached", len(all)),
-				log.Int64("keyAsUnixNano", keyAsUnixNano),
-				log.Time("t", t),
-				log.Time("interval", interval),
-				log.Bool("t_before_interval", t.Before(interval)),
-			)
 		}
 	}
 	return nil
