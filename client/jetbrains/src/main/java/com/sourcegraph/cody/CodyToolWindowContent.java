@@ -41,6 +41,7 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.chat.ChatUIConstants;
 import com.sourcegraph.cody.chat.ContentWithGradientBorder;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
+import com.sourcegraph.cody.chat.HumanMessageToMarkdownTextTransformer;
 import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextGetter;
@@ -600,7 +601,8 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void sendMessage(@NotNull Project project) {
-    String messageText = promptInput.getText();
+    String messageText =
+        new HumanMessageToMarkdownTextTransformer(promptInput.getText()).transform();
     promptInput.setText("");
     sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
   }
@@ -767,7 +769,7 @@ class CodyToolWindowContent implements UpdatableChat {
     try {
       return RepoUtil.getRemoteRepoUrlWithoutScheme(project, currentFile);
     } catch (Exception e) {
-      return null;
+      return RepoUtil.getSimpleRepositoryName(project, currentFile);
     }
   }
 

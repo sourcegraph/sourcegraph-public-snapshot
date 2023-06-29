@@ -66,7 +66,7 @@ export type Config = Pick<
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
-    private webview?: Omit<vscode.Webview, 'postMessage'> & {
+    public webview?: Omit<vscode.Webview, 'postMessage'> & {
         postMessage(message: ExtensionMessage): Thenable<boolean>
     }
 
@@ -116,11 +116,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
             }),
-            vscode.commands.registerCommand('cody.app.sync', () => this.syncLocalAppState()),
             vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
         )
-        this.authProvider.init().catch(error => console.log(error))
-
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
         const solutionLimit = codyConfig.get<number>('provider.limit.solution') || SOLUTION_TOKEN_LENGTH
@@ -176,6 +173,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     public onConfigurationChange(newConfig: Config): void {
         debug('ChatViewProvider:onConfigurationChange', '')
         this.config = newConfig
+        const authStatus = this.authProvider.getAuthStatus()
+        if (authStatus.endpoint) {
+            this.config.serverEndpoint = authStatus.endpoint
+        }
         this.configurationChangeEvent.fire()
     }
 
@@ -295,6 +296,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                         this.config.serverEndpoint
                     ).href
                     void this.openExternalLinks(sourcegraphSearchURL)
+                }
+                break
+            }
+            case 'chat-button': {
+                switch (message.action) {
+                    case 'explain-code-high-level':
+                    case 'find-code-smells':
+                    case 'generate-unit-test':
+                        void this.executeRecipe(message.action)
+                        break
+                    default:
+                        break
                 }
                 break
             }
@@ -652,14 +665,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Display app state in webview view that is used during Signin flow
-     */
-    public async syncLocalAppState(): Promise<void> {
-        // Notify webview that app is installed
-        await this.webview?.postMessage({ type: 'app-state', isInstalled: true })
-    }
-
-    /**
      * Delete history from current chat history and local storage
      */
     private async deleteHistory(chatID: string): Promise<void> {
@@ -763,7 +768,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             // update codebase context on configuration change
             await this.updateCodebaseContext()
             await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-            debug('Cody:publishConfig', 'webview', { verbose: authStatus })
+            debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
@@ -830,6 +835,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview
+        this.authProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')

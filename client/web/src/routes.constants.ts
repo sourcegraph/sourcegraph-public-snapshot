@@ -23,6 +23,7 @@ export enum PageRoutes {
     InstallGitHubAppSuccess = '/install-github-app-success',
     Teams = '/teams/*',
     RequestAccess = '/request-access/*',
+    GetCody = '/get-cody',
 }
 
 export enum EnterprisePageRoutes {

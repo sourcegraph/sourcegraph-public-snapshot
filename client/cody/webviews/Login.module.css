@@ -34,6 +34,15 @@
     border-color: grey;
 }
 
+.other-sign-in-options {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+
+    width: 100%;
+    gap: 1rem;
+}
+
 .section-header {
     font-weight: 600;
     color: var(--vscode-editor-foreground);

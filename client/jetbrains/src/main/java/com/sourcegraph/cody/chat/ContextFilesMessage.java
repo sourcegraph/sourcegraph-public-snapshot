@@ -11,6 +11,7 @@ import com.sourcegraph.cody.ui.AccordionSection;
 import java.awt.*;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import javax.swing.border.EmptyBorder;
@@ -23,12 +24,12 @@ public class ContextFilesMessage extends MessagePanel {
 
     JBInsets margin =
         JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN));
-    List<String> contextFileNames =
+    Set<String> contextFileNames =
         contextMessages.stream()
             .map(ContextMessage::getFile)
             .filter(Objects::nonNull)
             .map(ContextFile::getFileName)
-            .collect(Collectors.toList());
+            .collect(Collectors.toSet());
 
     AccordionSection accordionSection =
         new AccordionSection("Read " + contextFileNames.size() + " files");

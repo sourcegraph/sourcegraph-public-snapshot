@@ -564,7 +564,7 @@ func NewKubernetesSingleJob(
 
 	sslCAInfo := ""
 	if options.GitCACert != "" {
-		sslCAInfo = fmt.Sprintf("git config --local http.sslCAInfo %s; ", options.GitCACert)
+		sslCAInfo = fmt.Sprintf("git -C %s config --local http.sslCAInfo %s; ", repoDir, options.GitCACert)
 	}
 
 	setupArgs := []string{
@@ -623,6 +623,13 @@ func NewKubernetesSingleJob(
 
 	for stepIndex, step := range specs {
 		jobEnvs := newEnvVars(step.Env)
+		// Single job does not need to add the git directory as safe since the user is the same across all containers.
+		// This is a work around until we have a more elegant solution for dealing with the multi-job and different users.
+		// e.g. Executor is run as sourcegraph user and batcheshelper is run as root.
+		jobEnvs = append(jobEnvs, corev1.EnvVar{
+			Name:  "EXECUTOR_ADD_SAFE",
+			Value: "false",
+		})
 
 		nextIndexCommand := fmt.Sprintf("if [ \"$(%s /job/skip.json %s)\" != \"skip\" ]; then ", filepath.Join(KubernetesJobMountPath, "nextIndex.sh"), step.Key)
 		stepInitContainers[stepIndex+1] = corev1.Container{

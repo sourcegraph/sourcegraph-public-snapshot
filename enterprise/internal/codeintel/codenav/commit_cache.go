@@ -107,26 +107,43 @@ func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryComm
 	}
 
 	// Build the batch request to send to gitserver. Because we only add repo/commit
-	// pairs that are resolvable to a repo name, we may skip some of the inputs here.
-	// We track the indexes we're sending to gitserver so we can spread the response
-	// back to the correct indexes the caller is expecting. Anything not resolvable
-	// to a repository name will implicitly have a false value in the returned slice.
+	// pairs that are resolvable to a repo name, we may end up skipping inputs for an
+	// unresolvable repo. We also ensure that we only represent each repo/commit pair
+	// ONCE in the input slice.
 
-	repoCommits := make([]api.RepoCommit, 0, len(commits))
-	originalIndexes := make([]int, 0, len(commits))
+	repoCommits := make([]api.RepoCommit, 0, len(commits)) // input to CommitsExist
+	indexMapping := make(map[int]int, len(commits))        // map commits[i] to relevant repoCommits[i]
+	commitsRepresentedInInput := map[int]map[string]int{}  // used to populate index mapping
 
 	for i, rc := range commits {
 		repoName, ok := repositoryNames[rc.RepositoryID]
 		if !ok {
+			// insert a sentinel value we explicitly check below for any repositories
+			// that we're unable to resolve
+			indexMapping[i] = -1
 			continue
 		}
 
-		repoCommits = append(repoCommits, api.RepoCommit{
-			Repo:     repoName,
-			CommitID: api.CommitID(rc.Commit),
-		})
+		// Ensure our second-level mapping exists
+		if _, ok := commitsRepresentedInInput[rc.RepositoryID]; !ok {
+			commitsRepresentedInInput[rc.RepositoryID] = map[string]int{}
+		}
 
-		originalIndexes = append(originalIndexes, i)
+		if n, ok := commitsRepresentedInInput[rc.RepositoryID][rc.Commit]; ok {
+			// repoCommits[n] already represents this pair
+			indexMapping[i] = n
+		} else {
+			// pair is not yet represented in the input, so we'll stash the index of input
+			// object we're _about_ to insert
+			n := len(repoCommits)
+			indexMapping[i] = n
+			commitsRepresentedInInput[rc.RepositoryID][rc.Commit] = n
+
+			repoCommits = append(repoCommits, api.RepoCommit{
+				Repo:     repoName,
+				CommitID: api.CommitID(rc.Commit),
+			})
+		}
 	}
 
 	exists, err := c.gitserverClient.CommitsExist(ctx, authz.DefaultSubRepoPermsChecker, repoCommits)
@@ -146,8 +163,10 @@ func (c *commitCache) commitsExist(ctx context.Context, commits []RepositoryComm
 	// response from gitserver belongs to some index in the original commits slice. We re-map these
 	// values and leave all other values implicitly false (these repo name were not resolvable).
 	out := make([]bool, len(commits))
-	for i, e := range exists {
-		out[originalIndexes[i]] = e
+	for i := range commits {
+		if indexMapping[i] != -1 {
+			out[i] = exists[indexMapping[i]]
+		}
 	}
 
 	return out, nil

@@ -2,6 +2,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.sourcegraph.website.URLBuilder;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EmptySource;
@@ -9,6 +10,8 @@ import org.junit.jupiter.params.provider.EmptySource;
 public class URLBuilderTest {
 
   @Test
+  @Disabled(
+      "This test tries to access IntelliJ state which is not present in the unit test environment.")
   public void testBuildCommitUrl_AllValid() {
     String remoteUrl = "https://github.com/sourcegraph/sourcegraph-jetbrains.git";
 

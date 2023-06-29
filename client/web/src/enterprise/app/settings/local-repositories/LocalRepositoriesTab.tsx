@@ -203,10 +203,13 @@ interface RepositoryItemProps {
 const RepositoryItem: FC<RepositoryItemProps> = ({ service, repository, onDelete }) => (
     <li className={styles.listItem}>
         <span className={styles.listItemContent}>
-            <Icon aria-hidden={true} svgPath={mdiGit} inline={false} className={styles.listItemIcon} />
-            <Text weight="bold" className={styles.listItemName}>
-                {repository.name}
-            </Text>
+            <div className={styles.listItemDirectoryPath}>
+                <Icon aria-hidden={true} svgPath={mdiGit} inline={false} className={styles.listItemIcon} />
+                <Text weight="bold" className={styles.listItemName}>
+                    {repository.name}
+                </Text>
+            </div>
+
             <Text size="small" className={styles.listItemDescription}>
                 {repository.path}
             </Text>

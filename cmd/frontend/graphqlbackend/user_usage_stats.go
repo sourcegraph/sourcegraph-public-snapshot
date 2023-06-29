@@ -170,6 +170,11 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			})
 		}
 
+		// On Sourcegraph.com only, log a HubSpot event indicating when the user clicks button to downloads Cody App.
+		if envvar.SourcegraphDotComMode() && args.Event == "DownloadApp" && userID != 0 && userPrimaryEmail != "" {
+			hubspotutil.SyncUser(userPrimaryEmail, hubspotutil.AppDownloadButtonClickedEventID, &hubspot.ContactProperties{})
+		}
+
 		argumentPayload, err := decode(args.Argument)
 		if err != nil {
 			return nil, err
