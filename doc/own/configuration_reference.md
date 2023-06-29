@@ -37,7 +37,7 @@ Materialized list of excluded repositories is displayed for feedback.
 
 ## Analytics
 
-In order to measure how many files have owners, Code search exposes analytics through **Site admin > Analytics > Own**.
+In order to measure how many files have owners, Sourcegraph exposes analytics through **Site admin > Analytics > Own**.
 These present percentage of files that have:
 
 *   Any ownership associated,
