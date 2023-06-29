@@ -18,7 +18,7 @@ const RepositoryFileTreePage = lazyComponent(() => import('./RepositoryFileTreeP
 //
 // This splat should be used for all routes inside of `RepoContainer`.
 export const repoSplat =
-    '/:repo_one?/:repo_two?/:repo_three?/:repo_four?/:repo_five?/:repo_six?/:repo_seven?/:repo_eight?/:repo_nine?/:repo_ten?'
+    '/:repo_one?/:repo_two?/:repo_three?/:repo_four?/:repo_five?/:repo_six?/:repo_seven?/:repo_eight?/:repo_nine?/:repo_ten?/:repo_eleven?/:repo_twelve?/:repo_thirteen?/:repo_fourteen?/:repo_fifteen?'
 
 const routeToObjectType = {
     [repoSplat + '/-/blob/*']: 'blob',

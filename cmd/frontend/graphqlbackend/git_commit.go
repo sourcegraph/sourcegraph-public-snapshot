@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -237,8 +238,9 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 	Recursive bool
 }) (*GitTreeEntryResolver, error) {
 	treeEntry, err := r.path(ctx, args.Path, func(stat fs.FileInfo) error {
+		fmt.Println("CALLED TREE")
 		if !stat.Mode().IsDir() {
-			return errors.Errorf("not a directory: %q", args.Path)
+			return errors.Errorf("not a directory, Tree: %q", args.Path)
 		}
 
 		return nil
@@ -249,6 +251,7 @@ func (r *GitCommitResolver) Tree(ctx context.Context, args *struct {
 
 	// Note: args.Recursive is deprecated
 	if treeEntry != nil {
+		fmt.Println("RECURSED")
 		treeEntry.isRecursive = args.Recursive
 	}
 	return treeEntry, nil
