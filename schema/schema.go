@@ -1800,7 +1800,7 @@ type PerforceRateLimit struct {
 	RequestsPerHour float64 `json:"requestsPerHour"`
 }
 
-// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API.
+// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
 type PermissionsUserMapping struct {
 	// BindID description: The type of identifier to identify a user. The default is "email", which uses the email address to identify a user. Use "username" to identify a user by their username. Changing this setting will erase any permissions created for users that do not yet exist.
 	BindID string `json:"bindID,omitempty"`
@@ -2599,7 +2599,7 @@ type SiteConfiguration struct {
 	PermissionsSyncUsersBackoffSeconds int `json:"permissions.syncUsersBackoffSeconds,omitempty"`
 	// PermissionsSyncUsersMaxConcurrency description: The maximum number of user-centric permissions syncing jobs that can be spawned concurrently. Service restart is required to take effect for changes.
 	PermissionsSyncUsersMaxConcurrency int `json:"permissions.syncUsersMaxConcurrency,omitempty"`
-	// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API.
+	// PermissionsUserMapping description: Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This will mark repositories as restricted by default.
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.
 	ProductResearchPageEnabled *bool `json:"productResearchPage.enabled,omitempty"`
