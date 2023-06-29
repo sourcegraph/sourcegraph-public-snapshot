@@ -8,6 +8,10 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Added
 
+- Cody App: New indexing status with icons. [pull/54416](https://github.com/sourcegraph/sourcegraph/pull/54416)
+- Cody App: Button to add unindexed repository to App. [pull/54416](https://github.com/sourcegraph/sourcegraph/pull/54416)
+- Cody App: Progress bar to indicate codebase indexing progress. [pull/54416](https://github.com/sourcegraph/sourcegraph/pull/54416)
+
 ### Fixed
 
 ### Changed
