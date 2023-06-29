@@ -79,13 +79,13 @@ require (
 	github.com/agext/levenshtein v1.2.3
 	github.com/amit7itz/goset v1.2.1
 	github.com/aws/aws-sdk-go-v2 v1.18.1
-	github.com/aws/aws-sdk-go-v2/config v1.18.27
-	github.com/aws/aws-sdk-go-v2/credentials v1.13.26
-	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.71
-	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.26.2
-	github.com/aws/aws-sdk-go-v2/service/codecommit v1.14.14
-	github.com/aws/aws-sdk-go-v2/service/kms v1.22.2
-	github.com/aws/aws-sdk-go-v2/service/s3 v1.36.0
+	github.com/aws/aws-sdk-go-v2/config v1.18.12
+	github.com/aws/aws-sdk-go-v2/credentials v1.13.12
+	github.com/aws/aws-sdk-go-v2/feature/s3/manager v1.11.10
+	github.com/aws/aws-sdk-go-v2/service/cloudwatch v1.15.0
+	github.com/aws/aws-sdk-go-v2/service/codecommit v1.11.0
+	github.com/aws/aws-sdk-go-v2/service/kms v1.14.0
+	github.com/aws/aws-sdk-go-v2/service/s3 v1.26.9
 	github.com/aws/smithy-go v1.13.5
 	github.com/beevik/etree v1.2.0
 	github.com/buildkite/go-buildkite/v3 v3.3.0
