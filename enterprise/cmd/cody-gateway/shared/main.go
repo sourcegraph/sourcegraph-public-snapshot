@@ -57,7 +57,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 		// If a buffer is configured, wrap in events.BufferedLogger
 		if config.BigQuery.EventBufferSize > 0 {
-			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger, config.BigQuery.EventBufferSize)
+			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger,
+				config.BigQuery.EventBufferSize, config.BigQuery.EventBufferWorkers)
 		}
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
@@ -68,7 +69,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			eventLogger = events.NewBufferedLogger(
 				obctx.Logger,
 				events.NewDelayedLogger(eventLogger),
-				config.BigQuery.EventBufferSize)
+				config.BigQuery.EventBufferSize,
+				config.BigQuery.EventBufferWorkers)
 		}
 	}
 
