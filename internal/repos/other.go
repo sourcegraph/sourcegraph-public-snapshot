@@ -198,6 +198,7 @@ func (s OtherSource) otherRepoFromCloneURL(urn string, u *url.URL) (*types.Repo,
 		Metadata: &extsvc.OtherRepoMetadata{
 			RelativePath: strings.TrimPrefix(repoURL, serviceID),
 		},
+		Private: !s.svc.Unrestricted,
 	}, nil
 }
 

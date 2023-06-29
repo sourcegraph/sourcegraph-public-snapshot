@@ -204,6 +204,11 @@
       "type": "boolean",
       "default": false
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce Bitbucket Server repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "authorization": {
       "title": "BitbucketServerAuthorization",
       "description": "If non-null, enforces Bitbucket Server / Bitbucket Data Center repository permissions.",

@@ -71,6 +71,11 @@
       "deprecationMessage": "DEPRECATED: the Phabricator integration with Gitolite code hosts is deprecated",
       "type": "string"
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce Gitolite repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "phabricator": {
       "description": "This is DEPRECATED",
       "deprecationMessage": "DEPRECATED: the Phabricator integration with Gitolite code hosts is deprecated",

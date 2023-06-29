@@ -53,6 +53,11 @@
         "requestsPerHour": 7200
       }
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce Bitbucket Cloud repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "authorization": {
       "title": "BitbucketCloudAuthorization",
       "description": "If non-null, enforces Bitbucket Cloud repository permissions. This requires that there is an item in the [site configuration json](https://docs.sourcegraph.com/admin/config/site_config#auth-providers) `auth.providers` field, of type \"bitbucketcloud\" with the same `url` field as specified in this `BitbucketCloudConnection`.",

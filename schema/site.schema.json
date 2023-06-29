@@ -1113,12 +1113,12 @@
       "default": "disabled"
     },
     "permissions.userMapping": {
-      "description": "Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).",
+      "description": "Settings for Sourcegraph explicit permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API.",
       "type": "object",
       "additionalProperties": false,
       "properties": {
         "enabled": {
-          "description": "Whether permissions user mapping is enabled. There must be no `authorization` field in any external service configuration before enabling this.",
+          "description": "Whether permissions user mapping is enabled.",
           "type": "boolean",
           "default": false
         },

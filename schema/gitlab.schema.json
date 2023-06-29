@@ -177,6 +177,11 @@
       "description": "Deprecated and ignored field which will be removed entirely in the next release. GitLab repositories can no longer be enabled or disabled explicitly.",
       "type": "boolean"
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce GitLab repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "authorization": {
       "title": "GitLabAuthorization",
       "description": "If non-null, enforces GitLab repository permissions. This requires that there be an item in the `auth.providers` field of type \"gitlab\" with the same `url` field as specified in this `GitLabConnection`.",

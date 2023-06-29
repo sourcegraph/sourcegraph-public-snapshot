@@ -29,6 +29,11 @@
       "type": "string",
       "minLength": 1
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce Gerrit repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "projects": {
       "description": "An array of project strings specifying which Gerrit projects to mirror on Sourcegraph. If empty, all projects will be mirrored.",
       "type": "array",

@@ -168,6 +168,7 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*types.Repo, error
 			},
 		},
 		Metadata: repo,
+		Private: !s.svc.Unrestricted,
 	}, nil
 }
 

@@ -64,6 +64,11 @@
         "requestsPerHour": 5000
       }
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce Perforce repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "authorization": {
       "title": "PerforceAuthorization",
       "description": "If non-null, enforces Perforce depot permissions.",

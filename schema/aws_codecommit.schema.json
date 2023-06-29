@@ -68,6 +68,11 @@
       "type": "boolean",
       "default": false
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce AWS Code Commit repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "exclude": {
       "description": "A list of repositories to never mirror from AWS CodeCommit. \n\nSupports excluding by name ({\"name\": \"git-codecommit.us-west-1.amazonaws.com/repo-name\"}) or by ARN ({\"id\": \"arn:aws:codecommit:us-west-1:999999999999:name\"}).",
       "type": "array",

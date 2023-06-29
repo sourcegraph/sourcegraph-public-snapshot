@@ -41,6 +41,11 @@
       "default": "",
       "examples": ["path/to/my/repos"]
     },
+    "enforcePermissions": {
+      "description": "A flag to enforce Azure DevOps repository access permissions",
+      "type": "boolean",
+      "default": false
+    },
     "exclude": {
       "description": "A list of repositories to never mirror by name after applying repositoryPathPattern. Supports excluding by exact name ({\"name\": \"myrepo\"}) or regular expression ({\"pattern\": \".*secret.*\"}).",
       "type": "array",

@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -28,6 +29,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -2387,6 +2389,73 @@ func TestConfigurationHasWebhooks(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestExternalServiceStore_recalculateFields(t *testing.T) {
+	tests := map[string]struct {
+		explicitPermsEnabled  bool
+		enforcePermissionsSet *bool
+		authorizationSet      bool
+		expectUnrestricted    bool
+	}{
+		"default state": {
+			expectUnrestricted: true,
+		},
+		"only explicit perms set": {
+			explicitPermsEnabled: true,
+			expectUnrestricted:   false,
+		},
+		"only authorization set": {
+			authorizationSet:   true,
+			expectUnrestricted: false,
+		},
+		"enforcePermissions set to true": {
+			enforcePermissionsSet: pointers.Ptr(true),
+			expectUnrestricted:    false,
+		},
+		"false enforcePermissions overrides all settings": {
+			enforcePermissionsSet: pointers.Ptr(false),
+			authorizationSet: true,
+			explicitPermsEnabled: true,
+			expectUnrestricted: true,
+		},
+	}
+
+	e := &externalServiceStore{logger: logtest.NoOp(t)}
+
+	for name, tc := range tests {
+		t.Run(name, func(t *testing.T) {
+			pmu := globals.PermissionsUserMapping()
+			fmt.Println(pmu)
+			t.Cleanup(func() {
+				globals.SetPermissionsUserMapping(pmu)
+			})
+
+			es := &types.ExternalService{}
+
+			if tc.explicitPermsEnabled {
+				globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
+					BindID:  "email",
+					Enabled: true,
+				})
+			}
+			rawConfig := "{}"
+			var err error
+			if tc.authorizationSet {
+				rawConfig, err = jsonc.Edit(rawConfig, struct{}{}, "authorization")
+				require.NoError(t, err)
+			}
+
+			if tc.enforcePermissionsSet != nil {
+				rawConfig, err = jsonc.Edit(rawConfig, *tc.enforcePermissionsSet, "enforcePermissions")
+				require.NoError(t, err)
+			}
+
+			require.NoError(t, e.recalculateFields(es, rawConfig))
+
+			require.Equal(t, es.Unrestricted, tc.expectUnrestricted)
+		})
+	}
 }
 
 func TestExternalServiceStore_ListRepos(t *testing.T) {
