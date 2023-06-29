@@ -863,8 +863,6 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 			return nil, errors.Wrap(err, "lsifStore.Definitions")
 		}
 
-		// fmt.Println("These are the locations on location path >>> ", locations)
-
 		if len(locations) > 0 {
 			// If we have a local definition, we won't find a better one and can exit early
 			return s.GetUploadLocations(ctx, args, requestState, locations, true)
