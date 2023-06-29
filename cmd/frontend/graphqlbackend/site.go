@@ -255,7 +255,7 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 }
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
-	//  returnSafeConfigsOnly determines whether to return a redacted version of the
+	// returnSafeConfigsOnly determines whether to return a redacted version of the
 	// site configuration that removes sensitive information. If true, uses
 	// conf.ReturnSafeConfigs to return a redacted configuration. If false, checks if the
 	// current user is a site admin and returns the full unredacted configuration.
