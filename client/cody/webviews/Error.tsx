@@ -1,4 +1,4 @@
-import { AuthStatus } from '../src/chat/protocol'
+import { AuthStatus, isLocalApp } from '../src/chat/protocol'
 
 import styles from './Login.module.css'
 
@@ -34,7 +34,7 @@ export const ErrorContainer: React.FunctionComponent<{
         return null
     }
     // Errors for app are handled in the ConnectApp component
-    if (isApp.isInstalled && !isApp.isRunning) {
+    if ((isLocalApp(endpoint || '') || isApp.isInstalled) && !isApp.isRunning) {
         return null
     }
     // new users will not have an endpoint

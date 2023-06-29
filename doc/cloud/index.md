@@ -268,6 +268,10 @@ Only essential Sourcegraph personnel will have access to the instance, server, c
 
 All Sourcegraph Cloud instances have Sourcegraph management access enabled by default, and customers may request to disable by contacting your Sourcegraph contact.
 
+### Audit Logs
+
+Our Cloud instances provide [audit logs](../admin/audit_log.md#cloud) to help you monitor and investigate actions taken by users and the system. These logs are available to download by request  and are also sent to a [centralized logging service](https://about.sourcegraph.com/security#logging) for 30 day retention (configurable for greater periods by request).
+
 ## Accommodating special requirements
 
 We may be able to support special requests (network access policies, infrastructure requirements, custom version control systems, etc.) with additional time, support, and fees. [Contact us](https://about.sourcegraph.com/contact/sales) to discuss any special requirements you may have.

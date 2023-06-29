@@ -11,7 +11,7 @@ export interface Configuration {
     customHeaders: Record<string, string>
     autocomplete: boolean
     experimentalChatPredictions: boolean
-    experimentalInline: boolean
+    inlineChat: boolean
     experimentalGuardrails: boolean
     experimentalNonStop: boolean
     autocompleteAdvancedProvider: 'anthropic' | 'unstable-codegen' | 'unstable-huggingface'

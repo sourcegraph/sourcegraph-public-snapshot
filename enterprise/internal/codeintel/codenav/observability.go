@@ -14,6 +14,7 @@ import (
 type operations struct {
 	getReferences          *observation.Operation
 	getImplementations     *observation.Operation
+	getPrototypes          *observation.Operation
 	getDiagnostics         *observation.Operation
 	getHover               *observation.Operation
 	getDefinitions         *observation.Operation
@@ -47,6 +48,7 @@ func newOperations(observationCtx *observation.Context) *operations {
 	return &operations{
 		getReferences:          op("getReferences"),
 		getImplementations:     op("getImplementations"),
+		getPrototypes:          op("getPrototypes"),
 		getDiagnostics:         op("getDiagnostics"),
 		getHover:               op("getHover"),
 		getDefinitions:         op("getDefinitions"),

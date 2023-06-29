@@ -507,3 +507,227 @@ func monikersToString(vs []precise.MonikerData) string {
 
 	return strings.Join(strs, ", ")
 }
+
+//
+//
+
+func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
+	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
+}
+
+func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
+	return s.extractLocationsFromPosition(ctx, extractReferenceRanges, symbolExtractDefault, s.operations.getReferenceLocations, locationKey)
+}
+
+func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
+	return s.extractLocationsFromPosition(ctx, extractImplementationRanges, symbolExtractDefault, s.operations.getImplementationLocations, locationKey)
+}
+
+func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
+	return s.extractLocationsFromPosition(ctx, extractPrototypesRanges, symbolExtractPrototype, s.operations.getPrototypesLocations, locationKey)
+}
+
+func symbolExtractDefault(document *scip.Document, symbolName string) (symbols []string) {
+	if symbol := scip.FindSymbol(document, symbolName); symbol != nil {
+		for _, rel := range symbol.Relationships {
+			if rel.IsReference {
+				symbols = append(symbols, rel.Symbol)
+			}
+		}
+	}
+
+	return append(symbols, symbolName)
+}
+
+func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols []string) {
+	if symbol := scip.FindSymbol(document, symbolName); symbol != nil {
+		for _, rel := range symbol.Relationships {
+			if rel.IsImplementation {
+				symbols = append(symbols, rel.Symbol)
+			}
+		}
+	}
+
+	return symbols
+}
+
+//
+//
+
+func (s *store) extractLocationsFromPosition(
+	ctx context.Context,
+	extractRanges func(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range,
+	extractSymbolNames func(document *scip.Document, symbolName string) []string,
+	operation *observation.Operation,
+	locationKey LocationKey,
+) (_ []shared.Location, _ []string, err error) {
+	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", locationKey.UploadID),
+		attribute.String("path", locationKey.Path),
+		attribute.Int("line", locationKey.Line),
+		attribute.Int("character", locationKey.Character),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+		locationsDocumentQuery,
+		locationKey.UploadID,
+		locationKey.Path,
+	)))
+	if err != nil || !exists {
+		return nil, nil, err
+	}
+
+	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(locationKey.Line), int32(locationKey.Character))
+	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+
+	var locations []shared.Location
+	var symbols []string
+	for _, occurrence := range occurrences {
+		if ranges := extractRanges(documentData.SCIPData, occurrence); len(ranges) != 0 {
+			locations = append(locations, convertSCIPRangesToLocations(ranges, locationKey.UploadID, locationKey.Path)...)
+		}
+
+		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
+			symbols = append(symbols, extractSymbolNames(documentData.SCIPData, occurrence.Symbol)...)
+		}
+	}
+
+	return deduplicateLocations(locations), deduplicate(symbols, func(s string) string { return s }), nil
+}
+
+func deduplicate[T any](locations []T, keyFn func(T) string) []T {
+	seen := map[string]struct{}{}
+
+	filtered := locations[:0]
+	for _, l := range locations {
+		k := keyFn(l)
+		if _, ok := seen[k]; ok {
+			continue
+		}
+
+		seen[k] = struct{}{}
+		filtered = append(filtered, l)
+	}
+
+	return filtered
+}
+
+func deduplicateLocations(locations []shared.Location) []shared.Location {
+	return deduplicate(locations, locationKey)
+}
+
+func locationKey(l shared.Location) string {
+	return fmt.Sprintf("%d:%s:%d:%d:%d:%d",
+		l.DumpID,
+		l.Path,
+		l.Range.Start.Line,
+		l.Range.Start.Character,
+		l.Range.End.Line,
+		l.Range.End.Character,
+	)
+}
+
+//
+//
+
+func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
+	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("tableName", tableName),
+		attribute.Int("numUploadIDs", len(uploadIDs)),
+		attribute.IntSlice("uploadIDs", uploadIDs),
+		attribute.Int("numMonikers", len(monikers)),
+		attribute.String("monikers", monikersToString(monikers)),
+		attribute.Int("limit", limit),
+		attribute.Int("offset", offset),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	if len(uploadIDs) == 0 || len(monikers) == 0 {
+		return nil, 0, nil
+	}
+
+	symbolNames := make([]string, 0, len(monikers))
+	for _, arg := range monikers {
+		symbolNames = append(symbolNames, arg.Identifier)
+	}
+
+	var skipConds []*sqlf.Query
+	for _, id := range uploadIDs {
+		if path, ok := skipPaths[id]; ok {
+			skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", id, path))
+		}
+	}
+	if len(skipConds) == 0 {
+		skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", -1, ""))
+	}
+
+	fieldName := fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))
+	query := sqlf.Sprintf(
+		minimalBulkMonikerResultsQuery,
+		pq.Array(symbolNames),
+		pq.Array(uploadIDs),
+		sqlf.Sprintf(fieldName),
+		sqlf.Sprintf(fieldName),
+		sqlf.Join(skipConds, ", "),
+	)
+
+	locationData, err := s.scanDeduplicatedQualifiedMonikerLocations(s.db.Query(ctx, query))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	totalCount = 0
+	for _, monikerLocations := range locationData {
+		totalCount += len(monikerLocations.Locations)
+	}
+	trace.AddEvent("TODO Domain Owner",
+		attribute.Int("numDumps", len(locationData)),
+		attribute.Int("totalCount", totalCount))
+
+	max := totalCount
+	if totalCount > limit {
+		max = limit
+	}
+
+	locations := make([]shared.Location, 0, max)
+outer:
+	for _, monikerLocations := range locationData {
+		for _, row := range monikerLocations.Locations {
+			offset--
+			if offset >= 0 {
+				continue
+			}
+
+			locations = append(locations, shared.Location{
+				DumpID: monikerLocations.DumpID,
+				Path:   row.URI,
+				Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			})
+
+			if len(locations) >= limit {
+				break outer
+			}
+		}
+	}
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+
+	return locations, totalCount, nil
+}
+
+const minimalBulkMonikerResultsQuery = `
+WITH RECURSIVE
+` + symbolIDsCTEs + `
+SELECT
+	ss.upload_id,
+	%s,
+	document_path
+FROM codeintel_scip_symbols ss
+JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
+JOIN matching_symbol_names msn ON msn.upload_id = ss.upload_id AND msn.id = ss.symbol_id
+WHERE
+	ss.%s IS NOT NULL AND
+	(ss.upload_id, dl.document_path) NOT IN (%s)
+ORDER BY ss.upload_id, dl.document_path
+`

@@ -37,16 +37,69 @@ export const Empty: ComponentStoryObj<typeof ChatInputContext> = {
     render: () => <ChatInputContext contextStatus={{}} />,
 }
 
-export const Codebase: ComponentStoryObj<typeof ChatInputContext> = {
-    render: () => <ChatInputContext contextStatus={{ codebase: 'github.com/sourcegraph/about' }} />,
+export const CodebaseIndexed: ComponentStoryObj<typeof ChatInputContext> = {
+    render: () => (
+        <ChatInputContext
+            contextStatus={{ codebase: 'github.com/sourcegraph/about', mode: 'embeddings', connection: true }}
+        />
+    ),
 }
 
-export const File: ComponentStoryObj<typeof ChatInputContext> = {
-    render: () => <ChatInputContext contextStatus={{ filePath: 'path/to/file.go' }} />,
+export const CodebaseError: ComponentStoryObj<typeof ChatInputContext> = {
+    render: () => <ChatInputContext contextStatus={{ codebase: 'github.com/sourcegraph/about' }} />,
 }
 
 export const CodebaseAndFile: ComponentStoryObj<typeof ChatInputContext> = {
     render: () => (
-        <ChatInputContext contextStatus={{ codebase: 'github.com/sourcegraph/about', filePath: 'path/to/file.go' }} />
+        <ChatInputContext
+            contextStatus={{
+                codebase: 'github.com/sourcegraph/about',
+                filePath: 'path/to/file.go',
+                mode: 'embeddings',
+            }}
+        />
     ),
+}
+
+export const CodebaseAndFileWithSelections: ComponentStoryObj<typeof ChatInputContext> = {
+    render: () => (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <ChatInputContext
+                contextStatus={{
+                    codebase: 'github.com/sourcegraph/about',
+                    filePath: 'path/to/file.go',
+                    mode: 'embeddings',
+                    selection: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
+                }}
+            />
+            <ChatInputContext
+                contextStatus={{
+                    codebase: 'github.com/sourcegraph/about',
+                    filePath: 'path/to/file.go',
+                    mode: 'embeddings',
+                    selection: { start: { line: 0, character: 0 }, end: { line: 1, character: 0 } },
+                }}
+            />
+            <ChatInputContext
+                contextStatus={{
+                    codebase: 'github.com/sourcegraph/about',
+                    filePath: 'path/to/file.go',
+                    mode: 'embeddings',
+                    selection: { start: { line: 0, character: 0 }, end: { line: 3, character: 0 } },
+                }}
+            />
+            <ChatInputContext
+                contextStatus={{
+                    codebase: 'github.com/sourcegraph/about',
+                    filePath: 'path/to/file.go',
+                    mode: 'embeddings',
+                    selection: { start: { line: 42, character: 333 }, end: { line: 420, character: 999 } },
+                }}
+            />
+        </div>
+    ),
+}
+
+export const File: ComponentStoryObj<typeof ChatInputContext> = {
+    render: () => <ChatInputContext contextStatus={{ filePath: 'path/to/file.go' }} />,
 }

@@ -92,7 +92,6 @@ const register = async (
     await updateEventLogger(initialConfig, localStorage)
     // Controller for inline Chat
     const commentController = new InlineController(context.extensionPath)
-    disposables.push(commentController.get())
 
     const fixup = new FixupController()
     disposables.push(fixup)
@@ -116,6 +115,7 @@ const register = async (
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
+    await authProvider.init()
 
     // Create chat webview
     const chatProvider = new ChatViewProvider(
@@ -226,7 +226,7 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.improve-variable-names', () =>
             executeRecipe('improve-variable-names')
         ),
-        vscode.commands.registerCommand('cody.recipe.file-touch', () => executeRecipe('file-touch', false)),
+        vscode.commands.registerCommand('cody.recipe.inline-touch', () => executeRecipe('inline-touch', false)),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
         vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
@@ -260,11 +260,11 @@ const register = async (
         vscode.commands.registerCommand('cody.walkthrough.showChat', () => chatProvider.setWebviewView('chat')),
         vscode.commands.registerCommand('cody.walkthrough.showFixup', () => chatProvider.setWebviewView('recipes')),
         vscode.commands.registerCommand('cody.walkthrough.showExplain', () => chatProvider.setWebviewView('recipes')),
-        vscode.commands.registerCommand('cody.walkthrough.enableInlineAssist', async () => {
-            await workspaceConfig.update('cody.experimental.inline', true, vscode.ConfigurationTarget.Global)
+        vscode.commands.registerCommand('cody.walkthrough.enableInlineChat', async () => {
+            await workspaceConfig.update('cody.inlineChat', true, vscode.ConfigurationTarget.Global)
             // Open VSCode setting view. Provides visual confirmation that the setting is enabled.
             return vscode.commands.executeCommand('workbench.action.openSettings', {
-                query: 'cody.experimental.inline',
+                query: 'cody.inlineChat.enabled',
                 openToSide: true,
             })
         })
@@ -315,14 +315,8 @@ const register = async (
     })
 
     // Initiate inline chat when feature flag is on
-    if (initialConfig.experimentalInline) {
-        commentController.get().commentingRangeProvider = {
-            provideCommentingRanges: (document: vscode.TextDocument) => {
-                const lineCount = document.lineCount
-                return [new vscode.Range(0, 0, lineCount - 1, 0)]
-            },
-        }
-        void vscode.commands.executeCommand('setContext', 'cody.inline-assist.enabled', true)
+    if (!initialConfig.inlineChat) {
+        commentController.dispose()
     }
 
     if (initialConfig.experimentalGuardrails) {

@@ -9,7 +9,7 @@ import {
     MAX_RECIPE_SURROUNDING_TOKENS,
 } from '../../prompt/constants'
 import { populateCurrentEditorContextTemplate } from '../../prompt/templates'
-import { truncateText, isTextTruncated } from '../../prompt/truncation'
+import { truncateText } from '../../prompt/truncation'
 import { BufferedBotResponseSubscriber } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
@@ -20,8 +20,8 @@ import { Recipe, RecipeContext, RecipeID } from './recipe'
 /** ======================================================
  * Recipe for Generating a New File
 ====================================================== **/
-export class FileTouch implements Recipe {
-    public id: RecipeID = 'file-touch'
+export class InlineTouch implements Recipe {
+    public id: RecipeID = 'inline-touch'
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
 
     constructor(private debug: (filterLabel: string, text: string, ...args: unknown[]) => void) {}
@@ -43,7 +43,7 @@ export class FileTouch implements Recipe {
         // Create file path from selection.fileName and workspacePath
         const currentFilePath = `${this.workspacePath.fsPath}/${selection.fileName}`
         const currentDir = currentFilePath.replace(/\/[^/]+$/, '')
-        this.debug('FileTouch:currentDir', 'currentDir', currentDir)
+        this.debug('InlineTouch:currentDir', 'currentDir', currentDir)
 
         // Create new file name based on the user's input
         const newFileName = commandRegex.noTest.test(humanInput)
@@ -60,21 +60,15 @@ export class FileTouch implements Recipe {
         // Create file if it doesn't exist
         workspaceEditor.createFile(fileUri, { ignoreIfExists: true })
         await vscode.workspace.applyEdit(workspaceEditor)
-        this.debug('FileTouch:workspaceEditor', 'createFile', fileUri)
+        this.debug('InlineTouch:workspaceEditor', 'createFile', fileUri)
 
         const truncatedText = truncateText(humanInput, MAX_HUMAN_INPUT_TOKENS)
         const MAX_RECIPE_CONTENT_TOKENS = MAX_RECIPE_INPUT_TOKENS + MAX_RECIPE_SURROUNDING_TOKENS * 2
-        const truncatedSelectedText = truncateText(
-            selection.selectedText,
-            Math.min(MAX_RECIPE_CONTENT_TOKENS, MAX_RECIPE_INPUT_TOKENS)
-        )
-        if (isTextTruncated(selection.selectedText, truncatedSelectedText)) {
-            await context.editor.showWarningMessage('Truncated extra long selection so output may be incomplete.')
-        }
+        const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_CONTENT_TOKENS)
 
         // Reconstruct Cody's prompt using user's context
         // Replace placeholders in reverse order to avoid collisions if a placeholder occurs in the input
-        const prompt = FileTouch.newFilePrompt
+        const prompt = InlineTouch.newFilePrompt
         const promptText = prompt
             .replace('{newFileName}', newFsPath)
             .replace('{humanInput}', truncatedText)
@@ -94,7 +88,7 @@ export class FileTouch implements Recipe {
                     return
                 }
                 await this.addContentToNewFile(workspaceEditor, fileUri, content)
-                this.debug('FileTouch:responseMultiplexer', 'BufferedBotResponseSubscriber', content)
+                this.debug('InlineTouch:responseMultiplexer', 'BufferedBotResponseSubscriber', content)
             })
         )
 
@@ -174,11 +168,11 @@ export class FileTouch implements Recipe {
         const contextMessages: ContextMessage[] = []
         // Add selected text and current file as context and create context messages from current directory
         const selectedContext = ChatQuestion.getEditorSelectionContext(selection)
-        const currentDirContext = await FileTouch.getEditorDirContext(currentDir)
+        const currentDirContext = await InlineTouch.getEditorDirContext(currentDir)
         contextMessages.push(...selectedContext, ...currentDirContext)
         // Create context messages from open tabs
         if (contextMessages.length < 10) {
-            contextMessages.push(...FileTouch.getEditorOpenTabsContext(currentDir))
+            contextMessages.push(...InlineTouch.getEditorOpenTabsContext(currentDir))
         }
         return contextMessages.slice(-10)
     }
@@ -244,7 +238,7 @@ export class FileTouch implements Recipe {
 
     // Get display text for human
     private getHumanDisplayText(humanChatInput: string, fileName: string): string {
-        return '**✨Touch✨** ' + humanChatInput + FileTouch.displayPrompt + fileName
+        return '**✨Touch✨** ' + humanChatInput + InlineTouch.displayPrompt + fileName
     }
 
     private async getInstructionFromInput(): Promise<string> {

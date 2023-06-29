@@ -1,9 +1,10 @@
 package com.sourcegraph.cody;
 
-import static com.intellij.openapi.util.SystemInfoRt.isMac;
 import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
+import static java.awt.event.InputEvent.ALT_DOWN_MASK;
 import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
 import static java.awt.event.InputEvent.META_DOWN_MASK;
+import static java.awt.event.InputEvent.SHIFT_DOWN_MASK;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
@@ -40,6 +41,7 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.chat.ChatUIConstants;
 import com.sourcegraph.cody.chat.ContentWithGradientBorder;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
+import com.sourcegraph.cody.chat.HumanMessageToMarkdownTextTransformer;
 import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextGetter;
@@ -106,8 +108,6 @@ class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
   private final @NotNull Project project;
-  private final JPanel appNotInstalledPanel;
-  private final JPanel appNotRunningPanel;
   private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
@@ -261,8 +261,8 @@ class CodyToolWindowContent implements UpdatableChat {
     contentPanel.add(controlsPanel, BorderLayout.SOUTH);
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
-    appNotInstalledPanel = createAppNotInstalledPanel();
-    appNotRunningPanel = createAppNotRunningPanel();
+    JPanel appNotInstalledPanel = createAppNotInstalledPanel();
+    JPanel appNotRunningPanel = createAppNotRunningPanel();
     allContentPanel.add(tabbedPane, "tabbedPane");
     allContentPanel.add(appNotInstalledPanel, "appNotInstalledPanel");
     allContentPanel.add(appNotRunningPanel, "appNotRunningPanel");
@@ -449,12 +449,30 @@ class CodyToolWindowContent implements UpdatableChat {
     promptInput.setLineWrap(true);
     promptInput.setWrapStyleWord(true);
     promptInput.requestFocusInWindow();
+
+    /* Insert Enter on Shift+Enter, Ctrl+Enter, Alt/Option+Enter, and Meta+Enter */
+    KeyboardShortcut SHIFT_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, SHIFT_DOWN_MASK), null);
     KeyboardShortcut CTRL_ENTER =
         new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
+    KeyboardShortcut ALT_OR_OPTION_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), null);
     KeyboardShortcut META_ENTER =
         new KeyboardShortcut(getKeyStroke(VK_ENTER, META_DOWN_MASK), null);
-    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT =
-        isMac ? new CustomShortcutSet(CTRL_ENTER, META_ENTER) : new CustomShortcutSet(CTRL_ENTER);
+    ShortcutSet INSERT_ENTER_SHORTCUT =
+        new CustomShortcutSet(CTRL_ENTER, SHIFT_ENTER, META_ENTER, ALT_OR_OPTION_ENTER);
+    AnAction insertEnterAction =
+        new DumbAwareAction() {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent e) {
+            promptInput.insert("\n", promptInput.getCaretPosition());
+          }
+        };
+    insertEnterAction.registerCustomShortcutSet(INSERT_ENTER_SHORTCUT, promptInput);
+
+    /* Submit on enter */
+    KeyboardShortcut JUST_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, 0), null);
+    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT = new CustomShortcutSet(JUST_ENTER);
     AnAction sendMessageAction =
         new DumbAwareAction() {
           @Override
@@ -463,6 +481,7 @@ class CodyToolWindowContent implements UpdatableChat {
           }
         };
     sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
+
     return promptInput;
   }
 
@@ -526,7 +545,7 @@ class CodyToolWindowContent implements UpdatableChat {
     } else {
       this.addMessageToChat(
           ChatMessage.createAssistantMessage(
-              "I'm sorry, something wet wrong. Please try again. The error message I got was: \""
+              "I'm sorry, something went wrong. Please try again. The error message I got was: \""
                   + errorMessage
                   + "\"."));
     }
@@ -582,7 +601,8 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void sendMessage(@NotNull Project project) {
-    String messageText = promptInput.getText();
+    String messageText =
+        new HumanMessageToMarkdownTextTransformer(promptInput.getText()).transform();
     promptInput.setText("");
     sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
   }
@@ -687,11 +707,12 @@ class CodyToolWindowContent implements UpdatableChat {
                     ConfigUtil.getCustomRequestHeaders(project))
                 .getContextMessages(humanMessage.getText(), 8, 2, true);
       } catch (IOException e) {
-        this.addMessageToChat(
-            ChatMessage.createAssistantMessage(
-                "I didn't get a correct response. This is what I encountered while trying to get some context for your ask: \""
-                    + e.getMessage()
-                    + "\". I'll try to answer without further context."));
+        logger.warn(
+            "Unable to load context for message: "
+                + humanMessage.getText()
+                + ", in repo: "
+                + repoName,
+            e);
       }
     }
     return contextMessages;
@@ -748,7 +769,7 @@ class CodyToolWindowContent implements UpdatableChat {
     try {
       return RepoUtil.getRemoteRepoUrlWithoutScheme(project, currentFile);
     } catch (Exception e) {
-      return null;
+      return RepoUtil.getSimpleRepositoryName(project, currentFile);
     }
   }
 

@@ -104,6 +104,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             PageRoutes.Welcome,
             PageRoutes.RequestAccess,
         ].includes(routeMatch as PageRoutes)
+    const isGetCodyPage = location.pathname === PageRoutes.GetCody
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -152,7 +153,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     </div>
                 }
             >
-                <LazySetupWizard isSourcegraphApp={props.isSourcegraphApp} telemetryService={props.telemetryService} />
+                <LazySetupWizard telemetryService={props.telemetryService} />
             </Suspense>
         )
     }
@@ -235,7 +236,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                     telemetryService={props.telemetryService}
                 />
             )}
-            {!isSiteInit && !isSignInOrUp && (
+            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && (
                 <GlobalNavbar
                     {...props}
                     showSearchBox={

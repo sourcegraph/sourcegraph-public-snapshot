@@ -24,7 +24,7 @@ const config = {
        * Primary cause is due to multiple ongoing migrations that mean we are duplicating similar dependencies.
        * Issue to track: https://github.com/sourcegraph/sourcegraph/issues/37845
        */
-      maxSize: '460kb',
+      maxSize: '470kb',
       compression: 'none',
     },
     {

@@ -24,7 +24,7 @@ function getInlineFromConfig(config: vscode.WorkspaceConfiguration): boolean {
     if (!config) {
         return false
     }
-    return config.get<boolean>('cody.experimental.inline', false)
+    return config.get<boolean>('cody.inlineChat.enabled', false)
 }
 
 function getNonStopFromConfig(config: vscode.WorkspaceConfiguration): boolean {
