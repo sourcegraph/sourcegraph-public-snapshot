@@ -220,8 +220,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
 	q := make(url.Values)
-	q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
-	q.Add("per_page", "100")        // 100 is the maximum page size
+	q.Add("per_page", "100") // 100 is the maximum page size
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -243,7 +242,9 @@ func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUs
 			}
 
 			for _, p := range projects {
-				projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
+				if p.DefaultBranch != "" {
+					projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
+				}
 			}
 
 			if next == nil {
