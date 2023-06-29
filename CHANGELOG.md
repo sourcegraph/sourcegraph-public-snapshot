@@ -36,6 +36,7 @@ All notable changes to Sourcegraph are documented in this file.
 > **Note**: As of 5.1.0, Sourcegraph OSS is removed and has been relicensed to Sourcegraph Enterprise. A blog post with much more detail will come soon!
 
 ### Known issues
+
 - There is an issue with repository permissions not being enforced on code hosts that do not support the `authorization` field.
 
 ### Added
