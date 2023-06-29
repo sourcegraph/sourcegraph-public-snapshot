@@ -10,6 +10,8 @@ Starting from `0.2.0`, Cody is using `major.EVEN_NUMBER.patch` for release versi
 
 ### Fixed
 
+- Prevents errors from being displayed for a cancelled requests. [pull/](https://github.com/sourcegraph/sourcegraph/pull/)
+
 ### Changed
 
 ## [0.4.2]
