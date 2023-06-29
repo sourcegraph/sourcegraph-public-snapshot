@@ -110,7 +110,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			// Detailed notifications for product subscriptions.
 			codygateway.ActorSourceProductSubscription: []int{90, 95, 100},
 			// No notifications for individual dotcom users - this can get quite
-			// spammy./
+			// spammy.
 			codygateway.ActorSourceDotcomUser: []int{},
 		},
 		config.ActorRateLimitNotify.SlackWebhookURL,
