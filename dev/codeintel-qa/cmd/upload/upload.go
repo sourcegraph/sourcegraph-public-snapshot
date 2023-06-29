@@ -19,6 +19,7 @@ type uploadMeta struct {
 	id       string
 	repoName string
 	commit   string
+	root     string
 }
 
 // uploadAll uploads the dumps for the commits present in the given commitsByRepo map.
@@ -52,7 +53,7 @@ func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]inter
 				}
 				defer limiter.Release()
 
-				fmt.Printf("[%5s] %s Uploading index for %s@%s\n", internal.TimeSince(start), internal.EmojiLightbulb, repoName, commit[:7])
+				fmt.Printf("[%5s] %s Uploading index for %s@%s:%s\n", internal.TimeSince(start), internal.EmojiLightbulb, repoName, commit[:7], root)
 
 				cleanedRoot := strings.ReplaceAll(root, "_", "/")
 				graphqlID, err := upload(ctx, internal.MakeTestRepoName(repoName), commit, file, cleanedRoot)
@@ -61,12 +62,13 @@ func uploadAll(ctx context.Context, extensionAndCommitsByRepo map[string][]inter
 					return
 				}
 
-				fmt.Printf("[%5s] %s Finished uploading index %s for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, graphqlID, repoName, commit[:7])
+				fmt.Printf("[%5s] %s Finished uploading index %s for %s@%s:%s\n", internal.TimeSince(start), internal.EmojiSuccess, graphqlID, repoName, commit[:7], cleanedRoot)
 
 				uploadCh <- uploadMeta{
 					id:       graphqlID,
 					repoName: repoName,
 					commit:   commit,
+					root:     cleanedRoot,
 				}
 			}(repoName, commit, fmt.Sprintf("%s.%s.%s.%s", strings.Replace(repoName, "/", ".", 1), commit, root, extension))
 		}
@@ -137,7 +139,7 @@ func upload(ctx context.Context, repoName, commit, file, root string) (string, e
 
 	output, err := cmd.CombinedOutput()
 	if err != nil {
-		return "", errors.Wrap(err, fmt.Sprintf("failed to upload index for %s@%s: %s", repoName, commit, output))
+		return "", errors.Wrap(err, fmt.Sprintf("failed to upload index for %s@%s:%s: %s", repoName, commit, root, output))
 	}
 
 	resp := struct {
