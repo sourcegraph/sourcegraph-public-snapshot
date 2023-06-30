@@ -15,6 +15,7 @@ require (
 )
 
 require (
+	4d63.com/gocheckcompilerdirectives v1.2.1 // indirect
 	github.com/go-toolsmith/astfmt v1.1.0 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect

@@ -317,6 +317,7 @@ nogo(
             "//dev/linters/gocritic",
             "//dev/linters/ineffassign",
             "//dev/linters/unparam",
+            "//dev/linters/gocheckcompilerdirectives",
         ] + STATIC_CHECK_ANALYZERS,
     }),
 )
