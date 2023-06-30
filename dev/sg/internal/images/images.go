@@ -244,6 +244,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string,
 
 		if opts.SkipUpdates(ir.Name) {
 			std.Out.WriteWarningf("skipping update for %s", ir.Name)
+			return nil
 		}
 
 		updatedImage, err := getUpdatedSourcegraphImage(originalImage, credential, pinTag, opts)
