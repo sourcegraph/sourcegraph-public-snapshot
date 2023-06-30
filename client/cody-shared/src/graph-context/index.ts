@@ -4,52 +4,50 @@ import { Editor } from '../editor'
 import { PreciseContextResult, SourcegraphGraphQLAPIClient } from '../sourcegraph-api/graphql/client'
 
 export interface GitInfo {
-    repository: string
-    repoName: string
+    repo: string
     commitID: string
 }
 
 export abstract class GraphContextFetcher {
-    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {}
-
-    // NOTE(auguste): maybe we should refactor this into Editor
+    // TODO - move into editor interface
     abstract getGitInfo(workspaceRoot: string): Promise<GitInfo>
 
-    async getContext(): Promise<PreciseContextResult[]> {
-        const active = this.editor.getActiveTextEditor()
+    constructor(private graphqlClient: SourcegraphGraphQLAPIClient, private editor: Editor) {}
 
-        if (!active) {
+    async getContext(): Promise<PreciseContextResult[]> {
+        const editorContext = this.editor.getActiveTextEditor()
+        if (!editorContext) {
             return []
         }
 
-        let preciseContext: PreciseContextResult[] = []
         const workspaceRoot = this.editor.getWorkspaceRootPath()
-        if (workspaceRoot) {
-            const { repoName, repository, commitID } = await this.getGitInfo(workspaceRoot)
-            const activeFile = trimPath(active.filePath, repoName)
-
-            const response = await this.graphqlClient.getPreciseContext(
-                repository,
-                commitID,
-                activeFile,
-                active.content
-            )
-            if (!isErrorLike(response)) {
-                preciseContext = response
-            }
+        if (!workspaceRoot) {
+            return []
         }
 
-        return preciseContext
+        const { repo: repository, commitID } = await this.getGitInfo(workspaceRoot)
+        const activeFile = pathRelativeToRoot(editorContext.filePath, workspaceRoot)
+
+        const response = await this.graphqlClient.getPreciseContext(
+            repository,
+            commitID,
+            activeFile,
+            editorContext.content
+        )
+        if (isErrorLike(response)) {
+            return []
+        }
+
+        return response
     }
 }
 
-function trimPath(path: string, folderName: string) {
-    const folderIndex = path.indexOf(folderName)
-
-    if (folderIndex === -1) {
-        return path
+function pathRelativeToRoot(path: string, workspaceRoot: string) {
+    if (path.startsWith(workspaceRoot)) {
+        // +1 for the slash so we produce a relative path
+        return path.slice(workspaceRoot.length + 1)
     }
 
-    // Add folderName.length for length of folder name and +1 for the slash
-    return path.slice(Math.max(0, folderIndex + folderName.length + 1))
+    // Outside of workspace, return absolute file path
+    return path
 }
