@@ -12,6 +12,7 @@ import git4idea.repo.GitRepository;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
@@ -181,5 +182,11 @@ public class RepoUtil {
     }
 
     return VCSType.UNKNOWN;
+  }
+
+  public static Optional<VirtualFile> getRootFileFromFirstRepository(@NotNull Project project) {
+    Optional<Repository> firstFoundRepository =
+        VcsRepositoryManager.getInstance(project).getRepositories().stream().findFirst();
+    return firstFoundRepository.map(Repository::getRoot);
   }
 }
