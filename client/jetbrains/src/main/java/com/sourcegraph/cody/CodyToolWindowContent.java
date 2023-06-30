@@ -694,13 +694,17 @@ class CodyToolWindowContent implements UpdatableChat {
 
   @Nullable
   private static String getRepoName(@NotNull Project project, @Nullable VirtualFile currentFile) {
-    if (currentFile == null) {
+    VirtualFile fileFromTheRepository =
+        currentFile != null
+            ? currentFile
+            : RepoUtil.getRootFileFromFirstGitRepository(project).orElse(null);
+    if (fileFromTheRepository == null) {
       return null;
     }
     try {
-      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, currentFile);
+      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, fileFromTheRepository);
     } catch (Exception e) {
-      return RepoUtil.getSimpleRepositoryName(project, currentFile);
+      return RepoUtil.getSimpleRepositoryName(project, fileFromTheRepository);
     }
   }
 
