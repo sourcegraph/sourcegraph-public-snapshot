@@ -314,10 +314,10 @@ nogo(
             "//dev/linters/depguard",
             "//dev/linters/exportloopref",
             "//dev/linters/forbidigo",
+            "//dev/linters/gocheckcompilerdirectives",
             "//dev/linters/gocritic",
             "//dev/linters/ineffassign",
             "//dev/linters/unparam",
-            "//dev/linters/gocheckcompilerdirectives",
         ] + STATIC_CHECK_ANALYZERS,
     }),
 )
