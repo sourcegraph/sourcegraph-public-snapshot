@@ -1,5 +1,7 @@
 # Contributing to the Sourcegraph Cody VS Code Extension
 
+## Getting started
+
 1. Update your VS Code user setting to turn on debugging mode:
 
    ```json
@@ -8,9 +10,14 @@
    ```
 
 2. Run `pnpm install` from the **root** of this repository
-3. Select `Launch Cody Extension` from the dropdown menu in the `RUN AND DEBUG` sidebar
+3. Run `scripts/download-rg.sh` from `client/cody` directory
+4. Select `RUN AND DEBUG` from the sidebar > `Launch Cody Extension` in the top dropdown
    1. Remove `node_modules` from `root` and `client/cody` before re-running `pnpm install` if the start up failed
-4. Refresh the extension to see updated changes
+5. Refresh the extension to see updated changes
+
+- To view dev tools: `cm + option + i` or `cm + shift + p > Toggle Developer Tools`
+- To debug: `RUN AND DEBUG > ... elipsis > toggle 'Debug Console'`
+- To view logs: `DEBUG CONSOLE`
 
 ## File structure
 
