@@ -55,6 +55,9 @@ type MockGitHubAppsStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *GitHubAppsStoreListFunc
+	// SyncAppFunc is an instance of a mock function object controlling the
+	// behavior of the method SyncApp.
+	SyncAppFunc *GitHubAppsStoreSyncAppFunc
 	// SyncInstallationsFunc is an instance of a mock function object
 	// controlling the behavior of the method SyncInstallations.
 	SyncInstallationsFunc *GitHubAppsStoreSyncInstallationsFunc
@@ -123,6 +126,11 @@ func NewMockGitHubAppsStore() *MockGitHubAppsStore {
 		},
 		ListFunc: &GitHubAppsStoreListFunc{
 			defaultHook: func(context.Context, *types1.GitHubAppDomain) (r0 []*types.GitHubApp, r1 error) {
+				return
+			},
+		},
+		SyncAppFunc: &GitHubAppsStoreSyncAppFunc{
+			defaultHook: func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) (r0 error) {
 				return
 			},
 		},
@@ -203,6 +211,11 @@ func NewStrictMockGitHubAppsStore() *MockGitHubAppsStore {
 				panic("unexpected invocation of MockGitHubAppsStore.List")
 			},
 		},
+		SyncAppFunc: &GitHubAppsStoreSyncAppFunc{
+			defaultHook: func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) error {
+				panic("unexpected invocation of MockGitHubAppsStore.SyncApp")
+			},
+		},
 		SyncInstallationsFunc: &GitHubAppsStoreSyncInstallationsFunc{
 			defaultHook: func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) errors.MultiError {
 				panic("unexpected invocation of MockGitHubAppsStore.SyncInstallations")
@@ -258,6 +271,9 @@ func NewMockGitHubAppsStoreFrom(i GitHubAppsStore) *MockGitHubAppsStore {
 		},
 		ListFunc: &GitHubAppsStoreListFunc{
 			defaultHook: i.List,
+		},
+		SyncAppFunc: &GitHubAppsStoreSyncAppFunc{
+			defaultHook: i.SyncApp,
 		},
 		SyncInstallationsFunc: &GitHubAppsStoreSyncInstallationsFunc{
 			defaultHook: i.SyncInstallations,
@@ -1474,6 +1490,117 @@ func (c GitHubAppsStoreListFuncCall) Args() []interface{} {
 // invocation.
 func (c GitHubAppsStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitHubAppsStoreSyncAppFunc describes the behavior when the SyncApp method
+// of the parent MockGitHubAppsStore instance is invoked.
+type GitHubAppsStoreSyncAppFunc struct {
+	defaultHook func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) error
+	hooks       []func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) error
+	history     []GitHubAppsStoreSyncAppFuncCall
+	mutex       sync.Mutex
+}
+
+// SyncApp delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockGitHubAppsStore) SyncApp(v0 context.Context, v1 types.GitHubApp, v2 log.Logger, v3 types.GitHubAppClient) error {
+	r0 := m.SyncAppFunc.nextHook()(v0, v1, v2, v3)
+	m.SyncAppFunc.appendCall(GitHubAppsStoreSyncAppFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the SyncApp method of
+// the parent MockGitHubAppsStore instance is invoked and the hook queue is
+// empty.
+func (f *GitHubAppsStoreSyncAppFunc) SetDefaultHook(hook func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SyncApp method of the parent MockGitHubAppsStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *GitHubAppsStoreSyncAppFunc) PushHook(hook func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitHubAppsStoreSyncAppFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitHubAppsStoreSyncAppFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) error {
+		return r0
+	})
+}
+
+func (f *GitHubAppsStoreSyncAppFunc) nextHook() func(context.Context, types.GitHubApp, log.Logger, types.GitHubAppClient) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitHubAppsStoreSyncAppFunc) appendCall(r0 GitHubAppsStoreSyncAppFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitHubAppsStoreSyncAppFuncCall objects
+// describing the invocations of this function.
+func (f *GitHubAppsStoreSyncAppFunc) History() []GitHubAppsStoreSyncAppFuncCall {
+	f.mutex.Lock()
+	history := make([]GitHubAppsStoreSyncAppFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitHubAppsStoreSyncAppFuncCall is an object that describes an invocation
+// of method SyncApp on an instance of MockGitHubAppsStore.
+type GitHubAppsStoreSyncAppFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 types.GitHubApp
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 log.Logger
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 types.GitHubAppClient
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitHubAppsStoreSyncAppFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitHubAppsStoreSyncAppFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // GitHubAppsStoreSyncInstallationsFunc describes the behavior when the
