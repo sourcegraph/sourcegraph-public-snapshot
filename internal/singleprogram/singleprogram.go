@@ -28,7 +28,7 @@ type CleanupFunc func() error
 
 func Init(logger log.Logger) CleanupFunc {
 	if deploy.IsApp() {
-		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version())
+		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version(), runtime.GOOS, runtime.GOARCH)
 	}
 
 	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
