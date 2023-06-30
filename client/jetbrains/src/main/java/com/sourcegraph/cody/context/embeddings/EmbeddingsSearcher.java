@@ -186,7 +186,7 @@ public class EmbeddingsSearcher {
       try {
         JsonObject body = response.getBodyAsJson();
         JsonObject data = body.getAsJsonObject("data");
-        if (data.get("repository").isJsonNull()) { // Embedding does not exist
+        if (data == null || data.get("repository").isJsonNull()) { // Embedding does not exist
           return null;
         }
         JsonObject repository = data.getAsJsonObject("repository");
