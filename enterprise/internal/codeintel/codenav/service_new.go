@@ -121,7 +121,7 @@ func (f LocationExtractorFunc) Extract(ctx context.Context, locationKey lsifstor
 // TODO
 func (s *Service) renameMe(
 	ctx context.Context,
-	args RequestArgs,
+	args RequestArgs, // TODO - take different args here
 	requestState RequestState,
 	cursor Cursor,
 	operation *observation.Operation,

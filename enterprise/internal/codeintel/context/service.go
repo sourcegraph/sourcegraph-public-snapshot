@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
@@ -56,7 +57,7 @@ const (
 	hunkCacheSize                  = 1000
 )
 
-func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseData, error) {
+func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseContext, error) {
 	// TODO: validate args whether here or at the resolver level
 	filename := args.Input.ActiveFile
 	content := args.Input.ActiveFileContent
@@ -101,20 +102,32 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		hunkCache,
 	)
 
+	// DEBUGGING
+	n := time.Now()
 	fmt.Printf("PHASE 1\n")
 	// PHASE 1: Run current scope through treesitter
+
+	// DEBUGGING
+	fmt.Printf("> Parsing file %q\n", filename)
 
 	syntectDocument, err := s.getSCIPDocumentByContent(ctx, content, filename)
 	if err != nil {
 		return nil, err
 	}
 
-	symbolNames := make([]string, 0, len(syntectDocument.Occurrences))
+	symbolNameMap := map[string]struct{}{}
 	for _, occurrence := range syntectDocument.Occurrences {
-		symbolNames = append(symbolNames, occurrence.Symbol)
+		symbolNameMap[occurrence.Symbol] = struct{}{}
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
 	}
 	sort.Strings(symbolNames)
 
+	// DEBUGGING
+	fmt.Printf("> %s: %v\n", time.Since(n), len(symbolNames))
+	n = time.Now()
 	fmt.Printf("PHASE 2\n")
 	// PHASE 2: Run treesitter output through a translation layer so we can do
 	// the graph navigation in "SCIP-world" using proper identifiers. The following
@@ -130,6 +143,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// transformation.
 
 	scipNamesBySyntectName, err := func() (map[string][]*types.SCIPNames, error) {
+		for _, s := range symbolNames {
+			fmt.Printf("> %q\n", s)
+		}
+
 		// TODO: Either pass a slice of uploads or loop thru uploads and pass the ids to fix this hardcoding of the first
 		scipNames, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, []int{uploads[0].ID}, symbolNames)
 		if err != nil {
@@ -148,8 +165,23 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				// We do a `descriptor ILIKE %syntectName%` in Postgres today, so this
 				// is a bit of a less lenient (we do suffix here instead of contains).
 				if strippedDescriptor := strip(ex.Descriptor); strippedDescriptor != "" && strip(scipName.Descriptor) == strippedDescriptor {
+					if ex.Descriptor == scipName.Descriptor {
+						// fmt.Printf("EXACT: %q\n", ex.Descriptor)
+					} else if strings.HasSuffix(ex.Descriptor, scipName.Descriptor) {
+						// fmt.Printf("SUFFIX: %q and %q\n", scipName.Descriptor, ex.Descriptor)
+						// continue
+					} else {
+						// fmt.Printf("IDK: %q and %q\n", scipName.Descriptor, ex.Descriptor)
+						// continue
+					}
+
 					symbolNames = append(symbolNames, scipName)
 				}
+			}
+
+			if len(symbolNames) > 20 {
+				fmt.Printf("TOO MANY RESULTS FOR %q\n", syntectName)
+				symbolNames = nil
 			}
 
 			if len(symbolNames) > 0 {
@@ -163,6 +195,31 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		return nil, err
 	}
 
+	revmap := map[string]map[string]struct{}{}
+	for k, vs := range scipNamesBySyntectName {
+		for _, v := range vs {
+			i := v.GetIdentifier()
+			if _, ok := revmap[i]; !ok {
+				revmap[i] = map[string]struct{}{}
+			}
+			revmap[i][k] = struct{}{}
+		}
+	}
+
+	// DEBUGGING
+	fmt.Printf("> %s\n", time.Since(n))
+	for k, vs := range scipNamesBySyntectName {
+		var ss []string
+		for _, v := range vs {
+			ss = append(ss, v.GetIdentifier())
+		}
+		fmt.Printf("\t%s: %v\n", k, len(ss))
+	}
+	fmt.Printf("> SCIP:\n")
+	for k, vs := range revmap {
+		fmt.Printf("\t%s: %v\n", k, vs)
+	}
+	n = time.Now()
 	fmt.Printf("PHASE 3\n")
 	// PHASE 3: Gather definitions for each relevant SCIP symbol
 
@@ -173,17 +230,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}
 	preciseDataList := []*preciseData{}
 
-	for syntectName, names := range scipNamesBySyntectName {
-		for _, name := range names {
-			// TODO - these are duplicated and should also be batched
-			ident := name.GetIdentifier()
-			fmt.Printf("> Fetching definitions of %q\n", ident)
+	for ident, syntectNames := range revmap {
+		// DEBUGGING
+		fmt.Printf("> Definitions for identifier %q\n", ident)
 
-			ul, err := s.codenavSvc.RenameMe(ctx, requestArgs, reqState, []string{ident})
-			if err != nil {
-				return nil, err
-			}
+		// TODO - batch more
+		ul, err := s.codenavSvc.RenameMe(ctx, requestArgs, reqState, []string{ident})
+		if err != nil {
+			return nil, err
+		}
 
+		// TODO - should this ever be non-singleton?
+		for syntectName := range syntectNames {
 			preciseDataList = append(preciseDataList, &preciseData{
 				syntectName: syntectName,
 				symbolName:  ident,
@@ -192,6 +250,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
+	// DEBUGGING
+	fmt.Printf("> %s: %v\n", time.Since(n), len(preciseDataList))
+	n = time.Now()
 	fmt.Printf("PHASE 4\n")
 	// PHASE 4: Read the files that contain a definition
 
@@ -207,6 +268,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				continue
 			}
 
+			// DEBUGGING
 			fmt.Printf("> Parsing file %q\n", key)
 
 			// TODO - archive where possible when we fetch multiple files from the
@@ -235,6 +297,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
+	// DEBUGGING
+	fmt.Printf("> %s: %v\n", time.Since(n), len(cache))
+	n = time.Now()
 	fmt.Printf("PHASE 5\n")
 	// PHASE 5: Extract the definitions for each of the relevant syntect symbols
 	// we originally requested.
@@ -243,7 +308,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// they were both generated by the same treesitter process. See the
 	// inline note below.
 
-	preciseResponse := []*types.PreciseData{}
+	preciseResponse := []*types.PreciseContext{}
 	for _, pd := range preciseDataList {
 		for _, l := range pd.location {
 			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
@@ -256,14 +321,12 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				if occ.Symbol != pd.syntectName {
 					continue
 				}
-				fmt.Println("THIS is the EnclosingRange", occ.EnclosingRange)
 				if len(occ.EnclosingRange) > 0 {
 					r := scip.NewRange(occ.EnclosingRange)
-					fmt.Println("THIS is the CONTENT", documentAndText.Content)
 					c := strings.Split(string(documentAndText.Content), "\n")
 					snippet := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
 
-					preciseResponse = append(preciseResponse, &types.PreciseData{
+					preciseResponse = append(preciseResponse, &types.PreciseContext{
 						SymbolName:        pd.symbolName,
 						SyntectDescriptor: pd.syntectName,
 						Repository:        l.Dump.RepositoryName,
@@ -277,6 +340,8 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
+	// DEBUGGING
+	fmt.Printf("> %s: %v\n", time.Since(n), preciseResponse)
 	fmt.Printf("DONE\n")
 	return preciseResponse, nil
 }
