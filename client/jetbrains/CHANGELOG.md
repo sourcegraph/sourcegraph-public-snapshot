@@ -4,6 +4,20 @@
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.3]
+
+### Added
+
 - Added recipes to editor context menu [#54430](https://github.com/sourcegraph/sourcegraph/pull/54430)
 - Figure out default repository when no files are opened in the editor [#54476](https://github.com/sourcegraph/sourcegraph/pull/54476)
 - Added `unstable-codegen` completions support [#54435](https://github.com/sourcegraph/sourcegraph/pull/54435)
@@ -20,24 +34,15 @@
 ### Fixed
 
 - Preserve new lines in the human chat message [#54417](https://github.com/sourcegraph/sourcegraph/pull/54417)
+- JetBrains: Handle response == null case when checking for embeddings [#54492](https://github.com/sourcegraph/sourcegraph/pull/54492)
 
 ### Security
 
 ## [3.0.2]
 
-### Added
-
-### Changed
-
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
-
-### Security
 
 ## [3.0.1]
 
