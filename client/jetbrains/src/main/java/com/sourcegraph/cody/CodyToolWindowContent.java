@@ -58,6 +58,15 @@ import com.sourcegraph.cody.recipes.GenerateDocStringAction;
 import com.sourcegraph.cody.recipes.GenerateUnitTestAction;
 import com.sourcegraph.cody.recipes.ImproveVariableNamesAction;
 import com.sourcegraph.cody.recipes.OptimizeCodeAction;
+import com.sourcegraph.cody.prompts.SupportedLanguages;
+import com.sourcegraph.cody.recipes.ExplainCodeDetailedPromptProvider;
+import com.sourcegraph.cody.recipes.ExplainCodeHighLevelPromptProvider;
+import com.sourcegraph.cody.recipes.FindCodeSmellsPromptProvider;
+import com.sourcegraph.cody.recipes.GenerateDocStringPromptProvider;
+import com.sourcegraph.cody.recipes.GenerateUnitTestPromptProvider;
+import com.sourcegraph.cody.recipes.ImproveVariableNamesPromptProvider;
+import com.sourcegraph.cody.recipes.Language;
+import com.sourcegraph.cody.recipes.PromptProvider;
 import com.sourcegraph.cody.recipes.RecipeRunner;
 import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
 import com.sourcegraph.cody.recipes.TranslateToLanguageAction;
@@ -149,9 +158,6 @@ class CodyToolWindowContent implements UpdatableChat {
     // contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
     // JButton releaseNotesButton = createWideButton("Generate release notes");
     // releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
-    JButton optimizeCodeButton = createRecipeButton("Optimize code");
-    optimizeCodeButton.addActionListener(
-        e -> new OptimizeCodeAction().executeRecipeWithPromptProvider(this, project));
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -163,7 +169,6 @@ class CodyToolWindowContent implements UpdatableChat {
     //    recipesPanel.add(fixupButton);
     //    recipesPanel.add(contextSearchButton);
     //    recipesPanel.add(releaseNotesButton);
-    recipesPanel.add(optimizeCodeButton);
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
