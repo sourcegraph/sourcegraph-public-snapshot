@@ -4,6 +4,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -40,7 +41,7 @@ func (c *Config) Load() {
 
 	if c.Backend == "blobstore" || c.Backend == "s3" {
 		c.S3Region = c.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_REGION", "us-east-1", "The target AWS region.")
-		c.S3Endpoint = c.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://blobstore:9000", "The target AWS endpoint.")
+		c.S3Endpoint = c.Get("PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", deploy.BlobstoreDefaultEndpoint(), "The target AWS endpoint.")
 		c.S3UsePathStyle = c.GetBool("PRECISE_CODE_INTEL_UPLOAD_AWS_USE_PATH_STYLE", "false", "Whether to use path calling (vs subdomain calling).")
 		ec2RoleCredentials := c.GetBool("PRECISE_CODE_INTEL_UPLOAD_AWS_USE_EC2_ROLE_CREDENTIALS", "false", "Whether to use the EC2 metadata API, or use the provided static credentials.")
 

@@ -28,6 +28,7 @@ go_library(
         "//internal/api",
         "//internal/codeintel/types",
         "//internal/conf/conftypes",
+        "//internal/conf/deploy",
         "//internal/database",
         "//internal/endpoint",
         "//internal/env",

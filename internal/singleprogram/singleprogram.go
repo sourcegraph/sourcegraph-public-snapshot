@@ -52,7 +52,7 @@ func Init(logger log.Logger) CleanupFunc {
 
 	setDefaultEnv(logger, "SYMBOLS_URL", "http://127.0.0.1:3184")
 	setDefaultEnv(logger, "SEARCHER_URL", "http://127.0.0.1:3181")
-	setDefaultEnv(logger, "BLOBSTORE_URL", "http://127.0.0.1:9000")
+	setDefaultEnv(logger, "BLOBSTORE_URL", deploy.BlobstoreDefaultEndpoint())
 	setDefaultEnv(logger, "EMBEDDINGS_URL", "http://127.0.0.1:9991")
 
 	// The syntax-highlighter might not be running, but this is a better default than an internal
@@ -69,9 +69,9 @@ func Init(logger log.Logger) CleanupFunc {
 	// setDefaultEnv(logger, "JAEGER_SERVER_URL", "http://localhost:16686")
 
 	// Use blobstore on localhost.
-	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", "http://localhost:9000")
+	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT", deploy.BlobstoreDefaultEndpoint())
 	setDefaultEnv(logger, "PRECISE_CODE_INTEL_UPLOAD_BACKEND", "blobstore")
-	setDefaultEnv(logger, "EMBEDDINGS_UPLOAD_AWS_ENDPOINT", "http://localhost:9000")
+	setDefaultEnv(logger, "EMBEDDINGS_UPLOAD_AWS_ENDPOINT", deploy.BlobstoreDefaultEndpoint())
 
 	// Need to override this because without a host (eg ":3080") it listens only on localhost, which
 	// is not accessible from the containers
