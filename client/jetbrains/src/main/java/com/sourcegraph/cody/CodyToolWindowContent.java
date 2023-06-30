@@ -697,7 +697,7 @@ class CodyToolWindowContent implements UpdatableChat {
     VirtualFile fileFromTheRepository =
         currentFile != null
             ? currentFile
-            : RepoUtil.getRootFileFromFirstRepository(project).orElse(null);
+            : RepoUtil.getRootFileFromFirstGitRepository(project).orElse(null);
     if (fileFromTheRepository == null) {
       return null;
     }
