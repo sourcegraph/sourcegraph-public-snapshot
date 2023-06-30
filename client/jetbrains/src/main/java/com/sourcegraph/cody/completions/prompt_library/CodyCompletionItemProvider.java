@@ -297,14 +297,9 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
               endpoint ->
                   (CompletionProvider)
                       new UnstableCodegenEndOfLineCompletionProvider(
-                          completionsClient,
-                          promptChars,
-                          responseTokens,
                           snippets,
                           prefix,
                           suffix,
-                          injectPrefix,
-                          defaultN,
                           document.fileName(),
                           endpoint,
                           document.getLanguageId()))

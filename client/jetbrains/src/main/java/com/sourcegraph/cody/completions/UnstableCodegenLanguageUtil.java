@@ -38,6 +38,7 @@ public class UnstableCodegenLanguageUtil {
         }
       };
 
+  @NotNull
   public static String getModelLanguageId(
       @Nullable String intelliJLanguageId, @NotNull String fileName) {
     String fileExtension = "." + StringUtils.substringAfterLast(fileName, ".");

@@ -29,37 +29,34 @@ import org.jetbrains.annotations.Nullable;
 
 /** This is a rough implementation loosely translating unstable-codegen.ts */
 public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvider {
-  private final String fileName;
-  private final String completionsEndpoint;
-  private final String languageId;
+  @NotNull private final String fileName;
+  @NotNull private final String completionsEndpoint;
+  @Nullable private final String intelliJLanguageId;
 
   public UnstableCodegenEndOfLineCompletionProvider(
-      SourcegraphNodeCompletionsClient completionsClient,
-      int promptChars,
-      int responseTokens,
-      List<ReferenceSnippet> snippets,
-      String prefix,
-      String suffix,
-      String injectPrefix,
-      int defaultN,
-      String fileName,
+      @NotNull List<ReferenceSnippet> snippets,
+      @NotNull String prefix,
+      @NotNull String suffix,
+      @NotNull String fileName,
       @NotNull String completionsEndpoint,
-      @Nullable String languageId) {
+      @Nullable String intelliJLanguageId) {
     super(
-        completionsClient,
-        promptChars,
-        responseTokens,
+        null, // unused
+        -1, // unused
+        -1,
         snippets,
         prefix,
         suffix,
-        injectPrefix,
-        defaultN);
+        "", // unused
+        -1 // unused
+        );
     this.fileName = fileName;
     this.completionsEndpoint = completionsEndpoint;
-    this.languageId = languageId;
+    this.intelliJLanguageId = intelliJLanguageId;
   }
 
   @Override
+  @NotNull
   protected List<Message> createPromptPrefix() {
     // it seems it's not necessary for unstable-codegen for now
     return Collections.emptyList();
@@ -74,7 +71,8 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
       params.put(
           "lang_prefix",
           "<|"
-              + UnstableCodegenLanguageUtil.getModelLanguageId(this.languageId, this.fileName)
+              + UnstableCodegenLanguageUtil.getModelLanguageId(
+                  this.intelliJLanguageId, this.fileName)
               + "|>");
       params.put("prefix", this.prefix);
       params.put("suffix", this.suffix);
@@ -97,8 +95,9 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
   }
 
   @Override
+  @NotNull
   public CompletableFuture<List<Completion>> generateCompletions(
-      CancellationToken token, Optional<Integer> n) {
+      @NotNull CancellationToken token, @NotNull Optional<Integer> n) {
     return CompletableFuture.supplyAsync(
         () -> {
           StringEntity params = getParams();
@@ -156,7 +155,8 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
         });
   }
 
-  private String postProcess(String content) {
+  @NotNull
+  private String postProcess(@NotNull String content) {
     if (content.contains("\n")) {
       return content.substring(0, content.indexOf('\n')).trim();
     } else return content.trim();
@@ -169,7 +169,9 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
     return number;
   }
 
-  private Context prepareContext(List<ReferenceSnippet> snippets, String fileName) {
+  @NotNull
+  private Context prepareContext(
+      @NotNull List<ReferenceSnippet> snippets, @NotNull String fileName) {
     List<Window> windows = new ArrayList<>();
 
     double similarity = 0.5;
@@ -181,58 +183,58 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
     return new Context(fileName, windows);
   }
 
-  class Context {
-    private String currentFilePath;
-    private List<Window> windows;
+  static class Context {
+    @NotNull private String currentFilePath;
+    @NotNull private List<Window> windows;
 
-    public Context(String currentFilePath, List<Window> windows) {
+    public Context(@NotNull String currentFilePath, @NotNull List<Window> windows) {
       this.currentFilePath = currentFilePath;
       this.windows = windows;
     }
 
-    public String getCurrentFilePath() {
+    public @NotNull String getCurrentFilePath() {
       return currentFilePath;
     }
 
-    public void setCurrentFilePath(String currentFilePath) {
+    public void setCurrentFilePath(@NotNull String currentFilePath) {
       this.currentFilePath = currentFilePath;
     }
 
-    public List<Window> getWindows() {
+    public @NotNull List<Window> getWindows() {
       return windows;
     }
 
-    public void setWindows(List<Window> windows) {
+    public void setWindows(@NotNull List<Window> windows) {
       this.windows = windows;
     }
 
     // getters and setters
   }
 
-  class Window {
-    private String filePath;
-    private String text;
+  static class Window {
+    @NotNull private String filePath;
+    @NotNull private String text;
     private double similarity;
 
-    public Window(String filePath, String text, double similarity) {
+    public Window(@NotNull String filePath, @NotNull String text, double similarity) {
       this.filePath = filePath;
       this.text = text;
       this.similarity = similarity;
     }
 
-    public String getFilePath() {
+    public @NotNull String getFilePath() {
       return filePath;
     }
 
-    public void setFilePath(String filePath) {
+    public void setFilePath(@NotNull String filePath) {
       this.filePath = filePath;
     }
 
-    public String getText() {
+    public @NotNull String getText() {
       return text;
     }
 
-    public void setText(String text) {
+    public void setText(@NotNull String text) {
       this.text = text;
     }
 
