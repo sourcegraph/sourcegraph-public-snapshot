@@ -1,13 +1,12 @@
 namespaces:
   - name: BATCH_CHANGES
     actions:
-      - READ
-      - WRITE
+      - name: READ
+      - name: WRITE
   - name: OWNERSHIP
     actions:
-      - ASSIGN
+      - name: ASSIGN
+        excludeFromUserRole: true
   - name: REPO_METADATA
     actions:
-      - WRITE
-excludeFromUserRole:
-  - OWNERSHIP
+      - name: WRITE
