@@ -25,7 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Fixed validation of Bitbucket Cloud configuration in site-admin create/update form. [#54494](https://github.com/sourcegraph/sourcegraph/pull/54494)
 
 ### Removed
 
