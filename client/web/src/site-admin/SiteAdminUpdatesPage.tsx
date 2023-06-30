@@ -36,6 +36,7 @@ import {
     AnchorLink,
 } from '@sourcegraph/wildcard'
 
+import { SiteAdminUpdatePanel as CodyAppSiteAdminUpdatePanel } from '../cody/update/SiteAdminUpdatePanel'
 import { LogOutput } from '../components/LogOutput'
 import { PageTitle } from '../components/PageTitle'
 
@@ -404,18 +405,7 @@ export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, isSour
 
             <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
             <Container className="mb-3">
-                {isSourcegraphApp ? (
-                    <Text className="mb-1">
-                        We're making regular improvements to the Cody app.
-                        <br /> For information on how to upgrade to the latest version, see{' '}
-                        <Link to="/help/app#upgrading" target="_blank" rel="noopener">
-                            our docs
-                        </Link>
-                        .
-                    </Text>
-                ) : (
-                    <SiteUpdateCheck />
-                )}
+                {isSourcegraphApp ? <CodyAppSiteAdminUpdatePanel /> : <SiteUpdateCheck />}
             </Container>
 
             {!isSourcegraphApp && (

@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react'
 
 import {
+    mdiChevronRight,
     mdiClose,
     mdiCogOutline,
     mdiDelete,
     mdiDotsVertical,
+    mdiFormatListBulleted,
     mdiOpenInNew,
     mdiPlus,
-    mdiChevronRight,
     mdiViewList,
-    mdiFormatListBulleted,
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
@@ -20,19 +20,19 @@ import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {
     Badge,
     Button,
+    ButtonLink,
+    H3,
+    H4,
     Icon,
+    Link,
     Menu,
     MenuButton,
-    MenuList,
     MenuDivider,
     MenuItem,
     MenuLink,
+    MenuList,
     PageHeader,
-    Link,
-    H4,
-    H3,
     Text,
-    ButtonLink,
     Tooltip,
 } from '@sourcegraph/wildcard'
 
@@ -46,6 +46,7 @@ import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
 import { isCodyEnabled } from '../isCodyEnabled'
+import { HomePageUpdateNotice } from '../update/HomePageUpdateNotice'
 import { CodyChatStore, useCodyChat } from '../useCodyChat'
 
 import { CodyColorIcon } from './CodyPageIcon'
@@ -162,6 +163,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="Cody AI Chat" />
+            {isSourcegraphApp && <HomePageUpdateNotice />}
             {!isSourcegraphDotCom && !isCTADismissed && !isSourcegraphApp && (
                 <MarketingBlock
                     wrapperClassName="mb-5"
