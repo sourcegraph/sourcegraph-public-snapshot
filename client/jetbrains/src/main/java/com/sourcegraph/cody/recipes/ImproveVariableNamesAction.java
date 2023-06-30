@@ -6,4 +6,9 @@ public class ImproveVariableNamesAction extends BaseRecipeAction {
   protected PromptProvider getPromptProvider() {
     return new ImproveVariableNamesPromptProvider();
   }
+
+    @Override
+    protected String getActionComponentName() {
+        return "recipe:improve-variable-names";
+    }
 }

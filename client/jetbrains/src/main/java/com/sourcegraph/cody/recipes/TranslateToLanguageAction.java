@@ -22,6 +22,7 @@ public class TranslateToLanguageAction extends DumbAwareAction {
   }
 
   public void executeAction(Project project) {
+    GraphQlLogger.logCodyEvent(project, "recipe:translate-to-language", "clicked");
     UpdatableChatHolderService updatableChatHolderService =
         project.getService(UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();

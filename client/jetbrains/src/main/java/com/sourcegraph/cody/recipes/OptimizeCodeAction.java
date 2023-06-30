@@ -6,4 +6,9 @@ public class OptimizeCodeAction extends BaseRecipeAction {
   protected PromptProvider getPromptProvider() {
     return new OptimizeCodePromptProvider();
   }
+
+    @Override
+    protected String getActionComponentName() {
+        return "recipe:optimize-code";
+    }
 }

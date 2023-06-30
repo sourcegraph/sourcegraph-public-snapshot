@@ -6,4 +6,9 @@ public class GenerateUnitTestAction extends BaseRecipeAction {
   protected PromptProvider getPromptProvider() {
     return new GenerateUnitTestPromptProvider();
   }
+
+    @Override
+    protected String getActionComponentName() {
+        return "recipe:generate-unit-test";
+    }
 }

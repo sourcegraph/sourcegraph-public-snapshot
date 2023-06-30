@@ -6,4 +6,9 @@ public class ExplainCodeDetailedAction extends BaseRecipeAction {
   protected PromptProvider getPromptProvider() {
     return new ExplainCodeDetailedPromptProvider();
   }
+
+  @Override
+  protected String getActionComponentName() {
+    return "recipe:explain-code-detailed";
+  }
 }
