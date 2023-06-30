@@ -29,6 +29,7 @@ ts_project(
         "src/autocomplete/context-embeddings.ts",
         "src/autocomplete/context-local.ts",
         "src/autocomplete/index.ts",
+        "src/autocomplete/inline.ts",
         "src/autocomplete/logger.ts",
         "src/autocomplete/manual.ts",
         "src/autocomplete/multiline.ts",
@@ -129,6 +130,7 @@ ts_project(
         "//:node_modules/isomorphic-fetch",
         "//:node_modules/marked",
         "//:node_modules/react",
+        "//:node_modules/url",
     ],
 )
 

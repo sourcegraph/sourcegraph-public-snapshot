@@ -170,6 +170,10 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
+        getWorkspaceFolder: (uri: Uri) => {
+            return new Uri('/')
+        },
+        workspaceFolders: [new Uri('/')],
     },
     ConfigurationTarget: {
         Global: undefined,

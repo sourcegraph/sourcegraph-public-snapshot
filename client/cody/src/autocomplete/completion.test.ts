@@ -1,4 +1,4 @@
-import type * as vscode from 'vscode'
+import * as vscode from 'vscode'
 
 import { createProviderConfig } from '@sourcegraph/cody-shared/src/autocomplete/providers/anthropic'
 import {
@@ -117,7 +117,7 @@ async function complete(
         },
     }
     const document: any = {
-        filename: 'test.ts',
+        uri: { fsPath: 'test.ts' },
         languageId,
         offsetAt(): number {
             return 0

@@ -113,13 +113,11 @@ ts_project(
     deps = [
         ":node_modules/@sourcegraph/cody-shared",
         ":node_modules/@sourcegraph/cody-ui",
-        ":node_modules/lru-cache",
         ":node_modules/wink-nlp-utils",
         "//:node_modules/@storybook/react",
         "//:node_modules/@types/classnames",
         "//:node_modules/@types/jest",  #keep
         "//:node_modules/@types/lodash",
-        "//:node_modules/@types/lru-cache",
         "//:node_modules/@types/node",
         "//:node_modules/@types/react",
         "//:node_modules/@types/react-dom",
