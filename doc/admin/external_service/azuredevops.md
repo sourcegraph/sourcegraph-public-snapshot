@@ -12,7 +12,7 @@ To connect Azure DevOps to Sourcegraph, create a personal access token from your
 
 ![Click on New Token](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-personal-access-token-step-2.png)
 
-3.. Under the `Organization` menu, select `All accessible organizations` to allow access to all organizations. This is required to be able to perform connection checks from the code host page and to sync repositories from multiple organizations. Alternatively, site admins may also create a unique user that has access to only the selective organizations that they would like to sync with Sourcegraph. However the token being created **must** have access to `All accessible organizations` as shown below.
+3. Under the `Organization` menu, select `All accessible organizations` to allow access to all organizations. This is required to be able to perform connection checks from the code host page and to sync repositories from multiple organizations. Alternatively, site admins may also create a unique user that has access to only the selective organizations that they would like to sync with Sourcegraph. However the token being created **must** have access to `All accessible organizations` as shown below.
 
 ![Select All accessible organizations](https://storage.googleapis.com/sourcegraph-assets/docs/images/admin/config/azure-devops-personal-access-token-step-3.png)
 
