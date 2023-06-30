@@ -275,7 +275,7 @@
       {
         "command": "cody.recipe.fixup",
         "category": "Cody",
-        "title": "Fixup"
+        "title": "Inline Fixup"
       },
       {
         "command": "cody.recipe.context-search",
@@ -390,10 +390,10 @@
       },
       {
         "command": "cody.inline.new",
-        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
-        "category": "Cody Inline Assist",
+        "title": "Start a new Thread (Ctrl+Shift+C)",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentIsEmpty"
+        "enablement": "editorFocus"
       },
       {
         "command": "cody.guardrails.debug",
@@ -480,12 +480,12 @@
         "command": "cody.recipe.inline-touch",
         "key": "ctrl+alt+/",
         "mac": "cmd+alt+/",
-        "when": "cody.activated && editorTextFocus && !editorReadonly"
+        "when": "cody.activated && editorTextFocus && editorHasSelection && config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
-        "when": "cody.activated && !editorReadonly"
+        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
       }
     ],
     "submenus": [
@@ -514,7 +514,7 @@
         },
         {
           "command": "cody.recipe.inline-touch",
-          "when": "cody.activated && editorHasSelection"
+          "when": "false"
         },
         {
           "command": "cody.recipe.generate-unit-test",
