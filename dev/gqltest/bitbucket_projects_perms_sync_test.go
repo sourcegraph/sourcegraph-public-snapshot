@@ -190,7 +190,6 @@ func TestBitbucketProjectsPermsSync_SetPendingPermissions_NonExistentUsersOnly(t
 }
 
 func TestBitbucketProjectsPermsSync_SetPendingPermissions_ExistentAndNonExistentUsers(t *testing.T) {
-	t.Skip() // disabled due to licensing issues
 	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
 		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
