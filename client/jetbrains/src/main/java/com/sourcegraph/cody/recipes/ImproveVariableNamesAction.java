@@ -7,8 +7,8 @@ public class ImproveVariableNamesAction extends BaseRecipeAction {
     return new ImproveVariableNamesPromptProvider();
   }
 
-    @Override
-    protected String getActionComponentName() {
-        return "recipe:improve-variable-names";
-    }
+  @Override
+  protected String getActionComponentName() {
+    return "recipe:improve-variable-names";
+  }
 }

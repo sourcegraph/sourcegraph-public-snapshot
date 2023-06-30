@@ -138,7 +138,8 @@ class CodyToolWindowContent implements UpdatableChat {
         e -> new TranslateToLanguageAction().executeAction(project));
     JButton gitHistoryButton = createRecipeButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(
-        e -> new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges());
+        e ->
+            new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges());
     JButton findCodeSmellsButton = createRecipeButton("Smell code");
     findCodeSmellsButton.addActionListener(
         e -> new FindCodeSmellsAction().executeRecipeWithPromptProvider(this, project));

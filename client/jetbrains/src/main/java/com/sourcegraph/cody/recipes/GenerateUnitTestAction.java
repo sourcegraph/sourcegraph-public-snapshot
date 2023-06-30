@@ -7,8 +7,8 @@ public class GenerateUnitTestAction extends BaseRecipeAction {
     return new GenerateUnitTestPromptProvider();
   }
 
-    @Override
-    protected String getActionComponentName() {
-        return "recipe:generate-unit-test";
-    }
+  @Override
+  protected String getActionComponentName() {
+    return "recipe:generate-unit-test";
+  }
 }

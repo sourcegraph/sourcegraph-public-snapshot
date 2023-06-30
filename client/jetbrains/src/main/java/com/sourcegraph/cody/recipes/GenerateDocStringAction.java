@@ -7,8 +7,8 @@ public class GenerateDocStringAction extends BaseRecipeAction {
     return new GenerateDocStringPromptProvider();
   }
 
-    @Override
-    protected String getActionComponentName() {
-        return "recipe:generate-docstring";
-    }
+  @Override
+  protected String getActionComponentName() {
+    return "recipe:generate-docstring";
+  }
 }

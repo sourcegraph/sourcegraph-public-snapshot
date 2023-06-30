@@ -7,8 +7,8 @@ public class ExplainCodeHighLevelAction extends BaseRecipeAction {
     return new ExplainCodeHighLevelPromptProvider();
   }
 
-    @Override
-    protected String getActionComponentName() {
-        return "recipe:explain-code-high-level";
-    }
+  @Override
+  protected String getActionComponentName() {
+    return "recipe:explain-code-high-level";
+  }
 }
