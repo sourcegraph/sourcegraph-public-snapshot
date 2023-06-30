@@ -44,6 +44,7 @@ export const RepositoryFileTreePage: FC<RepositoryFileTreePageProps> = props => 
     }
 
     const objectType = maybeObjectType || 'tree'
+    console.log('!!!! maybeObjectType = ', maybeObjectType, ' !!!!!')
     const mode = getModeFromPath(filePath)
 
     // Redirect OpenGrok-style line number hashes (#123, #123-321) to query parameter (?L123, ?L123-321)

@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -433,6 +434,7 @@ func (r *GitTreeEntryResolver) OwnershipStats(ctx context.Context) (OwnershipSta
 }
 
 func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {
+	fmt.Println("CALLED PARENT")
 	if r.IsRoot() {
 		return nil, nil
 	}
@@ -440,7 +442,7 @@ func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolve
 	parentPath := path.Dir(r.Path())
 	return r.commit.path(ctx, parentPath, func(stat fs.FileInfo) error {
 		if !stat.Mode().IsDir() {
-			return errors.Errorf("not a directory: %q", parentPath)
+			return errors.Errorf("not a directory, parent: %q", parentPath)
 		}
 		return nil
 	})
