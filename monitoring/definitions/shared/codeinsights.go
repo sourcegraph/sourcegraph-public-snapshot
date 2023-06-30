@@ -34,6 +34,7 @@ func (codeInsights) NewInsightsQueryRunnerQueueGroup(containerName string) monit
 				- A value = than 1 indicates that process rate = enqueue rate
 				- A value > than 1 indicates that process rate < enqueue rate
 		`),
+		QueueDequeueCacheSize: nil,
 	})
 }
 

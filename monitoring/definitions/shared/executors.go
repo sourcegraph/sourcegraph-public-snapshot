@@ -44,11 +44,13 @@ func (executors) NewExecutorQueueGroup(namespace, containerName, queueFilter str
 				- A value = than 1 indicates that process rate = enqueue rate
 				- A value > than 1 indicates that process rate < enqueue rate
 		`),
+		QueueDequeueCacheSize: NoAlertsOption("none"),
 	}
 	if !strings.Contains(queueFilter, "$") {
 		opts.QueueSize = opts.QueueSize.and(MultiInstanceOption())
 		opts.QueueMaxAge = opts.QueueMaxAge.and(MultiInstanceOption())
 		opts.QueueGrowthRate = opts.QueueGrowthRate.and(MultiInstanceOption())
+		opts.QueueDequeueCacheSize = opts.QueueDequeueCacheSize.and(MultiInstanceOption())
 	}
 	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, opts)
 }

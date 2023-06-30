@@ -78,6 +78,7 @@ func (codeIntelligence) NewUploadQueueGroup(containerName string) monitoring.Gro
 				- A value = than 1 indicates that process rate = enqueue rate
 				- A value > than 1 indicates that process rate < enqueue rate
 		`),
+		QueueDequeueCacheSize: nil,
 	})
 }
 
@@ -147,6 +148,7 @@ func (codeIntelligence) NewCommitGraphQueueGroup(containerName string) monitorin
 				- A value = than 1 indicates that process rate = enqueue rate
 				- A value > than 1 indicates that process rate < enqueue rate
 		`),
+		QueueDequeueCacheSize: nil,
 	})
 }
 
@@ -227,6 +229,7 @@ func (codeIntelligence) NewDependencyIndexQueueGroup(containerName string) monit
 				- A value = than 1 indicates that process rate = enqueue rate
 				- A value > than 1 indicates that process rate < enqueue rate
 		`),
+		QueueDequeueCacheSize: nil,
 	})
 }
 

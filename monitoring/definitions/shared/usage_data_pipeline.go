@@ -35,6 +35,7 @@ func (dataAnalytics) NewTelemetryJobQueueGroup(containerName string) monitoring.
 				- A value = than 1 indicates that process rate = enqueue rate
 				- A value > than 1 indicates that process rate < enqueue rate
 		`),
+		QueueDequeueCacheSize: nil,
 	})
 }
 
