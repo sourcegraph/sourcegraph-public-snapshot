@@ -3,6 +3,17 @@ import vscode, { Uri } from 'vscode'
 import { LightTextDocument, CompletionsTextEditor } from '@sourcegraph/cody-shared/src/autocomplete'
 
 export const textEditor: CompletionsTextEditor = {
+    getWorkspaceRootPath(): string | null {
+        const uri = vscode.window.activeTextEditor?.document?.uri
+        if (uri) {
+            const wsFolder = vscode.workspace.getWorkspaceFolder(uri)
+            if (wsFolder) {
+                return wsFolder.uri.fsPath
+            }
+        }
+        return vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath ?? null
+    },
+
     getOpenDocuments(): LightTextDocument[] {
         return vscode.workspace.textDocuments.map(doc => ({
             uri: doc.uri.toString(),

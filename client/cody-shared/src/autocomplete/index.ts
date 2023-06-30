@@ -18,6 +18,7 @@ export interface CurrentDocumentContextWithLanguage extends CurrentDocumentConte
 }
 
 export interface CompletionsTextEditor {
+    getWorkspaceRootPath(): string | null
     getOpenDocuments(): LightTextDocument[]
     getCurrentDocument(): LightTextDocument | null
     getDocumentTextTruncated(uri: string): Promise<string | null>
