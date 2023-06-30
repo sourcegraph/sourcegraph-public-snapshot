@@ -9,6 +9,8 @@
 
 ### Changed
 
+- Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
+
 ### Deprecated
 
 ### Removed
