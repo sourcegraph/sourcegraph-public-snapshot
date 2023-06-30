@@ -81,17 +81,6 @@ func (m *MultiHandler) HandleDequeue(w http.ResponseWriter, r *http.Request) {
 }
 
 func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueRequest) (executortypes.Job, bool, error) {
-	m.logger.Debug(
-		"dequeueing",
-		log.Object("codeintel",
-			log.Int("limit", m.dequeueCacheConfig.Codeintel.Limit),
-			log.Int("weight", m.dequeueCacheConfig.Codeintel.Weight),
-		),
-		log.Object("batches",
-			log.Int("limit", m.dequeueCacheConfig.Batches.Limit),
-			log.Int("weight", m.dequeueCacheConfig.Batches.Weight),
-		),
-	)
 	if err := validateWorkerHostname(req.ExecutorName); err != nil {
 		m.logger.Error(err.Error())
 		return executortypes.Job{}, false, err
