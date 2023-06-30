@@ -314,6 +314,7 @@ nogo(
             "//dev/linters/depguard",
             "//dev/linters/exportloopref",
             "//dev/linters/forbidigo",
+            "//dev/linters/gocheckcompilerdirectives",
             "//dev/linters/gocritic",
             "//dev/linters/ineffassign",
             "//dev/linters/unparam",

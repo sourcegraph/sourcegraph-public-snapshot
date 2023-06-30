@@ -10,6 +10,8 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.common.ErrorNotification;
+import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.vcs.RepoInfo;
@@ -126,5 +128,16 @@ public abstract class FileActionBase extends DumbAwareAction {
     SelectionModel sel = editor.getSelectionModel();
     VisualPosition position = sel.getSelectionEndPosition();
     return position != null ? editor.visualToLogicalPosition(position) : null;
+  }
+
+  @Override
+  public void update(@NotNull AnActionEvent e) {
+    Project project = e.getProject();
+    if (project == null) {
+      return;
+    }
+    e.getPresentation()
+        .setEnabled(
+            ConfigUtil.getInstanceType(project) != SettingsComponent.InstanceType.LOCAL_APP);
   }
 }

@@ -86,9 +86,29 @@ For example: 1.2._ for release and 1.3._ for pre-release.
 
 - Install the [VSCE CLI tool](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#vsce)
 
-### Manual Release Steps
+### Manual release steps
 
-1. Increment the `version` in [`package.json`](package.json) and then run:
+1. Increment the `version` in [`package.json`](package.json).
+1. Update the contents of the change log in [`CHANGELOG.md](CHANGELOG.md).
+1. Create PR to merge the changes into `main` ([here's an example](https://github.com/sourcegraph/sourcegraph/pull/54316)).
+1. Once merged into `main`, push the changes onto the `cody/release` branch to start a release job:
+
+- `git checkout main`
+- `git pull`
+- `git push origin main:cody/release`
+
+The last part will trigger the build pipeline for publishing the extension using the `pnpm release` command
+
+- Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+- Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
+- Publish a pre-release version to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
+  - Create a [pre-release version with minor version bump](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions) allow the Nightly build to patch the pre-release version at the correct version number through the [auto-incrementing the extension version feature from the VSCE API](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version)
+
+## Testing the release locally
+
+Before pushing a release, you can ensure that it meets the bar by building and testing it locally. To do that:
+
+1. Create a release package:
 
    ```shell
    $ cd client/cody
@@ -103,19 +123,6 @@ For example: 1.2._ for release and 1.3._ for pre-release.
    $ cd client/cody
    $ code --install-extension dist/cody.vsix
    ```
-
-3. When the changes look good, create and merge a pull request with the changes into `main` and push an update to `cody/release` branch to trigger an automated release:
-
-   ```shell
-   $ git push origin main:cody/release
-   ```
-
-This will trigger the build pipeline for publishing the extension using the `pnpm release` command
-
-- Publish release to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-- Publish release to [Open VSX Registry](https://open-vsx.org/extension/sourcegraph/cody-ai)
-- Publish a pre-release version to [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  - Create a [pre-release version with minor version bump](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#prerelease-extensions) allow the Nightly build to patch the pre-release version at the correct version number through the [auto-incrementing the extension version feature from the VSCE API](https://code.visualstudio.com/api/working-with-extensions/publishing-extension#autoincrementing-the-extension-version)
 
 ### Build Status
 
@@ -152,7 +159,7 @@ pnpm --filter cody-ai run start:debug
 5. **Specify the Debugging Endpoint**: At this point, DevTools aren't initialized yet. Therefore, you need to specify [the debugging endpoint](https://nodejs.org/en/docs/inspector/) `localhost:9333` (the port depends on the `--inspect-extensions` CLI flag used in the `start:debug` npm script)
 6. **Start Debugging Like a PRO**: yay!
 
-### Moar tips
+### More tips
 
 1. To open the webviews developer tools: cmd+shift+p and select `Developer: Toggle Developer Tools`
 2. To reload extension sources: cmd+shift+p and select `Developer: Reload Window`. If you have the watcher running it should be enough to get the latest changes to the extension host.

@@ -24,6 +24,7 @@ export type WebviewMessage =
     | { command: 'insert'; text: string }
     | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
     | { command: 'abort' }
+    | { command: 'chat-button'; action: string }
 
 /**
  * A message sent from the extension host to the webview.

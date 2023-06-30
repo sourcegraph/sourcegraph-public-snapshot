@@ -8,10 +8,12 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.config.ConfigUtil;
+import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
@@ -181,5 +183,13 @@ public class RepoUtil {
     }
 
     return VCSType.UNKNOWN;
+  }
+
+  public static Optional<VirtualFile> getRootFileFromFirstGitRepository(@NotNull Project project) {
+    Optional<Repository> firstFoundRepository =
+        VcsRepositoryManager.getInstance(project).getRepositories().stream()
+            .filter(it -> it.getVcs().getName().equals(GitVcs.NAME))
+            .findFirst();
+    return firstFoundRepository.map(Repository::getRoot);
   }
 }
