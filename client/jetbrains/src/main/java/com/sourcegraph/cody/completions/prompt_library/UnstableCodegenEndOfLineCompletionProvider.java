@@ -80,7 +80,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
       params.put("temperature", 0.2);
       params.put("max_tokens", 40);
       params.put("batch_size", makeEven(4));
-      params.put("context", mapper.writeValueAsString(prepareContext(snippets, fileName)));
+      params.put("context", ""); // mapper.writeValueAsString(prepareContext(snippets, fileName)));
       params.put("completion_type", "automatic");
 
       StringEntity result = new StringEntity(mapper.writeValueAsString(params));
