@@ -605,7 +605,7 @@ class CodyToolWindowContent implements UpdatableChat {
     if (contextMessages.size() == 0) {
       this.addMessageToChat(
           ChatMessage.createAssistantMessage(
-              "I didn't find any context for your ask. I'll try to answer without further context."));
+              "No context found for your request. Please ensure this repository is configured in Cody App or Sourcegraph Enterprise and verify the connection in Settings. I will try to answer without context"));
     } else {
 
       ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
