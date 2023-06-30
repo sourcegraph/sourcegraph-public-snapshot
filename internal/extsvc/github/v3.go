@@ -873,13 +873,13 @@ func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64)
 	return &ins, nil
 }
 
-// GetApp fetches a GitHub App for the authenticated GitHub App.
+// GetApp checks the response status of a given GitHub App
 //
 // API docs: https://docs.github.com/en/rest/apps/apps?apiVersion=2022-11-28#get-an-app
 func (c *V3Client) GetApp(ctx context.Context, appSlug string) bool {
 	var res httpResponseState
 	_, err := c.get(ctx, fmt.Sprintf("apps/%s", appSlug), &res)
-	if err != nil || res.statusCode != 200 {
+	if err != nil || res.statusCode == 404 {
 		return false
 	}
 	if res.statusCode == 200 {

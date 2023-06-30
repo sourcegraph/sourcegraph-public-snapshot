@@ -46,13 +46,10 @@ type GitHubAppsStore interface {
 	// for the GitHub App with the given App ID.
 	BulkRemoveInstallations(ctx context.Context, appID int, installationIDs []int) error
 
-	// GetApp retrieves all installations for the GitHub App with the given App ID.
-	// GetApp(ctx context.Context, appSlug string) bool
-
 	// GetInstallations retrieves all installations for the GitHub App with the given App ID.
 	GetInstallations(ctx context.Context, appID int) ([]*ghtypes.GitHubAppInstallation, error)
 
-	// SyncApp checks the GitHub App with the given ID and removes the App if not found
+	// SyncApp checks the given GitHub App exists and removes the App if not found
 	SyncApp(ctx context.Context, app ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) error
 
 	// SyncInstallations retrieves all installations for the GitHub App with the given ID
@@ -454,13 +451,17 @@ func (s *gitHubAppsStore) BulkRemoveInstallations(ctx context.Context, appID int
 }
 
 func (s *gitHubAppsStore) SyncApp(ctx context.Context, app ghtypes.GitHubApp, logger log.Logger, client ghtypes.GitHubAppClient) error {
-	logger.Info("Fetching GitHub App", log.String("appName", app.Name), log.Int("id", app.ID))
 	appExists := client.GetApp(ctx, app.Slug)
 	if !appExists {
-		s.Delete(ctx, app.ID)
-		logger.Error("GitHub App doesn't exist, deleting App:", log.String("appName", app.Name), log.Int("id", app.ID))
-		return errors.New("GitHub App doesn't exist, deleting App:")
-		// Add error handling for deleting app
+		logger.Info("GitHub App doesn't exist, deleting App...", log.String("appName", app.Name), log.Int("id", app.ID))
+		err := s.Delete(ctx, app.ID)
+
+		if err != nil {
+			logger.Error("Problem deleting GitHub App", log.Error(err), log.String("appName", app.Name), log.Int("id", app.ID))
+			return err
+		}
+
+		return errors.New("GitHub App doesn't exist, App deleted")
 	}
 	return nil
 }
