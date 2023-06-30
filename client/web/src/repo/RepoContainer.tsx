@@ -60,7 +60,6 @@ import {
     RepoRevisionContainerContext,
     RepoRevisionContainerRoute,
 } from './RepoRevisionContainer'
-import { repoSplat } from './repoRevisionContainerRoutes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { repoSettingsAreaPath } from './settings/routes'
@@ -453,7 +452,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                             {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
                                 <Route
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    path={repoSplat + path}
+                                    path={repoName + path}
                                     errorElement={<RouteError />}
                                     element={
                                         /**
@@ -470,7 +469,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 />
                             ))}
                             <Route
-                                path={repoSplat + repoSettingsAreaPath}
+                                path={repoName + repoSettingsAreaPath}
                                 errorElement={<RouteError />}
                                 // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
                                 element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
