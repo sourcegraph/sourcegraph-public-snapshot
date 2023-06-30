@@ -81,8 +81,8 @@ export const RepositoryOwnPage: React.FunctionComponent<RepositoryOwnAreaPagePro
                 <PageHeader
                     description={
                         <>
-                            Code ownership data for this repository can be provided via an upload or a
-                            committed CODEOWNERS file. <Link to="/help/own">Learn more about code ownership.</Link>
+                            Code ownership data for this repository can be provided via an upload or a committed
+                            CODEOWNERS file. <Link to="/help/own">Learn more about code ownership.</Link>
                         </>
                     }
                 >
