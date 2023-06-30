@@ -113,7 +113,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
                     .
                 </DismissibleAlert>
             )}
-            {/*Sourcegraph app creates a global policy during setup but this alert is flashing during connection to dotcom account */}
+            {/* Sourcegraph app creates a global policy during setup but this alert is flashing during connection to dotcom account */}
             {showNoEmbeddingPoliciesAlert && authenticatedUser?.siteAdmin && !isSourcegraphApp && (
                 <DismissibleAlert
                     key="no-embeddings-policies-alert"
