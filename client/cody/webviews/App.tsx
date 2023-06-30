@@ -79,15 +79,10 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'contextStatus':
                         setContextStatus(message.contextStatus)
                         break
-                    case 'errors': {
-                        if (message.isTranscriptError) {
-                            setIsTranscriptError(message.isTranscriptError)
-                        } else {
-                            setErrorMessages([...errorMessages, message.errors].slice(-5))
-                            setDebugLog([...debugLog, message.errors])
-                        }
+                    case 'errors':
+                        setErrorMessages([...errorMessages, message.errors].slice(-5))
+                        setDebugLog([...debugLog, message.errors])
                         break
-                    }
                     case 'view':
                         setView(message.messages)
                         break
@@ -97,6 +92,8 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                     case 'app-state':
                         setIsAppInstalled(message.isInstalled)
                         break
+                    case 'transcript-errors':
+                        setIsTranscriptError(message.isTranscriptError)
                 }
             }),
         [debugLog, errorMessages, view, vscodeAPI]

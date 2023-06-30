@@ -377,7 +377,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     return
                 }
                 // Display error message as assistant response
-                this.sendErrorToWebview('', true)
+                this.sendTranscriptErrorToWebview(true)
                 this.transcript.addErrorAsAssistantResponse(err)
                 // Log users out on unauth error
                 if (statusCode && statusCode >= 400 && statusCode <= 410) {
@@ -745,7 +745,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         const searchErrors = this.codebaseContext.getEmbeddingSearchErrors()
         // Display error message as assistant response for users with indexed codebase but getting search errors
         if (this.codebaseContext.checkEmbeddingsConnection() && searchErrors) {
-            this.sendErrorToWebview('', true)
+            this.sendTranscriptErrorToWebview(true)
             this.transcript.addErrorAsAssistantResponse(searchErrors)
             debug('ChatViewProvider:onLogEmbeddingsErrors', '', { verbose: searchErrors })
         }
@@ -811,8 +811,15 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      * Display error message in webview view as banner in chat view
      * It does not display error message as assistant response
      */
-    public sendErrorToWebview(errorMsg: string, transcriptError?: boolean): void {
-        void this.webview?.postMessage({ type: 'errors', errors: errorMsg, isTranscriptError: transcriptError })
+    public sendErrorToWebview(errorMsg: string): void {
+        void this.webview?.postMessage({ type: 'errors', errors: errorMsg })
+    }
+
+    /**
+     * Send transcript error to webview
+     */
+    public sendTranscriptErrorToWebview(trasncriptError: boolean): void {
+        void this.webview?.postMessage({ type: 'transcript-errors', isTranscriptError: trasncriptError })
     }
 
     /**

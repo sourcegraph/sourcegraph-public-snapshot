@@ -38,7 +38,8 @@ export type ExtensionMessage =
     | { type: 'debug'; message: string }
     | { type: 'contextStatus'; contextStatus: ChatContextStatus }
     | { type: 'view'; messages: View }
-    | { type: 'errors'; errors: string; isTranscriptError?: boolean }
+    | { type: 'errors'; errors: string }
+    | { type: 'transcript-errors'; isTranscriptError: boolean }
     | { type: 'suggestions'; suggestions: string[] }
     | { type: 'app-state'; isInstalled: boolean }
 
