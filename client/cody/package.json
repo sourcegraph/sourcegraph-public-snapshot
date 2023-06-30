@@ -283,6 +283,11 @@
         "title": "Codebase Context Search"
       },
       {
+        "command": "cody.recipe.find-code-smells",
+        "category": "Ask Cody",
+        "title": "Find Code Smells"
+      },
+      {
         "command": "cody.test.token",
         "category": "Cody",
         "title": "Set Access Token"
@@ -532,6 +537,10 @@
           "when": "cody.activated && editorHasSelection"
         },
         {
+          "command": "cody.recipe.find-code-smells",
+          "when": "cody.activated && editorHasSelection"
+        },
+        {
           "command": "cody.test.token",
           "when": "false"
         },
@@ -650,6 +659,10 @@
         },
         {
           "command": "cody.recipe.fixup",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.find-code-smells",
           "when": "cody.activated"
         },
         {

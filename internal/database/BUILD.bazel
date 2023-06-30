@@ -248,6 +248,7 @@ go_test(
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",
         "//internal/featureflag",
+        "//internal/jsonc",
         "//internal/oauthutil",
         "//internal/rbac/types",
         "//internal/temporarysettings",

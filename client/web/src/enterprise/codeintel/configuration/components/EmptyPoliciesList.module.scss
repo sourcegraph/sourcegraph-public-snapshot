@@ -18,6 +18,7 @@
 
 .content-expanded {
     grid-template-columns: 1fr [docs] min-content [divider] 1fr [cta];
+    grid-auto-rows: minmax(min-content, max-content);
 }
 
 .divider {
