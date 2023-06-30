@@ -1,4 +1,4 @@
-# Sourcegraph Own
+# Code ownership
 
 <aside class="beta">
 <p>
@@ -8,11 +8,11 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-Sourcegraph Own is a new product aimed at helping find the right person and team to contact, for any question, at any time. We are starting out with code ownership, ownership inference and assignments and are exploring ways to help you find someone to answer _every_ question.
+Code ownership is aimed at helping find the right person and team to contact, for any question, at any time. We are starting out with code ownership, ownership inference and assignments and are exploring ways to help you find someone to answer _every_ question.
 
-## Enabling Sourcegraph Own
+## Enabling code ownership
 
-Sourcegraph Own is enabled by default. If you like to disable it from being shown in the UI, you can create the feature flag `enable-ownership-panels` and set it to `false`:
+Code ownership is enabled by default. If you like to disable it from being shown in the UI, you can create the feature flag `enable-ownership-panels` and set it to `false`:
 
 - Go to **Site-admin > Feature flags**
 - If the feature flag `enable-ownership-panels` doesn't yet exist, click **Create feature flag**
@@ -42,7 +42,7 @@ Code ownership is set in 2 different ways:
 
 ## Limitations
 
-- Sourcegraph Own has been released as an MVP for 5.0. In the future of the product we intend to infer ownership beyond `CODEOWNERS` data.
+- Code ownership support has been released as an MVP for 5.0. In the future of the product we intend to infer ownership beyond `CODEOWNERS` data.
 - The feature has not been fully validated to work well on large repositories or large `CODEOWNERS` rulesets. This is a future area of improvement, but please contact us if you run into issues.
 
 ## Browsing ownership
@@ -52,11 +52,11 @@ The ownership information is available for browsing once ownership data is avail
 When displaying a source file, there is a bar above the file contents.
 
 - On the left-hand side, it displays the most recent change to the file.
-- On the right-hand side it displays the Own bar with at most 2 file owners. Any additional number of owners is also displayed.
+- On the right-hand side it displays the code ownership bar with at most 2 file owners. Any additional number of owners is also displayed.
 
-![File view showing own bar on the right hand side above the file contents](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view.png)
+![File view showing code ownership bar on the right hand side above the file contents](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view.png)
 
-After clicking on the Own bar, a bottom panel appears listing all the owners.
+After clicking on the code ownsership bar, a bottom panel appears listing all the owners.
 
 ![File view with the ownership tab selected in the bottom panel](https://storage.googleapis.com/sourcegraph-assets/docs/own/blob-view-panel.png)
 
