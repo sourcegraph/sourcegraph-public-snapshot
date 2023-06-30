@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.completions.prompt_library;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -80,7 +81,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
       params.put("temperature", 0.2);
       params.put("max_tokens", 40);
       params.put("batch_size", makeEven(4));
-      params.put("context", ""); // mapper.writeValueAsString(prepareContext(snippets, fileName)));
+      params.put("context", mapper.writeValueAsString(prepareContext(snippets, fileName)));
       params.put("completion_type", "automatic");
 
       StringEntity result = new StringEntity(mapper.writeValueAsString(params));
@@ -184,7 +185,10 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
   }
 
   static class Context {
-    @NotNull private String currentFilePath;
+    @JsonProperty("current_file_path")
+    @NotNull
+    private String currentFilePath;
+
     @NotNull private List<Window> windows;
 
     public Context(@NotNull String currentFilePath, @NotNull List<Window> windows) {
@@ -212,7 +216,10 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
   }
 
   static class Window {
-    @NotNull private String filePath;
+    @JsonProperty("file_path")
+    @NotNull
+    private String filePath;
+
     @NotNull private String text;
     private double similarity;
 
