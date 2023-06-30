@@ -1,22 +1,30 @@
 package com.sourcegraph.cody.vscode;
 
+import com.intellij.lang.Language;
+import com.intellij.lang.LanguageUtil;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.fileEditor.FileDocumentManager;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.completions.CompletionDocumentContext;
 import java.net.URI;
 import java.nio.file.Paths;
+import java.util.Optional;
+import org.jetbrains.annotations.Nullable;
 
 /** Implementation of vscode.TextDocument backed by IntelliJ's Editor. */
 public class IntelliJTextDocument implements TextDocument {
   public final Editor editor;
   public VirtualFile file;
+  public Language language;
 
-  public IntelliJTextDocument(Editor editor) {
+  public IntelliJTextDocument(Editor editor, Project project) {
     this.editor = editor;
-    this.file = FileDocumentManager.getInstance().getFile(editor.getDocument());
+    Document document = editor.getDocument();
+    this.file = FileDocumentManager.getInstance().getFile(document);
+    this.language = LanguageUtil.getLanguageForPsi(project, file);
   }
 
   @Override
@@ -62,5 +70,11 @@ public class IntelliJTextDocument implements TextDocument {
     int lineStartOffset = document.getLineStartOffset(line);
     String sameLinePrefix = document.getText(TextRange.create(lineStartOffset, offset));
     return new CompletionDocumentContext(sameLinePrefix, sameLineSuffix);
+  }
+
+  @Override
+  @Nullable
+  public String getLanguageId() {
+    return Optional.ofNullable(this.language).map(Language::getID).orElse(null);
   }
 }

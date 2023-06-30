@@ -28,6 +28,7 @@ go_test(
     deps = [
         "//internal/codygateway",
         "//internal/redispool",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_slack_go_slack//:slack",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",

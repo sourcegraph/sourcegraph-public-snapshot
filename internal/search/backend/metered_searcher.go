@@ -181,6 +181,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		attribute.Int("stats.files_loaded", statsAgg.FilesLoaded),
 		attribute.Int("stats.files_skipped", statsAgg.FilesSkipped),
 		attribute.Int("stats.match_count", statsAgg.MatchCount),
+		attribute.Int("stats.ngram_lookups", statsAgg.NgramLookups),
 		attribute.Int("stats.ngram_matches", statsAgg.NgramMatches),
 		attribute.Int("stats.shard_files_considered", statsAgg.ShardFilesConsidered),
 		attribute.Int("stats.shards_scanned", statsAgg.ShardsScanned),

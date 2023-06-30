@@ -4,7 +4,14 @@
 
 ### Added
 
+- Added recipes to editor context menu [#54430](https://github.com/sourcegraph/sourcegraph/pull/54430)
+- Figure out default repository when no files are opened in the editor [#54476](https://github.com/sourcegraph/sourcegraph/pull/54476)
+- Added `unstable-codegen` completions support [#54435](https://github.com/sourcegraph/sourcegraph/pull/54435)
+
 ### Changed
+
+- Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
+- Sourcegraph link sharing and opening file in browser actions are disabled when working with Cody app [#54473](https://github.com/sourcegraph/sourcegraph/pull/54473)
 
 ### Deprecated
 
