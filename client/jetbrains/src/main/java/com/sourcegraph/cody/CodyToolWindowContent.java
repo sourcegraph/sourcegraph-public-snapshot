@@ -51,22 +51,18 @@ import com.sourcegraph.cody.editor.EditorContextGetter;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.prompts.Preamble;
 import com.sourcegraph.cody.prompts.Prompter;
-import com.sourcegraph.cody.prompts.SupportedLanguages;
-import com.sourcegraph.cody.recipes.ExplainCodeDetailedPromptProvider;
-import com.sourcegraph.cody.recipes.ExplainCodeHighLevelPromptProvider;
-import com.sourcegraph.cody.recipes.FindCodeSmellsPromptProvider;
-import com.sourcegraph.cody.recipes.GenerateDocStringPromptProvider;
-import com.sourcegraph.cody.recipes.GenerateUnitTestPromptProvider;
-import com.sourcegraph.cody.recipes.ImproveVariableNamesPromptProvider;
-import com.sourcegraph.cody.recipes.Language;
-import com.sourcegraph.cody.recipes.OptimizeCodePromptProvider;
-import com.sourcegraph.cody.recipes.PromptProvider;
+import com.sourcegraph.cody.recipes.ExplainCodeDetailedAction;
+import com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction;
+import com.sourcegraph.cody.recipes.FindCodeSmellsAction;
+import com.sourcegraph.cody.recipes.GenerateDocStringAction;
+import com.sourcegraph.cody.recipes.GenerateUnitTestAction;
+import com.sourcegraph.cody.recipes.ImproveVariableNamesAction;
+import com.sourcegraph.cody.recipes.OptimizeCodeAction;
 import com.sourcegraph.cody.recipes.RecipeRunner;
 import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
-import com.sourcegraph.cody.recipes.TranslateToLanguagePromptProvider;
+import com.sourcegraph.cody.recipes.TranslateToLanguageAction;
 import com.sourcegraph.cody.ui.HtmlViewer;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
-import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.config.SettingsConfigurable;
@@ -82,7 +78,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -125,71 +120,29 @@ class CodyToolWindowContent implements UpdatableChat {
     RecipeRunner recipeRunner = new RecipeRunner(this.project, this);
     JButton explainCodeDetailedButton = createRecipeButton("Explain selected code (detailed)");
     explainCodeDetailedButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvents(
-              this.project, "recipe:explain-code-detailed", new String[] {"clicked"});
-          executeRecipeWithPromptProvider(recipeRunner, new ExplainCodeDetailedPromptProvider());
-        });
+        e -> new ExplainCodeDetailedAction().executeRecipeWithPromptProvider(this, project));
     JButton explainCodeHighLevelButton = createRecipeButton("Explain selected code (high level)");
     explainCodeHighLevelButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvents(
-              this.project, "recipe:explain-code-high-level", new String[] {"clicked"});
-          executeRecipeWithPromptProvider(recipeRunner, new ExplainCodeHighLevelPromptProvider());
-        });
+        e -> new ExplainCodeHighLevelAction().executeRecipeWithPromptProvider(this, project));
     JButton generateUnitTestButton = createRecipeButton("Generate a unit test");
     generateUnitTestButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvents(
-              this.project, "recipe:generate-unit-test", new String[] {"clicked"});
-          executeRecipeWithPromptProvider(recipeRunner, new GenerateUnitTestPromptProvider());
-        });
+        e -> new GenerateUnitTestAction().executeRecipeWithPromptProvider(this, project));
     JButton generateDocstringButton = createRecipeButton("Generate a docstring");
     generateDocstringButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvents(
-              this.project, "recipe:generate-docstring", new String[] {"clicked"});
-          executeRecipeWithPromptProvider(recipeRunner, new GenerateDocStringPromptProvider());
-        });
+        e -> new GenerateDocStringAction().executeRecipeWithPromptProvider(this, project));
     JButton improveVariableNamesButton = createRecipeButton("Improve variable names");
     improveVariableNamesButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvents(
-              this.project, "recipe:improve-variable-names", new String[] {"clicked"});
-          executeRecipeWithPromptProvider(recipeRunner, new ImproveVariableNamesPromptProvider());
-        });
+        e -> new ImproveVariableNamesAction().executeRecipeWithPromptProvider(this, project));
     JButton translateToLanguageButton = createRecipeButton("Translate to different language");
     translateToLanguageButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvent(this.project, "recipe:translate-to-language", "clicked");
-          runIfCodeSelected(
-              (editorSelection) -> {
-                SelectOptionManager selectOptionManager = SelectOptionManager.getInstance(project);
-                selectOptionManager.show(
-                    project,
-                    SupportedLanguages.LANGUAGE_NAMES,
-                    (selectedLanguage) -> {
-                      GraphQlLogger.logCodyEvent(
-                          this.project, "recipe:translate-to-language", "executed");
-                      recipeRunner.runRecipe(
-                          new TranslateToLanguagePromptProvider(new Language(selectedLanguage)),
-                          editorSelection);
-                    });
-              });
-        });
+        e -> new TranslateToLanguageAction().executeAction(project));
     JButton gitHistoryButton = createRecipeButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvent(
-              this.project, "recipe:summarize-recent-code-changes", "clicked");
-          new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges();
-        });
+        e ->
+            new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges());
     JButton findCodeSmellsButton = createRecipeButton("Smell code");
     findCodeSmellsButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvents(this.project, "recipe:smell-code", new String[] {"clicked"});
-          executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider());
-        });
+        e -> new FindCodeSmellsAction().executeRecipeWithPromptProvider(this, project));
     // JButton fixupButton = createWideButton("Fixup code from inline instructions");
     // fixupButton.addActionListener(e -> recipeRunner.runFixup());
     // JButton contextSearchButton = createWideButton("Codebase context search");
@@ -198,11 +151,7 @@ class CodyToolWindowContent implements UpdatableChat {
     // releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
     JButton optimizeCodeButton = createRecipeButton("Optimize code");
     optimizeCodeButton.addActionListener(
-        e -> {
-          GraphQlLogger.logCodyEvents(
-              this.project, "recipe:optimize-code", new String[] {"clicked"});
-          executeRecipeWithPromptProvider(recipeRunner, new OptimizeCodePromptProvider());
-        });
+        e -> new OptimizeCodeAction().executeRecipeWithPromptProvider(this, project));
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -369,24 +318,6 @@ class CodyToolWindowContent implements UpdatableChat {
     panelWithSettingsButton.setBorder(JBUI.Borders.empty(TEXT_MARGIN, 0));
     panelWithSettingsButton.add(goToSettingsButton, BorderLayout.CENTER);
     return panelWithSettingsButton;
-  }
-
-  private void executeRecipeWithPromptProvider(
-      RecipeRunner recipeRunner, PromptProvider promptProvider) {
-    runIfCodeSelected((editorSelection) -> recipeRunner.runRecipe(promptProvider, editorSelection));
-  }
-
-  private void runIfCodeSelected(@NotNull Consumer<String> runIfCodeSelected) {
-    EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-    String editorSelection = editorContext.getSelection();
-    if (editorSelection == null) {
-      this.activateChatTab();
-      this.addMessageToChat(
-          ChatMessage.createAssistantMessage(
-              "No code selected. Please select some code and try again."));
-      return;
-    }
-    runIfCodeSelected.accept(editorSelection);
   }
 
   @NotNull

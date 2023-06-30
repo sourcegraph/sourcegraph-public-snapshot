@@ -136,12 +136,73 @@
                 class="com.sourcegraph.cody.chat.RefreshCodyAppDetection">
         </action>
 
+        <action
+            id="cody.recipe.explainCodeHighLevel"
+            class="com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction"
+            text="Explain Code at a High Level"
+            icon="/icons/codyLogo.svg" />
+
+        <action
+            id="cody.recipe.explainCodeDetailed"
+            class="com.sourcegraph.cody.recipes.ExplainCodeDetailedAction"
+            text="Explain Code in Detail"
+            icon="/icons/codyLogo.svg" />
+
+        <action
+            id="cody.recipe.findCodeSmells"
+            class="com.sourcegraph.cody.recipes.FindCodeSmellsAction"
+            text="Find Code Smells"
+            icon="/icons/codyLogo.svg" />
+
+        <action
+            id="cody.recipe.generateDocString"
+            class="com.sourcegraph.cody.recipes.GenerateDocStringAction"
+            text="Generate Docstring"
+            icon="/icons/codyLogo.svg" />
+
+        <action
+            id="cody.recipe.generateUnitTest"
+            class="com.sourcegraph.cody.recipes.GenerateUnitTestAction"
+            text="Generate Unit Test"
+            icon="/icons/codyLogo.svg" />
+
+        <action
+            id="cody.recipe.improveVariableNames"
+            class="com.sourcegraph.cody.recipes.ImproveVariableNamesAction"
+            text="Improve Variable Names"
+            icon="/icons/codyLogo.svg" />
+
+        <action
+            id="cody.recipe.optimizeCode"
+            class="com.sourcegraph.cody.recipes.OptimizeCodeAction"
+            text="Optimize Code"
+            icon="/icons/codyLogo.svg" />
+
+        <action
+            id="cody.recipe.translateToLanguage"
+            class="com.sourcegraph.cody.recipes.TranslateToLanguageAction"
+            text="Translate to Language"
+            icon="/icons/codyLogo.svg" />
+
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
             <reference ref="cody.refreshCodyAppDetection"/>
         </group>
 
-        <group id="SourcegraphEditor" icon="/icons/codyLogo.svg" popup="true" text="Cody AI by Sourcegraph"
+        <group id="CodyEditorActions" icon="/icons/codyLogo.svg" popup="true" text="Cody"
+               searchable="false">
+            <reference ref="cody.recipe.explainCodeDetailed"/>
+            <reference ref="cody.recipe.explainCodeHighLevel"/>
+            <reference ref="cody.recipe.findCodeSmells"/>
+            <reference ref="cody.recipe.generateDocString"/>
+            <reference ref="cody.recipe.generateUnitTest"/>
+            <reference ref="cody.recipe.improveVariableNames"/>
+            <reference ref="cody.recipe.optimizeCode"/>
+            <reference ref="cody.recipe.translateToLanguage"/>
+            <add-to-group anchor="last" group-id="EditorPopupMenu"/>
+        </group>
+
+        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
                searchable="false">
             <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>

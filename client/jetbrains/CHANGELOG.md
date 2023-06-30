@@ -4,6 +4,8 @@
 
 ### Added
 
+- Added recipes to editor context menu [#54430](https://github.com/sourcegraph/sourcegraph/pull/54430)
+
 ### Changed
 
 ### Deprecated

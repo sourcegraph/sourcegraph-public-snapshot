@@ -37,7 +37,7 @@ public class GraphQlLogger {
   }
 
   public static void logCodyEvents(
-      @NotNull Project project, @NotNull String componentName, @NotNull String[] actions) {
+      @NotNull Project project, @NotNull String componentName, String... actions) {
     for (String action : actions) {
       logCodyEvent(project, componentName, action);
     }
