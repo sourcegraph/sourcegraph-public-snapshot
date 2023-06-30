@@ -209,11 +209,7 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                 {routes.map(
                     ({ path, render, condition = () => true }) =>
                         condition(repoRevisionContainerContext) && (
-                            <Route
-                                key="hardcoded-key"
-                                path={repoName + path}
-                                element={render(repoRevisionContainerContext)}
-                            />
+                            <Route key="hardcoded-key" path={path} element={render(repoRevisionContainerContext)} />
                         )
                 )}
             </Routes>
