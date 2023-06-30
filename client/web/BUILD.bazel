@@ -2176,6 +2176,7 @@ webpack_devserver(
 
 build_test(
     name = "webpack_test",
+    size = "enormous",
     targets = [
         ":bundle",
         ":bundle-enterprise",
