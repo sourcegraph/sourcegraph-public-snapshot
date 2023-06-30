@@ -11,9 +11,11 @@ import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -84,7 +86,11 @@ public class LocalAppManager {
   @NotNull
   private static Optional<String> getRunningAppVersion() {
     // TODO: do this asynchronously
-    try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+    try (CloseableHttpClient httpClient =
+        HttpClients.custom()
+            .setDefaultRequestConfig(
+                RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+            .build()) {
       HttpGet request = new HttpGet(getLocalAppUrl() + "/__version");
       HttpResponse response = httpClient.execute(request);
       int statusCode = response.getStatusLine().getStatusCode();

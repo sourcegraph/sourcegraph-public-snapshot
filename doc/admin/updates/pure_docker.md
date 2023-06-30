@@ -12,6 +12,15 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 <!-- Add changes changes to this section before release. -->
 
+## v5.1.0 ➔ v5.1.1
+
+As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.1.0...v5.1.1)
+
+For non-standard replica builds:
+- [`Customer Replica 1: ➔ v5.1.1`](https://github.com/sourcegraph/deploy-sourcegraph-docker-customer-replica-1/compare/v5.1.0...v5.1.1)
+
+#### Notes:
+
 ## v5.0.6 ➔ v5.1.0
 
 As a template, perform the same actions as the following diff in your own deployment: [`Upgrade to v5.1.0`](https://github.com/sourcegraph/deploy-sourcegraph-docker/compare/v5.0.6...v5.1.0)
