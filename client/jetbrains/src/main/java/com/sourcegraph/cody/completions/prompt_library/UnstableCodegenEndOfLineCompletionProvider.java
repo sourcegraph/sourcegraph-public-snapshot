@@ -16,6 +16,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.apache.http.HttpEntity;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.StringEntity;
@@ -109,7 +111,11 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
           httpPost.setHeader("Accept", "application/json");
           httpPost.setEntity(params);
 
-          try (CloseableHttpClient client = HttpClients.createDefault()) {
+          try (CloseableHttpClient client =
+              HttpClients.custom()
+                  .setDefaultRequestConfig(
+                      RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+                  .build()) {
             CloseableHttpResponse response = client.execute(httpPost);
             int responseCode = response.getStatusLine().getStatusCode();
             if (responseCode != 200) {
