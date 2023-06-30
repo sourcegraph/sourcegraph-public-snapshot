@@ -6,6 +6,7 @@
 
 - Added recipes to editor context menu [#54430](https://github.com/sourcegraph/sourcegraph/pull/54430)
 - Figure out default repository when no files are opened in the editor [#54476](https://github.com/sourcegraph/sourcegraph/pull/54476)
+- Added `unstable-codegen` completions support [#54435](https://github.com/sourcegraph/sourcegraph/pull/54435)
 
 ### Changed
 
