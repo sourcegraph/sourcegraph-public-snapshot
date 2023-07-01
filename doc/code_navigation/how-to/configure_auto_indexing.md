@@ -102,4 +102,8 @@ Under the hood, this information will be used to write the [.netrc](https://www.
 
 ### TypeScript/JavaScript
 
-For **NPM**, you can create a [secret named `NPM_TOKEN`](https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#set-the-token-as-an-environment-variable-on-the-cicd-server) which will be automatically picked up by the indexer.
+For **npm**, you can create a [secret named `NPM_TOKEN`](https://docs.npmjs.com/using-private-packages-in-a-ci-cd-workflow#set-the-token-as-an-environment-variable-on-the-cicd-server) which will be automatically picked up by the indexer.
+
+If you are using something like [JFrog Artifactory for self-hosted **npm** registry](https://jfrog.com/help/r/jfrog-artifactory-documentation/npm-registry), the preferred method of authentication is an `.npmrc` file. If you configure a secret named `NPMRC_DATA`, auto-indexing executor will write the contents of that secret into a `~/.nprmc` file, which should be recognised by tools like **npm** and Yarn when connecting to your private **npm** registry.
+
+For the information on contents of this file please refer to official [npm](https://docs.npmjs.com/cli/v9/configuring-npm/npmrc?v=true#auth-related-configuration) documentation.

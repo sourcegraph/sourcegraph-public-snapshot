@@ -8,18 +8,27 @@ local util = require("sg.autoindex.util")
 
 local indexer = require("sg.autoindex.indexes").get "typescript"
 local typescript_nmusl_command =
-	"N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
+"N_NODE_MIRROR=https://unofficial-builds.nodejs.org/download/release n --arch x64-musl auto"
 
 local exclude_paths = pattern.new_path_combine(shared.exclude_paths, {
 	pattern.new_path_segment("node_modules"),
 })
 
-local safe_decode = function(encoded)
-  local _, payload = pcall(function()
-    return json.decode(encoded)
-  end)
+local npmrc_steps = [[if [ "$NPMRC_DATA" ]; then
+  echo "Writing npmrc config to $HOME/.npmrc"
+  echo "$NPMRC_DATA" > ~/.npmrc
+else
+  echo "No npmrc config set, continuing"
+fi]]
 
-  return payload
+
+
+local safe_decode = function(encoded)
+	local _, payload = pcall(function()
+		return json.decode(encoded)
+	end)
+
+	return payload
 end
 
 local check_lerna_file = function(root, contents_by_path)
@@ -125,6 +134,8 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
 				'if [ -n "${VM_MEM_MB:-}" ]; then export NODE_OPTIONS="--max-old-space-size=$VM_MEM_MB"; fi'
 			)
 
+			table.insert(local_steps, npmrc_steps)
+
 			local args = { "scip-typescript", "index" }
 			if should_infer_config then
 				table.insert(args, "--infer-tsconfig")
@@ -137,7 +148,7 @@ local infer_typescript_job = function(api, tsconfig_path, should_infer_config)
 				indexer = indexer,
 				indexer_args = args,
 				outfile = "index.scip",
-				requested_envvars = { "NPM_TOKEN" },
+				requested_envvars = { "NPM_TOKEN", "NPMRC_DATA" },
 			}
 		end,
 	}))
