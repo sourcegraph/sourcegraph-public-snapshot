@@ -49,7 +49,6 @@ ts_project(
         "src/chat/recipes/langs.ts",
         "src/chat/recipes/next-questions.ts",
         "src/chat/recipes/non-stop.ts",
-        "src/chat/recipes/optimize-code.ts",
         "src/chat/recipes/recipe.ts",
         "src/chat/recipes/translate.ts",
         "src/chat/transcript/index.ts",

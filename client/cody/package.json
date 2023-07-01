@@ -233,11 +233,6 @@
         "icon": "$(feedback)"
       },
       {
-        "command": "cody.recipe.optimize-code",
-        "category": "Ask Cody",
-        "title": "Optimize Code"
-      },
-      {
         "command": "cody.recipe.explain-code",
         "category": "Ask Cody",
         "title": "Explain Code in Detail"
@@ -505,10 +500,6 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.optimize-code",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
           "command": "cody.recipe.explain-code-high-level",
           "when": "cody.activated && editorHasSelection"
         },
@@ -627,10 +618,6 @@
       "cody.submenu": [
         {
           "command": "cody.recipe.explain-code",
-          "when": "cody.activated"
-        },
-        {
-          "command": "cody.recipe.optimize-code",
           "when": "cody.activated"
         },
         {

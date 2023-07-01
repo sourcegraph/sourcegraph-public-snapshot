@@ -14,7 +14,6 @@ import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-cha
 import { InlineTouch } from '@sourcegraph/cody-shared/src/chat/recipes/inline-touch'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
 import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
-import { OptimizeCode } from '@sourcegraph/cody-shared/src/chat/recipes/optimize-code'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 
@@ -50,7 +49,6 @@ function init(): void {
         new InlineTouch(debug),
         new NextQuestions(),
         new NonStop(),
-        new OptimizeCode(),
         new ReleaseNotes(),
         new PrDescription(),
         new TranslateToLanguage(),
