@@ -131,7 +131,7 @@ def oci_deps():
     # ???
     oci_pull(
         name = "wolfi_bundled_executor_base",
-        digest = "sha256:7418c2c8a4da7a044f2e16e6e36f730fe3d3ad41e9af32f1bb471c2026b613c3",
+        digest = "sha256:2c98ce8dd633a78fce336147389ed5b528ae3a96ce47796a6fd54dc2cd34362e",
         image = "index.docker.io/sourcegraph/wolfi-bundled-executor-base",
     )
 
