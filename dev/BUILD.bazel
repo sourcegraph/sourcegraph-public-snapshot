@@ -1,4 +1,5 @@
 load("@aspect_rules_webpack//webpack:defs.bzl", "webpack_binary")
+load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
 webpack_binary(
     name = "webpack",
@@ -6,3 +7,11 @@ webpack_binary(
 )
 
 exports_files(srcs = ["eslint-report-test.sh"])
+
+write_source_files(
+    name = "write_all",
+    additional_update_targets = [
+        "//lib/codeintel/lsif/protocol:write_symbol_kind",
+        "//lib/codeintel/lsif/protocol:write_symbol_tag",
+    ],
+)
