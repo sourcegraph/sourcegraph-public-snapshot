@@ -34,7 +34,7 @@ load("@rules_oci//oci:pull.bzl", "oci_pull")
 def oci_deps():
     oci_pull(
         name = "wolfi_base",
-        digest = "sha256:787447d9103e52faf924e7fcd71bb052f5cecb99b75ec6cd2f37453405781bd3",
+        digest = "sha256:aefef406651c1dea43955f2d8b6084a5ecfc9bc459247a89eac35072c4494d0d",
         image = "index.docker.io/sourcegraph/wolfi-sourcegraph-base",
     )
 
