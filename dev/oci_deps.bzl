@@ -143,7 +143,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_batcheshelper_base",
-        digest = "sha256:2572c8ed4a5286fab501c209e88261fe21347fca6b749f90eea3d90a768f894b",
+        digest = "sha256:11e8c9f8c42d5c82a66227eee537b8ec5bc19430d9876b24a85edd375e7ee518",
         image = "index.docker.io/sourcegraph/wolfi-batcheshelper-base",
     )
 
