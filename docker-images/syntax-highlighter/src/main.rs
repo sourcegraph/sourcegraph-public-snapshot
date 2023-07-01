@@ -111,17 +111,15 @@ fn rocket() -> _ {
     // See https://github.com/GoogleContainerTools/container-structure-test
     match std::env::var("SANITY_CHECK") {
         Ok(v) if v == "true" => {
+            // Just load an example configuration and parser to sanity check
+            scip_treesitter_languages::highlights::get_highlighting_configuration("go")
+                .expect("to load go");
+
             println!("Sanity check passed, exiting without error");
             std::process::exit(0)
         }
         _ => {}
     };
-
-    // load configurations on-startup instead of on-first-request.
-    // TODO: load individual languages lazily on-request instead, currently
-    // CONFIGURATIONS.get will load every configured configuration together.
-    scip_treesitter_languages::highlights::CONFIGURATIONS
-        .get(&scip_treesitter_languages::parsers::BundledParser::Go);
 
     // Only list features if QUIET != "true"
     match std::env::var("QUIET") {

@@ -1,5 +1,5 @@
 {
-  "checksum": "c30618ed9bc87fcd2c58cc8475a042ac740f0737ae192b358049e1ff2bd6a2e9",
+  "checksum": "4aa5baec60dd5dfbac9f13233c7e6e105df9431bc9ec8ef5bcc01c2250f094cc",
   "crates": {
     "adler 1.0.2": {
       "name": "adler",
@@ -9763,8 +9763,8 @@
         "deps": {
           "common": [
             {
-              "id": "lazy_static 1.4.0",
-              "target": "lazy_static"
+              "id": "once_cell 1.17.1",
+              "target": "once_cell"
             },
             {
               "id": "scip 0.1.1",
@@ -10267,10 +10267,6 @@
             {
               "id": "base64 0.13.0",
               "target": "base64"
-            },
-            {
-              "id": "lazy_static 1.4.0",
-              "target": "lazy_static"
             },
             {
               "id": "libloading 0.7.3",

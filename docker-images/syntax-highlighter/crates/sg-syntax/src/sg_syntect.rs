@@ -1,4 +1,5 @@
 use std::fmt::Write;
+
 use syntect::{
     html::ClassStyle,
     parsing::{
@@ -234,8 +235,9 @@ impl<'a> fmt::Display for Escape<'a> {
 
 #[cfg(test)]
 mod tests {
-    use crate::{syntect_highlight, SourcegraphQuery};
     use rocket::serde::json::json;
+
+    use crate::{syntect_highlight, SourcegraphQuery};
 
     fn test_css_table_highlight(q: SourcegraphQuery, expected: &str) {
         let result = syntect_highlight(q);
@@ -250,8 +252,6 @@ mod tests {
             code: "package main\n".to_string(),
             line_length_limit: None,
             extension: String::new(),
-            theme: String::new(),
-            css: true,
         };
         let expected = "<table>\
                             <tbody>\
@@ -280,8 +280,6 @@ mod tests {
             code: "<div>test</div>".to_string(),
             line_length_limit: Some(10),
             extension: String::new(),
-            theme: String::new(),
-            css: true,
         };
         let expected = "<table>\
                             <tbody>\
@@ -304,8 +302,6 @@ mod tests {
             code: "package main\n".to_string(),
             line_length_limit: Some(5),
             extension: String::new(),
-            theme: String::new(),
-            css: true,
         };
         let expected = "<table>\
                             <tbody>\
@@ -329,8 +325,6 @@ mod tests {
                 .to_string(),
             line_length_limit: None,
             extension: String::new(),
-            theme: String::new(),
-            css: true,
         };
         let expected = "<table>\
                             <tbody>\

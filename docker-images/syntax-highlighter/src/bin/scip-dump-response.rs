@@ -46,9 +46,7 @@ fn main() -> Result<(), std::io::Error> {
         code: contents.clone(),
         filepath: "".to_string(),
         filetype: None,
-        css: false,
         line_length_limit: None,
-        theme: "".to_string(),
     });
 
     println!("  filetype: {:?}", filetype);
