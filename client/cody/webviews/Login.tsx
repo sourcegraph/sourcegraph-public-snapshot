@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { AuthStatus, DOTCOM_URL, LOCAL_APP_URL } from '../src/chat/protocol'
+import { AuthStatus, DOTCOM_URL, LOCAL_APP_URL, isOsSupportedByApp } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
 import { ErrorContainer } from './Error'
@@ -49,7 +49,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     isAppRunning = false,
     onLoginRedirect,
 }) => {
-    const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
+    const isOSSupported = isOsSupportedByApp(appOS, appArch)
 
     const onFooterButtonClick = useCallback(
         (title: 'signin' | 'support') => {

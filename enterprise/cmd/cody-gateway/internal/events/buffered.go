@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -29,6 +30,8 @@ type BufferedLogger struct {
 	bufferC chan bufferedEvent
 	// timeout is the max duration to wait to submit an event.
 	timeout time.Duration
+	// workers is the number of goroutines to spin up to consume the buffer.
+	workers int
 
 	// bufferClosed indicates if the buffer has been closed.
 	bufferClosed *atomic.Bool
@@ -45,10 +48,22 @@ var _ goroutine.BackgroundRoutine = &BufferedLogger{}
 // quite large, so we should never hit timeout in a normal situation.
 var defaultTimeout = 150 * time.Millisecond
 
+// defaultWorkers sets worker count to 1/10th of the buffer size if workerCount
+// is not provided.
+func defaultWorkers(bufferSize, workerCount int) int {
+	if workerCount != 0 {
+		return workerCount
+	}
+	if bufferSize <= 10 {
+		return 1
+	}
+	return bufferSize / 10
+}
+
 // NewBufferedLogger wraps handler with a buffered logger that submits events
 // in the background instead of in the hot-path of a request. It implements
 // goroutine.BackgroundRoutine that must be started.
-func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize int) *BufferedLogger {
+func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize, workerCount int) *BufferedLogger {
 	return &BufferedLogger{
 		log: logger.Scoped("bufferedLogger", "buffered events logger"),
 
@@ -56,6 +71,7 @@ func NewBufferedLogger(logger log.Logger, handler Logger, bufferSize int) *Buffe
 
 		bufferC: make(chan bufferedEvent, bufferSize),
 		timeout: defaultTimeout,
+		workers: defaultWorkers(bufferSize, workerCount),
 
 		bufferClosed: &atomic.Bool{},
 		flushedC:     make(chan struct{}),
@@ -105,13 +121,23 @@ func (l *BufferedLogger) LogEvent(spanCtx context.Context, event Event) error {
 // Start begins working by procssing the logger's buffer, blocking until stop
 // is called and the backlog is cleared.
 func (l *BufferedLogger) Start() {
-	for event := range l.bufferC {
-		if err := l.handler.LogEvent(event.spanCtx, event.Event); err != nil {
-			sgtrace.Logger(event.spanCtx, l.log).
-				Error("failed to log buffered event", log.Error(err))
-		}
+	var wg sync.WaitGroup
+
+	// Spin up
+	for i := 0; i < l.workers; i += 1 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for event := range l.bufferC {
+				if err := l.handler.LogEvent(event.spanCtx, event.Event); err != nil {
+					sgtrace.Logger(event.spanCtx, l.log).
+						Error("failed to log buffered event", log.Error(err))
+				}
+			}
+		}()
 	}
 
+	wg.Wait()
 	l.log.Info("all events flushed")
 	close(l.flushedC)
 }

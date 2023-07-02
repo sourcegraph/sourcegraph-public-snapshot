@@ -78,7 +78,11 @@ func doMain() error {
 	case "pre":
 		return run.Pre(ctx, logger, arguments.step, executionInput, previousResult, wd, *workspaceFilesPath)
 	case "post":
-		return run.Post(ctx, logger, &util.RealCmdRunner{}, arguments.step, executionInput, previousResult, wd, *workspaceFilesPath)
+		addSafe, err := getAddSafe()
+		if err != nil {
+			return err
+		}
+		return run.Post(ctx, logger, &util.RealCmdRunner{}, arguments.step, executionInput, previousResult, wd, *workspaceFilesPath, addSafe)
 	default:
 		return errors.Newf("invalid mode %q", arguments.mode)
 	}
@@ -156,4 +160,17 @@ func getPreviouslyExecutedStep(path string, previousStep int) (execution.AfterSt
 		}
 	}
 	return execution.AfterStepResult{}, nil
+}
+
+func getAddSafe() (bool, error) {
+	addSafeString := os.Getenv("EXECUTOR_ADD_SAFE")
+	// Default to true for backwards compatibility.
+	if addSafeString == "" {
+		return true, nil
+	}
+	addSafe, err := strconv.ParseBool(addSafeString)
+	if err != nil {
+		return false, errors.Wrap(err, "parsing EXECUTOR_ADD_SAFE boolean")
+	}
+	return addSafe, nil
 }

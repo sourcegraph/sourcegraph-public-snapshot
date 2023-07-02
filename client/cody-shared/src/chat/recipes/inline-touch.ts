@@ -101,7 +101,7 @@ export class InlineTouch implements Recipe {
                 },
                 {
                     speaker: 'assistant',
-                    prefix: 'Working on it! I will show you the new file when it is ready.\n',
+                    prefix: 'Working on it! I will show you the new file when it is ready.\n\n',
                 },
                 this.getContextMessages(selection, currentDir),
                 []

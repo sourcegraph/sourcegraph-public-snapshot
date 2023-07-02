@@ -10,6 +10,49 @@
 
 ### Removed
 
+### Fixed
+
+### Security
+
+## [3.0.3]
+
+### Added
+
+- Added recipes to editor context menu [#54430](https://github.com/sourcegraph/sourcegraph/pull/54430)
+- Figure out default repository when no files are opened in the editor [#54476](https://github.com/sourcegraph/sourcegraph/pull/54476)
+- Added `unstable-codegen` completions support [#54435](https://github.com/sourcegraph/sourcegraph/pull/54435)
+
+### Changed
+
+- Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
+- Sourcegraph link sharing and opening file in browser actions are disabled when working with Cody app [#54473](https://github.com/sourcegraph/sourcegraph/pull/54473)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+- Preserve new lines in the human chat message [#54417](https://github.com/sourcegraph/sourcegraph/pull/54417)
+- JetBrains: Handle response == null case when checking for embeddings [#54492](https://github.com/sourcegraph/sourcegraph/pull/54492)
+
+### Security
+
+## [3.0.2]
+
+### Fixed
+
+- Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
+
+## [3.0.1]
+
+### Changed
+
+- Sending message on Enter rather than Ctrl/Cmd+Enter [#54331](https://github.com/sourcegraph/sourcegraph/pull/54331)
+- Updated name to Cody AI app [#54360](https://github.com/sourcegraph/sourcegraph/pull/54360)
+
+### Removed
+
 - Sourcegraph CLI's SRC_ENDPOINT and SRC_ACCESS_TOKEN env variables overrides for the local config got removed [#54369](https://github.com/sourcegraph/sourcegraph/pull/54369)
 
 ### Fixed
@@ -21,8 +64,6 @@
 - Don't display duplicated files in the "Read" section in the chat [#54363](https://github.com/sourcegraph/sourcegraph/pull/54363)
 - Repositories without configured git remotes are now available for Cody [#54370](https://github.com/sourcegraph/sourcegraph/pull/54370)
 - Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
-
-### Security
 
 ## [3.0.0]
 
@@ -59,10 +100,6 @@
 - Disabled line highlighting in code blocks in chat [#53829](https://github.com/sourcegraph/sourcegraph/pull/53829)
 - Parallelized completion API calls and reduced debounce down to 20ms [#53592](https://github.com/sourcegraph/sourcegraph/pull/53592)
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
@@ -78,8 +115,6 @@
 - Reset conversation button re-enables "Send" button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
 - Fixed displaying message about invalid access token on any 401 error from backend [#53674](https://github.com/sourcegraph/sourcegraph/pull/53674)
 
-### Security
-
 ## [3.0.0-alpha.9]
 
 ### Added
@@ -88,16 +123,6 @@
 - Autofocus Cody chat prompt input [#53836](https://github.com/sourcegraph/sourcegraph/pull/53836)
 - Basic integration with the local Cody App [#54061](https://github.com/sourcegraph/sourcegraph/pull/54061)
 - Onboarding of the user when using local Cody App [#54298](https://github.com/sourcegraph/sourcegraph/pull/54298)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [3.0.0-alpha.7]
 
@@ -112,10 +137,6 @@
 - Convert `\t` to spaces in leading whitespace for autocomplete suggestions (according to settings) [#53743](https://github.com/sourcegraph/sourcegraph/pull/53743)
 - Disabled line highlighting in code blocks in chat [#53829](https://github.com/sourcegraph/sourcegraph/pull/53829)
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Fixed the y position at which autocomplete suggestions are rendered [#53677](https://github.com/sourcegraph/sourcegraph/pull/53677)
@@ -124,24 +145,12 @@
 - Reset conversation button re-enables "Send"
   button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
 
-### Security
-
 ## [3.0.0-alpha.6]
 
 ### Added
 
 - Chat message when access token is invalid or not
   configured [#53659](https://github.com/sourcegraph/sourcegraph/pull/53659)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
 
 ## [3.0.0-alpha.5]
 
@@ -168,10 +177,6 @@
 
 - Parallelized completion API calls and reduced debounce down to 20ms [#53592](https://github.com/sourcegraph/sourcegraph/pull/53592)
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Fixed font on the chat ui [#53540](https://github.com/sourcegraph/sourcegraph/pull/53540)
@@ -181,8 +186,6 @@
 - Fixed zero-width spaces popping up in inline autocomplete [#53599](https://github.com/sourcegraph/sourcegraph/pull/53599)
 - Reset conversation button re-enables "Send" button [#53669](https://github.com/sourcegraph/sourcegraph/pull/53669)
 - Fixed displaying message about invalid access token on any 401 error from backend [#53674](https://github.com/sourcegraph/sourcegraph/pull/53674)
-
-### Security
 
 ## [3.0.0-alpha.1]
 

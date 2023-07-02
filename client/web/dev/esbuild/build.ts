@@ -86,6 +86,7 @@ export const BUILD_OPTIONS: esbuild.BuildOptions = {
     loader: {
         '.yaml': 'text',
         '.ttf': 'file',
+        '.woff2': 'file',
         '.png': 'file',
     },
     target: 'esnext',

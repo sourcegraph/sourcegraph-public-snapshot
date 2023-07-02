@@ -14,6 +14,13 @@ export const LOCAL_APP_LOCATIONS: LocalAppPaths = {
             hasToken: true,
         },
     ],
+    linux: [
+        {
+            dir: '~/.local/share/com.sourcegraph.cody/',
+            file: 'app.json',
+            hasToken: true,
+        },
+    ],
 }
 
 export interface AppJson {
