@@ -6,7 +6,7 @@ sh_test(
     args = ["$(location //dev/tools:docsite)"],
     data = [
         "//dev/tools:docsite",
-        "//doc/cli/references:doc_files",
+        "//doc/cli/references:generate_doc",
     ] + glob(
         ["**/*"],
         ["test.sh"],

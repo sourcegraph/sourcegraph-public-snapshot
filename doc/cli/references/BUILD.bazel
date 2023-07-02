@@ -1,19 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
-go_library(
-    name = "references_lib",
-    srcs = ["doc.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/doc/cli/references",
-    visibility = ["//visibility:private"],
-    deps = ["//lib/errors"],
-)
-
-go_binary(
-    name = "references",
-    embed = [":references_lib"],
-    visibility = ["//visibility:public"],
-)
-
 filegroup(
     name = "doc_files",
     srcs = glob(
@@ -21,4 +7,84 @@ filegroup(
         ["**/*.go"],
     ),
     visibility = ["//doc:__pkg__"],
+)
+
+genrule(
+    name = "generate_doc",
+    outs = [
+        "admin.md",
+        "api.md",
+        "batch/apply.md",
+        "batch/exec.md",
+        "batch/index.md",
+        "batch/new.md",
+        "batch/preview.md",
+        "batch/remote.md",
+        "batch/repositories.md",
+        "batch/validate.md",
+        "code-intel/index.md",
+        "code-intel/upload.md",
+        "codeowners.md",
+        "config/edit.md",
+        "config/get.md",
+        "config/index.md",
+        "config/list.md",
+        "debug.md",
+        "extensions/copy.md",
+        "extensions/delete.md",
+        "extensions/get.md",
+        "extensions/index.md",
+        "extensions/list.md",
+        "extensions/publish.md",
+        "extsvc/create.md",
+        "extsvc/edit.md",
+        "extsvc/index.md",
+        "extsvc/list.md",
+        "index.md",
+        "login.md",
+        "lsif.md",
+        "orgs/create.md",
+        "orgs/delete.md",
+        "orgs/get.md",
+        "orgs/index.md",
+        "orgs/list.md",
+        "orgs/members/add.md",
+        "orgs/members/index.md",
+        "orgs/members/remove.md",
+        "repos/add-metadata.md",
+        "repos/delete-metadata.md",
+        "repos/delete.md",
+        "repos/get.md",
+        "repos/index.md",
+        "repos/list.md",
+        "repos/update-metadata.md",
+        "scout.md",
+        "search.md",
+        "serve-git.md",
+        "snapshot.md",
+        "teams.md",
+        "users/create.md",
+        "users/delete.md",
+        "users/get.md",
+        "users/index.md",
+        "users/list.md",
+        "users/prune.md",
+        "users/tag.md",
+        "validate.md",
+        "version.md",
+    ],
+    cmd_bash = "USER=nobody HOME=. $(execpath //dev/tools:src-cli) doc -o=$(RULEDIR)",
+    tools = ["//dev/tools:src-cli"],
+        visibility = ["//visibility:public"],
+)
+
+sh_test(
+    name = "generate_doc_test",
+    size = "small",
+    srcs = ["generate_doc_test.sh"],
+    args = [
+        "$(location //dev/tools:src-cli)",
+        "$(locations :generate_doc)",
+    ],
+    data = [":generate_doc", "//dev/tools:src-cli"],
 )
