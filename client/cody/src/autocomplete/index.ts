@@ -58,7 +58,7 @@ export class CodyCompletionItemProvider
             isCompletionsCacheEnabled ? new CompletionsCache() : undefined
         )
 
-        this.startLoading = statusBar.startLoading
+        this.startLoading = (label: string) => statusBar.startLoading(label)
 
         debug('CodyCompletionProvider:initialized', `provider: ${providerConfig.identifier}`)
 

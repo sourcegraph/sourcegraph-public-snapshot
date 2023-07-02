@@ -90,6 +90,10 @@ class Uri {
         this.fsPath = path
         this.path = path
     }
+
+    // public toString() {
+    //     return this.fsPath
+    // }
 }
 
 class InlineCompletionItem {
@@ -170,10 +174,8 @@ export const vsCodeMocks = {
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
-        getWorkspaceFolder: (uri: Uri) => {
-            return new Uri('/')
-        },
-        workspaceFolders: [new Uri('/')],
+        getWorkspaceFolder: (uri: Uri) => ({ uri: new Uri('/') }),
+        workspaceFolders: [{ uri: new Uri('/') }],
     },
     ConfigurationTarget: {
         Global: undefined,

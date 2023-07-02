@@ -23,9 +23,7 @@ export class InlineCompletionProvider {
     public maxPrefixChars: number
     public maxSuffixChars: number
     public abortOpenInlineCompletions: () => void = () => {}
-    public startLoading: (text: string) => () => void = () => {
-        return () => {}
-    }
+    public startLoading: (text: string) => () => void = () => () => {}
     public stopLoading: () => void = () => {}
     public lastContentChanges: LRUCache<string, 'add' | 'del'> = new LRUCache<string, 'add' | 'del'>({
         max: 10,

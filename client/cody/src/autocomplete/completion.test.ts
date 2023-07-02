@@ -35,6 +35,18 @@ jest.mock('vscode', () => ({
         onDidChangeTextDocument() {
             return null
         },
+        getWorkspaceFolder: (uri: any) => ({
+            uri: {
+                fsPath: '/',
+            },
+        }),
+        workspaceFolders: [
+            {
+                uri: {
+                    fsPath: '/',
+                },
+            },
+        ],
     },
 }))
 
@@ -117,7 +129,12 @@ async function complete(
         },
     }
     const document: any = {
-        uri: { fsPath: 'test.ts' },
+        uri: {
+            fsPath: 'test.ts',
+            toString() {
+                return 'file:///test.ts'
+            },
+        },
         languageId,
         offsetAt(): number {
             return 0
