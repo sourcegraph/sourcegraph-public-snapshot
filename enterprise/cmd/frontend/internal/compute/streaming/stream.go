@@ -55,7 +55,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tr, ctx := trace.DeprecatedNew(ctx, "compute.ServeStream", args.Query)
+	tr, ctx := trace.New(ctx, "compute.ServeStream", attribute.String("query", args.Query))
 	defer tr.FinishWithErr(&err)
 
 	eventWriter, err := streamhttp.NewWriter(w)

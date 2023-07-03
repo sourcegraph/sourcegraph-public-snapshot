@@ -11,6 +11,7 @@ import (
 
 	"github.com/gobwas/glob"
 	"github.com/grafana/regexp"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -89,7 +90,7 @@ type workspaceResolver struct {
 }
 
 func (wr *workspaceResolver) ResolveWorkspacesForBatchSpec(ctx context.Context, batchSpec *batcheslib.BatchSpec) (workspaces []*RepoWorkspace, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "workspaceResolver.ResolveWorkspacesForBatchSpec", "")
+	tr, ctx := trace.New(ctx, "workspaceResolver.ResolveWorkspacesForBatchSpec")
 	defer tr.FinishWithErr(&err)
 
 	// First, find all repositories that match the batch spec `on` definitions.
@@ -230,7 +231,7 @@ var ErrMalformedOnQueryOrRepository = batcheslib.NewValidationError(errors.New("
 
 // resolveRepositoriesOn resolves a single on: entry in a batch spec.
 func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batcheslib.OnQueryOrRepository) (_ []*RepoRevision, _ onlib.RepositoryRuleType, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "workspaceResolver.resolveRepositoriesOn", "")
+	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoriesOn")
 	defer tr.FinishWithErr(&err)
 
 	if on.RepositoriesMatchingQuery != "" {
@@ -270,7 +271,7 @@ func (wr *workspaceResolver) resolveRepositoriesOn(ctx context.Context, on *batc
 }
 
 func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name string) (_ *RepoRevision, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "workspaceResolver.resolveRepositoryName", "")
+	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoryName")
 	defer tr.FinishWithErr(&err)
 
 	repo, err := wr.store.Repos().GetByName(ctx, api.RepoName(name))
@@ -288,7 +289,7 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 }
 
 func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context, name, branch string) (_ *RepoRevision, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "workspaceResolver.resolveRepositoryNameAndBranch", "")
+	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositoryNameAndBranch")
 	defer tr.FinishWithErr(&err)
 
 	repo, err := wr.store.Repos().GetByName(ctx, api.RepoName(name))
@@ -313,7 +314,7 @@ func (wr *workspaceResolver) resolveRepositoryNameAndBranch(ctx context.Context,
 }
 
 func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Context, query string) (_ []*RepoRevision, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "workspaceResolver.resolveRepositorySearch", "")
+	tr, ctx := trace.New(ctx, "workspaceResolver.resolveRepositorySearch")
 	defer tr.FinishWithErr(&err)
 
 	query = setDefaultQueryCount(query)
@@ -426,7 +427,7 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 }
 
 func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gitserver.Client, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repoToRepoRevision", "")
+	tr, ctx := trace.New(ctx, "repoToRepoRevision")
 	defer tr.FinishWithErr(&err)
 
 	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name, false)
@@ -446,8 +447,7 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gi
 const batchIgnoreFilePath = ".batchignore"
 
 func hasBatchIgnoreFile(ctx context.Context, gitserverClient gitserver.Client, r *RepoRevision) (_ bool, err error) {
-	traceTitle := fmt.Sprintf("RepoID: %q", r.Repo.ID)
-	tr, ctx := trace.DeprecatedNew(ctx, "hasBatchIgnoreFile", traceTitle)
+	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", attribute.Int("repoID", int(r.Repo.ID)))
 	defer tr.FinishWithErr(&err)
 
 	stat, err := gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, r.Repo.Name, r.Commit, batchIgnoreFilePath)

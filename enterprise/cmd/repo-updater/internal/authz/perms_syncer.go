@@ -80,7 +80,7 @@ func NewPermsSyncer(
 // When `noPerms` is true, the method will use partial results to update permissions
 // tables even when error occurs.
 func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
-	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
+	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
 	repo, err := s.reposStore.RepoStore().Get(ctx, repoID)
@@ -257,7 +257,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	var err error
-	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
+	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms")
 	defer save(requestTypeUser, userID, &err)
 
 	user, err := s.db.Users().GetByID(ctx, userID)
@@ -709,9 +709,9 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 	return stats, nil
 }
 
-func (s *PermsSyncer) observe(ctx context.Context, family, title string) (context.Context, func(requestType, int32, *error)) {
+func (s *PermsSyncer) observe(ctx context.Context, name string) (context.Context, func(requestType, int32, *error)) {
 	began := s.clock()
-	tr, ctx := trace.DeprecatedNew(ctx, family, title)
+	tr, ctx := trace.New(ctx, name)
 
 	return ctx, func(typ requestType, id int32, err *error) {
 		defer tr.Finish()

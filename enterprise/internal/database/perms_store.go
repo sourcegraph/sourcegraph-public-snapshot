@@ -234,7 +234,7 @@ func (s *permsStore) Done(err error) error {
 }
 
 func (s *permsStore) LoadUserPermissions(ctx context.Context, userID int32) (p []authz.Permission, err error) {
-	ctx, save := s.observe(ctx, "LoadUserPermissions", "")
+	ctx, save := s.observe(ctx, "LoadUserPermissions")
 	defer func() {
 		tracingFields := []attribute.KeyValue{}
 		for _, perm := range p {
@@ -257,7 +257,7 @@ WHERE user_external_account_id = %s;
 
 	q := sqlf.Sprintf(format, accountID)
 
-	ctx, save := s.observe(ctx, "FetchReposByExternalAccount", "")
+	ctx, save := s.observe(ctx, "FetchReposByExternalAccount")
 	defer func() {
 		save(&err)
 	}()
@@ -266,7 +266,7 @@ WHERE user_external_account_id = %s;
 }
 
 func (s *permsStore) LoadRepoPermissions(ctx context.Context, repoID int32) (p []authz.Permission, err error) {
-	ctx, save := s.observe(ctx, "LoadRepoPermissions", "")
+	ctx, save := s.observe(ctx, "LoadRepoPermissions")
 	defer func() {
 		tracingFields := []attribute.KeyValue{}
 		for _, perm := range p {
@@ -367,7 +367,7 @@ func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []a
 //
 // So one repo {id:2} was removed and one was added {id:233} to the user
 func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source authz.PermsSource, replacePerms bool) (_ *database.SetPermissionsResult, err error) {
-	ctx, save := s.observe(ctx, "setUserRepoPermissions", "")
+	ctx, save := s.observe(ctx, "setUserRepoPermissions")
 	defer func() {
 		f := []attribute.KeyValue{}
 		for _, permission := range p {
@@ -701,7 +701,7 @@ DO UPDATE SET
 }
 
 func (s *permsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.UserPendingPermissions) (err error) {
-	ctx, save := s.observe(ctx, "LoadUserPendingPermissions", "")
+	ctx, save := s.observe(ctx, "LoadUserPendingPermissions")
 	defer func() { save(&err, p.Attrs()...) }()
 
 	id, ids, updatedAt, err := s.loadUserPendingPermissions(ctx, p, "")
@@ -716,7 +716,7 @@ func (s *permsStore) LoadUserPendingPermissions(ctx context.Context, p *authz.Us
 }
 
 func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *extsvc.Accounts, p *authz.RepoPermissions) (err error) {
-	ctx, save := s.observe(ctx, "SetRepoPendingPermissions", "")
+	ctx, save := s.observe(ctx, "SetRepoPendingPermissions")
 	defer func() { save(&err, append(p.Attrs(), accounts.TracingFields()...)...) }()
 
 	var txs *permsStore
@@ -823,7 +823,7 @@ func (s *permsStore) SetRepoPendingPermissions(ctx context.Context, accounts *ex
 }
 
 func (s *permsStore) loadUserPendingPermissionsIDs(ctx context.Context, q *sqlf.Query) (ids []int64, err error) {
-	ctx, save := s.observe(ctx, "loadUserPendingPermissionsIDs", "")
+	ctx, save := s.observe(ctx, "loadUserPendingPermissionsIDs")
 	defer func() {
 		save(&err,
 			attribute.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
@@ -841,7 +841,7 @@ var scanBindIDs = basestore.NewMapScanner(func(s dbutil.Scanner) (bindID string,
 })
 
 func (s *permsStore) loadExistingUserPendingPermissionsBatch(ctx context.Context, q *sqlf.Query) (bindIDsToIDs map[string]int64, err error) {
-	ctx, save := s.observe(ctx, "loadExistingUserPendingPermissionsBatch", "")
+	ctx, save := s.observe(ctx, "loadExistingUserPendingPermissionsBatch")
 	defer func() {
 		save(&err,
 			attribute.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
@@ -960,7 +960,7 @@ AND object_type = %s
 }
 
 func (s *permsStore) GrantPendingPermissions(ctx context.Context, p *authz.UserGrantPermissions) (err error) {
-	ctx, save := s.observe(ctx, "GrantPendingPermissions", "")
+	ctx, save := s.observe(ctx, "GrantPendingPermissions")
 	defer func() { save(&err, p.Attrs()...) }()
 
 	var txs *permsStore
@@ -1178,7 +1178,7 @@ AND bind_id = %s
 }
 
 func (s *permsStore) ListPendingUsers(ctx context.Context, serviceType, serviceID string) (bindIDs []string, err error) {
-	ctx, save := s.observe(ctx, "ListPendingUsers", "")
+	ctx, save := s.observe(ctx, "ListPendingUsers")
 	defer save(&err)
 
 	q := sqlf.Sprintf(`
@@ -1216,7 +1216,7 @@ AND service_id = %s
 }
 
 func (s *permsStore) DeleteAllUserPermissions(ctx context.Context, userID int32) (err error) {
-	ctx, save := s.observe(ctx, "DeleteAllUserPermissions", "")
+	ctx, save := s.observe(ctx, "DeleteAllUserPermissions")
 
 	var txs *permsStore
 	if s.InTransaction() {
@@ -1245,7 +1245,7 @@ func (s *permsStore) DeleteAllUserPermissions(ctx context.Context, userID int32)
 }
 
 func (s *permsStore) DeleteAllUserPendingPermissions(ctx context.Context, accounts *extsvc.Accounts) (err error) {
-	ctx, save := s.observe(ctx, "DeleteAllUserPendingPermissions", "")
+	ctx, save := s.observe(ctx, "DeleteAllUserPendingPermissions")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 
 	// NOTE: Practically, we don't need to clean up "repo_pending_permissions" table because the value of "id" column
@@ -1268,7 +1268,7 @@ AND bind_id IN (%s)`,
 }
 
 func (s *permsStore) execute(ctx context.Context, q *sqlf.Query, vs ...any) (err error) {
-	ctx, save := s.observe(ctx, "execute", "")
+	ctx, save := s.observe(ctx, "execute")
 	defer func() { save(&err, attribute.String("q", q.Query(sqlf.PostgresBindVar))) }()
 
 	var rows *sql.Rows
@@ -1343,7 +1343,7 @@ AND bind_id = %s
 		p.Type,
 		p.BindID,
 	)
-	ctx, save := s.observe(ctx, "load", "")
+	ctx, save := s.observe(ctx, "load")
 	defer func() {
 		save(&err,
 			attribute.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
@@ -1389,7 +1389,7 @@ AND permission = %s
 		p.RepoID,
 		p.Perm.String(),
 	)
-	ctx, save := s.observe(ctx, "load", "")
+	ctx, save := s.observe(ctx, "load")
 	defer func() {
 		save(&err,
 			attribute.String("Query.Query", q.Query(sqlf.PostgresBindVar)),
@@ -1427,7 +1427,7 @@ var scanUserIDsByExternalAccounts = basestore.NewMapScanner(func(s dbutil.Scanne
 })
 
 func (s *permsStore) GetUserIDsByExternalAccounts(ctx context.Context, accounts *extsvc.Accounts) (_ map[string]authz.UserIDWithExternalAccountID, err error) {
-	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts", "")
+	ctx, save := s.observe(ctx, "ListUsersByExternalAccounts")
 	defer func() { save(&err, accounts.TracingFields()...) }()
 
 	items := make([]*sqlf.Query, len(accounts.AccountIDs))
@@ -1784,9 +1784,9 @@ WHERE perms.repo_id IN
 	return m, nil
 }
 
-func (s *permsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...attribute.KeyValue)) { //nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
+func (s *permsStore) observe(ctx context.Context, family string) (context.Context, func(*error, ...attribute.KeyValue)) { //nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
 	began := s.clock()
-	tr, ctx := trace.DeprecatedNew(ctx, "database.PermsStore."+family, title)
+	tr, ctx := trace.New(ctx, "database.PermsStore."+family)
 
 	return ctx, func(err *error, attrs ...attribute.KeyValue) {
 		now := s.clock()

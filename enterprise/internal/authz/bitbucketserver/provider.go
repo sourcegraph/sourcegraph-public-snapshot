@@ -83,7 +83,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 		return nil, nil
 	}
 
-	tr, ctx := trace.DeprecatedNew(ctx, "bitbucket.authz.provider.FetchAccount", "")
+	tr, ctx := trace.New(ctx, "bitbucket.authz.provider.FetchAccount")
 	defer func() {
 		tr.SetAttributes(
 			attribute.String("user.name", user.Username),
