@@ -27,7 +27,7 @@ In some cases ownership signals need to be disabled for specified repositories:
 *   Ownership signals are not desired for certain repositories.
 *   Computing signals is expensive due to size of some repositories.
 
-**Exclude repositories** section under each signal in **Site admin > Code graph > Ownership signals** allows to match repositories to exlude from computing ownership signals.
+**Exclude repositories** section under each signal in **Site admin > Code graph > Ownership signals** allows to match repositories to exclude from computing ownership signals.
 Materialized list of excluded repositories is displayed for feedback.
 
 <picture title="Site admin ownership configuration page">
@@ -37,7 +37,7 @@ Materialized list of excluded repositories is displayed for feedback.
 
 ## Analytics
 
-In order to measure how many files have owners, Code search exposes analytics through **Site admin > Analytics > Own**.
+In order to measure how many files have owners, Sourcegraph exposes analytics through **Site admin > Analytics > Own**.
 These present percentage of files that have:
 
 *   Any ownership associated,
