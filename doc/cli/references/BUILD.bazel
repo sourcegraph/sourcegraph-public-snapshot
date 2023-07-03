@@ -8,7 +8,7 @@ filegroup(
         ["**/*"],
         [
             "**/*.go",
-            "test.sh",
+            "*.sh",
         ],
     ),
     visibility = ["//doc:__pkg__"],
@@ -80,7 +80,7 @@ OUTPUT_FILES = [
 genrule(
     name = "generate_doc",
     outs = OUTPUT_FILES,
-    cmd_bash = "USER=nobody HOME=. $(execpath //dev/tools:src-cli) doc -o=$(RULEDIR)",
+    cmd_bash = "GOMAXPROCS=8 USER=user HOME=/home/user $(execpath //dev/tools:src-cli) doc -o=$(RULEDIR)",
     tools = ["//dev/tools:src-cli"],
     visibility = ["//visibility:public"],
 )
