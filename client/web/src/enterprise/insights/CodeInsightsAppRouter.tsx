@@ -72,20 +72,8 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                     />
                 ))}
 
-                <Route
-                    // Deprecated URL, delete this in the 4.10
-                    path="edit/:insightId"
-                    element={<RedirectRoute getRedirectURL={({ params }) => `/insights/${params.insightId}/edit`} />}
-                />
                 <Route path=":insightId/edit" element={<EditInsightLazyPage />} />
-
-                <Route
-                    // Deprecated URL, delete this in the 4.10
-                    path="insight/:insightId"
-                    element={<RedirectRoute getRedirectURL={({ params }) => `/insights/${params.insightId}`} />}
-                />
                 <Route path=":insightId" element={<CodeInsightIndependentPage telemetryService={telemetryService} />} />
-
                 <Route path="*" element={<NotFoundPage pageType="code insights" />} />
             </Routes>
         </CodeInsightsBackendContext.Provider>
