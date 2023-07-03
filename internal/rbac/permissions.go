@@ -56,7 +56,7 @@ func ComparePermissions(dbPerms []*types.Permission, schemaPerms Schema) (added 
 		for _, a := range n.Actions {
 			parsedSchemaPerms = append(parsedSchemaPerms, &types.Permission{
 				Namespace: n.Name,
-				Action:    a,
+				Action:    a.name,
 			})
 		}
 	}
