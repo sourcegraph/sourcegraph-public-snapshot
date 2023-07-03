@@ -7,8 +7,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/openai",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//internal/embeddings/embed/client/modeltransformations",
         "//internal/conf/conftypes",
+        "//internal/embeddings/embed/client/modeltransformations",
         "//lib/errors",
     ],
 )

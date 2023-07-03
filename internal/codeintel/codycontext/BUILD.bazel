@@ -14,8 +14,8 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//internal/codeintel/codycontext/internal/store",
-        "//internal/embeddings",
         "//internal/database",
+        "//internal/embeddings",
         "//internal/metrics",
         "//internal/observation",
     ],
@@ -29,5 +29,16 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":context"],
+    deps = ["@com_github_hexops_autogold_v2//:autogold"],
+)
+
+go_test(
+    name = "codycontext_test",
+    srcs = [
+        "service_test.go",
+        "split_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":codycontext"],
     deps = ["@com_github_hexops_autogold_v2//:autogold"],
 )
