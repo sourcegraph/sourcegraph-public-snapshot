@@ -79,7 +79,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Background information](dev/background-information/index.md)
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
-- [Own (beta)](own/index.md)
+- [Code ownership (beta)](own/index.md)
   - [The CODEOWNERS format](own/codeowners_format.md)
   - [CODEOWNERS ingestion](own/codeowners_ingestion.md)
   - [Assigned ownership](own/assigned_ownership.md)
