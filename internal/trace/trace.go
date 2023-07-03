@@ -22,9 +22,16 @@ type Trace struct {
 }
 
 // DeprecatedNew returns a new Trace with the specified family and title.
+// DEPRECATED: use New instead.
 func DeprecatedNew(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
 	return tr.New(ctx, family, title, attrs...)
+}
+
+// New returns a new Trace with the specified name.
+func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
+	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
+	return tr.New(ctx, name, "", attrs...)
 }
 
 // SetAttributes sets kv as attributes of the Span.
