@@ -60,7 +60,7 @@ func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This span should be manually finished before delegating to the next handler or
 		// redirecting.
-		span, _ := trace.New(r.Context(), traceFamily, "Middleware.Handle")
+		span, _ := trace.DeprecatedNew(r.Context(), traceFamily, "Middleware.Handle")
 		span.SetAttributes(attribute.Bool("isAPIHandler", isAPIHandler))
 		span.Finish()
 		if strings.HasPrefix(r.URL.Path, authPrefix+"/") {

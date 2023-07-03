@@ -310,7 +310,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := trace.New(
+	workerSpan, workerCtxWithSpan := trace.DeprecatedNew(
 		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
 		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
 		w.options.Name,

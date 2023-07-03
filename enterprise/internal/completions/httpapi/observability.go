@@ -21,7 +21,7 @@ func Trace(ctx context.Context, family, model string) *traceBuilder {
 	// is we need to somehow make it cleaner to access fields from the
 	// request.
 
-	tr, ctx := trace.New(ctx, "completions."+family, model)
+	tr, ctx := trace.DeprecatedNew(ctx, "completions."+family, model)
 	var ev honey.Event
 	if honey.Enabled() {
 		ev = honey.NewEvent("completions")

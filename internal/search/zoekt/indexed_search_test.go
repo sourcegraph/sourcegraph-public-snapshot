@@ -718,7 +718,7 @@ func TestContextWithoutDeadline(t *testing.T) {
 	ctxWithDeadline, cancelWithDeadline := context.WithTimeout(context.Background(), time.Minute)
 	defer cancelWithDeadline()
 
-	tr, ctxWithDeadline := trace.New(ctxWithDeadline, "", "")
+	tr, ctxWithDeadline := trace.DeprecatedNew(ctxWithDeadline, "", "")
 
 	if _, ok := ctxWithDeadline.Deadline(); !ok {
 		t.Fatal("expected context to have deadline")

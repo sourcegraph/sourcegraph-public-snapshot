@@ -711,7 +711,7 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 
 func (s *PermsSyncer) observe(ctx context.Context, family, title string) (context.Context, func(requestType, int32, *error)) {
 	began := s.clock()
-	tr, ctx := trace.New(ctx, family, title)
+	tr, ctx := trace.DeprecatedNew(ctx, family, title)
 
 	return ctx, func(typ requestType, id int32, err *error) {
 		defer tr.Finish()

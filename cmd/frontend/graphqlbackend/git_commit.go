@@ -279,7 +279,7 @@ func (r *GitCommitResolver) Path(ctx context.Context, args *struct {
 }
 
 func (r *GitCommitResolver) path(ctx context.Context, path string, validate func(fs.FileInfo) error) (_ *GitTreeEntryResolver, err error) {
-	tr, ctx := trace.New(ctx, "GitCommitResolver", "path",
+	tr, ctx := trace.DeprecatedNew(ctx, "GitCommitResolver", "path",
 		attribute.String("path", path))
 	defer tr.FinishWithErr(&err)
 

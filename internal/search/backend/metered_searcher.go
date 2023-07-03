@@ -71,7 +71,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 		event.AddAttributes(attrs)
 	}
 
-	tr, ctx := trace.New(ctx, "zoekt."+cat, qStr, attrs...)
+	tr, ctx := trace.DeprecatedNew(ctx, "zoekt."+cat, qStr, attrs...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
@@ -232,7 +232,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	qStr := queryString(q)
 
-	tr, ctx := trace.New(ctx, "zoekt", cat, attrs...)
+	tr, ctx := trace.DeprecatedNew(ctx, "zoekt", cat, attrs...)
 	tr.SetAttributes(
 		attribute.Stringer("opts", opts),
 		attribute.String("query", qStr),

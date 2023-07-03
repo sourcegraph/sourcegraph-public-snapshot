@@ -291,7 +291,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	logger.Debug("SyncRepo started")
 
-	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
+	tr, ctx := trace.DeprecatedNew(ctx, "Syncer.SyncRepo", string(name))
 	defer tr.Finish()
 
 	repo, err = s.Store.RepoStore().GetByName(ctx, name)
@@ -879,7 +879,7 @@ func (s *Syncer) observeSync(
 	family, title string,
 ) (context.Context, func(*types.ExternalService, error)) {
 	began := s.Now()
-	tr, ctx := trace.New(ctx, family, title)
+	tr, ctx := trace.DeprecatedNew(ctx, family, title)
 
 	return ctx, func(svc *types.ExternalService, err error) {
 		var owner string

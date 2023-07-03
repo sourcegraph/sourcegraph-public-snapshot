@@ -1063,7 +1063,7 @@ type UsersListOptions struct {
 }
 
 func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
-	tr, ctx := trace.New(ctx, "database.Users.List", fmt.Sprintf("%+v", opt))
+	tr, ctx := trace.DeprecatedNew(ctx, "database.Users.List", fmt.Sprintf("%+v", opt))
 	defer tr.FinishWithErr(&err)
 
 	if opt == nil {
@@ -1077,7 +1077,7 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 
 // ListForSCIM lists users along with their email addresses and SCIM ExternalID.
 func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
-	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
+	tr, ctx := trace.DeprecatedNew(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
 	defer tr.FinishWithErr(&err)
 
 	if opt == nil {

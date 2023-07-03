@@ -1595,7 +1595,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 
 	var resp *http.Response
 
-	tr, ctx := trace.New(ctx, "GitHub", "",
+	tr, ctx := trace.DeprecatedNew(ctx, "GitHub", "",
 		attribute.Stringer("url", req.URL))
 	defer func() {
 		if resp != nil {

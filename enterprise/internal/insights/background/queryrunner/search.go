@@ -22,7 +22,7 @@ import (
 
 func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 	searchStream := func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
-		tr, ctx := trace.New(ctx, "CodeInsightsSearch", "searchStream")
+		tr, ctx := trace.DeprecatedNew(ctx, "CodeInsightsSearch", "searchStream")
 		defer tr.Finish()
 
 		decoder, streamResults := streaming.TabulationDecoder()
@@ -36,7 +36,7 @@ func GetSearchHandlers() map[types.GenerationMethod]InsightsHandler {
 
 	computeSearchStream := func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
 		decoder, streamResults := streaming.MatchContextComputeDecoder()
-		tr, ctx := trace.New(ctx, "CodeInsightsSearch", "computeMatchContextSearchStream")
+		tr, ctx := trace.DeprecatedNew(ctx, "CodeInsightsSearch", "computeMatchContextSearchStream")
 		defer tr.Finish()
 
 		err := streaming.ComputeMatchContextStream(ctx, query, decoder)

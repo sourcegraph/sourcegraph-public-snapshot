@@ -142,7 +142,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 }
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	tr, ctx := trace.New(ctx, "ArchiveStore", "PrepareZipPaths")
+	tr, ctx := trace.DeprecatedNew(ctx, "ArchiveStore", "PrepareZipPaths")
 	defer tr.FinishWithErr(&err)
 
 	var cacheHit bool
@@ -227,7 +227,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 // not populate the in-memory cache. You should probably be calling
 // prepareZip.
 func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, filter *searchableFilter, paths []string) (rc io.ReadCloser, err error) {
-	tr, ctx := trace.New(ctx, "ArchiveStore", "fetch",
+	tr, ctx := trace.DeprecatedNew(ctx, "ArchiveStore", "fetch",
 		attribute.String("repo", string(repo)),
 		attribute.String("commit", string(commit)))
 

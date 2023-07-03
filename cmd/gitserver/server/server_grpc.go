@@ -315,7 +315,7 @@ func (gs *GRPCServer) Search(req *proto.SearchRequest, ss proto.GitserverService
 		})
 	}
 
-	tr, ctx := trace.New(ss.Context(), "search", "")
+	tr, ctx := trace.DeprecatedNew(ss.Context(), "search", "")
 	defer tr.Finish()
 
 	limitHit, err := gs.Server.searchWithObservability(ctx, tr, args, onMatch)

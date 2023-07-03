@@ -197,7 +197,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
-	tr, ctx := trace.New(ctx, "GitTreeEntryResolver", "url")
+	tr, ctx := trace.DeprecatedNew(ctx, "GitTreeEntryResolver", "url")
 	defer tr.Finish()
 
 	if submodule := r.Submodule(); submodule != nil {
@@ -294,7 +294,7 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 }
 
 func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (_ string, err error) {
-	tr, ctx := trace.New(ctx, "gitTreeEntry", "cloneURLToRepoName")
+	tr, ctx := trace.DeprecatedNew(ctx, "gitTreeEntry", "cloneURLToRepoName")
 	defer tr.FinishWithErr(&err)
 
 	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)

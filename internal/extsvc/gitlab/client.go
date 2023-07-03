@@ -252,7 +252,7 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (respons
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var resp *http.Response
 
-	tr, ctx := trace.New(ctx, "GitLab", "",
+	tr, ctx := trace.DeprecatedNew(ctx, "GitLab", "",
 		attribute.Stringer("url", req.URL))
 	defer func() {
 		if resp != nil {

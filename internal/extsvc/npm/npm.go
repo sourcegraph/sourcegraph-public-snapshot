@@ -142,7 +142,7 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, doer httpcli.Doer,
 	}
 
 	do := func() (_ *http.Response, err error) {
-		tr, ctx := trace.New(ctx, "npm", "")
+		tr, ctx := trace.DeprecatedNew(ctx, "npm", "")
 		defer tr.FinishWithErr(&err)
 		req = req.WithContext(ctx)
 

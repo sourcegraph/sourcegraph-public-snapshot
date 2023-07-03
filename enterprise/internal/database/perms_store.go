@@ -1786,7 +1786,7 @@ WHERE perms.repo_id IN
 
 func (s *permsStore) observe(ctx context.Context, family, title string) (context.Context, func(*error, ...attribute.KeyValue)) { //nolint:unparam // unparam complains that `title` always has same value across call-sites, but that's OK
 	began := s.clock()
-	tr, ctx := trace.New(ctx, "database.PermsStore."+family, title)
+	tr, ctx := trace.DeprecatedNew(ctx, "database.PermsStore."+family, title)
 
 	return ctx, func(err *error, attrs ...attribute.KeyValue) {
 		now := s.clock()

@@ -49,7 +49,7 @@ func (tc *tracedClient) MakeRequest(
 	req *graphql.Request,
 	resp *graphql.Response,
 ) error {
-	span, ctx := trace.New(ctx, "DotComGraphQL", req.OpName)
+	span, ctx := trace.DeprecatedNew(ctx, "DotComGraphQL", req.OpName)
 
 	err := tc.c.MakeRequest(ctx, req, resp)
 
