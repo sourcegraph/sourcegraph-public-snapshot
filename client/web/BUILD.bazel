@@ -1452,6 +1452,7 @@ ts_project(
         "src/setup-wizard/components/remote-repositories-step/RemoteRepositoriesStep.tsx",
         "src/setup-wizard/components/remote-repositories-step/components/code-host-delete-modal/CodeHostDeleteModal.tsx",
         "src/setup-wizard/components/remote-repositories-step/components/code-host-delete-modal/index.ts",
+        "src/setup-wizard/components/remote-repositories-step/components/code-host-picker/AppRemoteNotice.tsx",
         "src/setup-wizard/components/remote-repositories-step/components/code-host-picker/CodeHostsPicker.tsx",
         "src/setup-wizard/components/remote-repositories-step/components/code-host-picker/index.ts",
         "src/setup-wizard/components/remote-repositories-step/components/code-hosts/CodeHostCreation.tsx",
