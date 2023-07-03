@@ -14,7 +14,8 @@ got_files="${@:2}"
 # We put them in the ./expected folder.
 USER=nobody HOME=. "$src_bin" doc -o=expected/
 
-for file in $(find expected -name "*.md"); do
+while IFS= read -r -d '' file
+do
   want="${file##expected}"
   found="false"
 
@@ -34,4 +35,4 @@ for file in $(find expected -name "*.md"); do
     echo "Couldn't find expected output $want, perhaps it's missing from the 'srcs' attribute?"
     exit 1
   fi
-done
+done < <(find expected -name "*.md" -print0)
