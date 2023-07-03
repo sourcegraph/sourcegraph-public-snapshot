@@ -89,3 +89,10 @@ To find all commits between versions `5.0` and `5.1` made by `sourcegraph/own` t
 `repo:^github\.com/sourcegraph/sourcegraph$@5.1:^5.0 type:commit file:has.owner(sourcegraph/own)`
 
 Same query can be run for any owner (a person or a team).
+
+## Further reading
+
+In order to learn more please check out our references:
+
+- [CODEOWNERS format](codeowners_format.md) - Guide to using the CODEOWNERS file format to define ownership
+- [Configuration](configuration_reference.md) - Full list of ownership configuration options
