@@ -37,6 +37,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Update scip version to include a more resilient canonicalization pass for SCIP documents. [#54304](https://github.com/sourcegraph/sourcegraph/pull/54304)
 - Fixed validation of Bitbucket Cloud configuration in site-admin create/update form. [#54494](https://github.com/sourcegraph/sourcegraph/pull/54494)
+- Fixed race condition with grpc `server.send` message. [#54500](https://github.com/sourcegraph/sourcegraph/pull/54500)
 
 ## 5.1.1
 
