@@ -31,7 +31,7 @@ func startTrace(ctx context.Context, server, method string, arg any, err *error)
 	name := server + "." + method
 	requestGauge.WithLabelValues(name).Inc()
 
-	tr, ctx := trace.DeprecatedNew(ctx, server, method,
+	tr, ctx := trace.New(ctx, server, method,
 		attribute.String("argument", fmt.Sprintf("%#v", arg)),
 		attribute.Int("userID", int(actor.FromContext(ctx).UID)),
 	)
