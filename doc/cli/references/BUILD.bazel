@@ -1,5 +1,3 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
-
 filegroup(
     name = "doc_files",
     srcs = glob(
@@ -75,7 +73,7 @@ genrule(
     ],
     cmd_bash = "USER=nobody HOME=. $(execpath //dev/tools:src-cli) doc -o=$(RULEDIR)",
     tools = ["//dev/tools:src-cli"],
-        visibility = ["//visibility:public"],
+    visibility = ["//visibility:public"],
 )
 
 sh_test(
@@ -86,5 +84,8 @@ sh_test(
         "$(location //dev/tools:src-cli)",
         "$(locations :generate_doc)",
     ],
-    data = [":generate_doc", "//dev/tools:src-cli"],
+    data = [
+        ":generate_doc",
+        "//dev/tools:src-cli",
+    ],
 )
