@@ -64,6 +64,7 @@ import com.sourcegraph.cody.ui.HtmlViewer;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
+import com.sourcegraph.config.SettingsComponent.InstanceType;
 import com.sourcegraph.config.SettingsConfigurable;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
@@ -603,9 +604,20 @@ class CodyToolWindowContent implements UpdatableChat {
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
     // Use context
     if (contextMessages.size() == 0) {
+      InstanceType instanceType = ConfigUtil.getInstanceType(project);
+
+      String report = "I found no context for your request.";
+      String ask =
+          instanceType == InstanceType.ENTERPRISE
+              ? "Please ensure this repository is added to your Sourcegraph Enterprise instance and that your access token and custom request headers are set up correctly."
+              : (instanceType == InstanceType.LOCAL_APP
+                  ? "Please ensure this repository is configured in Cody App."
+                  : (instanceType == InstanceType.DOTCOM
+                      ? "As your current server setting is Sourcegraph.com, please ensure this repository is public and indexed on Sourcegraph.com and that your access token is valid."
+                      : ""));
+      String resolution = "I will try to answer without context.";
       this.addMessageToChat(
-          ChatMessage.createAssistantMessage(
-              "I didn't find any context for your ask. I'll try to answer without further context."));
+          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution));
     } else {
 
       ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
