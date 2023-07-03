@@ -37,15 +37,15 @@ const OwnExplanation: FC<OwnExplanationProps> = ({ owners }) => {
             <div className="d-flex align-items-start">
                 <div className="flex-1">
                     <H3 as={H4} className={styles.ownExplanationTitle}>
-                        Sourcegraph Own Preview
+                        Code ownership Preview
                     </H3>
                     <Text className={classNames(styles.ownExplanationContent, 'mb-2')}>
                         Find code owners from a CODEOWNERS file in this repository, or from your external ownership
-                        tracking system here. The <Link to="/help/own">Own documentation</Link> contains more
+                        tracking system here. <Link to="/help/own">Code ownership documentation</Link> contains more
                         information.
                     </Text>
                     <Text className={classNames(styles.ownExplanationContent, 'mb-1')}>
-                        Sourcegraph Own also works in search:
+                        Code ownership also works in search:
                     </Text>
                     <Button
                         variant="secondary"
