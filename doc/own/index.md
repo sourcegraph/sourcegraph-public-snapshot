@@ -79,3 +79,10 @@ Ownership predicate can also be used without parameters:
 When performing a search the `select:file.owners` predicate will return the owners for the result of that search.
 
 For instance one can find all the owners of TypeScript files in a given repository by using `repo:^github\.com/sourcegraph/sourcegraph$ lang:TypeScript select:file.owners`.
+
+## Further reading
+
+In order to learn more please check out our references:
+
+- [CODEOWNERS format](codeowners_format.md) - Guide to using the CODEOWNERS file format to define ownership
+- [Configuration](configuration_reference.md) - Full list of ownership configuration options
