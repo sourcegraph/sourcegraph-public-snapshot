@@ -91,21 +91,6 @@ http_archive(
     ],
 )
 
-SRC_CLI_VERSION = "5.0.3"
-
-http_archive(
-    name = "src-cli-linux-amd64",
-    build_file_content = """
-filegroup(
-    name = "src-cli-linux-amd64",
-    srcs = ["src"],
-    visibility = ["//visibility:public"],
-)
-    """,
-    sha256 = "d125d732ad4c47ae6977c49574b01cc1b3c943b2a2108142267438e829538aa3",
-    url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
-)
-
 http_archive(
     name = "container_structure_test",
     sha256 = "42edb647b51710cb917b5850380cc18a6c925ad195986f16e3b716887267a2d7",
