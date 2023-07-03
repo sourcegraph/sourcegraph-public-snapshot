@@ -36,7 +36,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_server_base",
-        digest = "sha256:2e7c1efa275df630d33121a53cbd40758fbdd4fa1fa5a31d256f8d2891e87c7e",
+        digest = "sha256:8c43c861026ff3706849bf56d22ef2a1714f76e739fb2cd9f89b78abeec39bd2",
         image = "us.gcr.io/sourcegraph-dev/wolfi-server-base",
     )
 
@@ -54,7 +54,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_postgres_exporter_base",
-        digest = "sha256:b51ae2b70cd7cd7883e8057d69a74c959fd5f03d723538908ea8f47a0a322e02",
+        digest = "sha256:df37c2ab0fac3e0215b19f51cf993971a71db9fb4db1230070e937d7842f154b",
         image = "us.gcr.io/sourcegraph-dev/wolfi-postgres-exporter-base",
     )
 
@@ -150,7 +150,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_node_exporter_base",
-        digest = "sha256:9f7149d05afad6e3581a7a4bc13c60cad5d314bab7307e1dcd47d1c6bb42c497",
+        digest = "sha256:85b5b0f1cf4df378ac007b846a84fde3a5b00696394bfa2dbc6ca0118ba31999",
         image = "us.gcr.io/sourcegraph-dev/wolfi-node-exporter-base",
     )
 

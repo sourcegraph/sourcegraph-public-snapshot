@@ -7,6 +7,6 @@ contents:
     - mailcap
 
     ## batcheshelper packages
-    - 'git>=2.38.1'
+    - 'git'
 
 # MANUAL REBUILD: Wed Jun 14 15:27:52 BST 2023
