@@ -325,6 +325,7 @@ go_library(
         "//lib/batches",
         "//lib/errors",
         "//lib/output",
+        "//lib/pointers",
         "//schema",
         "@com_github_gogo_protobuf//jsonpb",
         "@com_github_golang_jwt_jwt_v4//:jwt",
