@@ -13,7 +13,7 @@ export function reformatBotMessage(text: string, prefix: string): string {
     return fixOpenMarkdownCodeBlock(reformattedMessage)
 }
 
-function fixOpenMarkdownCodeBlock(text: string): string {
+export function fixOpenMarkdownCodeBlock(text: string): string {
     const occurrences = text.split('```').length - 1
     if (occurrences % 2 === 1) {
         return text + '\n```'

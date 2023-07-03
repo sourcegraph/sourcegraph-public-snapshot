@@ -11,6 +11,7 @@ import {
     CopyButtonProps,
     ChatUISubmitButtonProps,
 } from '../Chat'
+import { useTypewriterEffect } from '../hooks/useTypewriterEffect'
 
 import { BlinkingCursor } from './BlinkingCursor'
 import { CodeBlocks } from './CodeBlocks'
@@ -76,6 +77,12 @@ export const TranscriptItem: React.FunctionComponent<
     submitButtonComponent: SubmitButton,
     chatInputClassName,
 }) {
+    // const displayText = useTypewriterEffect({
+    //     text: message.displayText || '',
+    //     baseDelay: 100,
+    //     immediate: !inProgress,
+    // })
+
     const [formInput, setFormInput] = useState<string>(message.displayText ?? '')
     const textarea =
         TextArea && beingEdited && editButtonOnSubmit && SubmitButton ? (

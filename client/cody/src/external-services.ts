@@ -15,7 +15,6 @@ import { isError } from '@sourcegraph/cody-shared/src/utils'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import { logger } from './log'
-import { getRerankWithLog } from './logged-rerank'
 
 interface ExternalServices {
     intentDetector: IntentDetector
@@ -57,8 +56,7 @@ export async function configureExternalServices(
         embeddingsSearch,
         new LocalKeywordContextFetcher(rgPath, editor, chatClient),
         new FilenameContextFetcher(rgPath, editor, chatClient),
-        undefined,
-        getRerankWithLog(chatClient)
+        undefined
     )
 
     const guardrails = new SourcegraphGuardrailsClient(client)
