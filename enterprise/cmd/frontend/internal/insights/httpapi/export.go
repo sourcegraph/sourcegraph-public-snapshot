@@ -90,7 +90,7 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 	if !currentActor.IsAuthenticated() {
 		return nil, authenticationError
 	}
-	userID, orgIDs, err := h.permStore.GetUserPermissions(ctx)
+	userIDs, orgIDs, err := h.permStore.GetUserPermissions(ctx)
 	if err != nil {
 		return nil, authenticationError
 	}
@@ -118,8 +118,8 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 
 	visibleViewSeries, err := h.insightStore.GetAll(ctx, store.InsightQueryArgs{
 		UniqueIDs:            []string{insightViewId},
-		UserID:               userID,
-		OrgID:                orgIDs,
+		UserIDs:              userIDs,
+		OrgIDs:               orgIDs,
 		WithoutAuthorization: false,
 	})
 	if err != nil {
