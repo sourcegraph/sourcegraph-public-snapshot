@@ -10,7 +10,6 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { AuthenticatedUser } from '../../auth'
 import { withAuthenticatedUser } from '../../auth/withAuthenticatedUser'
 import { NotFoundPage } from '../../components/HeroPage'
-import { RedirectRoute } from '../../components/RedirectRoute'
 import { GetFirstAvailableDashboardResult, GetFirstAvailableDashboardVariables } from '../../graphql-operations'
 
 import { CodeInsightsBackendContext } from './core'
@@ -71,18 +70,7 @@ export const CodeInsightsAppRouter = withAuthenticatedUser<CodeInsightsAppRouter
                         element={<CodeInsightsRootPage activeTab={activeTab} telemetryService={telemetryService} />}
                     />
                 ))}
-                <Route
-                    // Deprecated URL, delete this in the 4.10
-                    path="edit/:insightId"
-                    element={<RedirectRoute getRedirectURL={({ params }) => `/insights/${params.insightId}/edit`} />}
-                />
                 <Route path=":insightId/edit" element={<EditInsightLazyPage />} />
-
-                <Route
-                    // Deprecated URL, delete this in the 4.10
-                    path="insight/:insightId"
-                    element={<RedirectRoute getRedirectURL={({ params }) => `/insights/${params.insightId}`} />}
-                />
                 <Route path=":insightId" element={<CodeInsightIndependentPage telemetryService={telemetryService} />} />
 
                 <Route path="*" element={<NotFoundPage pageType="code insights" />} />

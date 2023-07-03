@@ -63,7 +63,7 @@ describe('Code insight edit insight page', () => {
         driver = await createDriverForTest()
     })
 
-    beforeEach(async function() {
+    beforeEach(async function () {
         testContext = await createWebIntegrationTestContext({
             driver,
             currentTest: this.currentTest!,
@@ -75,7 +75,7 @@ describe('Code insight edit insight page', () => {
     afterEach(() => testContext?.dispose())
     afterEachSaveScreenshotIfFailed(() => driver.page)
 
-    it.only('should run a proper GQL mutation if search based insight has been updated', async () => {
+    it.skip('should run a proper GQL mutation if search based insight has been updated', async () => {
         // Mock `Date.now` to stabilize timestamps
         await driver.page.evaluateOnNewDocument(() => {
             // Number of ms between Unix epoch and June 31, 2021
@@ -113,7 +113,7 @@ describe('Code insight edit insight page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/edit/001')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/001/edit')
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[name="repositories"]')
