@@ -118,8 +118,8 @@ func (h *ExportHandler) exportCodeInsightData(ctx context.Context, id string) (*
 
 	visibleViewSeries, err := h.insightStore.GetAll(ctx, store.InsightQueryArgs{
 		UniqueIDs:            []string{insightViewId},
-		UserID:               userID,
-		OrgID:                orgIDs,
+		UserIDs:              userID,
+		OrgIDs:               orgIDs,
 		WithoutAuthorization: false,
 	})
 	if err != nil {
