@@ -785,6 +785,18 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		return nil
 	}
 
+	if completionsConfig.ChatModelMaxTokens == 0 {
+		completionsConfig.ChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.ChatModel)
+	}
+
+	if completionsConfig.FastChatModelMaxTokens == 0 {
+		completionsConfig.FastChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.FastChatModel)
+	}
+
+	if completionsConfig.CompletionModelMaxTokens == 0 {
+		completionsConfig.CompletionModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.CompletionModel)
+	}
+
 	computedConfig := &conftypes.CompletionsConfig{
 		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
 		AccessToken:                      completionsConfig.AccessToken,
@@ -981,4 +993,49 @@ func defaultTo(val, def int) int {
 		return def
 	}
 	return val
+}
+
+func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model string) int {
+	switch provider {
+	case conftypes.CompletionsProviderNameSourcegraph:
+		if strings.HasPrefix(model, "openai/") {
+			return openaiDefaultMaxPromptTokens(strings.TrimPrefix(model, "openai/"))
+		}
+		if strings.HasPrefix(model, "anthropic/") {
+			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic/"))
+		}
+		// Fallback for weird values.
+		return 9_000
+	case conftypes.CompletionsProviderNameAnthropic:
+		return anthropicDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameOpenAI:
+		return openaiDefaultMaxPromptTokens(model)
+	}
+
+	// Should be unreachable.
+	return 9_000
+}
+
+func anthropicDefaultMaxPromptTokens(model string) int {
+	if strings.HasSuffix(model, "-100k") {
+		return 100_000
+
+	}
+	// For now, all other claude models have a 9k token window.
+	return 9_000
+}
+
+func openaiDefaultMaxPromptTokens(model string) int {
+	switch model {
+	case "gpt-4":
+		return 8_000
+	case "gpt-4-32k":
+		return 32_000
+	case "gpt-3.5-turbo":
+		return 4_000
+	case "gpt-3.5-turbo-16k":
+		return 16_000
+	default:
+		return 4_000
+	}
 }
