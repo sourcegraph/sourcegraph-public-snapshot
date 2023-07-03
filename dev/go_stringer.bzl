@@ -19,7 +19,14 @@ GO_REL_PATH=`dirname $(location @go_sdk//:bin/go)`
 GO_ABS_PATH=`cd $$GO_REL_PATH && pwd`
 # Set GOPATH to something to workaround https://github.com/golang/go/issues/43938
 env PATH=$$GO_ABS_PATH HOME=$(GENDIR) GOPATH=/nonexist-gopath \
-$(location @org_golang_x_tools//cmd/stringer:stringer) -output=$@ -type={typ} {args} $<
+$(location @org_golang_x_tools//cmd/stringer:stringer) -output=$@ -type={typ} {args} $<; \
+# Because stringer will add a comment on the file saying how it generated that file, we end up
+# in a delicate case, where the comment mentions the path the bazel sandbox, which varies
+# depending on your OS (like bazel-out/darwin-fastbuild or bazel-out/linux-fastbuild) which
+# in turns breaks the diff_test that ensure that file is correctly up to date in CI.
+# So to make it work, we replace that OS dependent string with a something that's the same
+# across all envs, even if it's slighly inaccurate.
+sed -i'' -e 's=$@='`basename $@`'=' $@
 """.format(
          typ = typ,
          args = " ".join(additional_args),
