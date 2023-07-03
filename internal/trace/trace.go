@@ -21,13 +21,6 @@ type Trace struct {
 	oteltraceSpan oteltrace.Span
 }
 
-// DeprecatedNew returns a new Trace with the specified family and title.
-// DEPRECATED: use New instead.
-func DeprecatedNew(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
-	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
-	return tr.New(ctx, family, title, attrs...)
-}
-
 // New returns a new Trace with the specified name.
 // For tips on naming, see the OpenTelemetry Span documentation:
 // https://opentelemetry.io/docs/specs/otel/trace/api/#span
