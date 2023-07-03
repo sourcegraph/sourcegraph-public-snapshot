@@ -26,7 +26,7 @@ type Trace struct {
 // https://opentelemetry.io/docs/specs/otel/trace/api/#span
 func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
-	return tr.New(ctx, name, "", attrs...)
+	return tr.New(ctx, name, attrs...)
 }
 
 // SetAttributes sets kv as attributes of the Span.

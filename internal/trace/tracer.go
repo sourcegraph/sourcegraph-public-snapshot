@@ -15,8 +15,8 @@ type Tracer struct {
 	TracerProvider oteltrace.TracerProvider
 }
 
-// New returns a new Trace with the specified family and title. Must be closed with Finish().
-func (t Tracer) New(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
+// New returns a new Trace with the specified name. Must be closed with Finish().
+func (t Tracer) New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	if t.TracerProvider == nil {
 		t.TracerProvider = otel.GetTracerProvider()
 	}
@@ -24,17 +24,15 @@ func (t Tracer) New(ctx context.Context, family, title string, attrs ...attribut
 	var otelSpan oteltrace.Span
 	ctx, otelSpan = t.TracerProvider.
 		Tracer("sourcegraph/internal/trace").
-		Start(ctx, family,
-			oteltrace.WithAttributes(attribute.String("title", title)),
-			oteltrace.WithAttributes(attrs...))
+		Start(ctx, name, oteltrace.WithAttributes(attrs...))
 
 	// Set up the split trace.
 	trace := &Trace{
-		family:        family,
+		family:        name,
 		oteltraceSpan: otelSpan,
 	}
 	if parent := TraceFromContext(ctx); parent != nil {
-		trace.family = parent.family + " > " + family
+		trace.family = parent.family + " > " + name
 	}
 	return trace, contextWithTrace(ctx, trace)
 }
