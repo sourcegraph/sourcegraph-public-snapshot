@@ -11,7 +11,7 @@ go_library(
         "//enterprise/internal/codeintel",
         "//enterprise/internal/codycontext:context",
         "//enterprise/internal/database",
-        "//enterprise/internal/embeddings",
+        "//internal/embeddings",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/observation",

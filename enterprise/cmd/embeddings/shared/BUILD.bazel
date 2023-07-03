@@ -20,9 +20,9 @@ go_library(
         "//enterprise/internal/authz",
         "//enterprise/internal/authz/subrepoperms",
         "//enterprise/internal/database",
-        "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/background/repo",
-        "//enterprise/internal/embeddings/embed",
+        "//internal/embeddings",
+        "//internal/embeddings/background/repo",
+        "//internal/embeddings/embed",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
@@ -89,8 +89,8 @@ go_test(
     ],  # keep
     deps = [
         "//enterprise/cmd/embeddings/qa",
-        "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/background/repo",
+        "//internal/embeddings",
+        "//internal/embeddings/background/repo",
         "//internal/api",
         "//internal/database",
         "//internal/endpoint",

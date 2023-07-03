@@ -3,7 +3,7 @@ package context
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 )
 
 var splittableLinePrefixes = []string{

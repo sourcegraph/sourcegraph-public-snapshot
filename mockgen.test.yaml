@@ -388,8 +388,8 @@
     - path: github.com/Khan/genqlient/graphql
       interfaces:
         - Client
-- filename: enterprise/internal/embeddings/embed/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed
+- filename: internal/embeddings/embed/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/embeddings/embed
   interfaces:
     - ContextService
 - filename: internal/redispool/mocks.go

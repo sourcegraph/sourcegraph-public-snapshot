@@ -31,7 +31,7 @@ go_test(
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/codycontext:context",
         "//enterprise/internal/database",
-        "//enterprise/internal/embeddings",
+        "//internal/embeddings",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

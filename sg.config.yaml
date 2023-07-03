@@ -271,7 +271,7 @@ commands:
       - lib
       - internal
       - enterprise/cmd/embeddings
-      - enterprise/internal/embeddings
+      - internal/embeddings
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)

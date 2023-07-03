@@ -14,7 +14,7 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/codeintel/context/internal/store",
-        "//enterprise/internal/embeddings",
+        "//internal/embeddings",
         "//internal/database",
         "//internal/metrics",
         "//internal/observation",

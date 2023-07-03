@@ -21,10 +21,10 @@ go_library(
         "types.go",
         "uploadstore.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/embeddings/background/repo",
+        "//internal/embeddings/background/repo",
         "//internal/api",
         "//internal/codeintel/types",
         "//internal/conf/conftypes",
@@ -70,7 +70,7 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/embeddings/background/repo",
+        "//internal/embeddings/background/repo",
         "//internal/api",
         "//internal/codeintel/types",
         "//internal/database",
