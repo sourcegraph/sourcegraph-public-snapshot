@@ -88,7 +88,7 @@ func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	inputRev := repoRevs.Revs[0]
-	tr, ctx := trace.DeprecatedNew(ctx, "symbols", "searchInRepo",
+	tr, ctx := trace.New(ctx, "symbols.searchInRepo",
 		attribute.String("repo", string(repoRevs.Repo.Name)),
 		attribute.String("rev", inputRev))
 	defer tr.FinishWithErr(&err)

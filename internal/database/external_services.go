@@ -1429,7 +1429,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 }
 
 func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) (_ []*types.ExternalServiceRepo, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "externalServiceStore", "ListRepos")
+	tr, ctx := trace.New(ctx, "externalServiceStore.ListRepos")
 	defer tr.FinishWithErr(&err)
 
 	predicate := sqlf.Sprintf("TRUE")

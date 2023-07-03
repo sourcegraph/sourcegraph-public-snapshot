@@ -224,7 +224,7 @@ func PartitionRepos(
 		return &IndexedRepoRevs{}, repos, nil
 	}
 
-	tr, ctx := trace.DeprecatedNew(ctx, "PartitionRepos", string(typ))
+	tr, ctx := trace.New(ctx, "PartitionRepos", attribute.String("type", string(typ)))
 	defer tr.FinishWithErr(&err)
 
 	// Only include indexes with symbol information if a symbol request.
@@ -755,7 +755,7 @@ func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
 func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.DeprecatedNew(ctx, "privateReposForActor", "")
+	tr, ctx := trace.New(ctx, "privateReposForActor")
 	defer tr.Finish()
 
 	userID := int32(0)

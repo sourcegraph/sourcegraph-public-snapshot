@@ -48,30 +48,29 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	isLeaf := m.hostname != ""
 
 	var cat string
-	var attrs []attribute.KeyValue
+	attrs := []attribute.KeyValue{
+		attribute.String("query", queryString(q)),
+	}
 	if !isLeaf {
 		cat = "SearchAll"
 	} else {
 		cat = "Search"
-		attrs = []attribute.KeyValue{
+		attrs = append(attrs,
 			attribute.String("span.kind", "client"),
 			attribute.String("peer.address", m.hostname),
 			attribute.String("peer.service", "zoekt"),
-		}
+		)
 	}
-
-	qStr := queryString(q)
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "SearchAll" {
 		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
-		event.AddField("query", qStr)
 		event.AddField("actor", actor.FromContext(ctx).UIDString())
 		event.AddAttributes(attrs)
 	}
 
-	tr, ctx := trace.DeprecatedNew(ctx, "zoekt."+cat, qStr, attrs...)
+	tr, ctx := trace.New(ctx, "zoekt."+cat, attrs...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
@@ -232,7 +231,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	qStr := queryString(q)
 
-	tr, ctx := trace.DeprecatedNew(ctx, "zoekt", cat, attrs...)
+	tr, ctx := trace.New(ctx, "zoekt."+cat, attrs...)
 	tr.SetAttributes(
 		attribute.Stringer("opts", opts),
 		attribute.String("query", qStr),

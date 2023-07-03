@@ -46,6 +46,10 @@ func UndeletedRepoName(name RepoName) RepoName {
 // CommitID is the 40-character SHA-1 hash for a Git commit.
 type CommitID string
 
+func (c CommitID) Attr() attribute.KeyValue {
+	attribute.String("commitID", string(c))
+}
+
 // Short returns the SHA-1 commit hash truncated to 7 characters
 func (c CommitID) Short() string {
 	if len(c) >= 7 {

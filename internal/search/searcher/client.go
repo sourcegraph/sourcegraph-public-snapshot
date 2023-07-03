@@ -45,7 +45,7 @@ func Search(
 		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatches)
 	}
 
-	tr, ctx := trace.DeprecatedNew(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
+	tr, ctx := trace.New(ctx, "searcher.client", repo.Attr(), commit.Attr())
 	defer tr.FinishWithErr(&err)
 
 	r := protocol.Request{
@@ -122,7 +122,7 @@ func Search(
 }
 
 func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (_ bool, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "searcher", "textSearchStream")
+	tr, ctx := trace.New(ctx, "searcher.textSearchStream")
 	defer tr.FinishWithErr(&err)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewReader(body))

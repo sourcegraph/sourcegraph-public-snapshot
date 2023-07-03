@@ -14,7 +14,7 @@ import (
 type finishSpanFunc func(*search.Alert, error)
 
 func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (*trace.Trace, context.Context, streaming.Sender, finishSpanFunc) {
-	tr, ctx := trace.DeprecatedNew(ctx, job.Name(), "")
+	tr, ctx := trace.New(ctx, job.Name())
 	tr.SetAttributes(job.Attributes(VerbosityMax)...)
 
 	observingStream := newObservingStream(tr, stream)

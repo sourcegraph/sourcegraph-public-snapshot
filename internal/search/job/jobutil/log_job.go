@@ -70,7 +70,7 @@ func (l *LogJob) MapChildren(fn job.MapFunc) job.Job {
 // only be called after a search result is performed, because it relies on the
 // invariant that query and pattern error checking has already been performed.
 func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, duration time.Duration) {
-	tr, ctx := trace.DeprecatedNew(ctx, "LogSearchDuration", "")
+	tr, ctx := trace.New(ctx, "LogSearchDuration")
 	defer tr.Finish()
 
 	var types []string
