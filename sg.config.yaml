@@ -404,10 +404,7 @@ commands:
 
   docsite:
     description: Docsite instance serving the docs
-    cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: "installDocsite"
-    env:
-      DOCSITE_VERSION: v1.9.2 # Update in all places (including outside this repo)
+    cmd: bazel run //doc:serve
 
   syntax-highlighter:
     ignoreStdout: true
