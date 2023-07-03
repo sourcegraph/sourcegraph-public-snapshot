@@ -385,13 +385,14 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, git
 }
 
 // NOTE(scip-index-size-stats) In practice, the following seem to be true:
-//   - The memory usage of a full deserialized scip.Index is about
-//     2.5x-4.5x times the size of the uncompressed index byte slice.
 //   - The size of an uncompressed index is about 5x-10x the size of
 //     the gzip-compressed index
+//   - The memory usage of a full deserialized scip.Index is about
+//     2.5x-4.5x times the size of the uncompressed index byte slice.
 //
 // The code intel worker sometimes has as little as 2GB of RAM, so 1/4-th of
-// that is 512MiB.
+// that is 512MiB. There is no simple portable API to determine the
+// max available memory to the process, so use a constant for now.
 const uncompressedSizeLimitBytes = 512 * 1024 * 1024
 
 type gzipReadSeeker struct {
@@ -459,6 +460,8 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 			return errors.Wrap(err, "failed to read upload file")
 		}
 		compressedSize := len(buf)
+		// The factor of 5 is based on ~worst-case gzip compression ratio.
+		// See NOTE(scip-index-size-stats)
 		uncompressedSizeEstimate := compressedSize * 5
 		if uncompressedSizeEstimate > uncompressedSizeLimitBytes {
 			readerForDiskWrite = bytes.NewReader(buf)
