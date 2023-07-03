@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
@@ -29,7 +30,7 @@ func TestCorrelateSCIP(t *testing.T) {
 	}
 
 	// Correlate and consume channels from returned object
-	correlatedSCIPData, err := correlateSCIP(ctx, testReader(), "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+	correlatedSCIPData, err := correlateSCIP(ctx, log.NoOp(), testReader(), "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		return scipDirectoryChildren, nil
 	})
 	if err != nil {

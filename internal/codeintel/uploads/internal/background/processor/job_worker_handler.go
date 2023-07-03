@@ -275,7 +275,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		correlatedSCIPData, err := correlateSCIP(ctx, indexReader, upload.Root, getChildren)
+		correlatedSCIPData, err := correlateSCIP(ctx, logger, indexReader, upload.Root, getChildren)
 		if err != nil {
 			return errors.Wrap(err, "conversion.Correlate")
 		}

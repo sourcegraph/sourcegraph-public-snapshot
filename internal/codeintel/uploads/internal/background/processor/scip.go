@@ -6,6 +6,7 @@ import (
 	"io"
 	"sort"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
@@ -66,6 +67,7 @@ func aggregateExternalSymbolsAndPaths(indexReader *gzipReadSeeker) (firstPassRes
 // package and package reference channels concurrently.
 func correlateSCIP(
 	ctx context.Context,
+	logger log.Logger,
 	indexReader gzipReadSeeker,
 	root string,
 	getChildren pathexistence.GetChildrenFunc,
@@ -107,9 +109,16 @@ func correlateSCIP(
 					// with the same path are seen.
 					return
 				}
-				// TODO: Assert that the length of returned slice is 1
-				document = scip.FlattenDocuments(samePathDocs)[0]
+				flattenedDoc := scip.FlattenDocuments(samePathDocs)
 				delete(repeatedDocumentsByPath, path)
+				if len(flattenedDoc) != 1 {
+					logger.Warn("FlattenDocuments should return a single Document as input slice contains Documents"+
+						" with the same RelativePath",
+						log.String("path", path),
+						log.Int("obtainedCount", len(flattenedDoc)))
+					return
+				}
+				document = flattenedDoc[0]
 			}
 
 			select {
@@ -153,8 +162,8 @@ func correlateSCIP(
 		},
 		}
 		if err := secondPassVisitor.ParseStreaming(&indexReader); err != nil {
-			// FIXME: How do we handle the error here properly?
-			panic(err)
+			logger.Warn("error on second pass over SCIP index; should've hit it in the first pass",
+				log.Error(err))
 		}
 
 		go func() {
