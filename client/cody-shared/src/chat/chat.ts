@@ -21,7 +21,6 @@ export class ChatClient {
         const isLastMessageFromHuman = messages.length > 0 && messages[messages.length - 1].speaker === 'human'
         const augmentedMessages = isLastMessageFromHuman ? messages.concat([{ speaker: 'assistant' }]) : messages
         const typewriter = createTypewriter({
-            baseDelay: 100,
             emit: cb.onChange,
         })
 
