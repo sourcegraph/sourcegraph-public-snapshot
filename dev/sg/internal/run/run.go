@@ -184,7 +184,6 @@ func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan 
 				} else if cmd.Install == "" && cmd.InstallFunc != "" {
 					fn, ok := installFuncs[cmd.InstallFunc]
 					if !ok {
-						c.installSemaphore.Release(1)
 						return "", errors.Newf("no install func with name %q found", cmd.InstallFunc)
 					}
 					return "", fn(ctx, makeEnvMap(c.parentEnv, cmd.Env))
