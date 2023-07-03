@@ -9,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 // Trace is a convenience helper around instrumenting our handlers and
@@ -21,7 +22,7 @@ func Trace(ctx context.Context, family, model string) *traceBuilder {
 	// is we need to somehow make it cleaner to access fields from the
 	// request.
 
-	tr, ctx := trace.DeprecatedNew(ctx, "completions."+family, model)
+	tr, ctx := trace.New(ctx, "completions."+family, attribute.String("model", model))
 	var ev honey.Event
 	if honey.Enabled() {
 		ev = honey.NewEvent("completions")

@@ -27,11 +27,11 @@ var requestGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
 	Help: "Current number of requests running for a method.",
 }, []string{"method"})
 
-func startTrace(ctx context.Context, server, method string, arg any, err *error) (context.Context, func()) { //nolint:unparam // unparam complains that `server` always has same value across call-sites, but that's OK
-	name := server + "." + method
+func startTrace(ctx context.Context, method string, arg any, err *error) (context.Context, func()) { //nolint:unparam // unparam complains that `server` always has same value across call-sites, but that's OK
+	name := "Repos." + method
 	requestGauge.WithLabelValues(name).Inc()
 
-	tr, ctx := trace.DeprecatedNew(ctx, server, method,
+	tr, ctx := trace.New(ctx, name,
 		attribute.String("argument", fmt.Sprintf("%#v", arg)),
 		attribute.Int("userID", int(actor.FromContext(ctx).UID)),
 	)

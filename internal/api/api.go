@@ -47,7 +47,7 @@ func UndeletedRepoName(name RepoName) RepoName {
 type CommitID string
 
 func (c CommitID) Attr() attribute.KeyValue {
-	attribute.String("commitID", string(c))
+	return attribute.String("commitID", string(c))
 }
 
 // Short returns the SHA-1 commit hash truncated to 7 characters
