@@ -29,6 +29,8 @@ func DeprecatedNew(ctx context.Context, family, title string, attrs ...attribute
 }
 
 // New returns a new Trace with the specified name.
+// For tips on naming, see the OpenTelemetry Span documentation:
+// https://opentelemetry.io/docs/specs/otel/trace/api/#span
 func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
 	return tr.New(ctx, name, "", attrs...)
