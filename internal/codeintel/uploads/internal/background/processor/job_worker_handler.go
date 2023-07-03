@@ -432,7 +432,7 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 	}
 	defer rc.Close()
 
-	trySaveToDisk := func(r io.Reader) (gzipReadSeeker, *os.File, error) {
+	trySaveToDisk := func(_ io.Reader) (gzipReadSeeker, *os.File, error) {
 		var indexReader gzipReadSeeker
 		tmpFilePattern := fmt.Sprintf("upload-%d-tmp.gz", uploadStats.ID)
 		tmpFile, err := os.CreateTemp("", tmpFilePattern)
