@@ -4,8 +4,8 @@
 
 Ownership signals are used to guide the assignment of ownership. These are:
 
-*   Recent contributors signal counts files modified by commits in the last 90 days.
-*   Recent views signal counts file views within Sourcegraph in the last 90 days.
+*   **Recent contributors signal** counts files modified by commits in the last 90 days.
+*   **Recent views signal** counts file views within Sourcegraph in the last 90 days.
 
 Both of these signals are computed by background tasks.
 The values of signals are aggregted and bubble up the file tree.
