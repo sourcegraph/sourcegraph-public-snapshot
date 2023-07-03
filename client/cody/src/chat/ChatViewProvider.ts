@@ -29,6 +29,7 @@ import { logEvent } from '../event-logger'
 import { FilenameContextFetcher } from '../local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from '../local-context/local-keyword-context-fetcher'
 import { debug } from '../log'
+import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
 import { AuthProvider } from '../services/AuthProvider'
@@ -356,6 +357,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.onCompletionEnd()
             },
         })
+
         let textConsumed = 0
 
         this.cancelCompletionCallback = this.chat.chat(promptMessages, {
@@ -363,7 +365,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // TODO(dpc): The multiplexer can handle incremental text. Change chat to provide incremental text.
                 text = text.slice(textConsumed)
                 textConsumed += text.length
-                void this.multiplexer.publish(text)      
+                void this.multiplexer.publish(text)
             },
             onComplete: () => {
                 void this.multiplexer.notifyTurnComplete()
@@ -954,7 +956,8 @@ export async function getCodebaseContext(
         embeddingsSearch,
         new LocalKeywordContextFetcher(rgPath, editor, chatClient),
         new FilenameContextFetcher(rgPath, editor, chatClient),
-        undefined
+        undefined,
+        getRerankWithLog(chatClient)
     )
 }
 
