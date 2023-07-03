@@ -22,7 +22,7 @@ declare namespace Intl {
 const LIST_FORMATTER = (() => {
     try {
         return new Intl.ListFormat('en', { style: 'long', type: 'conjunction' })
-    } catch (e) {
+    } catch {
         return {
             format(items: string[]) {
                 return items.join(', ')
