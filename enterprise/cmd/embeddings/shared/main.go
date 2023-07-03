@@ -79,10 +79,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	if err != nil {
-		return err
-	}
-
 	weaviate := newWeaviateClient(
 		logger,
 		config.WeaviateURL,
