@@ -35,7 +35,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Update scip version to include a more resilient canonicalization pass for SCIP documents. [#54304](https://github.com/sourcegraph/sourcegraph/pull/54304)
+- Fixes a crash when uploading indexes with malformed source ranges (this was a bug in scip-go). [#54304](https://github.com/sourcegraph/sourcegraph/pull/54304)
 - Fixed validation of Bitbucket Cloud configuration in site-admin create/update form. [#54494](https://github.com/sourcegraph/sourcegraph/pull/54494)
 - Fixed race condition with grpc `server.send` message. [#54500](https://github.com/sourcegraph/sourcegraph/pull/54500)
 
