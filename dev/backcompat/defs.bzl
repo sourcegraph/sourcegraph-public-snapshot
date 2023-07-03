@@ -56,7 +56,6 @@ fi
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@src-cli-linux-amd64|@back_compat_src-cli-linux-amd64|g' {} +
 """
 
 def back_compat_defs():
@@ -114,22 +113,6 @@ def back_compat_defs():
         sum = "h1:zFLcZUQ74dCV/oIiQT3+db8kFPstAnvFDm7pd+tjZ+8=",
         version = "v0.0.0-20230620185637-63241cb1b17a",
     )
-
-    SRC_CLI_VERSION = "5.0.3"
-
-    http_archive(
-        name = "back_compat_src-cli-linux-amd64",
-        build_file_content = """
-    filegroup(
-        name = "src-cli-linux-amd64",
-        srcs = ["src"],
-        visibility = ["//visibility:public"],
-    )
-        """,
-        sha256 = "d125d732ad4c47ae6977c49574b01cc1b3c943b2a2108142267438e829538aa3",
-        url = "https://github.com/sourcegraph/src-cli/releases/download/{0}/src-cli_{0}_linux_amd64.tar.gz".format(SRC_CLI_VERSION),
-    )
-
 
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it

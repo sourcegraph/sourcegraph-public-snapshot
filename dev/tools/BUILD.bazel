@@ -11,9 +11,9 @@ sh_binary(
 sh_binary(
     name = "src-cli",
     srcs = select({
-        "@bazel_tools//src/conditions:darwin_x86_64": ["@src-cli-darwin-amd64//:src-cli-darwin_amd64"],
-        "@bazel_tools//src/conditions:darwin_arm64": ["@src-cli-darwin-arm64//:src-cli-darwin_arm64"],
-        "@bazel_tools//src/conditions:linux_x86_64": ["@src-cli-linux-amd64//:src-cli-linux_amd64"],
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@src-cli-darwin-amd64//:src-cli-darwin-amd64"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@src-cli-darwin-arm64//:src-cli-darwin-arm64"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
     }),
     visibility = ["//visibility:public"],
 )
