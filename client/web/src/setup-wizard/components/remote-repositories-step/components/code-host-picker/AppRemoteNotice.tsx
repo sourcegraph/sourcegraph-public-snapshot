@@ -1,8 +1,8 @@
 import { FC } from 'react'
 
-import styles from './RemoteNotice.module.scss'
+import styles from './AppRemoteNotice.module.scss'
 
-export const RemoteNotice: FC = () => (
+export const AppRemoteNotice: FC = () => (
     <section>
         <header className={styles.header}>
             <span>Please replace any existing remote code hosts</span>

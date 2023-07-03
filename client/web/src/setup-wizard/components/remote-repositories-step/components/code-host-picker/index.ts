@@ -1,2 +1,2 @@
 export { CodeHostsPicker } from './CodeHostsPicker'
-export { RemoteNotice } from './RemoteNotice'
+export { AppRemoteNotice } from './AppRemoteNotice'
