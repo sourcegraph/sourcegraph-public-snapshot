@@ -6,7 +6,7 @@ sh_test(
     args = ["$(location //dev/tools:docsite)"],
     data = [
         "//dev/tools:docsite",
-        "//doc/cli/references:generate_doc",
+        "//doc/cli/references:doc_files",
     ] + glob(
         ["**/*"],
         ["test.sh"],
@@ -22,7 +22,7 @@ sh_binary(
     args = ["$(location //dev/tools:docsite)"],
     data = [
         "//dev/tools:docsite",
-        "//doc/cli/references:generate_doc",
+        "//doc/cli/references:doc_files",
     ] + glob(
         ["**/*"],
         ["test.sh"],
