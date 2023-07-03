@@ -281,7 +281,3 @@ Batch Changes uses the tokens from GitHub Apps in the following ways:
 #### Installation access tokens
 
 Installation access tokens are short-lived, non-refreshable tokens that give Sourcegraph access to the repositories the GitHub App has been given access to. Sourcegraph uses these tokens to read and write commits to repository branches. These tokens expire after 1 hour.
-
-#### Known bugs
-
-* When no installation exists on a GitHub app, the commit created from a Batch Change is authored by the owner of the GitHub app. [#54324](https://github.com/sourcegraph/sourcegraph/issues/54324)

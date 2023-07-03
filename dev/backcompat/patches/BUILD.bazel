@@ -1,4 +1,5 @@
 exports_files([
     # See https://sourcegraph.com/search?q=context:global+dev/backcompat/patches/back_compat_migrations.patch+repo:github.com/sourcegraph/sourcegraph+lang:Go&patternType=standard&sm=0&groupBy=repo
     "back_compat_migrations.patch",  # git diff ci/backcompat-v5.0.0 ..HEAD -- migrations/ > migrations/back_compat_migrations.patch
+    "ui_assets.patch",  # manually created patch, removes all refs to //client so we don't depend on it
 ])

@@ -50,10 +50,6 @@ type ActorConcurrencyLimitConfig struct {
 // ActorRateLimitNotifyConfig is the configuration for the rate limit
 // notifications of an actor.
 type ActorRateLimitNotifyConfig struct {
-	// Thresholds is a list of the percentages of the rate limit usage to trigger a
-	// notification. Each threshold will only trigger the notification once during
-	// the same rate limit window.
-	Thresholds []int
 	// SlackWebhookURL is the URL of the Slack webhook to send the alerts to.
 	SlackWebhookURL string
 }

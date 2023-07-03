@@ -298,6 +298,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
+            case 'chat-button': {
+                switch (message.action) {
+                    case 'explain-code-high-level':
+                    case 'find-code-smells':
+                    case 'generate-unit-test':
+                        void this.executeRecipe(message.action)
+                        break
+                    default:
+                        break
+                }
+                break
+            }
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }
@@ -359,7 +371,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-                if (err === 'aborted') {
+
+                if (isAbortError(err)) {
                     return
                 }
                 // Display error message as assistant response
@@ -766,17 +779,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public sendEvent(event: string, value: string): void {
         const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
-        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
         const endpointUri = { serverEndpoint: endpoint }
-        const chatTranscript = { chatTranscript: this.transcript.toChat() }
         switch (event) {
             case 'feedback':
-                // Only include context for dot com users with connected codebase
-                logEvent(
-                    `CodyVSCodeExtension:codyFeedback:${value}`,
-                    null,
-                    !isPrivateInstance && this.codebaseContext.getCodebase() ? chatTranscript : null
-                )
+                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, null, this.codyFeedbackPayload())
                 break
             case 'token':
                 logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
@@ -788,6 +794,28 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'click':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
+        }
+    }
+
+    private codyFeedbackPayload(): any {
+        const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
+        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
+
+        // The user should only be able to submit feedback on transcripts, but just in case we guard against this happening.
+        const privateChatTranscript = this.transcript.toChat()
+        if (privateChatTranscript.length === 0) {
+            return null
+        }
+
+        const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
+        const lastChatUsedEmbeddings = lastContextFiles?.some(file => file.source === 'embeddings')
+
+        // We only include full chat transcript for dot com users with connected codebase
+        const chatTranscript = !isPrivateInstance && this.codebaseContext.getCodebase() ? privateChatTranscript : null
+
+        return {
+            chatTranscript,
+            lastChatUsedEmbeddings,
         }
     }
 
@@ -928,4 +956,8 @@ export async function getCodebaseContext(
         new FilenameContextFetcher(rgPath, editor, chatClient),
         undefined
     )
+}
+
+function isAbortError(error: string): boolean {
+    return error === 'aborted' || error === 'socket hang up'
 }

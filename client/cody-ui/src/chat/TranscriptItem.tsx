@@ -10,6 +10,7 @@ import {
     FeedbackButtonsProps,
     CopyButtonProps,
     ChatUISubmitButtonProps,
+    ChatButtonProps,
 } from '../Chat'
 import { useTypewriterEffect } from '../hooks/useTypewriterEffect'
 
@@ -53,6 +54,7 @@ export const TranscriptItem: React.FunctionComponent<
         submitButtonComponent?: React.FunctionComponent<ChatUISubmitButtonProps>
         abortMessageInProgressComponent?: React.FunctionComponent<{ onAbortMessageInProgress: () => void }>
         onAbortMessageInProgress?: () => void
+        ChatButtonComponent?: React.FunctionComponent<ChatButtonProps>
     } & TranscriptItemClassNames
 > = React.memo(function TranscriptItemContent({
     message,
@@ -76,6 +78,7 @@ export const TranscriptItem: React.FunctionComponent<
     copyButtonOnSubmit,
     submitButtonComponent: SubmitButton,
     chatInputClassName,
+    ChatButtonComponent,
 }) {
     // const displayText = useTypewriterEffect({
     //     text: message.displayText || '',
@@ -175,6 +178,9 @@ export const TranscriptItem: React.FunctionComponent<
                     <BlinkingCursor />
                 ) : null}
             </div>
+            {message.buttons?.length && ChatButtonComponent && (
+                <div className={styles.actions}>{message.buttons.map(ChatButtonComponent)}</div>
+            )}
             {showFeedbackButtons &&
                 FeedbackButtonsContainer &&
                 feedbackButtonsOnSubmit &&

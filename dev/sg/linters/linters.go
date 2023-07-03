@@ -35,7 +35,6 @@ var Targets = []Target{
 		Name:        "go",
 		Description: "Check go code for linting errors, forbidden imports, generated files, etc",
 		Checks: []*linter{
-			goFmt,
 			goGenerateLinter,
 			goDBConnImport,
 			goEnterpriseImport,
@@ -65,8 +64,8 @@ var Targets = []Target{
 		Name:        "dockerfiles",
 		Description: "Check Dockerfiles for Sourcegraph best practices",
 		Checks: []*linter{
+			// TODO move to pre-commit
 			hadolint(),
-			customDockerfileLinters(),
 		},
 	},
 	{

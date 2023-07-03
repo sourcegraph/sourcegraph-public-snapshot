@@ -28,7 +28,6 @@ export type RecipeID =
     | 'inline-chat'
     | 'next-questions'
     | 'non-stop'
-    | 'optimize-code'
     | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'

@@ -28,26 +28,39 @@ var tracer = otel.Tracer("internal/notify")
 // align the TTL with the rate limit window.
 type RateLimitNotifier func(ctx context.Context, actorID string, actorSource codygateway.ActorSource, feature codygateway.Feature, usageRatio float32, ttl time.Duration)
 
+// Thresholds map actor sources to percentage rate limit usage increments
+// to notify on. Each threshold will only trigger the notification once during
+// the same rate limit window.
+type Thresholds map[codygateway.ActorSource][]int
+
+// Get retrieves thresholds for the actor source if set, otherwise provides
+// defaults. The returned thresholds are sorted.
+func (t Thresholds) Get(actorSource codygateway.ActorSource) []int {
+	if thresholds, ok := t[actorSource]; ok {
+		sort.Ints(thresholds)
+		return thresholds
+	}
+	return []int{} // no notifications by default to avoid noise
+}
+
 // NewSlackRateLimitNotifier returns a RateLimitNotifier that sends Slack
 // notifications when usage rate hits given thresholds.
 func NewSlackRateLimitNotifier(
 	baseLogger log.Logger,
 	rs redispool.KeyValue,
 	dotcomURL string,
-	thresholds []int,
+	actorSourceThresholds Thresholds,
 	slackWebhookURL string,
 	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
 ) RateLimitNotifier {
 	baseLogger = baseLogger.Scoped("slackRateLimitNotifier", "notifications for usage rate limit approaching thresholds")
 
-	// Just in case
-	if len(thresholds) == 0 {
-		thresholds = []int{90, 95, 100}
-		baseLogger.Warn("no thresholds provided, using defaults", log.Ints("thresholds", thresholds))
-	}
-	sort.Ints(thresholds)
-
 	return func(ctx context.Context, actorID string, actorSource codygateway.ActorSource, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
+		thresholds := actorSourceThresholds.Get(actorSource)
+		if len(thresholds) == 0 {
+			return
+		}
+
 		usagePercentage := int(usageRatio * 100)
 		if usagePercentage < thresholds[0] {
 			return

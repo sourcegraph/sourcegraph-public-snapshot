@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
+	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -56,7 +57,8 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 		// If a buffer is configured, wrap in events.BufferedLogger
 		if config.BigQuery.EventBufferSize > 0 {
-			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger, config.BigQuery.EventBufferSize)
+			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger,
+				config.BigQuery.EventBufferSize, config.BigQuery.EventBufferWorkers)
 		}
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
@@ -67,28 +69,35 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			eventLogger = events.NewBufferedLogger(
 				obctx.Logger,
 				events.NewDelayedLogger(eventLogger),
-				config.BigQuery.EventBufferSize)
+				config.BigQuery.EventBufferSize,
+				config.BigQuery.EventBufferWorkers)
 		}
 	}
 
-	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
-
 	// Supported actor/auth sources
-	sources := actor.NewSources(
-		anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit),
-		productsubscription.NewSource(
-			obctx.Logger,
-			rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
-			dotcomClient,
-			config.Dotcom.InternalMode,
-			config.ActorConcurrencyLimit,
-		),
-		dotcomuser.NewSource(obctx.Logger,
-			rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
-			dotcomClient,
-			config.ActorConcurrencyLimit,
-		),
-	)
+	sources := actor.NewSources(anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
+	if config.Dotcom.AccessToken != "" {
+		// dotcom-based actor sources only if an access token is provided for
+		// us to talk with the client
+		obctx.Logger.Info("dotcom-based actor sources are enabled")
+		dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+		sources.Add(
+			productsubscription.NewSource(
+				obctx.Logger,
+				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
+				dotcomClient,
+				config.Dotcom.InternalMode,
+				config.ActorConcurrencyLimit,
+			),
+			dotcomuser.NewSource(obctx.Logger,
+				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
+				dotcomClient,
+				config.ActorConcurrencyLimit,
+			),
+		)
+	} else {
+		obctx.Logger.Warn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-based actor sources are disabled")
+	}
 
 	authr := &auth.Authenticator{
 		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
@@ -105,7 +114,13 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		obctx.Logger,
 		redispool.Cache,
 		dotcomURL.String(),
-		config.ActorRateLimitNotify.Thresholds,
+		notify.Thresholds{
+			// Detailed notifications for product subscriptions.
+			codygateway.ActorSourceProductSubscription: []int{90, 95, 100},
+			// No notifications for individual dotcom users - this can get quite
+			// spammy.
+			codygateway.ActorSourceDotcomUser: []int{},
+		},
 		config.ActorRateLimitNotify.SlackWebhookURL,
 		func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
 			return slack.PostWebhookCustomHTTPContext(ctx, url, otelhttp.DefaultClient, msg)

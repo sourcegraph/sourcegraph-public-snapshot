@@ -12,15 +12,21 @@
 
 ### Fixed
 
-- Preserve new lines in the human chat message [#54417](https://github.com/sourcegraph/sourcegraph/pull/54417)
-
 ### Security
 
-## [3.0.2]
+## [3.0.3]
 
 ### Added
 
+- Added recipes to editor context menu [#54430](https://github.com/sourcegraph/sourcegraph/pull/54430)
+- Figure out default repository when no files are opened in the editor [#54476](https://github.com/sourcegraph/sourcegraph/pull/54476)
+- Added `unstable-codegen` completions support [#54435](https://github.com/sourcegraph/sourcegraph/pull/54435)
+
 ### Changed
+
+- Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
+- Sourcegraph link sharing and opening file in browser actions are disabled when working with Cody app [#54473](https://github.com/sourcegraph/sourcegraph/pull/54473)
+- Display more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
 
 ### Deprecated
 
@@ -28,9 +34,16 @@
 
 ### Fixed
 
-- Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
+- Preserve new lines in the human chat message [#54417](https://github.com/sourcegraph/sourcegraph/pull/54417)
+- JetBrains: Handle response == null case when checking for embeddings [#54492](https://github.com/sourcegraph/sourcegraph/pull/54492)
 
 ### Security
+
+## [3.0.2]
+
+### Fixed
+
+- Repositories with http/https remotes are now available for Cody [#54372](https://github.com/sourcegraph/sourcegraph/pull/54372)
 
 ## [3.0.1]
 

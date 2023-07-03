@@ -23,6 +23,8 @@ func BazelOperations() []operations.Operation {
 		"@sourcegraph_back_compat//internal/...",
 		"@sourcegraph_back_compat//enterprise/cmd/...",
 		"@sourcegraph_back_compat//enterprise/internal/...",
+		"-@sourcegraph_back_compat//cmd/migrator/...",
+		"-@sourcegraph_back_compat//enterprise/cmd/migrator/...",
 	))
 	return ops
 }
@@ -145,6 +147,14 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 
 	// Test commands
 	bazelTestCmds := []bk.StepOpt{}
+
+	// bazel build //client/web:bundle is very resource hungry and often crashes when ran along other targets
+	// so we run it first to avoid failing builds midway.
+	cmds = append(cmds,
+		bazelAnnouncef("bazel build //client/web:bundle-*"),
+		bk.Cmd(bazelCmd("build //client/web:bundle //client/web:bundle-enterprise")),
+	)
+
 	for _, target := range targets {
 		cmd := bazelCmd(fmt.Sprintf("test %s", target))
 		bazelTestCmds = append(bazelTestCmds,
@@ -167,10 +177,10 @@ func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
 
 		// Generate a patch that backports the migration from the new code into the old one.
 		// Ignore space is because of https://github.com/bazelbuild/bazel/issues/17376
-		bk.Cmd("git diff --ignore-space-at-eol origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
+		bk.Cmd("git diff --ignore-space-at-eol v5.1.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
 	}
 
-	bazelCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
+	bazelCmd := bazelCmd(fmt.Sprintf("test --test_tag_filters=go -- %s ", strings.Join(targets, " ")))
 	cmds = append(
 		cmds,
 		bk.Cmd(bazelCmd),
