@@ -52,7 +52,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_server_base",
-        digest = "sha256:2e7c1efa275df630d33121a53cbd40758fbdd4fa1fa5a31d256f8d2891e87c7e",
+        digest = "sha256:8c43c861026ff3706849bf56d22ef2a1714f76e739fb2cd9f89b78abeec39bd2",
         image = "index.docker.io/sourcegraph/wolfi-server-base",
     )
 
@@ -70,7 +70,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_postgres_exporter_base",
-        digest = "sha256:21fe5b8ada61899c7f5afeb3fa36078471d555d0d4237c66d87c105770d868b2",
+        digest = "sha256:df37c2ab0fac3e0215b19f51cf993971a71db9fb4db1230070e937d7842f154b",
         image = "index.docker.io/sourcegraph/wolfi-postgres-exporter-base",
     )
 
@@ -167,7 +167,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_node_exporter_base",
-        digest = "sha256:958a60217909ab5986cd5e116151a7f5ba96cf4cb0a7c25843ccbc0b6d1440c2",
+        digest = "sha256:85b5b0f1cf4df378ac007b846a84fde3a5b00696394bfa2dbc6ca0118ba31999",
         image = "index.docker.io/sourcegraph/wolfi-node-exporter-base",
     )
 
