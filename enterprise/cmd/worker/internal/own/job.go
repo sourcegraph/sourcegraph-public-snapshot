@@ -18,7 +18,7 @@ func NewOwnRepoIndexingQueue() job.Job {
 }
 
 func (o *ownRepoIndexingQueue) Description() string {
-	return "Queue used by Sourcegraph Own to index ownership data partitioned per repository"
+	return "Queue used to index ownership data partitioned per repository"
 }
 
 func (o *ownRepoIndexingQueue) Config() []env.Config {

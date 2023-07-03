@@ -305,7 +305,7 @@ export const ServerSideAlertUnownedResults: Story = () => {
             kind: 'unowned-results',
             title: 'Some results have no owners',
             description:
-                'For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring Sourcegraph Own](https://docs.sourcegraph.com/own).',
+                'For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring code ownership](https://docs.sourcegraph.com/own).',
         },
     }
 

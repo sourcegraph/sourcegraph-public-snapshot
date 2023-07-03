@@ -24,7 +24,7 @@ export const OwnPage: React.FunctionComponent<{}> = () => {
 
     return (
         <Page>
-            <PageTitle title="Sourcegraph Own" />
+            <PageTitle title="Code ownership" />
             <PageHeader description="Track and update code ownership across your entire codebase." className="mb-3">
                 <H1 as="h2" className="d-flex align-items-center">
                     <Icon svgPath={mdiAccount} aria-hidden={true} />
