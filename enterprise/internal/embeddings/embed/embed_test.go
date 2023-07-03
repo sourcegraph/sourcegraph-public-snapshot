@@ -265,7 +265,7 @@ func TestEmbedRepo(t *testing.T) {
 		_, _, _, err := EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
-		misbehavingClient = &misbehavingEmbeddingsClient{client, 32} // too few dimensions
+		misbehavingClient = &misbehavingEmbeddingsClient{client, 2} // too few dimensions
 		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
@@ -284,7 +284,7 @@ func (c *misbehavingEmbeddingsClient) GetQueryEmbedding(ctx context.Context, que
 	return make([]float32, c.returnedDimsPerInput), nil
 }
 
-func (c *misbehavingEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error) {
+func (c *misbehavingEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) ([]float32, error) {
 	return make([]float32, len(documents)*c.returnedDimsPerInput), nil
 }
 
@@ -310,7 +310,7 @@ func (c *mockEmbeddingsClient) GetQueryEmbedding(_ context.Context, query string
 	return make([]float32, dimensions), nil
 }
 
-func (c *mockEmbeddingsClient) GetDocumentEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetDocumentEmbeddings(_ context.Context, texts []string) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err

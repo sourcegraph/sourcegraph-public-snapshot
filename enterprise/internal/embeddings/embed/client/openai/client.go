@@ -47,7 +47,7 @@ func (c *openaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query st
 	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
 }
 
-func (c *openaiEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error) {
+func (c *openaiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) ([]float32, error) {
 	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
 }
 

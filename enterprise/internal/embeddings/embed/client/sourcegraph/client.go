@@ -61,7 +61,7 @@ func (c *sourcegraphEmbeddingsClient) GetQueryEmbedding(ctx context.Context, que
 	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
 }
 
-func (c *sourcegraphEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error) {
+func (c *sourcegraphEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) ([]float32, error) {
 	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
 }
 
