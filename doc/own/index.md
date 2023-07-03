@@ -66,6 +66,8 @@ If any email information has been found for the owner, clicking the mail icon wi
 
 ## Ownership search
 
+### Searching for files with owners
+
 Code ownership is a first-class citizen in search. Ownership can be either a query input or a search result:
 
 - `file:has.owner(user@example.com)` keeps only the search results associated with given user (here referred to by e-mail).
@@ -79,3 +81,11 @@ Ownership predicate can also be used without parameters:
 When performing a search the `select:file.owners` predicate will return the owners for the result of that search.
 
 For instance one can find all the owners of TypeScript files in a given repository by using `repo:^github\.com/sourcegraph/sourcegraph$ lang:TypeScript select:file.owners`.
+
+### Find commits in given release for given owner
+
+To find all commits between versions `5.0` and `5.1` made by `sourcegraph/own` team, the following query could be used:
+
+`repo:^github\.com/sourcegraph/sourcegraph$@5.1:^5.0 type:commit file:has.owner(sourcegraph/own)`
+
+Same query can be run for any owner (a person or a team).
