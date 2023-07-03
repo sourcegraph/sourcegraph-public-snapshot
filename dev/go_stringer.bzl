@@ -3,7 +3,8 @@ load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 # go_stringer provides an equivalent to `//go:generate stringer`.
 # Files can be updated and generated with `bazel run //dev:write_all`.
 def go_stringer(src, typ, name, additional_args=[]):
-    output_file = typ.lower() + "_string.go"
+    output_file = "_out_" + typ.lower() + "_string.go_in"
+    output_file_source = typ.lower() + "_string.go"
 
     native.genrule(
         name = name,
@@ -33,7 +34,7 @@ $(location @org_golang_x_tools//cmd/stringer:stringer) -output=$@ -type={typ} {a
     write_source_files(
         name = "write_" + name,
         files = {
-            output_file: output_file,
+            output_file_source: output_file,
         },
         tags = ["go_generate"],
         suggested_update_target = "//dev:write_all",
