@@ -7,7 +7,7 @@ go_library(
         "observability.go",
         "store.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/store",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext/internal/store",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//internal/database",

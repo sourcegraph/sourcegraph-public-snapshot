@@ -10,10 +10,10 @@ go_library(
         "service.go",
         "split.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/context/internal/store",
+        "//internal/codeintel/codycontext/internal/store",
         "//internal/embeddings",
         "//internal/database",
         "//internal/metrics",

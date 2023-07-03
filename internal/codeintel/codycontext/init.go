@@ -1,7 +1,7 @@
 package context
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )

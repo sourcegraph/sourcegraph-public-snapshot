@@ -3,7 +3,7 @@ package context
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 

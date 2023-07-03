@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//enterprise/internal/codeintel/autoindexing",
         "//enterprise/internal/codeintel/codenav",
-        "//enterprise/internal/codeintel/context",
+        "//internal/codeintel/codycontext",
         "//enterprise/internal/codeintel/dependencies",
         "//enterprise/internal/codeintel/policies",
         "//enterprise/internal/codeintel/ranking",

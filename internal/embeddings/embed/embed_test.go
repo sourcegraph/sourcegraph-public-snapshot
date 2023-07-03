@@ -8,8 +8,8 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
-	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
