@@ -16,12 +16,12 @@ interface CreateTypewriterParams {
 }
 
 // Maximum/minimum amount of time to wait between character chunks
-const MAX_DELAY_MS = 100
-const MIN_DELAY_MS = 10
+const MAX_DELAY_MS = 200
+const MIN_DELAY_MS = 5
 
 // Maximum/minimum character chunk sizes.
 // The maximum is only used when the typewriter is falling behind incoming text and the minimum delay is not enough.
-const MAX_CHAR_CHUNK_SIZE = 3
+const MAX_CHAR_CHUNK_SIZE = 2
 const MIN_CHAR_CHUNK_SIZE = 1
 
 export const createTypewriter = ({ emit }: CreateTypewriterParams): Typewriter => {
