@@ -6,10 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"sort"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -45,18 +43,15 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("openai/%s", c.model)
 }
 
-func (c *openaiEmbeddingsClient) GetQueryEmbeddingWithRetries(ctx context.Context, query string, maxRetries int) ([]float32, error) {
-	return c.getEmbeddingsWithRetries(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())}, maxRetries)
+func (c *openaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) ([]float32, error) {
+	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
 }
 
 func (c *openaiEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error) {
-	return c.getEmbeddingsWithRetries(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()), maxRetries)
+	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
 }
 
-// getEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
-// In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
-// often hangs up when downloading large embedding responses.
-func (c *openaiEmbeddingsClient) getEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -65,30 +60,6 @@ func (c *openaiEmbeddingsClient) getEmbeddingsWithRetries(ctx context.Context, t
 		}
 	}
 
-	embeddings, err := c.getEmbeddings(ctx, texts)
-	if err == nil {
-		return embeddings, nil
-	}
-
-	for i := 0; i < maxRetries; i++ {
-		embeddings, err = c.getEmbeddings(ctx, texts)
-		if err == nil {
-			return embeddings, nil
-		} else {
-			// Exponential delay
-			delay := time.Duration(int(math.Pow(float64(2), float64(i))))
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(delay * time.Second):
-			}
-		}
-	}
-
-	return nil, err
-}
-
-func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
 	response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: texts})
 	if err != nil {
 		return nil, err

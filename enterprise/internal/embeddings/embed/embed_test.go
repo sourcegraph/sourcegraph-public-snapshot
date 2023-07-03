@@ -280,7 +280,7 @@ type misbehavingEmbeddingsClient struct {
 	returnedDimsPerInput int
 }
 
-func (c *misbehavingEmbeddingsClient) GetQueryEmbeddingWithRetries(ctx context.Context, query string, maxRetries int) ([]float32, error) {
+func (c *misbehavingEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) ([]float32, error) {
 	return make([]float32, c.returnedDimsPerInput), nil
 }
 
@@ -302,7 +302,7 @@ func (c *mockEmbeddingsClient) GetModelIdentifier() string {
 	return "mock/some-model"
 }
 
-func (c *mockEmbeddingsClient) GetQueryEmbeddingWithRetries(_ context.Context, query string, _ int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetQueryEmbedding(_ context.Context, query string) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err
