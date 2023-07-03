@@ -57,7 +57,6 @@ import com.sourcegraph.cody.recipes.FindCodeSmellsAction;
 import com.sourcegraph.cody.recipes.GenerateDocStringAction;
 import com.sourcegraph.cody.recipes.GenerateUnitTestAction;
 import com.sourcegraph.cody.recipes.ImproveVariableNamesAction;
-import com.sourcegraph.cody.recipes.OptimizeCodeAction;
 import com.sourcegraph.cody.recipes.RecipeRunner;
 import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
 import com.sourcegraph.cody.recipes.TranslateToLanguageAction;
@@ -65,6 +64,7 @@ import com.sourcegraph.cody.ui.HtmlViewer;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
+import com.sourcegraph.config.SettingsComponent.InstanceType;
 import com.sourcegraph.config.SettingsConfigurable;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
@@ -149,9 +149,6 @@ class CodyToolWindowContent implements UpdatableChat {
     // contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
     // JButton releaseNotesButton = createWideButton("Generate release notes");
     // releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
-    JButton optimizeCodeButton = createRecipeButton("Optimize code");
-    optimizeCodeButton.addActionListener(
-        e -> new OptimizeCodeAction().executeRecipeWithPromptProvider(this, project));
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -163,7 +160,6 @@ class CodyToolWindowContent implements UpdatableChat {
     //    recipesPanel.add(fixupButton);
     //    recipesPanel.add(contextSearchButton);
     //    recipesPanel.add(releaseNotesButton);
-    recipesPanel.add(optimizeCodeButton);
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
@@ -608,9 +604,20 @@ class CodyToolWindowContent implements UpdatableChat {
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
     // Use context
     if (contextMessages.size() == 0) {
+      InstanceType instanceType = ConfigUtil.getInstanceType(project);
+
+      String report = "I found no context for your request.";
+      String ask =
+          instanceType == InstanceType.ENTERPRISE
+              ? "Please ensure this repository is added to your Sourcegraph Enterprise instance and that your access token and custom request headers are set up correctly."
+              : (instanceType == InstanceType.LOCAL_APP
+                  ? "Please ensure this repository is configured in Cody App."
+                  : (instanceType == InstanceType.DOTCOM
+                      ? "As your current server setting is Sourcegraph.com, please ensure this repository is public and indexed on Sourcegraph.com and that your access token is valid."
+                      : ""));
+      String resolution = "I will try to answer without context.";
       this.addMessageToChat(
-          ChatMessage.createAssistantMessage(
-              "I didn't find any context for your ask. I'll try to answer without further context."));
+          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution));
     } else {
 
       ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);

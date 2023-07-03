@@ -27,7 +27,15 @@
       "current": "5.1.1",
       "captainGitHubUsername": "coury-clark",
       "captainSlackUsername": "@coury"
-    }
+    },
+    "5.1.2": {
+        "codeFreezeDate": "2023-07-03T10:57:29.660-07:00",
+        "securityApprovalDate": "2023-07-03T10:57:29.660-07:00",
+        "releaseDate": "2023-07-03T10:57:29.660-07:00",
+        "current": "5.1.2",
+        "captainGitHubUsername": "BolajiOlajide",
+        "captainSlackUsername": "bolaji"
+      }
   },
   "dryRun": {
     "tags": false,
