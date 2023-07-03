@@ -74,6 +74,7 @@ query Repository($name: String!) {
 export const GET_CODY_CONTEXT_QUERY = `
 query GetCodyContext($repos: [ID!]!, $query: String!, $codeResultsCount: Int!, $textResultsCount: Int!) {
 	getCodyContext(repos: $repos, query: $query, codeResultsCount: $codeResultsCount, textResultsCount: $textResultsCount) {
+                __typename
 		... on FileChunkContext {
                         blob {
                                 path
