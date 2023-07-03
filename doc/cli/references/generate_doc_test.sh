@@ -15,7 +15,6 @@ got_files="${@:2}"
 USER=nobody HOME=. "$src_bin" doc -o=expected/
 
 for file in $(find expected -name "*.md"); do
-  echo $file
   want="${file##expected}"
   found="false"
 
