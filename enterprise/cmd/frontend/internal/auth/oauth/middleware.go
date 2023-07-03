@@ -34,7 +34,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This span should be manually finished before delegating to the next handler or
 		// redirecting.
-		span, ctx := trace.DeprecatedNew(r.Context(), traceFamily, "Middleware.Handle")
+		span, ctx := trace.New(r.Context(), traceFamily+".Middleware.Handle")
 		span.SetAttributes(attribute.Bool("isAPIHandler", isAPIHandler))
 
 		// Delegate to the auth flow handler

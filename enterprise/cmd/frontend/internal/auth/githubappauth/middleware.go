@@ -55,12 +55,11 @@ func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next
 	db := edb.NewEnterpriseDB(ossDB)
 	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
 	handler := newServeMux(db, authPrefix, ghAppState)
-	traceFamily := "githubapp"
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// This span should be manually finished before delegating to the next handler or
 		// redirecting.
-		span, _ := trace.DeprecatedNew(r.Context(), traceFamily, "Middleware.Handle")
+		span, _ := trace.New(r.Context(), "githubapp")
 		span.SetAttributes(attribute.Bool("isAPIHandler", isAPIHandler))
 		span.Finish()
 		if strings.HasPrefix(r.URL.Path, authPrefix+"/") {

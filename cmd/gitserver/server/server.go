@@ -105,7 +105,7 @@ func init() {
 // command *without* a context.
 func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder) (exitCode int, err error) {
 	c := cmd.Unwrap()
-	tr, ctx := trace.DeprecatedNew(ctx, "gitserver", "runCommandGraceful",
+	tr, ctx := trace.New(ctx, "runCommandGraceful",
 		attribute.String("path", c.Path),
 		attribute.StringSlice("args", c.Args),
 		attribute.String("dir", c.Dir))
@@ -479,7 +479,7 @@ func (s *Server) Handler() http.Handler {
 	getObjectFunc := gitdomain.GetObjectFunc(func(ctx context.Context, repo api.RepoName, objectName string) (_ *gitdomain.GitObject, err error) {
 		// Tracing is server concern, so add it here. Once generics lands we should be
 		// able to create some simple wrappers
-		tr, ctx := trace.DeprecatedNew(ctx, "git", "GetObject",
+		tr, ctx := trace.New(ctx, "GetObject",
 			attribute.String("objectName", objectName))
 		defer tr.FinishWithErr(&err)
 
@@ -1140,7 +1140,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	logger := s.Logger.Scoped("handleSearch", "http handler for search")
-	tr, ctx := trace.DeprecatedNew(r.Context(), "search", "")
+	tr, ctx := trace.New(r.Context(), "handleSearch")
 	defer tr.Finish()
 
 	// Decode the request
@@ -1619,7 +1619,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		args := strings.Join(req.Args, " ")
 
 		var tr *trace.Trace
-		tr, ctx = trace.DeprecatedNew(ctx, "exec."+cmd, string(req.Repo))
+		tr, ctx = trace.New(ctx, "exec."+cmd, attribute.String("repo", string(req.Repo)))
 		tr.SetAttributes(
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
@@ -1891,7 +1891,7 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 		args := strings.Join(req.Args, " ")
 
 		var tr *trace.Trace
-		tr, ctx = trace.DeprecatedNew(ctx, "p4exec."+cmd, req.P4Port)
+		tr, ctx = trace.New(ctx, "p4exec."+cmd, attribute.String("port", req.P4Port))
 		tr.SetAttributes(attribute.String("args", args))
 		logger = logger.WithTrace(trace.Context(ctx))
 
@@ -2553,8 +2553,7 @@ func honeySampleRate(cmd string, actor *actor.Actor) uint {
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "server", "doRepoUpdate",
-		attribute.String("repo", string(repo)))
+	tr, ctx := trace.New(ctx, "doRepoUpdate", attribute.String("repo", string(repo)))
 	defer tr.FinishWithErr(&err)
 
 	s.repoUpdateLocksMu.Lock()

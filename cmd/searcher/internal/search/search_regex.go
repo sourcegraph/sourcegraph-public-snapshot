@@ -261,7 +261,7 @@ func regexSearchBatch(ctx context.Context, rg *readerGrep, zf *zipFile, limit in
 
 // regexSearch concurrently searches files in zr looking for matches using rg.
 func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatchesContent, patternMatchesPaths bool, isPatternNegated bool, sender matchSender) (err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "search", "RegexSearch")
+	tr, ctx := trace.New(ctx, "regexSearch")
 	defer tr.FinishWithErr(&err)
 
 	if rg.re != nil {

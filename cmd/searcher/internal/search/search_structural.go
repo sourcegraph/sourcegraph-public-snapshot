@@ -396,7 +396,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 		return mockStructuralSearch(ctx, inputType, paths, extensionHint, pattern, rule, languages, repo, sender)
 	}
 
-	tr, ctx := trace.DeprecatedNew(ctx, "searcher", "StructuralSearch",
+	tr, ctx := trace.New(ctx, "structuralSearch",
 		attribute.String("repo", string(repo)))
 	defer tr.FinishWithErr(&err)
 

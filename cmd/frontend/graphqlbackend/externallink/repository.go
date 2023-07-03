@@ -100,7 +100,7 @@ func linksForRepository(
 	db database.DB,
 	repo *types.Repo,
 ) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
-	tr, ctx := trace.DeprecatedNew(ctx, "externallink", "linksForRepository",
+	tr, ctx := trace.New(ctx, "linksForRepository",
 		attribute.String("repo", string(repo.Name)),
 		attribute.Stringer("externalRepo", repo.ExternalRepo))
 	defer tr.Finish()

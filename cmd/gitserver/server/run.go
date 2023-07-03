@@ -50,7 +50,7 @@ func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 	}
 	runCommandMockMu.RUnlock()
 
-	tr, _ := trace.DeprecatedNew(ctx, "gitserver", "runCommand",
+	tr, _ := trace.New(ctx, "runCommand",
 		attribute.String("path", cmd.Unwrap().Path),
 		attribute.StringSlice("args", cmd.Unwrap().Args),
 		attribute.String("dir", cmd.Unwrap().Dir))

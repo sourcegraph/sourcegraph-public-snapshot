@@ -7,6 +7,7 @@ import (
 	"strconv"
 
 	"github.com/graph-gophers/graphql-go"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 
@@ -417,7 +418,7 @@ func (r *Resolver) batchSpecWorkspaceByID(ctx context.Context, gqlID graphql.ID)
 }
 
 func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.CreateBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, _ := trace.DeprecatedNew(ctx, "Resolver.CreateBatchChange", fmt.Sprintf("BatchSpec %s", args.BatchSpec))
+	tr, _ := trace.New(ctx, "Resolver.CreateBatchChange", attribute.String("BatchSpec", string(args.BatchSpec)))
 	defer tr.FinishWithErr(&err)
 
 	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
@@ -447,7 +448,7 @@ func (r *Resolver) CreateBatchChange(ctx context.Context, args *graphqlbackend.C
 }
 
 func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs) (_ graphqlbackend.BatchChangeResolver, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "Resolver.ApplyBatchChange", fmt.Sprintf("BatchSpec %s", args.BatchSpec))
+	tr, ctx := trace.New(ctx, "Resolver.ApplyBatchChange", attribute.String("BatchSpec", string(args.BatchSpec)))
 	defer tr.FinishWithErr(&err)
 
 	if err := rbac.CheckCurrentUserHasPermission(ctx, r.store.DatabaseDB(), rbac.BatchChangesWritePermission); err != nil {
@@ -550,7 +551,7 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 }
 
 func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (_ graphqlbackend.BatchSpecResolver, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "CreateBatchSpec", fmt.Sprintf("Resolver.CreateBatchSpec %s, Spec %q", args.Namespace, args.BatchSpec))
+	tr, ctx := trace.New(ctx, "CreateBatchSpec", attribute.String("namespace", string(args.Namespace)), attribute.String("batchSpec", string(args.BatchSpec)))
 	defer tr.FinishWithErr(&err)
 
 	if err := batchChangesCreateAccess(ctx, r.store.DatabaseDB()); err != nil {

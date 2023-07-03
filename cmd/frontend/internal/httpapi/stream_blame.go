@@ -36,7 +36,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			w.WriteHeader(404)
 			return
 		}
-		tr, ctx := trace.DeprecatedNew(r.Context(), "blame.Stream", "")
+		tr, ctx := trace.New(r.Context(), "blame.Stream")
 		defer tr.Finish()
 		r = r.WithContext(ctx)
 

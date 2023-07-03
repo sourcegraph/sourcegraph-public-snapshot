@@ -42,7 +42,7 @@ func (r *GitTreeEntryResolver) Files(ctx context.Context, args *gitTreeEntryConn
 }
 
 func (r *GitTreeEntryResolver) entries(ctx context.Context, args *gitTreeEntryConnectionArgs, filter func(fi fs.FileInfo) bool) (_ []*GitTreeEntryResolver, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "GitTreeEntryResolver", "entries")
+	tr, ctx := trace.New(ctx, "GitTreeEntryResolver.entries")
 	defer tr.FinishWithErr(&err)
 
 	entries, err := r.gitserverClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), r.Path(), r.isRecursive || args.Recursive)

@@ -59,7 +59,7 @@ type streamHandler struct {
 }
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	tr, ctx := trace.DeprecatedNew(r.Context(), "search.ServeStream", "")
+	tr, ctx := trace.New(r.Context(), "search.ServeStream")
 	defer tr.Finish()
 	r = r.WithContext(ctx)
 

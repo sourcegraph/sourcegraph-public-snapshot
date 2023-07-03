@@ -14,7 +14,6 @@ package search
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"math"
 	"net"
 	"net/http"
@@ -143,7 +142,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	defer metricRunning.Dec()
 
 	var tr *trace.Trace
-	tr, ctx = trace.DeprecatedNew(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
+	tr, ctx = trace.New(ctx, "search", attribute.String("repo", string(p.Repo)), attribute.String("commit", string(p.Commit)))
 	defer tr.Finish()
 
 	tr.SetAttributes(
