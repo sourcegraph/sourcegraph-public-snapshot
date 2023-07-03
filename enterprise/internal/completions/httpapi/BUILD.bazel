@@ -28,5 +28,6 @@ go_library(
         "//lib/errors",
         "@com_github_gomodule_redigo//redis",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )

@@ -28,11 +28,11 @@ func (t Tracer) New(ctx context.Context, name string, attrs ...attribute.KeyValu
 
 	// Set up the split trace.
 	trace := &Trace{
-		family:        name,
+		name:          name,
 		oteltraceSpan: otelSpan,
 	}
 	if parent := TraceFromContext(ctx); parent != nil {
-		trace.family = parent.family + " > " + name
+		trace.name = parent.name + " > " + name
 	}
 	return trace, contextWithTrace(ctx, trace)
 }

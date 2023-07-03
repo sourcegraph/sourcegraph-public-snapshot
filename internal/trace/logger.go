@@ -15,8 +15,8 @@ import (
 func Logger(ctx context.Context, l log.Logger) log.Logger {
 	// Attach details about internal/trace
 	if t := TraceFromContext(ctx); t != nil {
-		if t.family != "" {
-			l = l.With(log.String("trace.family", t.family))
+		if t.name != "" {
+			l = l.With(log.String("trace.family", t.name))
 		}
 	}
 	// Attach any trace (WithTrace no-ops if empty trace is provided)
