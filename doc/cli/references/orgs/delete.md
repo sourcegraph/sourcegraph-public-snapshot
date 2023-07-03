@@ -22,11 +22,11 @@ Usage of 'src orgs delete':
   -get-curl
     	Print the curl command for executing this query and exit (WARNING: includes printing your access token!)
   -id string
-    	The ID of the organization to delete~
+    	The ID of the organization to delete.
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
@@ -38,11 +38,11 @@ Examples:
 
   Delete an organization by name:
 
-    	$ src orgs delete -id=$(src orgs get -f='{{~ID}}' -name=abc-org)
+    	$ src orgs delete -id=$(src orgs get -f='{{.ID}}' -name=abc-org)
 
   Delete all organizations that match the query
 
-    	$ src orgs list -f='{{~ID}}' -query=abc-org | xargs -n 1 -I ORGID src orgs delete -id=ORGID
+    	$ src orgs list -f='{{.ID}}' -query=abc-org | xargs -n 1 -I ORGID src orgs delete -id=ORGID
 
 
 

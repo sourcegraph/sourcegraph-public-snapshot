@@ -25,19 +25,19 @@ Usage of 'src orgs members remove':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -org-id string
-    	ID of organization from which to remove member~ (required)
+    	ID of organization from which to remove member. (required)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -user-id string
-    	ID of user to remove as member~ (required)
+    	ID of user to remove as member. (required)
 
 Examples:
 
   Remove a member (alice) from an organization (abc-org):
 
-    	$ src orgs members remove -org-id=$(src org get -f '{{~ID}}' -name=abc-org) -user-id=$(src users get -f '{{~ID}}' -username=alice)
+    	$ src orgs members remove -org-id=$(src org get -f '{{.ID}}' -name=abc-org) -user-id=$(src users get -f '{{.ID}}' -username=alice)
 
 
 ```

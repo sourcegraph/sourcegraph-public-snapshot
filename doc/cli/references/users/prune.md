@@ -38,11 +38,11 @@ Usage of 'src users prune':
   -remove-null-users
     	removes users with no last active value
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
-This command removes users from a Sourcegraph instance who have been inactive for 60 or more days~ Admin accounts are omitted by default~
+This command removes users from a Sourcegraph instance who have been inactive for 60 or more days. Admin accounts are omitted by default.
 	
 Examples:
 

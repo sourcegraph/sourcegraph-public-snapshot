@@ -26,25 +26,25 @@ Usage of 'src users tag':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -remove
-    	Remove the tag~ (default: add the tag
+    	Remove the tag. (default: add the tag
   -tag string
-    	The tag to set on the user~ (required)
+    	The tag to set on the user. (required)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -user-id string
-    	The ID of the user to tag~ (required)
+    	The ID of the user to tag. (required)
 
 Examples:
 
   Add a tag "foo" to a user:
 
-    	$ src users tag -user-id=$(src users get -f '{{~ID}}' -username=alice) -tag=foo
+    	$ src users tag -user-id=$(src users get -f '{{.ID}}' -username=alice) -tag=foo
 
   Remove a tag "foo" to a user:
 
-    	$ src users tag -user-id=$(src users get -f '{{~ID}}' -username=alice) -remove -tag=foo
+    	$ src users tag -user-id=$(src users get -f '{{.ID}}' -username=alice) -remove -tag=foo
 
 Related examples:
 

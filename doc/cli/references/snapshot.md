@@ -5,7 +5,7 @@
 ## Usage
 
 ```
-'src snapshot' manages snapshots of Sourcegraph instance data~ All subcommands are currently EXPERIMENTAL~
+'src snapshot' manages snapshots of Sourcegraph instance data. All subcommands are currently EXPERIMENTAL.
 
 USAGE
 	src [-v] snapshot <command>

@@ -7,7 +7,7 @@
 |------|-------------|---------------|
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
 | `-extension-id` | Look up extension by extension ID. (e.g. "alice/myextension") |  |
-| `-f` | Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Title}} ({{.RemoteURL}})" or "{{.|json}}") | `{{~|json}}` |
+| `-f` | Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Title}} ({{.RemoteURL}})" or "{{.|json}}") | `{{.|json}}` |
 | `-get-curl` | Print the curl command for executing this query and exit (WARNING: includes printing your access token!) | `false` |
 | `-insecure-skip-verify` | Skip validation of TLS certificates against trusted chains | `false` |
 | `-trace` | Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing | `false` |
@@ -21,15 +21,15 @@ Usage of 'src extensions get':
   -dump-requests
     	Log GraphQL requests and responses to stdout
   -extension-id string
-    	Look up extension by extension ID~ (e~g~ "alice/myextension")
+    	Look up extension by extension ID. (e.g. "alice/myextension")
   -f string
-    	Format for the output, using the syntax of Go package text/template~ (e~g~ "{{~ExtensionID}}: {{~Manifest~Title}} ({{~RemoteURL}})" or "{{~|json}}") (default "{{~|json}}")
+    	Format for the output, using the syntax of Go package text/template. (e.g. "{{.ExtensionID}}: {{.Manifest.Title}} ({{.RemoteURL}})" or "{{.|json}}") (default "{{.|json}}")
   -get-curl
     	Print the curl command for executing this query and exit (WARNING: includes printing your access token!)
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 

@@ -25,19 +25,19 @@ Usage of 'src orgs members add':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -org-id string
-    	ID of organization to which to add member~ (required)
+    	ID of organization to which to add member. (required)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -username string
-    	Username of user to add as member~ (required)
+    	Username of user to add as member. (required)
 
 Examples:
 
   Add a member (alice) to an organization (abc-org):
 
-    	$ src orgs members add -org-id=$(src org get -f '{{~ID}}' -name=abc-org) -username=alice
+    	$ src orgs members add -org-id=$(src org get -f '{{.ID}}' -name=abc-org) -username=alice
 
 
 

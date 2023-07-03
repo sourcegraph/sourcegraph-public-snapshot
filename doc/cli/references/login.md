@@ -15,7 +15,7 @@
 ## Usage
 
 ```
-'src login' helps you authenticate 'src' to access a Sourcegraph instance with your user credentials~
+'src login' helps you authenticate 'src' to access a Sourcegraph instance with your user credentials.
 
 Usage:
 
@@ -23,13 +23,13 @@ Usage:
 
 Examples:
 
-  Authenticate to a Sourcegraph instance at https://sourcegraph~example~com:
+  Authenticate to a Sourcegraph instance at https://sourcegraph.example.com:
 
-    $ src login https://sourcegraph~example~com
+    $ src login https://sourcegraph.example.com
 
-  Authenticate to Sourcegraph~com:
+  Authenticate to Sourcegraph.com:
 
-    $ src login https://sourcegraph~com
+    $ src login https://sourcegraph.com
 
   -dump-requests
     	Log GraphQL requests and responses to stdout
@@ -38,7 +38,7 @@ Examples:
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 

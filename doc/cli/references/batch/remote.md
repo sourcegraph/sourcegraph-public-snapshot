@@ -23,28 +23,28 @@
 ```
 Usage of 'src batch remote':
   -allow-unsupported
-    	Allow unsupported code hosts~
+    	Allow unsupported code hosts.
   -clear-cache
-    	If true, clears the execution cache and executes all steps anew~
+    	If true, clears the execution cache and executes all steps anew.
   -dump-requests
     	Log GraphQL requests and responses to stdout
   -f string
-    	The name of the batch spec file to run~
+    	The name of the batch spec file to run.
   -force-override-ignore
-    	Do not ignore repositories that have a ~batchignore file~
+    	Do not ignore repositories that have a .batchignore file.
   -get-curl
     	Print the curl command for executing this query and exit (WARNING: includes printing your access token!)
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -n string
-    	Alias for -namespace~
+    	Alias for -namespace.
   -namespace string
-    	The user or organization namespace to place the batch change within~ Default is the currently authenticated user~
+    	The user or organization namespace to place the batch change within. Default is the currently authenticated user.
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
-'src batch remote' runs a batch spec on the Sourcegraph instance~
+'src batch remote' runs a batch spec on the Sourcegraph instance.
 
 Usage:
 
@@ -53,7 +53,7 @@ Usage:
 
 Examples:
 
-    $ src batch remote -f batch~spec~yaml
+    $ src batch remote -f batch.spec.yaml
 
 
 

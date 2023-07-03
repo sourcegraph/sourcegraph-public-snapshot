@@ -32,7 +32,7 @@ Usage of 'src repos delete-metadata':
   -repo-name string
     	The name of the repo to add the key-value pair metadata to (required if -repo is not specified)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
@@ -42,7 +42,7 @@ Examples:
 
 		$ src repos delete-metadata -repo=repoID -key=mykey
 
-  [DEPRECATED] Note 'delete-kvp' is deprecated and will be removed in future release~ Use 'delete-metadata' instead~
+  [DEPRECATED] Note 'delete-kvp' is deprecated and will be removed in future release. Use 'delete-metadata' instead.
 
 
 ```

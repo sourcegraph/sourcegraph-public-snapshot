@@ -33,11 +33,11 @@ Usage of 'src repos update-metadata':
   -repo-name string
     	The name of the repo to add the key-value pair metadata to (required if -repo is not specified)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -value string
-    	The new metadata value of the metadata key to be set~ Defaults to null~
+    	The new metadata value of the metadata key to be set. Defaults to null.
 
 Examples:
 
@@ -45,9 +45,9 @@ Examples:
 
     	$ src repos update-metadata -repo=repoID -key=my-key -value=new-value
 
-  Omitting -value will set the value of the key to null~
+  Omitting -value will set the value of the key to null.
 
-  [DEPRECATED] Note that 'update-kvp' is deprecated and will be removed in future release~ Use 'update-metadata' instead~
+  [DEPRECATED] Note that 'update-kvp' is deprecated and will be removed in future release. Use 'update-metadata' instead.
 
 
 ```

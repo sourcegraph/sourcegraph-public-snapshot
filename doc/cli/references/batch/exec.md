@@ -19,24 +19,24 @@
 ```
 Usage of 'src batch exec':
   -binaryDiffs
-    	Whether to encode diffs as base64~
+    	Whether to encode diffs as base64.
   -f string
-    	The workspace execution input file to read~
+    	The workspace execution input file to read.
   -repo string
-    	Path of the checked out repo on disk~
+    	Path of the checked out repo on disk.
   -run-as-image-user
-    	True to run step containers as the default image user; if false or omitted, containers are always run as root~
+    	True to run step containers as the default image user; if false or omitted, containers are always run as root.
   -timeout duration
-    	The maximum duration a single batch spec step can take~ (default 1h0m0s)
+    	The maximum duration a single batch spec step can take. (default 1h0m0s)
   -tmp string
-    	Directory for storing temporary data~
+    	Directory for storing temporary data.
   -workspaceFiles string
-    	Path of workspace files on disk~
+    	Path of workspace files on disk.
 
-INTERNAL USE ONLY: 'src batch exec' executes the given raw batch spec in the given workspaces~
+INTERNAL USE ONLY: 'src batch exec' executes the given raw batch spec in the given workspaces.
 
 The input file contains a JSON dump of the WorkspacesExecutionInput struct in
-github~com/sourcegraph/sourcegraph/lib/batches~
+github.com/sourcegraph/sourcegraph/lib/batches.
 
 Usage:
 
@@ -44,7 +44,7 @@ Usage:
 
 Examples:
 
-    $ src batch exec -f batch-spec-with-workspaces~json
+    $ src batch exec -f batch-spec-with-workspaces.json
 
 
 

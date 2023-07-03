@@ -35,7 +35,7 @@ Usage of 'src extsvc edit':
   -rename string
     	when specified, renames the external service
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
@@ -43,8 +43,8 @@ Examples:
 
   Edit an external service configuration on the Sourcegraph instance:
 
-    	$ cat new-config~json | src extsvc edit -id 'RXh0ZXJuYWxTZXJ2aWNlOjQ='
-    	$ src extsvc edit -name 'My GitHub connection' new-config~json
+    	$ cat new-config.json | src extsvc edit -id 'RXh0ZXJuYWxTZXJ2aWNlOjQ='
+    	$ src extsvc edit -name 'My GitHub connection' new-config.json
 
   Edit an external service name on the Sourcegraph instance:
 
@@ -52,7 +52,7 @@ Examples:
 
   Add some repositories to the exclusion list of the external service:
 
-    	$ src extsvc edit -name 'My GitHub connection' -exclude-repos 'github~com/foo/one' 'github~com/foo/two'
+    	$ src extsvc edit -name 'My GitHub connection' -exclude-repos 'github.com/foo/one' 'github.com/foo/two'
 
 
 ```

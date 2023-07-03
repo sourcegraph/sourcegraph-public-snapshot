@@ -5,7 +5,7 @@
 ## Usage
 
 ```
-'src codeowners' is a tool that manages ingested code ownership data in a Sourcegraph instance~
+'src codeowners' is a tool that manages ingested code ownership data in a Sourcegraph instance.
 
 Usage:
 
@@ -18,7 +18,7 @@ The commands are:
 	update	update a codeowners file
 	delete	delete a codeowners file
 
-Use "src codeowners [command] -h" for more information about a command~
+Use "src codeowners [command] -h" for more information about a command.
 
 
 ```

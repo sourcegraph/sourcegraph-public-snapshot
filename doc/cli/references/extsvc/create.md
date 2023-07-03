@@ -29,7 +29,7 @@ Usage of 'src extsvc create':
   -name string
     	exact name of the external service to create
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
@@ -37,8 +37,8 @@ Usage of 'src extsvc create':
 
   create an external service configuration on the Sourcegraph instance:
 
-  $ cat new-config~json | src extsvc create
-  $ src extsvc create -name 'My GitHub connection' new-config~json
+  $ cat new-config.json | src extsvc create
+  $ src extsvc create -name 'My GitHub connection' new-config.json
   
 
 ```

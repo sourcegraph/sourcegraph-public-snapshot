@@ -7,8 +7,8 @@
 ```
 'src scout' is a tool that provides monitoring for Sourcegraph resources 
 
-    EXPERIMENTAL: 'scout' is an experimental command in the 'src' tool~ To use, you must
-    point your ~kube config to your Sourcegraph instance~
+    EXPERIMENTAL: 'scout' is an experimental command in the 'src' tool. To use, you must
+    point your .kube config to your Sourcegraph instance.
 
     Usage: 
         
@@ -20,7 +20,7 @@
         usage           get CPU, memory and current disk usage
         advise          recommend lowering or raising resource allocations based on actual usage
 
-    Use "src scout [command] -h" for more information about a command~
+    Use "src scout [command] -h" for more information about a command.
     
 
 ```

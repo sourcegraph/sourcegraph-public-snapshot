@@ -28,19 +28,19 @@ Usage of 'src config edit':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -overwrite
-    	Overwrite the entire settings with the value given in -value (not just a single property)~
+    	Overwrite the entire settings with the value given in -value (not just a single property).
   -property string
-    	The name of the settings property to set~
+    	The name of the settings property to set.
   -subject string
-    	The ID of the settings subject whose settings to edit~ (default: authenticated user)
+    	The ID of the settings subject whose settings to edit. (default: authenticated user)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -value string
-    	The value for the settings property (when used with -property)~
+    	The value for the settings property (when used with -property).
   -value-file string
-    	Read the value from this file instead of from the -value command-line option~
+    	Read the value from this file instead of from the -value command-line option.
 
 Examples:
 
@@ -54,19 +54,19 @@ Examples:
 
   Overwrite all settings settings for the current user with the file contents:
 
-    	$ src config edit -overwrite -value-file myconfig~json
+    	$ src config edit -overwrite -value-file myconfig.json
 
   Edit a settings property for the user with username alice:
 
-    	$ src config edit -subject=$(src users get -f '{{~ID}}' -username=alice) -property motd -value '["Hello!"]'
+    	$ src config edit -subject=$(src users get -f '{{.ID}}' -username=alice) -property motd -value '["Hello!"]'
 
   Overwrite all settings settings for the organization named abc-org:
 
-    	$ src config edit -subject=$(src orgs get -f '{{~ID}}' -name=abc-org) -overwrite -value '{"motd":["Hello!"]}'
+    	$ src config edit -subject=$(src orgs get -f '{{.ID}}' -name=abc-org) -overwrite -value '{"motd":["Hello!"]}'
 
   Change global settings:
 
-    	$ src config edit -subject=$(echo 'query { site { id } }' | src api | jq ~data~site~id --raw-output)
+    	$ src config edit -subject=$(echo 'query { site { id } }' | src api | jq .data.site.id --raw-output)
 
 
 ```

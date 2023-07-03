@@ -23,7 +23,7 @@ Usage of 'src repos delete'
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 
@@ -31,7 +31,7 @@ Examples:
 
    Delete one or more repositories:
 
-    	$ src repos delete github~com/my/repo github~com/my/repo2
+    	$ src repos delete github.com/my/repo github.com/my/repo2
 
 ```
 	

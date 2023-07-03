@@ -7,7 +7,7 @@
 |------|-------------|---------------|
 | `-allow-unsupported` | Allow unsupported code hosts. | `false` |
 | `-apply` | Ignored. | `false` |
-| `-cache` | Directory for caching results and repository archives. | `Library/Caches/sourcegraph/batch` |
+| `-cache` | Directory for caching results and repository archives. | `~/.cache/sourcegraph/batch` |
 | `-clean-archives` | If true, deletes downloaded repository archives after executing batch spec steps. Note that only the archives related to the actual repositories matched by the batch spec will be cleaned up, and clean up will not occur if src exits unexpectedly. | `true` |
 | `-clear-cache` | If true, clears the execution cache and executes all steps anew. | `false` |
 | `-dump-requests` | Log GraphQL requests and responses to stdout | `false` |
@@ -35,45 +35,45 @@
 ```
 Usage of 'src batch apply':
   -allow-unsupported
-    	Allow unsupported code hosts~
+    	Allow unsupported code hosts.
   -apply
-    	Ignored~
+    	Ignored.
   -cache string
-    	Directory for caching results and repository archives~ (default "Library/Caches/sourcegraph/batch")
+    	Directory for caching results and repository archives. (default "~/.cache/sourcegraph/batch")
   -clean-archives
-    	If true, deletes downloaded repository archives after executing batch spec steps~ Note that only the archives related to the actual repositories matched by the batch spec will be cleaned up, and clean up will not occur if src exits unexpectedly~ (default true)
+    	If true, deletes downloaded repository archives after executing batch spec steps. Note that only the archives related to the actual repositories matched by the batch spec will be cleaned up, and clean up will not occur if src exits unexpectedly. (default true)
   -clear-cache
-    	If true, clears the execution cache and executes all steps anew~
+    	If true, clears the execution cache and executes all steps anew.
   -dump-requests
     	Log GraphQL requests and responses to stdout
   -f string
-    	The batch spec file to read, or - to read from standard input~
+    	The batch spec file to read, or - to read from standard input.
   -force-override-ignore
-    	Do not ignore repositories that have a ~batchignore file~
+    	Do not ignore repositories that have a .batchignore file.
   -get-curl
     	Print the curl command for executing this query and exit (WARNING: includes printing your access token!)
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -j int
-    	The maximum number of parallel jobs~ Default (or 0) is the number of CPU cores available to Docker~
+    	The maximum number of parallel jobs. Default (or 0) is the number of CPU cores available to Docker.
   -keep-logs
-    	Retain logs after executing steps~
+    	Retain logs after executing steps.
   -n string
-    	Alias for -namespace~
+    	Alias for -namespace.
   -namespace string
-    	The user or organization namespace to place the batch change within~ Default is the currently authenticated user~
+    	The user or organization namespace to place the batch change within. Default is the currently authenticated user.
   -run-as-root
-    	If true, forces all step containers to run as root~
+    	If true, forces all step containers to run as root.
   -skip-errors
-    	If true, errors encountered while executing steps in a repository won't stop the execution of the batch spec but only cause that repository to be skipped~
+    	If true, errors encountered while executing steps in a repository won't stop the execution of the batch spec but only cause that repository to be skipped.
   -text-only
-    	INTERNAL USE ONLY~ EXPERIMENTAL~ Switches off the TUI to only print JSON lines~
+    	INTERNAL USE ONLY. EXPERIMENTAL. Switches off the TUI to only print JSON lines.
   -timeout duration
-    	The maximum duration a single batch spec step can take~ (default 1h0m0s)
+    	The maximum duration a single batch spec step can take. (default 1h0m0s)
   -tmp string
-    	Directory for storing temporary data, such as log files~ Default is /tmp~ Can also be set with environment variable SRC_BATCH_TMP_DIR; if both are set, this flag will be used and not the environment variable~ (default "/tmp")
+    	Directory for storing temporary data, such as log files. Default is /tmp. Can also be set with environment variable SRC_BATCH_TMP_DIR; if both are set, this flag will be used and not the environment variable. (default "/tmp")
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -v	print verbose output
@@ -81,7 +81,7 @@ Usage of 'src batch apply':
     	Workspace mode to use ("auto", "bind", or "volume") (default "auto")
 
 'src batch apply' is used to apply a batch spec on a Sourcegraph instance,
-creating or updating the described batch change if necessary~
+creating or updating the described batch change if necessary.
 
 Usage:
 
@@ -90,11 +90,11 @@ Usage:
 
 Examples:
 
-    $ src batch apply -f batch~spec~yaml
+    $ src batch apply -f batch.spec.yaml
 
-    $ src batch apply -f batch~spec~yaml -namespace myorg
+    $ src batch apply -f batch.spec.yaml -namespace myorg
 
-    $ src batch apply batch~spec~yaml
+    $ src batch apply batch.spec.yaml
 
 
 

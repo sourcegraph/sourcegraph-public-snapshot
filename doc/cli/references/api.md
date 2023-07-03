@@ -25,18 +25,18 @@ Usage of 'src api':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -query string
-    	GraphQL query to execute, e~g~ 'query { currentUser { username } }' (stdin otherwise)
+    	GraphQL query to execute, e.g. 'query { currentUser { username } }' (stdin otherwise)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -vars string
-    	GraphQL query variables to include as JSON string, e~g~ '{"var": "val", "var2": "val2"}'
+    	GraphQL query variables to include as JSON string, e.g. '{"var": "val", "var2": "val2"}'
 
 Exit codes:
 
   0: Success
-  1: General failures (connection issues, invalid HTTP response, etc~)
+  1: General failures (connection issues, invalid HTTP response, etc.)
   2: GraphQL error response
 
 Examples:

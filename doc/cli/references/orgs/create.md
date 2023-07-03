@@ -19,7 +19,7 @@
 ```
 Usage of 'src orgs create':
   -display-name string
-    	The new organization's display name~ Defaults to organization name if unspecified~
+    	The new organization's display name. Defaults to organization name if unspecified.
   -dump-requests
     	Log GraphQL requests and responses to stdout
   -get-curl
@@ -27,9 +27,9 @@ Usage of 'src orgs create':
   -insecure-skip-verify
     	Skip validation of TLS certificates against trusted chains
   -name string
-    	The new organization's name~ (required)
+    	The new organization's name. (required)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
 

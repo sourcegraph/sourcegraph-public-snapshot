@@ -33,11 +33,11 @@ Usage of 'src repos add-metadata':
   -repo-name string
     	The name of the repo to add the key-value pair metadata to (required if -repo is not specified)
   -trace
-    	Log the trace ID for requests~ See https://docs~sourcegraph~com/admin/observability/tracing
+    	Log the trace ID for requests. See https://docs.sourcegraph.com/admin/observability/tracing
   -user-agent-telemetry
     	Include the operating system and architecture in the User-Agent sent with requests to Sourcegraph (default true)
   -value string
-    	The  metadata value associated with the  metadata key~ Defaults to null~
+    	The  metadata value associated with the  metadata key. Defaults to null.
 
 Examples:
 
@@ -45,9 +45,9 @@ Examples:
 
     	$ src repos add-metadata -repo=repoID -key=mykey -value=myvalue
 
-  Omitting -value will create a tag (a key with a null value)~
+  Omitting -value will create a tag (a key with a null value).
 
-  [DEPRECATED] Note that 'add-kvp' is deprecated and will be removed in future release~ Use 'add-metadata' instead~
+  [DEPRECATED] Note that 'add-kvp' is deprecated and will be removed in future release. Use 'add-metadata' instead.
 
 
 ```

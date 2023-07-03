@@ -5,7 +5,7 @@
 ## Usage
 
 ```
-'src debug' gathers and bundles debug data from a Sourcegraph deployment for troubleshooting~
+'src debug' gathers and bundles debug data from a Sourcegraph deployment for troubleshooting.
 
 Usage:
 
@@ -18,8 +18,8 @@ The commands are:
 	server               dumps context from single-container deployments
 	
 
-Use "src debug command -h" for more information about a subcommands~
-src debug has access to flags on src -- Ex: src -v kube -o foo~zip
+Use "src debug command -h" for more information about a subcommands.
+src debug has access to flags on src -- Ex: src -v kube -o foo.zip
 
 
 
