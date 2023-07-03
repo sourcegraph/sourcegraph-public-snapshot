@@ -121,7 +121,7 @@ func (s *searchClient) Plan(
 		if err != nil {
 			return "", err
 		}
-		tr.LazyPrintf("substitute query %s for context %s", sc.Query, context)
+		tr.AddEvent("substituted context filter with query", attribute.String("query", sc.Query), attribute.String("context", context))
 		return sc.Query, nil
 	})
 
@@ -133,7 +133,7 @@ func (s *searchClient) Plan(
 	if err != nil {
 		return nil, &QueryError{Query: searchQuery, Err: err}
 	}
-	tr.LazyPrintf("parsing done")
+	tr.AddEvent("parsing done")
 
 	inputs := &search.Inputs{
 		Plan:                   plan,
@@ -148,7 +148,7 @@ func (s *searchClient) Plan(
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
-	tr.LazyPrintf("Parsed query: %s", inputs.Query)
+	tr.AddEvent("parsed query", attribute.Stringer("query", inputs.Query))
 
 	return inputs, nil
 }

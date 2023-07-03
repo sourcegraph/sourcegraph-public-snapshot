@@ -146,7 +146,6 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	tr, ctx = trace.New(ctx, "search", fmt.Sprintf("%s@%s", p.Repo, p.Commit))
 	defer tr.Finish()
 
-	tr.LazyPrintf("%s", p.Pattern)
 	tr.SetAttributes(
 		attribute.String("repo", string(p.Repo)),
 		attribute.String("url", p.URL),
@@ -179,10 +178,12 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 				code = "500"
 			}
 		}
-		tr.LazyPrintf("code=%s matches=%d limitHit=%v", code, sender.SentCount(), sender.LimitHit())
 		metricRequestTotal.WithLabelValues(code).Inc()
-		tr.AddEvent("matches", attribute.Int("matches.len", sender.SentCount()))
-		tr.SetAttributes(attribute.Bool("limitHit", sender.LimitHit()))
+		tr.AddEvent("done",
+			attribute.String("code", code),
+			attribute.Int("matches.len", sender.SentCount()),
+			attribute.Bool("limitHit", sender.LimitHit()),
+		)
 		s.Log.Debug("search request",
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
