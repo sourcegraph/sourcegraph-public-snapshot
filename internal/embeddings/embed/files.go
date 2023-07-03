@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/binary"
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 )
 
 const MIN_EMBEDDABLE_FILE_SIZE = 32

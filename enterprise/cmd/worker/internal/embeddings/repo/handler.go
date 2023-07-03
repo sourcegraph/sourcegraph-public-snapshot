@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"

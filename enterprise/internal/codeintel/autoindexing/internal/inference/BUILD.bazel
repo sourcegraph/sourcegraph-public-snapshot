@@ -19,7 +19,7 @@ go_library(
         "//enterprise/internal/codeintel/autoindexing/internal/inference/lua",
         "//enterprise/internal/codeintel/autoindexing/internal/inference/luatypes",
         "//enterprise/internal/codeintel/autoindexing/shared",
-        "//enterprise/internal/paths",
+        "//internal/paths",
         "//internal/api",
         "//internal/authz",
         "//internal/codeintel/dependencies",
@@ -63,7 +63,7 @@ go_test(
     embed = [":inference"],
     deps = [
         "//enterprise/internal/codeintel/autoindexing/internal/inference/libs",
-        "//enterprise/internal/paths",
+        "//internal/paths",
         "//internal/api",
         "//internal/codeintel/dependencies",
         "//internal/gitserver",

@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/sourcegraph"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

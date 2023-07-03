@@ -4,8 +4,8 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/autoindexing/internal/inference/luatypes"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 )
 
 // filterPathsByPatterns returns a slice containing all of the input paths that match

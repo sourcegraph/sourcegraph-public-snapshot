@@ -22,7 +22,7 @@ go_library(
         "//internal/embeddings",
         "//internal/embeddings/background/repo",
         "//internal/embeddings/embed",
-        "//enterprise/internal/paths",
+        "//internal/paths",
         "//internal/actor",
         "//internal/api",
         "//internal/api/internalapi",
