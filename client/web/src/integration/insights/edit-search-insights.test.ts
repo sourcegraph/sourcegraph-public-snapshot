@@ -113,7 +113,7 @@ describe('Code insight edit insight page', () => {
             },
         })
 
-        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/001/edit')
+        await driver.page.goto(driver.sourcegraphBaseUrl + '/insights/edit/001')
 
         // Waiting for all important part of creation form will be rendered.
         await driver.page.waitForSelector('[name="repositories"]')
