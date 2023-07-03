@@ -426,7 +426,7 @@ type ExternalAccountsListOptions struct {
 }
 
 func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccountsListOptions) (acct []*extsvc.Account, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "UserExternalAccountsStore.List", "")
+	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.List")
 	defer func() {
 		if err != nil {
 			tr.SetError(err)
@@ -446,7 +446,7 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 }
 
 func (s *userExternalAccountsStore) ListForUsers(ctx context.Context, userIDs []int32) (userToAccts map[int32][]*extsvc.Account, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "UserExternalAccountsStore.ListForUsers", "")
+	tr, ctx := trace.New(ctx, "UserExternalAccountsStore.ListForUsers")
 	var count int
 	defer func() {
 		if err != nil {

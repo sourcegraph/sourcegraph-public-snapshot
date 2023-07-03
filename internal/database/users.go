@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/sourcegraph/log"
@@ -1063,7 +1064,7 @@ type UsersListOptions struct {
 }
 
 func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types.User, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "database.Users.List", fmt.Sprintf("%+v", opt))
+	tr, ctx := trace.New(ctx, "database.Users.List", attribute.String("opt", fmt.Sprintf("%+v", opt)))
 	defer tr.FinishWithErr(&err)
 
 	if opt == nil {
@@ -1077,7 +1078,7 @@ func (u *userStore) List(ctx context.Context, opt *UsersListOptions) (_ []*types
 
 // ListForSCIM lists users along with their email addresses and SCIM ExternalID.
 func (u *userStore) ListForSCIM(ctx context.Context, opt *UsersListOptions) (_ []*types.UserForSCIM, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "database.Users.ListForSCIM", fmt.Sprintf("%+v", opt))
+	tr, ctx := trace.New(ctx, "database.Users.ListForSCIM", attribute.String("opt", fmt.Sprintf("%+v", opt)))
 	defer tr.FinishWithErr(&err)
 
 	if opt == nil {

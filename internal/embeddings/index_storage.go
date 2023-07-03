@@ -111,7 +111,7 @@ func UpdateRepoEmbeddingIndex(
 }
 
 func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (_ *RepoEmbeddingIndex, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "DownloadRepoEmbeddingIndex", "", attribute.String("key", key))
+	tr, ctx := trace.New(ctx, "DownloadRepoEmbeddingIndex", attribute.String("key", key))
 	defer tr.FinishWithErr(&err)
 
 	dec, err := newDecoder(ctx, uploadStore, key)

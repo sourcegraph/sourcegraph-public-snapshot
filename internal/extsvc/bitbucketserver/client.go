@@ -975,7 +975,7 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 }
 
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (_ *http.Response, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "Bitbucket Server", "do")
+	tr, ctx := trace.New(ctx, "BitbucketServer.do")
 	defer tr.FinishWithErr(&err)
 	req = req.WithContext(ctx)
 

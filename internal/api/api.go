@@ -23,12 +23,16 @@ type RepoID int32
 // Previously, this was called RepoURI.
 type RepoName string
 
-// RepoHashedName is the hashed name of a repo
-type RepoHashedName string
+func (r RepoName) Attr() attribute.KeyValue {
+	return attribute.String("repo", string(r))
+}
 
 func (r RepoName) Equal(o RepoName) bool {
 	return strings.EqualFold(string(r), string(o))
 }
+
+// RepoHashedName is the hashed name of a repo
+type RepoHashedName string
 
 var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
 

@@ -37,8 +37,8 @@ type ReverseProxy struct {
 // to gitserver. The director must rewrite the request to the correct gitserver address, which
 // should be obtained via a gitserver client's AddrForRepo method.
 func (p *ReverseProxy) ServeHTTP(repo api.RepoName, method, op string, director func(req *http.Request), res http.ResponseWriter, req *http.Request) {
-	tr, _ := trace.DeprecatedNew(req.Context(), "ReverseProxy", "ServeHTTP",
-		attribute.String("repo", string(repo)),
+	tr, _ := trace.New(req.Context(), "ReverseProxy.ServeHTTP",
+		repo.Attr(),
 		attribute.String("method", method),
 		attribute.String("op", op))
 	defer tr.Finish()

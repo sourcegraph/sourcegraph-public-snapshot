@@ -1334,7 +1334,7 @@ ORDER BY es.id, essj.finished_at DESC
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) (_ []*types.ExternalService, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "externalServiceStore", "List")
+	tr, ctx := trace.New(ctx, "externalServiceStore.List")
 	defer tr.FinishWithErr(&err)
 
 	if opt.OrderByDirection != "ASC" {

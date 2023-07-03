@@ -2380,7 +2380,7 @@ func TestParseIncludePattern(t *testing.T) {
 		`\s`: {regexp: `\s`},
 	}
 
-	tr, _ := trace.DeprecatedNew(context.Background(), "", "")
+	tr, _ := trace.New(context.Background(), "")
 	defer tr.Finish()
 
 	for pattern, want := range tests {

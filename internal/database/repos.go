@@ -125,7 +125,7 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 // Get finds and returns the repo with the given repository ID from the database.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.Get", "")
+	tr, ctx := trace.New(ctx, "repos.Get")
 	defer tr.FinishWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
@@ -194,7 +194,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 //
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.GetByName", "")
+	tr, ctx := trace.New(ctx, "repos.GetByName")
 	defer tr.FinishWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
@@ -233,7 +233,7 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 // RepoHashedName is the repository hashed name.
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.GetByHashedName", "")
+	tr, ctx := trace.New(ctx, "repos.GetByHashedName")
 	defer tr.FinishWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
@@ -255,7 +255,7 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 // GetByIDs returns a list of repositories by given IDs. The number of results list could be less
 // than the candidate list due to no repository is associated with some IDs.
 func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types.Repo, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.GetByIDs", "")
+	tr, ctx := trace.New(ctx, "repos.GetByIDs")
 	defer tr.FinishWithErr(&err)
 
 	// listRepos will return a list of all repos if we pass in an empty ID list,
@@ -283,7 +283,7 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 }
 
 func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]string, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.GetRepoDescriptionsByIDs", "")
+	tr, ctx := trace.New(ctx, "repos.GetRepoDescriptionsByIDs")
 	defer tr.FinishWithErr(&err)
 
 	opts := ReposListOptions{
@@ -310,7 +310,7 @@ func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.Rep
 }
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.Count", "")
+	tr, ctx := trace.New(ctx, "repos.Count")
 	defer tr.FinishWithErr(&err)
 
 	opt.Select = []string{"COUNT(*)"}
@@ -327,7 +327,7 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 // Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
 // number of IDs given if a repo with the given ID does not exist.
 func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.Metadata", "")
+	tr, ctx := trace.New(ctx, "repos.Metadata")
 	defer tr.FinishWithErr(&err)
 
 	opts := ReposListOptions{
@@ -797,7 +797,7 @@ const (
 // This will not return any repositories from external services that are not present in the Sourcegraph repository.
 // Matching is done with fuzzy matching, i.e. "query" will match any repo name that matches the regexp `q.*u.*e.*r.*y`
 func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.List", "")
+	tr, ctx := trace.New(ctx, "repos.List")
 	defer tr.FinishWithErr(&err)
 
 	if len(opt.OrderBy) == 0 {
@@ -809,7 +809,7 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 
 // StreamMinimalRepos calls the given callback for each of the repositories names and ids that match the given options.
 func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions, cb func(*types.MinimalRepo)) (err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.StreamMinimalRepos", "")
+	tr, ctx := trace.New(ctx, "repos.StreamMinimalRepos")
 	defer tr.FinishWithErr(&err)
 
 	opt.Select = minimalRepoColumns
@@ -1289,7 +1289,7 @@ type ListSourcegraphDotComIndexableReposOptions struct {
 const listSourcegraphDotComIndexableReposMinStars = 5
 
 func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.ListIndexable", "")
+	tr, ctx := trace.New(ctx, "repos.ListIndexable")
 	defer tr.FinishWithErr(&err)
 
 	var joins, where []*sqlf.Query
@@ -1367,7 +1367,7 @@ ORDER BY stars DESC NULLS LAST
 // Create inserts repos and their sources, respectively in the repo and external_service_repos table.
 // Associated external services must already exist.
 func (s *repoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
-	tr, ctx := trace.DeprecatedNew(ctx, "repos.Create", "")
+	tr, ctx := trace.New(ctx, "repos.Create")
 	defer tr.FinishWithErr(&err)
 
 	records := make([]*repoRecord, 0, len(repos))
