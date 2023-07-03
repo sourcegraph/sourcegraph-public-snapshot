@@ -47,7 +47,7 @@ func NewDocumentSymbolEdge(id, inV, outV uint64) DocumentSymbolEdge {
 	}
 }
 
-// bazel run //lib/lsif/protocol:write_symbol_kind (or bazel run //dev:write_all)
+// bazel run //lib/lsif/protocol:write_symbol_kind (or bazel run //dev:write_all_generated)
 // SymbolKind corresponds to lsp.SymbolKind in the LSP spec. See
 // https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#textDocument_documentSymbol
 type SymbolKind int
@@ -81,7 +81,7 @@ const (
 	TypeParameter SymbolKind = 26
 )
 
-// bazel run //lib/lsif/protocol:write_symbol_tag (or bazel run //dev:write_all)
+// bazel run //lib/lsif/protocol:write_symbol_tag (or bazel run //dev:write_all_generated)
 // SymbolTag corresponds to lsp.SymbolTag in the LSP spec. See
 // https://microsoft.github.io/language-server-protocol/specifications/specification-3-17/#textDocument_documentSymbol
 type SymbolTag int
