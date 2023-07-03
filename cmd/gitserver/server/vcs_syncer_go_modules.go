@@ -81,7 +81,7 @@ func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposour
 // valid according to modzip.CheckZip or that are potentially malicious.
 func unzip(mod module.Version, zipBytes []byte, workDir string) error {
 	zipFile := path.Join(workDir, "mod.zip")
-	err := os.WriteFile(zipFile, zipBytes, 0666)
+	err := os.WriteFile(zipFile, zipBytes, 0o666)
 	if err != nil {
 		return errors.Wrapf(err, "failed to create go module zip file %q", zipFile)
 	}
@@ -106,7 +106,8 @@ func unzip(mod module.Version, zipBytes []byte, workDir string) error {
 
 	br := bytes.NewReader(zipBytes)
 	err = unpack.Zip(br, int64(br.Len()), workDir, unpack.Opts{
-		SkipInvalid: true,
+		SkipInvalid:    true,
+		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
 			_, ok := valid[path]
