@@ -13,3 +13,12 @@ go_binary(
     embed = [":references_lib"],
     visibility = ["//visibility:public"],
 )
+
+filegroup(
+    name = "doc_files",
+    srcs = glob(
+        ["**/*"],
+        ["**/*.go"],
+    ),
+    visibility = ["//doc:__pkg__"],
+)

@@ -85,7 +85,7 @@ public class CodyCompletionsManager {
             200,
             0.6,
             0.1);
-    TextDocument textDocument = new IntelliJTextDocument(editor);
+    TextDocument textDocument = new IntelliJTextDocument(editor, project);
     CompletionDocumentContext documentCompletionContext = textDocument.getCompletionContext(offset);
     if (documentCompletionContext.isCompletionTriggerValid()) {
       Callable<CompletableFuture<Void>> callable =
@@ -250,15 +250,13 @@ public class CodyCompletionsManager {
   private CompletionsService completionsService(@NotNull Editor editor) {
     Optional<Project> project = Optional.ofNullable(editor.getProject());
     String instanceUrl =
-        Optional.ofNullable(System.getenv("SRC_ENDPOINT"))
-            .or(() -> project.map(ConfigUtil::getSourcegraphUrl))
+        project
+            .map(ConfigUtil::getSourcegraphUrl)
             .map(url -> url.endsWith("/") ? url : url + "/")
             .orElse(ConfigUtil.DOTCOM_URL);
     Optional<String> accessToken =
-        Optional.ofNullable(System.getenv("SRC_ACCESS_TOKEN"))
-            .or(
-                () ->
-                    project.flatMap(p -> Optional.ofNullable(ConfigUtil.getProjectAccessToken(p))))
+        project
+            .flatMap(p -> Optional.ofNullable(ConfigUtil.getProjectAccessToken(p)))
             .filter(StringUtils::isNotEmpty);
     if (accessToken.isEmpty() && !ConfigUtil.isAccessTokenNotificationDismissed()) {
       NotificationActivity.notifyAboutSourcegraphAccessToken(Optional.of(instanceUrl));

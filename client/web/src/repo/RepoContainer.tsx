@@ -34,7 +34,7 @@ import { BatchChangesProps } from '../batches'
 import { CodeIntelligenceProps } from '../codeintel'
 import { RepoContainerEditor } from '../cody/components/RepoContainerEditor'
 import { CodySidebar } from '../cody/sidebar'
-import { useCodySidebar } from '../cody/sidebar/Provider'
+import { useCodySidebar, useSidebarSize, CODY_SIDEBAR_SIZES } from '../cody/sidebar/Provider'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { RouteError } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
@@ -60,7 +60,6 @@ import {
     RepoRevisionContainerContext,
     RepoRevisionContainerRoute,
 } from './RepoRevisionContainer'
-import { repoSplat } from './repoRevisionContainerRoutes'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
 import { repoSettingsAreaPath } from './settings/routes'
@@ -68,8 +67,6 @@ import { repoSettingsAreaPath } from './settings/routes'
 import styles from './RepoContainer.module.scss'
 
 const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
-
-const CODY_SIDEBAR_SIZES = { default: 350, max: 1200, min: 250 }
 
 /**
  * Props passed to sub-routes of {@link RepoContainer}.
@@ -155,13 +152,17 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
     )
 
     const {
-        sidebarSize: codySidebarSize,
         isSidebarOpen: isCodySidebarOpen,
         setIsSidebarOpen: setIsCodySidebarOpen,
-        setSidebarSize: setCodySidebarSize,
         scope,
         setEditorScope,
     } = useCodySidebar()
+
+    const { sidebarSize, setSidebarSize: setCodySidebarSize } = useSidebarSize()
+
+    /* eslint-disable react-hooks/exhaustive-deps */
+    const codySidebarSize = useMemo(() => sidebarSize, [isCodySidebarOpen])
+    /* eslint-enable react-hooks/exhaustive-deps */
 
     useEffect(() => {
         const activeEditor = scope.editor.getActiveTextEditor()
@@ -356,6 +357,9 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
         repoName,
     }
 
+    // must exactly match how the revision was encoded in the URL
+    const repoNameAndRevision = `${repoName}${typeof rawRevision === 'string' ? `@${rawRevision}` : ''}`
+
     return (
         <>
             {focusCodyShortcut?.keybindings.map((keybinding, index) => (
@@ -453,7 +457,7 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                             {repoContainerRoutes.map(({ path, render, condition = () => true }) => (
                                 <Route
                                     key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                    path={repoSplat + path}
+                                    path={repoNameAndRevision + path}
                                     errorElement={<RouteError />}
                                     element={
                                         /**
@@ -470,14 +474,14 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                 />
                             ))}
                             <Route
-                                path={repoSplat + repoSettingsAreaPath}
+                                path={repoNameAndRevision + repoSettingsAreaPath}
                                 errorElement={<RouteError />}
                                 // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
                                 element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
                             />
                             <Route
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
-                                path="*"
+                                path={repoNameAndRevision + '/*'}
                                 errorElement={<RouteError />}
                                 element={
                                     isEmptyRepo ? (

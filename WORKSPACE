@@ -382,3 +382,7 @@ embbedings_assets_deps()
 load("@container_structure_test//:repositories.bzl", "container_structure_test_register_toolchain")
 
 container_structure_test_register_toolchain(name = "cst")
+
+load("//dev:tool_deps.bzl", "tool_deps")
+
+tool_deps()

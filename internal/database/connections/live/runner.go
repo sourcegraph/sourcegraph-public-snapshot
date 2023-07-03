@@ -39,7 +39,7 @@ func RunnerFromDSNsWithSchemas(out *output.Output, logger log.Logger, dsns map[s
 				pending.Destroy()
 				return nil, err
 			}
-			pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %s succeeded", dsns[name]))
+			pending.Complete(output.Emojif(output.EmojiSuccess, "Connection to %q succeeded", dsns[name]))
 
 			return initStore(ctx, newStore, db, schema)
 		}

@@ -66,7 +66,7 @@ export type Config = Pick<
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
-    private webview?: Omit<vscode.Webview, 'postMessage'> & {
+    public webview?: Omit<vscode.Webview, 'postMessage'> & {
         postMessage(message: ExtensionMessage): Thenable<boolean>
     }
 
@@ -116,11 +116,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             vscode.workspace.onDidChangeWorkspaceFolders(async () => {
                 await this.updateCodebaseContext()
             }),
-            vscode.commands.registerCommand('cody.app.sync', () => this.syncLocalAppState()),
             vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
         )
-        this.authProvider.init().catch(error => console.log(error))
-
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
         const solutionLimit = codyConfig.get<number>('provider.limit.solution') || SOLUTION_TOKEN_LENGTH
@@ -176,6 +173,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     public onConfigurationChange(newConfig: Config): void {
         debug('ChatViewProvider:onConfigurationChange', '')
         this.config = newConfig
+        const authStatus = this.authProvider.getAuthStatus()
+        if (authStatus.endpoint) {
+            this.config.serverEndpoint = authStatus.endpoint
+        }
         this.configurationChangeEvent.fire()
     }
 
@@ -298,6 +299,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
+            case 'chat-button': {
+                switch (message.action) {
+                    case 'explain-code-high-level':
+                    case 'find-code-smells':
+                    case 'generate-unit-test':
+                        void this.executeRecipe(message.action)
+                        break
+                    default:
+                        break
+                }
+                break
+            }
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }
@@ -360,7 +373,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-                if (err === 'aborted') {
+
+                if (isAbortError(err)) {
                     return
                 }
                 // Display error message as assistant response
@@ -652,14 +666,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     /**
-     * Display app state in webview view that is used during Signin flow
-     */
-    public async syncLocalAppState(): Promise<void> {
-        // Notify webview that app is installed
-        await this.webview?.postMessage({ type: 'app-state', isInstalled: true })
-    }
-
-    /**
      * Delete history from current chat history and local storage
      */
     private async deleteHistory(chatID: string): Promise<void> {
@@ -763,7 +769,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             // update codebase context on configuration change
             await this.updateCodebaseContext()
             await this.webview?.postMessage({ type: 'config', config: configForWebview, authStatus })
-            debug('Cody:publishConfig', 'webview', { verbose: authStatus })
+            debug('Cody:publishConfig', 'configForWebview', { verbose: configForWebview })
         }
 
         this.disposables.push(this.configurationChangeEvent.event(() => send()))
@@ -775,17 +781,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public sendEvent(event: string, value: string): void {
         const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
-        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
         const endpointUri = { serverEndpoint: endpoint }
-        const chatTranscript = { chatTranscript: this.transcript.toChat() }
         switch (event) {
             case 'feedback':
-                // Only include context for dot com users with connected codebase
-                logEvent(
-                    `CodyVSCodeExtension:codyFeedback:${value}`,
-                    null,
-                    !isPrivateInstance && this.codebaseContext.getCodebase() ? chatTranscript : null
-                )
+                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, null, this.codyFeedbackPayload())
                 break
             case 'token':
                 logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
@@ -797,6 +796,28 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'click':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
+        }
+    }
+
+    private codyFeedbackPayload(): any {
+        const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
+        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
+
+        // The user should only be able to submit feedback on transcripts, but just in case we guard against this happening.
+        const privateChatTranscript = this.transcript.toChat()
+        if (privateChatTranscript.length === 0) {
+            return null
+        }
+
+        const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
+        const lastChatUsedEmbeddings = lastContextFiles?.some(file => file.source === 'embeddings')
+
+        // We only include full chat transcript for dot com users with connected codebase
+        const chatTranscript = !isPrivateInstance && this.codebaseContext.getCodebase() ? privateChatTranscript : null
+
+        return {
+            chatTranscript,
+            lastChatUsedEmbeddings,
         }
     }
 
@@ -830,6 +851,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         _token: vscode.CancellationToken
     ): Promise<void> {
         this.webview = webviewView.webview
+        this.authProvider.webview = webviewView.webview
 
         const extensionPath = vscode.Uri.file(this.extensionPath)
         const webviewPath = vscode.Uri.joinPath(extensionPath, 'dist')
@@ -937,4 +959,8 @@ export async function getCodebaseContext(
         undefined,
         getRerankWithLog(chatClient)
     )
+}
+
+function isAbortError(error: string): boolean {
+    return error === 'aborted' || error === 'socket hang up'
 }

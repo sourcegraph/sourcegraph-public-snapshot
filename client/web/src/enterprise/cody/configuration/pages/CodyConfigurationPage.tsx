@@ -100,7 +100,10 @@ export const CodyConfigurationPage: FC<CodyConfigurationPageProps> = ({
                 description={
                     <>
                         Rules that control keeping embeddings up-to-date. See the{' '}
-                        <Link to="/help/cody/explanations/policies">documentation</Link> for more details.
+                        <Link target="_blank" to="/help/cody/explanations/policies">
+                            documentation
+                        </Link>{' '}
+                        for more details.
                     </>
                 }
                 actions={

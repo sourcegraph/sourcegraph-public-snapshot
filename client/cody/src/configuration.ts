@@ -53,6 +53,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
     }
 
     return {
+        // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
@@ -64,7 +65,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
         inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
-        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,

@@ -50,43 +50,94 @@
                 }
             </script>
 
-            <script type="module" src="https://esm.sh/@markprompt/web@0.3.2-beta3" defer></script>
+            <link rel="stylesheet" href="https://esm.sh/@markprompt/css@0.4.0?css" />
 
-            <script>
-                function showMarkprompt() {
-                    const elem = document.getElementById("markprompt-container");
-                    elem.style.opacity = 1;
-                    elem.style.pointerEvents = "auto";
+            <script type="module">
+                import { markprompt } from 'https://esm.sh/@markprompt/web@0.7.0';
 
-                    const page = document.getElementById("page");
-                    page.style.pointerEvents = "none";
+                const markpromptEl = document.querySelector('#markprompt');
 
-                    requestAnimationFrame((time) => {
-                        document.querySelector("#markprompt-dialog").classList.add("dialog-slide-up");
-                    });
+                const pathToHref = (path) => {
+                    return path
+                        ?.replace(/^\/*doc\//, "/")
+                        ?.replace(/\.[^.]+$/, "")
+                        ?.replace(/\/index$/, "")
+                };
 
-                    const markpromptComponent = document.getElementsByTagName('markprompt-content')[0];
-                    if (markpromptComponent) {
-                        markpromptComponent.reset()
-                        markpromptComponent.focus()
+                const sluggify = (text) => {
+                    return text
+                        .toLowerCase()
+                        .replace(/[^\w\s-]/g, '')
+                        .replace(/\s+/g, '-');
+                }
+
+                const getHref = (path, sectionHeading) => {
+                    const p = pathToHref(path);
+                    if (sectionHeading?.id) {
+                        return `${p}#${sectionHeading.id}`;
+                    } else if (sectionHeading?.value) {
+                        return `${p}#${sluggify(sectionHeading.value)}`;
                     }
-                }
+                    return p;
+                };
 
-                function dismissMarkprompt() {
-                   const elem = document.getElementById("markprompt-container");
-                   elem.style.opacity = 0;
-                   elem.style.pointerEvents = "none";
-                   const page = document.getElementById("page");
-                   page.style.pointerEvents = "auto";
+                const promptTemplate = `You are a very enthusiastic company representative from Sourcegraph who loves to help people! Below is a list of context sections separated by three dashes ('---'). They consist of a section id, which corresponds to the file from which the section is in, followed by the actual section content, in Markdown format.
 
-                   requestAnimationFrame((time) => {
-                        document.querySelector("#markprompt-dialog").classList.remove("dialog-slide-up");
-                    });
-                }
+In the content, you may find relative links in Markdown format. Some examples are [Step 1](#step1), [Writing an indexer](explanations/writing_an_indexer.md), [Home](/docs/index.md). If you encounter such a link, you need to reconstruct the full path. Here is how you should do it:
+- First, transform the section id to an absolute URL path, and remove the "/doc" prefix. For instance, "/doc/code_navigation/step-1.md" should be turned into "/code_navigation/step-1". Note that filenames like "index.md" corresponding to a root path, so for instance, "/doc/code_navigation/index.md" becomes "/doc/code_navigation".
+- Given this absolute base path, prepend it to the relative link. For instance, if the link "[Step 1](#step1)" comes from a section whose id is "/doc/code_navigation/getting-started.md", then this link should be turned into "[Step 1](/code_navigation/getting-started#step1)". Similarly, if the link [Writing an indexer](explanations/writing_an_indexer.md), comes from a section whose id is "/doc/code_navigation/index.md", then this link should be turned into "[Writing an indexer](/code_navigation/explanations/writing_an_indexer)".
+- In insist: if a link starts with "/doc/", replace the "/doc/" prefix by "/".
 
-                function onDialogClick(e) {
-                    e.stopPropagation();
-                }
+Finally, you should always offer answers with high conviction, based on the provided context. If you are unsure and the answer is not explicitly written in the documentation, say "I don't know".
+
+Here are the context sections:
+---
+\{\{CONTEXT\}\}
+
+Question: "\{\{PROMPT\}\}"
+
+Answer (including related code snippets if available):`
+
+                markprompt('dzvb1USv2SLXKiQMnH56ua3dW54mSChj',
+                markpromptEl, {
+                    prompt: {
+                        model: "gpt-4",
+                        promptTemplate,
+                        placeholder: "Search or ask a question…",
+                        cta: "Ask Docs AI"
+                    },
+                    search: {
+                        enabled: true,
+                        getResultHref: (path, sectionHeading) => {
+                            return getHref(path, sectionHeading);
+                        }
+                    },
+                    trigger: {
+                        label: 'Search or ask Docs AI',
+                        placeholder: 'Search or ask Docs AI',
+                        floating: false
+                    },
+                    showBranding: false,
+                    references: {
+                        transformReferenceId: (referenceId) => {
+                            const parts = referenceId.split("/")
+                            let text = parts.slice(-1)[0].replace(/\.[^.]+$/, '')
+                            if (text === "index") {
+                                if (parts.length === 1) {
+                                    text = "Home"
+                                } else {
+                                    text = parts.slice(-2)[0]
+                                }
+                            }
+                            text = text.replace(/[_-]+/gi, " ")
+                            text = text.charAt(0).toUpperCase() + text.slice(1);
+
+                            const href = pathToHref(referenceId);
+
+                            return { text, href }
+                        },
+                    },
+                });
             </script>
 
             <!-- Google Tag Manager (noscript) -->
@@ -102,15 +153,7 @@
                         <img src="{{asset "logo-theme-dark.svg"}}" class="theme-dark" alt="Sourcegraph docs"/>
                     </a></h1>
                     <div class="markprompt-search-container">
-                        <form id="search-form" method="get" action="/search">
-                            <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M21.172 24l-7.387-7.387c-1.388.874-3.024 1.387-4.785 1.387-4.971 0-9-4.029-9-9s4.029-9 9-9 9 4.029 9 9c0 1.761-.514 3.398-1.387 4.785l7.387 7.387-2.828 2.828zm-12.172-8c3.859 0 7-3.14 7-7s-3.141-7-7-7-7 3.14-7 7 3.141 7 7 7z"/></svg>
-                            <input type="text" id="search" name="q" value="{{block "query" .}}{{end}}" placeholder="" spellcheck="false" aria-label="Query" />
-                            <input type="hidden" name="v" value="{{block "version" .}}{{end}}">
-                            <button id="search-button" type="submit" aria-label="Search" class="sr-only">Search</button>
-                        </form>
-                        <button id="markprompt-button" aria-label="Open prompt" onclick="showMarkprompt()">
-                            <svg id="markprompt-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-message-square"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                        </button>
+                        <div id="markprompt" />
                     </div>
                 </header>
                 <nav id="sections" class="links sidebar">
@@ -156,75 +199,6 @@
                     </nav>
                 </footer>
             </div>
-            <div id="markprompt-container" class="markprompt-container" onclick="dismissMarkprompt()">
-                <div id="markprompt-dialog" class="markprompt-dialog" onclick="onDialogClick(event)">
-                    <markprompt-content
-                        model="gpt-4"
-                        projectKey="D5is0GTlhrzxIR5a9BkalgbdPhv8RWs8"
-                        placeholder="Ask docs..."
-                    />
-                </div>
-            </div>
-            <script>
-                const component = document.getElementsByTagName('markprompt-content')[0];
-
-                component.getRefFromId = (id) => {
-                    const parts = id.split("/")
-                    let label = parts.slice(-1)[0].replace(/\.md$/, '')
-                    if (label === "index") {
-                        if (parts.length === 1) {
-                            label = "Home"
-                        } else {
-                            label = parts.slice(-2)[0]
-                        }
-                    }
-                    label = label.replace(/[_-]+/gi, " ")
-                    label = label.charAt(0).toUpperCase() + label.slice(1);
-
-                    const href = id.replace(/^\/doc\//, "/").replace(/\.md/, "").replace(/\/index$/, "")
-
-                    return { label, href }
-                };
-
-component.promptTemplate = `You are a very enthusiastic company representative from Sourcegraph who loves to help people! Below is a list of context sections separated by three dashes ('---'). They consist of a section id, which corresponds to the file from which the section is in, followed by the actual section content, in Markdown format.
-
-In the content, you may find relative links in Markdown format. Some examples are [Step 1](#step1), [Writing an indexer](explanations/writing_an_indexer.md), [Home](/docs/index.md). If you encounter such a link, you need to reconstruct the full path. Here is how you should do it:
-- First, transform the section id to an absolute URL path, and remove the "/doc" prefix. For instance, "/doc/code_navigation/step-1.md" should be turned into "/code_navigation/step-1". Note that filenames like "index.md" corresponding to a root path, so for instance, "/doc/code_navigation/index.md" becomes "/doc/code_navigation".
-- Given this absolute base path, prepend it to the relative link. For instance, if the link "[Step 1](#step1)" comes from a section whose id is "/doc/code_navigation/getting-started.md", then this link should be turned into "[Step 1](/code_navigation/getting-started#step1)". Similarly, if the link [Writing an indexer](explanations/writing_an_indexer.md), comes from a section whose id is "/doc/code_navigation/index.md", then this link should be turned into "[Writing an indexer](/code_navigation/explanations/writing_an_indexer)".
-- In insist: if a link starts with "/doc/", replace the "/doc/" prefix by "/".
-
-Finally, you should always offer answers with high conviction, based on the provided context. If you are unsure and the answer is not explicitly written in the documentation, say "I don't know".
-
-Here are the context sections:
----
-\{\{CONTEXT\}\}
-
-Question: "\{\{PROMPT\}\}"
-
-Answer (including related code snippets if available):`
-
-                function setDark(dark) {
-                    if (dark) {
-                        component.classList.add('dark')
-                    } else {
-                        component.classList.remove('dark')
-                    }
-                }
-
-                const body = document.querySelector('body');
-
-                setDark(body.className.includes("theme-dark"))
-
-                const observer = new MutationObserver((mutationsList) => {
-                    for (const mutation of mutationsList) {
-                        if (mutation.target === body && mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                            setDark(body.className.includes("theme-dark"))
-                        }
-                    }
-                });
-
-                observer.observe(body, { attributes: true });
-            </script>
 		</body>
 	</html>
 {{end}}

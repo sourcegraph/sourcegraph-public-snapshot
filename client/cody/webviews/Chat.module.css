@@ -97,6 +97,11 @@ body[data-vscode-theme-kind='vscode-high-contrast'] .transcript-item:not(.human-
     color: var(--vscode-problemsWarningIcon-foreground);
 }
 
+.chat-button {
+    margin-top: 0.5rem;
+    padding: 0.25rem;
+}
+
 .feedback-buttons {
     display: flex;
     flex-direction: row;

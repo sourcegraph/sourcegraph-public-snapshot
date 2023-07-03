@@ -8,8 +8,12 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.vcsUtil.VcsUtil;
 import com.sourcegraph.common.ErrorNotification;
 import com.sourcegraph.config.ConfigUtil;
+import git4idea.GitVcs;
 import git4idea.repo.GitRepository;
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
@@ -68,6 +72,16 @@ public class RepoUtil {
         relativePath);
   }
 
+  @Nullable
+  public static String getSimpleRepositoryName(
+      @NotNull Project project, @NotNull VirtualFile file) {
+    Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
+    if (repository == null) {
+      return null;
+    }
+    return repository.getRoot().getName();
+  }
+
   private static String doReplacements(@NotNull Project project, @NotNull String remoteUrl) {
     String remoteUrlWithReplacements = remoteUrl;
     String r = ConfigUtil.getRemoteUrlReplacements(project);
@@ -86,10 +100,14 @@ public class RepoUtil {
   public static @NotNull String getRemoteRepoUrlWithoutScheme(
       @NotNull Project project, @NotNull VirtualFile file) throws Exception {
     String remoteUrl = getRemoteRepoUrl(project, file);
-    return remoteUrl
-        .substring(remoteUrl.indexOf('@') + 1)
-        .replaceFirst(":", "/")
-        .replaceFirst(".git$", "");
+    String repoName;
+    try {
+      URL url = new URL(remoteUrl);
+      repoName = url.getHost() + url.getPath();
+    } catch (MalformedURLException e) {
+      repoName = remoteUrl.substring(remoteUrl.indexOf('@') + 1).replaceFirst(":", "/");
+    }
+    return repoName.replaceFirst(".git$", "");
   }
 
   // Returned format: git@github.com:sourcegraph/sourcegraph.git
@@ -165,5 +183,13 @@ public class RepoUtil {
     }
 
     return VCSType.UNKNOWN;
+  }
+
+  public static Optional<VirtualFile> getRootFileFromFirstGitRepository(@NotNull Project project) {
+    Optional<Repository> firstFoundRepository =
+        VcsRepositoryManager.getInstance(project).getRepositories().stream()
+            .filter(it -> it.getVcs().getName().equals(GitVcs.NAME))
+            .findFirst();
+    return firstFoundRepository.map(Repository::getRoot);
   }
 }

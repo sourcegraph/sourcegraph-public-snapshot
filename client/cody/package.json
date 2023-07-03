@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.4.0",
+  "version": "0.4.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -233,11 +233,6 @@
         "icon": "$(feedback)"
       },
       {
-        "command": "cody.recipe.optimize-code",
-        "category": "Ask Cody",
-        "title": "Optimize Code"
-      },
-      {
         "command": "cody.recipe.explain-code",
         "category": "Ask Cody",
         "title": "Explain Code in Detail"
@@ -275,12 +270,17 @@
       {
         "command": "cody.recipe.fixup",
         "category": "Cody",
-        "title": "Fixup"
+        "title": "Inline Fixup"
       },
       {
         "command": "cody.recipe.context-search",
         "category": "Ask Cody",
         "title": "Codebase Context Search"
+      },
+      {
+        "command": "cody.recipe.find-code-smells",
+        "category": "Ask Cody",
+        "title": "Find Code Smells"
       },
       {
         "command": "cody.test.token",
@@ -385,10 +385,10 @@
       },
       {
         "command": "cody.inline.new",
-        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
-        "category": "Cody Inline Assist",
+        "title": "Start a new Thread (Ctrl+Shift+C)",
+        "category": "Cody Inline Chat",
         "when": "cody.activated && config.cody.inlineChat.enabled",
-        "enablement": "!commentIsEmpty"
+        "enablement": "editorFocus"
       },
       {
         "command": "cody.guardrails.debug",
@@ -475,12 +475,12 @@
         "command": "cody.recipe.inline-touch",
         "key": "ctrl+alt+/",
         "mac": "cmd+alt+/",
-        "when": "cody.activated && editorTextFocus && !editorReadonly"
+        "when": "cody.activated && editorTextFocus && editorHasSelection && config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
-        "when": "cody.activated && !editorReadonly"
+        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
       }
     ],
     "submenus": [
@@ -500,16 +500,12 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.optimize-code",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
           "command": "cody.recipe.explain-code-high-level",
           "when": "cody.activated && editorHasSelection"
         },
         {
           "command": "cody.recipe.inline-touch",
-          "when": "cody.activated && editorHasSelection"
+          "when": "false"
         },
         {
           "command": "cody.recipe.generate-unit-test",
@@ -529,6 +525,10 @@
         },
         {
           "command": "cody.recipe.fixup",
+          "when": "cody.activated && editorHasSelection"
+        },
+        {
+          "command": "cody.recipe.find-code-smells",
           "when": "cody.activated && editorHasSelection"
         },
         {
@@ -621,10 +621,6 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.optimize-code",
-          "when": "cody.activated"
-        },
-        {
           "command": "cody.recipe.explain-code-high-level",
           "when": "cody.activated"
         },
@@ -650,6 +646,10 @@
         },
         {
           "command": "cody.recipe.fixup",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.find-code-smells",
           "when": "cody.activated"
         },
         {
@@ -834,12 +834,6 @@
         },
         "cody.experimental.guardrails": {
           "order": 8,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
-        },
-        "cody.experimental.nonStop": {
-          "order": 9,
           "type": "boolean",
           "markdownDescription": "Experimental feature for internal use.",
           "default": false
