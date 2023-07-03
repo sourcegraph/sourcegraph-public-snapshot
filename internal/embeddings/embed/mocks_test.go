@@ -10,13 +10,13 @@ import (
 	"context"
 	"sync"
 
-	context1 "github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext"
+	codycontext "github.com/sourcegraph/sourcegraph/internal/codeintel/codycontext"
 )
 
 // MockContextService is a mock implementation of the ContextService
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/embeddings/embed)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/embeddings/embed) used for
+// unit testing.
 type MockContextService struct {
 	// SplitIntoEmbeddableChunksFunc is an instance of a mock function
 	// object controlling the behavior of the method
@@ -29,7 +29,7 @@ type MockContextService struct {
 func NewMockContextService() *MockContextService {
 	return &MockContextService{
 		SplitIntoEmbeddableChunksFunc: &ContextServiceSplitIntoEmbeddableChunksFunc{
-			defaultHook: func(context.Context, string, string, context1.SplitOptions) (r0 []context1.EmbeddableChunk, r1 error) {
+			defaultHook: func(context.Context, string, string, codycontext.SplitOptions) (r0 []codycontext.EmbeddableChunk, r1 error) {
 				return
 			},
 		},
@@ -41,7 +41,7 @@ func NewMockContextService() *MockContextService {
 func NewStrictMockContextService() *MockContextService {
 	return &MockContextService{
 		SplitIntoEmbeddableChunksFunc: &ContextServiceSplitIntoEmbeddableChunksFunc{
-			defaultHook: func(context.Context, string, string, context1.SplitOptions) ([]context1.EmbeddableChunk, error) {
+			defaultHook: func(context.Context, string, string, codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error) {
 				panic("unexpected invocation of MockContextService.SplitIntoEmbeddableChunks")
 			},
 		},
@@ -63,15 +63,15 @@ func NewMockContextServiceFrom(i ContextService) *MockContextService {
 // the SplitIntoEmbeddableChunks method of the parent MockContextService
 // instance is invoked.
 type ContextServiceSplitIntoEmbeddableChunksFunc struct {
-	defaultHook func(context.Context, string, string, context1.SplitOptions) ([]context1.EmbeddableChunk, error)
-	hooks       []func(context.Context, string, string, context1.SplitOptions) ([]context1.EmbeddableChunk, error)
+	defaultHook func(context.Context, string, string, codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error)
+	hooks       []func(context.Context, string, string, codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error)
 	history     []ContextServiceSplitIntoEmbeddableChunksFuncCall
 	mutex       sync.Mutex
 }
 
 // SplitIntoEmbeddableChunks delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockContextService) SplitIntoEmbeddableChunks(v0 context.Context, v1 string, v2 string, v3 context1.SplitOptions) ([]context1.EmbeddableChunk, error) {
+func (m *MockContextService) SplitIntoEmbeddableChunks(v0 context.Context, v1 string, v2 string, v3 codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error) {
 	r0, r1 := m.SplitIntoEmbeddableChunksFunc.nextHook()(v0, v1, v2, v3)
 	m.SplitIntoEmbeddableChunksFunc.appendCall(ContextServiceSplitIntoEmbeddableChunksFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -80,7 +80,7 @@ func (m *MockContextService) SplitIntoEmbeddableChunks(v0 context.Context, v1 st
 // SetDefaultHook sets function that is called when the
 // SplitIntoEmbeddableChunks method of the parent MockContextService
 // instance is invoked and the hook queue is empty.
-func (f *ContextServiceSplitIntoEmbeddableChunksFunc) SetDefaultHook(hook func(context.Context, string, string, context1.SplitOptions) ([]context1.EmbeddableChunk, error)) {
+func (f *ContextServiceSplitIntoEmbeddableChunksFunc) SetDefaultHook(hook func(context.Context, string, string, codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error)) {
 	f.defaultHook = hook
 }
 
@@ -89,7 +89,7 @@ func (f *ContextServiceSplitIntoEmbeddableChunksFunc) SetDefaultHook(hook func(c
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *ContextServiceSplitIntoEmbeddableChunksFunc) PushHook(hook func(context.Context, string, string, context1.SplitOptions) ([]context1.EmbeddableChunk, error)) {
+func (f *ContextServiceSplitIntoEmbeddableChunksFunc) PushHook(hook func(context.Context, string, string, codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -97,20 +97,20 @@ func (f *ContextServiceSplitIntoEmbeddableChunksFunc) PushHook(hook func(context
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ContextServiceSplitIntoEmbeddableChunksFunc) SetDefaultReturn(r0 []context1.EmbeddableChunk, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, string, context1.SplitOptions) ([]context1.EmbeddableChunk, error) {
+func (f *ContextServiceSplitIntoEmbeddableChunksFunc) SetDefaultReturn(r0 []codycontext.EmbeddableChunk, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string, codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ContextServiceSplitIntoEmbeddableChunksFunc) PushReturn(r0 []context1.EmbeddableChunk, r1 error) {
-	f.PushHook(func(context.Context, string, string, context1.SplitOptions) ([]context1.EmbeddableChunk, error) {
+func (f *ContextServiceSplitIntoEmbeddableChunksFunc) PushReturn(r0 []codycontext.EmbeddableChunk, r1 error) {
+	f.PushHook(func(context.Context, string, string, codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error) {
 		return r0, r1
 	})
 }
 
-func (f *ContextServiceSplitIntoEmbeddableChunksFunc) nextHook() func(context.Context, string, string, context1.SplitOptions) ([]context1.EmbeddableChunk, error) {
+func (f *ContextServiceSplitIntoEmbeddableChunksFunc) nextHook() func(context.Context, string, string, codycontext.SplitOptions) ([]codycontext.EmbeddableChunk, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -156,10 +156,10 @@ type ContextServiceSplitIntoEmbeddableChunksFuncCall struct {
 	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 context1.SplitOptions
+	Arg3 codycontext.SplitOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []context1.EmbeddableChunk
+	Result0 []codycontext.EmbeddableChunk
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
