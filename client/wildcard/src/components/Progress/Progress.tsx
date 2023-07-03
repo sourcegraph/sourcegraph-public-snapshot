@@ -30,7 +30,11 @@ export const Progress: FC<ProgressProps> = props => {
                 [styles.rootWithNoProgress]: normalizedValue === 0,
             })}
         >
-            <div style={{ width: `${normalizedValue}%` }} className={styles.bar} />
+            <div
+                // eslint-disable-next-line react/forbid-dom-props
+                style={{ width: `${normalizedValue}%` }}
+                className={styles.bar}
+            />
         </div>
     )
 }
