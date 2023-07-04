@@ -18,10 +18,6 @@ import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.actionSystem.ShortcutSet;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
@@ -46,8 +42,10 @@ import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextGetter;
 import com.sourcegraph.cody.context.ContextMessage;
+import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
+import com.sourcegraph.cody.editor.EditorUtil;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.prompts.Preamble;
 import com.sourcegraph.cody.prompts.Prompter;
@@ -90,7 +88,6 @@ import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
@@ -195,15 +192,20 @@ class CodyToolWindowContent implements UpdatableChat {
             JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     messagePanel.add(promptInputWithScroll, BorderLayout.CENTER);
     messagePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-
     controlsPanel.add(messagePanel, BorderLayout.NORTH);
     controlsPanel.add(sendButton, BorderLayout.EAST);
+    JPanel lowerPanel = new JPanel(new BorderLayout());
+    lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.Y_AXIS));
+    lowerPanel.add(controlsPanel);
+
+    EmbeddingStatusView embeddingStatusView = new EmbeddingStatusView(project);
+    lowerPanel.add(embeddingStatusView);
 
     // Main content panel
     contentPanel.setLayout(new BorderLayout(0, 0));
     contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
     contentPanel.add(chatPanel, BorderLayout.CENTER);
-    contentPanel.add(controlsPanel, BorderLayout.SOUTH);
+    contentPanel.add(lowerPanel, BorderLayout.SOUTH);
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
     JPanel appNotInstalledPanel = createAppNotInstalledPanel();
@@ -548,7 +550,7 @@ class CodyToolWindowContent implements UpdatableChat {
     ChatMessage humanMessage =
         ChatMessage.createHumanMessage(truncatedPrompt, message.getDisplayText());
     addMessageToChat(humanMessage);
-    VirtualFile currentFile = getCurrentFile(project);
+    VirtualFile currentFile = EditorUtil.getCurrentFile(project);
     // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
     // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the
     // messages streamed back to us.
@@ -558,7 +560,7 @@ class CodyToolWindowContent implements UpdatableChat {
               String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
               String accessToken = ConfigUtil.getProjectAccessToken(project);
 
-              String repoName = getRepoName(project, currentFile);
+              String repoName = RepoUtil.findRepositoryName(project, currentFile);
               String accessTokenOrEmpty = accessToken != null ? accessToken : "";
               Chat chat = new Chat(instanceUrl, accessTokenOrEmpty);
               if (CodyAgent.isConnected(project)) {
@@ -686,33 +688,6 @@ class CodyToolWindowContent implements UpdatableChat {
       return List.of(selectedTextHumanMessage, defaultAssistantMessage);
     }
     return Collections.emptyList();
-  }
-
-  @Nullable
-  private static VirtualFile getCurrentFile(@NotNull Project project) {
-    VirtualFile currentFile = null;
-    Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-    if (editor != null) {
-      Document currentDocument = editor.getDocument();
-      currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
-    }
-    return currentFile;
-  }
-
-  @Nullable
-  private static String getRepoName(@NotNull Project project, @Nullable VirtualFile currentFile) {
-    VirtualFile fileFromTheRepository =
-        currentFile != null
-            ? currentFile
-            : RepoUtil.getRootFileFromFirstGitRepository(project).orElse(null);
-    if (fileFromTheRepository == null) {
-      return null;
-    }
-    try {
-      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, fileFromTheRepository);
-    } catch (Exception e) {
-      return RepoUtil.getSimpleRepositoryName(project, fileFromTheRepository);
-    }
   }
 
   public @NotNull JComponent getContentPanel() {
