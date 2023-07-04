@@ -599,9 +599,18 @@ fragment RepositoryFields on Repository {
 			}
 		}
 	}
+    parent {
+      id
+	  databaseId
+      nameWithOwner
+      # TODO: fork of a fork is not in scope at the moment. Use this field to flag second degree forks and do not deduplicate them maybe?
+	  # Also, we need all the other fields from the RepositoryFields. Rework this to make a common fragment and reuse.
+      isFork
+    }
 }
 	`
 	}
+
 	conditionalGHEFields := []string{}
 	version := c.determineGitHubVersion(ctx)
 

@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -1198,10 +1199,54 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 }
 
+func TestGetPoolRepo(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create one test poolRepo
+	poolRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "internal.github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
+	})
+
+	// Create one test repo
+	forkedRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "internal.github.com/forked/repo",
+		URI:           "github.com/forked/repo",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
+	})
+
+	// A relationship between pool repo and forked repo has not been established yet.
+	gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, forkedRepo.Name)
+	require.NoError(t, err)
+	require.Nil(t, gotPoolRepo)
+
+	err = db.GitserverRepos().UpdatePoolRepoID(ctx, poolRepo.Name, forkedRepo.Name)
+	require.NoError(t, err)
+
+	// A relationship between pool repo and forked repo has now been established.
+	gotPoolRepo, err = db.GitserverRepos().GetPoolRepo(ctx, forkedRepo.Name)
+	require.NoError(t, err)
+	require.NotNil(t, gotPoolRepo)
+
+	wantPoolRepo := types.PoolRepo{RepoName: poolRepo.Name, RepoURI: poolRepo.URI}
+	if diff := cmp.Diff(wantPoolRepo, *gotPoolRepo); diff != "" {
+		t.Fatalf("mismatched pool repo got, (-want, +got):\n%s", diff)
+	}
+}
+
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
-	repo := &types.Repo{Name: payload.Name}
+	repo := &types.Repo{Name: payload.Name, URI: payload.URI}
 
 	// Create Repo
 	err := db.Repos().Create(ctx, repo)
@@ -1236,6 +1281,8 @@ type createTestRepoPayload struct {
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
+
+	URI string
 
 	// Gitserver related properties
 

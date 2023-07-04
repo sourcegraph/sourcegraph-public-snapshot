@@ -35618,6 +35618,9 @@ type MockGitserverRepoStore struct {
 	// GetByNamesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByNames.
 	GetByNamesFunc *GitserverRepoStoreGetByNamesFunc
+	// GetPoolRepoFunc is an instance of a mock function object controlling
+	// the behavior of the method GetPoolRepo.
+	GetPoolRepoFunc *GitserverRepoStoreGetPoolRepoFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *GitserverRepoStoreHandleFunc
@@ -35662,6 +35665,9 @@ type MockGitserverRepoStore struct {
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *GitserverRepoStoreUpdateFunc
+	// UpdatePoolRepoIDFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdatePoolRepoID.
+	UpdatePoolRepoIDFunc *GitserverRepoStoreUpdatePoolRepoIDFunc
 	// UpdateRepoSizesFunc is an instance of a mock function object
 	// controlling the behavior of the method UpdateRepoSizes.
 	UpdateRepoSizesFunc *GitserverRepoStoreUpdateRepoSizesFunc
@@ -35687,6 +35693,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 		},
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
 			defaultHook: func(context.Context, ...api.RepoName) (r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
+				return
+			},
+		},
+		GetPoolRepoFunc: &GitserverRepoStoreGetPoolRepoFunc{
+			defaultHook: func(context.Context, api.RepoName) (r0 *types.PoolRepo, r1 error) {
 				return
 			},
 		},
@@ -35760,6 +35771,11 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 				return
 			},
 		},
+		UpdatePoolRepoIDFunc: &GitserverRepoStoreUpdatePoolRepoIDFunc{
+			defaultHook: func(context.Context, api.RepoName, api.RepoName) (r0 error) {
+				return
+			},
+		},
 		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
 			defaultHook: func(context.Context, string, map[api.RepoName]int64) (r0 int, r1 error) {
 				return
@@ -35791,6 +35807,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
 			defaultHook: func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.GetByNames")
+			},
+		},
+		GetPoolRepoFunc: &GitserverRepoStoreGetPoolRepoFunc{
+			defaultHook: func(context.Context, api.RepoName) (*types.PoolRepo, error) {
+				panic("unexpected invocation of MockGitserverRepoStore.GetPoolRepo")
 			},
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
@@ -35863,6 +35884,11 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.Update")
 			},
 		},
+		UpdatePoolRepoIDFunc: &GitserverRepoStoreUpdatePoolRepoIDFunc{
+			defaultHook: func(context.Context, api.RepoName, api.RepoName) error {
+				panic("unexpected invocation of MockGitserverRepoStore.UpdatePoolRepoID")
+			},
+		},
 		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
 			defaultHook: func(context.Context, string, map[api.RepoName]int64) (int, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.UpdateRepoSizes")
@@ -35889,6 +35915,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
 			defaultHook: i.GetByNames,
+		},
+		GetPoolRepoFunc: &GitserverRepoStoreGetPoolRepoFunc{
+			defaultHook: i.GetPoolRepo,
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -35931,6 +35960,9 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		},
 		UpdateFunc: &GitserverRepoStoreUpdateFunc{
 			defaultHook: i.Update,
+		},
+		UpdatePoolRepoIDFunc: &GitserverRepoStoreUpdatePoolRepoIDFunc{
+			defaultHook: i.UpdatePoolRepoID,
 		},
 		UpdateRepoSizesFunc: &GitserverRepoStoreUpdateRepoSizesFunc{
 			defaultHook: i.UpdateRepoSizes,
@@ -36270,6 +36302,116 @@ func (c GitserverRepoStoreGetByNamesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreGetByNamesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// GitserverRepoStoreGetPoolRepoFunc describes the behavior when the
+// GetPoolRepo method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreGetPoolRepoFunc struct {
+	defaultHook func(context.Context, api.RepoName) (*types.PoolRepo, error)
+	hooks       []func(context.Context, api.RepoName) (*types.PoolRepo, error)
+	history     []GitserverRepoStoreGetPoolRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// GetPoolRepo delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) GetPoolRepo(v0 context.Context, v1 api.RepoName) (*types.PoolRepo, error) {
+	r0, r1 := m.GetPoolRepoFunc.nextHook()(v0, v1)
+	m.GetPoolRepoFunc.appendCall(GitserverRepoStoreGetPoolRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetPoolRepo method
+// of the parent MockGitserverRepoStore instance is invoked and the hook
+// queue is empty.
+func (f *GitserverRepoStoreGetPoolRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*types.PoolRepo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetPoolRepo method of the parent MockGitserverRepoStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *GitserverRepoStoreGetPoolRepoFunc) PushHook(hook func(context.Context, api.RepoName) (*types.PoolRepo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreGetPoolRepoFunc) SetDefaultReturn(r0 *types.PoolRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*types.PoolRepo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreGetPoolRepoFunc) PushReturn(r0 *types.PoolRepo, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (*types.PoolRepo, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverRepoStoreGetPoolRepoFunc) nextHook() func(context.Context, api.RepoName) (*types.PoolRepo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreGetPoolRepoFunc) appendCall(r0 GitserverRepoStoreGetPoolRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreGetPoolRepoFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreGetPoolRepoFunc) History() []GitserverRepoStoreGetPoolRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreGetPoolRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreGetPoolRepoFuncCall is an object that describes an
+// invocation of method GetPoolRepo on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreGetPoolRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.PoolRepo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreGetPoolRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreGetPoolRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -37823,6 +37965,117 @@ func (c GitserverRepoStoreUpdateFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverRepoStoreUpdateFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// GitserverRepoStoreUpdatePoolRepoIDFunc describes the behavior when the
+// UpdatePoolRepoID method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreUpdatePoolRepoIDFunc struct {
+	defaultHook func(context.Context, api.RepoName, api.RepoName) error
+	hooks       []func(context.Context, api.RepoName, api.RepoName) error
+	history     []GitserverRepoStoreUpdatePoolRepoIDFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdatePoolRepoID delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) UpdatePoolRepoID(v0 context.Context, v1 api.RepoName, v2 api.RepoName) error {
+	r0 := m.UpdatePoolRepoIDFunc.nextHook()(v0, v1, v2)
+	m.UpdatePoolRepoIDFunc.appendCall(GitserverRepoStoreUpdatePoolRepoIDFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdatePoolRepoID
+// method of the parent MockGitserverRepoStore instance is invoked and the
+// hook queue is empty.
+func (f *GitserverRepoStoreUpdatePoolRepoIDFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.RepoName) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdatePoolRepoID method of the parent MockGitserverRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverRepoStoreUpdatePoolRepoIDFunc) PushHook(hook func(context.Context, api.RepoName, api.RepoName) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverRepoStoreUpdatePoolRepoIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.RepoName) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverRepoStoreUpdatePoolRepoIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, api.RepoName, api.RepoName) error {
+		return r0
+	})
+}
+
+func (f *GitserverRepoStoreUpdatePoolRepoIDFunc) nextHook() func(context.Context, api.RepoName, api.RepoName) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverRepoStoreUpdatePoolRepoIDFunc) appendCall(r0 GitserverRepoStoreUpdatePoolRepoIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverRepoStoreUpdatePoolRepoIDFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreUpdatePoolRepoIDFunc) History() []GitserverRepoStoreUpdatePoolRepoIDFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverRepoStoreUpdatePoolRepoIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverRepoStoreUpdatePoolRepoIDFuncCall is an object that describes an
+// invocation of method UpdatePoolRepoID on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreUpdatePoolRepoIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 api.RepoName
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverRepoStoreUpdatePoolRepoIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverRepoStoreUpdatePoolRepoIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
