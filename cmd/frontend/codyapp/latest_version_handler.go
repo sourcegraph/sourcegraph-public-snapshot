@@ -9,20 +9,28 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 )
 
 // RouteCodyAppLatestVersion is the name of the route that that returns a URL where to download the latest Cody App version
 const RouteCodyAppLatestVersion = "codyapp.latest.version"
 
+// gitHubReleaseBaseURL is the base url we will use when redirecting to the page that lists all the releases for a tag
 const gitHubReleaseBaseURL = "https://github.com/sourcegraph/sourcegraph/releases/tag/"
 
 type latestVersion struct {
 	logger           log.Logger
-	manifestResolver updatecheck.UpdateManifestResolver
+	manifestResolver UpdateManifestResolver
 }
 
+// Handler handles requests that want to get the latest version of the app. The handler determines the latest version
+// by retrieving the Update manifest.
+//
+// If the requests has no query params, the client will be redirected to the GitHub releases page that lists all the releases.
+// If the request contains the query params arch (for architecture) and target(the client os) then the handler will inspect
+// the manifest platforms attribute and get the appropriate URL for the release that is suited for that architecture and os.
+//
+// Note: When the query param for target is "darwin", we alter the release url to be for the .dmg release.
 func (l *latestVersion) Handler() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -37,7 +45,7 @@ func (l *latestVersion) Handler() http.HandlerFunc {
 		query := r.URL.Query()
 		target := query.Get("target")
 		arch := query.Get("arch")
-		platform := updatecheck.PlatformString(arch, target) // x86_64-darwin
+		platform := platformString(arch, target) // x86_64-darwin
 
 		releaseURL, err := url.Parse(gitHubReleaseBaseURL)
 		if err != nil {
@@ -82,7 +90,7 @@ func patchReleaseURL(u string) string {
 	return u
 }
 
-func newLatestVersion(logger log.Logger, resolver updatecheck.UpdateManifestResolver) *latestVersion {
+func newLatestVersion(logger log.Logger, resolver UpdateManifestResolver) *latestVersion {
 	return &latestVersion{
 		logger:           logger,
 		manifestResolver: resolver,
@@ -90,17 +98,17 @@ func newLatestVersion(logger log.Logger, resolver updatecheck.UpdateManifestReso
 }
 
 func LatestVersionHandler(logger log.Logger) http.HandlerFunc {
-	var bucket = updatecheck.ManifestBucket
+	var bucket = ManifestBucket
 
 	if deploy.IsDev(deploy.Type()) {
-		bucket = updatecheck.ManifestBucketDev
+		bucket = ManifestBucketDev
 	}
 
-	resolver, err := updatecheck.NewGCSManifestResolver(context.Background(), bucket, updatecheck.ManifestName)
+	resolver, err := NewGCSManifestResolver(context.Background(), bucket, ManifestName)
 	if err != nil {
 		logger.Error("failed to initialize GCS Manifest resolver",
 			log.String("bucket", bucket),
-			log.String("manifestName", updatecheck.ManifestName),
+			log.String("manifestName", ManifestName),
 			log.Error(err),
 		)
 		return func(w http.ResponseWriter, _ *http.Request) {
