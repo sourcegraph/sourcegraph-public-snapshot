@@ -30,6 +30,8 @@ export class InlineController {
     private commentController: vscode.CommentController | null = null
     public thread: vscode.CommentThread | null = null // a thread is a comment
     private threads = new Map<string, vscode.CommentThread>()
+    private comment: Comment | null = null
+
     private currentTaskId = ''
     // Workspace State
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
@@ -170,20 +172,31 @@ export class InlineController {
     /**
      * List response from Cody as comment
      */
-    public reply(text: string, error = false): void {
+    public reply(text: string, error = false, state: 'streaming' | 'complete'): void {
         if (!this.thread || this.thread.state) {
             return
         }
         const replyText = text
-        const comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
-        this.thread.comments = [...this.thread.comments, comment]
-        this.thread.canReply = !error
-        this.thread.state = error ? 1 : 0
-        const firstCommentId = this.thread.comments[0].label
-        if (firstCommentId) {
-            this.threads.set(firstCommentId, this.thread)
+        if (this.comment) {
+            console.log('Updating comment...')
+            this.comment.update(replyText)
+            // eslint-disable-next-line no-self-assign
+            this.thread.comments = this.thread.comments
+            console.log('Updated comment...')
+        } else {
+            this.comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
+            this.thread.comments = [...this.thread.comments, this.comment]
         }
-        void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+        // this.thread.canReply = !error
+        // this.thread.state = error ? 1 : 0
+        // const firstCommentId = this.thread.comments[0].label
+        // if (firstCommentId) {
+        //     this.threads.set(firstCommentId, this.thread)
+        // }
+        if (state === 'complete') {
+            this.comment = null
+            void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+        }
     }
 
     private undo(id: string): void {
@@ -376,6 +389,10 @@ export class Comment implements vscode.Comment {
         this.body = this.markdown(input)
         this.author = { name, iconPath }
         this.label = '#' + this.id
+    }
+
+    public update(input: string): void {
+        this.body = this.markdown(input)
     }
 
     /**
