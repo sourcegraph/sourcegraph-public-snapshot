@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func BazelOperations() []operations.Operation {
@@ -479,5 +480,31 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 		// This step just pulls a prebuild image and pushes it to some registries. The
 		// only possible failure here is a registry flake, so we retry a few times.
 		bk.AutomaticRetry(3)
+	}
+}
+
+func verifyBazelCommand(command string) error {
+	if strings.Contains(command, ";") {
+		return errors.New("unauthorized input for bazel command: ';'")
+	}
+	if strings.Contains(command, "&") {
+		return errors.New("unauthorized input for bazel command: '&'")
+	}
+	if strings.Contains(command, "|") {
+		return errors.New("unauthorized input for bazel command: '|'")
+	}
+
+	strs := strings.Split(command, " ")
+	if len(strs) < 2 {
+		return errors.New("invalid command")
+	}
+
+	switch strs[0] {
+	case "build":
+		return nil
+	case "test":
+		return nil
+	default:
+		return errors.Newf("disallowed bazel command: %q", strs[0])
 	}
 }

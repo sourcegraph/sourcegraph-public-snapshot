@@ -107,18 +107,23 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	switch c.RunType {
 	case runtype.BazelDo:
 		// parse the commit message, looking for the bazel command to run
-		var bzCmd string
+		var bzlCmd string
 		scanner := bufio.NewScanner(strings.NewReader(env["CI_COMMIT_MESSAGE"]))
 		for scanner.Scan() {
 			line := scanner.Text()
 			if strings.HasPrefix(line, "!bazel") {
-				bzCmd = strings.TrimPrefix(line, "!bazel")
+				bzlCmd = strings.TrimPrefix(line, "!bazel")
+
+				// sanitize the input
+				if err := verifyBazelCommand(bzlCmd); err != nil {
+					return nil, errors.Wrapf(err, "cannot generate bazel-do")
+				}
 
 				ops.Append(func(pipeline *bk.Pipeline) {
-					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzCmd,
+					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzlCmd,
 						bk.Key("bazel-do"),
 						bk.Agent("queue", "bazel"),
-						bk.Cmd(bazelCmd(bzCmd)),
+						bk.Cmd(bazelCmd(bzlCmd)),
 					)
 				})
 			}
@@ -128,7 +133,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			return nil, err
 		}
 
-		if bzCmd == "" {
+		if bzlCmd == "" {
 			return nil, errors.Newf("no bazel command was given")
 		}
 	case runtype.WolfiExpBranch:
