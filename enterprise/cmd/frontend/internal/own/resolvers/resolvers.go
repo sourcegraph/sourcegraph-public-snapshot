@@ -124,15 +124,17 @@ func (r *ownResolver) GitBlobOwnership(
 	blob *graphqlbackend.GitTreeEntryResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if blob == nil {
+		return nil, errors.New("cannot resolve git tree")
+	}
 	var rrs []reasonAndReference
-
 	// Evaluate CODEOWNERS rules.
 	if args.IncludeReason(graphqlbackend.CodeownersFileEntry) {
-		codeowners, err := r.computeCodeowners(ctx, blob)
+		co, err := r.computeCodeowners(ctx, blob)
 		if err != nil {
 			return nil, err
 		}
-		rrs = append(rrs, codeowners...)
+		rrs = append(rrs, co...)
 	}
 
 	repoID := blob.Repository().IDInt32()
@@ -190,8 +192,10 @@ func (r *ownResolver) GitCommitOwnership(
 	commit *graphqlbackend.GitCommitResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if commit == nil {
+		return nil, errors.New("cannot resolve git commit")
+	}
 	repoID := commit.Repository().IDInt32()
-
 	// Retrieve recent contributors signals.
 	rrs, err := computeRecentContributorSignals(ctx, r.db, repoRootPath, repoID)
 	if err != nil {
@@ -213,6 +217,9 @@ func (r *ownResolver) GitTreeOwnership(
 	tree *graphqlbackend.GitTreeEntryResolver,
 	args graphqlbackend.ListOwnershipArgs,
 ) (graphqlbackend.OwnershipConnectionResolver, error) {
+	if tree == nil {
+		return nil, errors.New("cannot resolve git tree")
+	}
 	// Retrieve recent contributors signals.
 	repoID := tree.Repository().IDInt32()
 	rrs, err := computeRecentContributorSignals(ctx, r.db, tree.Path(), repoID)
@@ -245,6 +252,9 @@ func (r *ownResolver) GitTreeOwnership(
 }
 
 func (r *ownResolver) GitTreeOwnershipStats(_ context.Context, tree *graphqlbackend.GitTreeEntryResolver) (graphqlbackend.OwnershipStatsResolver, error) {
+	if tree == nil {
+		return nil, errors.New("cannot resolve git tree")
+	}
 	return &ownStatsResolver{
 		db: r.db,
 		opts: database.TreeLocationOpts{
@@ -523,7 +533,7 @@ type ownershipResolver struct {
 	reasons       []ownershipReason
 }
 
-func (r *ownershipResolver) Owner(ctx context.Context) (graphqlbackend.OwnerResolver, error) {
+func (r *ownershipResolver) Owner(_ context.Context) (graphqlbackend.OwnerResolver, error) {
 	return &ownerResolver{
 		db:            r.db,
 		resolvedOwner: r.resolvedOwner,
@@ -588,7 +598,7 @@ func (r *ownerResolver) ToPerson() (*graphqlbackend.PersonResolver, bool) {
 	if person.User != nil {
 		return graphqlbackend.NewPersonResolverFromUser(r.db, person.GetEmail(), person.User), true
 	}
-	includeUserInfo := true
+	const includeUserInfo = true
 	return graphqlbackend.NewPersonResolver(r.db, person.Handle, person.GetEmail(), includeUserInfo), true
 }
 
