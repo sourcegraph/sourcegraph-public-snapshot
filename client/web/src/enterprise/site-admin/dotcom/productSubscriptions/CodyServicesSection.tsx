@@ -47,7 +47,7 @@ import {
 } from './backend'
 import { CodyGatewayRateLimitModal } from './CodyGatewayRateLimitModal'
 import { ModelBadges } from './ModelBadges'
-import { prettyInterval } from './utils'
+import { numberFormatter, prettyInterval } from './utils'
 
 import styles from './CodyServicesSection.module.scss'
 
@@ -320,7 +320,8 @@ const RateLimitRow: React.FunctionComponent<RateLimitRowProps> = ({
                             <CodyGatewayRateLimitSourceBadge source={rateLimit.source} />
                         </td>
                         <td>
-                            {rateLimit.limit} {mode === 'embeddings' ? 'tokens' : 'requests'} /{' '}
+                            {numberFormatter.format(BigInt(rateLimit.limit))}{' '}
+                            {mode === 'embeddings' ? 'tokens' : 'requests'} /{' '}
                             {prettyInterval(rateLimit.intervalSeconds)}
                         </td>
                         <td>
