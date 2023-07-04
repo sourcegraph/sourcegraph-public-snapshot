@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { mdiPencil, mdiTrashCan } from '@mdi/js'
 import { parseISO } from 'date-fns'
@@ -23,6 +23,8 @@ import {
     H5,
     LineChart,
     Series,
+    Modal,
+    Alert,
 } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
@@ -73,22 +75,31 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
     const [updateCodyGatewayConfig, { loading: updateCodyGatewayConfigLoading, error: updateCodyGatewayConfigError }] =
         useMutation<UpdateCodyGatewayConfigResult, UpdateCodyGatewayConfigVariables>(UPDATE_CODY_GATEWAY_CONFIG)
 
-    const onToggleCompletions = useCallback(
-        async (value: boolean) => {
-            try {
-                await updateCodyGatewayConfig({
-                    variables: {
-                        productSubscriptionID,
-                        access: { enabled: value },
-                    },
-                })
-                await refetchSubscription()
-            } catch (error) {
-                logger.error(error)
-            }
-        },
-        [productSubscriptionID, refetchSubscription, updateCodyGatewayConfig]
-    )
+    const [codyServicesStateChange, setCodyServicesStateChange] = useState<boolean | undefined>()
+
+    const onCancelToggleCodyServices = useCallback(() => {
+        setCodyServicesStateChange(undefined)
+    }, [])
+
+    const onToggleCodyServices = useCallback(async () => {
+        if (typeof codyServicesStateChange !== 'boolean') {
+            return
+        }
+        try {
+            await updateCodyGatewayConfig({
+                variables: {
+                    productSubscriptionID,
+                    access: { enabled: codyServicesStateChange },
+                },
+            })
+            await refetchSubscription()
+        } catch (error) {
+            logger.error(error)
+        } finally {
+            // Reset the intent to change state.
+            setCodyServicesStateChange(undefined)
+        }
+    }, [productSubscriptionID, refetchSubscription, updateCodyGatewayConfig, codyServicesStateChange])
 
     return (
         <>
@@ -105,7 +116,7 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                                     id="cody-gateway-enabled"
                                     value={codyGatewayAccess.enabled}
                                     disabled={updateCodyGatewayConfigLoading || !viewerCanAdminister}
-                                    onToggle={onToggleCompletions}
+                                    onToggle={setCodyServicesStateChange}
                                     className="mr-1 align-text-bottom"
                                 />
                                 Access to hosted Cody services
@@ -207,6 +218,14 @@ export const CodyServicesSection: React.FunctionComponent<Props> = ({
                 )}
                 {accessTokenError && <ErrorAlert error={accessTokenError} className="mb-0" />}
             </Container>
+
+            {typeof codyServicesStateChange === 'boolean' && (
+                <ToggleCodyServicesConfirmationModal
+                    onAccept={onToggleCodyServices}
+                    onCancel={onCancelToggleCodyServices}
+                    targetState={codyServicesStateChange}
+                />
+            )}
         </>
     )
 }
@@ -504,5 +523,39 @@ const EmbeddingsRateLimitUsage: React.FunctionComponent<RateLimitUsageProps> = (
                 )}
             </ChartContainer>
         </>
+    )
+}
+
+interface ToggleCodyServicesConfirmationModalProps {
+    onAccept: () => void
+    onCancel: () => void
+    targetState: boolean
+}
+
+const ToggleCodyServicesConfirmationModal: React.FunctionComponent<ToggleCodyServicesConfirmationModalProps> = ({
+    onCancel,
+    onAccept,
+    targetState,
+}) => {
+    const labelId = 'toggle-cody-services'
+    return (
+        <Modal onDismiss={onCancel} aria-labelledby={labelId}>
+            <H3 id={labelId}>{targetState ? 'Enable' : 'Disable'} access to Cody Gateway</H3>
+            <Text>
+                Cody Gateway is a Sourcegraph managed service that allows customer instances to talk to upstream LLMs
+                and generate embeddings under our negotiated terms with third party providers in a safe manner.
+            </Text>
+
+            <Alert variant="info">Note that changes may take up to 10 minutes to propagate.</Alert>
+
+            <div className="d-flex justify-content-end">
+                <Button className="mr-2" onClick={onCancel} outline={true} variant="secondary">
+                    Cancel
+                </Button>
+                <Button variant="primary" onClick={onAccept}>
+                    {targetState ? 'Enable' : 'Disable'}
+                </Button>
+            </div>
+        </Modal>
     )
 }
