@@ -266,7 +266,7 @@ sg ci build --help
 		{
 			Name:      "bazel",
 			Usage:     "Fires a CI build running a given bazel command",
-			ArgsUsage: "[--web|--wait] [test|build] <bazel flags> <target1> <target2> ...",
+			ArgsUsage: "[--web|--wait] [test|build] <target1> <target2> ... <bazel flags>",
 			Flags: []cli.Flag{
 				&cli.BoolFlag{
 					Name:  "wait",
