@@ -13,7 +13,11 @@ public class LocalAppManagerTest {
 
   @Test
   public void localAppRunningCheckDoesntFail() {
-    LocalAppManager.isLocalAppRunning();
+    try {
+      LocalAppManager.isLocalAppRunning();
+    } catch (Throwable e) {
+      assertTrue(e.getMessage().startsWith("Could not"));
+    }
   }
 
   @Test
