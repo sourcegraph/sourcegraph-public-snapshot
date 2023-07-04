@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.completions;
 
+import com.intellij.openapi.diagnostic.Logger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -8,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class UnstableCodegenLanguageUtil {
+  private static final Logger logger = Logger.getInstance(UnstableCodegenLanguageUtil.class);
   private static final Map<String, String> fileExtensionToModelLanguageId =
       new HashMap<>() {
         {
@@ -51,14 +53,14 @@ public class UnstableCodegenLanguageUtil {
     if (!languageIdBasedOnExtension.isEmpty()
         && !languageIdBasedOnIntelliJ.isEmpty()
         && !languageIdBasedOnExtension.equals(languageIdBasedOnIntelliJ)) {
-      System.err.println( // logging the mismatch to make debugging easier
+      logger.warn( // logging the mismatch to make debugging easier
           "Cody: Completion: Detected mismatch between the code language detected by IntelliJ vs based on extension. "
               + "IntelliJ detected: "
               + languageIdBasedOnIntelliJ
               + " and extension-based detection: "
               + languageIdBasedOnExtension);
       if (intelliJLanguageIdIsSupported) {
-        System.err.println(
+        logger.warn(
             "Cody: IntelliJ detected language is supported by `unstable-codegen`, so it takes priority.");
       }
     }
