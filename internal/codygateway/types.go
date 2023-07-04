@@ -8,6 +8,13 @@ import (
 
 type Feature string
 
+var AllFeatures = []Feature{
+	FeatureCodeCompletions,
+	FeatureChatCompletions,
+	FeatureEmbeddings,
+}
+
+// NOTE: When you add a new feature here, make sure to add it to the slice above as well.
 const (
 	FeatureCodeCompletions Feature = Feature(types.CompletionsFeatureCode)
 	FeatureChatCompletions Feature = Feature(types.CompletionsFeatureChat)

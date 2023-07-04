@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/featurelimiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/requestlogger"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
@@ -30,6 +31,8 @@ type Config struct {
 }
 
 func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, authr *auth.Authenticator, config *Config) http.Handler {
+	// Add a prefix to the store for globally unique keys and simpler pruning.
+	rs = limiter.NewPrefixRedisStore("rate_limit:", rs)
 	r := mux.NewRouter()
 
 	// V1 service routes
@@ -110,6 +113,19 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 			),
 		)
 	}
+
+	// Register a route where actors can retrieve their current rate limit state.
+	v1router.Path("/limits").Methods(http.MethodGet).Handler(
+		instrumentation.HTTPMiddleware("v1.limits",
+			authr.Middleware(
+				requestlogger.Middleware(
+					logger,
+					featurelimiter.ListLimitsHandler(logger, eventLogger, rs),
+				),
+			),
+			otelhttp.WithPublicEndpoint(),
+		),
+	)
 
 	return r
 }
