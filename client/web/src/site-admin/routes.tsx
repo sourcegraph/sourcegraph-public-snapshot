@@ -7,6 +7,7 @@ import { PermissionsSyncJobsTable } from './permissions-center/PermissionsSyncJo
 import { SiteAdminAreaRoute } from './SiteAdminArea'
 
 const AnalyticsOverviewPage = lazyComponent(() => import('./analytics/AnalyticsOverviewPage'), 'AnalyticsOverviewPage')
+const AnalyticsCodyPage = lazyComponent(() => import('./analytics/AnalyticsCodyPage'), 'AnalyticsCodyPage')
 const AnalyticsSearchPage = lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage')
 const AnalyticsCodeIntelPage = lazyComponent(
     () => import('./analytics/AnalyticsCodeIntelPage'),
@@ -99,6 +100,10 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/',
         render: () => <AnalyticsOverviewPage />,
+    },
+    {
+        path: '/analytics/cody',
+        render: () => <AnalyticsCodyPage />,
     },
     {
         path: '/analytics/search',

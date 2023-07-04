@@ -23,6 +23,10 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             exact: true,
         },
         {
+            label: 'Cody',
+            to: '/site-admin/analytics/cody',
+        },
+        {
             label: 'Search',
             to: '/site-admin/analytics/search',
         },
