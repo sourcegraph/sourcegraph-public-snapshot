@@ -47,7 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 5.1.0
 
-> **Note**: As of 5.1.0, Sourcegraph OSS is removed and has been relicensed to Sourcegraph Enterprise. A blog post with much more detail will come soon!
+> **Note**: As of 5.1.0, the limited OSS subset of Sourcegraph has been removed, and code search OSS code has been relicensed going forward. See https://github.com/sourcegraph/sourcegraph/issues/53528#issuecomment-1594967818 for more information (blog post coming soon).
 
 ### Known issues
 
