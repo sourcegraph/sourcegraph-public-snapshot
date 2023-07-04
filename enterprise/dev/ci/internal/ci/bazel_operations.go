@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -483,7 +484,20 @@ func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation 
 	}
 }
 
+var allowedBazelFlags = map[string]struct{}{
+	"--runs_per_test":        {},
+	"--nobuild":              {},
+	"--local_test_jobs":      {},
+	"--test_arg":             {},
+	"--nocache_test_results": {},
+	"--test_tag_filters":     {},
+	"--test_timeout":         {},
+}
+
+var bazelFlagsRe = regexp.MustCompile(`--\w+`)
+
 func verifyBazelCommand(command string) error {
+	// check for shell escape mechanisms.
 	if strings.Contains(command, ";") {
 		return errors.New("unauthorized input for bazel command: ';'")
 	}
@@ -494,17 +508,31 @@ func verifyBazelCommand(command string) error {
 		return errors.New("unauthorized input for bazel command: '|'")
 	}
 
+	// check for command and targets
 	strs := strings.Split(command, " ")
 	if len(strs) < 2 {
 		return errors.New("invalid command")
 	}
 
+	// command must be either build or test.
 	switch strs[0] {
 	case "build":
-		return nil
 	case "test":
-		return nil
 	default:
 		return errors.Newf("disallowed bazel command: %q", strs[0])
 	}
+
+	// need at least one target.
+	if !strings.HasPrefix(strs[1], "//") {
+		return errors.New("misconstructed command, need at least one target")
+	}
+
+	// ensure flags are in the allow-list.
+	matches := bazelFlagsRe.FindAllString(command, -1)
+	for _, m := range matches {
+		if _, ok := allowedBazelFlags[m]; !ok {
+			return errors.Newf("disallowed bazel flag: %q", m)
+		}
+	}
+	return nil
 }
