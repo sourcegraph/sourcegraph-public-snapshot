@@ -21,7 +21,7 @@ public class RepositoryMissingEmbeddingStatus extends RepoAvailableEmbeddingStat
   public @NotNull String getTooltip(@NotNull Project project) {
     SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
     if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
-      return "Repository is not not set up in Cody App";
+      return "Repository is not set up in Cody App";
     } else {
       return "Repository does not exist on Sourcegraph";
     }
