@@ -299,12 +299,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
               endpoint ->
                   (CompletionProvider)
                       new UnstableCodegenEndOfLineCompletionProvider(
-                          snippets,
-                          prefix,
-                          suffix,
-                          document.fileName(),
-                          endpoint,
-                          document.getLanguageId()))
+                          snippets, prefix, suffix, endpoint, document))
           .orElseGet(
               () ->
                   fallbackDefaultProvider.apply(

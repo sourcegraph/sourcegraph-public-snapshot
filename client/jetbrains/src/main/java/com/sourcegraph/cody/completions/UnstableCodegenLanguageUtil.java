@@ -1,12 +1,11 @@
 package com.sourcegraph.cody.completions;
 
 import com.intellij.openapi.diagnostic.Logger;
+import com.sourcegraph.cody.vscode.TextDocument;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class UnstableCodegenLanguageUtil {
   private static final Logger logger = Logger.getInstance(UnstableCodegenLanguageUtil.class);
@@ -41,13 +40,12 @@ public class UnstableCodegenLanguageUtil {
       };
 
   @NotNull
-  public static String getModelLanguageId(
-      @Nullable String intelliJLanguageId, @NotNull String fileName) {
-    String fileExtension = "." + StringUtils.substringAfterLast(fileName, ".");
+  public static String getModelLanguageId(@NotNull TextDocument textDocument) {
+    String fileExtension = "." + StringUtils.substringAfterLast(textDocument.fileName(), ".");
     String languageIdBasedOnExtension =
         fileExtensionToModelLanguageId.getOrDefault(fileExtension, "");
     String languageIdBasedOnIntelliJ =
-        Optional.ofNullable(intelliJLanguageId).map(String::toLowerCase).orElse("");
+        textDocument.getLanguageId().map(String::toLowerCase).orElse("");
     boolean intelliJLanguageIdIsSupported =
         fileExtensionToModelLanguageId.containsValue(languageIdBasedOnIntelliJ);
     if (!languageIdBasedOnExtension.isEmpty()
