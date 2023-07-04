@@ -155,8 +155,9 @@ func (l *BufferedLogger) Stop() {
 			log.Duration("elapsed", time.Since(start)))
 
 	// We may lose some events, but it won't be a lot since traffic should
-	// already be routing to new instances when work is stopping.
-	case <-time.After(10 * time.Second):
+	// already be routing to new instances when work is stopping, and the deadline
+	// is already very long.
+	case <-time.After(2 * time.Minute):
 		l.log.Error("failed to shut down within shutdown deadline",
 			log.Error(errors.Newf("unflushed events: %d", len(l.bufferC)))) // real error for Sentry
 	}
