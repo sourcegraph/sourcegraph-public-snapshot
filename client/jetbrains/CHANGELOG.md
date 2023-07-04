@@ -4,7 +4,11 @@
 
 ### Added
 
+- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
+
 ### Changed
+
+- fix logging to use JetBrains api + other minor fixes [#54579](https://github.com/sourcegraph/sourcegraph/pull/54579)
 
 ### Deprecated
 

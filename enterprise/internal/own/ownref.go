@@ -292,7 +292,7 @@ func (b *bag) Add(ref Reference) {
 	}
 }
 
-// add inserts given reference key (one of: user ID, email, handle)
+// add inserts given reference key (one of: user ID, team ID, email, handle)
 // to the bag, so that it can be resolved later in batch.
 func (b *bag) add(k refKey) {
 	if _, ok := b.references[k]; !ok {
@@ -564,10 +564,11 @@ func (k refKey) fetch(ctx context.Context, db edb.EnterpriseDB) (*userReferences
 		if err != nil {
 			return nil, nil, err
 		}
-		// TODO(#52547): Weird situation if team is not found by ID.
-		if t != nil {
-			return nil, &teamReferences{t}, nil
+		// Weird situation: team is not found by ID. Cannot do much here.
+		if t == nil {
+			return nil, nil, errors.Newf("cannot find team by ID: %d", k.teamID)
 		}
+		return nil, &teamReferences{t}, nil
 	}
 	if k.handle != "" {
 		u, err := findUserByUsername(ctx, db, k.handle)
