@@ -2,8 +2,10 @@ package featurelimiter
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -139,4 +141,70 @@ func HandleFeature(
 			}
 		}
 	})
+}
+
+// ListLimitsHandler returns a map of all features and their current rate limit usages.
+func ListLimitsHandler(baseLogger log.Logger, eventLogger events.Logger, redisStore limiter.RedisStore) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		act := actor.FromContext(r.Context())
+		logger := act.Logger(sgtrace.Logger(r.Context(), baseLogger))
+
+		res := map[codygateway.Feature]listLimitElement{}
+
+		// Iterate over all features.
+		for _, f := range codygateway.AllFeatures {
+			// Get the limiter, but don't log any rate limit events, the only limits enforced
+			// here are concurrency limits and we should not care about those.
+			l, ok := act.Limiter(logger, redisStore, f, noopRateLimitNotifier)
+			if !ok {
+				response.JSONError(logger, w, http.StatusForbidden, errors.Newf("no access to feature %s", f))
+				return
+			}
+
+			// Capture the current usage.
+			currentUsage, expiry, err := l.Usage(r.Context())
+			if err != nil {
+				if errors.HasType(err, limiter.NoAccessError{}) {
+					// No access to this feature, skip.
+					continue
+				}
+				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrapf(err, "failed to get usage for %s", f))
+				return
+			}
+
+			// Find the configured rate limit. This should always be set after reading the Usage,
+			// but just to be safe, we add an existence check here.
+			rateLimit, ok := act.RateLimits[f]
+			if !ok {
+				response.JSONError(logger, w, http.StatusInternalServerError, errors.Newf("rate limit for %q not found", string(f)))
+				return
+			}
+
+			el := listLimitElement{
+				Limit:    rateLimit.Limit,
+				Interval: rateLimit.Interval.String(),
+				Usage:    int64(currentUsage),
+			}
+			if !expiry.IsZero() {
+				el.Expiry = &expiry
+			}
+			res[f] = el
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(res); err != nil {
+			baseLogger.Debug("failed to marshal json response", log.Error(err))
+		}
+	})
+}
+
+type listLimitElement struct {
+	Limit    int64      `json:"limit"`
+	Interval string     `json:"interval"`
+	Usage    int64      `json:"usage"`
+	Expiry   *time.Time `json:"expiry,omitempty"`
+}
+
+func noopRateLimitNotifier(ctx context.Context, actorID string, actorSource codygateway.ActorSource, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
+	// nothing
 }
