@@ -7911,6 +7911,27 @@ type AnalyticsCodesInsightsResult {
     insightDataPointClicks: AnalyticsStatItem!
 }
 """
+Cody analytics.
+"""
+type AnalyticsCodyResult {
+    """
+    Cody users statistics.
+    """
+    users: AnalyticsStatItem!
+    """
+    Cody prompts statistics.
+    """
+    prompts: AnalyticsStatItem!
+    """
+    Cody completions suggested statistics. Only includes completions that displayed for 750ms or longer.
+    """
+    completionsSuggested: AnalyticsStatItem!
+    """
+    Cody completions accepted statistics.
+    """
+    completionsAccepted: AnalyticsStatItem!
+}
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -7954,6 +7975,10 @@ type Analytics {
     Code insights statistics
     """
     codeInsights(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodesInsightsResult!
+    """
+    Cody statistics
+    """
+    cody(dateRange: AnalyticsDateRange, grouping: AnalyticsGrouping): AnalyticsCodyResult!
 }
 
 """

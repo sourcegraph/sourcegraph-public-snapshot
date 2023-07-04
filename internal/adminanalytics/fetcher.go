@@ -146,12 +146,18 @@ func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, erro
 	var data AnalyticsSummaryData
 
 	if err := f.db.QueryRowContext(ctx, f.summaryQuery.Query(sqlf.PostgresBindVar), f.summaryQuery.Args()...).Scan(&data.TotalCount, &data.TotalUniqueUsers, &data.TotalRegisteredUsers); err != nil {
+		
+		fmt.Println("======1")
+		fmt.Println(f.summaryQuery.Query(sqlf.PostgresBindVar))
+		fmt.Println(err)
 		return nil, err
 	}
 
 	summary := &AnalyticsSummary{data}
 
 	if err := setItemToCache(cacheKey, summary); err != nil {
+		fmt.Println("======2")
+		fmt.Println(err)
 		return nil, err
 	}
 

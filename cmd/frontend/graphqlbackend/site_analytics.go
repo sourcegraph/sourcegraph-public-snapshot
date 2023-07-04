@@ -111,3 +111,12 @@ func (r *siteAnalyticsResolver) CodeInsights(ctx context.Context, args *struct {
 }) *adminanalytics.CodeInsights {
 	return &adminanalytics.CodeInsights{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
 }
+
+/* Cody */
+
+func (r *siteAnalyticsResolver) Cody(ctx context.Context, args *struct {
+	DateRange *string
+	Grouping  *string
+}) *adminanalytics.Cody {
+	return &adminanalytics.Cody{Ctx: ctx, DateRange: *args.DateRange, Grouping: *args.Grouping, DB: r.db, Cache: r.cache}
+}

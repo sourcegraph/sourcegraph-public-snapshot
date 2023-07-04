@@ -1566,7 +1566,7 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 }
 
 // List of events that don't meet the criteria of "active" usage of Cody.
-var nonActiveCodyEvents = []string{
+var NonActiveCodyEvents = []string{
 	"CodyVSCodeExtension:CodySavedLogin:executed",
 	"web:codyChat:tryOnPublicCode",
 	"web:codyEditorWidget:viewed",
@@ -1582,6 +1582,9 @@ var nonActiveCodyEvents = []string{
 	"SpeakToACodyEngineerCTA",
 }
 
+// Conditions in this query match those found in the CodyUsers function
+// in /internal/adminanalytics/cody.go. Ensure these two filters remain in sync to ensure
+// that Sourcegraph and customers see the same data.
 var aggregatedCodyUsageEventsQuery = `
 WITH events AS (
   SELECT
@@ -1599,7 +1602,7 @@ WITH events AS (
     AND lower(name) like '%%cody%%'
     AND name not like '%%CTA%%'
     AND name not like '%%Cta%%'
-    AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
+    AND (name NOT IN ('` + strings.Join(NonActiveCodyEvents, "','") + `'))
 ),
 code_generation_keys AS (
   SELECT * FROM unnest(ARRAY[
