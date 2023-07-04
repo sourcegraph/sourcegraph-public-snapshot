@@ -33,7 +33,7 @@ pipeline:
       uri: https://github.com/GoogleCloudPlatform/prometheus/archive/refs/tags/v${{package.version}}.tar.gz
       expected-sha256: 6fe827f9253be9811052164b1d67b1fadb3c1bf6a74522ba06b6330e3290ee68
   - runs: |
+      mkdir -p ${{targets.destdir}}/bin
       make build
-      mkdir -p ${{targets.destdir}}/bin/
-      cp prometheus /bin/prometheus
-      cp promtool /bin/promtool
+      cp prometheus ${{targets.destdir}}/bin/prometheus
+      cp promtool ${{targets.destdir}}/bin/promtool
