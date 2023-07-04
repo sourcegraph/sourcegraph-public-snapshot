@@ -155,7 +155,8 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
             return Collections.emptyList();
           }
           return Collections.emptyList();
-        });
+        },
+        executor);
   }
 
   @NotNull
