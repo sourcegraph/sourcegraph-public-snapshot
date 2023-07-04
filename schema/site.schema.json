@@ -2441,6 +2441,51 @@
           "type": "string",
           "format": "uri"
         },
+        "fileFilters": {
+          "description": "Filters that will decode which files om a repository get embedded.",
+          "type": "object",
+          "properties": {
+            "excludedFilePathPatterns": {
+              "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                ".*ignore",
+                ".gitattributes",
+                ".mailmap",
+                "*.csv",
+                "*.svg",
+                "*.xml",
+                "__fixtures__/",
+                "node_modules/",
+                "testdata/",
+                "mocks/",
+                "vendor/"
+              ]
+            },
+            "includeFilePathPatterns": {
+              "description": "A list of glob patterns that match file paths you want to include in embeddings.",
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "default": [
+                "*.go",
+                "*.ts",
+                "*.md",
+                "src/",
+                "cmd/"
+              ]
+            },
+            "maxFileSize": {
+              "description": "The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).",
+              "type": "integer",
+              "default": 1000000
+            }
+          }
+        },
         "excludedFilePathPatterns": {
           "description": "A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).",
           "type": "array",
@@ -2459,7 +2504,8 @@
             "testdata/",
             "mocks/",
             "vendor/"
-          ]
+          ],
+          "deprecationMessage": "Deprecated in favor of fileFilers.excludedFilePathPatterns"
         },
         "maxCodeEmbeddingsPerRepo": {
           "description": "The maximum number of embeddings for code files to generate per repo",

@@ -814,6 +814,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	return computedConfig
 }
 
+const embeddingsMaxFileSize = 1000000
+
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
@@ -939,6 +941,23 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		return nil
 	}
 
+	// While its not removed, use both options
+	var includedFilePathPatterns []string
+	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
+	maxFileSizeLimit := embeddingsMaxFileSize
+	if embeddingsConfig.FileFilters != nil {
+		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludeFilePathPatterns
+		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
+		if embeddingsConfig.FileFilters.MaxFileSize >= 0 && embeddingsConfig.FileFilters.MaxFileSize <= embeddingsMaxFileSize {
+			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSize
+		}
+	}
+	fileFilters := conftypes.EmbeddingsFileFilters{
+		IncludedFilePathPatterns: includedFilePathPatterns,
+		ExcludedFilePathPatterns: excludedFilePathPatterns,
+		MaxFileSize:              maxFileSizeLimit,
+	}
+
 	computedConfig := &conftypes.EmbeddingsConfig{
 		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
 		AccessToken: embeddingsConfig.AccessToken,
@@ -947,7 +966,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
 		Incremental:                *embeddingsConfig.Incremental,
-		ExcludedFilePathPatterns:   embeddingsConfig.ExcludedFilePathPatterns,
+		FileFilters:                fileFilters,
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,

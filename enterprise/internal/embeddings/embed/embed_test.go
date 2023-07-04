@@ -107,9 +107,12 @@ func TestEmbedRepo(t *testing.T) {
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 
 	opts := EmbedRepoOpts{
-		RepoName:          repoName,
-		Revision:          revision,
-		ExcludePatterns:   excludedGlobPatterns,
+		RepoName: repoName,
+		Revision: revision,
+		FileFilters: FileFilters{
+			ExcludePatterns: excludedGlobPatterns,
+			MaxFileSize:     100000,
+		},
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: 100000,
 		MaxTextEmbeddings: 100000,
