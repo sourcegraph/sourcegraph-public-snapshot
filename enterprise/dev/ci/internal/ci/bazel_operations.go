@@ -13,10 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func BazelOperations() []operations.Operation {
+func BazelOperations(isMain bool) []operations.Operation {
 	ops := []operations.Operation{}
 	ops = append(ops, bazelConfigure())
-	ops = append(ops, bazelTest("//...", "//client/web:test"))
+	if isMain {
+		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test"))
+	} else {
+		ops = append(ops, bazelTest("//...", "//client/web:test"))
+	}
 	ops = append(ops, bazelBackCompatTest(
 		"@sourcegraph_back_compat//cmd/...",
 		"@sourcegraph_back_compat//lib/...",
