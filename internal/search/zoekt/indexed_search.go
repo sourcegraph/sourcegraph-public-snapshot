@@ -763,7 +763,7 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 		if a := actor.FromContext(ctx); a.IsAuthenticated() {
 			userID = a.UID
 		} else {
-			tr.LazyPrintf("skipping private repo resolution for unauthed user")
+			tr.AddEvent("skipping private repo resolution for unauthed user")
 			return nil
 		}
 	}
@@ -785,7 +785,7 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 
 	if err != nil {
 		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
-		tr.LazyPrintf("error resolving user private repos: %v", err)
+		tr.AddEvent("error resolving user private repos", trace.Error(err))
 	}
 	return userPrivateRepos
 }
