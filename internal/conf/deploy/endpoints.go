@@ -10,7 +10,7 @@ func BlobstoreDefaultEndpoint() string {
 	if IsApp() {
 		return "http://127.0.0.1:49000"
 	}
-	if IsSingleBinary() {
+	if IsSingleBinary() || IsDeployTypeSingleDockerContainer(Type()) {
 		return "http://127.0.0.1:9000"
 	}
 	return "http://blobstore:9000"
@@ -21,7 +21,7 @@ func BlobstoreHostPort() (string, string) {
 	if IsApp() {
 		return "127.0.0.1", "49000"
 	}
-	if env.InsecureDev || IsSingleBinary() {
+	if env.InsecureDev || IsSingleBinary() || IsDeployTypeSingleDockerContainer(Type()) {
 		return "127.0.0.1", "9000"
 	}
 	return "", "9000"
