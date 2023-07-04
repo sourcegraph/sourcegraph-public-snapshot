@@ -97,7 +97,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, opts.RepoName, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -108,7 +108,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
+	textIndex, textIndexStats, err := embedFiles(ctx, opts.RepoName, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -143,6 +143,7 @@ type EmbedRepoOpts struct {
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
+	repoName api.RepoName,
 	files []FileEntry,
 	client client.EmbeddingsClient,
 	contextService ContextService,
@@ -176,7 +177,7 @@ func embedFiles(
 
 		batchChunks := make([]string, len(batch))
 		for idx, chunk := range batch {
-			batchChunks[idx] = chunk.Content
+			batchChunks[idx] = addMetadataHeader(chunk.Content, string(repoName), chunk.FileName)
 			index.RowMetadata = append(index.RowMetadata, embeddings.RepoEmbeddingRowMetadata{FileName: chunk.FileName, StartLine: chunk.StartLine, EndLine: chunk.EndLine})
 
 			// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
