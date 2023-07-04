@@ -54,6 +54,7 @@ ts_project(
         "src/chat/transcript/index.ts",
         "src/chat/transcript/interaction.ts",
         "src/chat/transcript/messages.ts",
+        "src/chat/typewriter.ts",
         "src/chat/useClient.ts",
         "src/chat/viewHelpers.ts",
         "src/codebase-context/index.ts",
