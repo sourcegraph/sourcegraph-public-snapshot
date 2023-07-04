@@ -359,3 +359,12 @@ Base pipeline (more steps might be included based on branch changes):
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
+
+### Bazel command
+
+The run type for branches matching `bazel-do/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build bazel-do
+```

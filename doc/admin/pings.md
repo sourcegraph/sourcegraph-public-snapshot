@@ -190,7 +190,7 @@ Sourcegraph aggregates usage and performance metrics for some product features i
     - Count of unique users who interacted with the search exports feature
     - Count interactions with the go imports search query transformation feature
     - Count of unique users who interacted with the go imports search query transformation feature
-- Sourcegraph Own usage data
+- Code ownership usage data
   - Number and ratio of repositories for which ownership data is available via CODEOWNERS file or the API.
   - Number of owners assigned through Own.
   <!-- - Aggregate monthly weekly and daily active users for the following activities: -->

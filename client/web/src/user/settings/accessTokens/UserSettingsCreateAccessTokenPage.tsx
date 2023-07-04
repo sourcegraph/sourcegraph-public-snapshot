@@ -164,7 +164,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         )}{' '}
                         Generate token
                     </Button>
-                    <Button className="ml-2 test-create-access-token-cancel" to="." variant="secondary" as={Link}>
+                    <Button className="ml-2 test-create-access-token-cancel" to=".." variant="secondary" as={Link}>
                         Cancel
                     </Button>
                 </div>

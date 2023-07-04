@@ -9,7 +9,6 @@ import { useSidebarSize } from './useSidebarSize'
 interface CodySidebarStore extends CodyChatStore {
     readonly isSidebarOpen: boolean
     readonly inputNeedsFocus: boolean
-    readonly sidebarSize: number
     setIsSidebarOpen: (isOpen: boolean) => void
     setFocusProvided: () => void
     setSidebarSize: (size: number) => void
@@ -19,7 +18,6 @@ const CodySidebarContext = React.createContext<CodySidebarStore | null>({
     ...codyChatStoreMock,
     isSidebarOpen: false,
     inputNeedsFocus: false,
-    sidebarSize: 0,
     setSidebarSize: () => {},
     setIsSidebarOpen: () => {},
     setFocusProvided: () => {},
@@ -32,7 +30,7 @@ interface ICodySidebarStoreProviderProps {
 export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> = ({ children }) => {
     const [isSidebarOpen, setIsSidebarOpenState] = useTemporarySetting('cody.showSidebar', false)
     const [inputNeedsFocus, setInputNeedsFocus] = useState(false)
-    const { sidebarSize, setSidebarSize } = useSidebarSize()
+    const { setSidebarSize } = useSidebarSize()
 
     const setFocusProvided = useCallback(() => {
         setInputNeedsFocus(false)
@@ -55,12 +53,11 @@ export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> 
             ...codyChatStore,
             isSidebarOpen: isSidebarOpen ?? false,
             inputNeedsFocus,
-            sidebarSize: isSidebarOpen ? sidebarSize : 0,
             setIsSidebarOpen,
             setFocusProvided,
             setSidebarSize,
         }),
-        [codyChatStore, isSidebarOpen, sidebarSize, setIsSidebarOpen, setFocusProvided, setSidebarSize, inputNeedsFocus]
+        [codyChatStore, isSidebarOpen, setIsSidebarOpen, setFocusProvided, setSidebarSize, inputNeedsFocus]
     )
 
     // dirty fix because CodyRecipesWidget is rendered inside a different React DOM tree.
@@ -71,3 +68,7 @@ export const CodySidebarStoreProvider: React.FC<ICodySidebarStoreProviderProps> 
 }
 
 export const useCodySidebar = (): CodySidebarStore => useContext(CodySidebarContext) as CodySidebarStore
+
+export const CODY_SIDEBAR_SIZES = { default: 350, max: 1200, min: 250 }
+
+export { useSidebarSize }

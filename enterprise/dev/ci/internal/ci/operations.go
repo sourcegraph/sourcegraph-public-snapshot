@@ -28,6 +28,7 @@ type CoreTestOperationsOptions struct {
 	// for addWebAppOSSBuild
 	CacheBundleSize      bool
 	CreateBundleSizeDiff bool
+	IsMainBranch         bool
 }
 
 // CoreTestOperations is a core set of tests that should be run in most CI cases. More
@@ -43,7 +44,7 @@ type CoreTestOperationsOptions struct {
 func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *operations.Set {
 	// Base set
 	ops := operations.NewSet()
-	ops.Append(BazelOperations()...)
+	ops.Append(BazelOperations(opts.IsMainBranch)...)
 
 	// Simple, fast-ish linter checks
 	linterOps := operations.NewNamedSet("Linters and static analysis")

@@ -31,7 +31,7 @@ export const OwnAnalyticsPage: FC = () => {
         <>
             {loading && <LoadingSpinner />}
             {error && <ErrorAlert prefix="Error finding out if own analytics are enabled" error={error} />}
-            <AnalyticsPageTitle>Own</AnalyticsPageTitle>
+            <AnalyticsPageTitle>Code ownership</AnalyticsPageTitle>
             {enabled ? <OwnAnalyticsPanel /> : <OwnEnableAnalytics />}
         </>
     )
@@ -80,7 +80,7 @@ const OwnAnalyticsPanel: FC = () => {
     return (
         <>
             {loading && <LoadingSpinner />}
-            {error && <ErrorAlert prefix="Error getting own analytics" error={error} />}
+            {error && <ErrorAlert prefix="Error getting code ownership analytics" error={error} />}
             {!loading && !error && (
                 <>
                     {/* TODO(#52826): If only partial data is available - make that clear to the user. */}
@@ -122,7 +122,7 @@ const OwnAnalyticsPanel: FC = () => {
 
 const OwnEnableAnalytics: FC = () => (
     <Alert variant="info">
-        Analytics is not enabled, please <Link to="/site-admin/own-signal-page">enable Own analytics</Link> job first to
-        see Own stats.
+        Analytics is not enabled, please <Link to="/site-admin/own-signal-page">enable code ownership analytics</Link>{' '}
+        job first to see code ownership stats.
     </Alert>
 )

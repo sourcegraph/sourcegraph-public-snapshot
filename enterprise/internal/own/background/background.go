@@ -156,7 +156,7 @@ func makeWorker(ctx context.Context, db database.DB, observationCtx *observation
 
 	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*Job](&task), workerutil.WorkerOptions{
 		Name:              "own_background_worker",
-		Description:       "Sourcegraph own background processing partitioned by repository",
+		Description:       "Code ownership background processing partitioned by repository",
 		NumHandlers:       getConcurrencyConfig(),
 		Interval:          10 * time.Second,
 		HeartbeatInterval: 20 * time.Second,

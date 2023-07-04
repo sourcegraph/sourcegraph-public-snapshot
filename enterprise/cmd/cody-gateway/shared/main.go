@@ -165,10 +165,12 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		// a long-standing hold on the mutex. We will try again on the next periodic
 		// goroutine run.
 		redsync.WithTries(1),
-		// Expire locks at 2x sync interval to avoid contention while avoiding
-		// the lock getting stuck for too long if something happens. Every handler
-		// iteration, we will extend the lock.
-		redsync.WithExpiry(2*config.SourcesSyncInterval))
+		// Expire locks at Nx sync interval to avoid contention while avoiding
+		// the lock getting stuck for too long if something happens and to make
+		// sure we can extend the lock after a sync. Instances spinning will
+		// explicitly release the lock so this is a fallback measure.
+		// Note that syncs can take several minutes.
+		redsync.WithExpiry(4*config.SourcesSyncInterval))
 
 	// Mark health server as ready and go!
 	ready()

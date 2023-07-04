@@ -2,10 +2,12 @@ package searchcontexts
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"sync"
 
 	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -57,7 +59,7 @@ func ParseSearchContextSpec(searchContextSpec string) ParsedSearchContextSpec {
 func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContextSpec string) (sc *types.SearchContext, err error) {
 	tr, ctx := trace.New(ctx, "ResolveSearchContextSpec", searchContextSpec)
 	defer func() {
-		tr.LazyPrintf("context: %+v", sc)
+		tr.AddEvent("resolved search context", attribute.String("searchContext", fmt.Sprintf("%+v", sc)))
 		tr.SetErrorIfNotContext(err)
 		tr.Finish()
 	}()

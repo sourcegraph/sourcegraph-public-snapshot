@@ -3,6 +3,7 @@ package com.sourcegraph.cody.api;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import java.io.*;
 import java.net.ConnectException;
@@ -19,6 +20,7 @@ import org.apache.http.HttpStatus;
 import org.jetbrains.annotations.NotNull;
 
 public class SSEClient {
+  private static final Logger logger = Logger.getInstance(SSEClient.class);
   private final String url;
   private final String accessToken;
   private final String body;
@@ -110,7 +112,7 @@ public class SSEClient {
       try {
         inputStream.close();
       } catch (Exception e) {
-        System.err.println("Got error stopCurrentRequest: " + e.getMessage());
+        logger.error("Got error stopCurrentRequest: " + e.getMessage());
       }
     }
   }
@@ -157,7 +159,7 @@ public class SSEClient {
           }
         }
         if (messageBuilder.length() > 0) {
-          System.out.println("Non-processed data: {}" + messageBuilder);
+          logger.info("Non-processed data: {}" + messageBuilder);
         }
       }
     } catch (Exception e) {

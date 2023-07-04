@@ -1026,7 +1026,7 @@ func (c *insightPayloadResolver) View(ctx context.Context) (graphqlbackend.Insig
 		}
 	}
 
-	mapped, err := c.insightStore.GetAllMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserID: c.validator.userIds, OrgID: c.validator.orgIds})
+	mapped, err := c.insightStore.GetAllMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserIDs: c.validator.userIds, OrgIDs: c.validator.orgIds})
 	if err != nil {
 		return nil, err
 	}
@@ -1166,7 +1166,7 @@ func (r *InsightViewQueryConnectionResolver) TotalCount(ctx context.Context) (*i
 	args := store.InsightQueryArgs{}
 
 	var err error
-	args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
+	args.UserIDs, args.OrgIDs, err = getUserPermissions(ctx, orgStore)
 	if err != nil {
 		return nil, errors.Wrap(err, "getUserPermissions")
 	}
@@ -1203,7 +1203,7 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 		}
 
 		var err error
-		args.UserID, args.OrgID, err = getUserPermissions(ctx, orgStore)
+		args.UserIDs, args.OrgIDs, err = getUserPermissions(ctx, orgStore)
 		if err != nil {
 			r.err = errors.Wrap(err, "getUserPermissions")
 			return
@@ -1464,7 +1464,7 @@ func createInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStor
 			return 0, errors.New("Cannot create more than 2 global insights in Limited Access Mode.")
 		}
 		if len(dashboardIds) > 0 {
-			dashboards, err := dashboardTx.GetDashboards(ctx, store.DashboardQueryArgs{ID: dashboardIds, WithoutAuthorization: true})
+			dashboards, err := dashboardTx.GetDashboards(ctx, store.DashboardQueryArgs{IDs: dashboardIds, WithoutAuthorization: true})
 			if err != nil {
 				return 0, errors.Wrap(err, "GetDashboards")
 			}
