@@ -1908,6 +1908,12 @@ type Repos struct {
 	Path string `json:"path"`
 }
 
+// Repositories description: Top level configuration key for all things repositories.
+type Repositories struct {
+	// DeduplicateForks description: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver
+	DeduplicateForks []string `json:"deduplicateForks,omitempty"`
+}
+
 // Repository description: The repository to get the latest version of.
 type Repository struct {
 	// Name description: The repository name.
@@ -2635,6 +2641,8 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
+	// Repositories description: Top level configuration key for all things repositories.
+	Repositories *Repositories `json:"repositories,omitempty"`
 	// ScimAuthToken description: DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
@@ -2805,6 +2813,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
 	delete(m, "repoPurgeWorker")
+	delete(m, "repositories")
 	delete(m, "scim.authToken")
 	delete(m, "scim.identityProvider")
 	delete(m, "search.index.symbols.enabled")
