@@ -95,7 +95,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	ops := operations.NewSet()
 
 	if op, err := exposeBuildMetadata(c); err == nil {
-		ops.Merge(operations.NewNamedSet("Metadata", op))
+		if !c.RunType.Is(runtype.BazelDo) {
+			// Skip meta for bazel-do
+			ops.Merge(operations.NewNamedSet("Metadata", op))
+		}
 	}
 
 	// This statement outlines the pipeline steps for each CI case.
@@ -113,6 +116,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 				ops.Append(func(pipeline *bk.Pipeline) {
 					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzCmd,
+						bk.Key("bazel-do"),
 						bk.Agent("queue", "bazel"),
 						bk.Cmd(bazelCmd(bzCmd)),
 					)
