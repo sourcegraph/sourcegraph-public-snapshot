@@ -32,6 +32,7 @@ import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
+import { getPluginContextData, PLUGINS } from '../plugins'
 import { AuthProvider } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
@@ -511,12 +512,20 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.onCompletionEnd()
                 break
             default: {
+                this.transcript.addAssistantResponse('', 'Querying data source plugins for additional context...\n')
                 this.sendTranscript()
 
+                // todo: choose which plugins should be run based on the recipe and message
+                    // aka indent detection goes on
+                // todo: run plugins' search functions in parallel
+                const pluginContextMessages = getPluginContextData('todo: supply query here')
+
+                // todo: add plugins' results to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
-                    getPreamble(this.codebaseContext.getCodebase()),
+                    [...getPreamble(this.codebaseContext.getCodebase()), ...pluginContextMessages],
                     this.maxPromptLimit
                 )
+                console.log('prompt:\n%j', prompt)
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
                 await this.saveTranscriptToChatHistory()

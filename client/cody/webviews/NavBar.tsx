@@ -2,7 +2,7 @@ import React from 'react'
 
 import styles from './NavBar.module.css'
 
-export type View = 'chat' | 'recipes' | 'login' | 'settings' | 'debug' | 'history'
+export type View = 'chat' | 'recipes' | 'login' | 'settings' | 'debug' | 'history' | 'plugins'
 
 interface NavBarProps {
     setView: (selectedView: View) => void
@@ -18,6 +18,7 @@ interface NavBarItem {
 const navBarItems: NavBarItem[] = [
     { tab: 'chat', title: 'Chat' },
     { tab: 'recipes', title: 'Recipes' },
+    { tab: 'plugins', title: 'Plugins' },
 ]
 
 export const NavBar: React.FunctionComponent<React.PropsWithChildren<NavBarProps>> = ({ setView, view, devMode }) => (

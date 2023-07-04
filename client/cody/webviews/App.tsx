@@ -14,6 +14,7 @@ import { Header } from './Header'
 import { LoadingPage } from './LoadingPage'
 import { Login } from './Login'
 import { NavBar, View } from './NavBar'
+import { Plugins } from './Plugins'
 import { Recipes } from './Recipes'
 import { Settings } from './Settings'
 import { UserHistory } from './UserHistory'
@@ -178,6 +179,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
                             setSuggestions={setSuggestions}
                         />
                     )}
+                    {view === 'plugins' && <Plugins />}
                 </>
             )}
         </div>

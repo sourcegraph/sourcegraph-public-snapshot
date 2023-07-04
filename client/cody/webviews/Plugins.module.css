@@ -1,0 +1,30 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    padding: 1.25rem;
+    color: var(--vscode-editor-foreground);
+}
+
+.divider {
+    height: 1px;
+    border-top: 1px solid var(--vscode-activityBar-border);
+    margin-bottom: 1.25rem;
+}
+
+.plugin {
+    margin-bottom: 0.5rem;
+    border-bottom: 1px solid var(--vscode-activityBar-border);
+}
+
+.plugin-header {
+    display: flex;
+    h3 {
+        margin: 0 0 0.25rem 0.25rem;
+    }
+}
+
+.plugin-description  {
+    margin: 0;
+}
