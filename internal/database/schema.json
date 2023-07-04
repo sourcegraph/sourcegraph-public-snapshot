@@ -13446,6 +13446,19 @@
           "Comment": ""
         },
         {
+          "Name": "pool_repo_id",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "This is used to refer to the pool repository for deduplicated repos"
+        },
+        {
           "Name": "repo_id",
           "Index": 1,
           "TypeName": "integer",
