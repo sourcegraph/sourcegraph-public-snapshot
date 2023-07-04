@@ -98,7 +98,7 @@ public class LocalAppManager {
       int statusCode = response.getStatusLine().getStatusCode();
       String responseBody = EntityUtils.toString(response.getEntity());
       if (statusCode != 200) {
-        logger.error(
+        logger.warn(
             "Could not fetch local Cody app version. Got status code "
                 + statusCode
                 + ": "
@@ -109,10 +109,10 @@ public class LocalAppManager {
         return Optional.of(responseBody);
       }
     } catch (ConnectException e) {
-      logger.error("Could not connect to the local Cody app.");
+      logger.warn("Could not connect to the local Cody app.");
       return Optional.empty();
     } catch (Exception e) {
-      logger.error(e);
+      logger.warn(e);
       return Optional.empty();
     }
   }
