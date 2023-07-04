@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	"github.com/inconshreveable/log15"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
