@@ -304,9 +304,6 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	tr, ctx := trace.New(ctx, "repoLookup", args.String())
 	defer func() {
 		s.Logger.Debug("repoLookup", log.String("result", fmt.Sprint(result)), log.Error(err))
-		if result != nil {
-			tr.LazyPrintf("result: %s", result)
-		}
 		tr.SetError(err)
 		tr.Finish()
 	}()
