@@ -17,9 +17,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -806,6 +808,11 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 				return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
 			}
 		}
+
+		if err := s.MaybePrepareForDeduplication(ctx, sourced); err != nil {
+			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
+		}
+
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
@@ -832,6 +839,10 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			return Diff{}, errors.Wrapf(err, "syncer: failed to create external service repo: %s", sourced.Name)
 		}
 
+		if err := s.MaybePrepareForDeduplication(ctx, sourced); err != nil {
+			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
+		}
+
 		d.Added = append(d.Added, sourced)
 		s.ObsvCtx.Logger.Debug("appended to added repos")
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
@@ -840,6 +851,60 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 	s.ObsvCtx.Logger.Debug("completed")
 	return d, nil
+}
+
+// MaybePrepareForDeduplication will:
+// 1. Get the repo_id of the parent repo
+// 2. Insert that as the pool_id into gitserver_repos table
+func (s *Syncer) MaybePrepareForDeduplication(ctx context.Context, repo *types.Repo) error {
+	// We only support deduplication for github.com repos at the moment.
+	if !strings.HasPrefix(repo.URI, "github.com") {
+		return nil
+	}
+
+	// Nothing special needs to be done for non-forks.
+	if !repo.Fork {
+		return nil
+	}
+
+	metadata, ok := repo.Metadata.(*github.Repository)
+	if !ok {
+		// Only GitHub repositories are supported for deduplication. But do not return an error here
+		// because this will lead to a spur of errors for all non GitHub repositories.
+		return nil
+	}
+
+	if metadata.Parent == nil {
+		return nil
+	}
+
+	// If the Parent of repo is a fork itself do not deduplciate at all, deduplication for second
+	// degree forks is not supported at the moment.
+	if metadata.Parent.IsFork {
+		return nil
+	}
+
+	// NOTE: This currently breaks for repositoryPathPattern. This is not in scope in the first PoC
+	// and we will iterate on this to support this use case.
+	//
+	// The current API is not making it easy to retrieve the "originalHostname" here. Revisit
+	// and find a better way. But we only support "github.com" repositories for the time being so
+	// it's okay for now until this changes.
+	//
+	// GitHubRepoName without an empty repositoryPathPattern is the repo URI. We use the repo
+	// URI since we want users to add the repo names as they are on their code host and not the
+	// representation that we store in Sourcegraph. If a repositoryPathPattern is set on the code
+	// host config, the repo name may be different than the URI. But the URI will always be the name
+	// of the repo as it appears on the code host.
+	//
+	// When we want to support repositoryPathPattern we will have to decrypt svc.Config here.
+	poolRepoName := reposource.GitHubRepoName("", "github.com", metadata.Parent.NameWithOwner)
+
+	if !s.DeduplicatedForksSet.Contains(string(poolRepoName)) {
+		return nil
+	}
+
+	return s.Store.GitserverReposStore().UpdatePoolRepoID(ctx, poolRepoName, repo.Name)
 }
 
 func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen map[api.RepoID]struct{}) (int, error) {

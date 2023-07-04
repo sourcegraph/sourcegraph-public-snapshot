@@ -2,8 +2,13 @@ package server
 
 import (
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFlushingResponseWriter(t *testing.T) {
@@ -42,4 +47,13 @@ type flushFunc func()
 
 func (f flushFunc) Flush() {
 	f()
+}
+
+func TestPoolDirFromName(t *testing.T) {
+	reposDir := t.TempDir()
+
+	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+	got := poolDirFromName(reposDir, repoName)
+	want := common.GitDir(filepath.Join(reposDir, ".pool/github.com/sourcegraph/sourcegraph/.git"))
+	require.Equal(t, got, want)
 }

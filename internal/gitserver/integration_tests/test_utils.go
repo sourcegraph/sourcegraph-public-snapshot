@@ -84,6 +84,7 @@ func InitGitserver() {
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 
 	grpcServer := defaults.NewServer(logger)

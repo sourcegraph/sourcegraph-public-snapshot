@@ -529,6 +529,8 @@ func TestClient_ArchiveReader(t *testing.T) {
 				},
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 				Locker:                  server.NewRepositoryLocker(),
+				ObservationCtx:          observation.TestContextTB(t),
+				DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 			}
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1097,6 +1099,8 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  server.NewRepositoryLocker(),
+		ObservationCtx:          observation.TestContextTB(t),
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))

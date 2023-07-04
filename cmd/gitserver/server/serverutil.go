@@ -36,6 +36,17 @@ func repoNameFromDir(reposDir string, dir common.GitDir) api.RepoName {
 	return protocol.NormalizeRepo(api.RepoName(name))
 }
 
+// poolDir returns the directory under $REPO_DIR/.pool/ where this repository is expected to be
+// stored.
+//
+// NOTE: It makes no additional checks to see if the repository identified by `name` is a fork or a
+// parent and thus if it should be stored as a pool repository or not. This is the responsibility of
+// the caller of poolDir.
+func poolDirFromName(reposDir string, name api.RepoName) common.GitDir {
+	p := string(protocol.NormalizeRepo(name))
+	return common.GitDir(filepath.Join(reposDir, poolDirName, filepath.FromSlash(p), ".git"))
+}
+
 func cloneStatus(cloned, cloning bool) types.CloneStatus {
 	switch {
 	case cloned:

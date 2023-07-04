@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -127,8 +128,9 @@ func TestCheckSSRFHeader(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB:     db,
-		Locker: NewRepositoryLocker(),
+		DB:                   db,
+		Locker:               NewRepositoryLocker(),
+		DeduplicatedForksSet: types.NewEmptyRepoURISet(),
 	}
 	h := s.Handler()
 

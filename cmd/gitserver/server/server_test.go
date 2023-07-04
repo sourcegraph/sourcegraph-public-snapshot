@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -34,6 +35,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -57,6 +60,8 @@ type Test struct {
 	ExpectedCode     int
 	ExpectedBody     string
 	ExpectedTrailers http.Header
+
+	mockRepoGetByNameDefaultReturnFunc func() (*types.Repo, error)
 }
 
 func newRequest(method, path string, body io.Reader) *http.Request {
@@ -68,10 +73,11 @@ func newRequest(method, path string, body io.Reader) *http.Request {
 func TestExecRequest(t *testing.T) {
 	tests := []Test{
 		{
-			Name:         "HTTP GET",
-			Request:      newRequest("GET", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusMethodNotAllowed,
-			ExpectedBody: "",
+			Name:                               "HTTP GET",
+			Request:                            newRequest("GET", "/exec", strings.NewReader("{}")),
+			ExpectedCode:                       http.StatusMethodNotAllowed,
+			ExpectedBody:                       "",
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
 			Name:         "Command",
@@ -83,6 +89,7 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"42"},
 				"X-Exec-Stderr":      {"teststderr"},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
 			Name:         "CommandWithURL",
@@ -94,6 +101,7 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"42"},
 				"X-Exec-Stderr":      {"teststderr"},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
 			Name: "echo",
@@ -109,6 +117,7 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
 			Name: "stdin",
@@ -124,12 +133,14 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
-			Name:         "NonexistingRepo",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
+			Name:                               "NonexistingRepo",
+			Request:                            newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
+			ExpectedCode:                       http.StatusNotFound,
+			ExpectedBody:                       `{"cloneInProgress":false}`,
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return nil, &database.RepoNotFoundErr{Name: "NonexistingRepo"} },
 		},
 		{
 			Name: "NonexistingRepoWithURL",
@@ -137,18 +148,23 @@ func TestExecRequest(t *testing.T) {
 				"POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":false}`,
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) {
+				return nil, &database.RepoNotFoundErr{Name: "github.com/gorilla/doesnotexist"}
+			},
 		},
 		{
-			Name:         "UnclonedRepoWithoutURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
+			Name:                               "UnclonedRepoWithoutURL",
+			Request:                            newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
+			ExpectedCode:                       http.StatusNotFound,
+			ExpectedBody:                       `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/nicksnyder/go-i18n"}, nil },
 		},
 		{
-			Name:         "UnclonedRepoWithURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":true}`,
+			Name:                               "UnclonedRepoWithURL",
+			Request:                            newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
+			ExpectedCode:                       http.StatusNotFound,
+			ExpectedBody:                       `{"cloneInProgress":true}`,
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/nicksnyder/go-i18n"}, nil },
 		},
 		{
 			Name:         "Error",
@@ -159,23 +175,28 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
-			Name:         "EmptyInput",
-			Request:      newRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "invalid command",
+			Name:                               "EmptyInput",
+			Request:                            newRequest("POST", "/exec", strings.NewReader("{}")),
+			ExpectedCode:                       http.StatusBadRequest,
+			ExpectedBody:                       "invalid command",
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
-			Name:         "BadCommand",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "invalid command",
+			Name:                               "BadCommand",
+			Request:                            newRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
+			ExpectedCode:                       http.StatusBadRequest,
+			ExpectedBody:                       "invalid command",
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/sourcegraph/sourcegraph"}, nil },
 		},
 	}
 
 	db := dbmocks.NewMockDB()
 	gr := dbmocks.NewMockGitserverRepoStore()
+	r := dbmocks.NewMockRepoStore()
+	db.ReposFunc.SetDefaultReturn(r)
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	reposDir := "/testroot"
 	s := &Server{
@@ -192,6 +213,7 @@ func TestExecRequest(t *testing.T) {
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  NewRepositoryLocker(),
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 	h := s.Handler()
 
@@ -241,6 +263,10 @@ func TestExecRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
+			if test.mockRepoGetByNameDefaultReturnFunc != nil {
+				r.GetByNameFunc.SetDefaultReturn(test.mockRepoGetByNameDefaultReturnFunc())
+			}
+
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
 			h.ServeHTTP(&w, test.Request)
 
@@ -264,6 +290,97 @@ func TestExecRequest(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestServer_getDeduplicatedCloneOptions(t *testing.T) {
+	ctx := context.Background()
+	reposDir := t.TempDir()
+	remote := t.TempDir()
+	db := dbmocks.NewMockDB()
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+
+	gs := dbmocks.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gs)
+
+	dedupeNoneOpts := deduplicatedCloneOptions{
+		dedupeCloneType: dedupeNone,
+	}
+
+	t.Run("empty deduplicateForks config", func(t *testing.T) {
+		s.DeduplicatedForksSet = types.NewEmptyRepoURISet()
+		got := s.getDeduplicatedCloneOptions(ctx, &types.Repo{Name: repoName})
+		require.Equal(t, dedupeNoneOpts, got)
+	})
+
+	t.Run("repo name in deduplicateForks config", func(t *testing.T) {
+		s.DeduplicatedForksSet.Overwrite(collections.Set[string]{
+			string(repoName): {}},
+		)
+
+		got := s.getDeduplicatedCloneOptions(ctx, &types.Repo{Name: repoName, URI: string(repoName)})
+		want := deduplicatedCloneOptions{
+			dedupeCloneType: dedupeSource,
+			poolDir:         poolDirFromName(s.ReposDir, repoName),
+			poolRepoName:    repoName,
+		}
+		require.Equal(t, want, got)
+	})
+
+	t.Run("fork repo with non-empty deduplicateForks config", func(t *testing.T) {
+		s.DeduplicatedForksSet.Overwrite(collections.Set[string]{
+			string(repoName): {}},
+		)
+
+		forkedRepoName := api.RepoName("github.com/forked/sourcegrap")
+		forkedRepo := &types.Repo{
+			Name: forkedRepoName,
+			URI:  string(forkedRepoName),
+			Fork: true,
+		}
+
+		t.Run("pool repo relation does not exist", func(t *testing.T) {
+			gs.GetPoolRepoNameFunc.SetDefaultReturn(repoName, false, nil)
+			got := s.getDeduplicatedCloneOptions(ctx, forkedRepo)
+			require.Equal(t, dedupeNoneOpts, got)
+		})
+
+		t.Run("pool repo relation exists", func(t *testing.T) {
+			gs.GetPoolRepoNameFunc.SetDefaultReturn(repoName, true, nil)
+
+			got := s.getDeduplicatedCloneOptions(ctx, forkedRepo)
+			want := deduplicatedCloneOptions{
+				dedupeCloneType: dedupeFork,
+				poolDir:         poolDirFromName(s.ReposDir, repoName),
+				poolRepoName:    repoName,
+			}
+			require.Equal(t, want, got)
+		})
+	})
+}
+
+func TestServer_configureRepoAsGitAlternate(t *testing.T) {
+	ctx := context.Background()
+	reposDir := t.TempDir()
+	remote := t.TempDir()
+	db := dbmocks.NewMockDB()
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	_, tmpPath := gitserver.MakeGitRepositoryAndReturnDir(t)
+	tmpPath = filepath.Join(tmpPath, ".git")
+	tmp := common.GitDir(tmpPath)
+
+	poolRepoName := "github.com/sourcegrap/sourcegraph"
+	err := s.configureRepoAsGitAlternate(tmp, api.RepoName(poolRepoName))
+	require.NoError(t, err)
+
+	alternatesFile := filepath.Join(tmpPath, "objects/info/alternates")
+	data, err := ioutil.ReadFile(alternatesFile)
+	require.NoError(t, err)
+
+	want := filepath.Join(reposDir, poolDirName, poolRepoName, ".git/objects")
+	require.Equal(t, want, string(data))
 }
 
 func TestServer_handleP4Exec(t *testing.T) {
@@ -294,6 +411,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			DB:                      dbmocks.NewMockDB(),
 			RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 			Locker:                  NewRepositoryLocker(),
+			DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 		}
 
 		server := defaults.NewServer(logger)
@@ -737,7 +855,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
-		DeduplicatedForksSet:    types.NewRepoURICache(nil),
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 
 	p := s.NewClonePipeline(logtest.Scoped(t), cloneQueue)
@@ -816,6 +934,7 @@ func TestCloneRepo(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	wantRepoSize := dirSize(repoDir.Path("."))
+	require.NotEqual(t, 0, wantRepoSize)
 	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
 	cmdExecDir = repoDir.Path(".")
@@ -855,6 +974,90 @@ func TestCloneRepo(t *testing.T) {
 	if gitserverRepo.CloningProgress == "" {
 		t.Error("want non-empty CloningProgress")
 	}
+}
+
+func TestCloneRepo_Deduplication(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	t.Cleanup(cancel)
+
+	repoName := api.RepoName("example.com/foo/bar")
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	dbRepo := &types.Repo{
+		Name: repoName,
+		URI:  string(repoName),
+	}
+
+	// Insert the repo into our database
+	if err := db.Repos().Create(ctx, dbRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
+		t.Helper()
+		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, status, fromDB.CloneStatus)
+		assert.Equal(t, size, fromDB.RepoSizeBytes)
+		var errString string
+		if wantErr != nil {
+			errString = wantErr.Error()
+		}
+		assert.Equal(t, errString, fromDB.LastError)
+	}
+
+	// Verify the gitserver repo entry exists.
+	assertRepoState(types.CloneStatusNotCloned, 0, nil)
+
+	// Not setting this blocks when trying to debug this test with delve. But works fine otherwise.
+	authz.SetProviders(true, nil)
+
+	repoDir := t.TempDir()
+	cmd := func(name string, arg ...string) string {
+		t.Helper()
+		return runCmd(t, repoDir, name, arg...)
+	}
+	wantCommit := makeSingleCommitRepo(cmd)
+
+	reposDir := t.TempDir()
+	s := makeTestServer(ctx, t, reposDir, repoDir, db)
+
+	s.DeduplicatedForksSet.Overwrite(collections.Set[string]{
+		string(repoName): {},
+	})
+
+	_, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true})
+	require.NoError(t, err)
+
+	dst := repoDirFromName(s.ReposDir, repoName)
+
+	wantRepoSize := dirSize(dst.Path("."))
+	require.NotEqual(t, 0, wantRepoSize)
+	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
+
+	repoDir = filepath.Dir(string(dst))
+	gotCommit := cmd("git", "rev-parse", "HEAD")
+	if wantCommit != gotCommit {
+		t.Fatal("failed to clone:", gotCommit)
+	}
+
+	// Verify that the repo also exists in pool dir and has the same commit.
+	poolRepoDir := poolDirFromName(s.ReposDir, repoName)
+	gotCommit = runCmd(t, string(poolRepoDir), "git", "rev-parse", "HEAD")
+	if wantCommit != gotCommit {
+		t.Fatal("failed to clone:", gotCommit)
+	}
+
+	// Finally verify that the alternates file in the cloned repo points to the pool repo.
+	alternatesFile := filepath.Join(string(dst), "objects/info/alternates")
+	data, err := ioutil.ReadFile(alternatesFile)
+	require.NoError(t, err)
+
+	want := filepath.Join(reposDir, poolDirName, string(repoName), ".git/objects")
+	require.Equal(t, want, string(data))
 }
 
 func TestCloneRepoRecordsFailures(t *testing.T) {
@@ -1268,6 +1471,21 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	exampleRepo := api.RepoName("example.com/foo/bar")
+
+	getMockDB := func() *dbmocks.MockDB {
+		db := dbmocks.NewMockDB()
+
+		db.GitserverReposFunc.SetDefaultReturn(dbmocks.NewMockGitserverRepoStore())
+		db.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
+
+		repoStore := dbmocks.NewMockRepoStore()
+		repoStore.GetByNameFunc.SetDefaultReturn(&types.Repo{Name: exampleRepo}, nil)
+		db.ReposFunc.SetDefaultReturn(repoStore)
+
+		return db
+	}
+
 	t.Run("with no remote HEAD file", func(t *testing.T) {
 		var (
 			remote   = t.TempDir()
@@ -1281,11 +1499,12 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("git", "init", ".")
 		cmd("rm", ".git/HEAD")
 
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, t, reposDir, remote, getMockDB())
 		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
+
 	t.Run("with an empty remote HEAD file", func(t *testing.T) {
 		var (
 			remote   = t.TempDir()
@@ -1299,11 +1518,12 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("git", "init", ".")
 		cmd("sh", "-c", ": > .git/HEAD")
 
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, t, reposDir, remote, getMockDB())
 		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
+
 	t.Run("with no local HEAD file", func(t *testing.T) {
 		var (
 			reposDir = t.TempDir()
@@ -1320,7 +1540,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		}
 
 		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, t, reposDir, remote, getMockDB())
 
 		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			if err := os.Remove(tmpDir.Path("HEAD")); err != nil {
@@ -1328,6 +1548,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			}
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
+
 		// Use block so we get clone errors right here and don't have to rely on the
 		// clone queue. There's no other reason for blocking here, just convenience/simplicity.
 		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true}); err != nil {
@@ -1351,6 +1572,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			t.Fatal("expected a reconstituted HEAD, but the file is empty")
 		}
 	})
+
 	t.Run("with an empty local HEAD file", func(t *testing.T) {
 		var (
 			remote   = t.TempDir()
@@ -1362,12 +1584,13 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		)
 
 		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, t, reposDir, remote, getMockDB())
 
 		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
+
 		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -1865,9 +2088,168 @@ func TestIgnorePath(t *testing.T) {
 		// Double check handling of trailing space
 		{path: filepath.Join(reposDir, P4HomeName+"   "), shouldIgnore: true},
 		{path: filepath.Join(reposDir, "sourcegraph/sourcegraph"), shouldIgnore: false},
+		{path: filepath.Join(reposDir, poolDirName), shouldIgnore: true},
 	} {
-		t.Run("", func(t *testing.T) {
+		t.Run(tc.path, func(t *testing.T) {
 			assert.Equal(t, tc.shouldIgnore, ignorePath(reposDir, tc.path))
+		})
+	}
+}
+
+func TestCloneOptions_IsDeduplicateableClone(t *testing.T) {
+	testCases := []struct {
+		name string
+		opts CloneOptions
+		want bool
+	}{
+		{
+			name: "deduplicatedCloneOptions is not initialised",
+			opts: CloneOptions{},
+			want: false,
+		},
+		{
+			name: "dedupeNone",
+			opts: CloneOptions{
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeNone,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeSource",
+			opts: CloneOptions{
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeSource,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "dedupeFork",
+			opts: CloneOptions{
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeFork,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "dedupe garbage type",
+			opts: CloneOptions{
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeType(10),
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.opts.IsDeduplicateableClone()
+			require.Equal(t, tc.want, got)
+		})
+	}
+}
+
+func TestCloneOptions_IsPoolDirOverwritable(t *testing.T) {
+	testCases := []struct {
+		name string
+		opts CloneOptions
+		want bool
+	}{
+		{
+			name: "deduplicatedCloneOptions is not initialised",
+			opts: CloneOptions{},
+			want: false,
+		},
+		{
+			name: "dedupeNone, Overwrite false",
+			opts: CloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeNone,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeNone, Overwrite true",
+			opts: CloneOptions{
+				Overwrite: true,
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeNone,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeSource, Overwrite false",
+			opts: CloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeSource,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeSource, Overwrite true",
+			opts: CloneOptions{
+				Overwrite: true,
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeSource,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "dedupeFork, Overwrite false",
+			opts: CloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeFork,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeFork, Overwrite true",
+			opts: CloneOptions{
+				Overwrite: true,
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeFork,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupe garbage type, Overwrite false",
+			opts: CloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeType(10),
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupe garbage type, Overwrite true",
+			opts: CloneOptions{
+				Overwrite: true,
+				DeduplicatedCloneOptions: deduplicatedCloneOptions{
+					dedupeCloneType: dedupeType(10),
+				},
+			},
+			want: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.opts.IsPoolDirOverwritable()
+			require.Equal(t, tc.want, got)
 		})
 	}
 }

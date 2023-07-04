@@ -369,6 +369,9 @@ func TestGitGCAuto(t *testing.T) {
 func TestCleanupExpired(t *testing.T) {
 	root := t.TempDir()
 
+	// NOTE: If you're adding any new repos to this test, make sure you also insert them into the
+	// test DB as is being done below. This is required because the cleanup jobs may attempt to
+	// reclone the repo by calling cloneRepo, which tries to read the repo from the DB.
 	repoNew := path.Join(root, "repo-new", ".git")
 	repoOld := path.Join(root, "repo-old", ".git")
 	repoGCNew := path.Join(root, "repo-gc-new", ".git")
@@ -379,6 +382,8 @@ func TestCleanupExpired(t *testing.T) {
 	repoPerforce := path.Join(root, "repo-perforce", ".git")
 	repoPerforceGCOld := path.Join(root, "repo-perforce-gc-old", ".git")
 	remote := path.Join(root, "remote", ".git")
+
+	totalRepos := 0
 	for _, gitDirPath := range []string{
 		repoNew, repoOld,
 		repoGCNew, repoGCOld,
@@ -390,6 +395,7 @@ func TestCleanupExpired(t *testing.T) {
 		if err := cmd.Run(); err != nil {
 			t.Fatal(err)
 		}
+		totalRepos += 1
 	}
 
 	if err := exec.Command("git", "init", filepath.Dir(repoNonBare)).Run(); err != nil {
@@ -416,8 +422,25 @@ func TestCleanupExpired(t *testing.T) {
 		DB:                      database.NewDB(logger, dbtest.NewDB(logger, t)),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
 		Locker:                  NewRepositoryLocker(),
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 	s.Handler() // Handler as a side-effect sets up Server
+
+	repos := []*types.Repo{
+		{Name: "repo-new"},
+		{Name: "repo-old"},
+		{Name: "repo-gc-new"},
+		{Name: "repo-gc-old"},
+		{Name: "repo-boom"},
+		{Name: "repo-corrupt"},
+		{Name: "repo-non-bare"},
+		{Name: "repo-perforce"},
+		{Name: "repo-perforce-gc-old"},
+	}
+
+	require.Equal(t, totalRepos, len(repos), "ensure that all the repos declared in the test are inserted in the DB")
+
+	s.DB.Repos().Create(context.Background(), repos...)
 
 	modTime := func(path string) time.Time {
 		t.Helper()

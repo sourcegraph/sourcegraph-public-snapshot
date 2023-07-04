@@ -362,7 +362,6 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 
 			fixtureName := "githubenterprise-getrepo"
 			gheToken := os.Getenv("GHE_TOKEN")
-			fmt.Println(gheToken)
 
 			if Update(fixtureName) && gheToken == "" {
 				t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
@@ -598,7 +597,7 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 			}
 
 			// Confirm that we received 5 repositories, confirming that we retried the request.
-			assert.Len(t, repos, tc.expectedRepoCount)
+			require.Len(t, repos, tc.expectedRepoCount)
 		})
 	}
 }
@@ -1055,7 +1054,6 @@ func TestRepositoryQuery_DoSingleRequest(t *testing.T) {
 				}
 				have = append(have, res)
 			}
-
 			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), Update(t.Name()), have)
 		})
 	}

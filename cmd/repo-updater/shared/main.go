@@ -148,7 +148,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Synced:               make(chan repos.Diff),
 		Now:                  clock,
 		ObsvCtx:              observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
-		DeduplicatedForksSet: types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
+		DeduplicatedForksSet: types.NewRepoURISet(conf.GetDeduplicatedForksIndex()),
 	}
 
 	go conf.Watch(func() {
