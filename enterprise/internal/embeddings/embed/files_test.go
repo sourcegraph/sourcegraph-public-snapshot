@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/stretchr/testify/require"
 )
 
@@ -42,6 +43,91 @@ func TestExcludingFilePaths(t *testing.T) {
 	excludedGlobPatterns := GetDefaultExcludedFilePathPatterns()
 	for _, file := range files {
 		if !isExcludedFilePathMatch(file, excludedGlobPatterns) {
+			gotFiles = append(gotFiles, file)
+		}
+	}
+
+	require.Equal(t, expectedFiles, gotFiles)
+}
+
+func TestIncludingFilePaths(t *testing.T) {
+	files := []string{
+		"file.sql",
+		"root/file.yaml",
+		"client/web/struct.json",
+		"vendor/vendor.txt",
+		"cool.go",
+		"cmd/a.go",
+		"Dockerfile",
+		"README.md",
+		"vendor/README.md",
+		"LICENSE.txt",
+		"nested/vendor/file.py",
+		".prettierignore",
+		"client/web/.gitattributes",
+		"no_ignore",
+		"data/names.csv",
+	}
+
+	expectedFiles := []string{
+		"cool.go",
+		"cmd/a.go",
+	}
+
+	var gotFiles []string
+	pattern := "*.go"
+	g, err := paths.Compile(pattern)
+	require.Nil(t, err)
+	includedGlobPatterns := []*paths.GlobPattern{g}
+	for _, file := range files {
+		if isIncludedFilePathMatch(file, includedGlobPatterns) {
+			gotFiles = append(gotFiles, file)
+		}
+	}
+
+	require.Equal(t, expectedFiles, gotFiles)
+}
+
+func TestIncludingFilePathsWithEmptyIncludes(t *testing.T) {
+	files := []string{
+		"file.sql",
+		"root/file.yaml",
+		"client/web/struct.json",
+		"vendor/vendor.txt",
+		"cool.go",
+		"cmd/a.go",
+		"Dockerfile",
+		"README.md",
+		"vendor/README.md",
+		"LICENSE.txt",
+		"nested/vendor/file.py",
+		".prettierignore",
+		"client/web/.gitattributes",
+		"no_ignore",
+		"data/names.csv",
+	}
+
+	expectedFiles := []string{
+		"file.sql",
+		"root/file.yaml",
+		"client/web/struct.json",
+		"vendor/vendor.txt",
+		"cool.go",
+		"cmd/a.go",
+		"Dockerfile",
+		"README.md",
+		"vendor/README.md",
+		"LICENSE.txt",
+		"nested/vendor/file.py",
+		".prettierignore",
+		"client/web/.gitattributes",
+		"no_ignore",
+		"data/names.csv",
+	}
+
+	var gotFiles []string
+	for _, file := range files {
+		if isIncludedFilePathMatch(file, []*paths.GlobPattern{}) {
 			gotFiles = append(gotFiles, file)
 		}
 	}
