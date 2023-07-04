@@ -112,7 +112,7 @@ public class LocalAppManager {
       logger.error("Could not connect to the local Cody app.");
       return Optional.empty();
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.error(e);
       return Optional.empty();
     }
   }
@@ -125,7 +125,7 @@ public class LocalAppManager {
               try {
                 Desktop.getDesktop().open(new File(p.codyAppFile.toString()));
               } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e);
               }
             });
   }

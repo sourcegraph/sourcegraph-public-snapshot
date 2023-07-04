@@ -20,6 +20,8 @@ import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
 import org.jetbrains.idea.perforce.perforce.PerforceSettings;
 
 public class RepoUtil {
+  private static final Logger logger = Logger.getInstance(RepoUtil.class);
+
   // repoInfo returns the Sourcegraph repository URI, and the file path
   // relative to the repository root. If the repository URI cannot be
   // determined, a RepoInfo with empty strings is returned.
@@ -63,7 +65,7 @@ public class RepoUtil {
       }
       ErrorNotification.show(project, message);
       Logger.getInstance(RepoUtil.class).warn(message);
-      err.printStackTrace();
+      logger.error(err);
     }
     return new RepoInfo(
         vcsType,

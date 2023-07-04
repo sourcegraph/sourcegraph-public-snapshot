@@ -89,7 +89,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
 
       return result;
     } catch (JsonProcessingException | UnsupportedEncodingException e) {
-      e.printStackTrace();
+      logger.error(e);
       return null;
     }
   }
@@ -147,7 +147,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
             logger.error("Cody: Could not connect to the 'unstable-codegen' completion provider");
             return Collections.emptyList();
           } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
             return Collections.emptyList();
           }
           return Collections.emptyList();

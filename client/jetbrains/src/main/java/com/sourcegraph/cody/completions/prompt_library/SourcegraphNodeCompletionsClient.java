@@ -61,8 +61,8 @@ public class SourcegraphNodeCompletionsClient {
 
     @Override
     public void onError(Throwable error) {
-      error.printStackTrace();
       promise.completeExceptionally(error);
+      logger.error(error);
     }
 
     @Override
