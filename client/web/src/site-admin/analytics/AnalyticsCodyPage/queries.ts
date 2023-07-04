@@ -17,24 +17,24 @@ const analyticsStatItemFragment = gql`
 `
 export const CODY_STATISTICS = gql`
     query CodyStatistics($dateRange: AnalyticsDateRange!, $grouping: AnalyticsGrouping!) {
-      site {
-          analytics {
-              cody(dateRange: $dateRange, grouping: $grouping) {
-                users{
-                  ...CodyStatItemFragment
+        site {
+            analytics {
+                cody(dateRange: $dateRange, grouping: $grouping) {
+                    users {
+                        ...CodyStatItemFragment
+                    }
+                    prompts {
+                        ...CodyStatItemFragment
+                    }
+                    completionsAccepted {
+                        ...CodyStatItemFragment
+                    }
+                    completionsSuggested {
+                        ...CodyStatItemFragment
+                    }
                 }
-                prompts{
-                  ...CodyStatItemFragment
-                }
-                completionsAccepted{
-                  ...CodyStatItemFragment
-                }
-                completionsSuggested{
-                  ...CodyStatItemFragment
-                }
-              }
-          }
-      }
-  }
-  ${analyticsStatItemFragment}
+            }
+        }
+    }
+    ${analyticsStatItemFragment}
 `

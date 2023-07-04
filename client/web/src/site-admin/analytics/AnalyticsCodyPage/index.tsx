@@ -20,15 +20,12 @@ interface Props {}
 
 export const AnalyticsCodyPage: React.FunctionComponent<Props> = () => {
     const { dateRange, aggregation, grouping } = useChartFilters({ name: 'Cody', aggregation: 'count' })
-    const { data, error, loading } = useQuery<CodyStatisticsResult, CodyStatisticsVariables>(
-        CODY_STATISTICS,
-        {
-            variables: {
-                dateRange: dateRange.value,
-                grouping: grouping.value,
-            },
-        }
-    )
+    const { data, error, loading } = useQuery<CodyStatisticsResult, CodyStatisticsVariables>(CODY_STATISTICS, {
+        variables: {
+            dateRange: dateRange.value,
+            grouping: grouping.value,
+        },
+    })
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsCody')
     }, [])
@@ -41,7 +38,10 @@ export const AnalyticsCodyPage: React.FunctionComponent<Props> = () => {
         const activities: Series<StandardDatum>[] = [
             {
                 id: 'cody-prompts',
-                name: aggregation.selected === 'count' ? 'Cody prompts and recipes' : 'Users using Cody prompts and recipes',
+                name:
+                    aggregation.selected === 'count'
+                        ? 'Cody prompts and recipes'
+                        : 'Users using Cody prompts and recipes',
                 color: 'var(--orange)',
                 data: prompts.nodes.map(
                     node => ({
@@ -55,7 +55,10 @@ export const AnalyticsCodyPage: React.FunctionComponent<Props> = () => {
             },
             {
                 id: 'cody-completions-suggested',
-                name: aggregation.selected === 'count' ? 'Cody completions suggested' : 'Users seeing Cody completion suggestions',
+                name:
+                    aggregation.selected === 'count'
+                        ? 'Cody completions suggested'
+                        : 'Users seeing Cody completion suggestions',
                 color: 'var(--purple)',
                 data: completionsSuggested.nodes.map(
                     node => ({
@@ -69,7 +72,8 @@ export const AnalyticsCodyPage: React.FunctionComponent<Props> = () => {
             },
             {
                 id: 'cody-completions-accepted',
-                name: aggregation.selected === 'count' ? 'Cody completions accepted' : 'Users accepting Cody completions',
+                name:
+                    aggregation.selected === 'count' ? 'Cody completions accepted' : 'Users accepting Cody completions',
                 color: 'var(--purple)',
                 data: completionsAccepted.nodes.map(
                     node => ({
@@ -105,7 +109,9 @@ export const AnalyticsCodyPage: React.FunctionComponent<Props> = () => {
                 </div>
                 {activities && (
                     <div>
-                        <Alert variant="warning" className="d-flex align-center">Cody analytics are a work in progress, and subject to change in future updates</Alert>
+                        <Alert variant="warning" className="d-flex align-center">
+                            Cody analytics are a work in progress, and subject to change in future updates
+                        </Alert>
                         <ChartContainer
                             title={
                                 aggregation.selected === 'count'
