@@ -8,6 +8,8 @@
 
 ### Changed
 
+- fix logging to use JetBrains api + other minor fixes [#54579](https://github.com/sourcegraph/sourcegraph/pull/54579)
+
 ### Deprecated
 
 ### Removed
