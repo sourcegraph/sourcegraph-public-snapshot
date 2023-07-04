@@ -32,6 +32,10 @@ func TestVerifyBazelCommand(t *testing.T) {
 		{"test //foobar/...& curl", true},
 		{"test //foobar/...&& curl", true},
 		{"test //foobar/...|| curl", true},
+		{"test //foobar/$(foo)", true},
+		{"test //foobar/... $(foo)", true},
+		{"test //foobar/`foo`)", true},
+		{"test //foobar/... `foo`", true},
 
 		// forbidden flags
 		{"test //foobar/... --shell_executable", true},

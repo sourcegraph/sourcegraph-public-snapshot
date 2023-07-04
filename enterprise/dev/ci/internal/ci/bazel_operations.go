@@ -507,6 +507,12 @@ func verifyBazelCommand(command string) error {
 	if strings.Contains(command, "|") {
 		return errors.New("unauthorized input for bazel command: '|'")
 	}
+	if strings.Contains(command, "$") {
+		return errors.New("unauthorized input for bazel command: '|'")
+	}
+	if strings.Contains(command, "`") {
+		return errors.New("unauthorized input for bazel command: '`'")
+	}
 
 	// check for command and targets
 	strs := strings.Split(command, " ")
