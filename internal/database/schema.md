@@ -1831,6 +1831,7 @@ Indexes:
  corrupted_at     | timestamp with time zone |           |          | 
  corruption_logs  | jsonb                    |           | not null | '[]'::jsonb
  cloning_progress | text                     |           |          | ''::text
+ pool_repo_id     | integer                  |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)
@@ -1853,6 +1854,8 @@ Triggers:
 **corrupted_at**: Timestamp of when repo corruption was detected
 
 **corruption_logs**: Log output of repo corruptions that have been detected - encoded as json
+
+**pool_repo_id**: This is used to refer to the pool repository for deduplicated repos
 
 # Table "public.gitserver_repos_statistics"
 ```
