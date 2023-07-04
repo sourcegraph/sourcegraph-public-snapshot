@@ -1,33 +1,33 @@
 import { relative } from 'path'
 import url from 'url'
 
-import { CompletionsTextEditor, LightTextDocument } from '@sourcegraph/cody-shared/src/autocomplete'
-import {
-    ActiveTextEditor,
-    ActiveTextEditorSelection,
-    ActiveTextEditorViewControllers,
-    ActiveTextEditorVisibleContent,
-    Editor,
-} from '@sourcegraph/cody-shared/src/editor'
+import { Editor, Uri, ViewControllers, Workspace } from '@sourcegraph/cody-shared/src/editor'
+import { DocumentOffsets } from '@sourcegraph/cody-shared/src/editor/offsets'
 
 import { Agent } from './agent'
-import { DocumentOffsets } from './offsets'
 import { TextDocument } from './protocol'
 
-export class AgentEditor implements Editor, CompletionsTextEditor {
-    public controllers?: ActiveTextEditorViewControllers | undefined
+export class AgentEditor extends Editor {
+    public controllers?: ViewControllers | undefined
 
-    constructor(private agent: Agent) {}
+    constructor(private agent: Agent) {
+        super()
+    }
+
+    // TODO: Support workspaces properly in agent
+    public getActiveWorkspace(): Promise<Workspace | null> {
+        return Promise.resolve(this.agent.workspaceRootPath ? new Workspace(this.agent.workspaceRootPath) : null)
+    }
+
+    public getWorkspaceOf(uri: Uri): Promise<Workspace | null> {
+        return this.getActiveWorkspace()
+    }
 
     public didReceiveFixupText(): Promise<void> {
         throw new Error('Method not implemented.')
     }
 
-    public getWorkspaceRootPath(): string | null {
-        return this.agent.workspaceRootPath
-    }
-
-    private activeDocument(): TextDocument | undefined {
+    private getActiveTextDocument(): TextDocument | undefined {
         if (this.agent.activeDocumentFilePath === null) {
             return undefined
         }

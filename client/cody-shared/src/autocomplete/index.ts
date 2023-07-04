@@ -1,37 +1,19 @@
+import { JointRange } from '../editor'
+
 export interface Completion {
     prefix: string
     content: string
     stopReason?: string
 }
 
-export interface CurrentDocumentContext {
-    prefix: string
-    suffix: string
-    prevLine: string
-    prevNonEmptyLine: string
-    nextNonEmptyLine: string
-}
-
-export interface CurrentDocumentContextWithLanguage extends CurrentDocumentContext {
+export interface TextDocumentAutocompleteContext {
     languageId: string
     markdownLanguage: string
-}
 
-export interface CompletionsTextEditor {
-    getWorkspaceRootPath(): string | null
-    getOpenDocuments(): LightTextDocument[]
-    getCurrentDocument(): LightTextDocument | null
-    getDocumentTextTruncated(uri: string): Promise<string | null>
-    getDocumentRelativePath(uri: string): Promise<string | null>
-    getTabSize(): number
-}
+    prefix: JointRange | null
+    suffix: JointRange | null
 
-export interface LightTextDocument {
-    uri: string
-    languageId: string
-}
-
-export interface History {
-    addItem(newItem: LightTextDocument): void
-    lastN(n: number, languageId?: string, ignoreUris?: string[]): LightTextDocument[]
+    prevLine: JointRange | null
+    prevNonEmptyLine: JointRange | null
+    nextNonEmptyLine: JointRange | null
 }
