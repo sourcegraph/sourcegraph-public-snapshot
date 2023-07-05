@@ -283,7 +283,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
     Function<Optional<String>, AutoCompleteProvider> fallbackDefaultProvider =
         (maybeErrorToLog) -> {
           maybeErrorToLog.ifPresent(logger::error);
-          return new EndOfLineAutoCompleteProvider(
+          return new AnthropicAutoCompleteProvider(
               completionsClient,
               promptChars,
               responseTokens,

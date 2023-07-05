@@ -1,5 +1,8 @@
 package com.sourcegraph.cody.autocomplete.prompt_library;
 
+import static com.sourcegraph.cody.autocomplete.prompt_library.TextProcessing.*;
+
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.vscode.CancellationToken;
@@ -10,8 +13,11 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class EndOfLineAutoCompleteProvider extends AutoCompleteProvider {
-  public EndOfLineAutoCompleteProvider(
+public class AnthropicAutoCompleteProvider extends AutoCompleteProvider {
+
+  public static final Logger logger = Logger.getInstance(AnthropicAutoCompleteProvider.class);
+
+  public AnthropicAutoCompleteProvider(
       SourcegraphNodeCompletionsClient completionsClient,
       int promptChars,
       int responseTokens,
@@ -34,39 +40,23 @@ public class EndOfLineAutoCompleteProvider extends AutoCompleteProvider {
   @Override
   protected List<Message> createPromptPrefix() {
     String[] prefixLines = this.prefix.split("\n");
-    if (prefixLines.length == 0) {
-      throw new Error("no prefix lines");
-    }
+    if (prefixLines.length == 0) logger.error("Cody: missing prefix lines");
 
-    List<Message> prefixMessages;
-    if (prefixLines.length > 2) {
-      int endLine = Math.max(prefixLines.length / 2, prefixLines.length - 5);
-      prefixMessages =
-          List.of(
-              new Message(
-                  Speaker.HUMAN,
-                  "Complete the following file:\n"
-                      + "```\n"
-                      + String.join("\n", Arrays.copyOfRange(prefixLines, 0, endLine))
-                      + "\n"
-                      + "```"),
-              new Message(
-                  Speaker.ASSISTANT,
-                  "Here is the completion of the file:\n"
-                      + "```\n"
-                      + String.join(
-                          "\n", Arrays.copyOfRange(prefixLines, endLine, prefixLines.length))
-                      + this.injectPrefix));
-    } else {
-      prefixMessages =
-          List.of(
-              new Message(Speaker.HUMAN, "Write some code"),
-              new Message(
-                  Speaker.ASSISTANT,
-                  "Here is some code:\n```\n" + this.prefix + this.injectPrefix + "```"));
-    }
+    PrefixComponents pc = getHeadAndTail(this.prefix);
 
-    return prefixMessages;
+    return Arrays.asList(
+        new Message(
+            Speaker.HUMAN,
+            "You are Cody, a code completion AI developed by Sourcegraph. You write code in between tags like this:"
+                + OPENING_CODE_TAG
+                + "/* Code goes here */"
+                + CLOSING_CODE_TAG),
+        new Message(Speaker.ASSISTANT, "I am Cody, a code completion AI developed by Sourcegraph."),
+        new Message(
+            Speaker.HUMAN,
+            "Complete this code: " + OPENING_CODE_TAG + pc.head.trimmed + CLOSING_CODE_TAG + "."),
+        new Message(
+            Speaker.ASSISTANT, "Okay, here is some code: " + OPENING_CODE_TAG + pc.tail.trimmed));
   }
 
   @Override
