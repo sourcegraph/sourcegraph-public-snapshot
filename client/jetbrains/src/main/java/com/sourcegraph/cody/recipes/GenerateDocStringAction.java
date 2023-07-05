@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.recipes;
 
-public class GenerateDocStringAction extends BaseRecipeAction {
+public class GenerateDocStringAction extends SimpleRecipeAction {
 
   @Override
   protected PromptProvider getPromptProvider() {

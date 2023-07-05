@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.recipes;
 
-public class ExplainCodeHighLevelAction extends BaseRecipeAction {
+public class ExplainCodeHighLevelAction extends SimpleRecipeAction {
 
   @Override
   protected PromptProvider getPromptProvider() {

@@ -5,32 +5,45 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.UpdatableChatHolderService;
-import com.sourcegraph.telemetry.GraphQlLogger;
+import com.sourcegraph.cody.localapp.LocalAppManager;
+import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.SettingsComponent;
 import org.jetbrains.annotations.NotNull;
 
 public abstract class BaseRecipeAction extends DumbAwareAction {
+
   @Override
-  public void actionPerformed(@NotNull AnActionEvent e) {
+  public void update(@NotNull AnActionEvent e) {
     Project project = e.getProject();
     if (project == null) {
+      disableAction(e);
       return;
     }
     UpdatableChatHolderService updatableChatHolderService =
         project.getService(UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    executeRecipeWithPromptProvider(updatableChat, project);
+    if (updatableChat == null) {
+      disableAction(e);
+      return;
+    }
+    if (LocalAppManager.isPlatformSupported()
+        && ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.LOCAL_APP) {
+      if (!LocalAppManager.isLocalAppInstalled()) {
+        disableAction(e);
+        return;
+      } else if (!LocalAppManager.isLocalAppRunning()) {
+        disableAction(e);
+        return;
+      }
+    }
+    enableAction(e);
   }
 
-  public void executeRecipeWithPromptProvider(UpdatableChat updatableChat, Project project) {
-    GraphQlLogger.logCodyEvents(project, this.getActionComponentName(), "clicked");
-    RecipeRunner recipeRunner = new RecipeRunner(project, updatableChat);
-    ActionUtil.runIfCodeSelected(
-        updatableChat,
-        project,
-        (editorSelection) -> recipeRunner.runRecipe(this.getPromptProvider(), editorSelection));
+  private static void enableAction(@NotNull AnActionEvent e) {
+    e.getPresentation().setEnabled(true);
   }
 
-  protected abstract PromptProvider getPromptProvider();
-
-  protected abstract String getActionComponentName();
+  private static void disableAction(@NotNull AnActionEvent e) {
+    e.getPresentation().setEnabled(false);
+  }
 }
