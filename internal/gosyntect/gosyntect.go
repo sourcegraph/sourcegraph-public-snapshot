@@ -35,14 +35,6 @@ func GetSyntectClient() *Client {
 	return client
 }
 
-// New returns a client connection to a syntect_server.
-func New(syntectServer string) *Client {
-	return &Client{
-		syntectServer: strings.TrimSuffix(syntectServer, "/"),
-		httpClient:    httpcli.InternalClient,
-	}
-}
-
 const (
 	SyntaxEngineSyntect    = "syntect"
 	SyntaxEngineTreesitter = "tree-sitter"
@@ -269,6 +261,14 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 
 func (c *Client) url(path string) string {
 	return c.syntectServer + path
+}
+
+// New returns a client connection to a syntect_server.
+func New(syntectServer string) *Client {
+	return &Client{
+		syntectServer: strings.TrimSuffix(syntectServer, "/"),
+		httpClient:    httpcli.InternalClient,
+	}
 }
 
 type symbolsResponse struct {
