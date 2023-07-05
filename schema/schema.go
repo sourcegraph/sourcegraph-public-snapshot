@@ -985,8 +985,8 @@ type ExternalIdentity struct {
 type FileFilters struct {
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
-	// IncludeFilePathPatterns description: A list of glob patterns that match file paths you want to include in embeddings.
-	IncludeFilePathPatterns []string `json:"includeFilePathPatterns,omitempty"`
+	// IncludedFilePathPatterns description: A list of glob patterns that match file paths you want to include in embeddings.
+	IncludedFilePathPatterns []string `json:"includedFilePathPatterns,omitempty"`
 	// MaxFileSize description: The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).
 	MaxFileSize int `json:"maxFileSize,omitempty"`
 }

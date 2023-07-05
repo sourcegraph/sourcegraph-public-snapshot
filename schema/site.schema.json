@@ -2465,7 +2465,7 @@
                 "vendor/"
               ]
             },
-            "includeFilePathPatterns": {
+            "includedFilePathPatterns": {
               "description": "A list of glob patterns that match file paths you want to include in embeddings.",
               "type": "array",
               "items": {

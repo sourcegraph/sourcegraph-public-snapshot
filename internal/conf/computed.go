@@ -946,7 +946,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
 	maxFileSizeLimit := embeddingsMaxFileSize
 	if embeddingsConfig.FileFilters != nil {
-		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludeFilePathPatterns
+		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
 		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
 		if embeddingsConfig.FileFilters.MaxFileSize >= 0 && embeddingsConfig.FileFilters.MaxFileSize <= embeddingsMaxFileSize {
 			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSize
