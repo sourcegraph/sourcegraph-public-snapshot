@@ -17,7 +17,7 @@ import (
 
 // MockRepoEmbeddingJobsStore is a mock implementation of the
 // RepoEmbeddingJobsStore interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo)
+// github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo)
 // used for unit testing.
 type MockRepoEmbeddingJobsStore struct {
 	// CancelRepoEmbeddingJobFunc is an instance of a mock function object
