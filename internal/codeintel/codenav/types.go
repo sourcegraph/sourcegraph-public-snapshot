@@ -50,11 +50,15 @@ func (s *qualifiedMonikerSet) add(qualifiedMoniker precise.QualifiedMonikerData)
 type RequestArgs struct {
 	RepositoryID int
 	Commit       string
-	Path         string
-	Line         int
-	Character    int
 	Limit        int
 	RawCursor    string
+}
+
+type PositionalRequestArgs struct {
+	RequestArgs
+	Path      string
+	Line      int
+	Character int
 }
 
 // DiagnosticAtUpload is a diagnostic from within a particular upload. The adjusted commit denotes
