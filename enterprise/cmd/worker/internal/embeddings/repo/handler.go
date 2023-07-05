@@ -90,9 +90,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		RepoName: repo.Name,
 		Revision: record.Revision,
 		FileFilters: embed.FileFilters{
-			ExcludePatterns: excludedFiles,
-			IncludePatterns: includedFiles,
-			MaxFileSize:     embeddingsConfig.FileFilters.MaxFileSize,
+			ExcludePatterns:  excludedFiles,
+			IncludePatterns:  includedFiles,
+			MaxFileSizeBytes: embeddingsConfig.FileFilters.MaxFileSizeBytes,
 		},
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,

@@ -138,9 +138,9 @@ type EmbedRepoOpts struct {
 }
 
 type FileFilters struct {
-	ExcludePatterns []*paths.GlobPattern
-	IncludePatterns []*paths.GlobPattern
-	MaxFileSize     int
+	ExcludePatterns  []*paths.GlobPattern
+	IncludePatterns  []*paths.GlobPattern
+	MaxFileSizeBytes int
 }
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
@@ -224,7 +224,7 @@ func embedFiles(
 			continue
 		}
 
-		if file.Size > int64(fileFilters.MaxFileSize) {
+		if file.Size > int64(fileFilters.MaxFileSizeBytes) {
 			stats.Skip(SkipReasonLarge, int(file.Size))
 			continue
 		}

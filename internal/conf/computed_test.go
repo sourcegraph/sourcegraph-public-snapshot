@@ -708,7 +708,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		MaxTextEmbeddingsPerRepo:   512_000,
 		PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 		FileFilters: conftypes.EmbeddingsFileFilters{
-			MaxFileSize: 1000000,
+			MaxFileSizeBytes: 1000000,
 		},
 	}
 
@@ -811,7 +811,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSize:              200,
+					MaxFileSizeBytes:         200,
 					IncludedFilePathPatterns: []string{"*.go"},
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
@@ -838,7 +838,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSize: 1000000,
+					MaxFileSizeBytes: 1000000,
 				},
 			},
 		},
@@ -875,7 +875,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSize: 1000000,
+					MaxFileSizeBytes: 1000000,
 				},
 			},
 		},
@@ -911,7 +911,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSize: 1000000,
+					MaxFileSizeBytes: 1000000,
 				},
 			},
 		},
@@ -949,7 +949,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSize: 1000000,
+					MaxFileSizeBytes: 1000000,
 				},
 			},
 		},
@@ -975,7 +975,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSize: 1000000,
+					MaxFileSizeBytes: 1000000,
 				},
 			},
 		},

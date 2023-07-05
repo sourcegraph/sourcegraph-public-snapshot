@@ -985,10 +985,10 @@ type ExternalIdentity struct {
 type FileFilters struct {
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
-	// IncludedFilePathPatterns description: A list of glob patterns that match file paths you want to include in embeddings.
+	// IncludedFilePathPatterns description: A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.
 	IncludedFilePathPatterns []string `json:"includedFilePathPatterns,omitempty"`
-	// MaxFileSize description: The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).
-	MaxFileSize int `json:"maxFileSize,omitempty"`
+	// MaxFileSizeBytes description: The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).
+	MaxFileSizeBytes int `json:"maxFileSizeBytes,omitempty"`
 }
 
 // FusionClient description: Configuration for the experimental p4-fusion client

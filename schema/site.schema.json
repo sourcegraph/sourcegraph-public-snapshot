@@ -2466,14 +2466,14 @@
               ]
             },
             "includedFilePathPatterns": {
-              "description": "A list of glob patterns that match file paths you want to include in embeddings.",
+              "description": "A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.",
               "type": "array",
               "items": {
                 "type": "string"
               },
               "examples": ["*.go", "*.ts", "*.md", "src/", "cmd/"]
             },
-            "maxFileSize": {
+            "maxFileSizeBytes": {
               "description": "The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).",
               "type": "integer",
               "default": 1000000

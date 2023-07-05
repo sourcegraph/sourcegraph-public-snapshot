@@ -124,9 +124,9 @@ func TestEmbedRepo(t *testing.T) {
 		RepoName: repoName,
 		Revision: revision,
 		FileFilters: FileFilters{
-			ExcludePatterns: excludedGlobPatterns,
-			IncludePatterns: includeGlobs,
-			MaxFileSize:     100000,
+			ExcludePatterns:  excludedGlobPatterns,
+			IncludePatterns:  includeGlobs,
+			MaxFileSizeBytes: 100000,
 		},
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: 100000,

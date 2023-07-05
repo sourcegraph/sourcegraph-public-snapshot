@@ -142,6 +142,9 @@ func TestGetFileFilterPathPatterns(t *testing.T) {
 	if len(exclude) != 2 {
 		t.Fatalf("Expected 2 items, got %d", len(exclude))
 	}
+	if len(include) != 1 {
+		t.Fatalf("Expected 1 items, got %d", len(include))
+	}
 
 	if exclude[0].Match("test.foo") == false {
 		t.Fatalf("Expected true, got false")
@@ -157,9 +160,9 @@ func TestGetFileFilterPathPatterns(t *testing.T) {
 		t.Fatalf("Expected false, got true")
 	}
 	if include[0].Match("test.go") == false {
-		t.Fatalf("Expected false, got true")
+		t.Fatalf("Expected true, got false")
 	}
 	if include[0].Match("test.bar") == true {
-		t.Fatalf("Expected true, got false")
+		t.Fatalf("Expected false, got true")
 	}
 }

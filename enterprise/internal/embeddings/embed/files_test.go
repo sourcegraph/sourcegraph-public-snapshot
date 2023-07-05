@@ -107,24 +107,6 @@ func TestIncludingFilePathsWithEmptyIncludes(t *testing.T) {
 		"data/names.csv",
 	}
 
-	expectedFiles := []string{
-		"file.sql",
-		"root/file.yaml",
-		"client/web/struct.json",
-		"vendor/vendor.txt",
-		"cool.go",
-		"cmd/a.go",
-		"Dockerfile",
-		"README.md",
-		"vendor/README.md",
-		"LICENSE.txt",
-		"nested/vendor/file.py",
-		".prettierignore",
-		"client/web/.gitattributes",
-		"no_ignore",
-		"data/names.csv",
-	}
-
 	var gotFiles []string
 	for _, file := range files {
 		if isIncludedFilePathMatch(file, []*paths.GlobPattern{}) {
@@ -132,7 +114,7 @@ func TestIncludingFilePathsWithEmptyIncludes(t *testing.T) {
 		}
 	}
 
-	require.Equal(t, expectedFiles, gotFiles)
+	require.Equal(t, files, gotFiles)
 }
 
 func Test_isEmbeddableFileContent(t *testing.T) {

@@ -51,5 +51,5 @@ const (
 type EmbeddingsFileFilters struct {
 	IncludedFilePathPatterns []string
 	ExcludedFilePathPatterns []string
-	MaxFileSize              int
+	MaxFileSizeBytes         int
 }
