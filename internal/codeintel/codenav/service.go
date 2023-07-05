@@ -908,10 +908,6 @@ func (s *Service) GetDefinitions(ctx context.Context, args PositionalRequestArgs
 	return adjustedLocations, nil
 }
 
-func (s *Service) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error) {
-	return s.lsifstore.GetFullSCIPNameByDescriptor(ctx, uploadID, symbolNames)
-}
-
 func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (diagnosticsAtUploads []DiagnosticAtUpload, _ int, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDiagnostics, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
@@ -1193,6 +1189,10 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 
 	sortedRanges := sortRanges(adjustedRanges)
 	return dedupeRanges(sortedRanges), nil
+}
+
+func (s *Service) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error) {
+	return s.lsifstore.GetFullSCIPNameByDescriptor(ctx, uploadID, symbolNames)
 }
 
 // TODO(#48681) - do not proxy this

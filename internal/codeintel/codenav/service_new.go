@@ -32,24 +32,6 @@ func (s *Service) NewGetDefinitions(
 	return locations, err
 }
 
-func (s *Service) NewGetDefinitionsBySymbolNames(
-	ctx context.Context,
-	args RequestArgs,
-	requestState RequestState,
-	symbolNames []string,
-) (_ []shared.UploadLocation, err error) {
-	locations, _, err := s.gatherLocationsBySymbolNames(
-		ctx, args, requestState, Cursor{},
-
-		s.operations.getDefinitions, // operation
-		"definitions",               // tableName
-		false,                       // includeReferencingIndexes
-		symbolNames,
-	)
-
-	return locations, err
-}
-
 func (s *Service) NewGetReferences(
 	ctx context.Context,
 	args PositionalRequestArgs,
@@ -96,6 +78,24 @@ func (s *Service) NewGetPrototypes(
 		false,                      // includeReferencingIndexes
 		LocationExtractorFunc(s.lsifstore.ExtractPrototypeLocationsFromPosition),
 	)
+}
+
+func (s *Service) NewGetDefinitionsBySymbolNames(
+	ctx context.Context,
+	args RequestArgs,
+	requestState RequestState,
+	symbolNames []string,
+) (_ []shared.UploadLocation, err error) {
+	locations, _, err := s.gatherLocationsBySymbolNames(
+		ctx, args, requestState, Cursor{},
+
+		s.operations.getDefinitions, // operation
+		"definitions",               // tableName
+		false,                       // includeReferencingIndexes
+		symbolNames,
+	)
+
+	return locations, err
 }
 
 //
