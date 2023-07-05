@@ -685,6 +685,14 @@ type mockGitHubClient struct {
 	mock.Mock
 }
 
+func (m *mockGitHubClient) GetApp(ctx context.Context, slug string) bool {
+	args := m.Called(ctx, slug)
+	if args.Get(1) != nil {
+		return true
+	}
+	return false
+}
+
 func (m *mockGitHubClient) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
 	args := m.Called(ctx)
 	if args.Get(0) != nil {
