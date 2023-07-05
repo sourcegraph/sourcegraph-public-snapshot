@@ -1440,6 +1440,8 @@ commandsets:
       DISABLE_CODE_INSIGHTS: true
       SOURCEGRAPH_APP: 1
       EXTSVC_CONFIG_ALLOW_EDITS: true
+      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
 
   cody-gateway:
     checks:
