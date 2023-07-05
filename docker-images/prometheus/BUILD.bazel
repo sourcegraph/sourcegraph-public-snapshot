@@ -32,7 +32,7 @@ pkg_tar(
 
 oci_image(
     name = "image",
-    base = "@wolfi_prometheus_gcp_base",
+    base = "@wolfi_prometheus_base",
     entrypoint = ["/bin/prom-wrapper"],
     tars = [":config_tar"],
     user = "sourcegraph",
