@@ -21,7 +21,7 @@ go_library(
         "uploadstore.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/embeddings/background/repo",
         "//internal/api",

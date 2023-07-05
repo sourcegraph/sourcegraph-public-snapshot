@@ -4,5 +4,5 @@ go_library(
     name = "client",
     srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//enterprise:__subpackages__"],
 )

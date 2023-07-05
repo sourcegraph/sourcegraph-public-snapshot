@@ -4,7 +4,7 @@ go_library(
     name = "sourcegraph",
     srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/sourcegraph",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/embeddings/embed/client",
         "//internal/codygateway",

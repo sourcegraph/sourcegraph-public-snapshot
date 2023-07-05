@@ -5,7 +5,7 @@ go_library(
     name = "openai",
     srcs = ["client.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/openai",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
         "//lib/errors",

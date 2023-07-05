@@ -9,7 +9,7 @@ go_library(
         "iface.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed",
-    visibility = ["//:__subpackages__"],
+    visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/embeddings",
         "//enterprise/internal/embeddings/background/repo",
