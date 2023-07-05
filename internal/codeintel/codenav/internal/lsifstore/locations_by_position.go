@@ -2,7 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -12,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -59,23 +57,13 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 	explodedSymbols := []string{}
 	symbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
-		symbolNames = append(symbolNames, arg.Identifier)
-
-		s, err := symbols.NewExplodedSymbol(arg.Identifier)
+		explodedSymbol, err := explodeSymbol(arg.Identifier)
 		if err != nil {
 			return nil, 0, err
 		}
-		explodedSymbols = append(
-			explodedSymbols,
-			fmt.Sprintf(
-				"%s$%s$%s$%s$%s",
-				base64.StdEncoding.EncodeToString([]byte(s.Scheme)),
-				base64.StdEncoding.EncodeToString([]byte(s.PackageManager)),
-				base64.StdEncoding.EncodeToString([]byte(s.PackageName)),
-				base64.StdEncoding.EncodeToString([]byte(s.PackageVersion)),
-				base64.StdEncoding.EncodeToString([]byte(s.Descriptor)),
-			),
-		)
+
+		symbolNames = append(symbolNames, arg.Identifier)
+		explodedSymbols = append(explodedSymbols, explodedSymbol)
 	}
 
 	query := sqlf.Sprintf(
@@ -182,24 +170,16 @@ func (s *store) getLocations(
 		}
 
 		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
-			ex, err := symbols.NewExplodedSymbol(occurrence.Symbol)
+			explodedSymbol, err := explodeSymbol(occurrence.Symbol)
 			if err != nil {
 				return nil, 0, err
 			}
-			explodedSymbols := fmt.Sprintf(
-				"%s$%s$%s$%s$%s",
-				base64.StdEncoding.EncodeToString([]byte(ex.Scheme)),
-				base64.StdEncoding.EncodeToString([]byte(ex.PackageManager)),
-				base64.StdEncoding.EncodeToString([]byte(ex.PackageName)),
-				base64.StdEncoding.EncodeToString([]byte(ex.PackageVersion)),
-				base64.StdEncoding.EncodeToString([]byte(ex.Descriptor)),
-			)
 
 			monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
 				locationsSymbolSearchQuery,
 				pq.Array([]string{occurrence.Symbol}),
 				pq.Array([]int{bundleID}),
-				pq.Array([]string{explodedSymbols}),
+				pq.Array([]string{explodedSymbol}),
 				pq.Array([]int{bundleID}),
 				sqlf.Sprintf(scipFieldName),
 				bundleID,
@@ -545,21 +525,13 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 	symbolNames := make([]string, 0, len(monikers))
 	explodedSymbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
-		ex, err := symbols.NewExplodedSymbol(arg.Identifier)
+		explodedSymbol, err := explodeSymbol(arg.Identifier)
 		if err != nil {
 			return nil, 0, err
 		}
-		explodedSymbols := fmt.Sprintf(
-			"%s$%s$%s$%s$%s",
-			base64.StdEncoding.EncodeToString([]byte(ex.Scheme)),
-			base64.StdEncoding.EncodeToString([]byte(ex.PackageManager)),
-			base64.StdEncoding.EncodeToString([]byte(ex.PackageName)),
-			base64.StdEncoding.EncodeToString([]byte(ex.PackageVersion)),
-			base64.StdEncoding.EncodeToString([]byte(ex.Descriptor)),
-		)
 
 		symbolNames = append(symbolNames, arg.Identifier)
-		explodedSymbolNames = append(explodedSymbolNames, explodedSymbols)
+		explodedSymbolNames = append(explodedSymbolNames, explodedSymbol)
 	}
 
 	var skipConds []*sqlf.Query
