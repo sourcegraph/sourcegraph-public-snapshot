@@ -6,11 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,10 +43,8 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("openai/%s", c.model)
 }
 
-// GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
-// In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
-// often hangs up when downloading large embedding responses.
-func (c *openaiEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
+// GetEmbeddings tries to embed the given texts using the external service specified in the config.
+func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -57,34 +53,6 @@ func (c *openaiEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, t
 		}
 	}
 
-	embeddings, err := c.getEmbeddings(ctx, texts)
-	if err == nil {
-		return embeddings, nil
-	}
-
-	for i := 0; i < maxRetries; i++ {
-		embeddings, err = c.getEmbeddings(ctx, texts)
-		if err == nil {
-			return embeddings, nil
-		} else {
-			// Exponential delay
-			delay := time.Duration(int(math.Pow(float64(2), float64(i))))
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(delay * time.Second):
-			}
-		}
-	}
-
-	return nil, err
-}
-
-var modelsWithoutNewlines = map[string]struct{}{
-	"text-embedding-ada-002": {},
-}
-
-func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
 	_, replaceNewlines := modelsWithoutNewlines[c.model]
 	augmentedTexts := texts
 	if replaceNewlines {
@@ -127,6 +95,10 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 	}
 
 	return embeddings, nil
+}
+
+var modelsWithoutNewlines = map[string]struct{}{
+	"text-embedding-ada-002": {},
 }
 
 func (c *openaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {
