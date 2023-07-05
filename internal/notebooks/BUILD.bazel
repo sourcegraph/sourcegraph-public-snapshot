@@ -8,7 +8,7 @@ go_library(
         "types.go",
         "validate.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/notebooks",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//internal/actor",
