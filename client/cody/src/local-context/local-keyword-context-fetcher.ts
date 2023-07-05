@@ -101,7 +101,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
      */
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const startTime = performance.now()
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = this.editor.getActiveWorkspace()?.toPath()
         if (!rootPath) {
             return []
         }
@@ -202,7 +202,7 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
 
     // Return context results for the Codebase Context Search recipe
     public async getSearchContext(query: string, numResults: number): Promise<ContextResult[]> {
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = this.editor.getActiveWorkspace()!.toPath()
         if (!rootPath) {
             return []
         }
@@ -419,9 +419,11 @@ export class LocalKeywordContextFetcher implements KeywordContextFetcher {
         const { fileTermCounts, termTotalFiles, totalFiles } = fileMatches
         const idfDict = idf(termTotalFiles, totalFiles)
 
-        const activeTextEditor = this.editor.getActiveTextEditor()
+        const activeTextEditor = this.editor.getActiveLightTextDocument()!
+        const workspace = this.editor.getWorkspaceOf(activeTextEditor.uri)
+
         const activeFilename = activeTextEditor
-            ? path.normalize(vscode.workspace.asRelativePath(activeTextEditor.filePath))
+            ? path.normalize(workspace?.relativeTo(activeTextEditor.uri)!)
             : undefined
 
         const querySizeBytes = query

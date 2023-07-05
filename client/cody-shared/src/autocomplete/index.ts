@@ -20,6 +20,15 @@ export interface AutocompleteContext extends TextDocument {
     nextNonEmptyLine: JointRange | null
 }
 
+/**
+ * Get the current document context based on the cursor position in the current document.
+ *
+ * This function is meant to provide a context around the current position in the document,
+ * including a prefix, a suffix, the previous line, the previous non-empty line, and the next non-empty line.
+ * The prefix and suffix are obtained by looking around the current position up to a max length
+ * defined by `maxPrefixLength` and `maxSuffixLength` respectively. If the length of the entire
+ * document content in either direction is smaller than these parameters, the entire content will be used.
+ */
 export function getAutocompleteContext(
     document: TextDocument,
     position: Position,

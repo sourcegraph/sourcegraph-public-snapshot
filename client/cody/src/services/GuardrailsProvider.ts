@@ -1,4 +1,5 @@
 import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { DocumentOffsets } from '@sourcegraph/cody-shared/src/editor/offsets'
 import { Guardrails, summariseAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 
 export class GuardrailsProvider {
@@ -6,13 +7,18 @@ export class GuardrailsProvider {
     constructor(private client: Guardrails, private editor: Editor) {}
 
     public async debugEditorSelection(): Promise<void> {
-        const snippet = this.editor.getActiveTextEditorSelection()?.selectedText
-        if (snippet === undefined) {
+        const document = await this.editor.getFullTextDocument(this.editor.getActiveLightTextDocument()!)
+
+        if (!document.selection) {
             return
         }
 
-        const msg = await this.client.searchAttribution(snippet).then(summariseAttribution)
+        const offset = new DocumentOffsets(document.content)
 
-        await this.editor.showWarningMessage(msg)
+        const msg = await this.client
+            .searchAttribution(offset.jointRangeSlice(document.selection))
+            .then(summariseAttribution)
+
+        await this.editor.warn(msg)
     }
 }

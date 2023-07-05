@@ -27,10 +27,11 @@ export class FilenameContextFetcher {
     public async getContext(query: string, numResults: number): Promise<ContextResult[]> {
         const time0 = performance.now()
 
-        const rootPath = this.editor.getWorkspaceRootPath()
+        const rootPath = this.editor.getActiveWorkspace()?.toPath()
         if (!rootPath) {
             return []
         }
+
         const time1 = performance.now()
         const filenameFragments = await this.queryToFileFragments(query)
         const time2 = performance.now()

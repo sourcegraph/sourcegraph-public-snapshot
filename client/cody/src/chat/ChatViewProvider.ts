@@ -279,7 +279,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 void this.openExternalLinks(message.value)
                 break
             case 'openFile': {
-                const rootPath = this.editor.getWorkspaceRootPath()
+                const rootPath = this.editor.getActiveWorkspace()?.root
                 if (!rootPath) {
                     this.sendErrorToWebview('Failed to open file: missing rootPath')
                     return
@@ -338,7 +338,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 if (lastInteraction) {
                     const displayText = reformatBotMessage(text, responsePrefix)
                     const fileExistFunc = (filePaths: string[]): Promise<{ [filePath: string]: boolean }> => {
-                        const rootPath = this.editor.getWorkspaceRootPath()
+                        const rootPath = this.editor.getActiveWorkspace()?.toPath()
                         if (!rootPath) {
                             return Promise.resolve({})
                         }
@@ -449,11 +449,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     }
 
     private async updateCodebaseContext(): Promise<void> {
-        if (!this.editor.getActiveTextEditor() && vscode.window.visibleTextEditors.length !== 0) {
+        if (!this.editor.getActiveTextDocument() && vscode.window.visibleTextEditors.length !== 0) {
             // these are ephemeral
             return
         }
-        const workspaceRoot = this.editor.getWorkspaceRootPath()
+        const workspaceRoot = this.editor.getActiveWorkspace()?.toPath()
         if (!workspaceRoot || workspaceRoot === '' || workspaceRoot === this.currentWorkspaceRoot) {
             return
         }
@@ -718,14 +718,17 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     private async publishContextStatus(): Promise<void> {
         const send = async (): Promise<void> => {
-            const editorContext = this.editor.getActiveTextEditor()
+            const workspace = this.editor.getActiveWorkspace()
+            const editorContext = this.editor.getActiveTextDocument()
+
             await this.webview?.postMessage({
                 type: 'contextStatus',
                 contextStatus: {
                     mode: this.config.useContext,
                     connection: this.codebaseContext.checkEmbeddingsConnection(),
                     codebase: this.codebaseContext.getCodebase(),
-                    filePath: editorContext ? vscode.workspace.asRelativePath(editorContext.filePath) : undefined,
+                    filePath:
+                        editorContext && workspace ? workspace.relativeTo(editorContext.uri) ?? undefined : undefined,
                     selection: editorContext ? editorContext.selection : undefined,
                     supportsKeyword: true,
                 },
@@ -930,7 +933,7 @@ export async function getCodebaseContext(
     chatClient: ChatClient
 ): Promise<CodebaseContext | null> {
     const client = new SourcegraphGraphQLAPIClient(config)
-    const workspaceRoot = editor.getWorkspaceRootPath()
+    const workspaceRoot = editor.getActiveWorkspace()?.toPath()
     if (!workspaceRoot) {
         return null
     }

@@ -273,6 +273,7 @@ const register = async (
     let completionsProvider: vscode.Disposable | null = null
     if (initialConfig.autocomplete) {
         completionsProvider = createCompletionsProvider(
+            editor,
             config,
             webviewErrorMessenger,
             completionsClient,
@@ -305,6 +306,7 @@ const register = async (
                 completionsProvider.dispose()
             }
             completionsProvider = createCompletionsProvider(
+                editor,
                 config,
                 webviewErrorMessenger,
                 completionsClient,
@@ -348,6 +350,7 @@ const register = async (
 }
 
 function createCompletionsProvider(
+    textEditor: VSCodeEditor,
     config: Configuration,
     webviewErrorMessenger: (error: string) => Promise<void>,
     completionsClient: SourcegraphNodeCompletionsClient,
@@ -361,6 +364,7 @@ function createCompletionsProvider(
 
     const history = new VSCodeHistory()
     const manualCompletionService = new ManualCompletionServiceVSCode(
+        textEditor,
         webviewErrorMessenger,
         completionsClient,
         documentProvider,
@@ -369,6 +373,7 @@ function createCompletionsProvider(
     )
     const providerConfig = createCompletionProviderConfig(config, webviewErrorMessenger, completionsClient)
     const completionsProvider = new CodyCompletionItemProvider({
+        editor: textEditor,
         providerConfig,
         history,
         statusBar,

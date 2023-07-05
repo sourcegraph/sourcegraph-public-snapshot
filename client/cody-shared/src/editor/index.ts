@@ -48,7 +48,7 @@ export interface JointRange {
 }
 
 interface VsCodeInlineController {
-    selection: Range | null
+    selection: SelectionText | null
     error(): Promise<void>
 }
 
@@ -78,6 +78,16 @@ export interface SelectionText {
 
 export class Workspace {
     constructor(public root: Uri) {}
+
+    public toPath(): string | null {
+        const url = new URL(this.root)
+
+        if (url.protocol !== 'file') {
+            return null
+        }
+
+        return url.pathname
+    }
 
     /** Returns null if URI protocol is not the same */
     public relativeTo(uri: Uri): string | null {
@@ -111,7 +121,10 @@ export abstract class Editor {
     public abstract getWorkspaceOf(uri: Uri): Workspace | null
 
     public abstract getActiveLightTextDocument(): LightTextDocument | null
+    public abstract getActiveTextDocument(): TextDocument | null
+
     public abstract getOpenLightTextDocuments(): LightTextDocument[]
+
     public abstract getLightTextDocument(uri: Uri): Promise<LightTextDocument | null>
     public abstract getTextDocument(uri: Uri): Promise<TextDocument | null>
 
@@ -202,7 +215,11 @@ export class NoopEditor extends Editor {
         return null
     }
 
-    public getActiveLightTextDocument(): TextDocument | null {
+    public getActiveLightTextDocument(): LightTextDocument | null {
+        return null
+    }
+
+    public getActiveTextDocument(): TextDocument | null {
         return null
     }
 

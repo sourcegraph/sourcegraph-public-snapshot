@@ -66,6 +66,42 @@ export class VSCodeEditor extends Editor {
         }
     }
 
+    public getActiveTextDocument(): TextDocument | null {
+        const activeEditor = this.getActiveTextEditorInstance()
+        const document = activeEditor?.document
+
+        if (!document) {
+            return null
+        }
+
+        const visibleRange = activeEditor.visibleRanges[0]
+        const selection = activeEditor.selection
+
+        return {
+            uri: document.uri.toString(),
+            languageId: document.languageId,
+
+            content: document.getText(),
+
+            visible: visibleRange
+                ? {
+                      position: visibleRange,
+                      offset: null,
+                  }
+                : null,
+            selection: !selection.isEmpty
+                ? {
+                      position: selection,
+                      offset: null,
+                  }
+                : null,
+
+            // TODO
+            repoName: null,
+            revision: null,
+        }
+    }
+
     public getOpenLightTextDocuments(): LightTextDocument[] {
         return vscode.workspace.textDocuments.map(doc => ({
             uri: doc.uri.toString(),

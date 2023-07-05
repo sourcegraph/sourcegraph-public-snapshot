@@ -14,7 +14,7 @@ export abstract class ManualCompletionService {
     public maxSuffixTokens: number
 
     constructor(
-        private textEditor: Editor,
+        public textEditor: Editor,
         private completionsClient: SourcegraphNodeCompletionsClient,
         private history: History,
         private codebaseContext: CodebaseContext,

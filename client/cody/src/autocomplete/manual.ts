@@ -1,14 +1,13 @@
 import vscode from 'vscode'
 
-import { History } from '@sourcegraph/cody-shared/src/autocomplete'
+import { getAutocompleteContext } from '@sourcegraph/cody-shared/src/autocomplete'
 import { logCompletionEvent } from '@sourcegraph/cody-shared/src/autocomplete/logger'
 import { ManualCompletionService } from '@sourcegraph/cody-shared/src/autocomplete/manual'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { Editor, History } from '@sourcegraph/cody-shared/src/editor'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 
 import { CompletionsDocumentProvider } from './docprovider'
-import { getCurrentDocContext } from './document'
-import { textEditor } from './text_editor'
 
 const LOG_MANUAL = { type: 'manual' }
 const COMPLETIONS_URI = vscode.Uri.parse('cody:Completions.md')
@@ -17,6 +16,7 @@ export class ManualCompletionServiceVSCode extends ManualCompletionService {
     private abortOpenManualCompletion: () => void = () => {}
 
     constructor(
+        textEditor: Editor,
         private webviewErrorMessenger: (error: string) => Promise<void>,
         completionsClient: SourcegraphNodeCompletionsClient,
         private documentProvider: CompletionsDocumentProvider,
@@ -46,22 +46,14 @@ export class ManualCompletionServiceVSCode extends ManualCompletionService {
             viewColumn: 2,
         })
 
-        const docContext = getCurrentDocContext(
-            currentEditor.document,
+        const docContext = getAutocompleteContext(
+            (await this.textEditor.getTextDocument(currentEditor.document.uri.toString()))!,
             currentEditor.selection.start,
             this.tokToChar(this.maxPrefixTokens),
             this.tokToChar(this.maxSuffixTokens)
         )
 
-        if (!docContext) {
-            return
-        }
-
-        const completer = await this.getManualCompletionProvider({
-            ...docContext,
-            languageId: currentEditor.document.languageId,
-            markdownLanguage: ext,
-        })
+        const completer = await this.getManualCompletionProvider(docContext)
 
         if (!completer) {
             return

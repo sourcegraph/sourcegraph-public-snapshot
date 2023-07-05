@@ -1,21 +1,22 @@
 import vscode from 'vscode'
 
-import { Completion } from '@sourcegraph/cody-shared/src/autocomplete'
+import { Completion, getAutocompleteContext } from '@sourcegraph/cody-shared/src/autocomplete'
 import { CompletionsCache } from '@sourcegraph/cody-shared/src/autocomplete/cache'
 import { InlineCompletionProvider } from '@sourcegraph/cody-shared/src/autocomplete/inline'
 import { ProviderConfig } from '@sourcegraph/cody-shared/src/autocomplete/providers/provider'
 import { isAbortError } from '@sourcegraph/cody-shared/src/autocomplete/utils'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
+import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { DocumentOffsets } from '@sourcegraph/cody-shared/src/editor/offsets'
 
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
-import { getCurrentDocContext } from './document'
 import { VSCodeHistory } from './history'
-import { textEditor } from './text_editor'
 
 interface CodyCompletionItemProviderConfig {
     providerConfig: ProviderConfig
+    editor: Editor
     history: VSCodeHistory
     statusBar: CodyStatusBar
     codebaseContext: CodebaseContext
@@ -34,6 +35,7 @@ export class CodyCompletionItemProvider
     constructor(config: CodyCompletionItemProviderConfig) {
         const {
             providerConfig,
+            editor,
             history,
             statusBar,
             codebaseContext,
@@ -47,7 +49,7 @@ export class CodyCompletionItemProvider
 
         super(
             providerConfig,
-            textEditor,
+            editor,
             history,
             codebaseContext,
             responsePercentage,
@@ -97,11 +99,14 @@ export class CodyCompletionItemProvider
             return []
         }
 
-        const docContext = getCurrentDocContext(document, position, this.maxPrefixChars, this.maxSuffixChars)
+        const doc = (await this.textEditor.getTextDocument(document.uri.toString()))!
 
-        if (!docContext) {
-            return []
-        }
+        const docContext = getAutocompleteContext(doc, position, this.maxPrefixChars, this.maxSuffixChars)
+
+        const offset = new DocumentOffsets(doc.content)
+
+        const suffix = offset.jointRangeSlice(docContext.suffix)
+        const prevLine = docContext.prevLine ? offset.jointRangeSlice(docContext.prevLine) : null
 
         // If we have a suffix in the same line as the cursor and the suffix contains any word
         // characters, do not attempt to make a completion. This means we only make completions if
@@ -109,7 +114,7 @@ export class CodyCompletionItemProvider
         //
         // VS Code will attempt to merge the remainder of the current line by characters but for
         // words this will easily get very confusing.
-        if (/\w/.test(docContext.suffix.slice(0, docContext.suffix.indexOf('\n')))) {
+        if (/\w/.test(suffix.slice(0, suffix.indexOf('\n')))) {
             return []
         }
 
@@ -117,13 +122,13 @@ export class CodyCompletionItemProvider
         // selected completion info is present (so something is selected from the completions
         // dropdown list based on the lang server) and the returned completion range does not
         // contain the same selection.
-        if (context.selectedCompletionInfo || /[A-Za-z]$/.test(docContext.prevLine)) {
+        if (context.selectedCompletionInfo || !prevLine || /[A-Za-z]$/.test(prevLine)) {
             return []
         }
 
         // In this case, VS Code won't be showing suggestions anyway and we are more likely to want
         // suggested method names from the language server instead.
-        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || docContext.prevLine.endsWith('.')) {
+        if (context.triggerKind === vscode.InlineCompletionTriggerKind.Invoke || prevLine.endsWith('.')) {
             return []
         }
 

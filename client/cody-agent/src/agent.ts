@@ -8,7 +8,7 @@ import { ManualCompletionServiceAgent } from './completion/manual'
 import { AgentEditor } from './editor'
 import { AgentHistory } from './history'
 import { MessageHandler } from './jsonrpc'
-import { ConnectionConfiguration, Position, TextDocument } from './protocol'
+import { ConnectionConfiguration, TextDocument } from './protocol'
 
 export class Agent extends MessageHandler {
     private defaultConnectionConfig: ConnectionConfiguration = {

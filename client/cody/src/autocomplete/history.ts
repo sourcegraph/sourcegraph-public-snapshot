@@ -1,6 +1,6 @@
 import * as vscode from 'vscode'
 
-import { History, LightTextDocument } from '@sourcegraph/cody-shared/src/autocomplete'
+import { History, LightTextDocument } from '@sourcegraph/cody-shared/src/editor'
 
 export class VSCodeHistory implements vscode.Disposable, History {
     private window = 50

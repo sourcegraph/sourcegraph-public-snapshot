@@ -6,6 +6,7 @@ import {
     CompletionResponse,
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
+import { VSCodeEditor } from '../editor/vscode-editor'
 import { mockVSCodeExports } from '../testutils/vscode'
 
 import { CodyCompletionItemProvider } from '.'
@@ -108,6 +109,7 @@ async function complete(
     })
     const completionProvider = new CodyCompletionItemProvider({
         providerConfig,
+        editor: new VSCodeEditor(null as any),
         statusBar: noopStatusBar,
         history: null as any,
         codebaseContext: null as any,
