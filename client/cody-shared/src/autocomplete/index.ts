@@ -29,6 +29,20 @@ export function getAutocompleteContext(
     const offset = new DocumentOffsets(document.content)
     const posOffset = offset.offset(position)
 
+    let prevNonEmptyLine = null
+    for (let line = position.line - 1; line >= 0; line--) {
+        if (offset.getLine(line).trim().length !== 0) {
+            prevNonEmptyLine = offset.toJointRange(offset.getLineRange(line))
+        }
+    }
+
+    let nextNonEmptyLine = null
+    for (let line = position.line + 1; line < offset.lines.length; line++) {
+        if (offset.getLine(line).trim().length !== 0) {
+            nextNonEmptyLine = offset.toJointRange(offset.getLineRange(line))
+        }
+    }
+
     return {
         ...document,
 

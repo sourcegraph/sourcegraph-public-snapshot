@@ -1,10 +1,8 @@
-import path from 'path'
-import url from 'url'
-
 import { LRUCache } from 'lru-cache'
 
 import { CodebaseContext } from '../codebase-context'
-import { Editor, LightTextDocument } from '../editor'
+import { Editor, History, LightTextDocument } from '../editor'
+import { DocumentOffsets } from '../editor/offsets'
 
 import { AutocompleteContext, Completion } from '.'
 import { CompletionsCache } from './cache'
@@ -57,8 +55,21 @@ export class InlineCompletionProvider {
         document: LightTextDocument,
         docContext: AutocompleteContext
     ): Promise<InlineCompletionResult | null> {
+        const offset = new DocumentOffsets(docContext.content)
+
         const languageId = document.languageId
-        const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
+        const {
+            prefix: prefixRange,
+            suffix: suffixRange,
+            prevLine: sameLinePrefixRange,
+            prevNonEmptyLine: prevNonEmptyLineRange,
+        } = docContext
+
+        const prefix = offset.jointRangeSlice(prefixRange)
+        const suffix = offset.jointRangeSlice(suffixRange)
+        const sameLinePrefix = sameLinePrefixRange ? offset.jointRangeSlice(sameLinePrefixRange) : ''
+        const prevNonEmptyLine = prevNonEmptyLineRange ? offset.jointRangeSlice(prevNonEmptyLineRange) : ''
+
         const sameLineSuffix = suffix.slice(0, suffix.indexOf('\n'))
 
         // Avoid showing completions when we're deleting code (Cody can only insert code at the
@@ -93,7 +104,7 @@ export class InlineCompletionProvider {
         const sharedProviderOptions = {
             prefix,
             suffix,
-            fileName: workspace.relativeTo(document.uri),
+            fileName: workspace.relativeTo(document.uri)!,
             languageId,
             responsePercentage: this.responsePercentage,
             prefixPercentage: this.prefixPercentage,

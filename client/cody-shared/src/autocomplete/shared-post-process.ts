@@ -1,4 +1,6 @@
-import { Completion, CompletionsTextEditor } from '.'
+import { Editor } from '../editor'
+
+import { Completion } from '.'
 import { truncateMultilineCompletion } from './multiline'
 import { trimUntilSuffix } from './text-processing'
 
@@ -14,7 +16,7 @@ export function sharedPostProcess({
     multiline,
     completion,
 }: {
-    textEditor: CompletionsTextEditor
+    textEditor: Editor
     prefix: string
     suffix: string
     languageId: string

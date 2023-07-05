@@ -1,4 +1,4 @@
-import { CompletionsTextEditor } from '.'
+import { Editor } from '../editor'
 
 export const OPENING_CODE_TAG = '<CODE5711>'
 export const CLOSING_CODE_TAG = '</CODE5711>'
@@ -27,9 +27,11 @@ export function extractFromCodeBlock(completion: string): string {
     return result.trimEnd()
 }
 
-export function getEditorTabSize(textEditor: CompletionsTextEditor): number {
+// TODO: Stop using regex hack, actually make use of indentation information we now have available
+
+export function getEditorTabSize(textEditor: Editor): number {
     // return vscode.window.activeTextEditor ? (vscode.window.activeTextEditor.options.tabSize as number) : 2
-    return textEditor.getTabSize()
+    return textEditor.getIndentation().size
 }
 
 const INDENTATION_REGEX = /^[\t ]*/
@@ -39,7 +41,7 @@ const INDENTATION_REGEX = /^[\t ]*/
  * Since Cody can sometimes respond in a mix of tab and spaces, this function
  * normalizes the whitespace first using the currently enabled tabSize option.
  */
-export function indentation(textEditor: CompletionsTextEditor, line: string): number {
+export function indentation(textEditor: Editor, line: string): number {
     const tabSize = getEditorTabSize(textEditor)
 
     const regex = line.match(INDENTATION_REGEX)

@@ -1,8 +1,10 @@
 import { CodebaseContext } from '../codebase-context'
+import { Editor, History } from '../editor'
+import { DocumentOffsets } from '../editor/offsets'
 import { SourcegraphNodeCompletionsClient } from '../sourcegraph-api/completions/nodeClient'
 import { Message } from '../sourcegraph-api/completions/types'
 
-import { Completion, CurrentDocumentContextWithLanguage, History, CompletionsTextEditor } from '.'
+import { AutocompleteContext, Completion } from '.'
 import { ReferenceSnippet, getContext } from './context'
 import { batchCompletions, sliceUntilFirstNLinesOfSuffixMatch, messagesToText, SNIPPET_WINDOW_SIZE } from './utils'
 
@@ -12,7 +14,7 @@ export abstract class ManualCompletionService {
     public maxSuffixTokens: number
 
     constructor(
-        private textEditor: CompletionsTextEditor,
+        private textEditor: Editor,
         private completionsClient: SourcegraphNodeCompletionsClient,
         private history: History,
         private codebaseContext: CodebaseContext,
@@ -32,14 +34,14 @@ export abstract class ManualCompletionService {
     }
 
     public async getManualCompletionProvider(
-        docContext: CurrentDocumentContextWithLanguage
+        docContext: AutocompleteContext
     ): Promise<ManualCompletionProvider | null> {
-        if (docContext === null) {
-            console.error('not showing completions, no currently open doc')
-            return null
-        }
+        const offset = new DocumentOffsets(docContext.content)
 
-        const { prefix, suffix } = docContext
+        const { prefix: prefixRange, suffix: suffixRange } = docContext
+
+        const prefix = offset.jointRangeSlice(prefixRange)
+        const suffix = offset.jointRangeSlice(suffixRange)
 
         const remainingChars = this.tokToChar(this.promptTokens)
 

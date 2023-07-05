@@ -1,4 +1,4 @@
-import { CurrentDocumentContextWithLanguage } from '@sourcegraph/cody-shared/src/autocomplete'
+import { getAutocompleteContext } from '@sourcegraph/cody-shared/src/autocomplete'
 import { Client, createClient } from '@sourcegraph/cody-shared/src/chat/client'
 import { registeredRecipes } from '@sourcegraph/cody-shared/src/chat/recipes/agent-recipes'
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
@@ -117,7 +117,19 @@ export class Agent extends MessageHandler {
         this.registerRequest('completions/manual', async data => {
             const man = await this.manualCompletionsService
 
-            const ctx = this.getCurrentDocContext(
+            if (!this.activeDocumentFilePath) {
+                return null
+            }
+
+            const doc = this.documents.get(this.activeDocumentFilePath)
+
+            if (!doc?.selection || !doc.content) {
+                return null
+            }
+
+            const ctx = getAutocompleteContext(
+                await this.editor.getFullTextDocument(this.editor.getActiveLightTextDocument()!),
+                doc.selection.start,
                 man.tokToChar(man.maxPrefixTokens),
                 man.tokToChar(man.maxSuffixTokens)
             )
@@ -149,57 +161,4 @@ export class Agent extends MessageHandler {
             (await this.client).codebaseContext
         )
     }
-
-    private getCurrentDocContext(
-        maxPrefixLength: number,
-        maxSuffixLength: number
-    ): CurrentDocumentContextWithLanguage | null {
-        if (!this.activeDocumentFilePath) {
-            return null
-        }
-
-        const doc = this.documents.get(this.activeDocumentFilePath)
-
-        if (!doc?.selection || !doc?.content) {
-            return null
-        }
-
-        const lines = doc.content.split('\n')
-        const offset = positionToOffset(lines, doc.selection.start)
-
-        let prevNonEmptyLine = ''
-        for (let line = doc.selection.start.line - 1; line >= 0; line--) {
-            if (lines[line].trim().length !== 0) {
-                prevNonEmptyLine = lines[line]
-                break
-            }
-        }
-
-        let nextNonEmptyLine = ''
-        for (let line = doc.selection.start.line + 1; line < lines.length; line++) {
-            if (lines[line].trim().length !== 0) {
-                nextNonEmptyLine = lines[line]
-                break
-            }
-        }
-
-        return {
-            languageId: 'TODO',
-            markdownLanguage: 'TODO',
-            prefix: doc.content.slice(Math.max(0, offset - maxPrefixLength), offset),
-            suffix: doc.content.slice(offset, offset + maxSuffixLength),
-            prevLine: doc.selection.start.line === 0 ? '' : lines[doc.selection.start.line - 1],
-            prevNonEmptyLine,
-            nextNonEmptyLine,
-        }
-    }
-}
-
-function positionToOffset(lines: string[], position: Position): number {
-    let offset = 0
-    for (let i = 0; i < position.line; i++) {
-        offset += lines[i].length + 1
-    }
-    offset += position.character
-    return offset
 }

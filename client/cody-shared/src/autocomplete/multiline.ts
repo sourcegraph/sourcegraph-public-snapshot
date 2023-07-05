@@ -1,6 +1,7 @@
 import detectIndent from 'detect-indent'
 
-import { CompletionsTextEditor } from '.'
+import { Editor } from '../editor'
+
 import { PrefixComponents, getEditorTabSize, indentation } from './text-processing'
 
 const BRACKET_PAIR = {
@@ -10,7 +11,7 @@ const BRACKET_PAIR = {
 } as const
 const OPENING_BRACKET_REGEX = /([([{])$/
 export function detectMultilineMode(
-    textEditor: CompletionsTextEditor,
+    textEditor: Editor,
     prefix: string,
     prevNonEmptyLine: string,
     sameLinePrefix: string,
@@ -77,7 +78,7 @@ function adjustIndentation(text: string, originalIndent: number, newIndent: numb
         .join('\n')
 }
 
-function ensureSameOrLargerIndentation(textEditor: CompletionsTextEditor, completion: string): string {
+function ensureSameOrLargerIndentation(textEditor: Editor, completion: string): string {
     const indentAmount = detectIndent(completion).amount
     const editorTabSize = getEditorTabSize(textEditor)
 
@@ -118,7 +119,7 @@ function shouldIncludeClosingLineBasedOnBrackets(
  * We detect this by looking at the indentation of the next non-empty line.
  */
 function shouldIncludeClosingLine(
-    textEditor: CompletionsTextEditor,
+    textEditor: Editor,
     prefixIndentationWithFirstCompletionLine: string,
     suffix: string
 ): boolean {
@@ -139,7 +140,7 @@ function shouldIncludeClosingLine(
 }
 
 export function truncateMultilineCompletion(
-    textEditor: CompletionsTextEditor,
+    textEditor: Editor,
     completion: string,
     prefix: string,
     suffix: string,
