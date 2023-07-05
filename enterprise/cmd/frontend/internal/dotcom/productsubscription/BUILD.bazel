@@ -27,7 +27,7 @@ go_library(
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
         "//enterprise/internal/productsubscription",
-        "//internal/accesstoken:licensing",
+        "//internal/accesstoken",
         "//internal/auth",
         "//internal/authz",
         "//internal/codygateway",
@@ -86,7 +86,7 @@ go_test(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/internal/productsubscription",
-        "//internal/accesstoken:licensing",
+        "//internal/accesstoken",
         "//internal/actor",
         "//internal/auth",
         "//internal/authz",

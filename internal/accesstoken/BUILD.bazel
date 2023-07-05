@@ -2,7 +2,7 @@ load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "licensing",
+    name = "accesstoken",
     srcs = ["access_token.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/accesstoken",
     visibility = ["//:__subpackages__"],

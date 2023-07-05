@@ -19,7 +19,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/licensing",
     visibility = ["//:__subpackages__"],
     deps = [
-        "//internal/accesstoken:licensing",
+        "//internal/accesstoken",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/env",
