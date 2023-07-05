@@ -88,6 +88,7 @@ go_library(
         "@com_github_graph_gophers_graphql_go//relay",
         "@com_github_sourcegraph_go_diff//diff",
         "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
     ],
 )
 
