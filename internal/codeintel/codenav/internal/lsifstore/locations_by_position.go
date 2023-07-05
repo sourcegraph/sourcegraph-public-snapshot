@@ -240,24 +240,6 @@ func (s *store) getLocations(
 	return nil, 0, nil
 }
 
-func (s *store) getLocationByExplodedSymbol(
-	ctx context.Context,
-	symbolName string,
-	uploadID int,
-	scipFieldName string,
-	path string,
-) (locations []shared.Location, err error) {
-	ctx, _, endObservation := s.operations.getLocationByExplodedSymbol.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("symbolName", symbolName),
-		attribute.Int("bundleID", uploadID),
-		attribute.String("scipFieldName", scipFieldName),
-		attribute.String("path", path),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return locations, nil
-}
-
 const locationsDocumentQuery = `
 SELECT
 	sd.id,
