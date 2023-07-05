@@ -17,7 +17,7 @@ import (
 
 func (s *Service) NewGetDefinitions(
 	ctx context.Context,
-	args RequestArgs,
+	args PositionalRequestArgs,
 	requestState RequestState,
 ) (_ []shared.UploadLocation, err error) {
 	locations, _, err := s.gatherLocations(
@@ -32,19 +32,18 @@ func (s *Service) NewGetDefinitions(
 	return locations, err
 }
 
-func (s *Service) RenameMe(
+func (s *Service) NewGetDefinitionsBySymbolNames(
 	ctx context.Context,
 	args RequestArgs,
 	requestState RequestState,
 	symbolNames []string,
 ) (_ []shared.UploadLocation, err error) {
-	locations, _, err := s.renameMe(
+	locations, _, err := s.gatherLocationsBySymbolNames(
 		ctx, args, requestState, Cursor{},
 
 		s.operations.getDefinitions, // operation
 		"definitions",               // tableName
 		false,                       // includeReferencingIndexes
-		LocationExtractorFunc(s.lsifstore.ExtractDefinitionLocationsFromPosition),
 		symbolNames,
 	)
 
@@ -53,7 +52,7 @@ func (s *Service) RenameMe(
 
 func (s *Service) NewGetReferences(
 	ctx context.Context,
-	args RequestArgs,
+	args PositionalRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
@@ -69,7 +68,7 @@ func (s *Service) NewGetReferences(
 
 func (s *Service) NewGetImplementations(
 	ctx context.Context,
-	args RequestArgs,
+	args PositionalRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
@@ -85,7 +84,7 @@ func (s *Service) NewGetImplementations(
 
 func (s *Service) NewGetPrototypes(
 	ctx context.Context,
-	args RequestArgs,
+	args PositionalRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
 ) (_ []shared.UploadLocation, nextCursor Cursor, err error) {
@@ -118,72 +117,9 @@ func (f LocationExtractorFunc) Extract(ctx context.Context, locationKey lsifstor
 	return f(ctx, locationKey)
 }
 
-// TODO
-func (s *Service) renameMe(
-	ctx context.Context,
-	args RequestArgs, // TODO - take different args here
-	requestState RequestState,
-	cursor Cursor,
-	operation *observation.Operation,
-	tableName string,
-	includeReferencingIndexes bool,
-	extractor LocationExtractor,
-	symbolNames []string,
-) (allLocations []shared.UploadLocation, _ Cursor, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
-		attribute.Int("line", args.Line),
-		attribute.Int("character", args.Character),
-	}})
-	defer endObservation()
-
-	if cursor.Phase == "" {
-		cursor.Phase = "remote"
-	}
-
-	if len(cursor.SymbolNames) == 0 {
-		cursor.SymbolNames = symbolNames
-	}
-
-	for cursor.Phase != "done" {
-		trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
-
-		if len(allLocations) >= args.Limit {
-			// we've filled our page, exit with current results
-			break
-		}
-
-		var locations []shared.UploadLocation
-
-		// N.B.: cursor is purposefully re-assigned here
-		locations, cursor, err = s.gatherRemoteLocations(
-			ctx,
-			trace,
-			args,
-			requestState,
-			cursor,
-			tableName,
-			extractor,
-			includeReferencingIndexes,
-			nil,                          // visibleUploads,
-			args.Limit-len(allLocations), // remaining space in the page
-		)
-		if err != nil {
-			return nil, Cursor{}, err
-		}
-		allLocations = append(allLocations, locations...)
-	}
-
-	return allLocations, cursor, nil
-}
-
 func (s *Service) gatherLocations(
 	ctx context.Context,
-	args RequestArgs,
+	args PositionalRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
 	operation *observation.Operation,
@@ -238,11 +174,11 @@ func (s *Service) gatherLocations(
 	// there are many references to a symbol over a large number of indexes but each index has
 	// only a small number of locations, they can all be combined into a single page. Running
 	// each phase multiple times and combining the results will create a full page, if the
-	// result set was not exhausted),on each round-trip call to this service's method.
+	// result set was not exhausted), on each round-trip call to this service's method.
 
 outer:
 	for cursor.Phase != "done" {
-		for _, gatherLocations := range []gatherLocationsFunc{s.gatherLocalLocations, s.gatherRemoteLocations} {
+		for _, gatherLocations := range []gatherLocationsFunc{s.gatherLocalLocations, s.gatherRemoteLocationsShim} {
 			trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
 
 			if len(allLocations) >= args.Limit {
@@ -256,14 +192,14 @@ outer:
 			locations, cursor, err = gatherLocations(
 				ctx,
 				trace,
-				args,
+				args.RequestArgs,
 				requestState,
-				cursor,
 				tableName,
-				extractor,
 				includeReferencingIndexes,
-				visibleUploads,
+				cursor,
 				args.Limit-len(allLocations), // remaining space in the page
+				extractor,
+				visibleUploads,
 			)
 			if err != nil {
 				return nil, Cursor{}, err
@@ -275,9 +211,73 @@ outer:
 	return allLocations, cursor, nil
 }
 
-func (s *Service) newGetVisibleUploadsFromCursor(
+func (s *Service) gatherLocationsBySymbolNames(
 	ctx context.Context,
 	args RequestArgs,
+	requestState RequestState,
+	cursor Cursor,
+	operation *observation.Operation,
+	tableName string,
+	includeReferencingIndexes bool,
+	symbolNames []string,
+) (allLocations []shared.UploadLocation, _ Cursor, err error) {
+	ctx, trace, endObservation := observeResolver(ctx, &err, operation, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+	}})
+	defer endObservation()
+
+	if cursor.Phase == "" {
+		cursor.Phase = "remote"
+	}
+
+	if len(cursor.SymbolNames) == 0 {
+		// Set cursor symbol names if we haven't yet
+		cursor.SymbolNames = symbolNames
+	}
+
+	// The following loop calls to fill additional results into the currently-being-constructed page.
+	// Such a loop exists as each invocation of either phase may produce fewer results than the requested
+	// page size. For example, if there are many references to a symbol over a large number of indexes but
+	// each index has only a small number of locations, they can all be combined into a single page.
+	// Running each phase multiple times and combining the results will create a full page, if the result
+	// set was not exhausted), on each round-trip call to this service's method.
+
+	for cursor.Phase != "done" {
+		trace.AddEvent("Gather", attribute.String("phase", cursor.Phase), attribute.Int("numLocationsGathered", len(allLocations)))
+
+		if len(allLocations) >= args.Limit {
+			// we've filled our page, exit with current results
+			break
+		}
+
+		var locations []shared.UploadLocation
+
+		// N.B.: cursor is purposefully re-assigned here
+		locations, cursor, err = s.gatherRemoteLocations(
+			ctx,
+			trace,
+			args,
+			requestState,
+			cursor,
+			tableName,
+			includeReferencingIndexes,
+			args.Limit-len(allLocations), // remaining space in the page
+		)
+		if err != nil {
+			return nil, Cursor{}, err
+		}
+		allLocations = append(allLocations, locations...)
+	}
+
+	return allLocations, cursor, nil
+}
+
+func (s *Service) newGetVisibleUploadsFromCursor(
+	ctx context.Context,
+	args PositionalRequestArgs,
 	requestState RequestState,
 	cursor Cursor,
 ) ([]visibleUpload, Cursor, error) {
@@ -324,12 +324,12 @@ type gatherLocationsFunc func(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
-	cursor Cursor,
 	tableName string,
-	extractor LocationExtractor,
 	includeReferencingIndexes bool,
-	visibleUploads []visibleUpload,
+	cursor Cursor,
 	limit int,
+	extractor LocationExtractor,
+	visibleUploads []visibleUpload,
 ) ([]shared.UploadLocation, Cursor, error)
 
 const skipPrefix = "lsif ."
@@ -339,12 +339,12 @@ func (s *Service) gatherLocalLocations(
 	trace observation.TraceLogger,
 	args RequestArgs,
 	requestState RequestState,
+	tableName string,
+	includeReferencingIndexes bool,
 	cursor Cursor,
-	_ string,
-	extractor LocationExtractor,
-	_ bool,
-	visibleUploads []visibleUpload,
 	limit int,
+	extractor LocationExtractor,
+	visibleUploads []visibleUpload,
 ) (allLocations []shared.UploadLocation, _ Cursor, _ error) {
 	if cursor.Phase != "local" {
 		// not our turn
@@ -444,6 +444,30 @@ func (s *Service) gatherLocalLocations(
 	return allLocations, cursor, nil
 }
 
+func (s *Service) gatherRemoteLocationsShim(
+	ctx context.Context,
+	trace observation.TraceLogger,
+	args RequestArgs,
+	requestState RequestState,
+	tableName string,
+	includeReferencingIndexes bool,
+	cursor Cursor,
+	limit int,
+	_ LocationExtractor,
+	_ []visibleUpload,
+) ([]shared.UploadLocation, Cursor, error) {
+	return s.gatherRemoteLocations(
+		ctx,
+		trace,
+		args,
+		requestState,
+		cursor,
+		tableName,
+		includeReferencingIndexes,
+		limit,
+	)
+}
+
 func (s *Service) gatherRemoteLocations(
 	ctx context.Context,
 	trace observation.TraceLogger,
@@ -451,9 +475,7 @@ func (s *Service) gatherRemoteLocations(
 	requestState RequestState,
 	cursor Cursor,
 	tableName string,
-	_ LocationExtractor,
 	includeReferencingIndexes bool,
-	_ []visibleUpload,
 	limit int,
 ) ([]shared.UploadLocation, Cursor, error) {
 	if cursor.Phase != "remote" {

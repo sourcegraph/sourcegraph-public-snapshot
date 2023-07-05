@@ -80,9 +80,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	requestArgs := codenavtypes.RequestArgs{
 		RepositoryID: int(repo.ID),
 		Commit:       commitID,
-		Path:         "",
-		Line:         0,
-		Character:    0,
 		Limit:        100, //! MAGIC NUMBER
 		RawCursor:    "",
 	}
@@ -235,7 +232,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		fmt.Printf("> Definitions for identifier %q\n", ident)
 
 		// TODO - batch more
-		ul, err := s.codenavSvc.RenameMe(ctx, requestArgs, reqState, []string{ident})
+		ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{ident})
 		if err != nil {
 			return nil, err
 		}

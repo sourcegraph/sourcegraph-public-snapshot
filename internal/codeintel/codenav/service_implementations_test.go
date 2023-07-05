@@ -55,13 +55,15 @@ func TestImplementations(t *testing.T) {
 	}
 	mockRequestState.SetUploadsDataLoader(uploads)
 	mockCursor := ImplementationsCursor{Phase: "local"}
-	mockRequest := RequestArgs{
-		RepositoryID: 51,
-		Commit:       "deadbeef",
-		Path:         "s1/main.go",
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 51,
+			Commit:       "deadbeef",
+			Limit:        50,
+		},
+		Path:      "s1/main.go",
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, _, err := svc.GetImplementations(context.Background(), mockRequest, mockRequestState, mockCursor)
 	if err != nil {
@@ -133,13 +135,15 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockCursor := ImplementationsCursor{Phase: "local"}
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, _, err := svc.GetImplementations(ctx, mockRequest, mockRequestState, mockCursor)
 	if err != nil {
@@ -244,13 +248,15 @@ func TestImplementationsRemote(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(monikerLocations[2:], 3, nil)  // impls batch 2
 
 	mockCursor := ImplementationsCursor{Phase: "local"}
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, _, err := svc.GetImplementations(context.Background(), mockRequest, mockRequestState, mockCursor)
 	if err != nil {
@@ -374,13 +380,15 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockCursor := ImplementationsCursor{Phase: "local"}
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, _, err := svc.GetImplementations(ctx, mockRequest, mockRequestState, mockCursor)
 	if err != nil {

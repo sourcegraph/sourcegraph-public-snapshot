@@ -52,7 +52,7 @@ func newService(
 }
 
 // GetHover returns the set of locations defining the symbol at the given position.
-func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState RequestState) (_ string, _ shared.Range, _ bool, err error) {
+func (s *Service) GetHover(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (_ string, _ shared.Range, _ bool, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getHover, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
@@ -98,7 +98,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 		}
 
 		// Adjust the highlighted range back to the appropriate range in the target commit
-		_, adjustedRange, _, err := s.getSourceRange(ctx, args, requestState, cachedUploads[i].RepositoryID, cachedUploads[i].Commit, args.Path, rn)
+		_, adjustedRange, _, err := s.getSourceRange(ctx, args.RequestArgs, requestState, cachedUploads[i].RepositoryID, cachedUploads[i].Commit, args.Path, rn)
 		if err != nil {
 			return "", shared.Range{}, false, err
 		}
@@ -176,7 +176,7 @@ func (s *Service) GetHover(ctx context.Context, args RequestArgs, requestState R
 }
 
 // GetReferences returns the list of source locations that reference the symbol at the given position.
-func (s *Service) GetReferences(ctx context.Context, args RequestArgs, requestState RequestState, cursor ReferencesCursor) (_ []shared.UploadLocation, _ ReferencesCursor, err error) {
+func (s *Service) GetReferences(ctx context.Context, args PositionalRequestArgs, requestState RequestState, cursor ReferencesCursor) (_ []shared.UploadLocation, _ ReferencesCursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getReferences, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
@@ -263,7 +263,7 @@ func (s *Service) GetReferences(ctx context.Context, args RequestArgs, requestSt
 		}
 
 		for len(locations) < args.Limit {
-			remoteLocations, hasMore, err := s.getPageRemoteLocations(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, args.Limit-len(locations), trace, args, requestState)
+			remoteLocations, hasMore, err := s.getPageRemoteLocations(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, args.Limit-len(locations), trace, args.RequestArgs, requestState)
 			if err != nil {
 				return nil, cursor, err
 			}
@@ -281,7 +281,7 @@ func (s *Service) GetReferences(ctx context.Context, args RequestArgs, requestSt
 	// Adjust the locations back to the appropriate range in the target commits. This adjusts
 	// locations within the repository the user is browsing so that it appears all references
 	// are occurring at the same commit they are looking at.
-	referenceLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	referenceLocations, err := s.getUploadLocations(ctx, args.RequestArgs, requestState, locations, true)
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -651,7 +651,7 @@ func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []uploads
 // DefinitionsLimit is maximum the number of locations returned from Definitions.
 const DefinitionsLimit = 100
 
-func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []shared.UploadLocation, _ ImplementationsCursor, err error) {
+func (s *Service) GetImplementations(ctx context.Context, args PositionalRequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []shared.UploadLocation, _ ImplementationsCursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getImplementations, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
@@ -718,7 +718,7 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 	// Phase 3: Gather all "remote" locations in dependents via moniker search.
 	if cursor.Phase == "dependents" {
 		for len(locations) < args.Limit {
-			remoteLocations, hasMore, err := s.getPageRemoteLocations(ctx, "implementations", visibleUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, args.Limit-len(locations), trace, args, requestState)
+			remoteLocations, hasMore, err := s.getPageRemoteLocations(ctx, "implementations", visibleUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, args.Limit-len(locations), trace, args.RequestArgs, requestState)
 			if err != nil {
 				return nil, cursor, err
 			}
@@ -737,7 +737,7 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 	// locations within the repository the user is browsing so that it appears all implementations
 	// are occurring at the same commit they are looking at.
 
-	implementationLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	implementationLocations, err := s.getUploadLocations(ctx, args.RequestArgs, requestState, locations, true)
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -746,7 +746,7 @@ func (s *Service) GetImplementations(ctx context.Context, args RequestArgs, requ
 	return implementationLocations, cursor, nil
 }
 
-func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []shared.UploadLocation, _ ImplementationsCursor, err error) {
+func (s *Service) GetPrototypes(ctx context.Context, args PositionalRequestArgs, requestState RequestState, cursor ImplementationsCursor) (_ []shared.UploadLocation, _ ImplementationsCursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getImplementations, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
@@ -815,7 +815,7 @@ func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestSt
 	// locations within the repository the user is browsing so that it appears all implementations
 	// are occurring at the same commit they are looking at.
 
-	prototypeLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	prototypeLocations, err := s.getUploadLocations(ctx, args.RequestArgs, requestState, locations, true)
 	if err != nil {
 		return nil, cursor, err
 	}
@@ -825,7 +825,7 @@ func (s *Service) GetPrototypes(ctx context.Context, args RequestArgs, requestSt
 }
 
 // GetDefinitions returns the set of locations defining the symbol at the given position.
-func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestState RequestState) (_ []shared.UploadLocation, err error) {
+func (s *Service) GetDefinitions(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (_ []shared.UploadLocation, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDefinitions, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
@@ -864,7 +864,7 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 		}
 		if len(locations) > 0 {
 			// If we have a local definition, we won't find a better one and can exit early
-			return s.getUploadLocations(ctx, args, requestState, locations, true)
+			return s.getUploadLocations(ctx, args.RequestArgs, requestState, locations, true)
 		}
 	}
 
@@ -899,7 +899,7 @@ func (s *Service) GetDefinitions(ctx context.Context, args RequestArgs, requestS
 	// locations within the repository the user is browsing so that it appears all definitions
 	// are occurring at the same commit they are looking at.
 
-	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations, true)
+	adjustedLocations, err := s.getUploadLocations(ctx, args.RequestArgs, requestState, locations, true)
 	if err != nil {
 		return nil, err
 	}
@@ -912,7 +912,7 @@ func (s *Service) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []in
 	return s.lsifstore.GetFullSCIPNameByDescriptor(ctx, uploadID, symbolNames)
 }
 
-func (s *Service) GetDiagnostics(ctx context.Context, args RequestArgs, requestState RequestState) (diagnosticsAtUploads []DiagnosticAtUpload, _ int, err error) {
+func (s *Service) GetDiagnostics(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (diagnosticsAtUploads []DiagnosticAtUpload, _ int, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getDiagnostics, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
@@ -950,7 +950,7 @@ func (s *Service) GetDiagnostics(ctx context.Context, args RequestArgs, requestS
 		}
 
 		for _, diagnostic := range diagnostics {
-			adjustedDiagnostic, err := s.getRequestedCommitDiagnostic(ctx, args, requestState, visibleUploads[i], diagnostic)
+			adjustedDiagnostic, err := s.getRequestedCommitDiagnostic(ctx, args.RequestArgs, requestState, visibleUploads[i], diagnostic)
 			if err != nil {
 				return nil, 0, err
 			}
@@ -1068,7 +1068,7 @@ func (s *Service) getUploadPaths(ctx context.Context, path string, requestState 
 	return visibleUploads, nil
 }
 
-func (s *Service) GetRanges(ctx context.Context, args RequestArgs, requestState RequestState, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
+func (s *Service) GetRanges(ctx context.Context, args PositionalRequestArgs, requestState RequestState, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getRanges, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
@@ -1100,7 +1100,7 @@ func (s *Service) GetRanges(ctx context.Context, args RequestArgs, requestState 
 		}
 
 		for _, rn := range ranges {
-			adjustedRange, ok, err := s.getCodeIntelligenceRange(ctx, args, requestState, uploadsWithPath[i], rn)
+			adjustedRange, ok, err := s.getCodeIntelligenceRange(ctx, args.RequestArgs, requestState, uploadsWithPath[i], rn)
 			if err != nil {
 				return nil, err
 			}
@@ -1150,7 +1150,7 @@ func (s *Service) getCodeIntelligenceRange(ctx context.Context, args RequestArgs
 }
 
 // GetStencil returns the set of locations defining the symbol at the given position.
-func (s *Service) GetStencil(ctx context.Context, args RequestArgs, requestState RequestState) (adjustedRanges []shared.Range, err error) {
+func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, requestState RequestState) (adjustedRanges []shared.Range, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getStencil, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
@@ -1181,7 +1181,7 @@ func (s *Service) GetStencil(ctx context.Context, args RequestArgs, requestState
 			// FIXME: change this at it expects an empty uploadsshared.Dump{}
 			cu := requestState.GetCacheUploadsAtIndex(i)
 			// Adjust the highlighted range back to the appropriate range in the target commit
-			_, adjustedRange, _, err := s.getSourceRange(ctx, args, requestState, cu.RepositoryID, cu.Commit, args.Path, rn)
+			_, adjustedRange, _, err := s.getSourceRange(ctx, args.RequestArgs, requestState, cu.RepositoryID, cu.Commit, args.Path, rn)
 			if err != nil {
 				return nil, err
 			}
