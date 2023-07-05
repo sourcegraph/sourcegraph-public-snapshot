@@ -125,6 +125,15 @@ export interface SearchAttributionResults {
     nodes: { repositoryName: string }[]
 }
 
+export interface CodyLLMSiteConfiguration {
+    chatModel?: string
+    chatModelMaxTokens?: number
+    fastChatModel?: string
+    fastChatModelMaxTokens?: number
+    completionModel?: string
+    completionModelMaxTokens?: number
+}
+
 interface IsContextRequiredForChatQueryResponse {
     isContextRequiredForChatQuery: boolean
 }
@@ -204,21 +213,10 @@ export class SourcegraphGraphQLAPIClient {
         )
     }
 
-    public async getCodyLLMConfiguration(): Promise<
-        | undefined
-        | {
-              chatModel?: string
-              chatModelMaxTokens?: number
-              fastChatModel?: string
-              fastChatModelMaxTokens?: number
-              completionModel?: string
-              completionModelMaxTokens?: number
-          }
-        | Error
-    > {
-        return this.fetchSourcegraphAPI<APIResponse<any>>(CURRENT_SITE_CODY_LLM_CONFIGURATION, {}).then(response =>
-            extractDataOrError(response, data => data.site?.codyLLMConfiguration)
-        )
+    public async getCodyLLMConfiguration(): Promise<undefined | CodyLLMSiteConfiguration | Error> {
+        const response = await this.fetchSourcegraphAPI<APIResponse<any>>(CURRENT_SITE_CODY_LLM_CONFIGURATION)
+
+        return extractDataOrError(response, data => data.site?.codyLLMConfiguration)
     }
 
     public async getRepoIds(names: string[]): Promise<{ id: string; name: string }[] | Error> {
@@ -391,7 +389,7 @@ export class SourcegraphGraphQLAPIClient {
         }).then(response => extractDataOrError(response, data => data.isContextRequiredForChatQuery))
     }
 
-    private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any>): Promise<T | Error> {
+    private fetchSourcegraphAPI<T>(query: string, variables: Record<string, any> = {}): Promise<T | Error> {
         const headers = new Headers(this.config.customHeaders as HeadersInit)
         headers.set('Content-Type', 'application/json; charset=utf-8')
         if (this.config.accessToken) {

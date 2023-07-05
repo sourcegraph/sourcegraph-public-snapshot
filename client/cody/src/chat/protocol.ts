@@ -2,6 +2,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { View } from '../../webviews/NavBar'
 
@@ -77,14 +78,7 @@ export interface AuthStatus {
     requiresVerifiedEmail: boolean
     siteHasCodyEnabled: boolean
     siteVersion: string
-    configOverwrites?: {
-        chatModel?: string
-        chatModelMaxTokens?: number
-        fastChatModel?: string
-        fastChatModelMaxTokens?: number
-        completionModel?: string
-        completionModelMaxTokens?: number
-    }
+    configOverwrites?: CodyLLMSiteConfiguration
 }
 
 export const defaultAuthStatus = {

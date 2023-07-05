@@ -63,6 +63,8 @@ export type Config = Pick<
     | 'experimentalGuardrails'
 >
 
+const SAFETY_ANSWER_TOKENS = 100
+
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
@@ -910,18 +912,23 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private get maxPromptTokens(): number {
         const authStatus = this.authProvider.getAuthStatus()
 
-        if (authStatus.configOverwrites?.chatModelMaxTokens) {
-            return authStatus.configOverwrites.chatModelMaxTokens - ANSWER_TOKENS
-        }
-
         const codyConfig = vscode.workspace.getConfiguration('cody')
         const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
-        const solutionLimit = codyConfig.get<number>('provider.limit.solution') || ANSWER_TOKENS
-        if (tokenLimit && solutionLimit) {
-            return tokenLimit - solutionLimit
+        const localSolutionLimit = codyConfig.get<number>('provider.limit.solution')
+
+        // The local config takes precedence over the server config.
+        if (tokenLimit && localSolutionLimit) {
+            return tokenLimit - localSolutionLimit
         }
 
-        return DEFAULT_MAX_TOKENS - ANSWER_TOKENS
+        // TODO: add comment on why SAFETY_ANSWER_TOKENS is required here.
+        const solutionLimit = (localSolutionLimit || ANSWER_TOKENS) + SAFETY_ANSWER_TOKENS
+
+        if (authStatus.configOverwrites?.chatModelMaxTokens) {
+            return authStatus.configOverwrites.chatModelMaxTokens - solutionLimit
+        }
+
+        return DEFAULT_MAX_TOKENS - solutionLimit
     }
 }
 
