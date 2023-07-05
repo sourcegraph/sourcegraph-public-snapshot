@@ -1,8 +1,9 @@
 import type { Observable } from 'rxjs'
+import { get } from 'svelte/store'
 
 import type { HighlightResponseFormat, HighlightLineRange } from '$lib/graphql-operations'
 import { fetchHighlightedFileLineRanges } from '$lib/loader/blob'
-import type { PlatformContext } from '$lib/shared'
+import { platformContext } from '$lib/stores'
 
 interface Result {
     repository: string
@@ -14,7 +15,6 @@ export function fetchFileRangeMatches(args: {
     result: Result
     format?: HighlightResponseFormat
     ranges: HighlightLineRange[]
-    platformContext: Pick<PlatformContext, 'requestGraphQL'>
 }): Observable<string[][]> {
     return fetchHighlightedFileLineRanges(
         {
@@ -24,7 +24,7 @@ export function fetchFileRangeMatches(args: {
             disableTimeout: false,
             format: args.format,
             ranges: args.ranges,
-            platformContext: args.platformContext,
+            platformContext: get(platformContext),
         },
         false
     )

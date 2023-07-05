@@ -2,9 +2,8 @@
     import { map } from 'rxjs/operators'
 
     import { HighlightResponseFormat, type HighlightLineRange } from '$lib/graphql-operations'
-    import { fetchFileRangeMatches } from '$lib/search/results'
+    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import type { MatchGroup, ContentMatch } from '$lib/shared'
-    import { platformContext } from '$lib/stores'
 
     import CodeExcerpt from './CodeExcerpt.svelte'
 
@@ -14,7 +13,6 @@
     function fetchHighlightedFileMatchLineRanges(startLine: number, endLine: number) {
         return fetchFileRangeMatches({
             result,
-            platformContext: $platformContext,
             format: HighlightResponseFormat.HTML_HIGHLIGHT,
             ranges: grouped.map(
                 (group): HighlightLineRange => ({

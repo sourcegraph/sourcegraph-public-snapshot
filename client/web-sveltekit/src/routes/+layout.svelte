@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { onMount, setContext } from 'svelte'
+    import { setContext } from 'svelte'
     import { readable, writable, type Readable } from 'svelte/store'
 
     import { browser } from '$app/environment'
@@ -50,15 +50,7 @@
         temporarySettingsStorage,
     })
 
-    onMount(() => {
-        // Settings can change over time. This ensures that the store is always
-        // up-to-date.
-        const settingsSubscription = data.platformContext?.settings.subscribe(newSettings => {
-            settings.set(isErrorLike(newSettings.final) ? null : newSettings.final)
-        })
-        return () => settingsSubscription?.unsubscribe()
-    })
-
+    // Update stores when data changes
     $: $user = data.user ?? null
     $: $settings = isErrorLike(data.settings) ? null : data.settings.final
     $: $platformContext = data.platformContext
