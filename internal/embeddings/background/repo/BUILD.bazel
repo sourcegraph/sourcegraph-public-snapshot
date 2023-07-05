@@ -8,7 +8,7 @@ go_library(
         "store.go",
         "types.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
