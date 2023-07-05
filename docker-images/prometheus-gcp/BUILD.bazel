@@ -17,15 +17,15 @@ pkg_tar(
         "/cmd/prom-wrapper/prom-wrapper_/prom-wrapper": "/bin/prom-wrapper",
         "monitoring/outputs/prometheus": "/sg_config_prometheus",
         "/dev/prometheus/linux": "/sg_prometheus_add_ons",
-        "/docker-images/prometheus/alertmanager.sh": "/alertmanager.sh",
-        "/docker-images/prometheus/prometheus.sh": "/prometheus.sh",
+        "docker-images/prometheus/alertmanager.sh": "/alertmanager.sh",
+        "docker-images/prometheus/prometheus.sh": "/prometheus.sh",
     },
     strip_prefix = ".",
 )
 
 oci_image(
     name = "image",
-    base = "@wolfi_prometheus_base",
+    base = "@wolfi_prometheus_gcp_base",
     entrypoint = ["/bin/prom-wrapper"],
     tars = [":config_tar"],
     user = "sourcegraph",
