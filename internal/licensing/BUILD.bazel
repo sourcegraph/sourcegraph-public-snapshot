@@ -16,7 +16,7 @@ go_library(
         "types.go",
         "user_count.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/licensing",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/license",

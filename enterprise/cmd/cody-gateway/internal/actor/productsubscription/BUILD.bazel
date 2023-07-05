@@ -9,10 +9,10 @@ go_library(
     deps = [
         "//enterprise/cmd/cody-gateway/internal/actor",
         "//enterprise/cmd/cody-gateway/internal/dotcom",
-        "//enterprise/internal/licensing",
         "//enterprise/internal/productsubscription",
         "//internal/accesstoken:licensing",
         "//internal/codygateway",
+        "//internal/licensing",
         "//internal/trace",
         "//lib/errors",
         "@com_github_gregjones_httpcache//:httpcache",

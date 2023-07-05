@@ -8,7 +8,6 @@ go_library(
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/store",
-        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/database",
         "//lib/errors",

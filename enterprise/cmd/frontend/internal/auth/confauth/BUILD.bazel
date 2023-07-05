@@ -6,10 +6,7 @@ go_library(
     srcs = ["middleware.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/confauth",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
-    deps = [
-        "//cmd/frontend/auth",
-        "//enterprise/internal/licensing",
-    ],
+    deps = ["//cmd/frontend/auth"],
 )
 
 go_test(
@@ -20,7 +17,6 @@ go_test(
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
         "//enterprise/internal/license",
-        "//enterprise/internal/licensing",
         "@com_github_stretchr_testify//require",
     ],
 )

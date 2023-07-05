@@ -6,10 +6,7 @@ go_library(
     srcs = ["resolvers.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
-    deps = [
-        "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/licensing",
-    ],
+    deps = ["//cmd/frontend/graphqlbackend"],
 )
 
 go_test(
@@ -20,7 +17,6 @@ go_test(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/batches/resolvers/apitest",
-        "//enterprise/internal/licensing",
         "//internal/actor",
         "//lib/errors",
     ],

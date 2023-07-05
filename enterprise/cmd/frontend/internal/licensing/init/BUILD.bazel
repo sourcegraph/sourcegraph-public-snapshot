@@ -15,7 +15,6 @@ go_library(
         "//enterprise/cmd/frontend/internal/licensing/enforcement",
         "//enterprise/cmd/frontend/internal/licensing/resolvers",
         "//enterprise/cmd/frontend/internal/registry",
-        "//enterprise/internal/licensing",
         "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",

@@ -16,7 +16,6 @@ go_library(
         "//cmd/frontend/auth",
         "//cmd/frontend/external/globals",
         "//cmd/frontend/external/session",
-        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/auth/providers",
         "//internal/conf",
@@ -48,7 +47,6 @@ go_test(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
-        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/auth/providers",
         "//internal/conf",

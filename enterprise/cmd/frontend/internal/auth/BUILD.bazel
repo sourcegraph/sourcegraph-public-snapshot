@@ -20,7 +20,6 @@ go_library(
         "//enterprise/cmd/frontend/internal/auth/openidconnect",
         "//enterprise/cmd/frontend/internal/auth/saml",
         "//enterprise/cmd/frontend/internal/auth/sourcegraphoperator",
-        "//enterprise/internal/licensing",
         "//internal/auth",
         "//internal/conf",
         "//internal/database",

@@ -32,7 +32,6 @@ go_library(
         "//enterprise/internal/insights/store",
         "//enterprise/internal/insights/timeseries",
         "//enterprise/internal/insights/types",
-        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/auth",
         "//internal/conf",

@@ -15,7 +15,6 @@ go_library(
     deps = [
         "//cmd/frontend/envvar",
         "//enterprise/internal/cloud",
-        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/auth",
         "//internal/database",
@@ -41,7 +40,6 @@ go_test(
         "//cmd/frontend/envvar",
         "//enterprise/internal/cloud",
         "//enterprise/internal/license",
-        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/auth",
         "//internal/database",
