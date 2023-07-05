@@ -200,7 +200,6 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
                 completions ->
                     completions.stream()
                         .flatMap(Collection::stream)
-                        .map(c -> PostProcess.postProcess(prefix, suffix, c))
                         .map(InlineAutoCompleteItem::fromCompletion)
                         .collect(Collectors.toList()));
 

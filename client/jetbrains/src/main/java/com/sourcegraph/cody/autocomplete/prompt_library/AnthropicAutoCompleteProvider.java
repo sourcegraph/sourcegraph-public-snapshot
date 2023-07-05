@@ -90,24 +90,10 @@ public class AnthropicAutoCompleteProvider extends AutoCompleteProvider {
                 .map(
                     resp ->
                         new Completion(
-                            prefix, prompt, this.postProcess(resp.completion), resp.stopReason))
+                            prefix,
+                            prompt,
+                            PostProcess.postProcess(this.prefix, resp.completion),
+                            resp.stopReason))
                 .collect(Collectors.toList()));
-  }
-
-  private String postProcess(String completion) {
-    // Sometimes Claude emits an extra space
-    if (completion.startsWith(" ") && this.prefix.endsWith(" ")) {
-      completion = completion.substring(1);
-    }
-    // Insert the injected prefix back in
-    if (this.injectPrefix.length() > 0) {
-      completion = this.injectPrefix + completion;
-    }
-    // Strip out trailing markdown block and trim trailing whitespace
-    int endBlockIndex = completion.indexOf("```");
-    if (endBlockIndex != -1) {
-      return completion.substring(0, endBlockIndex).trim();
-    }
-    return completion.trim();
   }
 }
