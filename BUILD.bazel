@@ -314,6 +314,7 @@ nogo(
             "//dev/linters/depguard",
             "//dev/linters/exportloopref",
             "//dev/linters/forbidigo",
+            "//dev/linters/gocheckcompilerdirectives",
             "//dev/linters/gocritic",
             "//dev/linters/ineffassign",
             "//dev/linters/unparam",
@@ -325,7 +326,7 @@ exports_files([
     "go.mod",
     # Used for when copy_to_directory might reference an empty filegroup
     # under certain conditions. See //ui/assets/...
-    "CHANGELOG.md",
+    "CONTRIBUTING.md",
 ])
 
 # stamp_tags(

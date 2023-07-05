@@ -19,8 +19,9 @@ export class UnifiedContextFetcherClient implements UnifiedContextFetcher {
         }
 
         return response.reduce((results, result) => {
-            if (result) {
+            if (result?.__typename === 'FileChunkContext') {
                 results.push({
+                    type: 'FileChunkContext',
                     filePath: result.blob.path,
                     content: result.chunkContent,
                     startLine: result.startLine,
@@ -28,6 +29,8 @@ export class UnifiedContextFetcherClient implements UnifiedContextFetcher {
                     repoName: result.blob.repository.name,
                     revision: result.blob.commit.oid,
                 })
+            } else {
+                results.push({ type: 'UnknownContext' })
             }
 
             return results

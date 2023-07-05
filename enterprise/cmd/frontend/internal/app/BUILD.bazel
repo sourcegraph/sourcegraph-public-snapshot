@@ -8,7 +8,7 @@ go_library(
     deps = [
         "//cmd/frontend/enterprise",
         "//enterprise/cmd/frontend/internal/app/resolvers",
-        "//enterprise/internal/codeintel",
+        "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/database",

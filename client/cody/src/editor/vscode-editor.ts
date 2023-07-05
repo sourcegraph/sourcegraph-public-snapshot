@@ -17,24 +17,7 @@ export class VSCodeEditor implements Editor {
             inline: InlineController
             fixups: FixupController
         }
-    ) {
-        vscode.workspace.onDidChangeConfiguration(e => {
-            const config = vscode.workspace.getConfiguration('cody')
-            const isTesting = process.env.CODY_TESTING === 'true'
-            if (e.affectsConfiguration('cody')) {
-                // Inline Chat
-                const enableInlineAssist = (config.get('experimental.inline') as boolean) || isTesting
-                const inlineController = this.controllers.inline
-                void vscode.commands.executeCommand('setContext', 'cody.inline-assist.enabled', enableInlineAssist)
-                inlineController.get().commentingRangeProvider = {
-                    provideCommentingRanges: (document: vscode.TextDocument) => {
-                        const lineCount = document.lineCount
-                        return enableInlineAssist ? [new vscode.Range(0, 0, lineCount - 1, 0)] : []
-                    },
-                }
-            }
-        })
-    }
+    ) {}
 
     public get fileName(): string {
         return vscode.window.activeTextEditor?.document.fileName ?? ''

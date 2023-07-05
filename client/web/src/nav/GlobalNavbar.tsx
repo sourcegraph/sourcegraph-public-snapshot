@@ -16,7 +16,7 @@ import { SearchContextInputProps } from '@sourcegraph/shared/src/search'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Button, Link, ButtonLink, useWindowSize, Tooltip, ProductStatusBadge } from '@sourcegraph/wildcard'
+import { Button, Link, ButtonLink, useWindowSize, ProductStatusBadge } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -145,10 +145,10 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphApp
-    const showSearchNotebook = notebooksEnabled && !isSourcegraphApp
+    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphApp && !isSourcegraphDotCom
+    const showSearchNotebook = notebooksEnabled && !isSourcegraphApp && !isSourcegraphDotCom
     const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
-    const showBatchChanges = ((props.batchChangesEnabled && isLicensed) || isSourcegraphDotCom) && !isSourcegraphApp // Batch changes are enabled on sourcegraph.com so users can see the Getting Started page
+    const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
 
     const [isSentinelEnabled] = useFeatureFlag('sentinel')
@@ -170,12 +170,12 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
-    const codeInsights = codeInsightsEnabled && !isSourcegraphApp
+    const codeInsights = codeInsightsEnabled && !isSourcegraphApp && !isSourcegraphDotCom
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
-            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
+            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Code ownership' },
             codySearchEnabled && {
                 path: EnterprisePageRoutes.CodySearch,
                 content: (
@@ -293,49 +293,24 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                     )}
                 </NavGroup>
                 <NavActions>
-                    {!props.authenticatedUser && (
-                        <>
-                            <NavAction>
-                                <Link className={styles.link} to="https://about.sourcegraph.com">
-                                    About Sourcegraph
-                                </Link>
-                            </NavAction>
-
-                            {isSourcegraphDotCom && (
-                                <NavAction>
-                                    <Link className={styles.link} to="/help" target="_blank">
-                                        Docs
-                                    </Link>
-                                </NavAction>
-                            )}
-                        </>
+                    {!props.authenticatedUser && !isSourcegraphDotCom && (
+                        <NavAction>
+                            <Link className={styles.link} to="https://about.sourcegraph.com">
+                                About Sourcegraph
+                            </Link>
+                        </NavAction>
                     )}
                     {props.authenticatedUser?.siteAdmin && <AccessRequestsGlobalNavItem />}
                     {isSourcegraphDotCom && (
-                        <>
-                            <NavAction>
-                                <Tooltip content="The AI code assistant you can trust to answer questions and write code for you.">
-                                    <Link
-                                        to="https://about.sourcegraph.com/cody"
-                                        className={classNames(styles.link, 'small')}
-                                        onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
-                                    >
-                                        Cody
-                                    </Link>
-                                </Tooltip>
-                            </NavAction>
-                            <NavAction>
-                                <Tooltip content="The Sourcegraph desktop app runs locally and works on your own private code.">
-                                    <Link
-                                        to="https://about.sourcegraph.com/app"
-                                        className={classNames(styles.link, 'small')}
-                                        onClick={() => eventLogger.log('ClickedOnAppCTA', { location: 'NavBar' })}
-                                    >
-                                        App
-                                    </Link>
-                                </Tooltip>
-                            </NavAction>
-                        </>
+                        <NavAction>
+                            <Link
+                                to="/get-cody"
+                                className={classNames(styles.link, 'small')}
+                                onClick={() => eventLogger.log('ClickedOnCodyCTA', { location: 'NavBar' })}
+                            >
+                                Install Cody locally
+                            </Link>
+                        </NavAction>
                     )}
                     {fuzzyFinderNavbar && FuzzyFinderNavItem(props.setFuzzyFinderIsVisible)}
                     {props.authenticatedUser?.siteAdmin && !isSourcegraphApp && (

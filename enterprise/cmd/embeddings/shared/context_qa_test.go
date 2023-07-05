@@ -14,8 +14,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/qa"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

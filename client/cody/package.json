@@ -2,7 +2,7 @@
   "name": "cody-ai",
   "private": true,
   "displayName": "Cody AI by Sourcegraph",
-  "version": "0.2.5",
+  "version": "0.4.2",
   "publisher": "sourcegraph",
   "license": "Apache-2.0",
   "icon": "resources/cody.png",
@@ -110,7 +110,7 @@
           {
             "id": "inline-assist",
             "title": "Inline Chat (Experimental)",
-            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineAssist)",
+            "description": "Chat with Cody without leaving your file. Click the + button next to any line number in a file to bring up Inline Chat.\n[Enable in Settings](command:cody.walkthrough.enableInlineChat)",
             "media": {
               "markdown": "walkthroughs/inline-assist.md"
             }
@@ -233,11 +233,6 @@
         "icon": "$(feedback)"
       },
       {
-        "command": "cody.recipe.optimize-code",
-        "category": "Ask Cody",
-        "title": "Optimize Code"
-      },
-      {
         "command": "cody.recipe.explain-code",
         "category": "Ask Cody",
         "title": "Explain Code in Detail"
@@ -275,12 +270,17 @@
       {
         "command": "cody.recipe.fixup",
         "category": "Cody",
-        "title": "Fixup"
+        "title": "Inline Fixup"
       },
       {
         "command": "cody.recipe.context-search",
         "category": "Ask Cody",
         "title": "Codebase Context Search"
+      },
+      {
+        "command": "cody.recipe.find-code-smells",
+        "category": "Ask Cody",
+        "title": "Find Code Smells"
       },
       {
         "command": "cody.test.token",
@@ -356,7 +356,7 @@
         "title": "Show Explain"
       },
       {
-        "command": "cody.walkthrough.enableInlineAssist",
+        "command": "cody.walkthrough.enableInlineChat",
         "category": "Cody Walkthrough",
         "title": "Show Inline Chat"
       },
@@ -364,14 +364,14 @@
         "command": "cody.comment.add",
         "title": "Ask Cody",
         "category": "Cody Inline Chat",
-        "when": "cody.activated && cody.inline-assist.enabled",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentIsEmpty"
       },
       {
         "command": "cody.comment.delete",
         "title": "Remove Comment",
         "category": "Cody Inline Chat",
-        "when": "cody.activated && cody.inline-assist.enabled",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(trash)"
       },
@@ -379,16 +379,16 @@
         "command": "cody.comment.load",
         "title": "Loading",
         "category": "Cody Inline Chat",
-        "when": "cody.activated && cody.inline-assist.enabled",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
         "enablement": "!commentThreadIsEmpty",
         "icon": "$(sync~spin)"
       },
       {
         "command": "cody.inline.new",
-        "title": "Start a new Inline Chat session (Ctrl+Shift+C)",
-        "category": "Cody Inline Assist",
-        "when": "cody.activated && cody.inline-assist.enabled",
-        "enablement": "!commentIsEmpty"
+        "title": "Start a new Thread (Ctrl+Shift+C)",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
+        "enablement": "editorFocus"
       },
       {
         "command": "cody.guardrails.debug",
@@ -397,7 +397,7 @@
         "enablement": "config.cody.experimental.guardrails && editorHasSelection"
       },
       {
-        "command": "cody.recipe.file-touch",
+        "command": "cody.recipe.inline-touch",
         "category": "Cody",
         "title": "Touch"
       },
@@ -472,15 +472,15 @@
         "when": "cody.activated && editorHasSelection && !editorReadonly"
       },
       {
-        "command": "cody.recipe.file-touch",
+        "command": "cody.recipe.inline-touch",
         "key": "ctrl+alt+/",
         "mac": "cmd+alt+/",
-        "when": "cody.activated && editorTextFocus && !editorReadonly"
+        "when": "cody.activated && editorTextFocus && editorHasSelection && config.cody.inlineChat.enabled"
       },
       {
         "command": "cody.inline.new",
         "key": "ctrl+shift+c",
-        "when": "cody.activated && !editorReadonly"
+        "when": "cody.activated && editorFocus && config.cody.inlineChat.enabled"
       }
     ],
     "submenus": [
@@ -500,16 +500,12 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.optimize-code",
-          "when": "cody.activated && editorHasSelection"
-        },
-        {
           "command": "cody.recipe.explain-code-high-level",
           "when": "cody.activated && editorHasSelection"
         },
         {
-          "command": "cody.recipe.file-touch",
-          "when": "cody.activated && editorHasSelection"
+          "command": "cody.recipe.inline-touch",
+          "when": "false"
         },
         {
           "command": "cody.recipe.generate-unit-test",
@@ -529,6 +525,10 @@
         },
         {
           "command": "cody.recipe.fixup",
+          "when": "cody.activated && editorHasSelection"
+        },
+        {
+          "command": "cody.recipe.find-code-smells",
           "when": "cody.activated && editorHasSelection"
         },
         {
@@ -605,7 +605,7 @@
           "when": "false"
         },
         {
-          "command": "cody.walkthrough.enableInlineAssist",
+          "command": "cody.walkthrough.enableInlineChat",
           "when": "false"
         }
       ],
@@ -621,16 +621,12 @@
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.optimize-code",
-          "when": "cody.activated"
-        },
-        {
           "command": "cody.recipe.explain-code-high-level",
           "when": "cody.activated"
         },
         {
-          "command": "cody.recipe.file-touch",
-          "when": "cody.activated && cody.inline-assist.enabled"
+          "command": "cody.recipe.inline-touch",
+          "when": "cody.activated && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.recipe.generate-unit-test",
@@ -650,6 +646,10 @@
         },
         {
           "command": "cody.recipe.fixup",
+          "when": "cody.activated"
+        },
+        {
+          "command": "cody.recipe.find-code-smells",
           "when": "cody.activated"
         },
         {
@@ -725,24 +725,24 @@
         {
           "command": "cody.comment.add",
           "group": "inline",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.inline-assist.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.focus",
           "group": "inline",
-          "when": "!cody.activated && commentController =~ /^cody-inline/ && cody.inline-assist.enabled"
+          "when": "!cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
         }
       ],
       "comments/commentThread/title": [
         {
           "command": "cody.comment.delete",
           "group": "inline@1",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && cody.inline-assist.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.replied && !commentThreadIsEmpty && config.cody.inlineChat.enabled"
         },
         {
           "command": "cody.comment.load",
           "group": "inline@2",
-          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && cody.inline-assist.enabled"
+          "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && config.cody.inlineChat.enabled"
         }
       ],
       "view/item/context": [
@@ -819,27 +819,21 @@
           "markdownDescription": "Enables inline code suggestions in your editor.",
           "default": true
         },
-        "cody.experimental.chatPredictions": {
+        "cody.inlineChat.enabled": {
           "order": 6,
+          "title": "Cody Inline Chat",
+          "type": "boolean",
+          "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
+          "default": true
+        },
+        "cody.experimental.chatPredictions": {
+          "order": 7,
           "type": "boolean",
           "default": false,
           "markdownDescription": "Adds suggestions of possible relevant messages in the chat window."
         },
-        "cody.experimental.inline": {
-          "order": 7,
-          "title": "Cody Inline Chat",
-          "type": "boolean",
-          "markdownDescription": "Enables asking questions and requesting code changes directly from within the code editor. Use the + button next to any line of code to start an inline chat.",
-          "default": false
-        },
         "cody.experimental.guardrails": {
           "order": 8,
-          "type": "boolean",
-          "markdownDescription": "Experimental feature for internal use.",
-          "default": false
-        },
-        "cody.experimental.nonStop": {
-          "order": 9,
           "type": "boolean",
           "markdownDescription": "Experimental feature for internal use.",
           "default": false

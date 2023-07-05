@@ -7,10 +7,14 @@ import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public abstract class CompletionProvider {
   protected SourcegraphNodeCompletionsClient completionsClient;
+  protected final ExecutorService executor =
+      Executors.newFixedThreadPool(CodyCompletionItemProvider.nThreads);
   protected int promptChars;
   protected int responseTokens;
   protected List<ReferenceSnippet> snippets;

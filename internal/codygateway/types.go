@@ -8,6 +8,13 @@ import (
 
 type Feature string
 
+var AllFeatures = []Feature{
+	FeatureCodeCompletions,
+	FeatureChatCompletions,
+	FeatureEmbeddings,
+}
+
+// NOTE: When you add a new feature here, make sure to add it to the slice above as well.
 const (
 	FeatureCodeCompletions Feature = Feature(types.CompletionsFeatureCode)
 	FeatureChatCompletions Feature = Feature(types.CompletionsFeatureChat)
@@ -50,10 +57,6 @@ type ActorConcurrencyLimitConfig struct {
 // ActorRateLimitNotifyConfig is the configuration for the rate limit
 // notifications of an actor.
 type ActorRateLimitNotifyConfig struct {
-	// Thresholds is a list of the percentages of the rate limit usage to trigger a
-	// notification. Each threshold will only trigger the notification once during
-	// the same rate limit window.
-	Thresholds []int
 	// SlackWebhookURL is the URL of the Slack webhook to send the alerts to.
 	SlackWebhookURL string
 }

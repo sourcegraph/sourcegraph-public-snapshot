@@ -1,5 +1,5 @@
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
-import { truncateText, isTextTruncated } from '../../prompt/truncation'
+import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { languageMarkdownID, languageNames } from './langs'
@@ -19,15 +19,12 @@ export class TranslateToLanguage implements Recipe {
 
         const toLanguage = await context.editor.showQuickPick(languageNames)
         if (!toLanguage) {
-            await context.editor.showWarningMessage('No language selected. Please select a language and try again.')
+            // TODO: Show the warning within the Chat UI.
+            // editor.showWarningMessage('Must pick a language to translate to.')
             return null
         }
 
         const truncatedSelectedText = truncateText(selection.selectedText, MAX_RECIPE_INPUT_TOKENS)
-
-        if (isTextTruncated(selection.selectedText, truncatedSelectedText)) {
-            await context.editor.showWarningMessage('Truncated extra long selection so output may be incomplete.')
-        }
 
         const promptMessage = `Translate the following code into ${toLanguage}\n\`\`\`\n${truncatedSelectedText}\n\`\`\``
         const displayText = `Translate the following code into ${toLanguage}\n\`\`\`\n${selection.selectedText}\n\`\`\``

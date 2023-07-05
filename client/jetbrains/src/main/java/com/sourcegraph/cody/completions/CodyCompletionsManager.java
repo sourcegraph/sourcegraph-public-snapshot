@@ -2,6 +2,7 @@ package com.sourcegraph.cody.completions;
 
 import com.intellij.injected.editor.EditorWindow;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorCustomElementRenderer;
 import com.intellij.openapi.editor.Inlay;
@@ -30,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** Responsible for triggering and clearing inline code completions. */
 public class CodyCompletionsManager {
+  private static final Logger logger = Logger.getInstance(CodyCompletionsManager.class);
   private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
@@ -85,7 +87,7 @@ public class CodyCompletionsManager {
             200,
             0.6,
             0.1);
-    TextDocument textDocument = new IntelliJTextDocument(editor);
+    TextDocument textDocument = new IntelliJTextDocument(editor, project);
     CompletionDocumentContext documentCompletionContext = textDocument.getCompletionContext(offset);
     if (documentCompletionContext.isCompletionTriggerValid()) {
       Callable<CompletableFuture<Void>> callable =
@@ -184,7 +186,7 @@ public class CodyCompletionsManager {
                         });
               } catch (Exception e) {
                 // TODO: do something smarter with unexpected errors.
-                e.printStackTrace();
+                logger.error(e);
               }
             });
   }
@@ -250,15 +252,13 @@ public class CodyCompletionsManager {
   private CompletionsService completionsService(@NotNull Editor editor) {
     Optional<Project> project = Optional.ofNullable(editor.getProject());
     String instanceUrl =
-        Optional.ofNullable(System.getenv("SRC_ENDPOINT"))
-            .or(() -> project.map(ConfigUtil::getSourcegraphUrl))
+        project
+            .map(ConfigUtil::getSourcegraphUrl)
             .map(url -> url.endsWith("/") ? url : url + "/")
             .orElse(ConfigUtil.DOTCOM_URL);
     Optional<String> accessToken =
-        Optional.ofNullable(System.getenv("SRC_ACCESS_TOKEN"))
-            .or(
-                () ->
-                    project.flatMap(p -> Optional.ofNullable(ConfigUtil.getProjectAccessToken(p))))
+        project
+            .flatMap(p -> Optional.ofNullable(ConfigUtil.getProjectAccessToken(p)))
             .filter(StringUtils::isNotEmpty);
     if (accessToken.isEmpty() && !ConfigUtil.isAccessTokenNotificationDismissed()) {
       NotificationActivity.notifyAboutSourcegraphAccessToken(Optional.of(instanceUrl));

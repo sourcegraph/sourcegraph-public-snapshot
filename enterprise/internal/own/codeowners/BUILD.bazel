@@ -13,9 +13,9 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//enterprise/internal/own/codeowners/v1:codeowners",
-        "//enterprise/internal/paths",
         "//internal/api",
         "//internal/lazyregexp",
+        "//internal/paths",
         "//internal/types",
         "//lib/errors",
     ],

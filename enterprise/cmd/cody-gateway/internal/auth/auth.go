@@ -30,27 +30,38 @@ func (a *Authenticator) Middleware(next http.Handler) http.Handler {
 
 		act, err := a.Sources.Get(r.Context(), token)
 		if err != nil {
+			// Didn't even match to a source at all
+			if actor.IsErrNotFromSource(err) {
+				logger.Debug("received token with unknown source",
+					log.String("token", token)) // unknown token, log for debug purposes
+				response.JSONError(logger, w, http.StatusUnauthorized, err)
+				return
+			}
+
+			// Matched to a source, but was denied
 			var e actor.ErrAccessTokenDenied
 			if errors.As(err, &e) {
 				response.JSONError(logger, w, http.StatusUnauthorized, err)
 
-				err := a.EventLogger.LogEvent(
+				if err := a.EventLogger.LogEvent(
 					r.Context(),
 					events.Event{
 						Name:       codygateway.EventNameUnauthorized,
-						Source:     "anonymous",
-						Identifier: "anonymous",
+						Source:     e.Source,
+						Identifier: "unknown",
 						Metadata: map[string]any{
 							"reason": e.Reason,
 						},
 					},
-				)
-				if err != nil {
+				); err != nil {
 					logger.Error("failed to log event", log.Error(err))
 				}
-			} else {
-				response.JSONError(logger, w, http.StatusServiceUnavailable, err)
+				return
 			}
+
+			// Fallback case: some mysterious error happened, likely upstream
+			// service unavailability
+			response.JSONError(logger, w, http.StatusServiceUnavailable, err)
 			return
 		}
 

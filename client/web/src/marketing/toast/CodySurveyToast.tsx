@@ -1,19 +1,22 @@
 import { useState, useCallback, useEffect } from 'react'
 
 import { mdiEmail } from '@mdi/js'
+import classNames from 'classnames'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Checkbox, Form, H3, Modal, Text, Button, Icon, useLocalStorage } from '@sourcegraph/wildcard'
+import { Checkbox, Form, H3, Modal, Text, Button, Icon, useCookieStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
-import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
+import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
 import { isEmailVerificationNeededForCody } from '../../cody/isCodyEnabled'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitCodySurveyResult, SubmitCodySurveyVariables } from '../../graphql-operations'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
+
+import styles from './CodySurveyToast.module.scss'
 
 const SUBMIT_CODY_SURVEY = gql`
     mutation SubmitCodySurvey($isForWork: Boolean!, $isForPersonal: Boolean!) {
@@ -63,9 +66,9 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProp
     }, [telemetryService])
 
     return (
-        <Modal position="center" aria-label="Welcome message">
+        <Modal className={styles.codySurveyToastModal} position="center" aria-label="Welcome message">
             <H3 className="mb-4 d-flex align-items-center">
-                <CodyPageIcon />
+                <CodyColorIcon className={styles.codyIcon} />
                 <span>Just one more thing...</span>
             </H3>
             <Text className="mb-3">How will you be using Cody, our AI assistant?</Text>
@@ -77,6 +80,7 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProp
                     checked={isCodyForWork}
                     disabled={loading}
                     onChange={handleCodyForWorkChange}
+                    className={styles.modalCheckbox}
                 />
                 <Checkbox
                     id="cody-for-personal"
@@ -85,9 +89,15 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProp
                     checked={isCodyForPersonalStuff}
                     disabled={loading}
                     onChange={handleCodyForPersonalStuffChange}
+                    className={styles.modalCheckbox}
                 />
                 <div className="d-flex justify-content-end">
-                    <LoaderButton variant="primary" type="submit" loading={loading} label="Get started" />
+                    <LoaderButton
+                        className={styles.codySurveyToastModalButton}
+                        type="submit"
+                        loading={loading}
+                        label="Get started"
+                    />
                 </div>
             </Form>
         </Modal>
@@ -126,9 +136,9 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
     }, [telemetryService])
 
     return (
-        <Modal position="center" aria-label="Welcome message">
+        <Modal className={styles.codySurveyToastModal} position="center" aria-label="Welcome message">
             <H3 className="mb-4">
-                <Icon svgPath={mdiEmail} className="mr-2" aria-hidden={true} />
+                <Icon svgPath={mdiEmail} className={classNames('mr-2', styles.emailIcon)} aria-hidden={true} />
                 Verify your email address
             </H3>
             <Text>To use Cody, our AI Assistant, you'll need to verify your email address.</Text>
@@ -139,7 +149,7 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
                 ) : (
                     <>
                         <span>Click to </span>
-                        <Button variant="link" className="p-0 ml-1" onClick={resend}>
+                        <Button variant="link" className={classNames('p-0 ml-1', styles.resendButton)} onClick={resend}>
                             resend
                         </Button>
                         .
@@ -153,7 +163,7 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
             )}
             {resendEmailError && <Text>{resendEmailError.message}.</Text>}
             <div className="d-flex justify-content-end mt-4">
-                <Button variant="primary" onClick={onNext}>
+                <Button className={styles.codySurveyToastModalButton} variant="primary" onClick={onNext}>
                     Next
                 </Button>
             </div>
@@ -166,9 +176,11 @@ export const useCodySurveyToast = (): {
     dismiss: () => void
     setShouldShowCodySurvey: (show: boolean) => void
 } => {
-    // we specifically use local storage as we want consistent value between when user is logged out and logged in / signed up
-    // eslint-disable-next-line no-restricted-syntax
-    const [shouldShowCodySurvey, setShouldShowCodySurvey] = useLocalStorage('cody.survey.show', false)
+    // we specifically use cookie storage as we want consistent value between when user is logged out and logged in / signed up
+    // as well as cross-domain such about.sourcegraph.com
+    const [shouldShowCodySurvey, setShouldShowCodySurvey] = useCookieStorage<boolean>('cody.survey.show', false, {
+        expires: 365,
+    })
     const [hasSubmitted, setHasSubmitted] = useTemporarySetting('cody.survey.submitted', false)
     const dismiss = useCallback(() => {
         setHasSubmitted(true)
@@ -183,7 +195,7 @@ export const useCodySurveyToast = (): {
 
     return {
         // we calculate "show" value based whether this a new signup and whether they already have submitted survey
-        show: !hasSubmitted && shouldShowCodySurvey,
+        show: !hasSubmitted && !!shouldShowCodySurvey,
         dismiss,
         setShouldShowCodySurvey,
     }

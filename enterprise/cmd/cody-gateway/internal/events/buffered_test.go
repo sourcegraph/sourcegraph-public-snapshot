@@ -2,8 +2,10 @@ package events_test
 
 import (
 	"context"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/hexops/autogold/v2"
@@ -17,6 +19,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+// Test can be prone to races or nondeterminism - make sure changes pass with
+// the following flags:
+//
+//	go test -timeout 30s -count 100 -race -run ^TestBufferedLogger$ ./enterprise/cmd/cody-gateway/internal/events
 func TestBufferedLogger(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
@@ -27,7 +33,7 @@ func TestBufferedLogger(t *testing.T) {
 		handler := &mockLogger{}
 
 		// Test with a buffer size of 0, which should immediately submit events
-		b := events.NewBufferedLogger(logtest.Scoped(t), handler, 0)
+		b := events.NewBufferedLogger(logtest.Scoped(t), handler, 0, 3)
 		wg := conc.NewWaitGroup()
 		wg.Go(b.Start)
 
@@ -40,8 +46,7 @@ func TestBufferedLogger(t *testing.T) {
 		b.Stop()
 		wg.Wait()
 
-		autogold.Expect([]string{"foo", "bar", "baz"}).Equal(t, asIdentifiersList(handler.ReceivedEvents))
-
+		autogold.Expect([]string{"bar", "baz", "foo"}).Equal(t, asSortedIdentifiers(handler.ReceivedEvents))
 	})
 
 	t.Run("buffers until full", func(t *testing.T) {
@@ -72,15 +77,18 @@ func TestBufferedLogger(t *testing.T) {
 		l, exportLogs := logtest.Captured(t)
 
 		// Set up a buffered logger we can fill up
-		size := 3
-		b := events.NewBufferedLogger(l, handler, size)
+		bufferSize := 3
+		workerCount := 3
+		b := events.NewBufferedLogger(l, handler, bufferSize, workerCount)
 		wg := conc.NewWaitGroup()
 		wg.Go(b.Start)
 
-		// Send an event that will block the queue.
-		assert.NoErrorf(t, b.LogEvent(ctx, events.Event{Identifier: blockedEventID}), "event 1 (blocking)")
+		// Send events that will block the queue.
+		for i := 1; i <= workerCount; i++ {
+			assert.NoErrorf(t, b.LogEvent(ctx, events.Event{Identifier: blockedEventID}), "event %d (blocking)", i)
+		}
 		// Fill up the buffer with blocked events
-		for i := 1; i <= size; i++ {
+		for i := 1; i <= bufferSize; i++ {
 			assert.NoErrorf(t, b.LogEvent(ctx, events.Event{Identifier: strconv.Itoa(i)}), "event %d (non-blocking)", i)
 		}
 
@@ -101,12 +109,14 @@ func TestBufferedLogger(t *testing.T) {
 		// when it is unblocked, and the rest come in order as the queue is
 		// flushed.
 		autogold.Expect([]string{
-			"buffer-full", "blocked-submission", "1", "2",
-			"3",
-		}).Equal(t, asIdentifiersList(handler.ReceivedEvents))
+			"1", "2", "3", "blocked-submission", "blocked-submission",
+			"blocked-submission",
+			"buffer-full",
+		}).Equal(t, asSortedIdentifiers(handler.ReceivedEvents))
 
 		// Assert our error logging. There should only be one entry (i.e. no
-		// errors on flush).
+		// errors on flush, and no errors indicating multiple entries failed to
+		// submit directly).
 		errorLogs := exportLogs().Filter(func(l logtest.CapturedLog) bool { return l.Level == log.LevelError })
 		autogold.Expect([]string{"failed to queue event within timeout, submitting event directly"}).Equal(t, errorLogs.Messages())
 	})
@@ -116,7 +126,7 @@ func TestBufferedLogger(t *testing.T) {
 
 		handler := &mockLogger{}
 		l, exportLogs := logtest.Captured(t)
-		b := events.NewBufferedLogger(l, handler, 10)
+		b := events.NewBufferedLogger(l, handler, 10, 3)
 		wg := conc.NewWaitGroup()
 		wg.Go(b.Start)
 
@@ -131,7 +141,7 @@ func TestBufferedLogger(t *testing.T) {
 		assert.NoError(t, b.LogEvent(ctx, events.Event{Identifier: "bar"}))
 
 		// Expect all events to still be logged
-		autogold.Expect([]string{"foo", "bar"}).Equal(t, asIdentifiersList(handler.ReceivedEvents))
+		autogold.Expect([]string{"bar", "foo"}).Equal(t, asSortedIdentifiers(handler.ReceivedEvents))
 		// Expect log message to indicate send-after-close
 		assert.True(t, exportLogs().Contains(func(l logtest.CapturedLog) bool {
 			return strings.Contains(l.Message, "buffer is closed")
@@ -148,6 +158,7 @@ type mockLogger struct {
 	// accessed until (*BufferedLogger).Stop() has been called and
 	// (*BufferedLogger).Start() has exited.
 	ReceivedEvents []events.Event
+	mux            sync.Mutex
 }
 
 func (m *mockLogger) LogEvent(spanCtx context.Context, event events.Event) error {
@@ -155,16 +166,20 @@ func (m *mockLogger) LogEvent(spanCtx context.Context, event events.Event) error
 	if m.PreLogEventHook != nil {
 		err = m.PreLogEventHook(event.Identifier)
 	}
+
+	m.mux.Lock()
+	defer m.mux.Unlock()
 	m.ReceivedEvents = append(m.ReceivedEvents, event)
 	return err
 }
 
-// asIdentifiersList renders a list of events as a list of their identifiers,
+// asSortedIdentifiers renders a list of events as a list of their identifiers,
 // (events.Event).Identifier, for ease of comparison.
-func asIdentifiersList(sources []events.Event) []string {
+func asSortedIdentifiers(sources []events.Event) []string {
 	var names []string
 	for _, s := range sources {
 		names = append(names, s.Identifier)
 	}
+	sort.Strings(names)
 	return names
 }

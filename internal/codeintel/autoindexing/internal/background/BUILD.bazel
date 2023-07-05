@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "background",
+    srcs = ["init.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/background",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/autoindexing/internal/background/dependencies",
+        "//internal/codeintel/autoindexing/internal/background/scheduler",
+        "//internal/codeintel/autoindexing/internal/background/summary",
+        "//internal/codeintel/autoindexing/internal/jobselector",
+        "//internal/codeintel/autoindexing/internal/store",
+        "//internal/database",
+        "//internal/goroutine",
+        "//internal/observation",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker/store",
+    ],
+)

@@ -39,6 +39,13 @@
     left: 0;
     height: 100%;
     border-radius: 2px;
-    background: linear-gradient(90deg, #a112ff 0%, #ff5543 46.35%, #00cbec 100%),
-        linear-gradient(90deg, #a112ff 0%, #ff5543 46.35%, #00cbec 100%);
+    background: linear-gradient(90deg, #a112ff 0%, #ff5544 25%, #00cbec 50%, #ff5544 75%, #a112ff 100%);
+    animation: scroll 3s linear infinite;
+    background-size: 200% 100%;
+}
+
+@keyframes scroll {
+    to {
+        background-position-x: -200%;
+    }
 }

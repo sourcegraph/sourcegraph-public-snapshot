@@ -1,6 +1,6 @@
 <idea-plugin>
     <id>com.sourcegraph.jetbrains</id>
-    <name>Sourcegraph</name>
+    <name>Cody AI by Sourcegraph</name>
     <vendor email="hi@sourcegraph.com" url="https://sourcegraph.com">Sourcegraph</vendor>
 
     <!--
@@ -18,20 +18,20 @@
     <depends optional="true" config-file="plugin-perforce.xml">PerforceDirectPlugin</depends>
 
     <extensions defaultExtensionNs="com.intellij">
-        <projectService serviceImplementation="com.sourcegraph.config.SourcegraphProjectService"/>
+        <projectService serviceImplementation="com.sourcegraph.config.CodyProjectService"/>
         <projectService serviceImplementation="com.sourcegraph.config.SettingsChangeListener"/>
-        <applicationService serviceImplementation="com.sourcegraph.config.SourcegraphApplicationService"/>
+        <applicationService serviceImplementation="com.sourcegraph.config.CodyApplicationService"/>
         <projectConfigurable
             parentId="tools"
             instance="com.sourcegraph.config.SettingsConfigurable"
             id="com.sourcegraph.config.SettingsConfigurable"
-            displayName="Sourcegraph"
+            displayName="Cody AI by Sourcegraph"
             nonDefaultProject="false"
         />
-        <notificationGroup id="Sourcegraph access" displayType="BALLOON"/>
-        <notificationGroup id="Sourcegraph errors" displayType="BALLOON"/>
-        <notificationGroup id="Sourcegraph URL sharing" displayType="BALLOON"/>
-        <notificationGroup id="Sourcegraph plugin updates" displayType="STICKY_BALLOON"/>
+        <notificationGroup id="Cody AI by Sourcegraph: server access" displayType="BALLOON"/>
+        <notificationGroup id="Cody AI by Sourcegraph errors" displayType="BALLOON"/>
+        <notificationGroup id="Cody AI by Sourcegraph: URL sharing" displayType="BALLOON"/>
+        <notificationGroup id="Cody AI by Sourcegraph plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
@@ -39,11 +39,10 @@
         <!-- Cody -->
         <toolWindow
             id="Cody"
-            icon="/icons/codyLogo.svg"
+            icon="/icons/codyLogoSm.svg"
             anchor="left"
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
-        <notificationGroup id="Cody Sourcegraph access" displayType="BALLOON"/>
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
 
 
@@ -134,12 +133,80 @@
 
         <action id="cody.refreshCodyAppDetection" icon="AllIcons.Actions.Refresh"
                 text="Refresh"
-                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection" internal="true">
+                class="com.sourcegraph.cody.chat.RefreshCodyAppDetection">
         </action>
+
+        <action
+            id="cody.downloadAndInstallCodyAction"
+            class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
+            text="Download Cody App"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.runCodyAppAction"
+            class="com.sourcegraph.cody.recipes.RunCodyAppAction"
+            text="Run Cody App"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.recipe.explainCodeHighLevel"
+            class="com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction"
+            text="Explain Code at a High Level"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.recipe.explainCodeDetailed"
+            class="com.sourcegraph.cody.recipes.ExplainCodeDetailedAction"
+            text="Explain Code in Detail"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.recipe.findCodeSmells"
+            class="com.sourcegraph.cody.recipes.FindCodeSmellsAction"
+            text="Find Code Smells"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.recipe.generateDocString"
+            class="com.sourcegraph.cody.recipes.GenerateDocStringAction"
+            text="Generate Docstring"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.recipe.generateUnitTest"
+            class="com.sourcegraph.cody.recipes.GenerateUnitTestAction"
+            text="Generate Unit Test"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.recipe.improveVariableNames"
+            class="com.sourcegraph.cody.recipes.ImproveVariableNamesAction"
+            text="Improve Variable Names"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.recipe.translateToLanguage"
+            class="com.sourcegraph.cody.recipes.TranslateToLanguageAction"
+            text="Translate to Language"
+            icon="/icons/codyLogoSm.svg" />
 
         <group id="CodyChatActionsGroup">
             <reference ref="cody.resetCurrentConversation"/>
             <reference ref="cody.refreshCodyAppDetection"/>
+        </group>
+
+        <group id="CodyEditorActions" icon="/icons/codyLogoSm.svg" popup="true" text="Cody"
+               searchable="false">
+            <reference ref="cody.downloadAndInstallCodyAction"/>
+            <reference ref="cody.runCodyAppAction"/>
+            <reference ref="cody.recipe.explainCodeDetailed"/>
+            <reference ref="cody.recipe.explainCodeHighLevel"/>
+            <reference ref="cody.recipe.findCodeSmells"/>
+            <reference ref="cody.recipe.generateDocString"/>
+            <reference ref="cody.recipe.generateUnitTest"/>
+            <reference ref="cody.recipe.improveVariableNames"/>
+            <reference ref="cody.recipe.translateToLanguage"/>
+            <add-to-group anchor="last" group-id="EditorPopupMenu"/>
         </group>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"

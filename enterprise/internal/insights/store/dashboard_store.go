@@ -45,9 +45,9 @@ const (
 )
 
 type DashboardQueryArgs struct {
-	UserID           []int
-	OrgID            []int
-	ID               []int
+	UserIDs          []int
+	OrgIDs           []int
+	IDs              []int
 	WithViewUniqueID *string
 	Deleted          bool
 	Limit            int
@@ -60,9 +60,9 @@ type DashboardQueryArgs struct {
 
 func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQueryArgs) ([]*types.Dashboard, error) {
 	preds := make([]*sqlf.Query, 0, 1)
-	if len(args.ID) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.ID))
-		for _, id := range args.ID {
+	if len(args.IDs) > 0 {
+		elems := make([]*sqlf.Query, 0, len(args.IDs))
+		for _, id := range args.IDs {
 			elems = append(elems, sqlf.Sprintf("%s", id))
 		}
 		preds = append(preds, sqlf.Sprintf("db.id in (%s)", sqlf.Join(elems, ",")))
@@ -80,7 +80,7 @@ func (s *DBDashboardStore) GetDashboards(ctx context.Context, args DashboardQuer
 	}
 
 	if !args.WithoutAuthorization {
-		preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserID, args.OrgID)))
+		preds = append(preds, sqlf.Sprintf("db.id in (%s)", visibleDashboardsQuery(args.UserIDs, args.OrgIDs)))
 	}
 	if len(preds) == 0 {
 		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
@@ -186,8 +186,8 @@ update dashboard set deleted_at = NULL where id = %s;
 type CreateDashboardArgs struct {
 	Dashboard types.Dashboard
 	Grants    []DashboardGrant
-	UserID    []int // For dashboard permissions
-	OrgID     []int // For dashboard permissions
+	UserIDs   []int // For dashboard permissions
+	OrgIDs    []int // For dashboard permissions
 }
 
 func (s *DBDashboardStore) CreateDashboard(ctx context.Context, args CreateDashboardArgs) (_ *types.Dashboard, err error) {
@@ -219,7 +219,7 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, args CreateDashb
 		return nil, errors.Wrap(err, "AddDashboardGrants")
 	}
 
-	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: []int{dashboardId}, UserID: args.UserID, OrgID: args.OrgID})
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{IDs: []int{dashboardId}, UserIDs: args.UserIDs, OrgIDs: args.OrgIDs})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}
@@ -230,11 +230,11 @@ func (s *DBDashboardStore) CreateDashboard(ctx context.Context, args CreateDashb
 }
 
 type UpdateDashboardArgs struct {
-	ID     int
-	Title  *string
-	Grants []DashboardGrant
-	UserID []int // For dashboard permissions
-	OrgID  []int // For dashboard permissions
+	ID      int
+	Title   *string
+	Grants  []DashboardGrant
+	UserIDs []int // For dashboard permissions
+	OrgIDs  []int // For dashboard permissions
 }
 
 func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashboardArgs) (_ *types.Dashboard, err error) {
@@ -265,7 +265,7 @@ func (s *DBDashboardStore) UpdateDashboard(ctx context.Context, args UpdateDashb
 			return nil, errors.Wrap(err, "AddDashboardGrants")
 		}
 	}
-	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{ID: []int{args.ID}, UserID: args.UserID, OrgID: args.OrgID})
+	dashboards, err := tx.GetDashboards(ctx, DashboardQueryArgs{IDs: []int{args.ID}, UserIDs: args.UserIDs, OrgIDs: args.OrgIDs})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
 	}

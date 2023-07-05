@@ -3,7 +3,7 @@ package shared
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

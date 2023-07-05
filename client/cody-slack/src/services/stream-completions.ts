@@ -1,4 +1,4 @@
-import { SOLUTION_TOKEN_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { ANSWER_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import {
     CompletionParameters,
@@ -14,7 +14,7 @@ const { SOURCEGRAPH_ACCESS_TOKEN } = ENVIRONMENT_CONFIG
 
 const DEFAULT_CHAT_COMPLETION_PARAMETERS: Omit<CompletionParameters, 'messages'> = {
     temperature: 0.2,
-    maxTokensToSample: SOLUTION_TOKEN_LENGTH,
+    maxTokensToSample: ANSWER_TOKENS,
     topK: -1,
     topP: -1,
 }

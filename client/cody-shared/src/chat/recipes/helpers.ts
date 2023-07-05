@@ -21,7 +21,7 @@ export const commandRegex = {
     chat: new RegExp(/^(?!.*\/n(ew)?\s|.*\/f(ix)?\s)/i), // For now, if the input does not start with /n or /f, it is a chat
     fix: new RegExp(/^\/f(ix)?\s/i),
     touch: new RegExp(/^\/t(ouch)?\s/i),
-    touchNeedFileName: new RegExp(/^\/t(ouch)?\s(?!.*test)/i), // Has /touch or /t but no test or tests in the string
+    touchNeedFileName: new RegExp(/^\/t(ouch)?\s(?!.*test(s)?\s)/i), // Has /touch or /t but no test or tests in the string
     noTest: new RegExp(/^(?!.*test)/i),
     search: new RegExp(/^\/s(earch)?\s/i),
     test: new RegExp(/^\/n(ew)?\s|test(s)?\s/, 'i'),

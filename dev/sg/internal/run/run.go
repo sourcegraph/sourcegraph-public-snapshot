@@ -184,7 +184,6 @@ func (c *cmdRunner) runAndWatch(ctx context.Context, cmd Command, reload <-chan 
 				} else if cmd.Install == "" && cmd.InstallFunc != "" {
 					fn, ok := installFuncs[cmd.InstallFunc]
 					if !ok {
-						c.installSemaphore.Release(1)
 						return "", errors.Newf("no install func with name %q found", cmd.InstallFunc)
 					}
 					return "", fn(ctx, makeEnvMap(c.parentEnv, cmd.Env))
@@ -562,26 +561,6 @@ var installFuncs = map[string]installFunc{
 		target := filepath.Join(root, fmt.Sprintf(".bin/jaeger-all-in-one-%s", version))
 
 		return download.ArchivedExecutable(ctx, url, target, fmt.Sprintf("%s/jaeger-all-in-one", archiveName))
-	},
-	"installDocsite": func(ctx context.Context, env map[string]string) error {
-		version := env["DOCSITE_VERSION"]
-		if version == "" {
-			return errors.New("could not find DOCSITE_VERSION in env")
-		}
-		root, err := root.RepositoryRoot()
-		if err != nil {
-			return err
-		}
-		target := filepath.Join(root, fmt.Sprintf(".bin/docsite_%s", version))
-		if _, err := os.Stat(target); err == nil {
-			return nil
-		} else if !os.IsNotExist(err) {
-			return err
-		}
-		archiveName := fmt.Sprintf("docsite_%s_%s_%s", version, runtime.GOOS, runtime.GOARCH)
-		url := fmt.Sprintf("https://github.com/sourcegraph/docsite/releases/download/%s/%s", version, archiveName)
-		_, err = download.Executable(ctx, url, target, false)
-		return err
 	},
 }
 

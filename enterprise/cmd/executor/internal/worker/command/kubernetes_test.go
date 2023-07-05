@@ -737,9 +737,11 @@ func TestNewKubernetesSingleJob(t *testing.T) {
 		"if [ \"$(/job/nextIndex.sh /job/skip.json my.container.0)\" != \"skip\" ]; then echo; hello;  fi",
 		job.Spec.Template.Spec.InitContainers[1].Args[0],
 	)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[1].Env, 1)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[1].Env, 2)
 	assert.Equal(t, "FOO", job.Spec.Template.Spec.InitContainers[1].Env[0].Name)
 	assert.Equal(t, "bar", job.Spec.Template.Spec.InitContainers[1].Env[0].Value)
+	assert.Equal(t, "EXECUTOR_ADD_SAFE", job.Spec.Template.Spec.InitContainers[1].Env[1].Name)
+	assert.Equal(t, "false", job.Spec.Template.Spec.InitContainers[1].Env[1].Value)
 	require.Len(t, job.Spec.Template.Spec.InitContainers[1].VolumeMounts, 1)
 	assert.Equal(t, "job-data", job.Spec.Template.Spec.InitContainers[1].VolumeMounts[0].Name)
 	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[1].VolumeMounts[0].MountPath)
@@ -755,9 +757,11 @@ func TestNewKubernetesSingleJob(t *testing.T) {
 		"if [ \"$(/job/nextIndex.sh /job/skip.json my.container.1)\" != \"skip\" ]; then echo; world;  fi",
 		job.Spec.Template.Spec.InitContainers[2].Args[0],
 	)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[2].Env, 1)
+	require.Len(t, job.Spec.Template.Spec.InitContainers[2].Env, 2)
 	assert.Equal(t, "FOO", job.Spec.Template.Spec.InitContainers[2].Env[0].Name)
 	assert.Equal(t, "baz", job.Spec.Template.Spec.InitContainers[2].Env[0].Value)
+	assert.Equal(t, "EXECUTOR_ADD_SAFE", job.Spec.Template.Spec.InitContainers[1].Env[1].Name)
+	assert.Equal(t, "false", job.Spec.Template.Spec.InitContainers[1].Env[1].Value)
 	require.Len(t, job.Spec.Template.Spec.InitContainers[2].VolumeMounts, 1)
 	assert.Equal(t, "job-data", job.Spec.Template.Spec.InitContainers[2].VolumeMounts[0].Name)
 	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[2].VolumeMounts[0].MountPath)

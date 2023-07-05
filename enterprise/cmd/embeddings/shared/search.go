@@ -4,18 +4,23 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.opentelemetry.io/otel/attribute"
 )
 
-const similaritySearchMinRowsToSplit = 1000
-const queryEmbeddingRetries = 3
+const (
+	similaritySearchMinRowsToSplit = 1000
+	queryEmbeddingRetries          = 3
+)
 
-type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(ctx context.Context, model string) ([]float32, string, error)
+type (
+	getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
+	getQueryEmbeddingFn     func(ctx context.Context, model string) ([]float32, string, error)
+)
 
 func searchRepoEmbeddingIndexes(
 	ctx context.Context,

@@ -136,15 +136,6 @@ type Response struct {
 	Plaintext bool
 }
 
-// SymbolsResponse represents a response to a symbols query.
-type SymbolsResponse struct {
-	// TODO
-	Scip string
-
-	// TODO
-	Plaintext bool
-}
-
 var (
 	// ErrInvalidTheme is returned when the Query.Theme is not a valid theme.
 	ErrInvalidTheme = errors.New("invalid theme")
@@ -175,14 +166,6 @@ type response struct {
 	// Error response fields.
 	Error string `json:"error"`
 	Code  string `json:"code"`
-}
-
-type SymbolsQuery struct {
-	// FileName is the name of the file to get symbols for.
-	FileName string `json:"filename"`
-
-	// Content is the content of the file to get symbols for.
-	Content string `json:"content"`
 }
 
 // Client represents a client connection to a syntect_server.
@@ -289,26 +272,37 @@ func (c *Client) url(path string) string {
 }
 
 type symbolsResponse struct {
+	Scip      string
+	Plaintext bool
+}
+
+type SymbolsQuery struct {
+	FileName string `json:"filename"`
+	Content  string `json:"content"`
+}
+
+// SymbolsResponse represents a response to a symbols query.
+type SymbolsResponse struct {
 	Scip      string `json:"scip"`
 	Plaintext bool   `json:"plaintext"`
 }
 
 func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse, error) {
-	jsonQuery, err := json.Marshal(q)
+	serialized, err := json.Marshal(q)
 	if err != nil {
-		return nil, errors.Wrap(err, "encoding query")
+		return nil, errors.Wrap(err, "failed to encode query")
 	}
+	body := bytes.NewReader(serialized)
 
-	url := c.url("/symbols")
-	req, err := http.NewRequest("POST", url, bytes.NewReader(jsonQuery))
+	req, err := http.NewRequest("POST", c.url("/symbols"), body)
 	if err != nil {
-		return nil, errors.Wrap(err, "building request")
+		return nil, errors.Wrap(err, "failed to build request")
 	}
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "performing symbols request")
+		return nil, errors.Wrap(err, "failed to perform symbols request")
 	}
 	defer resp.Body.Close()
 
@@ -316,13 +310,10 @@ func (c *Client) Symbols(ctx context.Context, q *SymbolsQuery) (*SymbolsResponse
 		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
 	}
 
-	var r symbolsResponse
+	var r SymbolsResponse
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return nil, errors.Wrap(err, "decoding symbols response")
+		return nil, errors.Wrap(err, "failed to decode symbols response")
 	}
 
-	return &SymbolsResponse{
-		Scip:      r.Scip,
-		Plaintext: r.Plaintext,
-	}, nil
+	return &r, nil
 }
