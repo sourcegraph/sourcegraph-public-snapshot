@@ -13,6 +13,7 @@ write_source_files(
     additional_update_targets = [
         "//lib/codeintel/lsif/protocol:write_symbol_kind",
         "//lib/codeintel/lsif/protocol:write_symbol_tag",
+        "//enterprise/internal/batches/search/syntax:write_token_type",
         "//doc/cli/references:write_doc_files",
     ],
 )
