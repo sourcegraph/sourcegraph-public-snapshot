@@ -61,7 +61,7 @@ func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo api
 
 func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string, callback func(request ParseRequest)) (err error) {
 	ctx, trace, endObservation := f.operations.fetchRepositoryArchive.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 		attribute.String("commitID", string(commit)),
 		attribute.Int("paths", len(paths)),
 	}})

@@ -292,7 +292,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	logger.Debug("SyncRepo started")
 
-	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", attribute.String("repo", string(name)))
+	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", name.Attr())
 	defer tr.Finish()
 
 	repo, err = s.Store.RepoStore().GetByName(ctx, name)

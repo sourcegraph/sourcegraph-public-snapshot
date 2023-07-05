@@ -142,11 +142,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	defer metricRunning.Dec()
 
 	var tr *trace.Trace
-	tr, ctx = trace.New(ctx, "search", attribute.String("repo", string(p.Repo)), attribute.String("commit", string(p.Commit)))
-	defer tr.Finish()
-
-	tr.SetAttributes(
-		attribute.String("repo", string(p.Repo)),
+	tr, ctx = trace.New(ctx, "search",
+		p.Repo.Attr(),
 		attribute.String("url", p.URL),
 		attribute.String("commit", string(p.Commit)),
 		attribute.String("pattern", p.Pattern),
@@ -158,8 +155,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 		attribute.Int("limit", p.Limit),
 		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
 		attribute.Bool("patternMatchesPath", p.PatternMatchesPath),
-		attribute.String("select", p.Select),
-	)
+		attribute.String("select", p.Select))
+	defer tr.Finish()
 	defer func(start time.Time) {
 		code := "200"
 		// We often have canceled and timed out requests. We do not want to

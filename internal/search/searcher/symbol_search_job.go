@@ -56,7 +56,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 				},
 			})
 			if err != nil {
-				tr.SetAttributes(attribute.String("repo", string(repoRevs.Repo.Name)), trace.Error(err))
+				tr.SetAttributes(repoRevs.Repo.Name.Attr(), trace.Error(err))
 			}
 			return err
 		})
@@ -89,7 +89,7 @@ func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	inputRev := repoRevs.Revs[0]
 	tr, ctx := trace.New(ctx, "symbols.searchInRepo",
-		attribute.String("repo", string(repoRevs.Repo.Name)),
+		repoRevs.Repo.Name.Attr(),
 		attribute.String("rev", inputRev))
 	defer tr.FinishWithErr(&err)
 

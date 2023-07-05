@@ -1225,7 +1225,7 @@ func (s *Server) searchWithObservability(ctx context.Context, tr *trace.Trace, a
 	defer searchRunning.Dec()
 
 	tr.SetAttributes(
-		attribute.String("repo", string(args.Repo)),
+		args.Repo.Attr(),
 		attribute.Bool("include_diff", args.IncludeDiff),
 		attribute.String("query", args.Query.String()),
 		attribute.Int("limit", args.Limit),
@@ -1619,7 +1619,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		args := strings.Join(req.Args, " ")
 
 		var tr *trace.Trace
-		tr, ctx = trace.New(ctx, "exec."+cmd, attribute.String("repo", string(req.Repo)))
+		tr, ctx = trace.New(ctx, "exec."+cmd, req.Repo.Attr())
 		tr.SetAttributes(
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
@@ -2553,7 +2553,7 @@ func honeySampleRate(cmd string, actor *actor.Actor) uint {
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
-	tr, ctx := trace.New(ctx, "doRepoUpdate", attribute.String("repo", string(repo)))
+	tr, ctx := trace.New(ctx, "doRepoUpdate", repo.Attr())
 	defer tr.FinishWithErr(&err)
 
 	s.repoUpdateLocksMu.Lock()

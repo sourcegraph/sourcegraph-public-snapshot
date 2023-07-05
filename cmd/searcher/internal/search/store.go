@@ -228,7 +228,7 @@ func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit a
 // prepareZip.
 func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, filter *searchableFilter, paths []string) (rc io.ReadCloser, err error) {
 	tr, ctx := trace.New(ctx, "ArchiveStore.fetch",
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 		attribute.String("commit", string(commit)))
 
 	metricFetchQueueSize.Inc()

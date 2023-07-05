@@ -173,7 +173,7 @@ func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.Re
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
 	tr, ctx := trace.New(ctx, "symbols.Search",
-		attribute.String("repo", string(args.Repo)),
+		args.Repo.Attr(),
 		attribute.String("commitID", string(args.CommitID)))
 	defer tr.FinishWithErr(&err)
 
@@ -273,7 +273,7 @@ func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) 
 
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
 	tr, ctx := trace.New(ctx, "symbols.LocalCodeIntel",
-		attribute.String("repo", string(args.Repo)),
+		attribute.String("repo", args.Repo),
 		attribute.String("commitID", string(args.Commit)))
 	defer tr.FinishWithErr(&err)
 
@@ -338,7 +338,7 @@ func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPa
 
 func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
 	tr, ctx := trace.New(ctx, "squirrel.SymbolInfo",
-		attribute.String("repo", string(args.Repo)),
+		attribute.String("repo", args.Repo),
 		attribute.String("commitID", string(args.Commit)))
 	defer tr.FinishWithErr(&err)
 
@@ -444,7 +444,7 @@ func (c *Client) httpPost(
 ) (resp *http.Response, err error) {
 	tr, ctx := trace.New(ctx, "symbols.httpPost",
 		attribute.String("method", method),
-		attribute.String("repo", string(repo)))
+		repo.Attr())
 	defer tr.FinishWithErr(&err)
 
 	symbolsURL, err := c.url(repo)

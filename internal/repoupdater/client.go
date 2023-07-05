@@ -128,7 +128,7 @@ func (c *Client) RepoLookup(
 	}
 
 	tr, ctx := trace.New(ctx, "repoupdater.RepoLookup",
-		attribute.String("repo", string(args.Repo)))
+		args.Repo.Attr())
 	defer func() {
 		if result != nil {
 			tr.SetAttributes(attribute.Bool("found", result.Repo != nil))
