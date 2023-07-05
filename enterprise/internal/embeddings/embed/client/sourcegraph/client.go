@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -57,38 +56,8 @@ func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("sourcegraph/%s", c.model)
 }
 
-// GetEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
-// In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
-// often hangs up when downloading large embedding responses.
-func (c *sourcegraphEmbeddingsClient) GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
-	embeddings, err := c.getEmbeddings(ctx, texts)
-	if err == nil {
-		return embeddings, nil
-	}
-
-	for i := 0; i < maxRetries; i++ {
-		embeddings, err = c.getEmbeddings(ctx, texts)
-		if err == nil {
-			return embeddings, nil
-		} else {
-			// Exponential delay
-			delay := time.Duration(int(math.Pow(float64(2), float64(i))))
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(delay * time.Second):
-			}
-		}
-	}
-
-	return nil, err
-}
-
-var modelsWithoutNewlines = map[string]struct{}{
-	"openai/text-embedding-ada-002": {},
-}
-
-func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+// GetEmbeddings tries to embed the given texts using the external service specified in the config.
+func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
 	_, replaceNewlines := modelsWithoutNewlines[c.model]
 	augmentedTexts := texts
 	if replaceNewlines {
@@ -167,4 +136,8 @@ func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 	}
 
 	return embeddings, nil
+}
+
+var modelsWithoutNewlines = map[string]struct{}{
+	"openai/text-embedding-ada-002": {},
 }
