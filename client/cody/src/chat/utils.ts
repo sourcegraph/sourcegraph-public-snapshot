@@ -60,7 +60,7 @@ export function newAuthStatus(
     isEmailVerified: boolean,
     isCodyEnabled: boolean,
     version: string,
-    configOverwrites: AuthStatus['configOverwrites']
+    configOverwrites?: AuthStatus['configOverwrites']
 ): AuthStatus {
     if (!user) {
         return { ...unauthenticatedStatus, endpoint }
