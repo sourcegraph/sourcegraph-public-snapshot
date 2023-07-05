@@ -59,10 +59,6 @@ type MockLsifStore struct {
 	// object controlling the behavior of the method
 	// GetImplementationLocations.
 	GetImplementationLocationsFunc *LsifStoreGetImplementationLocationsFunc
-	// GetLocationByExplodedSymbolFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// GetLocationByExplodedSymbol.
-	GetLocationByExplodedSymbolFunc *LsifStoreGetLocationByExplodedSymbolFunc
 	// GetMinimalBulkMonikerLocationsFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// GetMinimalBulkMonikerLocations.
@@ -144,11 +140,6 @@ func NewMockLsifStore() *MockLsifStore {
 		},
 		GetImplementationLocationsFunc: &LsifStoreGetImplementationLocationsFunc{
 			defaultHook: func(context.Context, int, string, int, int, int, int) (r0 []shared.Location, r1 int, r2 error) {
-				return
-			},
-		},
-		GetLocationByExplodedSymbolFunc: &LsifStoreGetLocationByExplodedSymbolFunc{
-			defaultHook: func(context.Context, string, int, string, string) (r0 []shared.Location, r1 error) {
 				return
 			},
 		},
@@ -254,11 +245,6 @@ func NewStrictMockLsifStore() *MockLsifStore {
 				panic("unexpected invocation of MockLsifStore.GetImplementationLocations")
 			},
 		},
-		GetLocationByExplodedSymbolFunc: &LsifStoreGetLocationByExplodedSymbolFunc{
-			defaultHook: func(context.Context, string, int, string, string) ([]shared.Location, error) {
-				panic("unexpected invocation of MockLsifStore.GetLocationByExplodedSymbol")
-			},
-		},
 		GetMinimalBulkMonikerLocationsFunc: &LsifStoreGetMinimalBulkMonikerLocationsFunc{
 			defaultHook: func(context.Context, string, []int, map[int]string, []precise.MonikerData, int, int) ([]shared.Location, int, error) {
 				panic("unexpected invocation of MockLsifStore.GetMinimalBulkMonikerLocations")
@@ -340,9 +326,6 @@ func NewMockLsifStoreFrom(i lsifstore.LsifStore) *MockLsifStore {
 		},
 		GetImplementationLocationsFunc: &LsifStoreGetImplementationLocationsFunc{
 			defaultHook: i.GetImplementationLocations,
-		},
-		GetLocationByExplodedSymbolFunc: &LsifStoreGetLocationByExplodedSymbolFunc{
-			defaultHook: i.GetLocationByExplodedSymbol,
 		},
 		GetMinimalBulkMonikerLocationsFunc: &LsifStoreGetMinimalBulkMonikerLocationsFunc{
 			defaultHook: i.GetMinimalBulkMonikerLocations,
@@ -1578,127 +1561,6 @@ func (c LsifStoreGetImplementationLocationsFuncCall) Args() []interface{} {
 // invocation.
 func (c LsifStoreGetImplementationLocationsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// LsifStoreGetLocationByExplodedSymbolFunc describes the behavior when the
-// GetLocationByExplodedSymbol method of the parent MockLsifStore instance
-// is invoked.
-type LsifStoreGetLocationByExplodedSymbolFunc struct {
-	defaultHook func(context.Context, string, int, string, string) ([]shared.Location, error)
-	hooks       []func(context.Context, string, int, string, string) ([]shared.Location, error)
-	history     []LsifStoreGetLocationByExplodedSymbolFuncCall
-	mutex       sync.Mutex
-}
-
-// GetLocationByExplodedSymbol delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetLocationByExplodedSymbol(v0 context.Context, v1 string, v2 int, v3 string, v4 string) ([]shared.Location, error) {
-	r0, r1 := m.GetLocationByExplodedSymbolFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.GetLocationByExplodedSymbolFunc.appendCall(LsifStoreGetLocationByExplodedSymbolFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetLocationByExplodedSymbol method of the parent MockLsifStore instance
-// is invoked and the hook queue is empty.
-func (f *LsifStoreGetLocationByExplodedSymbolFunc) SetDefaultHook(hook func(context.Context, string, int, string, string) ([]shared.Location, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetLocationByExplodedSymbol method of the parent MockLsifStore instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *LsifStoreGetLocationByExplodedSymbolFunc) PushHook(hook func(context.Context, string, int, string, string) ([]shared.Location, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *LsifStoreGetLocationByExplodedSymbolFunc) SetDefaultReturn(r0 []shared.Location, r1 error) {
-	f.SetDefaultHook(func(context.Context, string, int, string, string) ([]shared.Location, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetLocationByExplodedSymbolFunc) PushReturn(r0 []shared.Location, r1 error) {
-	f.PushHook(func(context.Context, string, int, string, string) ([]shared.Location, error) {
-		return r0, r1
-	})
-}
-
-func (f *LsifStoreGetLocationByExplodedSymbolFunc) nextHook() func(context.Context, string, int, string, string) ([]shared.Location, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *LsifStoreGetLocationByExplodedSymbolFunc) appendCall(r0 LsifStoreGetLocationByExplodedSymbolFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// LsifStoreGetLocationByExplodedSymbolFuncCall objects describing the
-// invocations of this function.
-func (f *LsifStoreGetLocationByExplodedSymbolFunc) History() []LsifStoreGetLocationByExplodedSymbolFuncCall {
-	f.mutex.Lock()
-	history := make([]LsifStoreGetLocationByExplodedSymbolFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// LsifStoreGetLocationByExplodedSymbolFuncCall is an object that describes
-// an invocation of method GetLocationByExplodedSymbol on an instance of
-// MockLsifStore.
-type LsifStoreGetLocationByExplodedSymbolFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 int
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 string
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.Location
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c LsifStoreGetLocationByExplodedSymbolFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c LsifStoreGetLocationByExplodedSymbolFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // LsifStoreGetMinimalBulkMonikerLocationsFunc describes the behavior when

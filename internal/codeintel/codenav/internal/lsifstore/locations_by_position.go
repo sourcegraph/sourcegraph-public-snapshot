@@ -181,12 +181,44 @@ func (s *store) getLocations(
 			locations = append(locations, convertSCIPRangesToLocations(ranges, bundleID, path)...)
 		}
 
-		locs, err := s.GetLocationByExplodedSymbol(ctx, occurrence.Symbol, bundleID, scipFieldName, path)
-		if err != nil {
-			return nil, 0, err
-		}
+		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
+			ex, err := symbols.NewExplodedSymbol(occurrence.Symbol)
+			if err != nil {
+				return nil, 0, err
+			}
+			explodedSymbols := fmt.Sprintf(
+				"%s$%s$%s$%s$%s",
+				base64.StdEncoding.EncodeToString([]byte(ex.Scheme)),
+				base64.StdEncoding.EncodeToString([]byte(ex.PackageManager)),
+				base64.StdEncoding.EncodeToString([]byte(ex.PackageName)),
+				base64.StdEncoding.EncodeToString([]byte(ex.PackageVersion)),
+				base64.StdEncoding.EncodeToString([]byte(ex.Descriptor)),
+			)
 
-		locations = append(locations, locs...)
+			monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
+				locationsSymbolSearchQuery,
+				pq.Array([]string{occurrence.Symbol}),
+				pq.Array([]int{bundleID}),
+				pq.Array([]string{explodedSymbols}),
+				pq.Array([]int{bundleID}),
+				sqlf.Sprintf(scipFieldName),
+				bundleID,
+				path,
+				sqlf.Sprintf(scipFieldName),
+			)))
+			if err != nil {
+				return nil, 0, err
+			}
+			for _, monikerLocation := range monikerLocations {
+				for _, row := range monikerLocation.Locations {
+					locations = append(locations, shared.Location{
+						DumpID: monikerLocation.DumpID,
+						Path:   row.URI,
+						Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+					})
+				}
+			}
+		}
 
 		if len(locations) > 0 {
 			totalCount := len(locations)
@@ -208,7 +240,7 @@ func (s *store) getLocations(
 	return nil, 0, nil
 }
 
-func (s *store) GetLocationByExplodedSymbol(
+func (s *store) getLocationByExplodedSymbol(
 	ctx context.Context,
 	symbolName string,
 	uploadID int,
@@ -222,45 +254,6 @@ func (s *store) GetLocationByExplodedSymbol(
 		attribute.String("path", path),
 	}})
 	defer endObservation(1, observation.Args{})
-
-	if symbolName != "" && !scip.IsLocalSymbol(symbolName) {
-		ex, err := symbols.NewExplodedSymbol(symbolName)
-		if err != nil {
-			return nil, err
-		}
-		explodedSymbols := fmt.Sprintf(
-			"%s$%s$%s$%s$%s",
-			base64.StdEncoding.EncodeToString([]byte(ex.Scheme)),
-			base64.StdEncoding.EncodeToString([]byte(ex.PackageManager)),
-			base64.StdEncoding.EncodeToString([]byte(ex.PackageName)),
-			base64.StdEncoding.EncodeToString([]byte(ex.PackageVersion)),
-			base64.StdEncoding.EncodeToString([]byte(ex.Descriptor)),
-		)
-
-		monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
-			locationsSymbolSearchQuery,
-			pq.Array([]string{symbolName}),
-			pq.Array([]int{uploadID}),
-			pq.Array([]string{explodedSymbols}),
-			pq.Array([]int{uploadID}),
-			sqlf.Sprintf(scipFieldName),
-			uploadID,
-			path,
-			sqlf.Sprintf(scipFieldName),
-		)))
-		if err != nil {
-			return nil, err
-		}
-		for _, monikerLocation := range monikerLocations {
-			for _, row := range monikerLocation.Locations {
-				locations = append(locations, shared.Location{
-					DumpID: monikerLocation.DumpID,
-					Path:   row.URI,
-					Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
-				})
-			}
-		}
-	}
 
 	return locations, nil
 }

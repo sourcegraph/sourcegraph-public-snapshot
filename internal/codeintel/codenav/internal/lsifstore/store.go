@@ -38,7 +38,6 @@ type LsifStore interface {
 
 	// Fetch document by symbol name
 	GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error)
-	GetLocationByExplodedSymbol(ctx context.Context, symbolName string, uploadID int, scipFieldName string, path string) (locations []shared.Location, err error)
 
 	// Extraction methods
 	ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)

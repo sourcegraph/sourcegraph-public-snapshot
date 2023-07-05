@@ -66,23 +66,11 @@ func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int,
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(getFullSCIPNameByDescriptorQuery, pq.Array(symbolNamesIlike), pq.Array(uploadID))
-	rows, err := s.db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		var n types.SCIPNames
-		if err := rows.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor); err != nil {
-			return nil, err
-		}
-
-		names = append(names, &n)
-	}
-
-	return names, nil
+	return scanSCIPNames(s.db.Query(ctx, sqlf.Sprintf(
+		getFullSCIPNameByDescriptorQuery,
+		pq.Array(symbolNamesIlike),
+		pq.Array(uploadID),
+	)))
 }
 
 const getFullSCIPNameByDescriptorQuery = `
@@ -109,6 +97,12 @@ WHERE
     ssl6.scip_name_type = 'DESCRIPTOR' AND
 	ssl1.upload_id = ANY(%s);
 `
+
+var scanSCIPNames = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.SCIPNames, error) {
+	var n types.SCIPNames
+	err := s.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor)
+	return &n, err
+})
 
 func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
 	trimmedDescriptorMap := make(map[string]struct{}, len(symbolNames))

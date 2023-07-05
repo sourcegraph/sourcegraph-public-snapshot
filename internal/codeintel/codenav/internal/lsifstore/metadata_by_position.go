@@ -91,16 +91,14 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 	// by path, which is arbitrary but deterministic in the case that multiple files mark a defining
 	// occurrence of a symbol.
 
-	query := sqlf.Sprintf(
+	documents, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
 		hoverSymbolsQuery,
 		pq.Array(symbolNames),
 		pq.Array([]int{bundleID}),
 		pq.Array(explodedSymbols),
 		pq.Array([]int{bundleID}),
 		bundleID,
-	)
-
-	documents, err := s.scanDocumentData(s.db.Query(ctx, query))
+	)))
 	if err != nil {
 		return "", shared.Range{}, false, err
 	}
