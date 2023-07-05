@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.completions.prompt_library;
 
 import com.google.gson.Gson;
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.api.CompletionsCallbacks;
 import com.sourcegraph.cody.api.CompletionsInput;
 import com.sourcegraph.cody.api.CompletionsService;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 public class SourcegraphNodeCompletionsClient {
+  private static final Logger logger = Logger.getInstance(SourcegraphNodeCompletionsClient.class);
   public final CompletionsService completionsService;
   private final CancellationToken token;
 
@@ -21,7 +23,7 @@ public class SourcegraphNodeCompletionsClient {
 
   public CompletableFuture<CompletionResponse> complete(CompletionParameters params) {
     CodeCompletionCallbacks callbacks = new CodeCompletionCallbacks(token);
-    //    System.out.println(
+    //    logger.info(
     //        "QUERY: " +
     // params.messages.stream().map(Message::prompt).collect(Collectors.joining("")));
     completionsService.streamCompletion(
@@ -59,8 +61,8 @@ public class SourcegraphNodeCompletionsClient {
 
     @Override
     public void onError(Throwable error) {
-      error.printStackTrace();
       promise.completeExceptionally(error);
+      logger.error(error);
     }
 
     @Override

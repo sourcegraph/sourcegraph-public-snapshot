@@ -57,13 +57,13 @@ func TestSourcesWorkers(t *testing.T) {
 	// Run workers in group to ensure cleanup
 	g := conc.NewWaitGroup()
 
-	// Start first worker, aquiromg tje mutex first for test stability
+	// Start first worker, acquiring the mutex manually first for test stability
 	sourceWorkerMutex1 := rs.NewMutex(lockName)
 	require.NoError(t, sourceWorkerMutex1.Lock())
 	s1 := &mockSourceSyncer{}
 	stop1 := make(chan struct{})
 	g.Go(func() {
-		w := (NewSources(s1)).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
+		w := NewSources(s1).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
 		go func() {
 			<-stop1
 			w.Stop()
@@ -78,7 +78,7 @@ func TestSourcesWorkers(t *testing.T) {
 		sourceWorkerMutex := rs.NewMutex(lockName,
 			// Competing worker should only try once to avoid getting stuck
 			redsync.WithTries(1))
-		w := (NewSources(s2)).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
+		w := NewSources(s2).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
 		go func() {
 			<-stop2
 			w.Stop()

@@ -7,7 +7,7 @@ package router
 import (
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
 )
 
@@ -56,7 +56,7 @@ const (
 
 	UI = "ui"
 
-	AppUpdateCheck = updatecheck.RouteAppUpdateCheck
+	AppUpdateCheck = codyapp.RouteAppUpdateCheck
 )
 
 // Router returns the frontend app router.

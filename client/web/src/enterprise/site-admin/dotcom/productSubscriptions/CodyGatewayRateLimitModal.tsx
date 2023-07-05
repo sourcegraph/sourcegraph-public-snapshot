@@ -14,7 +14,7 @@ import {
 
 import { UPDATE_CODY_GATEWAY_CONFIG } from './backend'
 import { ModelBadges } from './ModelBadges'
-import { prettyInterval } from './utils'
+import { numberFormatter, prettyInterval } from './utils'
 
 export interface CodyGatewayRateLimitModalProps {
     onCancel: () => void
@@ -146,8 +146,8 @@ export const CodyGatewayRateLimitModal: React.FunctionComponent<
                         onChange={onChangeLimitInterval}
                         message={
                             <>
-                                {limit} {mode === 'embeddings' ? 'tokens' : 'requests'} per{' '}
-                                {prettyInterval(limitInterval!)}
+                                {numberFormatter.format(BigInt(limit))} {mode === 'embeddings' ? 'tokens' : 'requests'}{' '}
+                                per {prettyInterval(limitInterval!)}
                             </>
                         }
                     />

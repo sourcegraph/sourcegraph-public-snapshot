@@ -158,12 +158,17 @@ export class CodebaseContext {
             return []
         }
 
-        return results.flatMap(({ content, filePath, repoName, revision }) => {
-            const messageText = isMarkdownFile(filePath)
-                ? populateMarkdownContextTemplate(content, filePath, repoName)
-                : populateCodeContextTemplate(content, filePath, repoName)
+        return results.flatMap(result => {
+            if (result?.type === 'FileChunkContext') {
+                const { content, filePath, repoName, revision } = result
+                const messageText = isMarkdownFile(filePath)
+                    ? populateMarkdownContextTemplate(content, filePath, repoName)
+                    : populateCodeContextTemplate(content, filePath, repoName)
 
-            return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
+                return getContextMessageWithResponse(messageText, { fileName: filePath, repoName, revision })
+            }
+
+            return []
         })
     }
 

@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "updatecheck",
     srcs = [
-        "app_update_checker.go",
         "build.go",
         "client.go",
         "doc.go",
@@ -36,12 +35,9 @@ go_library(
         "//schema",
         "@com_github_coreos_go_semver//semver",
         "@com_github_gomodule_redigo//redis",
-        "@com_github_masterminds_semver//:semver",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
-        "@com_google_cloud_go_storage//:storage",
-        "@org_golang_google_api//option",
     ],
 )
 
@@ -49,7 +45,6 @@ go_test(
     name = "updatecheck_test",
     timeout = "short",
     srcs = [
-        "app_update_check_test.go",
         "build_test.go",
         "client_test.go",
         "handler_test.go",

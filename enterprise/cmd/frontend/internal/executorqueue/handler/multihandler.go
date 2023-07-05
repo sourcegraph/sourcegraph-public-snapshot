@@ -3,7 +3,6 @@ package handler
 import (
 	"context"
 	"fmt"
-	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -11,27 +10,33 @@ import (
 	"github.com/sourcegraph/log"
 	"golang.org/x/exp/slices"
 
+	"github.com/mroth/weightedrand/v2"
+
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
 	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // MultiHandler handles the HTTP requests of an executor for more than one queue. See ExecutorHandler for single-queue implementation.
 type MultiHandler struct {
 	executorStore         database.ExecutorStore
-	JobTokenStore         executorstore.JobTokenStore
+	jobTokenStore         executorstore.JobTokenStore
 	metricsStore          metricsstore.DistributedStore
 	CodeIntelQueueHandler QueueHandler[uploadsshared.Index]
 	BatchesQueueHandler   QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]
-	RandomGenerator       RandomGenerator
+	DequeueCache          *rcache.Cache
+	dequeueCacheConfig    *schema.DequeueCacheConfig
 	logger                log.Logger
 }
 
@@ -43,15 +48,23 @@ func NewMultiHandler(
 	codeIntelQueueHandler QueueHandler[uploadsshared.Index],
 	batchesQueueHandler QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob],
 ) MultiHandler {
-	return MultiHandler{
+	siteConfig := conf.Get().SiteConfiguration
+	dequeueCache := rcache.New(executortypes.DequeueCachePrefix)
+	dequeueCacheConfig := executortypes.DequeuePropertiesPerQueue
+	if siteConfig.ExecutorsMultiqueue != nil && siteConfig.ExecutorsMultiqueue.DequeueCacheConfig != nil {
+		dequeueCacheConfig = siteConfig.ExecutorsMultiqueue.DequeueCacheConfig
+	}
+	multiHandler := MultiHandler{
 		executorStore:         executorStore,
-		JobTokenStore:         jobTokenStore,
+		jobTokenStore:         jobTokenStore,
 		metricsStore:          metricsStore,
 		CodeIntelQueueHandler: codeIntelQueueHandler,
 		BatchesQueueHandler:   batchesQueueHandler,
-		RandomGenerator:       &realRandom{},
+		DequeueCache:          dequeueCache,
+		dequeueCacheConfig:    dequeueCacheConfig,
 		logger:                log.Scoped("executor-multi-queue-handler", "The route handler for all executor queues"),
 	}
+	return multiHandler
 }
 
 // HandleDequeue is the equivalent of ExecutorHandler.HandleDequeue for multiple queues.
@@ -93,74 +106,88 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 		return executortypes.Job{}, false, errors.New(message)
 	}
 
+	// discard empty queues
+	nonEmptyQueues, err := m.SelectNonEmptyQueues(ctx, req.Queues)
+	if err != nil {
+		return executortypes.Job{}, false, err
+	}
+
+	var selectedQueue string
+	if len(nonEmptyQueues) == 0 {
+		// all queues are empty, dequeue nothing
+		return executortypes.Job{}, false, nil
+	} else if len(nonEmptyQueues) == 1 {
+		// only one queue contains items, select as candidate
+		selectedQueue = nonEmptyQueues[0]
+	} else {
+		// multiple populated queues, discard queues at dequeue limit
+		candidateQueues, err := m.SelectEligibleQueues(nonEmptyQueues)
+		if err != nil {
+			return executortypes.Job{}, false, err
+		}
+		if len(candidateQueues) == 1 {
+			// only one queue hasn't reached dequeue limit for this window, select as candidate
+			selectedQueue = candidateQueues[0]
+		} else {
+			// final list of candidates: multiple not at limit or all at limit.
+			selectedQueue, err = m.SelectQueueForDequeueing(candidateQueues)
+			if err != nil {
+				return executortypes.Job{}, false, err
+			}
+		}
+	}
+
 	resourceMetadata := ResourceMetadata{
 		NumCPUs:   req.NumCPUs,
 		Memory:    req.Memory,
 		DiskSpace: req.DiskSpace,
 	}
 
-	// Initialize the random number generator
-	m.RandomGenerator.Seed(time.Now().UnixNano())
-
-	// Shuffle the slice using the Fisher-Yates algorithm
-	for i := len(req.Queues) - 1; i > 0; i-- {
-		j := m.RandomGenerator.Intn(i + 1)
-		req.Queues[i], req.Queues[j] = req.Queues[j], req.Queues[i]
-	}
-
 	logger := m.logger.Scoped("dequeue", "Pick a job record from the database.")
 	var job executortypes.Job
-	for _, queue := range req.Queues {
-		switch queue {
-		case m.BatchesQueueHandler.Name:
-			record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
-			if err != nil {
-				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
-				logger.Error("Failed to dequeue", log.String("queue", queue), log.Error(err))
-				return executortypes.Job{}, false, err
-			}
-			if !dequeued {
-				// no batches job to dequeue, try next queue
-				continue
-			}
-
-			job, err = m.BatchesQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
-			if err != nil {
-				markErr := markRecordAsFailed(ctx, m.BatchesQueueHandler.Store, record.RecordID(), err, logger)
-				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
-				logger.Error("Failed to transform record", log.String("queue", queue), log.Error(err))
-				return executortypes.Job{}, false, err
-			}
-		case m.CodeIntelQueueHandler.Name:
-			record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
-			if err != nil {
-				err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", queue)
-				logger.Error("Failed to dequeue", log.String("queue", queue), log.Error(err))
-				return executortypes.Job{}, false, err
-			}
-			if !dequeued {
-				// no codeintel job to dequeue, try next queue
-				continue
-			}
-
-			job, err = m.CodeIntelQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
-			if err != nil {
-				markErr := markRecordAsFailed(ctx, m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
-				err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", queue)
-				logger.Error("Failed to transform record", log.String("queue", queue), log.Error(err))
-				return executortypes.Job{}, false, err
-			}
+	switch selectedQueue {
+	case m.BatchesQueueHandler.Name:
+		record, dequeued, err := m.BatchesQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
+		if err != nil {
+			err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", selectedQueue)
+			logger.Error("Failed to dequeue", log.String("queue", selectedQueue), log.Error(err))
+			return executortypes.Job{}, false, err
 		}
-		if job.ID != 0 {
-			job.Queue = queue
-			break
+		if !dequeued {
+			// no batches job to dequeue. Even though the queue was populated before, another executor
+			// instance could have dequeued in the meantime
+			return executortypes.Job{}, false, nil
+		}
+
+		job, err = m.BatchesQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
+		if err != nil {
+			markErr := markRecordAsFailed(ctx, m.BatchesQueueHandler.Store, record.RecordID(), err, logger)
+			err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", selectedQueue)
+			logger.Error("Failed to transform record", log.String("queue", selectedQueue), log.Error(err))
+			return executortypes.Job{}, false, err
+		}
+	case m.CodeIntelQueueHandler.Name:
+		record, dequeued, err := m.CodeIntelQueueHandler.Store.Dequeue(ctx, req.ExecutorName, nil)
+		if err != nil {
+			err = errors.Wrapf(err, "dbworkerstore.Dequeue %s", selectedQueue)
+			logger.Error("Failed to dequeue", log.String("queue", selectedQueue), log.Error(err))
+			return executortypes.Job{}, false, err
+		}
+		if !dequeued {
+			// no codeintel job to dequeue. Even though the queue was populated before, another executor
+			// instance could have dequeued in the meantime
+			return executortypes.Job{}, false, nil
+		}
+
+		job, err = m.CodeIntelQueueHandler.RecordTransformer(ctx, req.Version, record, resourceMetadata)
+		if err != nil {
+			markErr := markRecordAsFailed(ctx, m.CodeIntelQueueHandler.Store, record.RecordID(), err, logger)
+			err = errors.Wrapf(errors.Append(err, markErr), "RecordTransformer %s", selectedQueue)
+			logger.Error("Failed to transform record", log.String("queue", selectedQueue), log.Error(err))
+			return executortypes.Job{}, false, err
 		}
 	}
-
-	if job.ID == 0 {
-		// all queues are empty, return nothing
-		return executortypes.Job{}, false, nil
-	}
+	job.Queue = selectedQueue
 
 	// If this executor supports v2, return a v2 payload. Based on this field,
 	// marshalling will be switched between old and new payload.
@@ -169,11 +196,11 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	}
 
 	logger = m.logger.Scoped("token", "Create or regenerate a job token.")
-	token, err := m.JobTokenStore.Create(ctx, job.ID, job.Queue, job.RepositoryName)
+	token, err := m.jobTokenStore.Create(ctx, job.ID, job.Queue, job.RepositoryName)
 	if err != nil {
 		if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
 			// Token has already been created, regen it.
-			token, err = m.JobTokenStore.Regenerate(ctx, job.ID, job.Queue)
+			token, err = m.jobTokenStore.Regenerate(ctx, job.ID, job.Queue)
 			if err != nil {
 				err = errors.Wrap(err, "RegenerateToken")
 				logger.Error("Failed to regenerate token", log.Error(err))
@@ -187,7 +214,89 @@ func (m *MultiHandler) dequeue(ctx context.Context, req executortypes.DequeueReq
 	}
 	job.Token = token
 
+	// increment dequeue counter
+	err = m.DequeueCache.SetHashItem(selectedQueue, fmt.Sprint(time.Now().UnixNano()), job.Token)
+	if err != nil {
+		m.logger.Error("failed to increment dequeue count", log.String("queue", selectedQueue), log.Error(err))
+	}
+
 	return job, true, nil
+}
+
+// SelectQueueForDequeueing selects a queue from the provided list with weighted randomness.
+func (m *MultiHandler) SelectQueueForDequeueing(candidateQueues []string) (string, error) {
+	return DoSelectQueueForDequeueing(candidateQueues, m.dequeueCacheConfig)
+}
+
+var DoSelectQueueForDequeueing = func(candidateQueues []string, config *schema.DequeueCacheConfig) (string, error) {
+	// pick a queue based on the defined weights
+	var choices []weightedrand.Choice[string, int]
+	for _, queue := range candidateQueues {
+		var weight int
+		switch queue {
+		case "batches":
+			weight = config.Batches.Weight
+		case "codeintel":
+			weight = config.Codeintel.Weight
+		}
+		choices = append(choices, weightedrand.NewChoice(queue, weight))
+	}
+	chooser, err := weightedrand.NewChooser(choices...)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to randomly select candidate queue to dequeue")
+	}
+	return chooser.Pick(), nil
+}
+
+// SelectEligibleQueues returns a list of queues that have not yet reached the limit of dequeues in the
+// current time window.
+func (m *MultiHandler) SelectEligibleQueues(queues []string) ([]string, error) {
+	var candidateQueues []string
+	for _, queue := range queues {
+		dequeues, err := m.DequeueCache.GetHashAll(queue)
+		if err != nil {
+			return nil, errors.Wrapf(err, "failed to check dequeue count for queue '%s'", queue)
+		}
+		var limit int
+		switch queue {
+		case m.BatchesQueueHandler.Name:
+			limit = m.dequeueCacheConfig.Batches.Limit
+		case m.CodeIntelQueueHandler.Name:
+			limit = m.dequeueCacheConfig.Codeintel.Limit
+		}
+		if len(dequeues) < limit {
+			candidateQueues = append(candidateQueues, queue)
+		}
+	}
+	if len(candidateQueues) == 0 {
+		// all queues are at limit, so make all candidate
+		candidateQueues = queues
+	}
+	return candidateQueues, nil
+}
+
+// SelectNonEmptyQueues gets the queue size from the store of each provided queue name and returns
+// only those names that have at least one job queued.
+func (m *MultiHandler) SelectNonEmptyQueues(ctx context.Context, queueNames []string) ([]string, error) {
+	var nonEmptyQueues []string
+	for _, queue := range queueNames {
+		var err error
+		var count int
+		switch queue {
+		case m.BatchesQueueHandler.Name:
+			count, err = m.BatchesQueueHandler.Store.QueuedCount(ctx, false)
+		case m.CodeIntelQueueHandler.Name:
+			count, err = m.CodeIntelQueueHandler.Store.QueuedCount(ctx, false)
+		}
+		if err != nil {
+			m.logger.Error("fetching queue size", log.Error(err), log.String("queue", queue))
+			return nil, err
+		}
+		if count != 0 {
+			nonEmptyQueues = append(nonEmptyQueues, queue)
+		}
+	}
+	return nonEmptyQueues, nil
 }
 
 // HandleHeartbeat processes a heartbeat from a multi-queue executor.
@@ -314,21 +423,4 @@ func markRecordAsFailed[T workerutil.Record](context context.Context, store dbwo
 			log.Error(markErr))
 	}
 	return markErr
-}
-
-// RandomGenerator is a wrapper for generating random numbers to support simple queue fairness.
-// Its functions can be mocked out for consistent dequeuing in unit tests.
-type RandomGenerator interface {
-	Seed(seed int64)
-	Intn(n int) int
-}
-
-type realRandom struct{}
-
-func (r *realRandom) Seed(seed int64) {
-	rand.Seed(seed)
-}
-
-func (r *realRandom) Intn(n int) int {
-	return rand.Intn(n)
 }

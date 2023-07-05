@@ -128,7 +128,8 @@ func decompressTgz(tgz io.Reader, destination string) error {
 	logger := log.Scoped("decompressTgz", "Decompress a tarball at tgzPath, putting the files under destination.")
 
 	err := unpack.Tgz(tgz, destination, unpack.Opts{
-		SkipInvalid: true,
+		SkipInvalid:    true,
+		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 

@@ -76,7 +76,7 @@ func (v *InsightPermissionsValidator) validateUserAccessForView(ctx context.Cont
 	if err != nil {
 		return err
 	}
-	results, err := v.insightStore.GetAll(ctx, store.InsightQueryArgs{UniqueID: insightId, UserID: v.userIds, OrgID: v.orgIds})
+	results, err := v.insightStore.GetAll(ctx, store.InsightQueryArgs{UniqueID: insightId, UserIDs: v.userIds, OrgIDs: v.orgIds})
 	if err != nil {
 		return errors.Wrap(err, "GetAll")
 	}

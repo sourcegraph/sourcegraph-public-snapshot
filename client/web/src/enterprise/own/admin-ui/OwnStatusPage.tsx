@@ -50,11 +50,11 @@ export const OwnStatusPage: FC = () => {
         <div>
             <span className={styles.topHeader}>
                 <div>
-                    <PageTitle title="Own Signals Configuration" />
+                    <PageTitle title="Code ownership signals configuration" />
                     <PageHeader
                         headingElement="h2"
-                        path={[{ text: 'Own Signals Configuration' }]}
-                        description="List of Own inference signal indexers and their configurations. All repositories are included by default."
+                        path={[{ text: 'Code ownership signals configuration' }]}
+                        description="List of code ownership inference signal indexers and their configurations. All repositories are included by default."
                         className="mb-3"
                     />
                     {saveError && <ErrorAlert error={saveError} />}
@@ -100,7 +100,7 @@ export const OwnStatusPage: FC = () => {
 
             <Container className={styles.root}>
                 {loading && <LoadingSpinner />}
-                {error && <ErrorAlert prefix="Error fetching Own signal configurations" error={error} />}
+                {error && <ErrorAlert prefix="Error fetching code ownership signal configurations" error={error} />}
                 {!loading &&
                     localData &&
                     !error &&

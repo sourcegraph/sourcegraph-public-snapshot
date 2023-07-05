@@ -1,4 +1,4 @@
-package updatecheck
+package codyapp
 
 import (
 	"context"

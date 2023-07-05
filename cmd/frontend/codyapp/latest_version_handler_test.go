@@ -9,17 +9,15 @@ import (
 
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 )
 
 func TestLatestVersionHandler(t *testing.T) {
-	var resolver = updatecheck.StaticManifestResolver{
-		Manifest: updatecheck.AppUpdateManifest{
+	var resolver = StaticManifestResolver{
+		Manifest: AppUpdateManifest{
 			Version: "3023.5.8", // set the year part of the version FAR ahead so that there is always a version to update to
 			Notes:   "This is a test",
 			PubDate: time.Date(2023, time.May, 8, 12, 0, 0, 0, &time.Location{}),
-			Platforms: map[string]updatecheck.AppLocation{
+			Platforms: map[string]AppLocation{
 				"x86_64-linux": {
 					Signature: "Yippy Kay YAY",
 					URL:       "https://example.com/linux",

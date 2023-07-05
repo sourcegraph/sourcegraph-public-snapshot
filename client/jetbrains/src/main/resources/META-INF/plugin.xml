@@ -173,12 +173,6 @@
             icon="/icons/codyLogoSm.svg" />
 
         <action
-            id="cody.recipe.optimizeCode"
-            class="com.sourcegraph.cody.recipes.OptimizeCodeAction"
-            text="Optimize Code"
-            icon="/icons/codyLogoSm.svg" />
-
-        <action
             id="cody.recipe.translateToLanguage"
             class="com.sourcegraph.cody.recipes.TranslateToLanguageAction"
             text="Translate to Language"
@@ -197,7 +191,6 @@
             <reference ref="cody.recipe.generateDocString"/>
             <reference ref="cody.recipe.generateUnitTest"/>
             <reference ref="cody.recipe.improveVariableNames"/>
-            <reference ref="cody.recipe.optimizeCode"/>
             <reference ref="cody.recipe.translateToLanguage"/>
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
         </group>

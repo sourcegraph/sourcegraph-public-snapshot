@@ -180,7 +180,7 @@ func renderPipelineDocs(logger log.Logger, w io.Writer) {
 
 			// Don't generate a preview for more complicated branch types, since we don't
 			// know what arguments to provide as a sample in advance.
-			if m.BranchArgumentRequired {
+			if m.BranchArgumentRequired || rt.Is(runtype.BazelDo) {
 				continue
 			}
 
