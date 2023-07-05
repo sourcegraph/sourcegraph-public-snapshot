@@ -313,6 +313,7 @@ sg ci build --help
 					return err
 				}
 
+                                 // give buildkite some time to kick off the build so that we can find it later on
 				time.Sleep(10 * time.Second)
 				client, err := bk.NewClient(cmd.Context, std.Out)
 				if err != nil {
