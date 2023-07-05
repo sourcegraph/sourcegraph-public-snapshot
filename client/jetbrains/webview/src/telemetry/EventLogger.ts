@@ -94,8 +94,8 @@ export class EventLogger implements TelemetryService {
     ): void {
         this.tracker(
             eventName,
-            { ...eventProperties, ...this.editorInfo, ...this.extensionDetails },
-            { ...publicArgument, ...this.editorInfo, ...this.extensionDetails },
+            { ...eventProperties, ...this.editorInfo, extensionDetails: this.extensionDetails },
+            { ...publicArgument, ...this.editorInfo, extensionDetails: this.extensionDetails },
             uri
         )
     }
