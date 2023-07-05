@@ -17,6 +17,8 @@ pkg_tar(
         "/cmd/prom-wrapper/prom-wrapper_/prom-wrapper": "/bin/prom-wrapper",
         "monitoring/outputs/prometheus": "/sg_config_prometheus",
         "/dev/prometheus/linux": "/sg_prometheus_add_ons",
+        "/docker-images/prometheus/alertmanager.sh": "/alertmanager.sh",
+        "/docker-images/prometheus/prometheus.sh": "/prometheus.sh",
     },
     strip_prefix = ".",
 )
