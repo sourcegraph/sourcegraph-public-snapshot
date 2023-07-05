@@ -9,7 +9,7 @@ go_library(
         "types.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
         "//internal/conf",
@@ -36,8 +36,8 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/codeintel/policies/shared",
         "//internal/api",
+        "//internal/codeintel/policies/shared",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",

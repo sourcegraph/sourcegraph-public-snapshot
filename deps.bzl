@@ -5058,6 +5058,14 @@ def go_dependencies():
         version = "v0.0.0-20190623134757-126b35219450",
     )
     go_repository(
+        name = "com_github_mroth_weightedrand_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/mroth/weightedrand/v2",
+        sum = "h1:zrEVDIaau/E4QLOKu02kpg8T8myweFlMGikIgbIdrRA=",
+        version = "v2.0.1",
+    )
+
+    go_repository(
         name = "com_github_mrunalp_fileutils",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/mrunalp/fileutils",
@@ -6302,8 +6310,8 @@ def go_dependencies():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:6PgJPdhDHRGskCu7+NxodNtX1z8umdC40QvoQt4FsP8=",
-        version = "v0.2.4-0.20230613194658-b62733841bc3",
+        sum = "h1:o+eq0cjVV3B5ngIBF04Lv3GwttKOuYFF5NTcfXWXzfA=",
+        version = "v0.3.1-0.20230627154934-45df7f6d33fc",
     )
 
     go_repository(

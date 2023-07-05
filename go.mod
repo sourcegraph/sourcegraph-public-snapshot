@@ -268,6 +268,7 @@ require (
 	github.com/hashicorp/cronexpr v1.1.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/ricochet2200/go-disk-usage/du v0.0.0-20210707232629-ac9918953285
 	github.com/vektah/gqlparser/v2 v2.4.5
 	go.opentelemetry.io/collector/exporter v0.75.0

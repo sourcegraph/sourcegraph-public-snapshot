@@ -19,7 +19,17 @@ declare namespace Intl {
     }
 }
 
-const LIST_FORMATTER = new Intl.ListFormat('en', { style: 'long', type: 'conjunction' })
+const LIST_FORMATTER = (() => {
+    try {
+        return new Intl.ListFormat('en', { style: 'long', type: 'conjunction' })
+    } catch {
+        return {
+            format(items: string[]) {
+                return items.join(', ')
+            },
+        }
+    }
+})()
 
 const INTERVALS = [
     { type: 'years', inMinutes: 60 * 24 * 7 * 5 * 12 },

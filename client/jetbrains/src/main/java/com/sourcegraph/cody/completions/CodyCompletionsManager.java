@@ -2,6 +2,7 @@ package com.sourcegraph.cody.completions;
 
 import com.intellij.injected.editor.EditorWindow;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorCustomElementRenderer;
 import com.intellij.openapi.editor.Inlay;
@@ -30,6 +31,7 @@ import org.jetbrains.annotations.Nullable;
 
 /** Responsible for triggering and clearing inline code completions. */
 public class CodyCompletionsManager {
+  private static final Logger logger = Logger.getInstance(CodyCompletionsManager.class);
   private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
@@ -184,7 +186,7 @@ public class CodyCompletionsManager {
                         });
               } catch (Exception e) {
                 // TODO: do something smarter with unexpected errors.
-                e.printStackTrace();
+                logger.error(e);
               }
             });
   }

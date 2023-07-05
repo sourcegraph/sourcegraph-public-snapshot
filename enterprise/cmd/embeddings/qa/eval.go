@@ -27,7 +27,6 @@ type embeddingsSearcher interface {
 
 // Run runs the evaluation and returns recall for the test data.
 func Run(searcher embeddingsSearcher) (float64, error) {
-
 	count, recall := 0.0, 0.0
 
 	file, err := fs.Open("context_data.tsv")

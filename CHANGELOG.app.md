@@ -16,6 +16,7 @@ All notable changes to the Cody app are documented in this file.
 ## Unreleased
 
 - Added a new menu option to check for app updates.
+- Removed the ability to add new remote repositories as that feature will be retired for the Cody App, all repositories should be added locally.
 
 ## v2023.6.28
 

@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.localapp;
 
 import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.*;
 import java.io.File;
@@ -20,6 +21,7 @@ import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class LocalAppManager {
+  private static final Logger logger = Logger.getInstance(LocalAppManager.class);
   public static final String DEFAULT_LOCAL_APP_URL = "http://localhost:3080/";
   private static final Map<String, LocalAppPaths> appPathsByPlatform =
       Map.of(
@@ -96,21 +98,21 @@ public class LocalAppManager {
       int statusCode = response.getStatusLine().getStatusCode();
       String responseBody = EntityUtils.toString(response.getEntity());
       if (statusCode != 200) {
-        System.err.println(
+        logger.warn(
             "Could not fetch local Cody app version. Got status code "
                 + statusCode
                 + ": "
                 + responseBody);
         return Optional.empty();
       } else {
-        System.out.println("Running local Cody app version: " + responseBody);
+        logger.info("Running local Cody app version: " + responseBody);
         return Optional.of(responseBody);
       }
     } catch (ConnectException e) {
-      System.err.println("Could not connect to the local Cody app.");
+      logger.warn("Could not connect to the local Cody app.");
       return Optional.empty();
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warn(e);
       return Optional.empty();
     }
   }
@@ -123,7 +125,7 @@ public class LocalAppManager {
               try {
                 Desktop.getDesktop().open(new File(p.codyAppFile.toString()));
               } catch (IOException e) {
-                e.printStackTrace();
+                logger.error(e);
               }
             });
   }

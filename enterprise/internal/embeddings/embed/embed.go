@@ -5,17 +5,17 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/openai"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/sourcegraph"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

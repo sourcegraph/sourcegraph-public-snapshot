@@ -137,6 +137,18 @@
         </action>
 
         <action
+            id="cody.downloadAndInstallCodyAction"
+            class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
+            text="Download Cody App"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.runCodyAppAction"
+            class="com.sourcegraph.cody.recipes.RunCodyAppAction"
+            text="Run Cody App"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
             id="cody.recipe.explainCodeHighLevel"
             class="com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction"
             text="Explain Code at a High Level"
@@ -173,12 +185,6 @@
             icon="/icons/codyLogoSm.svg" />
 
         <action
-            id="cody.recipe.optimizeCode"
-            class="com.sourcegraph.cody.recipes.OptimizeCodeAction"
-            text="Optimize Code"
-            icon="/icons/codyLogoSm.svg" />
-
-        <action
             id="cody.recipe.translateToLanguage"
             class="com.sourcegraph.cody.recipes.TranslateToLanguageAction"
             text="Translate to Language"
@@ -191,13 +197,14 @@
 
         <group id="CodyEditorActions" icon="/icons/codyLogoSm.svg" popup="true" text="Cody"
                searchable="false">
+            <reference ref="cody.downloadAndInstallCodyAction"/>
+            <reference ref="cody.runCodyAppAction"/>
             <reference ref="cody.recipe.explainCodeDetailed"/>
             <reference ref="cody.recipe.explainCodeHighLevel"/>
             <reference ref="cody.recipe.findCodeSmells"/>
             <reference ref="cody.recipe.generateDocString"/>
             <reference ref="cody.recipe.generateUnitTest"/>
             <reference ref="cody.recipe.improveVariableNames"/>
-            <reference ref="cody.recipe.optimizeCode"/>
             <reference ref="cody.recipe.translateToLanguage"/>
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
         </group>

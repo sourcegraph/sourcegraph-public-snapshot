@@ -20,6 +20,8 @@ import org.jetbrains.idea.perforce.perforce.PerforceAuthenticationException;
 import org.jetbrains.idea.perforce.perforce.PerforceSettings;
 
 public class RepoUtil {
+  private static final Logger logger = Logger.getInstance(RepoUtil.class);
+
   // repoInfo returns the Sourcegraph repository URI, and the file path
   // relative to the repository root. If the repository URI cannot be
   // determined, a RepoInfo with empty strings is returned.
@@ -63,7 +65,7 @@ public class RepoUtil {
       }
       ErrorNotification.show(project, message);
       Logger.getInstance(RepoUtil.class).warn(message);
-      err.printStackTrace();
+      logger.error(err);
     }
     return new RepoInfo(
         vcsType,
@@ -73,7 +75,24 @@ public class RepoUtil {
   }
 
   @Nullable
-  public static String getSimpleRepositoryName(
+  public static String findRepositoryName(
+      @NotNull Project project, @Nullable VirtualFile currentFile) {
+    VirtualFile fileFromTheRepository =
+        currentFile != null
+            ? currentFile
+            : RepoUtil.getRootFileFromFirstGitRepository(project).orElse(null);
+    if (fileFromTheRepository == null) {
+      return null;
+    }
+    try {
+      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, fileFromTheRepository);
+    } catch (Exception e) {
+      return RepoUtil.getSimpleRepositoryName(project, fileFromTheRepository);
+    }
+  }
+
+  @Nullable
+  private static String getSimpleRepositoryName(
       @NotNull Project project, @NotNull VirtualFile file) {
     Repository repository = VcsRepositoryManager.getInstance(project).getRepositoryForFile(file);
     if (repository == null) {
@@ -97,7 +116,7 @@ public class RepoUtil {
 
   // Returned format: github.com/sourcegraph/sourcegraph
   // Must be called from non-EDT context
-  public static @NotNull String getRemoteRepoUrlWithoutScheme(
+  private static @NotNull String getRemoteRepoUrlWithoutScheme(
       @NotNull Project project, @NotNull VirtualFile file) throws Exception {
     String remoteUrl = getRemoteRepoUrl(project, file);
     String repoName;
@@ -185,7 +204,7 @@ public class RepoUtil {
     return VCSType.UNKNOWN;
   }
 
-  public static Optional<VirtualFile> getRootFileFromFirstGitRepository(@NotNull Project project) {
+  private static Optional<VirtualFile> getRootFileFromFirstGitRepository(@NotNull Project project) {
     Optional<Repository> firstFoundRepository =
         VcsRepositoryManager.getInstance(project).getRepositories().stream()
             .filter(it -> it.getVcs().getName().equals(GitVcs.NAME))

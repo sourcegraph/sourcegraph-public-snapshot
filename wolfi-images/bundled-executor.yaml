@@ -10,7 +10,7 @@ contents:
     - ca-certificates
     - git
     - maven
-    - openjdk-11=11.0.20.4-r0 # TODO(will): Temporarily pinned to avoid bad signature
+    - openjdk-11
     - openjdk-11-default-jvm
     - python3
     - py3-pip

@@ -25,11 +25,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed validation of Bitbucket Cloud configuration in site-admin create/update form. [#54494](https://github.com/sourcegraph/sourcegraph/pull/54494)
+-
 
 ### Removed
 
 -
+
+## 5.1.2
+
+### Fixed
+
+- Fixes a crash when uploading indexes with malformed source ranges (this was a bug in scip-go). [#54304](https://github.com/sourcegraph/sourcegraph/pull/54304)
+- Fixed validation of Bitbucket Cloud configuration in site-admin create/update form. [#54494](https://github.com/sourcegraph/sourcegraph/pull/54494)
+- Fixed race condition with grpc `server.send` message. [#54500](https://github.com/sourcegraph/sourcegraph/pull/54500)
 
 ## 5.1.1
 
@@ -39,7 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 5.1.0
 
-> **Note**: As of 5.1.0, Sourcegraph OSS is removed and has been relicensed to Sourcegraph Enterprise. A blog post with much more detail will come soon!
+> **Note**: As of 5.1.0, the limited OSS subset of Sourcegraph has been removed, and code search OSS code has been relicensed going forward. See https://github.com/sourcegraph/sourcegraph/issues/53528#issuecomment-1594967818 for more information (blog post coming soon).
 
 ### Known issues
 

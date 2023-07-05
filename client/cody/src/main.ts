@@ -229,7 +229,7 @@ const register = async (
         vscode.commands.registerCommand('cody.recipe.inline-touch', () => executeRecipe('inline-touch', false)),
         vscode.commands.registerCommand('cody.recipe.find-code-smells', () => executeRecipe('find-code-smells')),
         vscode.commands.registerCommand('cody.recipe.context-search', () => executeRecipe('context-search')),
-        vscode.commands.registerCommand('cody.recipe.optimize-code', () => executeRecipe('optimize-code')),
+
         // Register URI Handler (vscode://sourcegraph.cody-ai)
         vscode.window.registerUriHandler({
             handleUri: async (uri: vscode.Uri) => {

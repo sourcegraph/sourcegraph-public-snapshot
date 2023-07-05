@@ -10,7 +10,7 @@ import (
 	"context"
 	"sync"
 
-	context1 "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
+	context1 "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 )
 
 // MockContextService is a mock implementation of the ContextService

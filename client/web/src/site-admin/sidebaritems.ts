@@ -51,7 +51,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/extensions',
         },
         {
-            label: 'Own',
+            label: 'Code ownership',
             to: '/site-admin/analytics/own',
         },
         {

@@ -266,6 +266,14 @@ type BatchSpec struct {
 	Workspaces []*WorkspaceConfiguration `json:"workspaces,omitempty"`
 }
 
+// Batches description: The configuration for the batches queue.
+type Batches struct {
+	// Limit description: The maximum number of dequeues allowed within the expiration window.
+	Limit int `json:"limit"`
+	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
+	Weight int `json:"weight"`
+}
+
 // BitbucketCloudAuthProvider description: Configures the Bitbucket Cloud OAuth authentication provider for SSO. In addition to specifying this configuration object, you must also create a OAuth App on your Bitbucket Cloud workspace: https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/. The application should have account, email, and repository scopes and the callback URL set to the concatenation of your Sourcegraph instance URL and "/.auth/bitbucketcloud/callback".
 type BitbucketCloudAuthProvider struct {
 	// AllowSignup description: Allows new visitors to sign up for accounts via Bitbucket Cloud authentication. If false, users signing in via Bitbucket Cloud must have an existing Sourcegraph account, which will be linked to their Bitbucket Cloud identity after sign-in.
@@ -542,6 +550,14 @@ type CloudKMSEncryptionKey struct {
 	Type            string `json:"type"`
 }
 
+// Codeintel description: The configuration for the codeintel queue.
+type Codeintel struct {
+	// Limit description: The maximum number of dequeues allowed within the expiration window.
+	Limit int `json:"limit"`
+	// Weight description: The relative weight of this queue. Higher weights mean a higher chance of being picked at random.
+	Weight int `json:"weight"`
+}
+
 // CodyGateway description: Configuration related to the Cody Gateway service management. This should only be used on sourcegraph.com.
 type CodyGateway struct {
 	// BigQueryDataset description: The dataset to pull BigQuery Cody Gateway related events from.
@@ -594,6 +610,14 @@ type CustomGitFetchMapping struct {
 type DebugLog struct {
 	// ExtsvcGitlab description: Log GitLab API requests.
 	ExtsvcGitlab bool `json:"extsvc.gitlab,omitempty"`
+}
+
+// DequeueCacheConfig description: The configuration for the dequeue cache of multiqueue executors. Each queue defines a limit of dequeues in the expiration window as well as a weight, indicating how frequently a queue is picked at random. For example, a weight of 4 for batches and 1 for codeintel means out of 5 dequeues, statistically batches will be picked 4 times and codeintel 1 time (unless one of those queues is at its limit).
+type DequeueCacheConfig struct {
+	// Batches description: The configuration for the batches queue.
+	Batches *Batches `json:"batches,omitempty"`
+	// Codeintel description: The configuration for the codeintel queue.
+	Codeintel *Codeintel `json:"codeintel,omitempty"`
 }
 
 // Dotcom description: Configuration options for Sourcegraph.com only.
@@ -775,6 +799,12 @@ type ExcludedOtherRepo struct {
 	Name string `json:"name,omitempty"`
 	// Pattern description: Regular expression which matches against the name of a Other repo to exclude from mirroring.
 	Pattern string `json:"pattern,omitempty"`
+}
+
+// ExecutorsMultiqueue description: The configuration for multiqueue executors.
+type ExecutorsMultiqueue struct {
+	// DequeueCacheConfig description: The configuration for the dequeue cache of multiqueue executors. Each queue defines a limit of dequeues in the expiration window as well as a weight, indicating how frequently a queue is picked at random. For example, a weight of 4 for batches and 1 for codeintel means out of 5 dequeues, statistically batches will be picked 4 times and codeintel 1 time (unless one of those queues is at its limit).
+	DequeueCacheConfig *DequeueCacheConfig `json:"dequeueCacheConfig,omitempty"`
 }
 type ExistingChangesetSpec struct {
 	// BaseRepository description: The GraphQL ID of the repository that contains the existing changeset on the code host.
@@ -2470,6 +2500,8 @@ type SiteConfiguration struct {
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
 	// ExecutorsLsifGoImage description: The tag to use for the lsif-go image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
 	ExecutorsLsifGoImage string `json:"executors.lsifGoImage,omitempty"`
+	// ExecutorsMultiqueue description: The configuration for multiqueue executors.
+	ExecutorsMultiqueue *ExecutorsMultiqueue `json:"executors.multiqueue,omitempty"`
 	// ExecutorsSrcCLIImage description: The image to use for src-cli in executors. Use this value to pull from a custom image registry.
 	ExecutorsSrcCLIImage string `json:"executors.srcCLIImage,omitempty"`
 	// ExecutorsSrcCLIImageTag description: The tag to use for the src-cli image in executors. Use this value to use a custom tag. Sourcegraph by default uses the best match, so use this setting only if you really need to overwrite it and make sure to keep it updated.
@@ -2699,6 +2731,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "executors.batcheshelperImageTag")
 	delete(m, "executors.frontendURL")
 	delete(m, "executors.lsifGoImage")
+	delete(m, "executors.multiqueue")
 	delete(m, "executors.srcCLIImage")
 	delete(m, "executors.srcCLIImageTag")
 	delete(m, "experimentalFeatures")

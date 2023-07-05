@@ -4,10 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.completions.UnstableCodegenLanguageUtil;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
+import com.sourcegraph.cody.vscode.TextDocument;
 import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.util.*;
@@ -30,17 +32,17 @@ import org.jetbrains.annotations.Nullable;
 
 /** This is a rough implementation loosely translating unstable-codegen.ts */
 public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvider {
-  @NotNull private final String fileName;
+  private static final Logger logger =
+      Logger.getInstance(UnstableCodegenEndOfLineCompletionProvider.class);
   @NotNull private final String completionsEndpoint;
-  @Nullable private final String intelliJLanguageId;
+  @NotNull private final TextDocument textDocument;
 
   public UnstableCodegenEndOfLineCompletionProvider(
       @NotNull List<ReferenceSnippet> snippets,
       @NotNull String prefix,
       @NotNull String suffix,
-      @NotNull String fileName,
       @NotNull String completionsEndpoint,
-      @Nullable String intelliJLanguageId) {
+      @NotNull TextDocument textDocument) {
     super(
         null, // unused
         -1, // unused
@@ -51,9 +53,8 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
         "", // unused
         -1 // unused
         );
-    this.fileName = fileName;
     this.completionsEndpoint = completionsEndpoint;
-    this.intelliJLanguageId = intelliJLanguageId;
+    this.textDocument = textDocument;
   }
 
   @Override
@@ -71,17 +72,15 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
       params.put("debug_ext_path", "cody");
       params.put(
           "lang_prefix",
-          "<|"
-              + UnstableCodegenLanguageUtil.getModelLanguageId(
-                  this.intelliJLanguageId, this.fileName)
-              + "|>");
+          "<|" + UnstableCodegenLanguageUtil.getModelLanguageId(textDocument) + "|>");
       params.put("prefix", this.prefix);
       params.put("suffix", this.suffix);
       params.put("top_p", 0.95);
       params.put("temperature", 0.2);
       params.put("max_tokens", 40);
       params.put("batch_size", makeEven(4));
-      params.put("context", mapper.writeValueAsString(prepareContext(snippets, fileName)));
+      params.put(
+          "context", mapper.writeValueAsString(prepareContext(snippets, textDocument.fileName())));
       params.put("completion_type", "automatic");
 
       StringEntity result = new StringEntity(mapper.writeValueAsString(params));
@@ -90,7 +89,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
 
       return result;
     } catch (JsonProcessingException | UnsupportedEncodingException e) {
-      e.printStackTrace();
+      logger.error(e);
       return null;
     }
   }
@@ -103,7 +102,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
         () -> {
           StringEntity params = getParams();
           if (params == null) {
-            System.err.println("Cody: Could not create params for unstable-codegen");
+            logger.error("Cody: Could not create params for unstable-codegen");
             return Collections.emptyList();
           }
           HttpPost httpPost = new HttpPost(completionsEndpoint);
@@ -119,7 +118,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
             CloseableHttpResponse response = client.execute(httpPost);
             int responseCode = response.getStatusLine().getStatusCode();
             if (responseCode != 200) {
-              System.err.println(
+              logger.error(
                   "Cody: `unstable-codegen` completion provider returned non-200 response code: "
                       + responseCode);
               return Collections.emptyList();
@@ -145,15 +144,15 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
                   .collect(Collectors.toList());
             }
           } catch (ConnectException e) {
-            System.err.println(
-                "Cody: Could not connect to the 'unstable-codegen' completion provider");
+            logger.error("Cody: Could not connect to the 'unstable-codegen' completion provider");
             return Collections.emptyList();
           } catch (Exception e) {
-            e.printStackTrace();
+            logger.error(e);
             return Collections.emptyList();
           }
           return Collections.emptyList();
-        });
+        },
+        executor);
   }
 
   @NotNull

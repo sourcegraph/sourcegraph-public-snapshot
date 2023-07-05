@@ -4,7 +4,13 @@
 
 ### Added
 
+- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
+- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
+
 ### Changed
+
+- fix logging to use JetBrains api + other minor fixes [#54579](https://github.com/sourcegraph/sourcegraph/pull/54579)
+- Enable editor recipe context menu items when working with Cody app only when Cody app is running [#54583](https://github.com/sourcegraph/sourcegraph/pull/54583)
 
 ### Deprecated
 
@@ -26,6 +32,7 @@
 
 - Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
 - Sourcegraph link sharing and opening file in browser actions are disabled when working with Cody app [#54473](https://github.com/sourcegraph/sourcegraph/pull/54473)
+- Display more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
 
 ### Deprecated
 

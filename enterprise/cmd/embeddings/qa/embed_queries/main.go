@@ -56,7 +56,7 @@ func embedQueries(queries []string, siteConfigPath string) error {
 	}
 
 	// open file to write to
-	target, err := os.OpenFile("query_embeddings.gob", os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0644)
+	target, err := os.OpenFile("query_embeddings.gob", os.O_CREATE|os.O_TRUNC|os.O_RDWR, 0o644)
 	if err != nil {
 		return errors.Wrap(err, "failed to open target file")
 	}

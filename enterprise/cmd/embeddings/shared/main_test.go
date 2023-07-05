@@ -335,5 +335,4 @@ func TestEmbeddingModelMismatch(t *testing.T) {
 			}
 		})
 	}
-
 }

@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.api;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.chat.ChatMessage;
 import java.util.regex.Matcher;
@@ -8,6 +9,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class ChatUpdaterCallbacks implements CompletionsCallbacks {
+  private static final Logger logger = Logger.getInstance(ChatUpdaterCallbacks.class);
   private final UpdatableChat chat;
   private final String prefix;
   private boolean gotFirstMessage = false;
@@ -19,7 +21,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onSubscribed() {
-    System.out.println("Subscribed to completions.");
+    logger.info("Subscribed to completions.");
   }
 
   @Override
@@ -28,7 +30,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
       return;
     }
     // print date/time and msg
-    // System.out.println(DateTimeFormatter.ofPattern("yyyy-MM-dd
+    // logger.info(DateTimeFormatter.ofPattern("yyyy-MM-dd
     // HH:mm:ss.SSS").format(LocalDateTime.now()) + " Data received by callback: " + data);
     if (!gotFirstMessage) {
       chat.addMessageToChat(ChatMessage.createAssistantMessage(reformatBotMessage(data, prefix)));
@@ -43,12 +45,12 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
     String message = error.getMessage();
     chat.respondToErrorFromServer(message != null ? message : "");
     chat.finishMessageProcessing();
-    System.err.println("Error: " + error);
+    logger.error("Error: " + error);
   }
 
   @Override
   public void onComplete() {
-    System.out.println("Streaming completed.");
+    logger.info("Streaming completed.");
     chat.finishMessageProcessing();
   }
 

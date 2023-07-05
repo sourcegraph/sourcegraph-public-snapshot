@@ -54,7 +54,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 			args.Limit = int(*d.args.First)
 		}
 		var err error
-		args.UserID, args.OrgID, err = getUserPermissions(ctx, d.orgStore)
+		args.UserIDs, args.OrgIDs, err = getUserPermissions(ctx, d.orgStore)
 		if err != nil {
 			d.err = errors.Wrap(err, "getUserPermissions")
 			return
@@ -66,7 +66,7 @@ func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Das
 				d.err = errors.Wrap(err, "unmarshalDashboardID")
 			}
 			if !id.isVirtualized() {
-				args.ID = []int{int(id.Arg)}
+				args.IDs = []int{int(id.Arg)}
 			}
 		}
 
@@ -264,8 +264,8 @@ func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbac
 	dashboard, err := r.dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{
 		Dashboard: types.Dashboard{Title: args.Input.Title, Save: true},
 		Grants:    dashboardGrants,
-		UserID:    userIds,
-		OrgID:     orgIds})
+		UserIDs:   userIds,
+		OrgIDs:    orgIds})
 	if err != nil {
 		return nil, err
 	}
@@ -300,11 +300,11 @@ func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbac
 	}
 
 	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{
-		ID:     int(dashboardID.Arg),
-		Title:  args.Input.Title,
-		Grants: dashboardGrants,
-		UserID: permissionsValidator.userIds,
-		OrgID:  permissionsValidator.orgIds})
+		ID:      int(dashboardID.Arg),
+		Title:   args.Input.Title,
+		Grants:  dashboardGrants,
+		UserIDs: permissionsValidator.userIds,
+		OrgIDs:  permissionsValidator.orgIds})
 	if err != nil {
 		return nil, err
 	}
@@ -451,8 +451,8 @@ func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlb
 		}
 	}
 
-	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: []int{int(dashboardID.Arg)},
-		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{IDs: []int{int(dashboardID.Arg)},
+		UserIDs: txValidator.userIds, OrgIDs: txValidator.orgIds})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
 	} else if len(dashboards) < 1 {
@@ -500,8 +500,8 @@ func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *gra
 	if err != nil {
 		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
 	}
-	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{ID: []int{int(dashboardID.Arg)},
-		UserID: txValidator.userIds, OrgID: txValidator.orgIds})
+	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{IDs: []int{int(dashboardID.Arg)},
+		UserIDs: txValidator.userIds, OrgIDs: txValidator.orgIds})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetDashboards")
 	} else if len(dashboards) < 1 {

@@ -12,7 +12,7 @@ import com.sourcegraph.cody.completions.CompletionDocumentContext;
 import java.net.URI;
 import java.nio.file.Paths;
 import java.util.Optional;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 /** Implementation of vscode.TextDocument backed by IntelliJ's Editor. */
 public class IntelliJTextDocument implements TextDocument {
@@ -33,6 +33,7 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
+  @NotNull
   public String fileName() {
     return file.getName();
   }
@@ -73,8 +74,7 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
-  @Nullable
-  public String getLanguageId() {
-    return Optional.ofNullable(this.language).map(Language::getID).orElse(null);
+  public @NotNull Optional<String> getLanguageId() {
+    return Optional.ofNullable(this.language).map(Language::getID);
   }
 }
