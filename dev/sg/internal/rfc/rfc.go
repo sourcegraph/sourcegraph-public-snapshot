@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
+	"google.golang.org/api/docs/v1"
 	"google.golang.org/api/drive/v3"
 	"google.golang.org/api/option"
 
@@ -38,12 +39,21 @@ var PrivateDrive = DriveSpec{
 	OrderBy:     "createdTime,name",
 }
 
+const RfcTemplateDoc = "1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4"
+
 type DriveSpec struct {
 	DisplayName string
 	DriveID     string
 	FolderID    string
 	OrderBy     string
 }
+
+type ScopePermissions int64
+
+const (
+	ScopePermissionsReadOnly  ScopePermissions = 1
+	ScopePermissionsReadWrite ScopePermissions = 2
+)
 
 const AuthEndpoint = "/oauth2/callback"
 
@@ -52,20 +62,30 @@ func (d *DriveSpec) Query(q string) string {
 }
 
 // Retrieve a token, saves the token, then returns the generated client.
-func getClient(ctx context.Context, config *oauth2.Config, out *std.Output) (*http.Client, error) {
+func getClientWeb(ctx context.Context, scope ScopePermissions, config *oauth2.Config,
+	out *std.Output) (*http.Client, error) {
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, err
 	}
 	tok := &oauth2.Token{}
-	if err := sec.Get("rfc", tok); err != nil {
+	var secretName string
+	switch scope {
+	case ScopePermissionsReadOnly:
+		secretName = "rfc"
+	case ScopePermissionsReadWrite:
+		secretName = "rfc.rw"
+	default:
+		return nil, errors.Errorf("Unknown permission scope:" + strconv.Itoa(int(scope)))
+	}
+	if err := sec.Get(secretName, tok); err != nil {
 		// ...if it doesn't exist, open browser and ask user to give us
 		// permissions
 		tok, err = getTokenFromWeb(ctx, handleAuthResponse, NewTokenHandler(config), out)
 		if err != nil {
 			return nil, err
 		}
-		err := sec.PutAndSave("rfc", tok)
+		err := sec.PutAndSave(secretName, tok)
 		if err != nil {
 			return nil, err
 		}
@@ -247,33 +267,72 @@ func getTokenFromWeb(ctx context.Context, f authResponseHandlerFactory, config t
 	return config.Exchange(ctx, authCode)
 }
 
-func queryRFCs(ctx context.Context, query string, driveSpec DriveSpec, pager func(r *drive.FileList) error, out *std.Output) error {
+func getClient(ctx context.Context, scope ScopePermissions, out *std.Output) (*http.Client, error) {
 	// If modifying these scopes, delete your previously saved token.json.
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
-		return err
+		return nil, err
 	}
+
+	var driveScope string
+	switch scope {
+	case ScopePermissionsReadOnly:
+		driveScope = drive.DriveMetadataReadonlyScope
+	case ScopePermissionsReadWrite:
+		driveScope = drive.DriveScope
+	default:
+		return nil, errors.Errorf("Unknown scope: %d", scope)
+	}
+
 	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
 		Project: "sourcegraph-local-dev",
 		// sg Google client credentials
 		Name: "SG_GOOGLE_CREDS",
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to get google client credentials")
+		return nil, errors.Wrap(err, "failed to get google client credentials")
 	}
 
-	config, err := google.ConfigFromJSON([]byte(clientCredentials), drive.DriveMetadataReadonlyScope)
+	config, err := google.ConfigFromJSON([]byte(clientCredentials), driveScope)
 	if err != nil {
-		return errors.Wrap(err, "Unable to parse client secret file to config")
+		return nil, errors.Wrap(err, "Unable to parse client secret file to config")
 	}
-	client, err := getClient(ctx, config, out)
+	client, err := getClientWeb(ctx, scope, config, out)
 	if err != nil {
-		return errors.Wrap(err, "Unable to build client")
+		return nil, errors.Wrap(err, "Unable to build client")
 	}
 
+	return client, nil
+}
+
+func getService(ctx context.Context, scope ScopePermissions, out *std.Output) (*drive.Service, error) {
+	client, err := getClient(ctx, scope, out)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to client Google client")
+	}
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return errors.Wrap(err, "Unable to retrieve Drive client")
+		return nil, errors.Wrap(err, "Unable to retrieve Drive client")
+	}
+	return srv, nil
+}
+
+func getDocsService(ctx context.Context, scope ScopePermissions, out *std.Output) (*docs.Service, error) {
+	client, err := getClient(ctx, scope, out)
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to client Google client")
+	}
+	srv, err := docs.NewService(ctx, option.WithHTTPClient(client))
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to retrieve Drive client")
+	}
+	return srv, nil
+}
+
+func queryRFCs(ctx context.Context, query string, driveSpec DriveSpec, pager func(r *drive.FileList) error, out *std.Output) error {
+	srv, err := getService(ctx, ScopePermissionsReadOnly, out)
+	if err != nil {
+		return err
 	}
 
 	if query == "" {
@@ -305,12 +364,16 @@ func Search(ctx context.Context, query string, driveSpec DriveSpec, out *std.Out
 	return queryRFCs(ctx, fmt.Sprintf("(name contains '%[1]s' or fullText contains '%[1]s')", query), driveSpec, rfcTitlesPrinter(out), out)
 }
 
+func openFile(f *drive.File, out *std.Output) {
+	if err := open.URL(fmt.Sprintf("https://docs.google.com/document/d/%s/edit", f.Id)); err != nil {
+		out.WriteFailuref("failed to open browser ", err)
+	}
+}
+
 func Open(ctx context.Context, number string, driveSpec DriveSpec, out *std.Output) error {
 	return queryRFCs(ctx, fmt.Sprintf("name contains 'RFC %s'", number), driveSpec, func(r *drive.FileList) error {
 		for _, f := range r.Files {
-			if err := open.URL(fmt.Sprintf("https://docs.google.com/document/d/%s/edit", f.Id)); err != nil {
-				out.WriteFailuref("failed to open browser ", err)
-			}
+			openFile(f, out)
 		}
 		return nil
 	}, out)
@@ -329,6 +392,8 @@ func Open(ctx context.Context, number string, driveSpec DriveSpec, out *std.Outp
 //	RFC 123 WIP: Foobar
 //	RFC 123 PRIVATE WIP: Foobar
 var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s([\w\s]+):\s(.*)$`)
+var rfcIdRegex = regexp.MustCompile(`RFC\s(\d+)`)
+var rfcDocRegex = regexp.MustCompile(`(RFC.*)(number)(.*:.*)(title)`)
 
 func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
 	return func(r *drive.FileList) error {

@@ -38,6 +38,12 @@ sg rfc open 420
 
 # Open a specific private RFC
 sg rfc --private open 420
+
+# Create a new public RFC
+sg rfc create "title"
+
+# Create a new private RFC
+sg rfc create --private "title"
 `,
 	Category: CategoryCompany,
 	Flags: []cli.Flag{
@@ -89,6 +95,21 @@ sg rfc --private open 420
 					return errors.New("no RFC given")
 				}
 				return rfc.Open(c.Context, c.Args().First(), driveSpec, std.Out)
+			},
+		},
+		{
+			Name:      "create",
+			ArgsUsage: "[title]",
+			Usage:     "Create Sourcegraph RFCs",
+			Action: func(c *cli.Context) error {
+				driveSpec := rfc.PublicDrive
+				if c.Bool("private") {
+					driveSpec = rfc.PrivateDrive
+				}
+				if c.Args().Len() == 0 {
+					return errors.New("no title given")
+				}
+				return rfc.Create(c.Context, strings.Join(c.Args().Slice(), " "), driveSpec, std.Out)
 			},
 		},
 	},
