@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/stretchr/testify/require"
 )
 

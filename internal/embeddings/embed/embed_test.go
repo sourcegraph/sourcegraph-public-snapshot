@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
