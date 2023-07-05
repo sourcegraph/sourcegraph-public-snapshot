@@ -39,7 +39,6 @@ go_library(
         "//enterprise/internal/scim",
         "//internal/codeintel",
         "//internal/codeintel/shared",
-        "//internal/cody",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",
