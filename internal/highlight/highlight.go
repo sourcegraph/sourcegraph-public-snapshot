@@ -24,7 +24,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/binary"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -32,13 +31,11 @@ import (
 )
 
 func LoadConfig() {
-	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
-	client = gosyntect.New(syntectServer)
+	client = gosyntect.GetSyntectClient()
 }
 
-var client *gosyntect.Client
-
 var (
+	client          *gosyntect.Client
 	highlightOpOnce sync.Once
 	highlightOp     *observation.Operation
 )
