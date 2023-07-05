@@ -172,7 +172,7 @@ func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, er
 		return nil, "", errors.Wrap(err, "getting embeddings client")
 	}
 
-	floatQuery, err := client.GetEmbeddingsWithRetries(ctx, []string{query}, queryEmbeddingRetries)
+	floatQuery, err := client.GetEmbeddings(ctx, []string{query})
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting query embedding")
 	}
