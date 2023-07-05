@@ -62,7 +62,7 @@ public class EmbeddingStatusView extends JPanel {
         .connect()
         .subscribe(
             FileEditorManagerListener.FILE_EDITOR_MANAGER,
-            new CurrentlyOpenedFileListener(project, this));
+            new CurrentlyOpenFileListener(project, this));
   }
 
   private void updateViewBasedOnStatus() {

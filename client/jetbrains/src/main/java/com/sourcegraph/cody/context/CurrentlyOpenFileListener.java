@@ -8,12 +8,12 @@ import com.sourcegraph.common.ProjectFileUtils;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 
-public class CurrentlyOpenedFileListener implements FileEditorManagerListener {
+public class CurrentlyOpenFileListener implements FileEditorManagerListener {
 
   private final @NotNull Project project;
   private final @NotNull EmbeddingStatusView embeddingStatusView;
 
-  public CurrentlyOpenedFileListener(
+  public CurrentlyOpenFileListener(
       @NotNull Project project, @NotNull EmbeddingStatusView embeddingStatusView) {
     this.project = project;
     this.embeddingStatusView = embeddingStatusView;
