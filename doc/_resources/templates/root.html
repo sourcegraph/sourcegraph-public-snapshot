@@ -62,7 +62,7 @@
                 }
                 window.showMarkprompt = showMarkprompt;
 
-                const showInstantSearch = localStorage.getItem('markprompt-instant-search') !== null
+                const showInstantSearch = localStorage.getItem('markprompt-instant-search') === 'true'
 
                 const oldSearchForm = document.getElementById("search-form");
                 const oldMarkpromptButton = document.getElementById("markprompt-button");
