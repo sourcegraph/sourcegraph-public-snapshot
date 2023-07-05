@@ -195,4 +195,47 @@ and a donut
         assert.deepStrictEqual(rowTopic, ['S, V F X'])
         assert.deepStrictEqual(cellTopic, ['variety', 'limburger'])
     })
+
+    it('can handle slow consumers', async () => {
+        const multiplexer = new BotResponseMultiplexer()
+
+        const defaultTopic: string[] = []
+        multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse(content) {
+                defaultTopic.push(content)
+                return Promise.resolve()
+            },
+            onTurnComplete() {
+                return Promise.resolve()
+            },
+        })
+
+        // This consumer is "slow" to digest messages and delays responses
+        // until after the LLM is finished.
+        const foodTopic: string[] = []
+        let finishedEating = () => {}
+        const foodPromise: Promise<void> = new Promise(resolve => {
+            finishedEating = resolve
+            multiplexer.sub('food', {
+                onResponse(content) {
+                    foodTopic.push(content)
+                    return foodPromise
+                },
+                onTurnComplete() {
+                    foodTopic.push(' ...BURP!')
+                    return Promise.resolve()
+                },
+            })
+        })
+
+        // eslint-disable-next-line no-void
+        void multiplexer.publish("Tonight's menu: <")
+        // eslint-disable-next-line no-void
+        void multiplexer.publish('food>hamburger\ndonuts</food>')
+        const turnDone = multiplexer.notifyTurnComplete()
+        finishedEating()
+        await turnDone
+        assert.deepStrictEqual(defaultTopic, ["Tonight's menu: "])
+        assert.deepStrictEqual(foodTopic, ['hamburger\ndonuts', ' ...BURP!'])
+    })
 })

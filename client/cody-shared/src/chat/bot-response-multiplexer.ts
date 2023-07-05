@@ -103,6 +103,7 @@ export class BotResponseMultiplexer {
 
     // Buffers responses until topics can be parsed
     private buffer_ = ''
+    private publishInProgress_ = Promise.resolve()
 
     /**
      * Subscribes to a topic in the bot response. Each topic can have only one subscriber at a time. New subscribers overwrite old ones.
@@ -122,6 +123,9 @@ export class BotResponseMultiplexer {
      * Notifies all subscribers that the bot response is complete.
      */
     public async notifyTurnComplete(): Promise<void> {
+        // Ensure any existing publishing is done.
+        await this.publishInProgress_
+
         // Flush buffered content, if any
         if (this.buffer_) {
             const content = this.buffer_
@@ -142,11 +146,15 @@ export class BotResponseMultiplexer {
      *
      * @param response the text of the next incremental response from the bot.
      */
-    public async publish(response: string): Promise<void> {
-        // This is basically a loose parser of an XML-like language which forwards
-        // incremental content to subscribers which handle specific tags. The parser
-        // is forgiving if tags are not closed in the right order.
+    public publish(response: string): Promise<void> {
+        // If an existing publication hasn't finished, convoy behind that one.
+        return (this.publishInProgress_ = this.publishInProgress_.then(() => this.publishStep(response)))
+    }
 
+    // This is basically a loose parser of an XML-like language which forwards
+    // incremental content to subscribers which handle specific tags. The parser
+    // is forgiving if tags are not closed in the right order.
+    private async publishStep(response: string): Promise<void> {
         this.buffer_ += response
         let last
         while (this.buffer_) {
@@ -207,8 +215,8 @@ export class BotResponseMultiplexer {
 
     // Publishes the content of `buffer_` up to `index` in the current topic. Discards the published content.
     private publishBufferUpTo(index: number): Promise<void> {
-        let content
-        ;[content, this.buffer_] = splitAt(this.buffer_, index)
+        const [content, remaining] = splitAt(this.buffer_, index)
+        this.buffer_ = remaining
         return this.publishInTopic(this.currentTopic, content)
     }
 
