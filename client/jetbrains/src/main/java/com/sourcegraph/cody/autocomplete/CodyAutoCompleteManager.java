@@ -89,7 +89,7 @@ public class CodyAutoCompleteManager {
             0.1);
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
     AutoCompleteDocumentContext autoCompleteDocumentContext =
-        textDocument.getCompletionContext(offset);
+        textDocument.getAutoCompleteContext(offset);
     if (autoCompleteDocumentContext.isCompletionTriggerValid()) {
       Callable<CompletableFuture<Void>> callable =
           () ->

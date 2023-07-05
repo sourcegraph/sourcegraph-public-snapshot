@@ -57,7 +57,7 @@ public class TestTextDocument implements TextDocument {
   }
 
   @Override
-  public AutoCompleteDocumentContext getCompletionContext(int offset) {
+  public AutoCompleteDocumentContext getAutoCompleteContext(int offset) {
     String sameLinePrefix =
         Iterables.getLast(this.text.substring(0, offset).lines().collect(Collectors.toList()));
     String sameLineSuffix =

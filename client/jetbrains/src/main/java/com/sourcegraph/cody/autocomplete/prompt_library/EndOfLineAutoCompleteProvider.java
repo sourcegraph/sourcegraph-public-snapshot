@@ -10,8 +10,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class EndOfLineCompletionProvider extends CompletionProvider {
-  public EndOfLineCompletionProvider(
+public class EndOfLineAutoCompleteProvider extends AutoCompleteProvider {
+  public EndOfLineAutoCompleteProvider(
       SourcegraphNodeCompletionsClient completionsClient,
       int promptChars,
       int responseTokens,

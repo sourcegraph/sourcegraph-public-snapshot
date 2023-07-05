@@ -11,8 +11,8 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public class MultilineCompletionProvider extends CompletionProvider {
-  public MultilineCompletionProvider(
+public class MultilineAutoCompleteProvider extends AutoCompleteProvider {
+  public MultilineAutoCompleteProvider(
       SourcegraphNodeCompletionsClient completionsClient,
       int promptChars,
       int responseTokens,

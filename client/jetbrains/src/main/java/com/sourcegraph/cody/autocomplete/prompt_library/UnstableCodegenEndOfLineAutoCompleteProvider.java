@@ -31,17 +31,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** This is a rough implementation loosely translating unstable-codegen.ts */
-public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvider {
+public class UnstableCodegenEndOfLineAutoCompleteProvider extends AutoCompleteProvider {
   private static final Logger logger =
-      Logger.getInstance(UnstableCodegenEndOfLineCompletionProvider.class);
-  @NotNull private final String completionsEndpoint;
+      Logger.getInstance(UnstableCodegenEndOfLineAutoCompleteProvider.class);
+  @NotNull private final String autocompleteEndpoint;
   @NotNull private final TextDocument textDocument;
 
-  public UnstableCodegenEndOfLineCompletionProvider(
+  public UnstableCodegenEndOfLineAutoCompleteProvider(
       @NotNull List<ReferenceSnippet> snippets,
       @NotNull String prefix,
       @NotNull String suffix,
-      @NotNull String completionsEndpoint,
+      @NotNull String autocompleteEndpoint,
       @NotNull TextDocument textDocument) {
     super(
         null, // unused
@@ -53,7 +53,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
         "", // unused
         -1 // unused
         );
-    this.completionsEndpoint = completionsEndpoint;
+    this.autocompleteEndpoint = autocompleteEndpoint;
     this.textDocument = textDocument;
   }
 
@@ -105,7 +105,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
             logger.error("Cody: Could not create params for unstable-codegen");
             return Collections.emptyList();
           }
-          HttpPost httpPost = new HttpPost(completionsEndpoint);
+          HttpPost httpPost = new HttpPost(autocompleteEndpoint);
           httpPost.setHeader("Content-Type", "application/json");
           httpPost.setHeader("Accept", "application/json");
           httpPost.setEntity(params);
@@ -119,7 +119,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
             int responseCode = response.getStatusLine().getStatusCode();
             if (responseCode != 200) {
               logger.error(
-                  "Cody: `unstable-codegen` completion provider returned non-200 response code: "
+                  "Cody: `unstable-codegen` autocomplete provider returned non-200 response code: "
                       + responseCode);
               return Collections.emptyList();
             }
@@ -144,7 +144,7 @@ public class UnstableCodegenEndOfLineCompletionProvider extends CompletionProvid
                   .collect(Collectors.toList());
             }
           } catch (ConnectException e) {
-            logger.error("Cody: Could not connect to the 'unstable-codegen' completion provider");
+            logger.error("Cody: Could not connect to the 'unstable-codegen' autocomplete provider");
             return Collections.emptyList();
           } catch (Exception e) {
             logger.error(e);

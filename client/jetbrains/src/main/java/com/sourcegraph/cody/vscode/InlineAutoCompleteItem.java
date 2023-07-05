@@ -40,7 +40,7 @@ public class InlineAutoCompleteItem {
 
   @Override
   public String toString() {
-    return "InlineCompletionItem{"
+    return "InlineAutoCompleteItem{"
         + "insertText='"
         + insertText
         + '\''

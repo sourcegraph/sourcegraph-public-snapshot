@@ -55,7 +55,7 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
   }
 
   @Override
-  public CompletableFuture<InlineCompletionList> provideInlineCompletions(
+  public CompletableFuture<InlineAutoCompleteList> provideInlineCompletions(
       TextDocument document,
       Position position,
       InlineCompletionContext context,
@@ -70,15 +70,15 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
     }
   }
 
-  private CompletableFuture<InlineCompletionList> emptyResult() {
-    return CompletableFuture.completedFuture(new InlineCompletionList(List.of()));
+  private CompletableFuture<InlineAutoCompleteList> emptyResult() {
+    return CompletableFuture.completedFuture(new InlineAutoCompleteList(List.of()));
   }
 
   private int tokToChar(int toks) {
     return toks * charsPerToken;
   }
 
-  private CompletableFuture<InlineCompletionList> provideInlineCompletionItemsInner(
+  private CompletableFuture<InlineAutoCompleteList> provideInlineCompletionItemsInner(
       TextDocument document,
       Position position,
       InlineCompletionContext context,
@@ -109,7 +109,7 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
 
     int remainingChars = tokToChar(promptTokens);
 
-    CompletionProvider completionNoSnippets =
+    AutoCompleteProvider completionNoSnippets =
         endOfLineProvider(
             completionsClient,
             remainingChars,
@@ -125,7 +125,7 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
     List<ReferenceSnippet> similarCode = Collections.emptyList();
 
     //    int waitMs;
-    List<CompletionProvider> completers = new ArrayList<>();
+    List<AutoCompleteProvider> completers = new ArrayList<>();
 
     if (context.selectedAutoCompleteSuggestionInfo != null
         || precedingLine.matches(".*[A-Za-z]$")) {
@@ -202,7 +202,7 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
                         .map(InlineAutoCompleteItem::fromCompletion)
                         .collect(Collectors.toList()));
 
-    return all.thenApply(InlineCompletionList::new);
+    return all.thenApply(InlineAutoCompleteList::new);
   }
 
   private DocContext getCurrentDocContext(
@@ -268,7 +268,7 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
     return new DocContext(prefix, suffix, prevLine, prevNonEmptyLine, nextNonEmptyLine);
   }
 
-  private CompletionProvider endOfLineProvider(
+  private AutoCompleteProvider endOfLineProvider(
       SourcegraphNodeCompletionsClient completionsClient,
       int promptChars,
       int responseTokens,
@@ -278,10 +278,10 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
       String injectPrefix,
       int defaultN,
       TextDocument document) {
-    Function<Optional<String>, CompletionProvider> fallbackDefaultProvider =
+    Function<Optional<String>, AutoCompleteProvider> fallbackDefaultProvider =
         (maybeErrorToLog) -> {
           maybeErrorToLog.ifPresent(logger::error);
-          return new EndOfLineCompletionProvider(
+          return new EndOfLineAutoCompleteProvider(
               completionsClient,
               promptChars,
               responseTokens,
@@ -298,8 +298,8 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
       return completionsServerEndpoint
           .map(
               endpoint ->
-                  (CompletionProvider)
-                      new UnstableCodegenEndOfLineCompletionProvider(
+                  (AutoCompleteProvider)
+                      new UnstableCodegenEndOfLineAutoCompleteProvider(
                           snippets, prefix, suffix, endpoint, document))
           .orElseGet(
               () ->

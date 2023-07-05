@@ -19,7 +19,7 @@ public interface TextDocument {
 
   Position positionAt(int offset);
 
-  AutoCompleteDocumentContext getCompletionContext(int offset);
+  AutoCompleteDocumentContext getAutoCompleteContext(int offset);
 
   @NotNull
   Optional<String> getLanguageId();

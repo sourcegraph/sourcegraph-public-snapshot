@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-public abstract class CompletionProvider {
+public abstract class AutoCompleteProvider {
   protected SourcegraphNodeCompletionsClient completionsClient;
   protected final ExecutorService executor =
       Executors.newFixedThreadPool(CodyAutoCompleteItemProvider.nThreads);
@@ -23,7 +23,7 @@ public abstract class CompletionProvider {
   protected String injectPrefix;
   protected int defaultN;
 
-  public CompletionProvider(
+  public AutoCompleteProvider(
       SourcegraphNodeCompletionsClient completionsClient,
       int promptChars,
       int responseTokens,

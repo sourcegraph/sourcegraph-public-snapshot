@@ -63,7 +63,7 @@ public class IntelliJTextDocument implements TextDocument {
   }
 
   @Override
-  public AutoCompleteDocumentContext getCompletionContext(int offset) {
+  public AutoCompleteDocumentContext getAutoCompleteContext(int offset) {
     Document document = this.editor.getDocument();
     int line = document.getLineNumber(offset);
     int lineEndOffset = document.getLineEndOffset(line);
