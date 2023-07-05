@@ -1,7 +1,4 @@
 <script lang="ts">
-    import { map } from 'rxjs/operators'
-
-    import { HighlightResponseFormat, type HighlightLineRange } from '$lib/graphql-operations'
     import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import type { MatchGroup, ContentMatch } from '$lib/shared'
 
@@ -10,21 +7,14 @@
     export let result: ContentMatch
     export let grouped: MatchGroup[]
 
-    function fetchHighlightedFileMatchLineRanges(startLine: number, endLine: number) {
-        return fetchFileRangeMatches({
-            result,
-            format: HighlightResponseFormat.HTML_HIGHLIGHT,
-            ranges: grouped.map(
-                (group): HighlightLineRange => ({
-                    startLine: group.startLine,
-                    endLine: group.endLine,
-                })
-            ),
-        }).pipe(
-            map(lines => {
-                return lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
-            })
-        )
+    $: ranges = grouped.map(group => ({
+        startLine: group.startLine,
+        endLine: group.endLine,
+    }))
+
+    async function fetchHighlightedFileMatchLineRanges(startLine: number, endLine: number) {
+        const highlightedGroups = await fetchFileRangeMatches({ result, ranges })
+        return highlightedGroups[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
     }
 </script>
 
@@ -34,8 +24,8 @@
             <CodeExcerpt
                 startLine={group.startLine}
                 endLine={group.endLine}
-                blobLines={group.blobLines}
-                fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
+                fetchHighlightedFileRangeLines={async (...args) =>
+                    group.blobLines ? group.blobLines : fetchHighlightedFileMatchLineRanges(...args)}
                 matches={group.matches}
             />
         </div>

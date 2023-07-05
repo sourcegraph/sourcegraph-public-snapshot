@@ -1,5 +1,4 @@
 import { browser } from '$app/environment'
-import { createPlatformContext } from '$lib/context'
 import type { CurrentAuthStateResult } from '$lib/graphql/shared'
 import { getDocumentNode } from '$lib/http-client'
 import { currentAuthStateQuery } from '$lib/loader/auth'
@@ -24,14 +23,9 @@ if (browser) {
 
 export const load: LayoutLoad = () => {
     const graphqlClient = getWebGraphQLClient()
-    const platformContext = graphqlClient.then(createPlatformContext)
 
     return {
         graphqlClient,
-        /**
-         * @deprecated Only used for React integration.
-         */
-        platformContext,
         user: graphqlClient
             .then(client => client.query<CurrentAuthStateResult>({ query: getDocumentNode(currentAuthStateQuery) }))
             .then(result => result.data.currentUser),

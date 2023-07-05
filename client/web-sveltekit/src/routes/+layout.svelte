@@ -34,7 +34,6 @@
 
     const user = writable(data.user ?? null)
     const settings = writable(isErrorLike(data.settings) ? null : data.settings.final)
-    const platformContext = writable(data.platformContext)
     const isLightTheme = createLightThemeStore()
     // It's OK to set the temporary storage during initialization time because
     // sign-in/out currently performs a full page refresh
@@ -45,7 +44,6 @@
     setContext<SourcegraphContext>(KEY, {
         user,
         settings,
-        platformContext,
         isLightTheme,
         temporarySettingsStorage,
     })
@@ -53,7 +51,6 @@
     // Update stores when data changes
     $: $user = data.user ?? null
     $: $settings = isErrorLike(data.settings) ? null : data.settings.final
-    $: $platformContext = data.platformContext
 
     $: if (browser) {
         document.documentElement.classList.toggle('theme-light', $isLightTheme)
