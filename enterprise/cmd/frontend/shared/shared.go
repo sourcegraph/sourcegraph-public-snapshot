@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/app"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth"
 	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
@@ -26,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute"
 	internalcontext "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/context"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings"
 	executor "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights"

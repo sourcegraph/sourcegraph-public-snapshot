@@ -10,7 +10,7 @@ go_library(
         "scheduler.go",
         "worker.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/enterprise/internal/embeddings/repo",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo",
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
         "//cmd/searcher/diff",

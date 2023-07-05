@@ -7,7 +7,7 @@ go_library(
         "repo_embedding_jobs.go",
         "resolvers.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/enterprise/internal/embeddings/resolvers",
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/resolvers",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/backend",
