@@ -4,8 +4,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "openai",
     srcs = ["client.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/openai",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/openai",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
         "//lib/errors",
