@@ -7,15 +7,33 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"go.opentelemetry.io/otel/attribute"
 
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var (
+	client *Client
+	once   sync.Once
+)
+
+func init() {
+	syntectServer := env.Get("SRC_SYNTECT_SERVER", "http://syntect-server:9238", "syntect_server HTTP(s) address")
+	once.Do(func() {
+		client = New(syntectServer)
+	})
+}
+
+func GetSyntectClient() *Client {
+	return client
+}
 
 const (
 	SyntaxEngineSyntect    = "syntect"
