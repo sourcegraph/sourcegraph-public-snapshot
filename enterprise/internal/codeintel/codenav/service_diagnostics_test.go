@@ -50,13 +50,15 @@ func TestDiagnostics(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        5,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        5,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedDiagnostics, totalCount, err := svc.GetDiagnostics(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
@@ -135,13 +137,15 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        5,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        5,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedDiagnostics, totalCount, err := svc.GetDiagnostics(ctx, mockRequest, mockRequestState)
 	if err != nil {

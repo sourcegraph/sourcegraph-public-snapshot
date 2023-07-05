@@ -51,13 +51,15 @@ func TestStencil(t *testing.T) {
 	mockLsifStore.GetStencilFunc.PushReturn(nil, nil)
 	mockLsifStore.GetStencilFunc.PushReturn(expectedRanges, nil)
 
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	ranges, err := svc.GetStencil(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
@@ -109,13 +111,15 @@ func TestStencilWithDuplicateRanges(t *testing.T) {
 	// Duplicate the ranges to test that we dedupe them
 	mockLsifStore.GetStencilFunc.PushReturn(append(expectedRanges, expectedRanges...), nil)
 
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	ranges, err := svc.GetStencil(context.Background(), mockRequest, mockRequestState)
 	if err != nil {

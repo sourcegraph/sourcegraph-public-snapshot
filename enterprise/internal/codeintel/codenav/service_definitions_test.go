@@ -50,12 +50,14 @@ func TestDefinitions(t *testing.T) {
 	}
 	mockLsifStore.GetDefinitionLocationsFunc.PushReturn(locations, len(locations), nil)
 
-	mockRequest := RequestArgs{
-		RepositoryID: 51,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 51,
+			Commit:       mockCommit,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
@@ -120,12 +122,14 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetDefinitionLocationsFunc.PushReturn(locations, len(locations), nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := RequestArgs{
-		RepositoryID: 51,
-		Commit:       "deadbeef",
-		Path:         "s1/main.go",
-		Line:         10,
-		Character:    20,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 51,
+			Commit:       "deadbeef",
+		},
+		Path:      "s1/main.go",
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, err := svc.GetDefinitions(ctx, mockRequest, mockRequestState)
 	if err != nil {
@@ -209,12 +213,14 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	remoteUploads := dumps
 	adjustedLocations, err := svc.GetDefinitions(context.Background(), mockRequest, mockRequestState)
@@ -343,12 +349,14 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLsifStore.GetBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       "deadbeef",
-		Path:         "s1/main.go",
-		Line:         10,
-		Character:    20,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       "deadbeef",
+		},
+		Path:      "s1/main.go",
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, err := svc.GetDefinitions(ctx, mockRequest, mockRequestState)
 	if err != nil {

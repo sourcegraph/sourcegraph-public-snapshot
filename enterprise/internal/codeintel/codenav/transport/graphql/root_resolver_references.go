@@ -28,7 +28,17 @@ func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolver
 		return nil, err
 	}
 
-	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Line: int(args.Line), Character: int(args.Character), Limit: limit, RawCursor: rawCursor}
+	requestArgs := codenav.PositionalRequestArgs{
+		RequestArgs: codenav.RequestArgs{
+			RepositoryID: r.requestState.RepositoryID,
+			Commit:       r.requestState.Commit,
+			Limit:        limit,
+			RawCursor:    rawCursor,
+		},
+		Path:      r.requestState.Path,
+		Line:      int(args.Line),
+		Character: int(args.Character),
+	}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()
 
