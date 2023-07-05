@@ -17,9 +17,9 @@ import (
 	"google.golang.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/ranges"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/trie"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/trie"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"

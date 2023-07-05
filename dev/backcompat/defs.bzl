@@ -32,13 +32,16 @@ PATCH_GO_TEST = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
-$_sed_binary -i "s/func {}/func _{}/g" {}/*.go
+
+if [ -a "{}" ]; then
+    $_sed_binary -i "s/func {}/func _{}/g" {}/*.go
+fi
 """
 
 # Assemble go test patches, based on the currently defined version.
 # See //dev/backcompat:test_release_version.bzl for the version definition.
 PATCH_GO_TEST_CMDS = [
-    PATCH_GO_TEST.format(test["prefix"], test["prefix"], test["path"], test["prefix"], test["reason"])
+    PATCH_GO_TEST.format(test["path"], test["prefix"], test["prefix"], test["path"])
     for test in FLAKES[MINIMUM_UPGRADEABLE_VERSION]
 ]
 
