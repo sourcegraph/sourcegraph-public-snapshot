@@ -793,7 +793,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				Embeddings: &schema.Embeddings{
 					Provider: "sourcegraph",
 					FileFilters: &schema.FileFilters{
-						MaxFileSize:              200,
+						MaxFileSizeBytes:         200,
 						IncludedFilePathPatterns: []string{"*.go"},
 						ExcludedFilePathPatterns: []string{"*.java"},
 					},
