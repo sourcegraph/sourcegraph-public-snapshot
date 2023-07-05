@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	stores "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
+	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )

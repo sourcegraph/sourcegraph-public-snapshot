@@ -15,8 +15,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -36,8 +36,10 @@ func featureFlagName(jobType IndexJobType) string {
 	return fmt.Sprintf("own-background-index-repo-%s", jobType.Name)
 }
 
-const tableName = "own_background_jobs"
-const viewName = "own_background_jobs_config_aware"
+const (
+	tableName = "own_background_jobs"
+	viewName  = "own_background_jobs_config_aware"
+)
 
 type Job struct {
 	ID              int
@@ -136,7 +138,6 @@ func makeWorkerStore(db database.DB, observationCtx *observation.Context) dbwork
 		RetryAfter:        time.Second * 30,
 		MaxNumRetries:     3,
 	})
-
 }
 
 func makeWorker(ctx context.Context, db database.DB, observationCtx *observation.Context) (*workerutil.Worker[*Job], *dbworker.Resetter[*Job], dbworkerstore.Store[*Job]) {

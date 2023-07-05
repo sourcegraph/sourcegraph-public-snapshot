@@ -121,7 +121,7 @@
 
 /enterprise/internal/cloud/**/* @unknwon @michaellzc
 
-/enterprise/internal/codeintel/**/* @efritz @Strum355
+/internal/codeintel/**/* @efritz @Strum355
 
 /enterprise/internal/database/external_services* @unknwon
 /enterprise/internal/database/perms_store* @unknwon

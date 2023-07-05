@@ -17,7 +17,6 @@ go_library(
         "quantize.go",
         "schedule.go",
         "similarity_search.go",
-        "tokens.go",
         "types.go",
         "uploadstore.go",
     ],
