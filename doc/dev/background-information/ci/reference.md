@@ -15,14 +15,12 @@ For a higher-level overview, please refer to the [continuous integration docs](h
 The default run type.
 
 - Pipeline for `Go` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `Client` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
@@ -31,90 +29,76 @@ The default run type.
   - **Pipeline setup**: Trigger async
 
 - Pipeline for `GraphQL` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 
 - Pipeline for `DatabaseSchema` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
 
 - Pipeline for `Docs` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `Dockerfiles` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `ExecutorVMImage` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
 
 - Pipeline for `CIScripts` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
 
 - Pipeline for `Terraform` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
 
 - Pipeline for `SVG` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `Shell` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
 
 - Pipeline for `DockerImages` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
 
 - Pipeline for `WolfiPackages` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
 
 - Pipeline for `WolfiBaseImages` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
 
 - Pipeline for `Protobuf` changes:
-  - **Metadata**: Pipeline metadata
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
@@ -131,7 +115,6 @@ sg ci build wolfi
 
 Base pipeline (more steps might be included based on branch changes):
 
-- **Metadata**: Pipeline metadata
 
 ### Release branch nightly healthcheck build
 
@@ -139,7 +122,6 @@ The run type for environment including `{"RELEASE_NIGHTLY":"true"}`.
 
 Base pipeline (more steps might be included based on branch changes):
 
-- **Metadata**: Pipeline metadata
 - Trigger 5.1 release branch healthcheck build
 - Trigger 5.0 release branch healthcheck build
 
@@ -194,7 +176,6 @@ The run type for tags starting with `v`.
 
 Base pipeline (more steps might be included based on branch changes):
 
-- **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
 - Ensure buildfiles are up to date
@@ -212,7 +193,6 @@ The run type for branches matching `^[0-9]+\.[0-9]+$` (regexp match).
 
 Base pipeline (more steps might be included based on branch changes):
 
-- **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build executor image, Build executor binary, Build docker registry mirror image
 - Ensure buildfiles are up to date
@@ -263,7 +243,6 @@ The run type for branches matching `main` (exact match).
 
 Base pipeline (more steps might be included based on branch changes):
 
-- **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build executor image, Build executor binary
 - Ensure buildfiles are up to date
@@ -286,7 +265,6 @@ sg ci build main-dry-run
 
 Base pipeline (more steps might be included based on branch changes):
 
-- **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images, Build executor image, Build executor binary
 - Ensure buildfiles are up to date
@@ -348,7 +326,6 @@ sg ci build backend-integration
 
 Base pipeline (more steps might be included based on branch changes):
 
-- **Metadata**: Pipeline metadata
 - **Pipeline setup**: Trigger async
 - **Image builds**: Build Docker images
 - Ensure buildfiles are up to date
