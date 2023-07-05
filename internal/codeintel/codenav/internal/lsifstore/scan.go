@@ -3,6 +3,7 @@ package lsifstore
 import (
 	"bytes"
 	"database/sql"
+	"fmt"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"google.golang.org/protobuf/proto"
@@ -135,4 +136,66 @@ func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (quali
 
 	record.Locations = locations
 	return record, nil
+}
+
+//
+//
+
+func (s *store) scanDeduplicatedQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_ []qualifiedMonikerLocations, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	var values []qualifiedMonikerLocations
+	for rows.Next() {
+		record, err := s.scanSingleMinimalQualifiedMonikerLocationsObject(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		if n := len(values) - 1; n >= 0 && values[n].DumpID == record.DumpID {
+			values[n].Locations = append(values[n].Locations, record.Locations...)
+		} else {
+			values = append(values, record)
+		}
+	}
+	for i := range values {
+		values[i].Locations = deduplicate(values[i].Locations, locationDataKey)
+	}
+
+	return values, nil
+}
+
+func (s *store) scanSingleMinimalQualifiedMonikerLocationsObject(rows *sql.Rows) (qualifiedMonikerLocations, error) {
+	var uri string
+	var scipPayload []byte
+	var record qualifiedMonikerLocations
+
+	if err := rows.Scan(&record.DumpID, &scipPayload, &uri); err != nil {
+		return qualifiedMonikerLocations{}, err
+	}
+
+	ranges, err := ranges.DecodeRanges(scipPayload)
+	if err != nil {
+		return qualifiedMonikerLocations{}, err
+	}
+
+	locations := make([]precise.LocationData, 0, len(ranges))
+	for _, r := range ranges {
+		locations = append(locations, precise.LocationData{
+			URI:            uri,
+			StartLine:      int(r.Start.Line),
+			StartCharacter: int(r.Start.Character),
+			EndLine:        int(r.End.Line),
+			EndCharacter:   int(r.End.Character),
+		})
+	}
+
+	record.Locations = locations
+	return record, nil
+}
+
+func locationDataKey(v precise.LocationData) string {
+	return fmt.Sprintf("%s:%d:%d:%d:%d", v.URI, v.StartLine, v.StartCharacter, v.EndLine, v.EndCharacter)
 }

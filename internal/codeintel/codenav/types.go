@@ -77,6 +77,81 @@ type AdjustedCodeIntelligenceRange struct {
 	HoverText       string
 }
 
+// Cursor is a struct that holds the state necessary to resume a locations query from a second or
+// subsequent request. This struct is used internally as a request-specific context object that is
+// mutated as the locations request is fulfilled. This struct is serialized to JSON then base64
+// encoded to make an opaque string that is handed to a future request to get the remainder of the
+// result set.
+type Cursor struct {
+	// the following fields...
+	// track the current phase and offset within phase
+
+	Phase                string `json:"p"`    // ""/"local", "remote", or "done"
+	LocalUploadOffset    int    `json:"l_uo"` // number of consumed visible uploads
+	LocalLocationOffset  int    `json:"l_lo"` // offset within locations of VisibleUploads[LocalUploadOffset:]
+	RemoteUploadOffset   int    `json:"r_uo"` // number of searched (to completion) uploads
+	RemoteLocationOffset int    `json:"r_lo"` // offset within locations of the current upload batch
+
+	// the following fields...
+	// track associated visible/definition uploads and current batch of referencing uploads
+
+	VisibleUploads []CursorVisibleUpload `json:"vus"` // root uploads covering a particular code location
+	DefinitionIDs  []int                 `json:"dus"` // identifiers of uploads defining relevant symbol names
+	UploadIDs      []int                 `json:"rus"` // current batch of uploads in which to search
+
+	// the following fields...
+	// are populated during the local phase, used in the remote phase
+
+	SymbolNames         []string       `json:"ss"` // symbol names extracted from visible uploads
+	SkipPathsByUploadID map[int]string `json:"pm"` // paths to skip for particular uploads in the remote phase
+}
+
+type CursorVisibleUpload struct {
+	DumpID                int             `json:"id"`
+	TargetPath            string          `json:"path"`
+	TargetPathWithoutRoot string          `json:"path_no_root"` // TODO - can store these differently?
+	TargetPosition        shared.Position `json:"pos"`          // TODO - inline
+}
+
+var exhaustedCursor = Cursor{Phase: "done"}
+
+func (c Cursor) BumpLocalLocationOffset(n, totalCount int) Cursor {
+	c.LocalLocationOffset += n
+	if c.LocalLocationOffset >= totalCount {
+		// We've consumed this upload completely. Skip it the next time we find
+		// ourselves in this loop, and ensure that we start with a zero offset on
+		// the next upload we process (if any).
+		c.LocalUploadOffset++
+		c.LocalLocationOffset = 0
+	}
+
+	return c
+}
+
+func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
+	c.RemoteUploadOffset += n
+	if c.RemoteUploadOffset >= totalCount {
+		// We've consumed all upload batches
+		c.RemoteUploadOffset = -1
+	}
+
+	return c
+}
+
+func (c Cursor) BumpRemoteLocationOffset(n, totalCount int) Cursor {
+	c.RemoteLocationOffset += n
+	if c.RemoteLocationOffset >= totalCount {
+		// We've consumed the locations for this set of uploads. Reset this slice value in the
+		// cursor so that the next call to this function will query the new set of uploads to
+		// search in while resolving the next page. We also ensure we start on a zero offset
+		// for the next page of results for a fresh set of uploads (if any).
+		c.UploadIDs = nil
+		c.RemoteLocationOffset = 0
+	}
+
+	return c
+}
+
 // referencesCursor stores (enough of) the state of a previous References request used to
 // calculate the offset into the result set to be returned by the current request.
 type ReferencesCursor struct {

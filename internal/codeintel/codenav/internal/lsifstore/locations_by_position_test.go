@@ -23,6 +23,139 @@ const (
 	testSCIPUploadID = 2408562
 )
 
+func TestExtractDefinitionLocationsFromPosition(t *testing.T) {
+	store := populateTestStore(t)
+
+	// `const lru = new LRU<string, V>(cacheOptions)`
+	//        ^^^
+	// -> `    if (lru.has(key)) {`
+	//             ^^^
+	// -> `        return lru.get(key)!`
+	//                    ^^^
+	// -> `    lru.set(key, value)`
+	//         ^^^
+
+	scipDefinitionLocations := []shared.Location{
+		{
+			DumpID: testSCIPUploadID,
+			Path:   "template/src/lsif/util.ts",
+			Range:  newRange(7, 10, 7, 13),
+		},
+	}
+
+	testCases := []struct {
+		key                 LocationKey
+		expectedLocations   []shared.Location
+		expectedSymbolNames []string
+	}{
+		{LocationKey{testSCIPUploadID, "template/src/lsif/util.ts", 7, 12}, scipDefinitionLocations, nil},
+		{LocationKey{testSCIPUploadID, "template/src/lsif/util.ts", 10, 13}, scipDefinitionLocations, nil},
+		{LocationKey{testSCIPUploadID, "template/src/lsif/util.ts", 12, 19}, scipDefinitionLocations, nil},
+		{LocationKey{testSCIPUploadID, "template/src/lsif/util.ts", 15, 10}, scipDefinitionLocations, nil},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
+			if locations, symbolNames, err := store.ExtractDefinitionLocationsFromPosition(context.Background(), testCase.key); err != nil {
+				t.Fatalf("unexpected error %s", err)
+			} else {
+				if diff := cmp.Diff(testCase.expectedLocations, locations); diff != "" {
+					t.Errorf("unexpected locations (-want +got):\n%s", diff)
+				}
+
+				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames); diff != "" {
+					t.Errorf("unexpected symbol names (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}
+
+func TestExtractReferenceLocationsFromPosition(t *testing.T) {
+	store := populateTestStore(t)
+
+	// `const lru = new LRU<string, V>(cacheOptions)`
+	//        ^^^
+	// -> `    if (lru.has(key)) {`
+	//             ^^^
+	// -> `        return lru.get(key)!`
+	//                    ^^^
+	// -> `    lru.set(key, value)`
+	//         ^^^
+
+	scipExpected := []shared.Location{
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(10, 12, 10, 15)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(12, 19, 12, 22)},
+		{DumpID: testSCIPUploadID, Path: "template/src/lsif/util.ts", Range: newRange(15, 8, 15, 11)},
+	}
+
+	testCases := []struct {
+		key                 LocationKey
+		expectedLocations   []shared.Location
+		expectedSymbolNames []string
+	}{
+		{LocationKey{testSCIPUploadID, "template/src/lsif/util.ts", 12, 21}, scipExpected, nil},
+	}
+
+	for i, testCase := range testCases {
+		t.Run(fmt.Sprintf("i=%d", i), func(t *testing.T) {
+			if locations, symbolNames, err := store.ExtractReferenceLocationsFromPosition(context.Background(), testCase.key); err != nil {
+				t.Fatalf("unexpected error %s", err)
+			} else {
+				if diff := cmp.Diff(testCase.expectedLocations, locations); diff != "" {
+					t.Errorf("unexpected locations (-want +got):\n%s", diff)
+				}
+
+				if diff := cmp.Diff(testCase.expectedSymbolNames, symbolNames); diff != "" {
+					t.Errorf("unexpected symbol names (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}
+
+func TestGetMinimalBulkMonikerLocations(t *testing.T) {
+	tableName := "references"
+	uploadIDs := []int{testSCIPUploadID}
+	skipPaths := map[int]string{}
+	monikers := []precise.MonikerData{
+		{
+			Scheme:     "gomod",
+			Identifier: "github.com/sourcegraph/lsif-go/protocol:DefinitionResult.Vertex",
+		},
+		{
+			Scheme:     "scip-typescript",
+			Identifier: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray().",
+		},
+	}
+
+	store := populateTestStore(t)
+
+	locations, totalCount, err := store.GetMinimalBulkMonikerLocations(context.Background(), tableName, uploadIDs, skipPaths, monikers, 100, 0)
+	if err != nil {
+		t.Fatalf("unexpected error querying bulk moniker locations: %s", err)
+	}
+	if expected := 9; totalCount != expected {
+		t.Fatalf("unexpected total count: want=%d have=%d\n", expected, totalCount)
+	}
+
+	expectedLocations := []shared.Location{
+		// SCIP results
+		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(10, 9, 10, 16)},
+		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(186, 43, 186, 50)},
+		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(296, 34, 296, 41)},
+		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(324, 38, 324, 45)},
+		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(384, 30, 384, 37)},
+		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(415, 8, 415, 15)},
+		{DumpID: testSCIPUploadID, Path: "template/src/providers.ts", Range: newRange(420, 27, 420, 34)},
+		{DumpID: testSCIPUploadID, Path: "template/src/search/providers.ts", Range: newRange(9, 9, 9, 16)},
+		{DumpID: testSCIPUploadID, Path: "template/src/search/providers.ts", Range: newRange(225, 20, 225, 27)},
+	}
+	if diff := cmp.Diff(expectedLocations, locations); diff != "" {
+		t.Errorf("unexpected locations (-want +got):\n%s", diff)
+	}
+}
+
 func TestDatabaseDefinitions(t *testing.T) {
 	store := populateTestStore(t)
 
