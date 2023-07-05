@@ -15,8 +15,6 @@ import (
 // golang.org/x/net/trace.Trace, applying its various API functions to both
 // underlying trace types. Use New to construct one.
 type Trace struct {
-	name string
-
 	// oteltraceSpan is always set.
 	oteltraceSpan oteltrace.Span
 }

@@ -26,13 +26,6 @@ func (t Tracer) New(ctx context.Context, name string, attrs ...attribute.KeyValu
 		Tracer("sourcegraph/internal/trace").
 		Start(ctx, name, oteltrace.WithAttributes(attrs...))
 
-	// Set up the split trace.
-	trace := &Trace{
-		name:          name,
-		oteltraceSpan: otelSpan,
-	}
-	if parent := TraceFromContext(ctx); parent != nil {
-		trace.name = parent.name + " > " + name
-	}
+	trace := &Trace{oteltraceSpan: otelSpan}
 	return trace, contextWithTrace(ctx, trace)
 }
