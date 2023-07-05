@@ -407,7 +407,7 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
 	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		repo.Attr(),
-		attribute.String("commit", string(commit)),
+		commit.Attr(),
 		attribute.String("path", path),
 		attribute.Bool("recurse", recurse),
 	}})
@@ -497,7 +497,7 @@ func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 // no attempt to follow the link.
 func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
 	ctx, _, endObservation := c.operations.lstat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("commit", string(commit)),
+		commit.Attr(),
 		attribute.String("path", path),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1374,7 +1374,7 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
 	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		repo.Attr(),
-		attribute.String("commit", string(commit)),
+		commit.Attr(),
 		attribute.String("name", name),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1399,7 +1399,7 @@ func (c *clientImplementor) NewFileReader(ctx context.Context, checker authz.Sub
 	// TODO: this does not capture the lifetime of the request since we return a reader
 	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		repo.Attr(),
-		attribute.String("commit", string(commit)),
+		commit.Attr(),
 		attribute.String("name", name),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1536,7 +1536,7 @@ func (br *blobReader) convertError(err error) error {
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
 	ctx, _, endObservation := c.operations.stat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("commit", string(commit)),
+		commit.Attr(),
 		attribute.String("path", path),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1641,7 +1641,7 @@ func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepo
 func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		repo.Attr(),
-		attribute.String("commit", string(id)),
+		id.Attr(),
 		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 	}})
 	defer endObservation(1, observation.Args{})

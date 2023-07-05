@@ -101,7 +101,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	if err != nil {
 		return nil, err
 	}
-	tr.SetAttributes(attribute.String("commit", string(commitID)))
+	tr.SetAttributes(commitID.Attr())
 
 	symbols, err := backend.Symbols.ListTags(ctx, search.SymbolsParameters{
 		Repo:            repoRevs.Repo.Name,

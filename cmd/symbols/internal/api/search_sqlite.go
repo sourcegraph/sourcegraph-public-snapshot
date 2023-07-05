@@ -29,7 +29,7 @@ func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWri
 	return func(ctx context.Context, args search.SymbolsParameters) (results []result.Symbol, err error) {
 		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 			args.Repo.Attr(),
-			attribute.String("commitID", string(args.CommitID)),
+			args.CommitID.Attr(),
 			attribute.String("query", args.Query),
 			attribute.Bool("isRegExp", args.IsRegExp),
 			attribute.Bool("isCaseSensitive", args.IsCaseSensitive),

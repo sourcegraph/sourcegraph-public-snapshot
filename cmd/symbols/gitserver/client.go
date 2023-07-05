@@ -57,7 +57,7 @@ func NewClient(observationCtx *observation.Context) GitserverClient {
 func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (_ io.ReadCloser, err error) {
 	ctx, _, endObservation := c.operations.fetchTar.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		repo.Attr(),
-		attribute.String("commit", string(commit)),
+		commit.Attr(),
 		attribute.Int("paths", len(paths)),
 	}})
 	defer endObservation(1, observation.Args{})

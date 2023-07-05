@@ -59,7 +59,7 @@ func NewParser(
 func (p *parser) Parse(ctx context.Context, args search.SymbolsParameters, paths []string) (_ <-chan SymbolOrError, err error) {
 	ctx, _, endObservation := p.operations.parse.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		args.Repo.Attr(),
-		attribute.String("commitID", string(args.CommitID)),
+		args.CommitID.Attr(),
 		attribute.Int("paths", len(paths)),
 		attribute.StringSlice("paths", paths),
 	}})

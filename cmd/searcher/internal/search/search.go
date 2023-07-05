@@ -144,8 +144,8 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	var tr *trace.Trace
 	tr, ctx = trace.New(ctx, "search",
 		p.Repo.Attr(),
+		p.Commit.Attr(),
 		attribute.String("url", p.URL),
-		attribute.String("commit", string(p.Commit)),
 		attribute.String("pattern", p.Pattern),
 		attribute.Bool("isRegExp", p.IsRegExp),
 		attribute.StringSlice("languages", p.Languages),

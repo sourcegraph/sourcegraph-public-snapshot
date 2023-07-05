@@ -85,7 +85,7 @@ func (rc *RepoCommit) FromProto(p *proto.RepoCommit) {
 func (rc RepoCommit) Attrs() []attribute.KeyValue {
 	return []attribute.KeyValue{
 		rc.Repo.Attr(),
-		attribute.String("commitID", string(rc.CommitID)),
+		rc.CommitID.Attr(),
 	}
 }
 
