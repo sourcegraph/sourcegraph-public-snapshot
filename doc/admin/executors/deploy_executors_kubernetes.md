@@ -14,6 +14,9 @@
 
 ## Requirements
 
+### Feature flag
+To instruct Sourcegraph to use Kubernetes-deployed executors, you will need to enable the `native-ssbc-execution` [feature flag](./native_execution.md#enable).
+
 ### RBAC Roles
 
 Executors interact with the Kubernetes API to handle jobs. The following are the RBAC Roles needed to run Executors on

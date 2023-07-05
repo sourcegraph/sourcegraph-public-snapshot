@@ -94,13 +94,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
 
-	if op, err := exposeBuildMetadata(c); err == nil {
-		if !c.RunType.Is(runtype.BazelDo) {
-			// Skip meta for bazel-do
-			ops.Merge(operations.NewNamedSet("Metadata", op))
-		}
-	}
-
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
@@ -110,9 +103,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		var bzlCmd string
 		scanner := bufio.NewScanner(strings.NewReader(env["CI_COMMIT_MESSAGE"]))
 		for scanner.Scan() {
-			line := scanner.Text()
+			line := strings.TrimSpace(scanner.Text())
 			if strings.HasPrefix(line, "!bazel") {
-				bzlCmd = strings.TrimPrefix(line, "!bazel")
+				bzlCmd = strings.TrimSpace(strings.TrimPrefix(line, "!bazel"))
 
 				// sanitize the input
 				if err := verifyBazelCommand(bzlCmd); err != nil {
@@ -126,6 +119,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 						bk.Cmd(bazelCmd(bzlCmd)),
 					)
 				})
+				break
 			}
 		}
 

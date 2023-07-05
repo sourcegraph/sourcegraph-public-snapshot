@@ -16,9 +16,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel/lsif",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/codeintel/shared/ranges",
-        "//enterprise/internal/codeintel/shared/trie",
-        "//enterprise/internal/codeintel/uploads/shared",
+        "//internal/codeintel/shared/ranges",
+        "//internal/codeintel/shared/trie",
+        "//internal/codeintel/uploads/shared",
         "//internal/database/basestore",
         "//internal/database/batch",
         "//internal/database/dbutil",
@@ -49,7 +49,7 @@ go_test(
     embed = [":lsif"],
     tags = ["requires-network"],
     deps = [
-        "//enterprise/internal/codeintel/shared",
+        "//internal/codeintel/shared",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",

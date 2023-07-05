@@ -10,7 +10,7 @@ go_library(
         "//cmd/frontend/envvar",
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/dotcom/productsubscription",
-        "//enterprise/internal/codeintel",
+        "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/observation",

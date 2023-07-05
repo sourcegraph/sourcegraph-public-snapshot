@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.recipes;
 
-public class FindCodeSmellsAction extends BaseRecipeAction {
+public class FindCodeSmellsAction extends SimpleRecipeAction {
 
   @Override
   protected PromptProvider getPromptProvider() {

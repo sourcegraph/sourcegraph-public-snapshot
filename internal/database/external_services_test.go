@@ -142,8 +142,8 @@ func TestExternalServicesStore_ValidateConfig(t *testing.T) {
 			wantErr: "<nil>",
 		},
 		{
-			name:    "1 error - Bitbucket.org",
-			kind:    extsvc.KindBitbucketCloud,
+			name: "1 error - Bitbucket.org",
+			kind: extsvc.KindBitbucketCloud,
 			// Invalid UUID, using + instead of -
 			config:  `{"url": "https://bitbucket.org", "username": "ceo", "appPassword": "abc", "exclude": [{"uuid":"{fceb73c7+cef6-4abe-956d-e471281126bd}"}]}`,
 			wantErr: `exclude.0.uuid: Does not match pattern '^\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}$'`,

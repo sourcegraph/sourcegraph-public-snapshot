@@ -137,6 +137,18 @@
         </action>
 
         <action
+            id="cody.downloadAndInstallCodyAction"
+            class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
+            text="Download Cody App"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.runCodyAppAction"
+            class="com.sourcegraph.cody.recipes.RunCodyAppAction"
+            text="Run Cody App"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
             id="cody.recipe.explainCodeHighLevel"
             class="com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction"
             text="Explain Code at a High Level"
@@ -185,6 +197,8 @@
 
         <group id="CodyEditorActions" icon="/icons/codyLogoSm.svg" popup="true" text="Cody"
                searchable="false">
+            <reference ref="cody.downloadAndInstallCodyAction"/>
+            <reference ref="cody.runCodyAppAction"/>
             <reference ref="cody.recipe.explainCodeDetailed"/>
             <reference ref="cody.recipe.explainCodeHighLevel"/>
             <reference ref="cody.recipe.findCodeSmells"/>

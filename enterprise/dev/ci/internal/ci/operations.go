@@ -1,7 +1,6 @@
 package ci
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -1025,34 +1024,4 @@ func publishExecutorDockerMirror(c Config) operations.Operation {
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish docker registry mirror image", stepOpts...)
 	}
-}
-
-func exposeBuildMetadata(c Config) (operations.Operation, error) {
-	overview := struct {
-		RunType      string       `json:"RunType"`
-		Version      string       `json:"Version"`
-		Diff         string       `json:"Diff"`
-		MessageFlags MessageFlags `json:"MessageFlags"`
-	}{
-		RunType:      c.RunType.String(),
-		Diff:         c.Diff.String(),
-		MessageFlags: c.MessageFlags,
-	}
-	data, err := json.Marshal(&overview)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(p *bk.Pipeline) {
-		p.AddStep(":memo::pipeline: Pipeline metadata",
-			bk.SoftFail(),
-			bk.Env("BUILD_METADATA", string(data)),
-			bk.AnnotatedCmd("dev/ci/gen-metadata-annotation.sh", bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{
-					Type:         bk.AnnotationTypeInfo,
-					IncludeNames: false,
-				},
-			}),
-		)
-	}, nil
 }
