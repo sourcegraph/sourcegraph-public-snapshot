@@ -204,7 +204,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
 
 ### Release branch
 
@@ -222,7 +222,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Browser extension release build
 
@@ -273,7 +273,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Publish executor image, Publish executor binary, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
 
 ### Main dry run
 
@@ -296,7 +296,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Patch image
 
@@ -358,4 +358,4 @@ Base pipeline (more steps might be included based on branch changes):
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
