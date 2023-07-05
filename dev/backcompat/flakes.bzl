@@ -19,7 +19,7 @@ FLAKES = {
             "reason": "Shifting constraints on table; ranking is experimental",
         },
         {
-            "path": "internal/codeintel/ranking/internal/store",
+            "path": "enterprise/internal/codeintel/ranking/internal/store",
             "prefix": "Test",
             "reason": "Shifting constraints on table; ranking is experimental",
         },
