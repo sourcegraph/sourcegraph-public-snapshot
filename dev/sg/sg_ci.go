@@ -313,7 +313,7 @@ sg ci build --help
 					return err
 				}
 
-                                 // give buildkite some time to kick off the build so that we can find it later on
+				// give buildkite some time to kick off the build so that we can find it later on
 				time.Sleep(10 * time.Second)
 				client, err := bk.NewClient(cmd.Context, std.Out)
 				if err != nil {
@@ -332,43 +332,12 @@ sg ci build --help
 
 				if cmd.Bool("wait") {
 					pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-					err = statusTicker(cmd.Context, func() (bool, error) {
-						// get the next update for this specific build
-						build, err = client.GetBuildByNumber(cmd.Context, "sourcegraph", strconv.Itoa(*build.Number))
-						if err != nil {
-							return false, errors.Newf("failed to get most recent build for branch %q: %w", *build.Branch, err)
-						}
+					err = statusTicker(cmd.Context, fetchJobs(cmd.Context, client, *build.Number, pending))
+					if err != nil {
+						return err
+					}
 
-						// Check if all jobs are finished
-						finishedJobs := 0
-						for _, job := range build.Jobs {
-							if job.State != nil {
-								if *job.State == "failed" && !job.SoftFailed {
-									// If a job has failed, return immediately, we don't have to wait until all
-									// steps are completed.
-									return true, nil
-								}
-								if *job.State == "passed" || job.SoftFailed {
-									finishedJobs++
-								}
-							}
-						}
-
-						// once started, poll for status
-						if build.StartedAt != nil {
-							pending.Updatef("Waiting for %d out of %d jobs... (elapsed: %v)",
-								len(build.Jobs)-finishedJobs, len(build.Jobs), time.Since(build.StartedAt.Time))
-						}
-
-						if build.FinishedAt == nil {
-							// No failure yet, we can keep waiting.
-							return false, nil
-						}
-						return true, nil
-					})
-
-					std.Out.WriteLine(output.Styledf(output.StylePending, "Fetching logs for %s ...",
-						*build.WebURL))
+					std.Out.WriteLine(output.Styledf(output.StylePending, "Fetching logs for %s ...", *build.WebURL))
 					options := bk.ExportLogsOpts{
 						JobStepKey: "bazel-do",
 					}
@@ -440,40 +409,7 @@ sg ci build --help
 					}
 
 					pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-					err := statusTicker(cmd.Context, func() (bool, error) {
-						// get the next update for this specific build
-						build, err = client.GetBuildByNumber(cmd.Context, target.pipeline, strconv.Itoa(*build.Number))
-						if err != nil {
-							return false, errors.Newf("failed to get most recent build for branch %q: %w", *build.Branch, err)
-						}
-
-						// Check if all jobs are finished
-						finishedJobs := 0
-						for _, job := range build.Jobs {
-							if job.State != nil {
-								if *job.State == "failed" && !job.SoftFailed {
-									// If a job has failed, return immediately, we don't have to wait until all
-									// steps are completed.
-									return true, nil
-								}
-								if *job.State == "passed" || job.SoftFailed {
-									finishedJobs++
-								}
-							}
-						}
-
-						// once started, poll for status
-						if build.StartedAt != nil {
-							pending.Updatef("Waiting for %d out of %d jobs... (elapsed: %v)",
-								len(build.Jobs)-finishedJobs, len(build.Jobs), time.Since(build.StartedAt.Time))
-						}
-
-						if build.FinishedAt == nil {
-							// No failure yet, we can keep waiting.
-							return false, nil
-						}
-						return true, nil
-					})
+					err := statusTicker(cmd.Context, fetchJobs(cmd.Context, client, *build.Number, pending))
 					pending.Destroy()
 					if err != nil {
 						return err
@@ -1071,5 +1007,41 @@ func statusTicker(ctx context.Context, f func() (bool, error)) error {
 		case <-ctx.Done():
 			return ctx.Err()
 		}
+	}
+}
+
+func fetchJobs(ctx context.Context, client *bk.Client, buildNumber int, pending output.Pending) func() (bool, error) {
+	return func() (bool, error) {
+		build, err := client.GetBuildByNumber(ctx, "sourcegraph", strconv.Itoa(buildNumber))
+		if err != nil {
+			return false, errors.Newf("failed to get most recent build for branch %q: %w", *build.Branch, err)
+		}
+
+		// Check if all jobs are finished
+		finishedJobs := 0
+		for _, job := range build.Jobs {
+			if job.State != nil {
+				if *job.State == "failed" && !job.SoftFailed {
+					// If a job has failed, return immediately, we don't have to wait until all
+					// steps are completed.
+					return true, nil
+				}
+				if *job.State == "passed" || job.SoftFailed {
+					finishedJobs++
+				}
+			}
+		}
+
+		// once started, poll for status
+		if build.StartedAt != nil {
+			pending.Updatef("Waiting for %d out of %d jobs... (elapsed: %v)",
+				len(build.Jobs)-finishedJobs, len(build.Jobs), time.Since(build.StartedAt.Time))
+		}
+
+		if build.FinishedAt == nil {
+			// No failure yet, we can keep waiting.
+			return false, nil
+		}
+		return true, nil
 	}
 }
