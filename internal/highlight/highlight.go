@@ -35,7 +35,6 @@ func LoadConfig() {
 }
 
 var (
-	clientOnce      sync.Once
 	client          *gosyntect.Client
 	highlightOpOnce sync.Once
 	highlightOp     *observation.Operation
