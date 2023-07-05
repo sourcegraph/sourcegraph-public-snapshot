@@ -129,11 +129,11 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store
   interfaces:
     - GitHubAppsStore
-- filename: enterprise/internal/embeddings/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings
+- filename: internal/embeddings/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/embeddings
   interfaces:
     - Client
-- filename: enterprise/internal/embeddings/background/repo/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo
+- filename: internal/embeddings/background/repo/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo
   interfaces:
     - RepoEmbeddingJobsStore
