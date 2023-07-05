@@ -791,6 +791,8 @@ type ExternalServiceUpdate struct {
 	Config         *string
 	CloudDefault   *bool
 	TokenExpiresAt *time.Time
+	LastSyncAt     *time.Time
+	NextSyncAt     *time.Time
 }
 
 func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProviders, id int64, update *ExternalServiceUpdate) (err error) {
@@ -870,7 +872,7 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 		unrestricted := !envvar.SourcegraphDotComMode() && !gjson.GetBytes(normalized, "authorization").Exists()
 		updates = append(updates,
 			sqlf.Sprintf(
-				"config = %s, encryption_key_id = %s, next_sync_at = NOW(), unrestricted = %s, has_webhooks = %s",
+				"config = %s, encryption_key_id = %s, unrestricted = %s, has_webhooks = %s",
 				encryptedConfig, keyID, unrestricted, hasWebhooks,
 			))
 	}
@@ -881,6 +883,17 @@ func (e *externalServiceStore) Update(ctx context.Context, ps []schema.AuthProvi
 
 	if update.TokenExpiresAt != nil {
 		updates = append(updates, sqlf.Sprintf("token_expires_at = %s", update.TokenExpiresAt))
+	}
+
+	if update.LastSyncAt != nil {
+		updates = append(updates, sqlf.Sprintf("last_sync_at = %s", dbutil.NullTimeColumn(*update.LastSyncAt)))
+	}
+
+	if update.NextSyncAt != nil {
+		updates = append(updates, sqlf.Sprintf("next_sync_at = %s", dbutil.NullTimeColumn(*update.NextSyncAt)))
+	} else if update.Config != nil {
+		// If the config changed, trigger a new sync immediately.
+		updates = append(updates, sqlf.Sprintf("next_sync_at = NOW()"))
 	}
 
 	if len(updates) == 0 {

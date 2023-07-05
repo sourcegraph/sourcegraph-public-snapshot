@@ -528,7 +528,13 @@ func (s *Syncer) SyncExternalService(
 		svc.NextSyncAt = now.Add(interval)
 		svc.LastSyncAt = now
 
-		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+		// We call Update here instead of Upsert, because upsert stores all fields of the external
+		// service, and syncs take a while so changes to the external service made while this sync
+		// was running would be overwritten again.
+		if err := s.Store.ExternalServiceStore().Update(ctx, nil, svc.ID, &database.ExternalServiceUpdate{
+			LastSyncAt: &svc.LastSyncAt,
+			NextSyncAt: &svc.NextSyncAt,
+		}); err != nil {
 			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
