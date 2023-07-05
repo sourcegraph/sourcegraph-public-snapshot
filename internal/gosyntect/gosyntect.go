@@ -176,7 +176,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 	// Normalize filetype
 	q.Filetype = languages.NormalizeLanguage(q.Filetype)
 
-	tr, ctx := trace.New(ctx, "gosyntect", "Highlight",
+	tr, ctx := trace.New(ctx, "gosyntect.Highlight",
 		attribute.String("filepath", q.Filepath),
 		attribute.String("theme", q.Theme),
 		attribute.Bool("css", q.CSS))
