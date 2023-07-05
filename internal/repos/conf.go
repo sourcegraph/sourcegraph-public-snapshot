@@ -13,8 +13,6 @@ import (
 //
 // - 15 seconds for app deployments (to speed up adding repos during setup)
 // - 1 minute otherwise
-//
-// The returned duration is in minutes.
 func ConfRepoListUpdateInterval() time.Duration {
 	v := conf.Get().RepoListUpdateInterval
 	if v == 0 { //  default to 1 minute
