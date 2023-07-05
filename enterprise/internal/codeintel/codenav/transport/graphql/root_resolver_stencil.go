@@ -10,7 +10,13 @@ import (
 )
 
 func (r *gitBlobLSIFDataResolver) Stencil(ctx context.Context) (_ []resolverstubs.RangeResolver, err error) {
-	args := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
+	args := codenav.PositionalRequestArgs{
+		RequestArgs: codenav.RequestArgs{
+			RepositoryID: r.requestState.RepositoryID,
+			Commit:       r.requestState.Commit,
+		},
+		Path: r.requestState.Path,
+	}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.stencil, time.Second, getObservationArgs(args))
 	defer endObservation()
 

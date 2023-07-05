@@ -46,13 +46,15 @@ func TestHover(t *testing.T) {
 	mockLsifStore.GetHoverFunc.PushReturn("", shared.Range{}, false, nil)
 	mockLsifStore.GetHoverFunc.PushReturn("doctext", expectedRange, true, nil)
 
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	text, rn, exists, err := svc.GetHover(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
@@ -143,13 +145,15 @@ func TestHoverRemote(t *testing.T) {
 		return
 	})
 
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	text, rn, exists, err := svc.GetHover(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
