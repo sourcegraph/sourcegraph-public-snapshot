@@ -12,13 +12,14 @@ import {
     isLocalApp,
     isLoggedIn as isAuthed,
     unauthenticatedStatus,
+    ExtensionMessage,
 } from '../chat/protocol'
 import { newAuthStatus } from '../chat/utils'
-import { updateConfiguration } from '../configuration'
 import { logEvent } from '../event-logger'
 import { debug } from '../log'
 
-import { AuthMenu, LoginStepInputBox, TokenInputBox } from './CodyMenus'
+import { AuthMenu, LoginStepInputBox, TokenInputBox } from './AuthMenus'
+import { LocalAppDetector } from './LocalAppDetector'
 import { LocalStorage } from './LocalStorageProvider'
 import { SecretStorage } from './SecretStorageProvider'
 
@@ -27,31 +28,34 @@ export class AuthProvider {
 
     private appScheme = vscode.env.uriScheme
     private client: SourcegraphGraphQLAPIClient | null = null
+    public appDetector: LocalAppDetector
 
     private authStatus: AuthStatus = defaultAuthStatus
+    public webview?: Omit<vscode.Webview, 'postMessage'> & {
+        postMessage(message: ExtensionMessage): Thenable<boolean>
+    }
 
     constructor(
         private config: Pick<ConfigurationWithAccessToken, 'serverEndpoint' | 'accessToken' | 'customHeaders'>,
         private secretStorage: SecretStorage,
         private localStorage: LocalStorage
     ) {
+        this.authStatus.endpoint = 'init'
         this.loadEndpointHistory()
+        this.appDetector = new LocalAppDetector(secretStorage, { onChange: type => this.syncLocalAppState(type) })
     }
 
-    // Sign into the last endpoint the user was signed into if any
+    // Sign into the last endpoint the user was signed into
+    // if none, try signing in with App URL
     public async init(): Promise<void> {
-        const lastEndpoint = this.localStorage?.getEndpoint()
-        this.authStatus.endpoint = lastEndpoint
-        if (!lastEndpoint) {
-            return
-        }
+        await this.appDetector.init()
+        const lastEndpoint = this.localStorage?.getEndpoint() || this.config.serverEndpoint
+        const token = (await this.secretStorage.get(lastEndpoint || '')) || this.config.accessToken
         debug('AuthProvider:init:lastEndpoint', lastEndpoint)
-        const token = await this.secretStorage.get(lastEndpoint)
-        if (!token) {
+        const authState = await this.auth(lastEndpoint, token || null)
+        if (authState?.isLoggedIn) {
             return
         }
-        await this.auth(lastEndpoint, token)
-        debug('AuthProvider:init:tokenFound', lastEndpoint)
     }
 
     // Display quickpick to select endpoint to sign in to
@@ -95,41 +99,41 @@ export class AuthProvider {
             default: {
                 // Auto log user if token for the selected instance was found in secret
                 const selectedEndpoint = item.uri
-                if (isLocalApp(selectedEndpoint)) {
-                    await this.appAuth(selectedEndpoint)
-                    return
-                }
-                const token = await this.secretStorage.get(selectedEndpoint)
-                const authState = await this.auth(selectedEndpoint, token || null)
-                if (!authState) {
-                    return
-                }
-                let isLoggedIn = authState.isLoggedIn
-                if (!authState.isLoggedIn) {
+                const tokenKey = isLocalApp(selectedEndpoint) ? 'SOURCEGRAPH_CODY_APP' : selectedEndpoint
+                const token = await this.secretStorage.get(tokenKey)
+                const authStatus = await this.auth(selectedEndpoint, token || null)
+                this.showIsLoggedIn(authStatus?.authStatus || null)
+                if (!authStatus?.isLoggedIn) {
                     const input = await TokenInputBox(item.uri)
-                    isLoggedIn = (await this.auth(selectedEndpoint, input?.token || null))?.isLoggedIn || false
+                    const authStatusFromToken = await this.auth(selectedEndpoint, input?.token || null)
+                    this.showIsLoggedIn(authStatusFromToken?.authStatus || null)
                 }
-                if (isLoggedIn) {
-                    void vscode.window.showInformationMessage(`Signed in to ${selectedEndpoint}`)
-                    debug('AuthProvider:signinMenu', mode, selectedEndpoint)
-                    return
-                }
+                debug('AuthProvider:signinMenu', mode, selectedEndpoint)
             }
         }
     }
 
+    private showIsLoggedIn(authStatus: AuthStatus | null): void {
+        if (!authStatus?.isLoggedIn || !authStatus.endpoint) {
+            return
+        }
+        const endpointName = isLocalApp(authStatus.endpoint) ? 'Cody App' : authStatus.endpoint
+        void vscode.window.showInformationMessage(`Signed in to ${endpointName}`)
+    }
+
     public async appAuth(uri?: string): Promise<void> {
+        debug('AuthProvider:appAuth:init', '')
         const token = await this.secretStorage.get('SOURCEGRAPH_CODY_APP')
         if (token) {
             const authStatus = await this.auth(LOCAL_APP_URL.href, token)
-            const isLoggedIn = authStatus?.isLoggedIn
-            if (isLoggedIn) {
+            if (authStatus?.isLoggedIn) {
                 return
             }
         }
-        if (uri) {
-            await vscode.env.openExternal(vscode.Uri.parse(uri))
+        if (!uri) {
+            return
         }
+        await vscode.env.openExternal(vscode.Uri.parse(uri))
     }
 
     // Display quickpick to select endpoint to sign out of
@@ -148,8 +152,9 @@ export class AuthProvider {
     private async signout(endpoint: string): Promise<void> {
         await this.secretStorage.deleteToken(endpoint)
         await this.localStorage.deleteEndpoint()
-        await updateConfiguration('serverEndpoint', '')
         await this.auth(endpoint, null)
+        this.authStatus.endpoint = ''
+        await vscode.commands.executeCommand('setContext', 'cody.activated', false)
     }
 
     // Create Auth Status
@@ -167,18 +172,40 @@ export class AuthProvider {
             this.client = new SourcegraphGraphQLAPIClient(config)
         }
         // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-        const { enabled, version } = await this.client.isCodyEnabled()
+        const [{ enabled, version }, codyLLMConfiguration] = await Promise.all([
+            this.client.isCodyEnabled(),
+            this.client.getCodyLLMConfiguration(),
+        ])
+
+        const configOverwrites = !isError(codyLLMConfiguration) ? codyLLMConfiguration : undefined
+
         const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
-            return newAuthStatus(endpoint, isDotComOrApp, !isError(currentUserID), hasVerifiedEmail, enabled, version)
+            return newAuthStatus(
+                endpoint,
+                isDotComOrApp,
+                !isError(currentUserID),
+                hasVerifiedEmail,
+                enabled,
+                version,
+                configOverwrites
+            )
         }
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
         return isError(userInfo)
             ? { ...unauthenticatedStatus, endpoint }
-            : newAuthStatus(endpoint, isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, isCodyEnabled, version)
+            : newAuthStatus(
+                  endpoint,
+                  isDotComOrApp,
+                  !!userInfo.id,
+                  userInfo.hasVerifiedEmail,
+                  isCodyEnabled,
+                  version,
+                  configOverwrites
+              )
     }
 
     public getAuthStatus(): AuthStatus {
@@ -189,7 +216,7 @@ export class AuthProvider {
     public async auth(
         uri: string,
         token: string | null,
-        customHeaders = {}
+        customHeaders?: {} | null
     ): Promise<{ authStatus: AuthStatus; isLoggedIn: boolean } | null> {
         const endpoint = formatURL(uri) || ''
         const config = {
@@ -200,8 +227,9 @@ export class AuthProvider {
         const authStatus = await this.makeAuthStatus(config)
         const isLoggedIn = isAuthed(authStatus)
         authStatus.isLoggedIn = isLoggedIn
-        await this.syncAuthStatus(authStatus)
         await this.storeAuthInfo(endpoint, token)
+        await this.syncAuthStatus(authStatus)
+        await vscode.commands.executeCommand('setContext', 'cody.activated', isLoggedIn)
         return { authStatus, isLoggedIn }
     }
 
@@ -211,7 +239,28 @@ export class AuthProvider {
             return
         }
         this.authStatus = authStatus
-        await vscode.commands.executeCommand('cody.auth.sync', authStatus)
+        await this.announceNewAuthStatus()
+    }
+
+    public async announceNewAuthStatus(): Promise<void> {
+        if (this.authStatus.endpoint === 'init' || !this.webview) {
+            return
+        }
+        await vscode.commands.executeCommand('cody.auth.sync')
+    }
+    /**
+     * Display app state in webview view that is used during Signin flow
+     */
+    public async syncLocalAppState(type: string): Promise<void> {
+        if (this.authStatus.endpoint === 'init' || !this.webview) {
+            return
+        }
+        // Log user into App if user is currently not logged in and has App running
+        if (type !== 'app' && !this.authStatus.isLoggedIn) {
+            await this.appAuth()
+        }
+        // Notify webview that app is installed
+        await this.webview?.postMessage({ type: 'app-state', isInstalled: true })
     }
 
     // Register URI Handler (vscode://sourcegraph.cody-ai) for:
@@ -225,7 +274,6 @@ export class AuthProvider {
         if (!token || !endpoint) {
             return
         }
-        await this.storeAuthInfo(endpoint, token)
         const authState = await this.auth(endpoint, token, customHeaders)
         if (authState?.isLoggedIn) {
             const successMessage = isApp ? 'Connected to Cody App' : `Signed in to ${endpoint}`
@@ -274,9 +322,6 @@ export class AuthProvider {
         await this.localStorage.saveEndpoint(endpoint)
         if (token) {
             await this.secretStorage.storeToken(endpoint, token)
-        }
-        if (token && isLocalApp(endpoint)) {
-            await this.secretStorage.storeToken('SOURCEGRAPH_CODY_APP', token)
         }
         this.loadEndpointHistory()
         debug('AuthProvider:storeAuthInfo:stored', endpoint || '')

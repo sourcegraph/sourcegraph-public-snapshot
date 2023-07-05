@@ -1,19 +1,27 @@
 package com.sourcegraph.cody.localapp;
 
+import com.intellij.ide.BrowserUtil;
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.common.AuthorizationUtil;
+import java.awt.*;
+import java.io.File;
+import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
 import org.apache.commons.lang.SystemUtils;
 import org.apache.http.HttpResponse;
+import org.apache.http.client.config.CookieSpecs;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class LocalAppManager {
+  private static final Logger logger = Logger.getInstance(LocalAppManager.class);
   public static final String DEFAULT_LOCAL_APP_URL = "http://localhost:3080/";
   private static final Map<String, LocalAppPaths> appPathsByPlatform =
       Map.of(
@@ -23,13 +31,13 @@ public class LocalAppManager {
               Path.of("/Applications/Cody.app"),
               Path.of(
                   SystemUtils.getUserHome()
-                      + "/Library/Application Support/com.sourcegraph.cody/site.config.json"),
+                      + "/Library/Application Support/com.sourcegraph.cody/site-config.json"),
               Path.of(
                   SystemUtils.getUserHome()
                       + "/Library/Application Support/com.sourcegraph.cody/app.json")));
 
   public static boolean isLocalAppInstalled() {
-    return getLocalAppPaths().map(LocalAppPaths::anyPathExists).orElse(false);
+    return getLocalAppPaths().map(LocalAppPaths::isCodyInstalled).orElse(false);
   }
 
   @NotNull
@@ -80,28 +88,49 @@ public class LocalAppManager {
   @NotNull
   private static Optional<String> getRunningAppVersion() {
     // TODO: do this asynchronously
-    try (CloseableHttpClient httpClient = HttpClientBuilder.create().build()) {
+    try (CloseableHttpClient httpClient =
+        HttpClients.custom()
+            .setDefaultRequestConfig(
+                RequestConfig.custom().setCookieSpec(CookieSpecs.STANDARD).build())
+            .build()) {
       HttpGet request = new HttpGet(getLocalAppUrl() + "/__version");
       HttpResponse response = httpClient.execute(request);
       int statusCode = response.getStatusLine().getStatusCode();
       String responseBody = EntityUtils.toString(response.getEntity());
       if (statusCode != 200) {
-        System.err.println(
+        logger.warn(
             "Could not fetch local Cody app version. Got status code "
                 + statusCode
                 + ": "
                 + responseBody);
         return Optional.empty();
       } else {
-        System.out.println("Running local Cody app version: " + responseBody);
+        logger.info("Running local Cody app version: " + responseBody);
         return Optional.of(responseBody);
       }
     } catch (ConnectException e) {
-      System.err.println("Could not connect to the local Cody app.");
+      logger.warn("Could not connect to the local Cody app.");
       return Optional.empty();
     } catch (Exception e) {
-      e.printStackTrace();
+      logger.warn(e);
       return Optional.empty();
     }
+  }
+
+  public static void runLocalApp() {
+    getLocalAppPaths()
+        .filter(paths -> !isLocalAppRunning()) // only run the app if it's not already running
+        .ifPresent(
+            p -> {
+              try {
+                Desktop.getDesktop().open(new File(p.codyAppFile.toString()));
+              } catch (IOException e) {
+                logger.error(e);
+              }
+            });
+  }
+
+  public static void browseLocalAppInstallPage() {
+    BrowserUtil.browse("https://about.sourcegraph.com/app");
   }
 }

@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -83,7 +84,7 @@ func Search(
 	// relatively expensive to fetch from gitserver. So we use consistent
 	// hashing to increase cache hits.
 	consistentHashKey := string(repo) + "@" + string(commit)
-	tr.LazyPrintf("%s", consistentHashKey)
+	tr.AddEvent("calculated hash", attribute.String("consistentHashKey", consistentHashKey))
 
 	nodes, err := searcherURLs.Endpoints()
 	if err != nil {
@@ -98,7 +99,7 @@ func Search(
 	for attempt := 0; attempt < 2; attempt++ {
 		url := urls[attempt%len(urls)]
 
-		tr.LazyPrintf("attempt %d: %s", attempt, url)
+		tr.AddEvent("attempting text search", attribute.String("url", url), attribute.Int("attempt", attempt))
 		limitHit, err = textSearchStream(ctx, url, body, onMatches)
 		if err == nil || errcode.IsTimeout(err) {
 			return limitHit, err
@@ -114,7 +115,7 @@ func Search(
 			return false, err
 		}
 
-		tr.LazyPrintf("transient error %s", err.Error())
+		tr.AddEvent("transient error", trace.Error(err))
 	}
 
 	return false, err

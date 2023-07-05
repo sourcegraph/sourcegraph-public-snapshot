@@ -79,10 +79,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	if err != nil {
-		return err
-	}
-
 	weaviate := newWeaviateClient(
 		logger,
 		config.WeaviateURL,
@@ -176,7 +172,7 @@ func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, er
 		return nil, "", errors.Wrap(err, "getting embeddings client")
 	}
 
-	floatQuery, err := client.GetQueryEmbeddingWithRetries(ctx, query, queryEmbeddingRetries)
+	floatQuery, err := client.GetQueryEmbedding(ctx, query)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting query embedding")
 	}

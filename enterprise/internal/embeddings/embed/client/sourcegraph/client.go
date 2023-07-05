@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"math"
 	"net/http"
 	"sort"
 	"strconv"
@@ -58,39 +57,12 @@ func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("sourcegraph/%s", c.model)
 }
 
-func (c *sourcegraphEmbeddingsClient) GetQueryEmbeddingWithRetries(ctx context.Context, query string, maxRetries int) ([]float32, error) {
-	return c.getEmbeddingsWithRetries(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())}, maxRetries)
+func (c *sourcegraphEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) ([]float32, error) {
+	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
 }
 
-func (c *sourcegraphEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error) {
-	return c.getEmbeddingsWithRetries(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()), maxRetries)
-}
-
-// getEmbeddingsWithRetries tries to embed the given texts using the external service specified in the config.
-// In case of failure, it retries the embedding procedure up to maxRetries. This due to the OpenAI API which
-// often hangs up when downloading large embedding responses.
-func (c *sourcegraphEmbeddingsClient) getEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error) {
-	embeddings, err := c.getEmbeddings(ctx, texts)
-	if err == nil {
-		return embeddings, nil
-	}
-
-	for i := 0; i < maxRetries; i++ {
-		embeddings, err = c.getEmbeddings(ctx, texts)
-		if err == nil {
-			return embeddings, nil
-		} else {
-			// Exponential delay
-			delay := time.Duration(int(math.Pow(float64(2), float64(i))))
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(delay * time.Second):
-			}
-		}
-	}
-
-	return nil, err
+func (c *sourcegraphEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) ([]float32, error) {
+	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
 }
 
 func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {

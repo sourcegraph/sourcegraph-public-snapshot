@@ -37,7 +37,7 @@ func NewHandler(
 	return featurelimiter.HandleFeature(
 		baseLogger,
 		eventLogger,
-		limiter.NewPrefixRedisStore("rate_limit:", rs),
+		rs,
 		rateLimitNotifier,
 		codygateway.FeatureEmbeddings,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

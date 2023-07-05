@@ -330,7 +330,6 @@ func (r localExternalServiceResolver) Repositories(ctx context.Context) ([]graph
 }
 
 func globalEmbeddingsPolicyExists(ctx context.Context) (bool, error) {
-
 	const queryPayload = `{
 		"operationName": "CodeIntelligenceConfigurationPolicies",
 		"variables": {
@@ -389,11 +388,9 @@ func globalEmbeddingsPolicyExists(ctx context.Context) (bool, error) {
 		return false, errors.Errorf("graphql: errors: %v", v.Errors)
 	}
 	return v.Data.CodeIntelligenceConfigurationPolicies.TotalCount > 0, nil
-
 }
 
 func createGlobalEmbeddingsPolicy(ctx context.Context) error {
-
 	alreadyExists, _ := globalEmbeddingsPolicyExists(ctx)
 	// ignoring error creating multiple policies is not problematic
 	if alreadyExists {

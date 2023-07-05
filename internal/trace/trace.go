@@ -2,7 +2,6 @@ package trace
 
 import (
 	"context"
-	"fmt"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -39,17 +38,6 @@ func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
 // accepts attributes for simplicity, and for ease of adapting to nettrace.
 func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
 	t.oteltraceSpan.AddEvent(name, oteltrace.WithAttributes(attributes...))
-}
-
-// LazyPrintf evaluates its arguments with fmt.Sprintf each time the
-// /debug/requests page is rendered. Any memory referenced by a will be
-// pinned until the trace is finished and later discarded.
-func (t *Trace) LazyPrintf(format string, a ...any) {
-	t.oteltraceSpan.AddEvent("LazyPrintf", oteltrace.WithAttributes(
-		attribute.Stringer("message", stringerFunc(func() string {
-			return fmt.Sprintf(format, a...)
-		})),
-	))
 }
 
 // SetError declares that this trace and span resulted in an error.

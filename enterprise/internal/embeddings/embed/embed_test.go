@@ -8,10 +8,10 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
-	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
 	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -280,11 +280,11 @@ type misbehavingEmbeddingsClient struct {
 	returnedDimsPerInput int
 }
 
-func (c *misbehavingEmbeddingsClient) GetQueryEmbeddingWithRetries(ctx context.Context, query string, maxRetries int) ([]float32, error) {
+func (c *misbehavingEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) ([]float32, error) {
 	return make([]float32, c.returnedDimsPerInput), nil
 }
 
-func (c *misbehavingEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string, maxRetries int) ([]float32, error) {
+func (c *misbehavingEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) ([]float32, error) {
 	return make([]float32, len(documents)*c.returnedDimsPerInput), nil
 }
 
@@ -302,7 +302,7 @@ func (c *mockEmbeddingsClient) GetModelIdentifier() string {
 	return "mock/some-model"
 }
 
-func (c *mockEmbeddingsClient) GetQueryEmbeddingWithRetries(_ context.Context, query string, _ int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetQueryEmbedding(_ context.Context, query string) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err
@@ -310,7 +310,7 @@ func (c *mockEmbeddingsClient) GetQueryEmbeddingWithRetries(_ context.Context, q
 	return make([]float32, dimensions), nil
 }
 
-func (c *mockEmbeddingsClient) GetDocumentEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetDocumentEmbeddings(_ context.Context, texts []string) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err

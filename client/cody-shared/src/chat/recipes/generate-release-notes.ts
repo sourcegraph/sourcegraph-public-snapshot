@@ -1,7 +1,7 @@
 import { spawnSync } from 'child_process'
 
 import { MAX_RECIPE_INPUT_TOKENS } from '../../prompt/constants'
-import { truncateText, isTextTruncated } from '../../prompt/truncation'
+import { truncateText } from '../../prompt/truncation'
 import { Interaction } from '../transcript/interaction'
 
 import { Recipe, RecipeContext, RecipeID } from './recipe'
@@ -77,14 +77,14 @@ export class ReleaseNotes implements Recipe {
         }
 
         const truncatedGitLogOutput = truncateText(gitLogOutput, MAX_RECIPE_INPUT_TOKENS)
-        if (isTextTruncated(gitLogOutput, truncatedGitLogOutput)) {
-            await context.editor.showWarningMessage(
-                'Truncated extra long git log output, so release notes may miss some changes.'
-            )
+        console.log(truncatedGitLogOutput)
+        let truncatedLogMessage = ''
+        if (truncatedGitLogOutput.length < gitLogOutput.length) {
+            truncatedLogMessage = 'Truncated extra long git log output, so release notes may miss some changes.'
         }
 
         const promptMessage = `Generate release notes by summarising these commits:\n${truncatedGitLogOutput}\n\nUse proper heading format for the release notes.\n\n${tagsPromptText}.Do not include other changes and dependency updates.`
-        const assistantResponsePrefix = `Here is the generated release notes for ${selectedLabel}\n`
+        const assistantResponsePrefix = `Here is the generated release notes for ${selectedLabel}\n${truncatedLogMessage}`
         return new Interaction(
             { speaker: 'human', text: promptMessage, displayText: rawDisplayText },
             {

@@ -27,7 +27,7 @@ export class InlineController {
     private readonly userIcon: vscode.Uri = getIconPath('user', this.extensionPath)
     private _disposables: vscode.Disposable[] = []
     // Constroller State
-    private commentController: vscode.CommentController
+    private commentController: vscode.CommentController | null = null
     public thread: vscode.CommentThread | null = null // a thread is a comment
     private threads = new Map<string, vscode.CommentThread>()
     private currentTaskId = ''
@@ -40,9 +40,23 @@ export class InlineController {
     private codeLenses: Map<string, CodeLensProvider> = new Map()
 
     constructor(private extensionPath: string) {
-        this.commentController = vscode.comments.createCommentController(this.id, this.label)
-        this.commentController.options = this.options
-
+        this.commentController = this.init()
+        this._disposables.push(this.commentController)
+        // Toggle Inline Chat on Config Change
+        vscode.workspace.onDidChangeConfiguration(e => {
+            const config = vscode.workspace.getConfiguration('cody')
+            if (e.affectsConfiguration('cody')) {
+                // Inline Chat
+                const enableInlineChat = config.get('inlineChat.enabled') as boolean
+                if (enableInlineChat) {
+                    this.commentController = this.init()
+                    return
+                }
+                this.commentController?.dispose()
+                this.commentController = null
+                this.dispose()
+            }
+        })
         // Track last selection range in valid doc before an action is called
         vscode.window.onDidChangeTextEditorSelection(e => {
             if (
@@ -91,17 +105,34 @@ export class InlineController {
             vscode.commands.registerCommand('cody.inline.fix.undo', id => this.undo(id))
         )
     }
-
     /**
-     * Getter to return instance
+     * Create comment controller and set options
      */
-    public get(): vscode.CommentController {
+    public init(): vscode.CommentController {
+        this.commentController?.dispose()
+        const commentController = vscode.comments.createCommentController(this.id, this.label)
+        commentController.options = this.options
+        commentController.commentingRangeProvider = {
+            provideCommentingRanges: (document: vscode.TextDocument) => {
+                const lineCount = document.lineCount
+                return [new vscode.Range(0, 0, lineCount - 1, 0)]
+            },
+        }
+        return commentController
+    }
+    /**
+     * Getter to return comment controller
+     */
+    public get(): vscode.CommentController | null {
         return this.commentController
     }
     /**
      * Create a new thread (the first comment of a thread)
      */
     public create(humanInput: string): vscode.CommentReply | null {
+        if (!this.commentController) {
+            return null
+        }
         const editor = vscode.window.activeTextEditor
         if (!editor || !humanInput || editor.document.uri.scheme !== 'file') {
             return null

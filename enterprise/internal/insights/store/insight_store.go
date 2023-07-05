@@ -48,8 +48,8 @@ type InsightQueryArgs struct {
 	UniqueIDs   []string
 	UniqueID    string
 	ExcludeIDs  []string
-	UserID      []int
-	OrgID       []int
+	UserIDs     []int
+	OrgIDs      []int
 	DashboardID int
 
 	After    string
@@ -82,7 +82,7 @@ func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.
 	}
 	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
 	if !args.WithoutAuthorization {
-		viewConditions = append(viewConditions, sqlf.Sprintf("id in (%s)", visibleViewsQuery(args.UserID, args.OrgID)))
+		viewConditions = append(viewConditions, sqlf.Sprintf("id in (%s)", visibleViewsQuery(args.UserIDs, args.OrgIDs)))
 	}
 
 	cursor := insightViewPageCursor{
@@ -139,8 +139,8 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 
 	q := sqlf.Sprintf(getInsightIdsVisibleToUserSql,
-		visibleDashboardsQuery(args.UserID, args.OrgID),
-		visibleViewsQuery(args.UserID, args.OrgID),
+		visibleDashboardsQuery(args.UserIDs, args.OrgIDs),
+		visibleViewsQuery(args.UserIDs, args.OrgIDs),
 		sqlf.Join(preds, "AND"),
 		limit)
 	insightIds, err := scanInsightViewIds(s.Query(ctx, q))

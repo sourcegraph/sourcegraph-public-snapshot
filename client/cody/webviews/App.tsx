@@ -6,7 +6,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { ChatHistory, ChatMessage } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
 
-import { AuthStatus, LocalEnv } from '../src/chat/protocol'
+import { AuthStatus, LocalEnv, defaultAuthStatus } from '../src/chat/protocol'
 
 import { Chat } from './Chat'
 import { Debug } from './Debug'
@@ -38,69 +38,78 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
     const [suggestions, setSuggestions] = useState<string[] | undefined>()
     const [isAppInstalled, setIsAppInstalled] = useState<boolean>(false)
 
-    useEffect(() => {
-        vscodeAPI.onMessage(message => {
-            switch (message.type) {
-                case 'transcript': {
-                    if (message.isMessageInProgress) {
-                        const msgLength = message.messages.length - 1
-                        setTranscript(message.messages.slice(0, msgLength))
-                        setMessageInProgress(message.messages[msgLength])
-                    } else {
-                        setTranscript(message.messages)
-                        setMessageInProgress(null)
+    useEffect(
+        () =>
+            vscodeAPI.onMessage(message => {
+                switch (message.type) {
+                    case 'transcript': {
+                        if (message.isMessageInProgress) {
+                            const msgLength = message.messages.length - 1
+                            setTranscript(message.messages.slice(0, msgLength))
+                            setMessageInProgress(message.messages[msgLength])
+                        } else {
+                            setTranscript(message.messages)
+                            setMessageInProgress(null)
+                        }
+                        break
                     }
-                    break
+                    case 'config':
+                        setConfig(message.config)
+                        setIsAppInstalled(message.config.isAppInstalled)
+                        setEndpoint(message.authStatus.endpoint)
+                        setAuthStatus(message.authStatus)
+                        setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
+                        break
+                    case 'login':
+                        break
+                    case 'showTab':
+                        if (message.tab === 'chat') {
+                            setView('chat')
+                        }
+                        break
+                    case 'debug':
+                        setDebugLog([...debugLog, message.message])
+                        break
+                    case 'history':
+                        setInputHistory(message.messages?.input ?? [])
+                        setUserHistory(message.messages?.chat ?? null)
+                        break
+                    case 'contextStatus':
+                        setContextStatus(message.contextStatus)
+                        break
+                    case 'errors':
+                        setErrorMessages([...errorMessages, message.errors].slice(-5))
+                        setDebugLog([...debugLog, message.errors])
+                        break
+                    case 'view':
+                        setView(message.messages)
+                        break
+                    case 'suggestions':
+                        setSuggestions(message.suggestions)
+                        break
+                    case 'app-state':
+                        setIsAppInstalled(message.isInstalled)
+                        break
                 }
-                case 'config':
-                    setConfig(message.config)
-                    setIsAppInstalled(message.config.isAppInstalled)
-                    setEndpoint(message.authStatus.endpoint)
-                    setView(message.authStatus.isLoggedIn ? 'chat' : 'login')
-                    setAuthStatus(message.authStatus)
-                    break
-                case 'login':
-                    break
-                case 'showTab':
-                    if (message.tab === 'chat') {
-                        setView('chat')
-                    }
-                    break
-                case 'debug':
-                    setDebugLog([...debugLog, message.message])
-                    break
-                case 'history':
-                    setInputHistory(message.messages?.input ?? [])
-                    setUserHistory(message.messages?.chat ?? null)
-                    break
-                case 'contextStatus':
-                    setContextStatus(message.contextStatus)
-                    break
-                case 'errors':
-                    setErrorMessages([...errorMessages, message.errors].slice(-5))
-                    setDebugLog([...debugLog, message.errors])
-                    break
-                case 'view':
-                    setView(message.messages)
-                    break
-                case 'suggestions':
-                    setSuggestions(message.suggestions)
-                    break
-                case 'app-state':
-                    setIsAppInstalled(message.isInstalled)
-                    break
-            }
-        })
+            }),
+        [debugLog, errorMessages, view, vscodeAPI]
+    )
+
+    useEffect(() => {
+        // Notify the extension host that we are ready to receive events
+        vscodeAPI.postMessage({ command: 'ready' })
+    }, [vscodeAPI])
+
+    useEffect(() => {
         if (!view) {
             vscodeAPI.postMessage({ command: 'initialized' })
         }
-        // The dependencies array is empty to execute the callback only on component mount.
-    }, [debugLog, errorMessages, view, vscodeAPI])
+    }, [view, vscodeAPI])
 
     const onLogout = useCallback(() => {
         setConfig(null)
         setEndpoint(null)
-        setAuthStatus(null)
+        setAuthStatus(defaultAuthStatus)
         setView('login')
         vscodeAPI.postMessage({ command: 'auth', type: 'signout' })
     }, [vscodeAPI])
@@ -109,7 +118,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
         (uri: string) => {
             setConfig(null)
             setEndpoint(null)
-            setAuthStatus(null)
+            setAuthStatus(defaultAuthStatus)
             setView('login')
             vscodeAPI.postMessage({ command: 'auth', type: 'callback', endpoint: uri })
         },
@@ -122,7 +131,7 @@ export const App: React.FunctionComponent<{ vscodeAPI: VSCodeWrapper }> = ({ vsc
 
     return (
         <div className="outer-container">
-            <Header />
+            <Header endpoint={authStatus.isLoggedIn ? endpoint : null} />
             {view === 'login' || !authStatus.isLoggedIn ? (
                 <Login
                     authStatus={authStatus}

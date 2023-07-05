@@ -2,7 +2,6 @@ import { ChatQuestion } from '@sourcegraph/cody-shared/src/chat/recipes/chat-que
 import { ContextSearch } from '@sourcegraph/cody-shared/src/chat/recipes/context-search'
 import { ExplainCodeDetailed } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-detailed'
 import { ExplainCodeHighLevel } from '@sourcegraph/cody-shared/src/chat/recipes/explain-code-high-level'
-import { FileTouch } from '@sourcegraph/cody-shared/src/chat/recipes/file-touch'
 import { FindCodeSmells } from '@sourcegraph/cody-shared/src/chat/recipes/find-code-smells'
 import { Fixup } from '@sourcegraph/cody-shared/src/chat/recipes/fixup'
 import { GenerateDocstring } from '@sourcegraph/cody-shared/src/chat/recipes/generate-docstring'
@@ -11,10 +10,10 @@ import { ReleaseNotes } from '@sourcegraph/cody-shared/src/chat/recipes/generate
 import { GenerateTest } from '@sourcegraph/cody-shared/src/chat/recipes/generate-test'
 import { GitHistory } from '@sourcegraph/cody-shared/src/chat/recipes/git-log'
 import { ImproveVariableNames } from '@sourcegraph/cody-shared/src/chat/recipes/improve-variable-names'
-import { InlineAssist } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
+import { InlineChat } from '@sourcegraph/cody-shared/src/chat/recipes/inline-chat'
+import { InlineTouch } from '@sourcegraph/cody-shared/src/chat/recipes/inline-touch'
 import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-questions'
 import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
-import { OptimizeCode } from '@sourcegraph/cody-shared/src/chat/recipes/optimize-code'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
 
@@ -40,17 +39,16 @@ function init(): void {
         new ContextSearch(),
         new ExplainCodeDetailed(),
         new ExplainCodeHighLevel(),
-        new FileTouch(debug),
         new FindCodeSmells(),
         new Fixup(),
         new GenerateDocstring(),
         new GenerateTest(),
         new GitHistory(),
         new ImproveVariableNames(),
-        new InlineAssist(debug),
+        new InlineChat(debug),
+        new InlineTouch(debug),
         new NextQuestions(),
         new NonStop(),
-        new OptimizeCode(),
         new ReleaseNotes(),
         new PrDescription(),
         new TranslateToLanguage(),

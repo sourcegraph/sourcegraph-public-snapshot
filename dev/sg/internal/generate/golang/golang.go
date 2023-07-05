@@ -149,7 +149,7 @@ func runGoGenerate(ctx context.Context, args []string, progressBar bool, verbosi
 
 	// If no packages are given, go for everything except doc/cli/references.
 	// We cut down on the number of files we have to generate by looking for a
-	// go:generate directive by hand first.
+	// "go:generate" directive by hand first.
 	paths, err := FindFilesWithGenerate(wd)
 	if err != nil {
 		return err

@@ -300,11 +300,12 @@ commands:
     checkBinary: .bin/cody-gateway
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
-      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: foobar
+      # Set in override if you want to test local Cody Gateway: https://docs.sourcegraph.com/dev/how-to/cody_gateway
+      CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: ""
       CODY_GATEWAY_DOTCOM_API_URL: https://sourcegraph.test:3443/.api/graphql
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
-      SRC_LOG_LEVEL: dbug
+      SRC_LOG_LEVEL: info
     watch:
       - lib
       - internal
@@ -403,10 +404,7 @@ commands:
 
   docsite:
     description: Docsite instance serving the docs
-    cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: "installDocsite"
-    env:
-      DOCSITE_VERSION: v1.9.2 # Update in all places (including outside this repo)
+    cmd: bazel run //doc:serve
 
   syntax-highlighter:
     ignoreStdout: true
@@ -1442,6 +1440,8 @@ commandsets:
       DISABLE_CODE_INSIGHTS: true
       SOURCEGRAPH_APP: 1
       EXTSVC_CONFIG_ALLOW_EDITS: true
+      PRECISE_CODE_INTEL_UPLOAD_AWS_ENDPOINT: http://localhost:49000
+      EMBEDDINGS_UPLOAD_AWS_ENDPOINT: http://localhost:49000
 
   cody-gateway:
     checks:

@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { VSCodeButton } from '@vscode/webview-ui-toolkit/react'
 import classNames from 'classnames'
 
-import { AuthStatus, DOTCOM_URL, LOCAL_APP_URL } from '../src/chat/protocol'
+import { AuthStatus, DOTCOM_URL, LOCAL_APP_URL, isOsSupportedByApp } from '../src/chat/protocol'
 
 import { ConnectApp } from './ConnectApp'
 import { ErrorContainer } from './Error'
@@ -24,10 +24,16 @@ interface LoginProps {
 }
 
 const APP_DESC = {
-    getStarted: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
-    download: 'Download and run the Cody desktop app to configure your local code graph.',
+    getStarted: (
+        <>
+            You can now use Cody with your own private code using the{' '}
+            <a href="https://docs.sourcegraph.com/app">Cody desktop app</a>. Cody App allows you to index up to 10 local
+            repositories, and lets you start Cody chats from anywhere.
+        </>
+    ),
     connectApp: 'Cody App detected. All that’s left to do is connect VS Code with Cody App.',
-    notRunning: 'Cody for VS Code requires the Cody desktop app to enable context fetching for your private code.',
+    notRunning:
+        'It appears that Cody App is installed, but not running. Open Cody App to connect VS Code with Cody App.',
     comingSoon:
         'We’re working on bringing Cody App to your platform. In the meantime, you can try Cody with open source repositories by signing in to Sourcegraph.com.',
 }
@@ -43,7 +49,7 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
     isAppRunning = false,
     onLoginRedirect,
 }) => {
-    const isOSSupported = appOS === 'darwin' && appArch === 'arm64'
+    const isOSSupported = isOsSupportedByApp(appOS, appArch)
 
     const onFooterButtonClick = useCallback(
         (title: 'signin' | 'support') => {
@@ -57,9 +63,8 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
 
     const AppConnect: React.FunctionComponent = () => (
         <section className={classNames(styles.section, isOSSupported ? styles.codyGradient : styles.greyGradient)}>
-            <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Get Started'}</h2>
+            <h2 className={styles.sectionHeader}>{isAppInstalled ? title : 'Download Cody App'}</h2>
             <p className={styles.openMessage}>{openMsg}</p>
-            {!isAppInstalled && <p className={styles.openMessage}>{APP_DESC.download}</p>}
             <ConnectApp
                 isAppInstalled={isAppInstalled}
                 vscodeAPI={vscodeAPI}
@@ -98,12 +103,14 @@ export const Login: React.FunctionComponent<React.PropsWithChildren<LoginProps>>
             <div className={styles.sectionsContainer}>
                 <AppConnect />
                 {!isOSSupported && <NoAppConnect />}
+                <div className={styles.otherSignInOptions}>
+                    <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
+                        Other Sign In Options…
+                    </VSCodeButton>
+                </div>
             </div>
             {/* Footer */}
             <footer className={styles.footer}>
-                <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('signin')}>
-                    Other Sign In Options…
-                </VSCodeButton>
                 <VSCodeButton className={styles.button} type="button" onClick={() => onFooterButtonClick('support')}>
                     Feedback & Support
                 </VSCodeButton>

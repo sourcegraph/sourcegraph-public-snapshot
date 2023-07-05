@@ -235,7 +235,7 @@ func TestPost(t *testing.T) {
 				test.mockFunc(runner)
 			}
 
-			err = run.Post(context.Background(), logger, runner, test.step, test.executionInput, test.previousResult, dir, workspaceFilesDir)
+			err = run.Post(context.Background(), logger, runner, test.step, test.executionInput, test.previousResult, dir, workspaceFilesDir, true)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)

@@ -1,11 +1,14 @@
 package com.sourcegraph.cody;
 
-import static com.intellij.openapi.util.SystemInfoRt.isMac;
+import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
+import static java.awt.event.InputEvent.ALT_DOWN_MASK;
 import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
 import static java.awt.event.InputEvent.META_DOWN_MASK;
+import static java.awt.event.InputEvent.SHIFT_DOWN_MASK;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
+import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaTextAreaUI;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -15,10 +18,7 @@ import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.actionSystem.ShortcutSet;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.fileEditor.FileDocumentManager;
-import com.intellij.openapi.fileEditor.FileEditorManager;
+import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
@@ -26,34 +26,48 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
-import com.intellij.util.ui.*;
+import com.intellij.util.ui.JBUI;
+import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.api.Message;
-import com.sourcegraph.cody.chat.*;
+import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
+import com.sourcegraph.cody.chat.Chat;
+import com.sourcegraph.cody.chat.ChatBubble;
+import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.chat.ChatUIConstants;
+import com.sourcegraph.cody.chat.ContentWithGradientBorder;
+import com.sourcegraph.cody.chat.ContextFilesMessage;
+import com.sourcegraph.cody.chat.HumanMessageToMarkdownTextTransformer;
+import com.sourcegraph.cody.chat.Interaction;
+import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextGetter;
 import com.sourcegraph.cody.context.ContextMessage;
+import com.sourcegraph.cody.context.EmbeddingStatusView;
 import com.sourcegraph.cody.editor.EditorContext;
 import com.sourcegraph.cody.editor.EditorContextGetter;
+import com.sourcegraph.cody.editor.EditorUtil;
+import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.cody.prompts.Preamble;
 import com.sourcegraph.cody.prompts.Prompter;
-import com.sourcegraph.cody.prompts.SupportedLanguages;
-import com.sourcegraph.cody.recipes.ExplainCodeDetailedPromptProvider;
-import com.sourcegraph.cody.recipes.ExplainCodeHighLevelPromptProvider;
-import com.sourcegraph.cody.recipes.FindCodeSmellsPromptProvider;
-import com.sourcegraph.cody.recipes.GenerateDocStringPromptProvider;
-import com.sourcegraph.cody.recipes.GenerateUnitTestPromptProvider;
-import com.sourcegraph.cody.recipes.ImproveVariableNamesPromptProvider;
-import com.sourcegraph.cody.recipes.Language;
-import com.sourcegraph.cody.recipes.OptimizeCodePromptProvider;
-import com.sourcegraph.cody.recipes.PromptProvider;
+import com.sourcegraph.cody.recipes.ExplainCodeDetailedAction;
+import com.sourcegraph.cody.recipes.ExplainCodeHighLevelAction;
+import com.sourcegraph.cody.recipes.FindCodeSmellsAction;
+import com.sourcegraph.cody.recipes.GenerateDocStringAction;
+import com.sourcegraph.cody.recipes.GenerateUnitTestAction;
+import com.sourcegraph.cody.recipes.ImproveVariableNamesAction;
 import com.sourcegraph.cody.recipes.RecipeRunner;
 import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
-import com.sourcegraph.cody.recipes.TranslateToLanguagePromptProvider;
+import com.sourcegraph.cody.recipes.TranslateToLanguageAction;
+import com.sourcegraph.cody.ui.HtmlViewer;
 import com.sourcegraph.cody.ui.RoundedJBTextArea;
-import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.SettingsComponent;
+import com.sourcegraph.config.SettingsComponent.InstanceType;
+import com.sourcegraph.config.SettingsConfigurable;
+import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.BorderLayout;
+import java.awt.CardLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.GridLayout;
@@ -62,23 +76,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
+import javax.swing.JEditorPane;
 import javax.swing.JPanel;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
   private static final int CHAT_TAB_INDEX = 0;
   private static final int RECIPES_TAB_INDEX = 1;
+  private final @NotNull CardLayout allContentLayout = new CardLayout();
+  private final @NotNull JPanel allContentPanel = new JPanel(allContentLayout);
   private final @NotNull JBTabbedPane tabbedPane = new JBTabbedPane();
   private final @NotNull JPanel messagesPanel = new JPanel();
   private final @NotNull JBTextArea promptInput;
@@ -86,6 +102,7 @@ class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull Project project;
   private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
+  private boolean isChatVisible = false;
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -98,57 +115,37 @@ class CodyToolWindowContent implements UpdatableChat {
 
     // Recipes panel
     RecipeRunner recipeRunner = new RecipeRunner(this.project, this);
-    JButton explainCodeDetailedButton = createWideButton("Explain selected code (detailed)");
+    JButton explainCodeDetailedButton = createRecipeButton("Explain selected code (detailed)");
     explainCodeDetailedButton.addActionListener(
-        e ->
-            executeRecipeWithPromptProvider(recipeRunner, new ExplainCodeDetailedPromptProvider()));
-    JButton explainCodeHighLevelButton = createWideButton("Explain selected code (high level)");
+        e -> new ExplainCodeDetailedAction().executeRecipeWithPromptProvider(this, project));
+    JButton explainCodeHighLevelButton = createRecipeButton("Explain selected code (high level)");
     explainCodeHighLevelButton.addActionListener(
-        e ->
-            executeRecipeWithPromptProvider(
-                recipeRunner, new ExplainCodeHighLevelPromptProvider()));
-    JButton generateUnitTestButton = createWideButton("Generate a unit test");
+        e -> new ExplainCodeHighLevelAction().executeRecipeWithPromptProvider(this, project));
+    JButton generateUnitTestButton = createRecipeButton("Generate a unit test");
     generateUnitTestButton.addActionListener(
-        e -> executeRecipeWithPromptProvider(recipeRunner, new GenerateUnitTestPromptProvider()));
-    JButton generateDocstringButton = createWideButton("Generate a docstring");
+        e -> new GenerateUnitTestAction().executeRecipeWithPromptProvider(this, project));
+    JButton generateDocstringButton = createRecipeButton("Generate a docstring");
     generateDocstringButton.addActionListener(
-        e -> executeRecipeWithPromptProvider(recipeRunner, new GenerateDocStringPromptProvider()));
-    JButton improveVariableNamesButton = createWideButton("Improve variable names");
+        e -> new GenerateDocStringAction().executeRecipeWithPromptProvider(this, project));
+    JButton improveVariableNamesButton = createRecipeButton("Improve variable names");
     improveVariableNamesButton.addActionListener(
-        e ->
-            executeRecipeWithPromptProvider(
-                recipeRunner, new ImproveVariableNamesPromptProvider()));
-    JButton translateToLanguageButton = createWideButton("Translate to different language");
+        e -> new ImproveVariableNamesAction().executeRecipeWithPromptProvider(this, project));
+    JButton translateToLanguageButton = createRecipeButton("Translate to different language");
     translateToLanguageButton.addActionListener(
-        e ->
-            runIfCodeSelected(
-                (editorSelection) -> {
-                  SelectOptionManager selectOptionManager =
-                      SelectOptionManager.getInstance(project);
-                  selectOptionManager.show(
-                      project,
-                      SupportedLanguages.LANGUAGE_NAMES,
-                      (selectedLanguage) ->
-                          recipeRunner.runRecipe(
-                              new TranslateToLanguagePromptProvider(new Language(selectedLanguage)),
-                              editorSelection));
-                }));
-    JButton gitHistoryButton = createWideButton("Summarize recent code changes");
+        e -> new TranslateToLanguageAction().executeAction(project));
+    JButton gitHistoryButton = createRecipeButton("Summarize recent code changes");
     gitHistoryButton.addActionListener(
         e ->
             new SummarizeRecentChangesRecipe(project, this, recipeRunner).summarizeRecentChanges());
-    JButton findCodeSmellsButton = createWideButton("Smell code");
+    JButton findCodeSmellsButton = createRecipeButton("Smell code");
     findCodeSmellsButton.addActionListener(
-        e -> executeRecipeWithPromptProvider(recipeRunner, new FindCodeSmellsPromptProvider()));
+        e -> new FindCodeSmellsAction().executeRecipeWithPromptProvider(this, project));
     // JButton fixupButton = createWideButton("Fixup code from inline instructions");
     // fixupButton.addActionListener(e -> recipeRunner.runFixup());
     // JButton contextSearchButton = createWideButton("Codebase context search");
     // contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
     // JButton releaseNotesButton = createWideButton("Generate release notes");
     // releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
-    JButton optimizeCodeButton = createWideButton("Optimize code");
-    optimizeCodeButton.addActionListener(
-        e -> executeRecipeWithPromptProvider(recipeRunner, new OptimizeCodePromptProvider()));
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -160,7 +157,6 @@ class CodyToolWindowContent implements UpdatableChat {
     //    recipesPanel.add(fixupButton);
     //    recipesPanel.add(contextSearchButton);
     //    recipesPanel.add(releaseNotesButton);
-    recipesPanel.add(optimizeCodeButton);
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
@@ -196,43 +192,146 @@ class CodyToolWindowContent implements UpdatableChat {
             JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
     messagePanel.add(promptInputWithScroll, BorderLayout.CENTER);
     messagePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-
     controlsPanel.add(messagePanel, BorderLayout.NORTH);
     controlsPanel.add(sendButton, BorderLayout.EAST);
+    JPanel lowerPanel = new JPanel(new BorderLayout());
+    lowerPanel.setLayout(new BoxLayout(lowerPanel, BoxLayout.Y_AXIS));
+    lowerPanel.add(controlsPanel);
+
+    EmbeddingStatusView embeddingStatusView = new EmbeddingStatusView(project);
+    lowerPanel.add(embeddingStatusView);
 
     // Main content panel
     contentPanel.setLayout(new BorderLayout(0, 0));
     contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
     contentPanel.add(chatPanel, BorderLayout.CENTER);
-    contentPanel.add(controlsPanel, BorderLayout.SOUTH);
+    contentPanel.add(lowerPanel, BorderLayout.SOUTH);
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
+
+    JPanel appNotInstalledPanel = createAppNotInstalledPanel();
+    JPanel appNotRunningPanel = createAppNotRunningPanel();
+    allContentPanel.add(tabbedPane, "tabbedPane");
+    allContentPanel.add(appNotInstalledPanel, "appNotInstalledPanel");
+    allContentPanel.add(appNotRunningPanel, "appNotRunningPanel");
+    allContentLayout.show(allContentPanel, "appNotInstalledPanel");
+    updateVisibilityOfContentPanels();
     // Add welcome message
     addWelcomeMessage();
   }
 
-  private void executeRecipeWithPromptProvider(
-      RecipeRunner recipeRunner, PromptProvider promptProvider) {
-    runIfCodeSelected((editorSelection) -> recipeRunner.runRecipe(promptProvider, editorSelection));
-  }
-
-  private void runIfCodeSelected(@NotNull Consumer<String> runIfCodeSelected) {
-    EditorContext editorContext = EditorContextGetter.getEditorContext(project);
-    String editorSelection = editorContext.getSelection();
-    if (editorSelection == null) {
-      this.activateChatTab();
-      this.addMessageToChat(
-          ChatMessage.createAssistantMessage(
-              "No code selected. Please select some code and try again."));
-      return;
+  private void updateVisibilityOfContentPanels() {
+    if (LocalAppManager.isPlatformSupported()
+        && ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.LOCAL_APP) {
+      if (!LocalAppManager.isLocalAppInstalled()) {
+        allContentLayout.show(allContentPanel, "appNotInstalledPanel");
+        isChatVisible = false;
+      } else if (!LocalAppManager.isLocalAppRunning()) {
+        allContentLayout.show(allContentPanel, "appNotRunningPanel");
+        isChatVisible = false;
+      } else {
+        allContentLayout.show(allContentPanel, "tabbedPane");
+        isChatVisible = true;
+      }
+    } else {
+      allContentLayout.show(allContentPanel, "tabbedPane");
+      isChatVisible = true;
     }
-    runIfCodeSelected.accept(editorSelection);
   }
 
   @NotNull
-  private static JButton createWideButton(@NotNull String text) {
+  private JPanel createAppNotInstalledPanel() {
+    JPanel appNotInstalledPanel =
+        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+    JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
+    jEditorPane.setText(
+        "<html><body><h2>Get Started</h2>"
+            + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code."
+            + " Download and run the Cody desktop app to Configure your local code graph.</p><"
+            + "/body></html>");
+    appNotInstalledPanel.add(jEditorPane);
+    JButton downloadCodyAppButton = createMainButton("Download Cody App");
+    downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
+    downloadCodyAppButton.addActionListener(
+        e -> {
+          BrowserUtil.browse("https://about.sourcegraph.com/app");
+          updateVisibilityOfContentPanels();
+        });
+    Border margin = JBUI.Borders.empty(TEXT_MARGIN);
+    jEditorPane.setBorder(margin);
+    appNotInstalledPanel.add(downloadCodyAppButton);
+    JPanel blankPanel = new JPanel();
+    blankPanel.setBorder(margin);
+    blankPanel.setOpaque(false);
+    appNotInstalledPanel.add(blankPanel);
+    JPanel wrapperAppNotInstalledPanel =
+        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+    wrapperAppNotInstalledPanel.setBorder(margin);
+    wrapperAppNotInstalledPanel.add(appNotInstalledPanel);
+    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
+    wrapperAppNotInstalledPanel.add(goToSettingsPanel);
+    return wrapperAppNotInstalledPanel;
+  }
+
+  @NotNull
+  private JPanel createAppNotRunningPanel() {
+    JPanel appNotRunningPanel =
+        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+    JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
+    jEditorPane.setText(
+        "<html><body><h2>Cody App Not Running</h2>"
+            + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code.</p><"
+            + "/body></html>");
+    appNotRunningPanel.add(jEditorPane);
+    JButton downloadCodyAppButton = createMainButton("Open Cody App");
+    downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
+    downloadCodyAppButton.addActionListener(
+        e -> {
+          LocalAppManager.runLocalApp();
+          updateVisibilityOfContentPanels();
+        });
+    Border margin = JBUI.Borders.empty(TEXT_MARGIN);
+    jEditorPane.setBorder(margin);
+    appNotRunningPanel.add(downloadCodyAppButton);
+    JPanel blankPanel = new JPanel();
+    blankPanel.setBorder(margin);
+    blankPanel.setOpaque(false);
+    appNotRunningPanel.add(blankPanel);
+    JPanel wrapperAppNotRunningPanel =
+        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+    wrapperAppNotRunningPanel.setBorder(margin);
+    wrapperAppNotRunningPanel.add(appNotRunningPanel);
+    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
+    wrapperAppNotRunningPanel.add(goToSettingsPanel);
+    return wrapperAppNotRunningPanel;
+  }
+
+  private JPanel createPanelWithGoToSettingsButton() {
+    JButton goToSettingsButton = new JButton("Sign in with an enterprise account");
+    goToSettingsButton.addActionListener(
+        e ->
+            ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class));
+    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(goToSettingsButton);
+    goToSettingsButton.setUI(buttonUI);
+    JPanel panelWithSettingsButton = new JPanel(new BorderLayout());
+    panelWithSettingsButton.setBorder(JBUI.Borders.empty(TEXT_MARGIN, 0));
+    panelWithSettingsButton.add(goToSettingsButton, BorderLayout.CENTER);
+    return panelWithSettingsButton;
+  }
+
+  @NotNull
+  private JButton createRecipeButton(@NotNull String text) {
     JButton button = new JButton(text);
     button.setAlignmentX(Component.CENTER_ALIGNMENT);
     button.setMaximumSize(new Dimension(Integer.MAX_VALUE, button.getPreferredSize().height));
+    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
+    button.setUI(buttonUI);
+    return button;
+  }
+
+  @NotNull
+  private static JButton createMainButton(@NotNull String text) {
+    JButton button = new JButton(text);
+    button.setAlignmentX(Component.CENTER_ALIGNMENT);
     ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
     button.setUI(buttonUI);
     return button;
@@ -262,7 +361,11 @@ class CodyToolWindowContent implements UpdatableChat {
     sendButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
     ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(sendButton);
     sendButton.setUI(buttonUI);
-    sendButton.addActionListener(e -> sendMessage(project));
+    sendButton.addActionListener(
+        e -> {
+          GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "clicked");
+          sendMessage(project);
+        });
     return sendButton;
   }
 
@@ -275,12 +378,30 @@ class CodyToolWindowContent implements UpdatableChat {
     promptInput.setLineWrap(true);
     promptInput.setWrapStyleWord(true);
     promptInput.requestFocusInWindow();
+
+    /* Insert Enter on Shift+Enter, Ctrl+Enter, Alt/Option+Enter, and Meta+Enter */
+    KeyboardShortcut SHIFT_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, SHIFT_DOWN_MASK), null);
     KeyboardShortcut CTRL_ENTER =
         new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
+    KeyboardShortcut ALT_OR_OPTION_ENTER =
+        new KeyboardShortcut(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), null);
     KeyboardShortcut META_ENTER =
         new KeyboardShortcut(getKeyStroke(VK_ENTER, META_DOWN_MASK), null);
-    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT =
-        isMac ? new CustomShortcutSet(CTRL_ENTER, META_ENTER) : new CustomShortcutSet(CTRL_ENTER);
+    ShortcutSet INSERT_ENTER_SHORTCUT =
+        new CustomShortcutSet(CTRL_ENTER, SHIFT_ENTER, META_ENTER, ALT_OR_OPTION_ENTER);
+    AnAction insertEnterAction =
+        new DumbAwareAction() {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent e) {
+            promptInput.insert("\n", promptInput.getCaretPosition());
+          }
+        };
+    insertEnterAction.registerCustomShortcutSet(INSERT_ENTER_SHORTCUT, promptInput);
+
+    /* Submit on enter */
+    KeyboardShortcut JUST_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, 0), null);
+    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT = new CustomShortcutSet(JUST_ENTER);
     AnAction sendMessageAction =
         new DumbAwareAction() {
           @Override
@@ -289,6 +410,7 @@ class CodyToolWindowContent implements UpdatableChat {
           }
         };
     sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
+
     return promptInput;
   }
 
@@ -352,7 +474,7 @@ class CodyToolWindowContent implements UpdatableChat {
     } else {
       this.addMessageToChat(
           ChatMessage.createAssistantMessage(
-              "I'm sorry, something wet wrong. Please try again. The error message I got was: \""
+              "I'm sorry, something went wrong. Please try again. The error message I got was: \""
                   + errorMessage
                   + "\"."));
     }
@@ -397,8 +519,19 @@ class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
+  @Override
+  public void refreshPanelsVisibility() {
+    this.updateVisibilityOfContentPanels();
+  }
+
+  @Override
+  public boolean isChatVisible() {
+    return this.isChatVisible;
+  }
+
   private void sendMessage(@NotNull Project project) {
-    String messageText = promptInput.getText();
+    String messageText =
+        new HumanMessageToMarkdownTextTransformer(promptInput.getText()).transform();
     promptInput.setText("");
     sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
   }
@@ -417,7 +550,7 @@ class CodyToolWindowContent implements UpdatableChat {
     ChatMessage humanMessage =
         ChatMessage.createHumanMessage(truncatedPrompt, message.getDisplayText());
     addMessageToChat(humanMessage);
-    VirtualFile currentFile = getCurrentFile(project);
+    VirtualFile currentFile = EditorUtil.getCurrentFile(project);
     // This cannot run on EDT (Event Dispatch Thread) because it may block for a long time.
     // Also, if we did the back-end call in the main thread and then waited, we wouldn't see the
     // messages streamed back to us.
@@ -427,7 +560,7 @@ class CodyToolWindowContent implements UpdatableChat {
               String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
               String accessToken = ConfigUtil.getProjectAccessToken(project);
 
-              String repoName = getRepoName(project, currentFile);
+              String repoName = RepoUtil.findRepositoryName(project, currentFile);
               String accessTokenOrEmpty = accessToken != null ? accessToken : "";
               Chat chat = new Chat(instanceUrl, accessTokenOrEmpty);
               if (CodyAgent.isConnected(project)) {
@@ -465,6 +598,7 @@ class CodyToolWindowContent implements UpdatableChat {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }
               }
+              GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
             });
   }
 
@@ -472,9 +606,20 @@ class CodyToolWindowContent implements UpdatableChat {
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
     // Use context
     if (contextMessages.size() == 0) {
+      InstanceType instanceType = ConfigUtil.getInstanceType(project);
+
+      String report = "I found no context for your request.";
+      String ask =
+          instanceType == InstanceType.ENTERPRISE
+              ? "Please ensure this repository is added to your Sourcegraph Enterprise instance and that your access token and custom request headers are set up correctly."
+              : (instanceType == InstanceType.LOCAL_APP
+                  ? "Please ensure this repository is configured in Cody App."
+                  : (instanceType == InstanceType.DOTCOM
+                      ? "As your current server setting is Sourcegraph.com, please ensure this repository is public and indexed on Sourcegraph.com and that your access token is valid."
+                      : ""));
+      String resolution = "I will try to answer without context.";
       this.addMessageToChat(
-          ChatMessage.createAssistantMessage(
-              "I didn't find any context for your ask. I'll try to answer without further context."));
+          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution));
     } else {
 
       ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
@@ -502,11 +647,12 @@ class CodyToolWindowContent implements UpdatableChat {
                     ConfigUtil.getCustomRequestHeaders(project))
                 .getContextMessages(humanMessage.getText(), 8, 2, true);
       } catch (IOException e) {
-        this.addMessageToChat(
-            ChatMessage.createAssistantMessage(
-                "I didn't get a correct response. This is what I encountered while trying to get some context for your ask: \""
-                    + e.getMessage()
-                    + "\". I'll try to answer without further context."));
+        logger.warn(
+            "Unable to load context for message: "
+                + humanMessage.getText()
+                + ", in repo: "
+                + repoName,
+            e);
       }
     }
     return contextMessages;
@@ -544,31 +690,8 @@ class CodyToolWindowContent implements UpdatableChat {
     return Collections.emptyList();
   }
 
-  @Nullable
-  private static VirtualFile getCurrentFile(@NotNull Project project) {
-    VirtualFile currentFile = null;
-    Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-    if (editor != null) {
-      Document currentDocument = editor.getDocument();
-      currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
-    }
-    return currentFile;
-  }
-
-  @Nullable
-  private static String getRepoName(@NotNull Project project, @Nullable VirtualFile currentFile) {
-    if (currentFile == null) {
-      return null;
-    }
-    try {
-      return RepoUtil.getRemoteRepoUrlWithoutScheme(project, currentFile);
-    } catch (Exception e) {
-      return null;
-    }
-  }
-
   public @NotNull JComponent getContentPanel() {
-    return tabbedPane;
+    return allContentPanel;
   }
 
   public void focusPromptInput() {

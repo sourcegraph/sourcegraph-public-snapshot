@@ -126,7 +126,10 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 
 	for _, gqlerr := range gqlerrs {
 		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeDotcomUserNotFound {
-			return nil, actor.ErrAccessTokenDenied{Reason: "associated dotcom user not found"}
+			return nil, actor.ErrAccessTokenDenied{
+				Source: s.Name(),
+				Reason: "associated dotcom user not found",
+			}
 		}
 	}
 	return nil, err

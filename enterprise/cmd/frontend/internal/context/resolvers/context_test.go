@@ -122,7 +122,6 @@ func TestContextResolver(t *testing.T) {
 					ChunkMatches: lineRange(0, 4),
 				}},
 			})
-
 		}
 		return nil, nil
 	})

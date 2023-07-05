@@ -5,9 +5,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
 type janitorJob struct{}
@@ -30,6 +32,8 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 		return nil, err
 	}
 
+	dequeueCache := rcache.New(executortypes.DequeueCachePrefix)
+
 	routines := []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
@@ -40,6 +44,7 @@ func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Con
 			goroutine.WithDescription("clean up executor heartbeat records for presumed dead executors"),
 			goroutine.WithInterval(janitorConfigInst.CleanupTaskInterval),
 		),
+		NewMultiqueueCacheCleaner(executortypes.ValidQueueNames, dequeueCache, janitorConfigInst.CacheDequeueTtl, janitorConfigInst.CacheCleanupInterval),
 	}
 
 	return routines, nil

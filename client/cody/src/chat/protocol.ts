@@ -2,6 +2,7 @@ import { ChatContextStatus } from '@sourcegraph/cody-shared/src/chat/context'
 import { RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { ChatMessage, UserLocalHistory } from '@sourcegraph/cody-shared/src/chat/transcript/messages'
 import { Configuration } from '@sourcegraph/cody-shared/src/configuration'
+import { CodyLLMSiteConfiguration } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql/client'
 
 import { View } from '../../webviews/NavBar'
 
@@ -9,6 +10,7 @@ import { View } from '../../webviews/NavBar'
  * A message sent from the webview to the extension host.
  */
 export type WebviewMessage =
+    | { command: 'ready' }
     | { command: 'initialized' }
     | { command: 'event'; event: string; value: string }
     | { command: 'submit'; text: string; submitType: 'user' | 'suggestion' }
@@ -23,6 +25,7 @@ export type WebviewMessage =
     | { command: 'insert'; text: string }
     | { command: 'auth'; type: 'signin' | 'signout' | 'support' | 'app' | 'callback'; endpoint?: string }
     | { command: 'abort' }
+    | { command: 'chat-button'; action: string }
 
 /**
  * A message sent from the extension host to the webview.
@@ -60,13 +63,6 @@ export const CODY_FEEDBACK_URL = new URL(
 export const LOCAL_APP_URL = new URL('http://localhost:3080')
 export const APP_LANDING_URL = new URL('https://about.sourcegraph.com/app')
 export const APP_CALLBACK_URL = new URL('sourcegraph://user/settings/tokens/new/callback')
-// TODO: Update URLs to always point to the latest app release: https://github.com/sourcegraph/sourcegraph/issues/53511
-export const APP_DOWNLOAD_URLS: { [os: string]: { [arch: string]: string } } = {
-    darwin: {
-        arm64: 'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.16%2B1314.6c2d49d47c/Cody_2023.6.16+1314.6c2d49d47c_aarch64.dmg',
-        x64: 'https://github.com/sourcegraph/sourcegraph/releases/download/app-v2023.6.16%2B1314.6c2d49d47c/Cody_2023.6.16+1314.6c2d49d47c_x64.dmg',
-    },
-}
 
 /**
  * The status of a users authentication, whether they're authenticated and have a
@@ -82,6 +78,7 @@ export interface AuthStatus {
     requiresVerifiedEmail: boolean
     siteHasCodyEnabled: boolean
     siteVersion: string
+    configOverwrites?: CodyLLMSiteConfiguration
 }
 
 export const defaultAuthStatus = {
@@ -96,6 +93,7 @@ export const defaultAuthStatus = {
 }
 
 export const unauthenticatedStatus = {
+    endpoint: '',
     isLoggedIn: false,
     showInvalidAccessTokenError: true,
     authenticated: false,
@@ -132,9 +130,36 @@ export function isLoggedIn(authStatus: AuthStatus): boolean {
 }
 
 export function isLocalApp(url: string): boolean {
-    return new URL(url).origin === LOCAL_APP_URL.origin
+    try {
+        return new URL(url).origin === LOCAL_APP_URL.origin
+    } catch {
+        return false
+    }
 }
 
 export function isDotCom(url: string): boolean {
-    return new URL(url).origin === DOTCOM_URL.origin
+    try {
+        return new URL(url).origin === DOTCOM_URL.origin
+    } catch {
+        return false
+    }
+}
+
+// The OS and Arch support for Cody app
+export function isOsSupportedByApp(os?: string, arch?: string): boolean {
+    if (!os || !arch) {
+        return false
+    }
+    return os === 'darwin' || os === 'linux'
+}
+
+// Map the Arch to the app's supported Arch
+export function archConvertor(arch: string): string {
+    switch (arch) {
+        case 'arm64':
+            return 'aarch64'
+        case 'x64':
+            return 'x86_64'
+    }
+    return arch
 }

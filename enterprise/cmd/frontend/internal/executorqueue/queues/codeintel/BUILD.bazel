@@ -11,9 +11,9 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
-        "//enterprise/internal/codeintel/autoindexing",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/types",
+        "//internal/codeintel/autoindexing",
+        "//internal/codeintel/uploads/shared",
         "//internal/conf",
         "//internal/database",
         "//internal/encryption/keyring",
@@ -32,8 +32,8 @@ go_test(
     embed = [":codeintel"],
     deps = [
         "//enterprise/cmd/frontend/internal/executorqueue/handler",
-        "//enterprise/internal/codeintel/uploads/shared",
         "//enterprise/internal/executor/types",
+        "//internal/codeintel/uploads/shared",
         "//internal/conf",
         "//internal/database",
         "//internal/src-cli",

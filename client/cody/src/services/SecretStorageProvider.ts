@@ -1,5 +1,7 @@
 import * as vscode from 'vscode'
 
+import { isLocalApp } from '../chat/protocol'
+
 export const CODY_ACCESS_TOKEN_SECRET = 'cody.access-token'
 
 export async function getAccessToken(secretStorage: SecretStorage): Promise<string | null> {
@@ -25,10 +27,16 @@ export interface SecretStorage {
 
 export class VSCodeSecretStorage implements SecretStorage {
     constructor(private secretStorage: vscode.SecretStorage) {}
-
+    // Catch corrupted token in secret storage
     public async get(key: string): Promise<string | undefined> {
-        const secret = await this.secretStorage.get(key)
-        return secret
+        try {
+            if (key) {
+                return await this.secretStorage.get(key)
+            }
+        } catch (error) {
+            console.error('Failed to get token from Secret Storage', error)
+        }
+        return undefined
     }
 
     public async store(key: string, value: string): Promise<void> {
@@ -40,6 +48,9 @@ export class VSCodeSecretStorage implements SecretStorage {
     public async storeToken(endpoint: string, value: string): Promise<void> {
         if (!value || !endpoint) {
             return
+        }
+        if (isLocalApp(endpoint)) {
+            await this.store('SOURCEGRAPH_CODY_APP', value)
         }
         await this.store(endpoint, value)
         await this.store(CODY_ACCESS_TOKEN_SECRET, value)
@@ -55,7 +66,13 @@ export class VSCodeSecretStorage implements SecretStorage {
     }
 
     public onDidChange(callback: (key: string) => Promise<void>): vscode.Disposable {
-        return this.secretStorage.onDidChange(event => callback(event.key))
+        return this.secretStorage.onDidChange(event => {
+            // Run callback on token changes for current endpoint only
+            if (event.key === CODY_ACCESS_TOKEN_SECRET) {
+                return callback(event.key)
+            }
+            return
+        })
     }
 }
 

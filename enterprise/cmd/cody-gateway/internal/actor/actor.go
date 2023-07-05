@@ -183,6 +183,7 @@ func (a *Actor) Limiter(
 // reason.
 type ErrAccessTokenDenied struct {
 	Reason string
+	Source string
 }
 
 func (e ErrAccessTokenDenied) Error() string {

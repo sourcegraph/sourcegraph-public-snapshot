@@ -164,7 +164,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent = () => {
                             <AnchorLink to="https://about.sourcegraph.com/blog/notebooks-ci" target="_blank">
                                 Learn more
                             </AnchorLink>{' '}
-                            about how notebooks improves onbaording, code reuse and saves developers time.
+                            about how notebooks improves onboarding, code reuse and saves developers time.
                         </Text>
                     </ul>
                 </div>

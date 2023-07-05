@@ -53,6 +53,7 @@ export function getConfiguration(config: ConfigGetter): Configuration {
     }
 
     return {
+        // NOTE: serverEndpoint is now stored in Local Storage instead but we will still keep supporting the one in confg
         serverEndpoint: sanitizeServerEndpoint(config.get(CONFIG_KEY.serverEndpoint, '')),
         codebase: sanitizeCodebase(config.get(CONFIG_KEY.codebase)),
         customHeaders: config.get<object>(CONFIG_KEY.customHeaders, {}) as Record<string, string>,
@@ -62,9 +63,9 @@ export function getConfiguration(config: ConfigGetter): Configuration {
         debugFilter: debugRegex,
         autocomplete: config.get(CONFIG_KEY.autocompleteEnabled, true),
         experimentalChatPredictions: config.get(CONFIG_KEY.experimentalChatPredictions, isTesting),
-        experimentalInline: config.get(CONFIG_KEY.experimentalInline, isTesting),
+        inlineChat: config.get(CONFIG_KEY.inlineChatEnabled, true),
         experimentalGuardrails: config.get(CONFIG_KEY.experimentalGuardrails, isTesting),
-        experimentalNonStop: config.get(CONFIG_KEY.experimentalNonStop, isTesting),
+        experimentalNonStop: config.get('cody.experimental.nonStop' as any, isTesting),
         autocompleteAdvancedProvider,
         autocompleteAdvancedServerEndpoint: config.get<string | null>(
             CONFIG_KEY.autocompleteAdvancedServerEndpoint,
@@ -87,6 +88,13 @@ function sanitizeCodebase(codebase: string | undefined): string {
 
 function sanitizeServerEndpoint(serverEndpoint: string): string {
     if (!serverEndpoint) {
+        // TODO(philipp-spiess): Find out why the config is not loaded properly in the integration
+        // tests.
+        const isTesting = process.env.CODY_TESTING === 'true'
+        if (isTesting) {
+            return 'http://localhost:49300/'
+        }
+
         return DOTCOM_URL.href
     }
     const trailingSlashRegexp = /\/$/
