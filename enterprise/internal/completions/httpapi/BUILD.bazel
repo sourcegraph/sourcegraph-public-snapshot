@@ -12,10 +12,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/httpapi",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/cody",
         "//enterprise/internal/completions/client",
         "//internal/actor",
         "//internal/auth",
+        "//internal/cody",
         "//internal/completions/types",
         "//internal/conf",
         "//internal/conf/conftypes",
