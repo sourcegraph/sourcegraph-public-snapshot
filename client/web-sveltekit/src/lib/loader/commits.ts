@@ -261,10 +261,10 @@ function getCacheKey(resolvedRevision: ResolvedRevision & Repo): string {
 }
 
 export async function fetchCommits(
-    resolvedRevision: (ResolvedRevision & Repo) | ErrorLike,
+    resolvedRevision: (ResolvedRevision & Repo) | null,
     force: boolean = false
 ): Promise<{ nodes: GitCommitFields[] }> {
-    if (!isErrorLike(resolvedRevision)) {
+    if (resolvedRevision) {
         if (browser && !force) {
             const fromCache = clientCache.get(getCacheKey(resolvedRevision))
             if (fromCache) {

@@ -6,13 +6,13 @@
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import { createActionStore, type ActionStore } from '$lib/repo/actions'
-    import { getRevisionLabel, navFromPath } from '$lib/repo/utils'
     import { displayRepoName, isRepoNotFoundErrorLike } from '$lib/shared'
 
     import type { LayoutData } from './$types'
-    import Permalink from './Permalink.svelte'
     import RepoNotFoundError from './RepoNotFoundError.svelte'
     import Header from '$lib/Header.svelte'
+    import RevisionSelector from '$lib/repo/ui/RevisionSelector.svelte'
+    import { resolvePath } from '@sveltejs/kit'
 
     export let data: LayoutData
 
@@ -36,21 +36,24 @@
     $: viewerCanAdminister = data.user?.siteAdmin ?? false
     $: ({ repo } = $page.params)
 
-    $: resolvedRevision = isErrorLike(data.resolvedRevision) ? null : data.resolvedRevision
-    $: revisionLabel = getRevisionLabel(data.revision, resolvedRevision)
-    $: repoName = displayRepoName(repo.split('@')[0])
-    $: if (resolvedRevision) {
-        repoActions.setAction({ key: 'permalink', priority: 100, component: Permalink })
+    function createRevisionURL(revision:string) {
+        if ($page.route.id) {
+            return resolvePath($page.route.id, {
+                repo: `${data.repoName}@${revision}`,
+                path: $page.params.path,
+            })
+        }
+        return ''
     }
 </script>
 
-{#if isErrorLike(data.resolvedRevision)}
+{#if isErrorLike(data.resolvedRevisionOrError)}
     <!--
         We are rendering the error page here instead of using SvelteKit's error handler.
         See comment in +layout.ts
     -->
-    {#if isRepoNotFoundErrorLike(data.resolvedRevision)}
-        <RepoNotFoundError {repoName} {viewerCanAdminister} />
+    {#if isRepoNotFoundErrorLike(data.resolvedRevisionOrError)}
+        <RepoNotFoundError repoName={displayRepoName(data.repoName)} {viewerCanAdminister} />
     {:else}
         Something went wrong
     {/if}
@@ -58,7 +61,7 @@
     <Header>
         <div class="header">
             <nav>
-                <h2><a href="/{repo}"><Icon svgPath={mdiSourceRepository} inline /> {repoName}</a></h2>
+                <h2><a href="/{repo}"><Icon svgPath={mdiSourceRepository} inline /> {displayRepoName(data.repoName)}</a></h2>
                 <!--
                     TODO: Add back revision
                     {#if revisionLabel}
@@ -81,12 +84,14 @@
                     {/each}
                 </ul>
             </nav>
-
-            <div class="actions">
-                {#each $repoActions as action (action.key)}
-                    <svelte:component this={action.component} />
-                {/each}
-            </div>
+            {#if data.resolvedRevision}
+                <RevisionSelector
+                    repoID={data.resolvedRevision.repo.id}
+                    revision={data.revision ?? ''}
+                    resolvedRevision={data.resolvedRevision}
+                    createURL={createRevisionURL}
+                />
+            {/if}
         </div>
     </Header>
     <slot />
@@ -96,6 +101,7 @@
     .header {
         display: flex;
         align-items: center;
+        flex: 1;
     }
 
     h2 {
@@ -106,6 +112,7 @@
     nav {
         display: flex;
         align-items: center;
+        flex: 1;
 
         a {
             color: var(--body-color);
@@ -132,28 +139,12 @@
             }
 
             &.active {
-                background-color: var(--color-bg-3);
+                background-color: var(--color-bg-2);
             }
         }
     }
 
-    .actions {
-        margin-left: auto;
-    }
-
     nav {
         color: var(--body-color);
-    }
-
-    .crumps {
-        color: var(--link-color);
-    }
-
-    .button {
-        color: var(--body-color);
-        border: 1px solid var(--border-color);
-        padding: 0.25rem 0.5rem;
-        border-radius: var(--border-radius);
-        text-decoration: none;
     }
 </style>

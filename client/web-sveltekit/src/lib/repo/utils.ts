@@ -1,11 +1,16 @@
+import { resolvePath } from '@sveltejs/kit'
+
 import type { ResolvedRevision } from '$lib/web'
 
-export function navFromPath(path: string, repo: string, blobPage: boolean): [string, string][] {
+export function navFromPath(path: string, repo: string): [string, string][] {
     const parts = path.split('/')
     return parts
         .slice(0, -1)
-        .map((part, index, all): [string, string] => [part, `/${repo}/-/tree/${all.slice(0, index + 1).join('/')}`])
-        .concat([[parts[parts.length - 1], `/${repo}/-/${blobPage ? 'blob' : 'tree'}/${path}`]])
+        .map((part, index, all): [string, string] => [
+            part,
+            resolvePath('/[...repo]/(code)/-/tree/[...path]', { repo, path: all.slice(0, index + 1).join('/') }),
+        ])
+        .concat([[parts[parts.length - 1], '']])
 }
 
 export function getRevisionLabel(

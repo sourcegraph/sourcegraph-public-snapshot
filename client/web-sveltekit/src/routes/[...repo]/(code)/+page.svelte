@@ -1,60 +1,125 @@
 <script lang="ts">
-    import { mdiFolderOutline, mdiFileDocumentOutline } from '@mdi/js'
+    import { mdiFileDocumentOutline } from '@mdi/js'
 
-    import Commit from '$lib/Commit.svelte'
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import FileTable from '$lib/repo/ui/FileTable.svelte'
+    import { getRelativeTime } from '$lib/relativeTime.js'
+    import UserAvatar from '$lib/UserAvatar.svelte'
 
-    import type { PageData } from './$types'
+    export let data
 
-    export let data: PageData
-
-    $: treeOrError = data.treeEntries
-    $: commits = data.commits
+    $: commitWithTree = data.deferred.commitWithTree.then(result => isErrorLike(result) ? null : result)
 </script>
 
-<div class="content">
-    {#if !isErrorLike(data.resolvedRevision)}
-        <h3>Description</h3>
-        <p>
-            {data.resolvedRevision.repo.description}
-        </p>
-    {/if}
+<section>
+    <div class="main">
+        {#await commitWithTree then commit}
+            {#if commit}
+                <div class="card">
+                <h3 class="header">Latest Commit</h3>
+                <div class="content commit-summary">
+                    <span><UserAvatar user={commit.author.person} /></span>
+                    <p><a href={commit.url}>{commit.subject}</a></p>
+                    <a href={commit.url}>{commit.abbreviatedOID}</a>
+    &nbsp;&middot;&nbsp;
+                    <span>{getRelativeTime(new Date(commit.author.date))}</span>
+                </div>
+                </div>
+                <section class="mb-3">
+                    <FileTable treeOrError={commit.tree}/>
+                </section>
 
-    {#if !$treeOrError.loading && $treeOrError.data && !isErrorLike($treeOrError.data)}
-        <h3>Files and directories</h3>
-        <ul class="files">
-            {#each $treeOrError.data.entries as entry}
-                <li>
-                    <a
-                        data-sveltekit-preload-data={entry.isDirectory ? 'hover' : 'tap'}
-                        data-sveltekit-preload-code="hover"
-                        href={entry.url}
-                        ><Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
-                        {entry.name}</a
-                    >
-                </li>
-            {/each}
-        </ul>
-    {/if}
-
-    <h3 class="mt-3">Changes</h3>
-    <ul class="commits">
-        {#if $commits.loading}
-            <LoadingSpinner />
-        {:else if $commits.data}
-            {#each $commits.data as commit (commit.url)}
-                <li><Commit {commit} /></li>
-            {/each}
+                {/if}
+            {/await}
+        {#await data.deferred.readmeBlob then blob}
+            {#if blob}
+                <div class="readme card">
+                    <h3 class="header">
+                        <Icon svgPath={mdiFileDocumentOutline} inline />
+                        {blob.name}
+                    </h3>
+                    <div class="content">
+                        {#if blob?.richHTML}
+                            {@html blob.richHTML}
+                        {:else if blob.content}
+                            <pre>{blob.content}</pre>
+                        {/if}
+                    </div>
+                </div>
+            {/if}
+        {/await}
+    </div>
+    <div class="side">
+        {#if data.resolvedRevision}
+            <div class="side-card">
+                <h3>Description</h3>
+                <p>
+                    {data.resolvedRevision.repo.description}
+                </p>
+            </div>
         {/if}
-    </ul>
-</div>
+
+    </div>
+</section>
 
 <style lang="scss">
-    .content {
-        padding: 1rem;
-        overflow: auto;
+    section {
+        display: flex;
+        overflow: hidden;
+    }
+
+    .main {
+        flex: 1;
+        flex-basis: 0px;
+        overflow-y: auto;
+    }
+
+    .side {
+        flex-shrink: 0;
+        width: 200px;
+        margin: 0 1rem;
+
+        .side-card {
+        }
+    }
+
+    .commit-summary {
+        display: flex;
+        margin-bottom: 1rem;
+        align-items: center;
+        padding: 0.5rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+
+        p {
+            margin: 0;
+            margin-left: 0.5rem;
+            flex: 1;
+        }
+    }
+    .card {
+        .header {
+            border: 1px solid var(--border-color);
+            background-color: var(--code-bg);
+            position: sticky;
+            top: 0;
+            padding: 0.5rem;
+            border-bottom: 1px solid var(--border-color);
+
+        }
+
+        h3.header {
+            margin: 0;
+        }
+
+        .content {
+            border: 1px solid var(--border-color);
+            border-top: none;
+            background-color: var(--code-bg);
+            padding: 0.5rem;
+
+        }
     }
 
     ul.commits {

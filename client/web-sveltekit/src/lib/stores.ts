@@ -1,5 +1,5 @@
 import { getContext } from 'svelte'
-import { readable, type Readable } from 'svelte/store'
+import { readable, writable, type Readable, type Writable } from 'svelte/store'
 
 import type { GraphQLClient } from '$lib/http-client'
 import type { SettingsCascade, AuthenticatedUser, TemporarySettingsStorage } from '$lib/shared'
@@ -54,3 +54,27 @@ export const graphqlClient = readable<GraphQLClient | null>(null, set => {
     // eslint-disable-next-line no-void
     void getWebGraphQLClient().then(client => set(client))
 })
+
+export function createLocalWritable<T>(id: string, defaultValue: T): Writable<T> {
+    const { subscribe, set, update } = writable(defaultValue, set => {
+        const existingValue = localStorage.getItem(id)
+        if (existingValue) {
+            set(JSON.parse(existingValue))
+        }
+    })
+
+    return {
+        subscribe,
+        set: value => {
+            set(value)
+            localStorage.setItem(id, JSON.stringify(value))
+        },
+        update: fn => {
+            update(value => {
+                const newValue = fn(value)
+                localStorage.setItem(id, JSON.stringify(newValue))
+                return newValue
+            })
+        },
+    }
+}

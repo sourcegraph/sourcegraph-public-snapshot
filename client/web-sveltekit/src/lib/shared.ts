@@ -1,6 +1,11 @@
 // We want to limit the number of imported modules as much as possible
 
-export { parseRepoRevision, buildSearchURLQuery, makeRepoURI } from '@sourcegraph/shared/src/util/url'
+export {
+    type AbsoluteRepoFile,
+    parseRepoRevision,
+    buildSearchURLQuery,
+    makeRepoURI,
+} from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
@@ -12,6 +17,7 @@ export {
     type ContentMatch,
     type Skipped,
     getFileMatchUrl,
+    getRevision,
     getRepositoryUrl,
     aggregateStreamingSearch,
     LATEST_VERSION,

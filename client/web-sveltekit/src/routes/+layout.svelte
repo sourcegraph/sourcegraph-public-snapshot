@@ -1,6 +1,6 @@
 <script lang="ts">
     import { setContext } from 'svelte'
-    import { mdiBookOutline, mdiChartBar, mdiClose, mdiMagnify } from '@mdi/js'
+    import { mdiBookOutline, mdiChartBar, mdiMagnify } from '@mdi/js'
     import { readable, writable, type Readable } from 'svelte/store'
     import { mark } from '$lib/images'
 
@@ -9,8 +9,6 @@
     import { KEY, type SourcegraphContext } from '$lib/stores'
     import { createTemporarySettingsStorage } from '$lib/temporarySettings'
     import HeaderNavLink from '$lib/HeaderNavLink.svelte'
-    import Button from '$lib/wildcard/Button.svelte'
-    import Icon from '$lib/Icon.svelte'
 
     import './styles.scss'
 
@@ -148,6 +146,7 @@
         overflow: hidden;
 
             &:hover {
+            transition: width 100ms ease-in-out;
             box-shadow: 5px 0px 10px -7px rgba(0,0,0,0.75);
                 background-color: black;
                     z-index: 100;

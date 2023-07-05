@@ -1,13 +1,12 @@
+<svelte:options immutable/>
 <script lang="ts">
-    import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
+    import type { TreeProvider } from './domain/tree'
 
-    import { isErrorLike, type ErrorLike } from '$lib/common'
-    import type { TreeFields } from '$lib/graphql/shared'
-    import Icon from '$lib/Icon.svelte'
+    import FileTreeEntry from './FileTreeEntry.svelte'
 
-    export let treeOrError: TreeFields | ErrorLike | null
+    type T = $$Generic<TreeEntry>
+    export let treeProvider: TreeProvider<T>
     export let activeEntry: string
-    export let commitData: string | null = null
 
     function scrollIntoView(node: HTMLElement, scroll: boolean) {
         if (scroll) {
@@ -16,24 +15,14 @@
         }
     }
 
-    $: entries = !isErrorLike(treeOrError) && treeOrError ? treeOrError.entries : []
+    $: entries = treeProvider.getEntries()
 </script>
 
-<slot name="title">
-    <h3>Files</h3>
-</slot>
+<slot name="title"></slot>
 <ul>
-    {#each entries as entry}
-        <li class:active={entry.name === activeEntry} use:scrollIntoView={entry.name === 'activeEntry'}>
-            <a href={entry.url}>
-                <span>
-                    <Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
-                </span>
-                <span class="name">{entry.name}</span>
-            </a>
-            {#if commitData}
-                <span class="ml-5">{commitData}</span>
-            {/if}
+    {#each entries as entry (treeProvider.getKey(entry))}
+        <li class:active={entry.id === activeEntry} use:scrollIntoView={entry.id === activeEntry}>
+            <FileTreeEntry {entry} {treeProvider} />
         </li>
     {/each}
 </ul>
@@ -44,13 +33,10 @@
         list-style: none;
         padding: 0;
         margin: 0;
-        overflow: auto;
         min-height: 0;
     }
 
     li {
-        display: flex;
-
         a {
             flex: 1;
             white-space: nowrap;

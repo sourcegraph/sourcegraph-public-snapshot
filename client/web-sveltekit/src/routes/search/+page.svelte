@@ -7,7 +7,7 @@
     import type { PageData } from './$types'
     import QueryExamples from './QueryExamples.svelte'
     import SearchHome from './SearchHome.svelte'
-    import SearchResults from './SearchResults.svelte'
+    import InlineSearchResults from './InlineSearchResults.svelte'
 
     export let data: PageData
 
@@ -18,7 +18,7 @@
 <Header><h2>Search</h2></Header>
 
 {#if data.stream}
-    <SearchResults stream={data.stream} queryFromURL={data.queryOptions.query} {queryState} />
+    <InlineSearchResults stream={data.stream} queryFromURL={data.queryOptions.query} {queryState} />
 {:else}
     <SearchHome {queryState}>
         <div class="mt-5">

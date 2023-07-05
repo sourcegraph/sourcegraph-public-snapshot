@@ -1,7 +1,7 @@
 import { NEVER, of } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
-import { asError, encodeURIPathComponent, type ErrorLike } from '$lib/common'
+import { asError, encodeURIPathComponent, isErrorLike, type ErrorLike } from '$lib/common'
 import { resolveRepoRevision } from '$lib/loader/repo'
 import { isCloneInProgressErrorLike, isRepoSeeOtherErrorLike, parseRepoRevision } from '$lib/shared'
 
@@ -14,7 +14,7 @@ export const load: LayoutLoad = ({ params }) => {
     // SvelteKit's error handling / error page rendering instead. Verify whether
     // returning a promise instead of an object containing a promises changes
     // load behavior.
-    const resolvedRevision = resolveRepoRevision({ repoName, revision })
+    const resolvedRevisionOrError = resolveRepoRevision({ repoName, revision })
         .pipe(
             catchError(error => {
                 const redirect = isRepoSeeOtherErrorLike(error)
@@ -37,7 +37,10 @@ export const load: LayoutLoad = ({ params }) => {
     return {
         repoURL: '/' + encodeURIPathComponent(repoName),
         repoName,
-        revision,
-        resolvedRevision,
+        revision: revision ?? '',
+        resolvedRevisionOrError,
+        resolvedRevision: resolvedRevisionOrError.then(resolvedRevisionOrError =>
+            isErrorLike(resolvedRevisionOrError) ? null : resolvedRevisionOrError
+        ),
     }
 }
