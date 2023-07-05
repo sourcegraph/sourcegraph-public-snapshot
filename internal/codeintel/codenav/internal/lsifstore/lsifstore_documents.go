@@ -13,7 +13,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -57,7 +56,7 @@ WHERE
 	sid.document_path = %s
 `
 
-func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error) {
+func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*symbols.ExplodedSymbol, err error) {
 	ctx, _, endObservation := s.operations.getFullSCIPNameByDescriptor.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{}})
 	defer endObservation(1, observation.Args{})
 
@@ -66,7 +65,7 @@ func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int,
 		return nil, err
 	}
 
-	return scanSCIPNames(s.db.Query(ctx, sqlf.Sprintf(
+	return scanExplodedSymbols(s.db.Query(ctx, sqlf.Sprintf(
 		getFullSCIPNameByDescriptorQuery,
 		pq.Array(symbolNamesIlike),
 		pq.Array(uploadID),
@@ -98,8 +97,8 @@ WHERE
 	ssl1.upload_id = ANY(%s);
 `
 
-var scanSCIPNames = basestore.NewSliceScanner(func(s dbutil.Scanner) (*types.SCIPNames, error) {
-	var n types.SCIPNames
+var scanExplodedSymbols = basestore.NewSliceScanner(func(s dbutil.Scanner) (*symbols.ExplodedSymbol, error) {
+	var n symbols.ExplodedSymbol
 	err := s.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor)
 	return &n, err
 })

@@ -13,7 +13,7 @@ import (
 	scip "github.com/sourcegraph/scip/bindings/go/scip"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	types "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	symbols "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -129,7 +129,7 @@ func NewMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetFullSCIPNameByDescriptorFunc: &LsifStoreGetFullSCIPNameByDescriptorFunc{
-			defaultHook: func(context.Context, []int, []string) (r0 []*types.SCIPNames, r1 error) {
+			defaultHook: func(context.Context, []int, []string) (r0 []*symbols.ExplodedSymbol, r1 error) {
 				return
 			},
 		},
@@ -231,7 +231,7 @@ func NewStrictMockLsifStore() *MockLsifStore {
 			},
 		},
 		GetFullSCIPNameByDescriptorFunc: &LsifStoreGetFullSCIPNameByDescriptorFunc{
-			defaultHook: func(context.Context, []int, []string) ([]*types.SCIPNames, error) {
+			defaultHook: func(context.Context, []int, []string) ([]*symbols.ExplodedSymbol, error) {
 				panic("unexpected invocation of MockLsifStore.GetFullSCIPNameByDescriptor")
 			},
 		},
@@ -1201,15 +1201,15 @@ func (c LsifStoreGetDiagnosticsFuncCall) Results() []interface{} {
 // GetFullSCIPNameByDescriptor method of the parent MockLsifStore instance
 // is invoked.
 type LsifStoreGetFullSCIPNameByDescriptorFunc struct {
-	defaultHook func(context.Context, []int, []string) ([]*types.SCIPNames, error)
-	hooks       []func(context.Context, []int, []string) ([]*types.SCIPNames, error)
+	defaultHook func(context.Context, []int, []string) ([]*symbols.ExplodedSymbol, error)
+	hooks       []func(context.Context, []int, []string) ([]*symbols.ExplodedSymbol, error)
 	history     []LsifStoreGetFullSCIPNameByDescriptorFuncCall
 	mutex       sync.Mutex
 }
 
 // GetFullSCIPNameByDescriptor delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockLsifStore) GetFullSCIPNameByDescriptor(v0 context.Context, v1 []int, v2 []string) ([]*types.SCIPNames, error) {
+func (m *MockLsifStore) GetFullSCIPNameByDescriptor(v0 context.Context, v1 []int, v2 []string) ([]*symbols.ExplodedSymbol, error) {
 	r0, r1 := m.GetFullSCIPNameByDescriptorFunc.nextHook()(v0, v1, v2)
 	m.GetFullSCIPNameByDescriptorFunc.appendCall(LsifStoreGetFullSCIPNameByDescriptorFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -1218,7 +1218,7 @@ func (m *MockLsifStore) GetFullSCIPNameByDescriptor(v0 context.Context, v1 []int
 // SetDefaultHook sets function that is called when the
 // GetFullSCIPNameByDescriptor method of the parent MockLsifStore instance
 // is invoked and the hook queue is empty.
-func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) SetDefaultHook(hook func(context.Context, []int, []string) ([]*types.SCIPNames, error)) {
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) SetDefaultHook(hook func(context.Context, []int, []string) ([]*symbols.ExplodedSymbol, error)) {
 	f.defaultHook = hook
 }
 
@@ -1227,7 +1227,7 @@ func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) PushHook(hook func(context.Context, []int, []string) ([]*types.SCIPNames, error)) {
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) PushHook(hook func(context.Context, []int, []string) ([]*symbols.ExplodedSymbol, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -1235,20 +1235,20 @@ func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) PushHook(hook func(context.Co
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) SetDefaultReturn(r0 []*types.SCIPNames, r1 error) {
-	f.SetDefaultHook(func(context.Context, []int, []string) ([]*types.SCIPNames, error) {
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) SetDefaultReturn(r0 []*symbols.ExplodedSymbol, r1 error) {
+	f.SetDefaultHook(func(context.Context, []int, []string) ([]*symbols.ExplodedSymbol, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) PushReturn(r0 []*types.SCIPNames, r1 error) {
-	f.PushHook(func(context.Context, []int, []string) ([]*types.SCIPNames, error) {
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) PushReturn(r0 []*symbols.ExplodedSymbol, r1 error) {
+	f.PushHook(func(context.Context, []int, []string) ([]*symbols.ExplodedSymbol, error) {
 		return r0, r1
 	})
 }
 
-func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) nextHook() func(context.Context, []int, []string) ([]*types.SCIPNames, error) {
+func (f *LsifStoreGetFullSCIPNameByDescriptorFunc) nextHook() func(context.Context, []int, []string) ([]*symbols.ExplodedSymbol, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1294,7 +1294,7 @@ type LsifStoreGetFullSCIPNameByDescriptorFuncCall struct {
 	Arg2 []string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.SCIPNames
+	Result0 []*symbols.ExplodedSymbol
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

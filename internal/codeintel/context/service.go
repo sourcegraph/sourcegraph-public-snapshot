@@ -139,7 +139,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// mapping instead. This block should become a single function call after that
 	// transformation.
 
-	scipNamesBySyntectName, err := func() (map[string][]*types.SCIPNames, error) {
+	scipNamesBySyntectName, err := func() (map[string][]*symbols.ExplodedSymbol, error) {
 		for _, s := range symbolNames {
 			fmt.Printf("> %q\n", s)
 		}
@@ -154,10 +154,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			parts := strings.Split(s, "/")
 			return parts[len(parts)-1]
 		}
-		scipNamesBySyntectName := map[string][]*types.SCIPNames{}
+		scipNamesBySyntectName := map[string][]*symbols.ExplodedSymbol{}
 		for _, syntectName := range symbolNames {
 			ex, _ := symbols.NewExplodedSymbol(syntectName)
-			var symbolNames []*types.SCIPNames
+			var symbolNames []*symbols.ExplodedSymbol
 			for _, scipName := range scipNames {
 				// We do a `descriptor ILIKE %syntectName%` in Postgres today, so this
 				// is a bit of a less lenient (we do suffix here instead of contains).
@@ -195,7 +195,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	revmap := map[string]map[string]struct{}{}
 	for k, vs := range scipNamesBySyntectName {
 		for _, v := range vs {
-			i := v.GetIdentifier()
+			i := v.SymbolName()
 			if _, ok := revmap[i]; !ok {
 				revmap[i] = map[string]struct{}{}
 			}
@@ -208,7 +208,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	for k, vs := range scipNamesBySyntectName {
 		var ss []string
 		for _, v := range vs {
-			ss = append(ss, v.GetIdentifier())
+			ss = append(ss, v.SymbolName())
 		}
 		fmt.Printf("\t%s: %v\n", k, len(ss))
 	}
