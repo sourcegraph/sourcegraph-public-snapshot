@@ -25,6 +25,7 @@ go_library(
         "//internal/database",
         "//internal/extsvc",
         "//internal/extsvc/gitlab",
+        "//internal/licensing",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin//:gologin",

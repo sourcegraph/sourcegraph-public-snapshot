@@ -75,6 +75,7 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gqlutil",
+        "//internal/licensing",
         "//internal/rbac",
         "//internal/trace",
         "//internal/types",

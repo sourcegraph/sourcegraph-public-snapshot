@@ -19,6 +19,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/goroutine",
+        "//internal/licensing",
         "//internal/observation",
         "//internal/usagestats",
         "@com_github_sourcegraph_log//:log",

@@ -47,6 +47,7 @@ go_test(
         "//internal/embeddings/background/repo",
         "//internal/featureflag",
         "//internal/gitserver",
+        "//internal/licensing",
         "//internal/types",
         "//lib/pointers",
         "//schema",

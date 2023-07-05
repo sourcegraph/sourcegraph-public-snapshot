@@ -25,6 +25,7 @@ go_library(
         "//internal/extsvc/auth",
         "//internal/extsvc/bitbucketcloud",
         "//internal/lazyregexp",
+        "//internal/licensing",
         "//lib/errors",
         "//schema",
         "@com_github_dghubble_gologin//:gologin",
