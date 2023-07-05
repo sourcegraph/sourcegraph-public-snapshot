@@ -63,7 +63,18 @@ export type Config = Pick<
     | 'experimentalGuardrails'
 >
 
-const SAFETY_ANSWER_TOKENS = 100
+/**
+ * The problem with a token limit for the prompt is that we can only
+ * estimate tokens (and do so in a very cheap way), so it can be that
+ * we undercount tokens. If we exceed the maximum tokens, things will
+ * start to break, so we should have some safety cushion for when we're wrong in estimating.
+ *
+ * Ie.: Long text, 10000 characters, we estimate it to be 2500 tokens.
+ * That would fit into a limit of 3000 tokens easily. Now, it's actually
+ * 3500 tokens, because it splits weird and our estimation is off, it will
+ * fail. That's where we want to add this safety cushion in.
+ */
+const SAFETY_PROMPT_TOKENS = 100
 
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
@@ -921,8 +932,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             return tokenLimit - localSolutionLimit
         }
 
-        // TODO: add comment on why SAFETY_ANSWER_TOKENS is required here.
-        const solutionLimit = (localSolutionLimit || ANSWER_TOKENS) + SAFETY_ANSWER_TOKENS
+        const solutionLimit = (localSolutionLimit || ANSWER_TOKENS) + SAFETY_PROMPT_TOKENS
 
         if (authStatus.configOverwrites?.chatModelMaxTokens) {
             return authStatus.configOverwrites.chatModelMaxTokens - solutionLimit
