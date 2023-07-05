@@ -17,4 +17,4 @@
     } satisfies CodeInsightsRouterProps
 </script>
 
-<ReactComponent route="/insights/*" component={CodeInsightsRouter} {props} />
+<ReactComponent route="/insights/*" settings={data.settings} component={CodeInsightsRouter} {props} />
