@@ -38,10 +38,6 @@ go_test(
     ],
     embed = [":embed"],
     deps = [
-        "//enterprise/internal/codeintel/context",
-        "//enterprise/internal/embeddings/background/repo",
-        "//enterprise/internal/embeddings/embed/client",
-        "//enterprise/internal/paths",
         "//internal/api",
         "//internal/codeintel/context",
         "//internal/codeintel/types",
