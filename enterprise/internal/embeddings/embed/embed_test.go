@@ -280,7 +280,7 @@ type misbehavingEmbeddingsClient struct {
 	returnedDimsPerInput int
 }
 
-func (c *misbehavingEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
+func (c *misbehavingEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) ([]float32, error) {
 	return make([]float32, len(texts)*c.returnedDimsPerInput), nil
 }
 
