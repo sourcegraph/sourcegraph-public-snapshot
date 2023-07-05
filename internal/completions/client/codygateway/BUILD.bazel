@@ -4,12 +4,12 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "codygateway",
     srcs = ["codygateway.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/completions/client/codygateway",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client/codygateway",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/completions/client/anthropic",
-        "//enterprise/internal/completions/client/openai",
         "//internal/codygateway",
+        "//internal/completions/client/anthropic",
+        "//internal/completions/client/openai",
         "//internal/completions/types",
         "//internal/conf/conftypes",
         "//internal/httpcli",
