@@ -1,7 +1,7 @@
 package streaming
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
