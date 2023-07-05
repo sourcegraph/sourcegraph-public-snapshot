@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hashicorp/cronexpr"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -815,6 +814,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	return computedConfig
 }
 
+const embeddingsMaxFileSize = 1000000
+
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
@@ -943,11 +944,11 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	// While its not removed, use both options
 	var includedFilePathPatterns []string
 	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
-	maxFileSizeLimit := embed.MaxFileSizeBytes
+	maxFileSizeLimit := embeddingsMaxFileSize
 	if embeddingsConfig.FileFilters != nil {
 		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
 		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
-		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embed.MaxFileSizeBytes {
+		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSize {
 			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
 		}
 	}
