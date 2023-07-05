@@ -7,7 +7,7 @@ import (
 	stdhttp "net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
