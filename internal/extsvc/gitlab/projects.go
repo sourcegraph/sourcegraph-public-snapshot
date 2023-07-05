@@ -76,6 +76,14 @@ func (p Project) RequiresAuthentication() bool {
 	return p.Visibility == "private" || p.Visibility == "internal"
 }
 
+// ContentsVisible reports whether or not the repository contents of this project is visible to the user.
+// Repo content visibility is determined by checking whether or not the default branch of the project
+// was returned in the JSON response. If no default branch is returned it means that either the
+// project has no repository initialised, or the user cannot see the contents of the repository.
+func (p *Project) ContentsVisible() bool {
+	return p.DefaultBranch != ""
+}
+
 func idCacheKey(id int) string                                  { return "1:" + strconv.Itoa(id) }
 func pathWithNamespaceCacheKey(pathWithNamespace string) string { return "1:" + pathWithNamespace }
 

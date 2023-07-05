@@ -242,7 +242,8 @@ func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUs
 			}
 
 			for _, p := range projects {
-				if p.DefaultBranch != "" {
+				// Only append the project if the user can see the contents of the project.
+				if p.ContentsVisible() {
 					projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
 				}
 			}
