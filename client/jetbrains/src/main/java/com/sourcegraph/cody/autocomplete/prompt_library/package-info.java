@@ -4,4 +4,4 @@
  *
  * <p>Try to avoid writing custom IntelliJ-only related logic in this package.
  */
-package com.sourcegraph.cody.completions.prompt_library;
+package com.sourcegraph.cody.autocomplete.prompt_library;

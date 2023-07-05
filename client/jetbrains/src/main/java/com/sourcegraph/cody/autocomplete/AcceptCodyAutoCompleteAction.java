@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.openapi.actionSystem.DataContext;
 import com.intellij.openapi.command.WriteCommandAction;
@@ -17,8 +17,8 @@ import org.jetbrains.annotations.Nullable;
  * <p>The action works by reading the Inlay at the caret position and inserting the completion text
  * into the editor.
  */
-public class AcceptCodyCompletionAction extends EditorAction {
-  public AcceptCodyCompletionAction() {
+public class AcceptCodyAutoCompleteAction extends EditorAction {
+  public AcceptCodyAutoCompleteAction() {
     super(new AcceptCompletionActionHandler());
   }
 
@@ -28,11 +28,11 @@ public class AcceptCodyCompletionAction extends EditorAction {
     protected boolean isEnabledForCaret(
         @NotNull Editor editor, @NotNull Caret caret, DataContext dataContext) {
       // Returns false to fall back to normal TAB character if there is no suggestion at the caret.
-      return CodyCompletionsManager.isEditorInstanceSupported(editor)
+      return CodyAutoCompleteManager.isEditorInstanceSupported(editor)
           && getCodyCompletionAtCaret(editor, caret) != null;
     }
 
-    private @Nullable CodyCompletionElementRenderer getCodyCompletionAtCaret(
+    private @Nullable CodyAutoCompleteElementRenderer getCodyCompletionAtCaret(
         @NotNull Editor editor, @Nullable Caret caret) {
       if (caret == null) {
         return null;
@@ -42,9 +42,9 @@ public class AcceptCodyCompletionAction extends EditorAction {
       // we work around it by just looking at a range containing a single point
       List<Inlay<?>> inlays =
           editor.getInlayModel().getInlineElementsInRange(caret.getOffset(), caret.getOffset());
-      return (CodyCompletionElementRenderer)
+      return (CodyAutoCompleteElementRenderer)
           inlays.stream()
-              .filter(i -> i.getRenderer() instanceof CodyCompletionElementRenderer)
+              .filter(i -> i.getRenderer() instanceof CodyAutoCompleteElementRenderer)
               .map(Inlay::getRenderer)
               .findFirst()
               .orElse(null);
@@ -67,7 +67,7 @@ public class AcceptCodyCompletionAction extends EditorAction {
       }
       final Caret caret = maybeCaret;
 
-      CodyCompletionElementRenderer completion = getCodyCompletionAtCaret(editor, caret);
+      CodyAutoCompleteElementRenderer completion = getCodyCompletionAtCaret(editor, caret);
       if (completion == null) {
         return;
       }

@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions.prompt_library;
+package com.sourcegraph.cody.autocomplete.prompt_library;
 
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.api.Speaker;

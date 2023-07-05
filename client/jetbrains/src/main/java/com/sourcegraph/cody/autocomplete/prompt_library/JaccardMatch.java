@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions.prompt_library;
+package com.sourcegraph.cody.autocomplete.prompt_library;
 
 public class JaccardMatch {
   public final int score;

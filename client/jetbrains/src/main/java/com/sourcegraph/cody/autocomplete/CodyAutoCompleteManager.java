@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.injected.editor.EditorWindow;
 import com.intellij.openapi.application.ApplicationManager;
@@ -16,7 +16,7 @@ import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.CodyCompatibility;
 import com.sourcegraph.cody.api.CompletionsService;
-import com.sourcegraph.cody.completions.prompt_library.*;
+import com.sourcegraph.cody.autocomplete.prompt_library.*;
 import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
@@ -29,25 +29,25 @@ import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Responsible for triggering and clearing inline code completions. */
-public class CodyCompletionsManager {
-  private static final Logger logger = Logger.getInstance(CodyCompletionsManager.class);
+/** Responsible for triggering and clearing inline code completions (the autocomplete feature). */
+public class CodyAutoCompleteManager {
+  private static final Logger logger = Logger.getInstance(CodyAutoCompleteManager.class);
   private static final Key<Boolean> KEY_EDITOR_SUPPORTED = Key.create("cody.editorSupported");
   private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   // TODO: figure out how to avoid the ugly nested `Future<CompletableFuture<T>>` type.
   private final AtomicReference<Optional<Future<CompletableFuture<Void>>>> currentJob =
       new AtomicReference<>(Optional.empty());
 
-  public static @NotNull CodyCompletionsManager getInstance() {
-    return ApplicationManager.getApplication().getService(CodyCompletionsManager.class);
+  public static @NotNull CodyAutoCompleteManager getInstance() {
+    return ApplicationManager.getApplication().getService(CodyAutoCompleteManager.class);
   }
 
   @RequiresEdt
-  public void clearCompletions(@NotNull Editor editor) {
+  public void clearAutoCompleteSuggestions(@NotNull Editor editor) {
     cancelCurrentJob();
     for (Inlay<?> inlay :
         editor.getInlayModel().getInlineElementsInRange(0, editor.getDocument().getTextLength())) {
-      if (!(inlay.getRenderer() instanceof CodyCompletionElementRenderer)) {
+      if (!(inlay.getRenderer() instanceof CodyAutoCompleteElementRenderer)) {
         continue;
       }
       Disposer.dispose(inlay);
@@ -56,14 +56,14 @@ public class CodyCompletionsManager {
 
   @RequiresEdt
   public boolean isEnabledForEditor(Editor editor) {
-    return ConfigUtil.areCodyCompletionsEnabled()
+    return ConfigUtil.isCodyAutoCompleteEnabled()
         && editor != null
         && isProjectAvailable(editor.getProject())
         && isEditorSupported(editor);
   }
 
-  public void triggerCompletion(@NotNull Editor editor, int offset) {
-    if (!ConfigUtil.areCodyCompletionsEnabled()) {
+  public void triggerAutoComplete(@NotNull Editor editor, int offset) {
+    if (!ConfigUtil.isCodyAutoCompleteEnabled()) {
       return;
     }
 
@@ -75,12 +75,12 @@ public class CodyCompletionsManager {
 
     CancellationToken token = new CancellationToken();
     SourcegraphNodeCompletionsClient client =
-        new SourcegraphNodeCompletionsClient(completionsService(editor), token);
-    CodyCompletionItemProvider provider =
-        new CodyCompletionItemProvider(
+        new SourcegraphNodeCompletionsClient(autoCompleteService(editor), token);
+    CodyAutoCompleteItemProvider provider =
+        new CodyAutoCompleteItemProvider(
             new WebviewErrorMessenger(),
             client,
-            new CompletionsDocumentProvider(),
+            new AutoCompleteDocumentProvider(),
             new History(),
             2048,
             4,
@@ -88,39 +88,40 @@ public class CodyCompletionsManager {
             0.6,
             0.1);
     TextDocument textDocument = new IntelliJTextDocument(editor, project);
-    CompletionDocumentContext documentCompletionContext = textDocument.getCompletionContext(offset);
-    if (documentCompletionContext.isCompletionTriggerValid()) {
+    AutoCompleteDocumentContext autoCompleteDocumentContext =
+        textDocument.getCompletionContext(offset);
+    if (autoCompleteDocumentContext.isCompletionTriggerValid()) {
       Callable<CompletableFuture<Void>> callable =
           () ->
-              triggerCompletionAsync(
-                  editor, offset, token, provider, textDocument, documentCompletionContext);
-      // debouncing the completion trigger
+              triggerAutoCompleteAsync(
+                  editor, offset, token, provider, textDocument, autoCompleteDocumentContext);
+      // debouncing the autocomplete trigger
       cancelCurrentJob();
       this.currentJob.set(
           Optional.of(this.scheduler.schedule(callable, 20, TimeUnit.MILLISECONDS)));
     }
   }
 
-  public static @NotNull InlineCompletionItem postProcessInlineCompletionBasedOnDocumentContext(
-      @NotNull InlineCompletionItem resultItem,
-      @NotNull CompletionDocumentContext documentCompletionContext) {
-    String sameLineSuffix = documentCompletionContext.getSameLineSuffix();
+  public static @NotNull InlineAutoCompleteItem postProcessInlineAutoCompleteBasedOnDocumentContext(
+      @NotNull InlineAutoCompleteItem resultItem,
+      @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext) {
+    String sameLineSuffix = autoCompleteDocumentContext.getSameLineSuffix();
     if (resultItem.insertText.endsWith(sameLineSuffix)) {
-      // if the completion already has the same line suffix, we strip it
+      // if the autocomplete suggestion already has the same line suffix, we strip it
       String newInsertText = StringUtils.stripEnd(resultItem.insertText, sameLineSuffix);
-      // adjusting the range to account for the shorter completion
+      // adjusting the range to account for the shorter autocomplete suggestion
       Range newRange =
           resultItem.range.withEnd(
               resultItem.range.end.withCharacter(
                   resultItem.range.end.character - sameLineSuffix.length()));
       return resultItem.withRange(newRange).withInsertText(newInsertText);
     } else if (resultItem.insertText.contains(sameLineSuffix)) {
-      // if the completion already contains the same line suffix
+      // if the autocomplete suggestion already contains the same line suffix
       // but it doesn't strictly end with it
-      // we cut the end of the completion starting with the suffix
+      // we cut the end of the autocomplete suggestion starting with the suffix
       int index = resultItem.insertText.lastIndexOf(sameLineSuffix);
       String newInsertText = resultItem.insertText.substring(0, index);
-      // adjusting the range to account for the shorter completion
+      // adjusting the range to account for the shorter autocomplete suggestion
       int rangeDiff = resultItem.insertText.length() - newInsertText.length();
       Range newRange =
           resultItem.range.withEnd(
@@ -129,13 +130,13 @@ public class CodyCompletionsManager {
     } else return resultItem;
   }
 
-  private CompletableFuture<Void> triggerCompletionAsync(
+  private CompletableFuture<Void> triggerAutoCompleteAsync(
       @NotNull Editor editor,
       int offset,
       @NotNull CancellationToken token,
-      @NotNull CodyCompletionItemProvider provider,
+      @NotNull CodyAutoCompleteItemProvider provider,
       @NotNull TextDocument textDocument,
-      @NotNull CompletionDocumentContext documentCompletionContext) {
+      @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext) {
     return provider
         .provideInlineCompletions(
             textDocument,
@@ -152,28 +153,28 @@ public class CodyCompletionsManager {
               }
               InlayModel inlayModel = editor.getInlayModel();
               // TODO: smarter logic around selecting the best completion item.
-              Optional<InlineCompletionItem> maybeItem =
+              Optional<InlineAutoCompleteItem> maybeItem =
                   result.items.stream()
-                      .map(CodyCompletionsManager::removeUndesiredCharacters)
+                      .map(CodyAutoCompleteManager::removeUndesiredCharacters)
                       .map(item -> normalizeIndentation(item, EditorUtils.indentOptions(editor)))
                       .map(
                           resultItem ->
-                              postProcessInlineCompletionBasedOnDocumentContext(
-                                  resultItem, documentCompletionContext))
+                              postProcessInlineAutoCompleteBasedOnDocumentContext(
+                                  resultItem, autoCompleteDocumentContext))
                       .filter(resultItem -> !resultItem.insertText.isEmpty())
                       .findFirst();
               if (maybeItem.isEmpty()) {
                 return;
               }
-              InlineCompletionItem item = maybeItem.get();
+              InlineAutoCompleteItem item = maybeItem.get();
               try {
                 EditorCustomElementRenderer renderer =
-                    new CodyCompletionElementRenderer(item.insertText, editor);
+                    new CodyAutoCompleteElementRenderer(item.insertText, editor);
                 ApplicationManager.getApplication()
                     .invokeLater(
                         () -> {
                           /* Clear existing completions */
-                          this.clearCompletions(editor);
+                          this.clearAutoCompleteSuggestions(editor);
 
                           /* Log the event */
                           Project project = editor.getProject();
@@ -191,9 +192,9 @@ public class CodyCompletionsManager {
             });
   }
 
-  // TODO: handle tabs in multiline completions when we add them
-  public static @NotNull InlineCompletionItem normalizeIndentation(
-      @NotNull InlineCompletionItem item,
+  // TODO: handle tabs in multiline autocomplete suggestions when we add them
+  public static @NotNull InlineAutoCompleteItem normalizeIndentation(
+      @NotNull InlineAutoCompleteItem item,
       @NotNull CommonCodeStyleSettings.IndentOptions indentOptions) {
     if (item.insertText.matches("^[\t ]*.+")) {
       String withoutLeadingWhitespace = item.insertText.stripLeading();
@@ -209,8 +210,8 @@ public class CodyCompletionsManager {
     } else return item;
   }
 
-  public static @NotNull InlineCompletionItem removeUndesiredCharacters(
-      @NotNull InlineCompletionItem item) {
+  public static @NotNull InlineAutoCompleteItem removeUndesiredCharacters(
+      @NotNull InlineAutoCompleteItem item) {
     // no zero-width spaces or line separator chars, pls
     String newInsertText = item.insertText.replaceAll("[\u200b\u2028]", "");
     int rangeDiff = item.insertText.length() - newInsertText.length();
@@ -249,7 +250,7 @@ public class CodyCompletionsManager {
   }
 
   @Nullable
-  private CompletionsService completionsService(@NotNull Editor editor) {
+  private CompletionsService autoCompleteService(@NotNull Editor editor) {
     Optional<Project> project = Optional.ofNullable(editor.getProject());
     String instanceUrl =
         project

@@ -2,11 +2,12 @@ package com.sourcegraph.cody.vscode;
 
 public class InlineCompletionContext {
   public final InlineCompletionTriggerKind triggerKind;
-  public final SelectedCompletionInfo selectedCompletionInfo;
+  public final SelectedAutoCompleteSuggestionInfo selectedAutoCompleteSuggestionInfo;
 
   public InlineCompletionContext(
-      InlineCompletionTriggerKind triggerKind, SelectedCompletionInfo selectedCompletionInfo) {
+      InlineCompletionTriggerKind triggerKind,
+      SelectedAutoCompleteSuggestionInfo selectedAutoCompleteSuggestionInfo) {
     this.triggerKind = triggerKind;
-    this.selectedCompletionInfo = selectedCompletionInfo;
+    this.selectedAutoCompleteSuggestionInfo = selectedAutoCompleteSuggestionInfo;
   }
 }

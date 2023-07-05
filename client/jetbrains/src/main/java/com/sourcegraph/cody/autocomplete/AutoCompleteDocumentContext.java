@@ -1,12 +1,13 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.autocomplete;
 
 import org.jetbrains.annotations.NotNull;
 
-public class CompletionDocumentContext {
+public class AutoCompleteDocumentContext {
   private final @NotNull String sameLineSuffix;
   private final @NotNull String sameLinePrefix;
 
-  public CompletionDocumentContext(@NotNull String sameLinePrefix, @NotNull String sameLineSuffix) {
+  public AutoCompleteDocumentContext(
+      @NotNull String sameLinePrefix, @NotNull String sameLineSuffix) {
     this.sameLineSuffix = sameLineSuffix;
     this.sameLinePrefix = sameLinePrefix;
   }

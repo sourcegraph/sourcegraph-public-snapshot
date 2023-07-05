@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions.prompt_library;
+package com.sourcegraph.cody.autocomplete.prompt_library;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.api.Message;
-import com.sourcegraph.cody.completions.UnstableCodegenLanguageUtil;
+import com.sourcegraph.cody.autocomplete.UnstableCodegenLanguageUtil;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
 import com.sourcegraph.cody.vscode.TextDocument;

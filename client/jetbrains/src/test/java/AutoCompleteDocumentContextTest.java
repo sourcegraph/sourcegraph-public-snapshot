@@ -1,39 +1,39 @@
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.sourcegraph.cody.completions.CompletionDocumentContext;
+import com.sourcegraph.cody.autocomplete.AutoCompleteDocumentContext;
 import org.junit.jupiter.api.Test;
 
-public class CompletionDocumentContextTest {
+public class AutoCompleteDocumentContextTest {
   @Test
   public void skipCompletionIfLineSuffixContainsWordChars() {
-    CompletionDocumentContext context1 = new CompletionDocumentContext("", "foo");
+    AutoCompleteDocumentContext context1 = new AutoCompleteDocumentContext("", "foo");
     assertFalse(context1.isCompletionTriggerValid());
-    CompletionDocumentContext context2 = new CompletionDocumentContext("bar", "foo");
+    AutoCompleteDocumentContext context2 = new AutoCompleteDocumentContext("bar", "foo");
     assertFalse(context2.isCompletionTriggerValid());
-    CompletionDocumentContext context3 = new CompletionDocumentContext("bar", " = 123; }");
+    AutoCompleteDocumentContext context3 = new AutoCompleteDocumentContext("bar", " = 123; }");
     assertFalse(context3.isCompletionTriggerValid());
   }
 
   @Test
   public void skipCompletionIfLinePrefixContainsText() {
-    CompletionDocumentContext context1 = new CompletionDocumentContext("foo", "");
+    AutoCompleteDocumentContext context1 = new AutoCompleteDocumentContext("foo", "");
     assertFalse(context1.isCompletionTriggerValid());
-    CompletionDocumentContext context2 = new CompletionDocumentContext("foo", ");");
+    AutoCompleteDocumentContext context2 = new AutoCompleteDocumentContext("foo", ");");
     assertFalse(context2.isCompletionTriggerValid());
   }
 
   @Test
   public void skipCompletionIfLinePrefixContainsTextPrecededByWhitespace() {
-    CompletionDocumentContext context1 = new CompletionDocumentContext("  foo", "");
+    AutoCompleteDocumentContext context1 = new AutoCompleteDocumentContext("  foo", "");
     assertFalse(context1.isCompletionTriggerValid());
-    CompletionDocumentContext context2 = new CompletionDocumentContext("\t\tfoo", ");");
+    AutoCompleteDocumentContext context2 = new AutoCompleteDocumentContext("\t\tfoo", ");");
     assertFalse(context2.isCompletionTriggerValid());
   }
 
   @Test
   public void shouldTriggerCompletionIfLineSuffixIsSpecialCharsOnly() {
-    CompletionDocumentContext context = new CompletionDocumentContext("if(", ") {");
+    AutoCompleteDocumentContext context = new AutoCompleteDocumentContext("if(", ") {");
     assertTrue(context.isCompletionTriggerValid());
   }
 }

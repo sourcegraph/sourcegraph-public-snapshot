@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions.prompt_library;
+package com.sourcegraph.cody.autocomplete.prompt_library;
 
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 // TODO: implement the rest of this class.
-public class CompletionsDocumentProvider implements TextDocumentContentProvider {
+public class AutoCompleteDocumentProvider implements TextDocumentContentProvider {
   @Override
   public CompletableFuture<String> provideTextDocumentContent(URI uri, CancellationToken token) {
     return null;

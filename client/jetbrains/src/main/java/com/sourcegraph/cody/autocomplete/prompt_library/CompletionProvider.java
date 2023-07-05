@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions.prompt_library;
+package com.sourcegraph.cody.autocomplete.prompt_library;
 
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.api.Promises;
@@ -14,7 +14,7 @@ import java.util.stream.Collectors;
 public abstract class CompletionProvider {
   protected SourcegraphNodeCompletionsClient completionsClient;
   protected final ExecutorService executor =
-      Executors.newFixedThreadPool(CodyCompletionItemProvider.nThreads);
+      Executors.newFixedThreadPool(CodyAutoCompleteItemProvider.nThreads);
   protected int promptChars;
   protected int responseTokens;
   protected List<ReferenceSnippet> snippets;

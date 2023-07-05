@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.openapi.editor.DefaultLanguageHighlighterColors;
 import com.intellij.openapi.editor.Editor;
@@ -12,14 +12,14 @@ import java.awt.*;
 import org.jetbrains.annotations.NotNull;
 
 /** Implements the logic to render a completion item inline in the editor. */
-public class CodyCompletionElementRenderer implements EditorCustomElementRenderer {
+public class CodyAutoCompleteElementRenderer implements EditorCustomElementRenderer {
   public final String text;
   private final TextAttributes themeAttributes;
   private final Editor editor;
 
-  public CodyCompletionElementRenderer(String text, Editor editor) {
+  public CodyAutoCompleteElementRenderer(String text, Editor editor) {
     this.text = text;
-    this.themeAttributes = CodyCompletionElementRenderer.getTextAttributes(editor);
+    this.themeAttributes = CodyAutoCompleteElementRenderer.getTextAttributes(editor);
     this.editor = editor;
   }
 

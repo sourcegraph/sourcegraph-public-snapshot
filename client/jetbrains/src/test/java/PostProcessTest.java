@@ -1,6 +1,6 @@
 import static org.junit.jupiter.api.Assertions.*;
 
-import com.sourcegraph.cody.completions.prompt_library.PostProcess;
+import com.sourcegraph.cody.autocomplete.prompt_library.PostProcess;
 import com.sourcegraph.cody.vscode.Completion;
 import org.apache.commons.compress.utils.Lists;
 import org.junit.jupiter.api.Test;

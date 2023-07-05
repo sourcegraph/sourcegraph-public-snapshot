@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.vscode;
 
-import com.sourcegraph.cody.completions.prompt_library.InlineCompletionList;
+import com.sourcegraph.cody.autocomplete.prompt_library.InlineCompletionList;
 import java.util.concurrent.CompletableFuture;
 
 public abstract class InlineCompletionItemProvider {

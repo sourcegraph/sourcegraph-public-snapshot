@@ -1,4 +1,4 @@
-package com.sourcegraph.cody.completions;
+package com.sourcegraph.cody.autocomplete;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.vscode.TextDocument;

@@ -1,8 +1,8 @@
-package com.sourcegraph.cody.completions.prompt_library;
+package com.sourcegraph.cody.autocomplete.prompt_library;
 
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.api.Promises;
-import com.sourcegraph.cody.completions.CompletionsProviderType;
+import com.sourcegraph.cody.autocomplete.AutoCompleteProviderType;
 import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.config.UserLevelConfig;
 import java.util.*;
@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
  * Let's keep the unused code to make it easier to see the similarity between the two versions.
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal", "CommentedOutCode"})
-public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
-  private static final Logger logger = Logger.getInstance(CodyCompletionItemProvider.class);
+public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
+  private static final Logger logger = Logger.getInstance(CodyAutoCompleteItemProvider.class);
   public static final int nThreads = 3; // up to 3 completion API calls to run in parallel
   // should we reuse the scheduler from CodyCompletionsManager here later on?
   private final ExecutorService executor = Executors.newFixedThreadPool(nThreads);
@@ -28,15 +28,15 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
   private final Runnable abortOpenMultilineCompletion = () -> {};
   private final WebviewErrorMessenger webviewErrorMessenger;
   private final SourcegraphNodeCompletionsClient completionsClient;
-  private final CompletionsDocumentProvider documentProvider;
+  private final AutoCompleteDocumentProvider documentProvider;
   private final History history;
   private final int charsPerToken;
   private final int responseTokens;
 
-  public CodyCompletionItemProvider(
+  public CodyAutoCompleteItemProvider(
       WebviewErrorMessenger webviewErrorMessenger,
       SourcegraphNodeCompletionsClient completionsClient,
-      CompletionsDocumentProvider documentProvider,
+      AutoCompleteDocumentProvider documentProvider,
       History history,
       int contextWindowTokens,
       int charsPerToken,
@@ -127,7 +127,8 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
     //    int waitMs;
     List<CompletionProvider> completers = new ArrayList<>();
 
-    if (context.selectedCompletionInfo != null || precedingLine.matches(".*[A-Za-z]$")) {
+    if (context.selectedAutoCompleteSuggestionInfo != null
+        || precedingLine.matches(".*[A-Za-z]$")) {
       return emptyResult();
     }
 
@@ -191,14 +192,14 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
                         () -> c.generateCompletions(token, Optional.empty()), executor))
             .map(cf -> cf.thenCompose(Function.identity())) // flatten the CompletableFutures
             .collect(Collectors.toList());
-    CompletableFuture<List<InlineCompletionItem>> all =
+    CompletableFuture<List<InlineAutoCompleteItem>> all =
         Promises.all(promises)
             .thenApply(
                 completions ->
                     completions.stream()
                         .flatMap(Collection::stream)
                         .map(c -> PostProcess.postProcess(prefix, suffix, c))
-                        .map(InlineCompletionItem::fromCompletion)
+                        .map(InlineAutoCompleteItem::fromCompletion)
                         .collect(Collectors.toList()));
 
     return all.thenApply(InlineCompletionList::new);
@@ -290,10 +291,10 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
               injectPrefix,
               defaultN);
         };
-    CompletionsProviderType providerType = UserLevelConfig.getCompletionsProviderType();
+    AutoCompleteProviderType providerType = UserLevelConfig.getAutoCompleteProviderType();
     Optional<String> completionsServerEndpoint =
-        Optional.ofNullable(UserLevelConfig.getCompletionsServerEndpoint());
-    if (providerType == CompletionsProviderType.UNSTABLE_CODEGEN) {
+        Optional.ofNullable(UserLevelConfig.getAutoCompleteServerEndpoint());
+    if (providerType == AutoCompleteProviderType.UNSTABLE_CODEGEN) {
       return completionsServerEndpoint
           .map(
               endpoint ->
