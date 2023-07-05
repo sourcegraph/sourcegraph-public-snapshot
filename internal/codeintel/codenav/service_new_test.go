@@ -50,13 +50,15 @@ func TestNewGetDefinitions(t *testing.T) {
 		}
 		mockLsifStore.ExtractDefinitionLocationsFromPositionFunc.PushReturn(locations, nil, nil)
 
-		mockRequest := RequestArgs{
-			RepositoryID: 51,
-			Commit:       mockCommit,
-			Path:         mockPath,
-			Line:         10,
-			Character:    20,
-			Limit:        50,
+		mockRequest := PositionalRequestArgs{
+			RequestArgs: RequestArgs{
+				RepositoryID: 51,
+				Commit:       mockCommit,
+				Limit:        50,
+			},
+			Path:      mockPath,
+			Line:      10,
+			Character: 20,
 		}
 		adjustedLocations, err := svc.NewGetDefinitions(context.Background(), mockRequest, mockRequestState)
 		if err != nil {
@@ -135,13 +137,15 @@ func TestNewGetDefinitions(t *testing.T) {
 		}
 		mockLsifStore.GetMinimalBulkMonikerLocationsFunc.PushReturn(locations, len(locations), nil)
 
-		mockRequest := RequestArgs{
-			RepositoryID: 42,
-			Commit:       mockCommit,
-			Path:         mockPath,
-			Line:         10,
-			Character:    20,
-			Limit:        50,
+		mockRequest := PositionalRequestArgs{
+			RequestArgs: RequestArgs{
+				RepositoryID: 42,
+				Commit:       mockCommit,
+				Limit:        50,
+			},
+			Path:      mockPath,
+			Line:      10,
+			Character: 20,
 		}
 		remoteUploads := dumps
 		adjustedLocations, err := svc.NewGetDefinitions(context.Background(), mockRequest, mockRequestState)
@@ -236,13 +240,15 @@ func TestNewGetReferences(t *testing.T) {
 		mockLsifStore.ExtractReferenceLocationsFromPositionFunc.PushReturn(locations[4:], nil, nil)
 
 		mockCursor := Cursor{}
-		mockRequest := RequestArgs{
-			RepositoryID: 42,
-			Commit:       mockCommit,
-			Path:         mockPath,
-			Line:         10,
-			Character:    20,
-			Limit:        50,
+		mockRequest := PositionalRequestArgs{
+			RequestArgs: RequestArgs{
+				RepositoryID: 42,
+				Commit:       mockCommit,
+				Limit:        50,
+			},
+			Path:      mockPath,
+			Line:      10,
+			Character: 20,
 		}
 		adjustedLocations, _, err := svc.NewGetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
@@ -364,13 +370,15 @@ func TestNewGetReferences(t *testing.T) {
 		// resolver.SetUploadsDataLoader(uploads)
 
 		mockCursor := Cursor{}
-		mockRequest := RequestArgs{
-			RepositoryID: 42,
-			Commit:       mockCommit,
-			Path:         mockPath,
-			Line:         10,
-			Character:    20,
-			Limit:        50,
+		mockRequest := PositionalRequestArgs{
+			RequestArgs: RequestArgs{
+				RepositoryID: 42,
+				Commit:       mockCommit,
+				Limit:        50,
+			},
+			Path:      mockPath,
+			Line:      10,
+			Character: 20,
 		}
 		adjustedLocations, _, err := svc.NewGetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {
@@ -476,13 +484,15 @@ func TestNewGetImplementations(t *testing.T) {
 		}
 		mockRequestState.SetUploadsDataLoader(uploads)
 		mockCursor := Cursor{}
-		mockRequest := RequestArgs{
-			RepositoryID: 51,
-			Commit:       "deadbeef",
-			Path:         "s1/main.go",
-			Line:         10,
-			Character:    20,
-			Limit:        50,
+		mockRequest := PositionalRequestArgs{
+			RequestArgs: RequestArgs{
+				RepositoryID: 51,
+				Commit:       "deadbeef",
+				Limit:        50,
+			},
+			Path:      "s1/main.go",
+			Line:      10,
+			Character: 20,
 		}
 		adjustedLocations, _, err := svc.NewGetImplementations(context.Background(), mockRequest, mockRequestState, mockCursor)
 		if err != nil {

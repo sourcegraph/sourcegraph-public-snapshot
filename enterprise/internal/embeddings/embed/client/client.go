@@ -6,8 +6,8 @@ import (
 )
 
 type EmbeddingsClient interface {
-	// GetEmbeddingsWithRetries returns embeddings for the given texts.
-	GetEmbeddingsWithRetries(ctx context.Context, texts []string, maxRetries int) ([]float32, error)
+	// GetEmbeddings returns embeddings for the given texts.
+	GetEmbeddings(ctx context.Context, texts []string) ([]float32, error)
 	// GetDimensions returns the dimensionality of the embedding space.
 	GetDimensions() (int, error)
 	// GetModelIdentifier returns the identifier of the model used to generate embeddings. The format is
