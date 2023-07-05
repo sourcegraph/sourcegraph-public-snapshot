@@ -103,9 +103,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		var bzlCmd string
 		scanner := bufio.NewScanner(strings.NewReader(env["CI_COMMIT_MESSAGE"]))
 		for scanner.Scan() {
-			line := scanner.Text()
+			line := strings.TrimSpace(scanner.Text())
 			if strings.HasPrefix(line, "!bazel") {
-				bzlCmd = strings.TrimPrefix(line, "!bazel")
+				bzlCmd = strings.TrimSpace(strings.TrimPrefix(line, "!bazel"))
 
 				// sanitize the input
 				if err := verifyBazelCommand(bzlCmd); err != nil {
@@ -119,6 +119,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 						bk.Cmd(bazelCmd(bzlCmd)),
 					)
 				})
+				break
 			}
 		}
 

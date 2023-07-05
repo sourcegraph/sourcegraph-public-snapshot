@@ -216,6 +216,18 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--format="<value>"`: Output format for the preview (one of 'markdown', 'json', or 'yaml') (default: markdown)
 
+### sg ci bazel
+
+Fires a CI build running a given bazel command.
+
+Arguments: `[--web|--wait] [test|build] <target1> <target2> ... <bazel flags>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--wait`: Wait until build completion and then print logs for the Bazel command
+* `--web`: Print the web URL for the build and return immediately
+
 ### sg ci status
 
 Get the status of the CI run associated with the currently checked out branch.
