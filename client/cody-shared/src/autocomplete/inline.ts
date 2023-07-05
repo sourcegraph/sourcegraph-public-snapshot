@@ -4,8 +4,9 @@ import url from 'url'
 import { LRUCache } from 'lru-cache'
 
 import { CodebaseContext } from '../codebase-context'
+import { Editor, LightTextDocument } from '../editor'
 
-import { Completion, CompletionsTextEditor, CurrentDocumentContext, History, LightTextDocument } from '.'
+import { AutocompleteContext, Completion } from '.'
 import { CompletionsCache } from './cache'
 import { getContext } from './context'
 import { detectMultilineMode } from './multiline'
@@ -31,7 +32,7 @@ export class InlineCompletionProvider {
 
     constructor(
         public providerConfig: ProviderConfig,
-        public textEditor: CompletionsTextEditor,
+        public textEditor: Editor,
         public history: History,
         public codebaseContext: CodebaseContext,
         public responsePercentage: number,
@@ -54,7 +55,7 @@ export class InlineCompletionProvider {
     public async getCompletions(
         abortController: AbortController,
         document: LightTextDocument,
-        docContext: CurrentDocumentContext
+        docContext: AutocompleteContext
     ): Promise<InlineCompletionResult | null> {
         const languageId = document.languageId
         const { prefix, suffix, prevLine: sameLinePrefix, prevNonEmptyLine } = docContext
@@ -83,7 +84,7 @@ export class InlineCompletionProvider {
         const completers: Provider[] = []
         let timeout: number
 
-        const workspace = this.textEditor.getWorkspaceRootPath()
+        const workspace = this.textEditor.getActiveWorkspace()
 
         if (!workspace) {
             return null
@@ -92,7 +93,7 @@ export class InlineCompletionProvider {
         const sharedProviderOptions = {
             prefix,
             suffix,
-            fileName: path.relative(workspace, url.fileURLToPath(document.uri)),
+            fileName: workspace.relativeTo(document.uri),
             languageId,
             responsePercentage: this.responsePercentage,
             prefixPercentage: this.prefixPercentage,

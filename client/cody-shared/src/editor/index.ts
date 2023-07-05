@@ -1,5 +1,7 @@
 import path from 'path'
 
+import { SURROUNDING_LINES } from '../prompt/constants'
+
 import { DocumentOffsets } from './offsets'
 
 export type Uri = string
@@ -68,6 +70,12 @@ export interface ViewControllers {
     fixups: VsCodeFixupController
 }
 
+export interface SelectionText {
+    precedingText: string
+    selectedText: string
+    followingText: string
+}
+
 export class Workspace {
     constructor(public root: Uri) {}
 
@@ -104,6 +112,7 @@ export abstract class Editor {
 
     public abstract getActiveLightTextDocument(): LightTextDocument | null
     public abstract getOpenLightTextDocuments(): LightTextDocument[]
+    public abstract getLightTextDocument(uri: Uri): Promise<LightTextDocument | null>
     public abstract getTextDocument(uri: Uri): Promise<TextDocument | null>
 
     /** NOTE: This is currently unused but will be used for inline fix */
@@ -128,13 +137,17 @@ export abstract class Editor {
         return document
     }
 
-    public async getDocumentTextTruncated(uri: Uri): Promise<string | null> {
-        const document = await this.getTextDocument(uri)
+    public getLightTextDocumentRelativePath(light: LightTextDocument): string | null {
+        const workspace = this.getWorkspaceOf(light.uri)
 
-        if (!document) {
+        if (!workspace) {
             return null
         }
 
+        return workspace.relativeTo(light.uri)
+    }
+
+    public static getTruncatedTextDocument(document: TextDocument): string {
         const offset = new DocumentOffsets(document.content)
 
         const range: Range = {
@@ -149,6 +162,38 @@ export abstract class Editor {
         }
 
         return offset.rangeSlice(range)
+    }
+
+    public static getTextDocumentSelectionText(document: TextDocument): SelectionText | null {
+        if (!document.selection) {
+            return null
+        }
+
+        const offset = new DocumentOffsets(document.content)
+
+        const selectedText = offset.jointRangeSlice(document.selection)
+
+        const precedingText = offset.rangeSlice({
+            start: {
+                line: Math.max(0, document.selection.position.start.line - SURROUNDING_LINES),
+                character: 0,
+            },
+            end: document.selection.position.start,
+        })
+
+        const followingText = offset.rangeSlice({
+            start: document.selection.position.end,
+            end: {
+                line: document.selection.position.end.line + SURROUNDING_LINES,
+                character: 0,
+            },
+        })
+
+        return {
+            selectedText,
+            precedingText,
+            followingText,
+        }
     }
 }
 
@@ -167,6 +212,10 @@ export class NoopEditor extends Editor {
 
     public getWorkspaceOf(uri: string): Workspace | null {
         return null
+    }
+
+    public getLightTextDocument(uri: string): Promise<LightTextDocument | null> {
+        return Promise.resolve(null)
     }
 
     public getTextDocument(uri: string): Promise<TextDocument | null> {

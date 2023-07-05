@@ -1480,6 +1480,9 @@ importers:
       '@anthropic-ai/sdk':
         specifier: ^0.4.2
         version: 0.4.3
+      '@flatten-js/interval-tree':
+        specifier: ^1.0.21
+        version: 1.0.21
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -5822,6 +5825,10 @@ packages:
       '@figspec/components': 1.0.0
       react: 18.1.0
     dev: true
+
+  /@flatten-js/interval-tree@1.0.21:
+    resolution: {integrity: sha512-TcxTNMkWBPqLicuFw9FViOZSVuug8MRRISUMDOCFzMI9FZ97BTjxiq8V168VifuEq9ERHhP2ltmGCovwS+KACw==}
+    dev: false
 
   /@fortaine/fetch-event-source@3.0.6:
     resolution: {integrity: sha512-621GAuLMvKtyZQ3IA6nlDWhV1V/7PGOTNIGLUifxt0KzM+dZIweJ6F3XvQF3QnqeNfS1N7WQ0Kil1Di/lhChEw==}

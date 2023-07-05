@@ -4,7 +4,6 @@ describe('sliceUntilFirstNLinesOfSuffixMatch', () => {
     it('returns the right text', () => {
         const suggestion = 'foo\nbar\nbaz\nline-1\nline-2\noh no\nline-1\nline-2\nline-3'
         const suffix = 'line-1\nline-2\nline-3\nline-4\nline-5'
-
         expect(sliceUntilFirstNLinesOfSuffixMatch(suggestion, suffix, 3)).toMatchInlineSnapshot(`
             "foo
             bar

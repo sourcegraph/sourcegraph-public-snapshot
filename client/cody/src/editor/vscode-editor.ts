@@ -78,6 +78,19 @@ export class VSCodeEditor extends Editor {
         return activeEditor && activeEditor.document.uri.scheme === 'file' ? activeEditor : null
     }
 
+    public async getLightTextDocument(uri: Uri): Promise<LightTextDocument | null> {
+        const document = await vscode.workspace.openTextDocument(uri)
+
+        if (!document) {
+            return null
+        }
+
+        return {
+            uri,
+            languageId: document.languageId,
+        }
+    }
+
     public async getTextDocument(uri: Uri): Promise<TextDocument | null> {
         const activeEditor = this.getActiveTextEditorInstance()
         const document = await vscode.workspace.openTextDocument(uri)

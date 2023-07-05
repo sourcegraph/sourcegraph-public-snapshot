@@ -4,13 +4,13 @@ import { differenceInMinutes } from 'date-fns'
 import { LRUCache } from 'lru-cache'
 
 import { CodebaseContext } from '../codebase-context'
+import { Editor } from '../editor'
 
-import { CompletionsTextEditor } from '.'
 import type { ReferenceSnippet } from './context'
 import { logCompletionEvent } from './logger'
 
 interface Options {
-    currentEditor: CompletionsTextEditor
+    currentEditor: Editor
     prefix: string
     suffix: string
     codebaseContext: CodebaseContext
@@ -29,7 +29,7 @@ export async function getContextFromEmbeddings(options: Options): Promise<Refere
     const { currentEditor, codebaseContext, prefix, suffix } = options
 
     const currentFilePath = path.normalize(
-        (await currentEditor.getDocumentRelativePath(currentEditor.getCurrentDocument()!.uri))!
+        currentEditor.getLightTextDocumentRelativePath(currentEditor.getActiveLightTextDocument()!)!
     )
     const embeddingsForCurrentFile = embeddingsPerFile.get(currentFilePath)
 

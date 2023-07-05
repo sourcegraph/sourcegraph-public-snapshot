@@ -18,15 +18,16 @@
     "test": "jest"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.4.2",
+    "@flatten-js/interval-tree": "^1.0.21",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
-    "xml2js": "^0.6.0",
-    "@anthropic-ai/sdk": "^0.4.2",
     "lru-cache": "^9.1.1",
     "openai": "^3.2.1",
     "wink-eng-lite-web-model": "^1.5.0",
     "wink-nlp": "^1.13.1",
-    "wink-nlp-utils": "^2.1.0"
+    "wink-nlp-utils": "^2.1.0",
+    "xml2js": "^0.6.0"
   },
   "devDependencies": {
     "@types/xml2js": "^0.4.11"
