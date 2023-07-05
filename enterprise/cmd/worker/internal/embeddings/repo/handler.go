@@ -85,12 +85,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		revision:  record.Revision,
 		gitserver: h.gitserverClient,
 	}
-	includedFiles, excluededFiles := getFileFilterPathPatterns(embeddingsConfig)
+	includedFiles, excludedFiles := getFileFilterPathPatterns(embeddingsConfig)
 	opts := embed.EmbedRepoOpts{
 		RepoName: repo.Name,
 		Revision: record.Revision,
 		FileFilters: embed.FileFilters{
-			ExcludePatterns: excluededFiles,
+			ExcludePatterns: excludedFiles,
 			IncludePatterns: includedFiles,
 			MaxFileSize:     embeddingsConfig.FileFilters.MaxFileSize,
 		},
