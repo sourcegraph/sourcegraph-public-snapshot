@@ -330,6 +330,43 @@ func TestGRPCPrefixChecker(t *testing.T) {
 	}
 }
 
+func TestGRPCUnexpectedContentTypeChecker(t *testing.T) {
+	tests := []struct {
+		name   string
+		status *status.Status
+		want   bool
+	}{
+		{
+			name:   "gRPC error with OK status",
+			status: status.New(codes.OK, "transport: received unexpected content-type"),
+			want:   false,
+		},
+		{
+			name:   "gRPC error without unexpected content-type message",
+			status: status.New(codes.Internal, "some random error"),
+			want:   false,
+		},
+		{
+			name:   "gRPC error with unexpected content-type message",
+			status: status.Newf(codes.Internal, "transport: received unexpected content-type %q", "application/octet-stream"),
+			want:   true,
+		},
+		{
+			name:   "gRPC error with unexpected content-type message as part of chain",
+			status: status.Newf(codes.Unknown, "transport: malformed grpc-status %q; transport: received unexpected content-type %q", "random-status", "application/octet-stream"),
+			want:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := gRPCUnexpectedContentTypeChecker(tt.status); got != tt.want {
+				t.Errorf("gRPCUnexpectedContentTypeChecker() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestSplitMethodName(t *testing.T) {
 	testCases := []struct {
 		name string

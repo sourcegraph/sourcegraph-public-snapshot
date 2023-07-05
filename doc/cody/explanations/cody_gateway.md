@@ -12,7 +12,7 @@ Reach out your account manager for more details about Sourcegraph Cody Gateway a
 
 > WARNING: Sourcegraph Cody Gateway access must be included in your Sourcegraph Enterprise subscription plan first - reach out to your account manager for more details.
 >
-> If you are a [Sourcegraph Cloud](../../cloud/index.md) customer, please reach out to your account manager to enable Cody.
+> If you are a [Sourcegraph Cloud](../../cloud/index.md) customer, Cody is enabled by default on your instance starting with Sourcegraph 5.1.
 
 <span class="virtual-br"></span>
 

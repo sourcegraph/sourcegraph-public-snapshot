@@ -1,13 +1,14 @@
 package com.sourcegraph.cody.completions;
 
+import com.intellij.openapi.diagnostic.Logger;
+import com.sourcegraph.cody.vscode.TextDocument;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class UnstableCodegenLanguageUtil {
+  private static final Logger logger = Logger.getInstance(UnstableCodegenLanguageUtil.class);
   private static final Map<String, String> fileExtensionToModelLanguageId =
       new HashMap<>() {
         {
@@ -39,26 +40,25 @@ public class UnstableCodegenLanguageUtil {
       };
 
   @NotNull
-  public static String getModelLanguageId(
-      @Nullable String intelliJLanguageId, @NotNull String fileName) {
-    String fileExtension = "." + StringUtils.substringAfterLast(fileName, ".");
+  public static String getModelLanguageId(@NotNull TextDocument textDocument) {
+    String fileExtension = "." + StringUtils.substringAfterLast(textDocument.fileName(), ".");
     String languageIdBasedOnExtension =
         fileExtensionToModelLanguageId.getOrDefault(fileExtension, "");
     String languageIdBasedOnIntelliJ =
-        Optional.ofNullable(intelliJLanguageId).map(String::toLowerCase).orElse("");
+        textDocument.getLanguageId().map(String::toLowerCase).orElse("");
     boolean intelliJLanguageIdIsSupported =
         fileExtensionToModelLanguageId.containsValue(languageIdBasedOnIntelliJ);
     if (!languageIdBasedOnExtension.isEmpty()
         && !languageIdBasedOnIntelliJ.isEmpty()
         && !languageIdBasedOnExtension.equals(languageIdBasedOnIntelliJ)) {
-      System.err.println( // logging the mismatch to make debugging easier
+      logger.warn( // logging the mismatch to make debugging easier
           "Cody: Completion: Detected mismatch between the code language detected by IntelliJ vs based on extension. "
               + "IntelliJ detected: "
               + languageIdBasedOnIntelliJ
               + " and extension-based detection: "
               + languageIdBasedOnExtension);
       if (intelliJLanguageIdIsSupported) {
-        System.err.println(
+        logger.warn(
             "Cody: IntelliJ detected language is supported by `unstable-codegen`, so it takes priority.");
       }
     }

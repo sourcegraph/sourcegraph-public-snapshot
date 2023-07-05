@@ -64,8 +64,8 @@ var Targets = []Target{
 		Name:        "dockerfiles",
 		Description: "Check Dockerfiles for Sourcegraph best practices",
 		Checks: []*linter{
+			// TODO move to pre-commit
 			hadolint(),
-			customDockerfileLinters(),
 		},
 	},
 	{

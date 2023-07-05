@@ -22,6 +22,7 @@ export interface RepositoryOwnAreaPageProps extends Pick<BreadcrumbSetters, 'use
     repo: RepositoryFields
     authenticatedUser: Pick<AuthenticatedUser, 'siteAdmin'> | null
 }
+
 const EDIT_PAGE_BREADCRUMB = { key: 'edit-own', element: 'Upload CODEOWNERS' }
 
 export const RepositoryOwnEditPage: React.FunctionComponent<Omit<RepositoryOwnAreaPageProps, 'telemetryService'>> = ({
@@ -38,8 +39,8 @@ export const RepositoryOwnEditPage: React.FunctionComponent<Omit<RepositoryOwnAr
             <PageHeader
                 description={
                     <>
-                        Sourcegraph Own can provide code ownership data for this repository via an upload or a committed{' '}
-                        CODEOWNERS file. <Link to="/help/own">Learn more about Sourcegraph Own.</Link>
+                        Code ownership data for this repository can be provided via an upload or a committed CODEOWNERS
+                        file. <Link to="/help/own">Learn more about code ownership.</Link>
                     </>
                 }
             >

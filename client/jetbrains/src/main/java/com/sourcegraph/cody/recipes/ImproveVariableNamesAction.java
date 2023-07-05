@@ -1,6 +1,6 @@
 package com.sourcegraph.cody.recipes;
 
-public class ImproveVariableNamesAction extends BaseRecipeAction {
+public class ImproveVariableNamesAction extends SimpleRecipeAction {
 
   @Override
   protected PromptProvider getPromptProvider() {

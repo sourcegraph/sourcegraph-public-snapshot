@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.completions.prompt_library;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.api.Promises;
 import com.sourcegraph.cody.completions.CompletionsProviderType;
 import com.sourcegraph.cody.vscode.*;
@@ -16,7 +17,8 @@ import java.util.stream.Collectors;
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal", "CommentedOutCode"})
 public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
-  int nThreads = 3; // up to 3 completion API calls to run in parallel
+  private static final Logger logger = Logger.getInstance(CodyCompletionItemProvider.class);
+  public static final int nThreads = 3; // up to 3 completion API calls to run in parallel
   // should we reuse the scheduler from CodyCompletionsManager here later on?
   private final ExecutorService executor = Executors.newFixedThreadPool(nThreads);
   private final int promptTokens;
@@ -277,7 +279,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
       TextDocument document) {
     Function<Optional<String>, CompletionProvider> fallbackDefaultProvider =
         (maybeErrorToLog) -> {
-          maybeErrorToLog.ifPresent(System.err::println);
+          maybeErrorToLog.ifPresent(logger::error);
           return new EndOfLineCompletionProvider(
               completionsClient,
               promptChars,
@@ -297,12 +299,7 @@ public class CodyCompletionItemProvider extends InlineCompletionItemProvider {
               endpoint ->
                   (CompletionProvider)
                       new UnstableCodegenEndOfLineCompletionProvider(
-                          snippets,
-                          prefix,
-                          suffix,
-                          document.fileName(),
-                          endpoint,
-                          document.getLanguageId()))
+                          snippets, prefix, suffix, endpoint, document))
           .orElseGet(
               () ->
                   fallbackDefaultProvider.apply(

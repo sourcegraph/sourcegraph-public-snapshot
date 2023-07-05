@@ -23,6 +23,7 @@ load("test_release_version.bzl", "MINIMUM_UPGRADEABLE_VERSION", "MINIMUM_UPGRADE
 load("flakes.bzl", "FLAKES")
 
 load("@bazel_gazelle//:deps.bzl", "go_repository")
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 # Shell snippet to disable a test on the fly. Needs to be formatted before being used.
@@ -112,7 +113,6 @@ def back_compat_defs():
         sum = "h1:zFLcZUQ74dCV/oIiQT3+db8kFPstAnvFDm7pd+tjZ+8=",
         version = "v0.0.0-20230620185637-63241cb1b17a",
     )
-
 
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it

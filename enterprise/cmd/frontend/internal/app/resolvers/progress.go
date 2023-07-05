@@ -64,6 +64,7 @@ func (r *embeddingsSetupProgressResolver) CurrentRepository(ctx context.Context)
 	}
 	return r.currentRepo
 }
+
 func (r *embeddingsSetupProgressResolver) CurrentRepositoryFilesProcessed(ctx context.Context) *int32 {
 	r.getStatus(ctx)
 	if r.err != nil {
@@ -71,6 +72,7 @@ func (r *embeddingsSetupProgressResolver) CurrentRepositoryFilesProcessed(ctx co
 	}
 	return r.currentProcessed
 }
+
 func (r *embeddingsSetupProgressResolver) CurrentRepositoryTotalFilesToProcess(ctx context.Context) *int32 {
 	r.getStatus(ctx)
 	if r.err != nil {
@@ -78,6 +80,7 @@ func (r *embeddingsSetupProgressResolver) CurrentRepositoryTotalFilesToProcess(c
 	}
 	return r.currentTotal
 }
+
 func (r *embeddingsSetupProgressResolver) OneRepositoryReady(ctx context.Context) bool {
 	r.getStatus(ctx)
 	if r.err != nil {

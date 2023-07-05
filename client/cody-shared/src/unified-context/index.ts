@@ -1,4 +1,5 @@
-export interface UnifiedContextFetcherResult {
+export interface FileChunkContext {
+    type: 'FileChunkContext'
     filePath: string
     content: string
     startLine: number
@@ -6,6 +7,8 @@ export interface UnifiedContextFetcherResult {
     repoName: string
     revision: string
 }
+
+export type UnifiedContextFetcherResult = FileChunkContext | { type: 'UnknownContext' }
 
 export interface UnifiedContextFetcher {
     getContext(

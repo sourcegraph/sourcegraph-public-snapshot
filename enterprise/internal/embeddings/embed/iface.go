@@ -3,7 +3,7 @@ package embed
 import (
 	"context"
 
-	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
+	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 )
 
 type ContextService interface {

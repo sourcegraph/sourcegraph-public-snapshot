@@ -84,7 +84,7 @@ func TestGetDashboard(t *testing.T) {
 	})
 
 	t.Run("test user 3 can see global and user private dashboards", func(t *testing.T) {
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{3}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -92,7 +92,7 @@ func TestGetDashboard(t *testing.T) {
 		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 3 can see both dashboards limit 1", func(t *testing.T) {
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, Limit: 1})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{3}, Limit: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -100,7 +100,7 @@ func TestGetDashboard(t *testing.T) {
 		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 3 can see both dashboards after 1", func(t *testing.T) {
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, After: 1})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{3}, After: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -108,7 +108,7 @@ func TestGetDashboard(t *testing.T) {
 		autogold.ExpectFile(t, got, autogold.ExportedOnly())
 	})
 	t.Run("test user 4 in org 1 can see both global and org private dashboard", func(t *testing.T) {
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, OrgID: []int{1}})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{4}, OrgIDs: []int{1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -117,7 +117,7 @@ func TestGetDashboard(t *testing.T) {
 	})
 	t.Run("test user 3 can see both dashboards with view", func(t *testing.T) {
 		viewId := "shared1234"
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{3}, WithViewUniqueID: &viewId})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -126,7 +126,7 @@ func TestGetDashboard(t *testing.T) {
 	})
 	t.Run("test user 4 in org 1 can see both dashboards with view", func(t *testing.T) {
 		viewId := "shared1234"
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, OrgID: []int{1}, WithViewUniqueID: &viewId})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{4}, OrgIDs: []int{1}, WithViewUniqueID: &viewId})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -135,7 +135,7 @@ func TestGetDashboard(t *testing.T) {
 	})
 	t.Run("test user 4 can not see dashboards with private view", func(t *testing.T) {
 		viewId := "private1234"
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{4}, WithViewUniqueID: &viewId})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{4}, WithViewUniqueID: &viewId})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -144,7 +144,7 @@ func TestGetDashboard(t *testing.T) {
 	})
 	t.Run("test user 3 can see both dashboards with view limit 1", func(t *testing.T) {
 		viewId := "shared1234"
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId, Limit: 1})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{3}, WithViewUniqueID: &viewId, Limit: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -153,7 +153,7 @@ func TestGetDashboard(t *testing.T) {
 	})
 	t.Run("test user 3 can see both dashboards with view after 1", func(t *testing.T) {
 		viewId := "shared1234"
-		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{3}, WithViewUniqueID: &viewId, After: 1})
+		got, err := store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{3}, WithViewUniqueID: &viewId, After: 1})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -182,7 +182,7 @@ func TestCreateDashboard(t *testing.T) {
 		global := true
 		orgId := 1
 		grants := []DashboardGrant{{nil, nil, &global}, {nil, &orgId, nil}}
-		_, err = store.CreateDashboard(ctx, CreateDashboardArgs{Dashboard: types.Dashboard{ID: 1, Title: "test dashboard 1"}, Grants: grants, UserID: []int{1}, OrgID: []int{1}})
+		_, err = store.CreateDashboard(ctx, CreateDashboardArgs{Dashboard: types.Dashboard{ID: 1, Title: "test dashboard 1"}, Grants: grants, UserIDs: []int{1}, OrgIDs: []int{1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -260,7 +260,7 @@ func TestUpdateDashboard(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		got, err = store.GetDashboards(ctx, DashboardQueryArgs{UserID: []int{1}})
+		got, err = store.GetDashboards(ctx, DashboardQueryArgs{UserIDs: []int{1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -446,7 +446,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		dashboards, err := store.GetDashboards(ctx, DashboardQueryArgs{ID: []int{1}})
+		dashboards, err := store.GetDashboards(ctx, DashboardQueryArgs{IDs: []int{1}})
 		if err != nil || len(dashboards) != 1 {
 			t.Errorf("failed to fetch dashboard before adding insight")
 		}
@@ -459,7 +459,7 @@ func TestAddViewsToDashboard(t *testing.T) {
 		if err != nil {
 			t.Errorf("failed to add view to dashboard")
 		}
-		dashboards, err = store.GetDashboards(ctx, DashboardQueryArgs{ID: []int{1}})
+		dashboards, err = store.GetDashboards(ctx, DashboardQueryArgs{IDs: []int{1}})
 		if err != nil || len(dashboards) != 1 {
 			t.Errorf("failed to fetch dashboard after adding insight")
 		}
@@ -499,8 +499,8 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 	_, err = store.CreateDashboard(ctx, CreateDashboardArgs{
 		Dashboard: types.Dashboard{Title: "first", InsightIDs: []string{view.UniqueID}},
 		Grants:    []DashboardGrant{GlobalDashboardGrant()},
-		UserID:    []int{1},
-		OrgID:     []int{1},
+		UserIDs:   []int{1},
+		OrgIDs:    []int{1},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -508,8 +508,8 @@ func TestRemoveViewsFromDashboard(t *testing.T) {
 	second, err := store.CreateDashboard(ctx, CreateDashboardArgs{
 		Dashboard: types.Dashboard{Title: "second", InsightIDs: []string{view.UniqueID}},
 		Grants:    []DashboardGrant{GlobalDashboardGrant()},
-		UserID:    []int{1},
-		OrgID:     []int{1},
+		UserIDs:   []int{1},
+		OrgIDs:    []int{1},
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -581,8 +581,8 @@ func TestHasDashboardPermission(t *testing.T) {
 			Title: "test dashboard 123",
 			Save:  true,
 		},
-		Grants: []DashboardGrant{UserDashboardGrant(1), OrgDashboardGrant(5)},
-		UserID: []int{1}, // this is a weird thing I'd love to get rid of, but for now this will cause the db to return
+		Grants:  []DashboardGrant{UserDashboardGrant(1), OrgDashboardGrant(5)},
+		UserIDs: []int{1}, // this is a weird thing I'd love to get rid of, but for now this will cause the db to return
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -597,8 +597,8 @@ func TestHasDashboardPermission(t *testing.T) {
 			Title: "second test dashboard",
 			Save:  true,
 		},
-		Grants: []DashboardGrant{UserDashboardGrant(2), OrgDashboardGrant(5)},
-		UserID: []int{2}, // this is a weird thing I'd love to get rid of, but for now this will cause the db to return
+		Grants:  []DashboardGrant{UserDashboardGrant(2), OrgDashboardGrant(5)},
+		UserIDs: []int{2}, // this is a weird thing I'd love to get rid of, but for now this will cause the db to return
 	})
 	if err != nil {
 		t.Fatal(err)

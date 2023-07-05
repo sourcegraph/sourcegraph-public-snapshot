@@ -1343,7 +1343,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 	}
 
 	t.Run("user 1 can see this view", func(t *testing.T) {
-		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserID: []int{1}})
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserIDs: []int{1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1354,7 +1354,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 	})
 
 	t.Run("user 2 cannot see the view", func(t *testing.T) {
-		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserID: []int{2}})
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserIDs: []int{2}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1364,7 +1364,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 	})
 
 	t.Run("org 1 cannot see the view", func(t *testing.T) {
-		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserID: []int{3}, OrgID: []int{1}})
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserIDs: []int{3}, OrgIDs: []int{1}})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -1373,7 +1373,7 @@ func TestCreateGetView_WithGrants(t *testing.T) {
 		}
 	})
 	t.Run("org 5 can see the view", func(t *testing.T) {
-		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserID: []int{3}, OrgID: []int{5}})
+		got, err := store.Get(ctx, InsightQueryArgs{UniqueID: uniqueID, UserIDs: []int{3}, OrgIDs: []int{5}})
 		if err != nil {
 			t.Fatal(err)
 		}

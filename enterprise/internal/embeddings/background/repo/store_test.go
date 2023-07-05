@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -320,14 +320,16 @@ func TestGetEmbeddableRepoOpts(t *testing.T) {
 	require.Equal(t, 5000, *opts.PolicyRepositoryMatchLimit)
 
 	limit := 5
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		CodyEnabled: pointers.Ptr(true),
-		Embeddings: &schema.Embeddings{
-			Provider:                   "openai",
-			AccessToken:                "asdf",
-			MinimumInterval:            "1h",
-			PolicyRepositoryMatchLimit: &limit,
-		}},
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			CodyEnabled: pointers.Ptr(true),
+			Embeddings: &schema.Embeddings{
+				Provider:                   "openai",
+				AccessToken:                "asdf",
+				MinimumInterval:            "1h",
+				PolicyRepositoryMatchLimit: &limit,
+			},
+		},
 	})
 
 	opts = GetEmbeddableRepoOpts()

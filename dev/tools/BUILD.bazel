@@ -5,5 +5,15 @@ sh_binary(
         "@bazel_tools//src/conditions:darwin_arm64": ["@docsite_darwin_arm64//file:downloaded"],
         "@bazel_tools//src/conditions:linux_x86_64": ["@docsite_linux_amd64//file:downloaded"],
     }),
-    visibility = ["//doc:__pkg__"],
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "src-cli",
+    srcs = select({
+        "@bazel_tools//src/conditions:darwin_x86_64": ["@src-cli-darwin-amd64//:src-cli-darwin-amd64"],
+        "@bazel_tools//src/conditions:darwin_arm64": ["@src-cli-darwin-arm64//:src-cli-darwin-arm64"],
+        "@bazel_tools//src/conditions:linux_x86_64": ["@src-cli-linux-amd64//:src-cli-linux-amd64"],
+    }),
+    visibility = ["//visibility:public"],
 )
