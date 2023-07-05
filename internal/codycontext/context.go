@@ -13,8 +13,8 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
@@ -36,7 +36,7 @@ type FileChunkContext struct {
 	EndLine   int
 }
 
-func NewCodyContextClient(obsCtx *observation.Context, db edb.EnterpriseDB, embeddingsClient embeddings.Client, searchClient client.SearchClient) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient) *CodyContextClient {
 	redMetrics := metrics.NewREDMetrics(
 		obsCtx.Registerer,
 		"codycontext_client",
@@ -67,7 +67,7 @@ func NewCodyContextClient(obsCtx *observation.Context, db edb.EnterpriseDB, embe
 }
 
 type CodyContextClient struct {
-	db               edb.EnterpriseDB
+	db               database.DB
 	embeddingsClient embeddings.Client
 	searchClient     client.SearchClient
 

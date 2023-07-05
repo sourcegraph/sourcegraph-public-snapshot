@@ -6,8 +6,8 @@ import (
 	"github.com/sourcegraph/conc/iter"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
