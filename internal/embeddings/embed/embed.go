@@ -5,15 +5,15 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/openai"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/sourcegraph"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/openai"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/sourcegraph"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -185,7 +185,7 @@ func embedFiles(
 			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 		}
 
-		batchEmbeddings, err := client.GetEmbeddingsWithRetries(ctx, batchChunks, getEmbeddingsMaxRetries)
+		batchEmbeddings, err := client.GetEmbeddings(ctx, batchChunks)
 		if err != nil {
 			return errors.Wrap(err, "error while getting embeddings")
 		}

@@ -16,7 +16,7 @@ func TestOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
 		client := NewClient(http.DefaultClient, &conftypes.EmbeddingsConfig{})
 		invalidTexts := []string{"a", ""} // empty string is invalid
-		_, err := client.GetEmbeddingsWithRetries(context.Background(), invalidTexts, 10)
+		_, err := client.GetEmbeddings(context.Background(), invalidTexts)
 		require.ErrorContains(t, err, "empty string")
 	})
 
@@ -67,7 +67,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddingsWithRetries(context.Background(), []string{"a", "b"}, 0)
+		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
 		require.NoError(t, err)
 		var expected []float32
 		{
@@ -119,7 +119,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		_, err := client.GetEmbeddingsWithRetries(context.Background(), []string{"a", "b"}, 0)
+		_, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
 		require.Error(t, err, "expected request to error on failed retry")
 	})
 }

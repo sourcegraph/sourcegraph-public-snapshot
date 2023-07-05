@@ -12,9 +12,8 @@ import (
 )
 
 // MockClient is a mock implementation of the Client interface (from the
-// package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings) used
-// for unit testing.
+// package github.com/sourcegraph/sourcegraph/internal/embeddings) used for
+// unit testing.
 type MockClient struct {
 	// IsContextRequiredForChatQueryFunc is an instance of a mock function
 	// object controlling the behavior of the method

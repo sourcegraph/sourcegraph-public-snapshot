@@ -8,11 +8,11 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/stretchr/testify/require"
 
-	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -280,7 +280,7 @@ type misbehavingEmbeddingsClient struct {
 	returnedDimsPerInput int
 }
 
-func (c *misbehavingEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
+func (c *misbehavingEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) ([]float32, error) {
 	return make([]float32, len(texts)*c.returnedDimsPerInput), nil
 }
 
@@ -298,7 +298,7 @@ func (c *mockEmbeddingsClient) GetModelIdentifier() string {
 	return "mock/some-model"
 }
 
-func (c *mockEmbeddingsClient) GetEmbeddingsWithRetries(_ context.Context, texts []string, _ int) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) ([]float32, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err
