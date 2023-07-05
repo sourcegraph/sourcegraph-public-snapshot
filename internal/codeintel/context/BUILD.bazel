@@ -15,7 +15,6 @@ go_library(
     deps = [
         "//internal/codeintel/context/internal/store",
         "//internal/database",
-        "//internal/embeddings",
         "//internal/metrics",
         "//internal/observation",
     ],

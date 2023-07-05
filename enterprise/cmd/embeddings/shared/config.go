@@ -6,7 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	emb "github.com/sourcegraph/sourcegraph/internal/embeddings"
+	emb "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
