@@ -40,8 +40,5 @@ func (c *Config) Validate() error {
 	var errs error
 	errs = errors.Append(errs, c.BaseConfig.Validate())
 	errs = errors.Append(errs, c.EmbeddingsUploadStoreConfig.Validate())
-	if c.EmbeddingsCacheSize < 0 {
-		errs = errors.Append(errs, errors.New("embeddings cache size cannot be negative"))
-	}
 	return errs
 }
