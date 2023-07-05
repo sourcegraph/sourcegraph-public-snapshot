@@ -8,7 +8,7 @@ The steps below are only for development and won't work in production.
 
 2. Run the following command from your terminal in the root directory of the `/sourcegraph/sourcegraph` repository. Replace `business-0` with the name of any other plan that you want to test. This command will use the private key set on the `dev-private` repository in the `site-config.json` file, so you need to have a local clone of this repository.
 
-          go run ./enterprise/internal/license/generate-license.go -private-key ../dev-private/enterprise/dev/test-license-generation-key.pem -tags=plan:business-0 -users=10 -expires=8784h .
+          go run ./internal/license/generate-license.go -private-key ../dev-private/enterprise/dev/test-license-generation-key.pem -tags=plan:business-0 -users=10 -expires=8784h .
 
 3. Confirm that the license generated has the correct information. For the example above, the output was: 
 

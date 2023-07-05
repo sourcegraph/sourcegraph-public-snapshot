@@ -3,7 +3,7 @@ package licensing
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 )
 
 const (

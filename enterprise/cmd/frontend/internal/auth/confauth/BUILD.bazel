@@ -16,7 +16,7 @@ go_test(
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/external/session",
-        "//enterprise/internal/license",
+        "//internal/license",
         "@com_github_stretchr_testify//require",
     ],
 )

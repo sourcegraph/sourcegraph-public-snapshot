@@ -61,9 +61,9 @@ go_test(
     ],
     embed = [":scim"],
     deps = [
-        "//enterprise/internal/license",
         "//internal/conf",
         "//internal/database",
+        "//internal/license",
         "//internal/licensing",
         "//internal/observation",
         "//internal/txemail",

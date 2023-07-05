@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 )
 
 func TestCheckFeature(t *testing.T) {

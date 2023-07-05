@@ -4,7 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "license",
     srcs = ["license.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/license",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/license",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//lib/errors",
