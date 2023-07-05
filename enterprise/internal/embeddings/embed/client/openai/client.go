@@ -43,11 +43,11 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("openai/%s", c.model)
 }
 
-func (c *openaiEmbeddingsClient) GetQueryEmbeddingWithRetries(ctx context.Context, query string) ([]float32, error) {
+func (c *openaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) ([]float32, error) {
 	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
 }
 
-func (c *openaiEmbeddingsClient) GetDocumentEmbeddingsWithRetries(ctx context.Context, documents []string) ([]float32, error) {
+func (c *openaiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) ([]float32, error) {
 	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
 }
 
@@ -92,10 +92,6 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 	}
 
 	return embeddings, nil
-}
-
-var modelsWithoutNewlines = map[string]struct{}{
-	"text-embedding-ada-002": {},
 }
 
 func (c *openaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {
