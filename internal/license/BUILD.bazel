@@ -5,7 +5,7 @@ go_library(
     name = "license",
     srcs = ["license.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/license",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
         "@org_golang_x_crypto//ssh",

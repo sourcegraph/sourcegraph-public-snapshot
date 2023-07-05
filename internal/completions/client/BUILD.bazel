@@ -8,7 +8,7 @@ go_library(
         "observe.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/completions/client",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/client/anthropic",
         "//internal/completions/client/codygateway",
