@@ -19,7 +19,7 @@ import (
 // any location that wants to use it for observing operations.
 type Context struct {
 	Logger       log.Logger
-	Tracer       oteltrace.Tracer
+	Tracer       oteltrace.Tracer // may be nil
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
 }
@@ -48,6 +48,7 @@ func TestContextTB(t testing.TB) *Context {
 	return &Context{
 		Logger:     logtest.Scoped(t),
 		Registerer: metrics.NoOpRegisterer,
+		Tracer:     oteltrace.NewNoopTracerProvider().Tracer("noop"),
 	}
 }
 
