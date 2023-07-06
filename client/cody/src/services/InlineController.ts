@@ -160,7 +160,13 @@ export class InlineController {
         thread.label = this.threadLabel
         thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
 
-        const comment = new Comment(humanInput, 'You', this.userIcon, isFixMode, thread, 'loading')
+        const comment = new Comment({
+            input: humanInput,
+            name: 'You',
+            iconPath: this.userIcon,
+            parent: thread,
+            contextValue: 'loading',
+        })
         thread.comments = [...thread.comments, comment]
 
         if (isFixMode) {
@@ -179,13 +185,27 @@ export class InlineController {
         if (!this.thread || this.thread.state) {
             return
         }
-        const replyText = text
+
+        const replyComment = {
+            input: text,
+            name: 'Cody',
+            iconPath: this.codyIcon,
+            parent: this.thread,
+        }
+
         if (this.comment) {
-            this.comment.update(replyText)
-            // eslint-disable-next-line no-self-assign
-            this.thread.comments = this.thread.comments
+            this.thread.comments = this.thread.comments.map(comment => {
+                if (comment instanceof Comment && comment.id === this.comment?.id) {
+                    return new Comment({
+                        id: this.comment.id,
+                        ...replyComment,
+                    })
+                }
+
+                return comment
+            })
         } else {
-            this.comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
+            this.comment = new Comment(replyComment)
             this.thread.comments = [...this.thread.comments, this.comment]
         }
 
@@ -366,28 +386,26 @@ export class InlineController {
     }
 }
 
+interface CommentOptions {
+    id?: string
+    input: string
+    name: string
+    iconPath: vscode.Uri
+    parent?: vscode.CommentThread
+    contextValue?: string
+}
+
 export class Comment implements vscode.Comment {
     public id: string
     public label: string | undefined
     public body: string | vscode.MarkdownString
     public mode = vscode.CommentMode.Preview
     public author: vscode.CommentAuthorInformation
-    constructor(
-        public input: string,
-        public name: string,
-        public iconPath: vscode.Uri,
-        public isTask: boolean,
-        public parent?: vscode.CommentThread,
-        public contextValue?: string
-    ) {
-        const timestamp = new Date(Date.now())
-        this.id = timestamp.getTime().toString()
-        this.body = this.markdown(input)
-        this.author = { name, iconPath }
-    }
 
-    public update(input: string): void {
-        this.body = this.markdown(input)
+    constructor(options: CommentOptions) {
+        this.id = options.id ? options.id : new Date(Date.now()).getTime().toString()
+        this.body = this.markdown(options.input)
+        this.author = { name: options.name, iconPath: options.iconPath }
     }
 
     /**
