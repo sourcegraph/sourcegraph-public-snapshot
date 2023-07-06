@@ -9,6 +9,7 @@ import (
 
 	"cloud.google.com/go/storage"
 	"github.com/google/go-cmp/cmp"
+	"google.golang.org/api/iterator"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -149,26 +150,39 @@ func TestGCSUpload(t *testing.T) {
 	}
 }
 
+type mockGCSObjectsIterator struct {
+	objects []storage.ObjectAttrs
+}
+
+func (m *mockGCSObjectsIterator) Next() (*storage.ObjectAttrs, error) {
+	if len(m.objects) == 0 {
+		return nil, iterator.Done
+	}
+
+	obj := m.objects[0]
+	m.objects = m.objects[1:]
+	return &obj, nil
+}
+
+func (m *mockGCSObjectsIterator) PageInfo() *iterator.PageInfo {
+	return nil
+}
+
 func TestGCSList(t *testing.T) {
+	buf := &bytes.Buffer{}
 
 	gcsClient := NewMockGcsAPI()
 	bucketHandle := NewMockGcsBucketHandle()
 	objectHandle := NewMockGcsObjectHandle()
+	mockIterator := mockGCSObjectsIterator{objects: []storage.ObjectAttrs{{Name: "test-key1"}, {Name: "test-key2"}}}
 
 	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
 	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
+	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
+
+	bucketHandle.ObjectsFunc.SetDefaultReturn(&mockIterator)
 
 	client := testGCSClient(gcsClient, false)
-
-	_, err := client.Upload(context.Background(), "test-file-1", bytes.NewReader([]byte("TEST PAYLOAD")))
-	if err != nil {
-		t.Fatalf("unexpected error uploading key: %s", err)
-	}
-
-	_, err = client.Upload(context.Background(), "test-file-2", bytes.NewReader([]byte("TEST PAYLOAD")))
-	if err != nil {
-		t.Fatalf("unexpected error uploading key: %s", err)
-	}
 
 	iter, err := client.List(context.Background())
 	if err != nil {
@@ -180,7 +194,7 @@ func TestGCSList(t *testing.T) {
 		names = append(names, iter.Current())
 	}
 
-	if d := cmp.Diff([]string{"test-file-1", "test-file-2"}, names); d != "" {
+	if d := cmp.Diff([]string{"test-key1", "test-key2"}, names); d != "" {
 		t.Fatalf("-want, +got: %s\n", d)
 	}
 }

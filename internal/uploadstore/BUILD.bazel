@@ -61,5 +61,6 @@ go_test(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_inconshreveable_log15//:log15",
         "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//iterator",
     ],
 )
