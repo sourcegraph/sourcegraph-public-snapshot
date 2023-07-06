@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

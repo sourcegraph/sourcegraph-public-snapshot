@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

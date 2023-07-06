@@ -4,8 +4,8 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "modeltransformations",
     srcs = ["model_transformations.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed/client/modeltransformations",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations",
+    visibility = ["//:__subpackages__"],
 )
 
 go_test(
