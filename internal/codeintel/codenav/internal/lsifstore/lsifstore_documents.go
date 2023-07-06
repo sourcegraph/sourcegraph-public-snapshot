@@ -3,6 +3,8 @@ package lsifstore
 import (
 	"bytes"
 	"context"
+	"sort"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -11,7 +13,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -55,7 +56,7 @@ WHERE
 	sid.document_path = %s
 `
 
-func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error) {
+func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*symbols.ExplodedSymbol, err error) {
 	ctx, _, endObservation := s.operations.getFullSCIPNameByDescriptor.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{}})
 	defer endObservation(1, observation.Args{})
 
@@ -64,64 +65,64 @@ func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int,
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(getFullSCIPNameByDescriptorQuery, pq.Array(symbolNamesIlike), pq.Array(uploadID))
-	rows, err := s.db.Query(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	// fmt.Println("This is my query >>>", query.Query(sqlf.PostgresBindVar), query.Args())
-
-	for rows.Next() {
-		var n types.SCIPNames
-		if err := rows.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor); err != nil {
-			return nil, err
-		}
-
-		names = append(names, &n)
-	}
-
-	return names, nil
+	return scanExplodedSymbols(s.db.Query(ctx, sqlf.Sprintf(
+		getFullSCIPNameByDescriptorQuery,
+		pq.Array(uploadID),
+		pq.Array(symbolNamesIlike),
+	)))
 }
 
 const getFullSCIPNameByDescriptorQuery = `
 SELECT DISTINCT
-    ssl2.name AS scheme,
-    ssl3.name AS package_manager,
-    ssl4.name AS package_name,
-    ssl5.name AS package_version,
-    ssl6.name AS descriptor
-FROM codeintel_scip_symbols ss
-JOIN codeintel_scip_symbols_lookup ssl1 ON ssl1.upload_id = ss.upload_id AND ssl1.id = ss.descriptor_id
-JOIN codeintel_scip_symbols_lookup ssl2 ON ssl2.upload_id = ss.upload_id AND ssl2.id = ss.scheme_id
-JOIN codeintel_scip_symbols_lookup ssl3 ON ssl3.upload_id = ss.upload_id AND ssl3.id = ss.package_manager_id
-JOIN codeintel_scip_symbols_lookup ssl4 ON ssl4.upload_id = ss.upload_id AND ssl4.id = ss.package_name_id
-JOIN codeintel_scip_symbols_lookup ssl5 ON ssl5.upload_id = ss.upload_id AND ssl5.id = ss.package_version_id
-JOIN codeintel_scip_symbols_lookup ssl6 ON ssl6.upload_id = ss.upload_id AND ssl6.id = ss.descriptor_id
+    l1.name AS scheme,
+    l2.name AS package_manager,
+    l3.name AS package_name,
+    l4.name AS package_version,
+    l5.name AS descriptor
+-- Initially fuzzy search (see WHERE clause)
+FROM codeintel_scip_symbols_lookup l6
+
+-- Join to symbols table, which will bridge DESCRIPTOR_NO_SUFFIX (syntect) and DESCRIPTOR (precise)
+JOIN codeintel_scip_symbols ss ON ss.upload_id = l6.upload_id AND ss.descriptor_no_suffix_id = l6.id
+
+-- Follow parent path from descriptor l5->l4->l3->l2->l1
+JOIN codeintel_scip_symbols_lookup l5 ON l5.id = ss.descriptor_id
+JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = ss.upload_id AND l4.id = l5.parent_id
+JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = ss.upload_id AND l3.id = l4.parent_id
+JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = ss.upload_id AND l2.id = l3.parent_id
+JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = ss.upload_id AND l1.id = l2.parent_id
 WHERE
-    ssl1.name ILIKE ANY(%s) AND
-    ssl1.scip_name_type = 'DESCRIPTOR' AND
-    ssl2.scip_name_type = 'SCHEME' AND
-    ssl3.scip_name_type = 'PACKAGE_MANAGER' AND
-    ssl4.scip_name_type = 'PACKAGE_NAME' AND
-    ssl5.scip_name_type = 'PACKAGE_VERSION' AND
-    ssl6.scip_name_type = 'DESCRIPTOR' AND
-	ssl1.upload_id = ANY(%s);
+	l6.upload_id = ANY(%s) AND
+	l6.scip_name_type = 'DESCRIPTOR_NO_SUFFIX' AND
+	l6.name ILIKE ANY(%s)
 `
 
+var scanExplodedSymbols = basestore.NewSliceScanner(func(s dbutil.Scanner) (*symbols.ExplodedSymbol, error) {
+	var n symbols.ExplodedSymbol
+	err := s.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor)
+	return &n, err
+})
+
 func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
-	explodedSymbols := make([]string, 0, len(symbolNames))
+	trimmedDescriptorMap := make(map[string]struct{}, len(symbolNames))
 	for _, symbolName := range symbolNames {
 		ex, err := symbols.NewExplodedSymbol(symbolName)
 		if err != nil {
 			return nil, err
 		}
-		explodedSymbols = append(
-			explodedSymbols,
-			"%"+ex.Descriptor+"%",
-		)
+
+		// TODO: BIT OF A HACK
+		parts := strings.Split(ex.Descriptor, "/")
+		trimmedDescriptorMap[parts[len(parts)-1]] = struct{}{}
 	}
 
-	return explodedSymbols, nil
+	descriptorWildcards := make([]string, 0, len(trimmedDescriptorMap))
+	for symbol := range trimmedDescriptorMap {
+		if symbol != "" {
+			descriptorWildcards = append(descriptorWildcards, "%"+symbol)
+		}
+	}
+	sort.Strings(descriptorWildcards)
+
+	return descriptorWildcards, nil
 }

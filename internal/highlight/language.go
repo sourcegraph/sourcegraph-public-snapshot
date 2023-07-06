@@ -46,7 +46,7 @@ func (e EngineType) isTreesitterBased() bool {
 
 // Converts an engine type to the corresponding parameter value for the syntax
 // highlighting request. Defaults to "syntect".
-func GetEngineParameter(engine EngineType) string {
+func getEngineParameter(engine EngineType) string {
 	if engine == EngineInvalid {
 		return EngineSyntect.String()
 	}

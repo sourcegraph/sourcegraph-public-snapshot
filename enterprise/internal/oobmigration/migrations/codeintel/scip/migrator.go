@@ -192,7 +192,6 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 }
 
 func (m *migrator) up(ctx context.Context) (err error) {
-
 	return m.run(ctx, m.options.targetVersion-1, m.options.targetVersion, m.driver.MigrateUp)
 }
 
@@ -209,7 +208,6 @@ func (m *migrator) Down(ctx context.Context) error {
 }
 
 func (m *migrator) down(ctx context.Context) error {
-
 	return m.run(ctx, m.options.targetVersion, m.options.targetVersion-1, m.driver.MigrateDown)
 }
 

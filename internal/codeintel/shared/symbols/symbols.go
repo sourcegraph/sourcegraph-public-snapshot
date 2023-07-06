@@ -1,6 +1,8 @@
 package symbols
 
 import (
+	"strings"
+
 	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
@@ -10,7 +12,29 @@ type ExplodedSymbol struct {
 	PackageName        string
 	PackageVersion     string
 	Descriptor         string
-	DescriptorNoSuffix string
+	DescriptorNoSuffix string // N.B.
+}
+
+func (s *ExplodedSymbol) String() string {
+	return s.Symbol()
+}
+
+func (s *ExplodedSymbol) Symbol() string {
+	return strings.Join([]string{
+		quote(s.Scheme),
+		quote(s.PackageManager),
+		quote(s.PackageName),
+		quote(s.PackageVersion),
+		quote(s.Descriptor),
+	}, " ")
+}
+
+func quote(s string) string {
+	if s == "" {
+		return "."
+	}
+
+	return s
 }
 
 func NewExplodedSymbol(symbol string) (*ExplodedSymbol, error) {

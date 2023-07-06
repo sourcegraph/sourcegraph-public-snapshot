@@ -238,7 +238,7 @@ export class SourcegraphGraphQLAPIClient {
     ): Promise<PreciseContextResult[] | Error> {
         return this.fetchSourcegraphAPI<APIResponse<PreciseContextResponse>>(PRECISE_CONTEXT, {
             input: {
-                symbols: ['dev'],
+                symbols: [],
                 repository,
                 commitID,
                 activeFile,

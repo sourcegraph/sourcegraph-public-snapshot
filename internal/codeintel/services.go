@@ -37,9 +37,9 @@ type ServiceDependencies struct {
 
 func NewServices(deps ServiceDependencies) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
-	repoDB := deps.DB.Repos()
 	gitserverClient := gitserver.NewClient()
 	syntectClient := gosyntect.GetSyntectClient()
+	repoDB := deps.DB.Repos()
 
 	uploadsSvc := uploads.NewService(deps.ObservationCtx, db, codeIntelDB, gitserverClient)
 	dependenciesSvc := dependencies.NewService(deps.ObservationCtx, db)

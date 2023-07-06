@@ -65,7 +65,13 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		}
 
 		if _, ok := rangeBySymbol[occurrence.Symbol]; !ok {
+			explodedSymbol, err := explodeSymbol(occurrence.Symbol)
+			if err != nil {
+				return "", shared.Range{}, false, err
+			}
+
 			symbolNames = append(symbolNames, occurrence.Symbol)
+			explodedSymbols = append(explodedSymbols, explodedSymbol)
 			rangeBySymbol[occurrence.Symbol] = translateRange(scip.NewRange(occurrence.Range))
 
 			s, err := symbols.NewExplodedSymbol(occurrence.Symbol)
@@ -99,9 +105,6 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		pq.Array([]int{bundleID}),
 		bundleID,
 	)
-
-	// debug := fmt.Sprintf("**********QUERY************* \n query: %s \n variables: %s", query.Query(sqlf.PostgresBindVar), query.Args())
-	// fmt.Println(debug)
 
 	documents, err := s.scanDocumentData(s.db.Query(ctx, query))
 	if err != nil {
@@ -204,30 +207,27 @@ matching_symbol_names AS (
 		SELECT mp.upload_id, mp.id, mp.prefix AS symbol_name
 		FROM matching_prefixes mp
 		WHERE mp.search = ''
+		-- DEBUGGING
+		AND FALSE
 	) UNION (
 		SELECT
-			css.upload_id,
-			css.symbol_id,
+			ss.upload_id,
+			ss.symbol_id,
+			-- Reconstruct symbol names from parts
 			l1.name || ' ' || l2.name || ' ' || l3.name || ' ' || l4.name || ' ' || l5.name AS symbol_name
 		FROM symbols_parts p
-		JOIN codeintel_scip_symbols_lookup l1 ON l1.scip_name_type = 'SCHEME'          AND l1.name = p.scheme
-		JOIN codeintel_scip_symbols_lookup l2 ON l2.scip_name_type = 'PACKAGE_MANAGER' AND l2.name = p.package_manager
-		JOIN codeintel_scip_symbols_lookup l3 ON l3.scip_name_type = 'PACKAGE_NAME'    AND l3.name = p.package_name
-		JOIN codeintel_scip_symbols_lookup l4 ON l4.scip_name_type = 'PACKAGE_VERSION' AND l4.name = p.package_version
-		JOIN codeintel_scip_symbols_lookup l5 ON l5.scip_name_type = 'DESCRIPTOR'      AND l5.name = p.descriptor
-		JOIN codeintel_scip_symbols css
-			ON  css.scheme_id = l1.id
-			AND css.package_manager_id = l2.id
-			AND css.package_name_id = l3.id
-			AND css.package_version_id = l4.id
-			AND css.descriptor_id = l5.id
-			AND css.upload_id = l1.upload_id
-			AND css.upload_id = l2.upload_id
-			AND css.upload_id = l3.upload_id
-			AND css.upload_id = l4.upload_id
-			AND css.upload_id = l5.upload_id
-		WHERE
-			css.upload_id = ANY(%s)
+
+		-- Initially match descriptor scoped to an upload
+		JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = ANY(%s) AND l5.scip_name_type = 'DESCRIPTOR' AND l5.name = p.descriptor
+
+		-- Follow parent path l5->l4->l3->l2->l1, filter out anything that doesn't match exploded symbol parts
+		JOIN codeintel_scip_symbols_lookup l4 ON l4.name = p.package_version AND l4.upload_id = l5.upload_id AND l4.id = l5.parent_id
+		JOIN codeintel_scip_symbols_lookup l3 ON l3.name = p.package_name    AND l3.upload_id = l5.upload_id AND l3.id = l4.parent_id
+		JOIN codeintel_scip_symbols_lookup l2 ON l2.name = p.package_manager AND l2.upload_id = l5.upload_id AND l2.id = l3.parent_id
+		JOIN codeintel_scip_symbols_lookup l1 ON l1.name = p.scheme          AND l1.upload_id = l5.upload_id AND l1.id = l2.parent_id
+
+		-- Find symbol identifier matching descriptor
+		JOIN codeintel_scip_symbols ss ON ss.upload_id = l5.upload_id AND ss.descriptor_id = l5.id
 	)
 )
 `

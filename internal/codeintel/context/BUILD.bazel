@@ -17,7 +17,6 @@ go_library(
         "//internal/authz",
         "//internal/codeintel/codenav",
         "//internal/codeintel/codenav/shared",
-        "//internal/codeintel/context/internal/scipstore",
         "//internal/codeintel/resolvers",
         "//internal/codeintel/shared",
         "//internal/codeintel/shared/symbols",

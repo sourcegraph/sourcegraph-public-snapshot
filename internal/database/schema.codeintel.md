@@ -179,17 +179,13 @@ Stores a prefix tree of symbol names within a particular upload.
  implementation_ranges   | bytea   |           |          | 
  type_definition_ranges  | bytea   |           |          | 
  symbol_id               | integer |           | not null | 
- scheme_id               | integer |           |          | 
- package_manager_id      | integer |           |          | 
- package_name_id         | integer |           |          | 
- package_version_id      | integer |           |          | 
  descriptor_id           | integer |           |          | 
  descriptor_no_suffix_id | integer |           |          | 
 Indexes:
     "codeintel_scip_symbols_pkey" PRIMARY KEY, btree (upload_id, symbol_id, document_lookup_id)
     "codeintel_scip_symbols_document_lookup_id" btree (document_lookup_id)
     "codeintel_scip_symbols_fuzzy_selector" btree (upload_id, descriptor_no_suffix_id)
-    "codeintel_scip_symbols_precise_selector" btree (scheme_id, package_manager_id, package_name_id, package_version_id, descriptor_id)
+    "codeintel_scip_symbols_precise_selector" btree (upload_id, descriptor_id)
 Foreign-key constraints:
     "codeintel_scip_symbols_document_lookup_id_fk" FOREIGN KEY (document_lookup_id) REFERENCES codeintel_scip_document_lookup(id) ON DELETE CASCADE
 Triggers:
@@ -223,9 +219,21 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
  upload_id      | integer |           | not null | 
  name           | text    |           | not null | 
  scip_name_type | text    |           | not null | 
+ parent_id      | integer |           |          | 
 Indexes:
     "codeintel_scip_symbols_lookup_unique_precise" UNIQUE, btree (upload_id, id)
     "codeintel_scip_symbols_lookup_unique_fuzzy" btree (upload_id, scip_name_type, name)
+
+```
+
+# Table "public.codeintel_scip_symbols_migration_progress"
+```
+  Column   |  Type   | Collation | Nullable | Default 
+-----------+---------+-----------+----------+---------
+ upload_id | integer |           | not null | 
+ symbol_id | integer |           | not null | 
+Indexes:
+    "codeintel_scip_symbols_migration_progress_pkey" PRIMARY KEY, btree (upload_id)
 
 ```
 

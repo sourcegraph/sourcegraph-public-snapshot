@@ -3,6 +3,7 @@ package scip
 import (
 	"context"
 	"database/sql"
+	"sort"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -12,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type scipSymbolsMigrator struct {
@@ -27,15 +27,12 @@ func NewSCIPSymbolsMigrator(codeintelStore *basestore.Store) *migrator {
 	return newMigrator(codeintelStore, driver, migratorOptions{
 		tableName:     "codeintel_scip_symbols",
 		targetVersion: 2,
-		batchSize:     10000, // TODO
-		numRoutines:   1,     // TODO
+		batchSize:     10000, // TODO - tune
+		numRoutines:   1,     // TODO - tune
 		fields: []fieldSpec{
 			{name: "symbol_id", postgresType: "integer not null", primaryKey: true},
 			{name: "document_lookup_id", postgresType: "integer not null", primaryKey: true},
-			{name: "scheme_id", postgresType: "integer", updateOnly: true},
-			{name: "package_manager_id", postgresType: "integer", updateOnly: true},
-			{name: "package_name_id", postgresType: "integer", updateOnly: true},
-			{name: "package_version_id", postgresType: "integer", updateOnly: true},
+			// TODO - read as well so we can no-op on down?
 			{name: "descriptor_id", postgresType: "integer", updateOnly: true},
 			{name: "descriptor_no_suffix_id", postgresType: "integer", updateOnly: true},
 		},
@@ -45,45 +42,182 @@ func NewSCIPSymbolsMigrator(codeintelStore *basestore.Store) *migrator {
 func (m *scipSymbolsMigrator) ID() int                 { return 24 }
 func (m *scipSymbolsMigrator) Interval() time.Duration { return time.Second }
 
-// TODO - rewrite
-// TODO - redocument
-// MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
-// modify the record to conform to the new schema.
 func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *basestore.Store, rows *sql.Rows) (_ [][]any, err error) {
-	type symbolInDocument struct {
-		symbolID         int
-		documentLookupID int
+	// Consume symbol_id/document_id pairs from the incoming rows
+	symbolInDocuments, err := readSymbolInDocuments(rows)
+	if err != nil {
+		return nil, err
 	}
-	var symbolPairs []symbolInDocument
+	symbolIDMap := make(map[int]struct{}, len(symbolInDocuments))
+	for _, pair := range symbolInDocuments {
+		symbolIDMap[pair.symbolID] = struct{}{}
+	}
+	symbolIDs := flattenKeys(symbolIDMap)
 
-	if err := func() (err error) {
-		defer func() { err = basestore.CloseRows(rows, err) }()
+	// Reconstruct the full symbol names for each of the symbol IDs in this batch
+	symbolNamesByID, err := readSymbolNamesBySymbolIDs(ctx, tx, uploadID, symbolIDs)
+	if err != nil {
+		return nil, err
+	}
+	symbolNames := flattenValues(symbolNamesByID)
 
-		for rows.Next() {
-			var symbolID, documentLookupID int
-			if err := rows.Scan(&symbolID, &documentLookupID); err != nil {
+	// An upload's symbols may be processed over several batches, and each symbol
+	// identifier needs to be unique per upload, so we track the highest symbol
+	// identifier written by the migration per upload. We read the last written
+	// value here (or default zero), and write our next highest identifier upon
+	// (successful) exit of this method.
+	nextSymbolLookupID, err := getNextSymbolID(ctx, tx, uploadID)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		if err == nil {
+			err = setNextSymbolID(ctx, tx, nextSymbolLookupID, uploadID)
+		}
+	}()
+
+	// NOTE(scip-migration): This behavior in the following function has been copied from the upload
+	// processing procedure to match the logic for newly uploaded index files. See the original code
+	// in the uploads service for more detail (.../lsifstore/insert.go).
+
+	// Create helpers to create new tree nodes with (upload-)unique identifiers
+	id := func() int { id := nextSymbolLookupID; nextSymbolLookupID++; return id }
+	createSchemeNode := func() SchemeNode { return SchemeNode(newNodeWithID[PackageManagerNode](id())) }
+	createPackageManagerNode := func() PackageManagerNode { return PackageManagerNode(newNodeWithID[PackageNameNode](id())) }
+	createPackageNameNode := func() PackageNameNode { return PackageNameNode(newNodeWithID[PackageVersionNode](id())) }
+	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[DescriptorNode](id())) }
+	createDescriptor := func() DescriptorNode { return DescriptorNode(newNodeWithID[descriptor](id())) }
+
+	type explodedIDs struct {
+		descriptorID         int
+		descriptorNoSuffixID int
+	}
+	cache := map[string]explodedIDs{}              // Tracks symbol name -> identifiers in the scheme tree
+	schemeTree := map[string]SchemeNode{}          // Tracks scheme -> manager -> name -> version -> descriptor
+	descriptorsNoSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
+
+	symbolNameBatchMigrator := func(ctx context.Context, symbolLookupInserter *batch.Inserter) error {
+		for _, symbolName := range symbolNames {
+			symbol, err := symbols.NewExplodedSymbol(symbolName)
+			if err != nil {
 				return err
 			}
 
-			symbolPairs = append(symbolPairs, symbolInDocument{symbolID, documentLookupID})
+			// Assign the parts of the exploded symbol into the scheme tree. If a prefix of
+			// the exploded symbol is already in the tree then existing nodes will be re-used.
+			// Laying out the exploded in a tree structure will allow us to trace parentage
+			// (required for fast lookups) when we insert these into the database.
+
+			schemeNode := getOrCreate(schemeTree, symbol.Scheme, createSchemeNode)
+			packageManagerNode := getOrCreate(schemeNode.children, symbol.PackageManager, createPackageManagerNode)
+			packageNameNode := getOrCreate(packageManagerNode.children, symbol.PackageName, createPackageNameNode)
+			packageVersionNode := getOrCreate(packageNameNode.children, symbol.PackageVersion, createPackageVersionNode)
+			descriptor := getOrCreate(packageVersionNode.children, symbol.Descriptor, createDescriptor)
+			descriptorsNoSuffixID := getOrCreate(descriptorsNoSuffixMap, symbol.DescriptorNoSuffix, id)
+
+			cache[symbolName] = explodedIDs{
+				descriptorID:         descriptor.id,
+				descriptorNoSuffixID: descriptorsNoSuffixID,
+			}
+		}
+
+		scipNameTypeByDepth := []string{
+			"SCHEME",          // depth 0
+			"PACKAGE_MANAGER", // depth 1
+			"PACKAGE_NAME",    // depth 2
+			"PACKAGE_VERSION", // depth 3
+			"DESCRIPTOR",      // depth 4
+			/*              */ // depth PANIC
+		}
+
+		// Bulk insert the content of the tree
+		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
+			return symbolLookupInserter.Insert(ctx, scipNameTypeByDepth[depth], name, id, parentID)
+		}); err != nil {
+			return err
+		}
+
+		// Bulk insert fuzzy descriptors
+		for name, id := range descriptorsNoSuffixMap {
+			if err := symbolLookupInserter.Insert(ctx, "DESCRIPTOR_NO_SUFFIX", name, id, nil); err != nil {
+				return err
+			}
 		}
 
 		return nil
-	}(); err != nil {
+	}
+
+	// Batch-insert new symbol-lookup rows before batch updating the symbols table (below)
+	if err := withSymbolLookupInserter(ctx, tx, uploadID, symbolNameBatchMigrator); err != nil {
 		return nil, err
 	}
 
-	var symbolIDs []int
-	for _, symbol := range symbolPairs {
-		symbolIDs = append(symbolIDs, symbol.symbolID)
+	// Construct the updated tuples for the symbols rows we have locked in this transaction.
+	// Each (original) symbol identifier is translated into the new descriptor identifier
+	// pairs batch inserted into the symbols lookup table (above).
+	values := make([][]any, 0, len(symbolInDocuments))
+	for _, symbolInDocument := range symbolInDocuments {
+		ids := cache[symbolNamesByID[symbolInDocument.symbolID]]
+
+		values = append(values, []any{
+			symbolInDocument.symbolID,
+			symbolInDocument.documentLookupID,
+			ids.descriptorID,
+			ids.descriptorNoSuffixID,
+		})
 	}
 
-	scanner := basestore.NewMapScanner[int, string](func(s dbutil.Scanner) (symbolID int, symbolName string, _ error) {
-		err := s.Scan(&symbolID, &symbolName)
-		return symbolID, symbolName, err
-	})
+	return values, nil
+}
 
-	symbolsNamesByID, err := scanner(tx.Query(ctx, sqlf.Sprintf(`
+//
+//
+//
+
+func (m *scipSymbolsMigrator) MigrateDown(ctx context.Context, uploadID int, tx *basestore.Store, rows *sql.Rows) (_ [][]any, err error) {
+	// Consume symbol_id/document_id pairs from the incoming rows
+	symbolInDocuments, err := readSymbolInDocuments(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	// Remove the keys we added in the up direction
+	values := make([][]any, 0, len(symbolInDocuments))
+	for _, symbolInDocument := range symbolInDocuments {
+		values = append(values, []any{
+			symbolInDocument.symbolID,
+			symbolInDocument.documentLookupID,
+			nil,
+			nil,
+		})
+	}
+
+	return values, nil
+}
+
+//
+//
+//
+
+type symbolInDocument struct {
+	symbolID         int
+	documentLookupID int
+}
+
+func readSymbolInDocuments(rows *sql.Rows) ([]symbolInDocument, error) {
+	return scanSymbolInDocuments(rows, nil)
+}
+
+var scanSymbolInDocuments = basestore.NewSliceScanner(func(s dbutil.Scanner) (sd symbolInDocument, _ error) {
+	err := s.Scan(&sd.symbolID, &sd.documentLookupID)
+	return sd, err
+})
+
+//
+//
+
+func readSymbolNamesBySymbolIDs(ctx context.Context, tx *basestore.Store, uploadID int, symbolIDs []int) (map[int]string, error) {
+	return scanSymbolNamesByID(tx.Query(ctx, sqlf.Sprintf(`
 		WITH RECURSIVE
 		symbols(id, upload_id, suffix, prefix_id) AS (
 			(
@@ -115,87 +249,53 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 		pq.Array(symbolIDs),
 		uploadID,
 	)))
-	if err != nil {
-		return nil, err
-	}
+}
 
-	symbolNames := make([]string, 0, len(symbolsNamesByID))
-	for _, symbolName := range symbolsNamesByID {
-		symbolNames = append(symbolNames, symbolName)
-	}
+var scanSymbolNamesByID = basestore.NewMapScanner(func(s dbutil.Scanner) (symbolID int, symbolName string, _ error) {
+	err := s.Scan(&symbolID, &symbolName)
+	return symbolID, symbolName, err
+})
 
-	// TODO - needs to be unique within an index?
-	nextSymbolLookupID := 0
+//
+//
 
-	schemes := make(map[string]int)
-	managers := make(map[string]int)
-	packageNames := make(map[string]int)
-	packageVersions := make(map[string]int)
-	descriptors := make(map[string]int)
-	descriptorsNoSuffix := make(map[string]int)
+func getNextSymbolID(ctx context.Context, tx *basestore.Store, uploadID int) (int, error) {
+	nextSymbolLookupID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(`
+		SELECT symbol_id
+		FROM codeintel_scip_symbols_migration_progress
+		WHERE upload_id = %s
+	`,
+		uploadID,
+	)))
+	return nextSymbolLookupID, err
+}
 
-	type explodedIDs struct {
-		schemeID             int
-		packageManagerID     int
-		packageNameID        int
-		packageVersionID     int
-		descriptorID         int
-		descriptorNoSuffixID int
-	}
-	cache := map[string]explodedIDs{}
+func setNextSymbolID(ctx context.Context, tx *basestore.Store, uploadID, id int) error {
+	return tx.Exec(ctx, sqlf.Sprintf(`
+		UPDATE codeintel_scip_symbols_migration_progress
+		SET symbol_id = %s
+		WHERE upload_id = %s
+	`,
+		id,
+		uploadID,
+	))
+}
 
-	getOrSetID := func(m map[string]int, key string) int {
-		if v, ok := m[key]; ok {
-			return v
-		}
+//
+//
 
-		id := nextSymbolLookupID
-		nextSymbolLookupID++
-		m[key] = id
-		return id
-	}
+type inserterFunc func(ctx context.Context, symbolLookupInserter *batch.Inserter) error
 
-	for _, symbolName := range symbolNames {
-		symbol, err := symbols.NewExplodedSymbol(symbolName)
-		if err != nil {
-			return nil, err
-		}
-
-		schemeID := getOrSetID(schemes, symbol.Scheme)
-		packageManagerID := getOrSetID(managers, symbol.PackageManager)
-		packageNameID := getOrSetID(packageNames, symbol.PackageName)
-		packageVersionID := getOrSetID(packageVersions, symbol.PackageVersion)
-		descriptorID := getOrSetID(descriptors, symbol.Descriptor)
-		descriptorNoSuffixID := getOrSetID(descriptorsNoSuffix, symbol.DescriptorNoSuffix)
-		cache[symbolName] = explodedIDs{
-			schemeID:             schemeID,
-			packageManagerID:     packageManagerID,
-			packageNameID:        packageNameID,
-			packageVersionID:     packageVersionID,
-			descriptorID:         descriptorID,
-			descriptorNoSuffixID: descriptorNoSuffixID,
-		}
-	}
-
-	maps := map[string]map[string]int{
-		"SCHEME":               schemes,
-		"PACKAGE_MANAGER":      managers,
-		"PACKAGE_NAME":         packageNames,
-		"PACKAGE_VERSION":      packageVersions,
-		"DESCRIPTOR":           descriptors,
-		"DESCRIPTOR_NO_SUFFIX": descriptorsNoSuffix,
-	}
-
-	const newSCIPWriterTemporarySymbolLookupTableQuery = `
+func withSymbolLookupInserter(ctx context.Context, tx *basestore.Store, uploadID int, f inserterFunc) error {
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
 		CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
 			id integer NOT NULL,
-			upload_id integer NOT NULL,
 			name text NOT NULL,
-			scip_name_type text NOT NULL
+			scip_name_type text NOT NULL,
+			parent_id integer
 		) ON COMMIT DROP
-	`
-	if err := tx.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolLookupTableQuery)); err != nil {
-		return nil, err
+	`)); err != nil {
+		return err
 	}
 
 	symbolLookupInserter := batch.NewInserter(
@@ -203,52 +303,47 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 		tx.Handle(),
 		"t_codeintel_scip_symbols_lookup",
 		batch.MaxNumPostgresParameters,
-		"id",
-		"upload_id",
-		"name",
 		"scip_name_type",
+		"name",
+		"id",
+		"parent_id",
 	)
 
-	for nameType, m := range maps {
-		for symbolName, symbolID := range m {
-			if err := symbolLookupInserter.Insert(ctx, symbolID, uploadID, symbolName, nameType); err != nil {
-				return nil, err
-			}
-		}
+	if err := f(ctx, symbolLookupInserter); err != nil {
+		return err
 	}
-
 	if err := symbolLookupInserter.Flush(ctx); err != nil {
-		return nil, err
+		return err
 	}
 
-	values := make([][]any, 0, len(symbolPairs))
-	for _, pair := range symbolPairs {
-		ids := cache[symbolsNamesByID[pair.symbolID]]
-
-		values = append(values, []any{
-			pair.symbolID,
-			pair.documentLookupID,
-			ids.schemeID,
-			ids.packageManagerID,
-			ids.packageNameID,
-			ids.packageVersionID,
-			ids.descriptorID,
-			ids.descriptorNoSuffixID,
-		})
-	}
-
-	return values, nil
+	return tx.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO codeintel_scip_symbols_lookup (id, upload_id, name, scip_name_type, parent_id)
+		SELECT id, %s, name, scip_name_type, parent_id
+		FROM t_codeintel_scip_symbols_lookup
+	`,
+		uploadID,
+	))
 }
 
 //
 //
-//
 
-// TODO - rewrite
-// TODO - redocument
-// MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
-func (m *scipSymbolsMigrator) MigrateDown(ctx context.Context, uploadID int, tx *basestore.Store, rows *sql.Rows) (_ [][]any, err error) {
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func flattenKeys[K int | string, V any](m map[K]V) []K {
+	ss := make([]K, 0, len(m))
+	for v := range m {
+		ss = append(ss, v)
+	}
+	sort.Slice(ss, func(i, j int) bool { return ss[i] < ss[j] })
 
-	return nil, errors.New("down unimplemented")
+	return ss
+}
+
+func flattenValues[K comparable, V int | string](m map[K]V) []V {
+	ss := make([]V, 0, len(m))
+	for _, v := range m {
+		ss = append(ss, v)
+	}
+	sort.Slice(ss, func(i, j int) bool { return ss[i] < ss[j] })
+
+	return ss
 }

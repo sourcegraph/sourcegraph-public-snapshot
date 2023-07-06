@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -37,8 +37,7 @@ type LsifStore interface {
 	SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error)
 
 	// Fetch document by symbol name
-	GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*types.SCIPNames, err error)
-	GetLocationByExplodedSymbol(ctx context.Context, symbolName string, uploadID int, scipFieldName string, path string) (locations []shared.Location, err error)
+	GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*symbols.ExplodedSymbol, err error)
 
 	// Extraction methods
 	ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
