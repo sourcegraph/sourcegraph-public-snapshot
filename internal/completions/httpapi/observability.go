@@ -43,7 +43,7 @@ func Trace(ctx context.Context, family, model string) *traceBuilder {
 
 type traceBuilder struct {
 	start time.Time
-	tr    *trace.Trace
+	tr    trace.Trace
 	err   *error
 	event honey.Event
 	ctx   context.Context

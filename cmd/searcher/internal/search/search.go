@@ -141,7 +141,7 @@ func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchS
 	metricRunning.Inc()
 	defer metricRunning.Dec()
 
-	var tr *trace.Trace
+	var tr trace.Trace
 	tr, ctx = trace.New(ctx, "search",
 		p.Repo.Attr(),
 		p.Commit.Attr(),

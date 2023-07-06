@@ -82,7 +82,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter *eventWriter) (err error) {
+func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *eventWriter) (err error) {
 	ctx := r.Context()
 	start := time.Now()
 

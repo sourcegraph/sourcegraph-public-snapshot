@@ -874,7 +874,7 @@ func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) 
 	})
 }
 
-func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
+func (s *repoStore) listRepos(ctx context.Context, tr trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
 	var privateIDs []api.RepoID
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
@@ -898,7 +898,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	return rs, err
 }
 
-func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+func (s *repoStore) list(ctx context.Context, tr trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
 	q, err := s.listSQL(ctx, tr, opt)
 	if err != nil {
 		return err
@@ -922,7 +922,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	return rows.Err()
 }
 
-func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
+func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, joins, where []*sqlf.Query
 
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
@@ -1672,7 +1672,7 @@ func (s *repoStore) GetFirstRepoByCloneURL(ctx context.Context, cloneURL string)
 	return s.GetByName(ctx, repoName)
 }
 
-func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
+func parsePattern(tr trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
@@ -1710,7 +1710,7 @@ func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query,
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
+func parseDescriptionPattern(tr trace.Trace, p string) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err

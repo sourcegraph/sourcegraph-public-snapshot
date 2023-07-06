@@ -1218,7 +1218,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	matchesBuf.Flush()
 }
 
-func (s *Server) searchWithObservability(ctx context.Context, tr *trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
+func (s *Server) searchWithObservability(ctx context.Context, tr trace.Trace, args *protocol.SearchRequest, onMatch func(*protocol.CommitMatch) error) (limitHit bool, err error) {
 	searchStart := time.Now()
 
 	searchRunning.Inc()
@@ -1618,7 +1618,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		}
 		args := strings.Join(req.Args, " ")
 
-		var tr *trace.Trace
+		var tr trace.Trace
 		tr, ctx = trace.New(ctx, "exec."+cmd, req.Repo.Attr())
 		tr.SetAttributes(
 			attribute.String("args", args),
@@ -1890,7 +1890,7 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 		}
 		args := strings.Join(req.Args, " ")
 
-		var tr *trace.Trace
+		var tr trace.Trace
 		tr, ctx = trace.New(ctx, "p4exec."+cmd, attribute.String("port", req.P4Port))
 		tr.SetAttributes(attribute.String("args", args))
 		logger = logger.WithTrace(trace.Context(ctx))

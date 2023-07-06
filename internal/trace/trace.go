@@ -20,10 +20,10 @@ type Trace struct {
 // New returns a new Trace with the specified name.
 // For tips on naming, see the OpenTelemetry Span documentation:
 // https://opentelemetry.io/docs/specs/otel/trace/api/#span
-func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
+func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (Trace, context.Context) {
 	tracer := Tracer{TracerProvider: otel.GetTracerProvider()}
 	tr, ctx := tracer.New(ctx, name, attrs...)
-	return &tr, ctx
+	return tr, ctx
 }
 
 // SetAttributes sets kv as attributes of the Span.
