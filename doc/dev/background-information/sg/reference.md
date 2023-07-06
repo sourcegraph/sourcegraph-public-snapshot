@@ -164,6 +164,7 @@ Flags:
 
 * `--describe`: Print details about selected run target
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--legacy`: Force run to pick the non-bazel variant of the command
 
 ## sg ci
 
