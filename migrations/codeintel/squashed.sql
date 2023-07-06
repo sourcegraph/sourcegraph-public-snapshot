@@ -237,10 +237,6 @@ CREATE TABLE codeintel_scip_symbols (
     implementation_ranges bytea,
     type_definition_ranges bytea,
     symbol_id integer NOT NULL,
-    scheme_id integer,
-    package_manager_id integer,
-    package_name_id integer,
-    package_version_id integer,
     descriptor_id integer,
     descriptor_no_suffix_id integer
 );
@@ -264,10 +260,16 @@ COMMENT ON COLUMN codeintel_scip_symbols.type_definition_ranges IS 'An encoded s
 COMMENT ON COLUMN codeintel_scip_symbols.symbol_id IS 'The identifier of the segment that terminates the name of this symbol. See the table [`codeintel_scip_symbol_names`](#table-publiccodeintel_scip_symbol_names) on how to reconstruct the full symbol name.';
 
 CREATE TABLE codeintel_scip_symbols_lookup (
-    id bigint NOT NULL,
     upload_id integer NOT NULL,
+    scip_name_type text NOT NULL,
     name text NOT NULL,
-    scip_name_type text NOT NULL
+    id integer NOT NULL,
+    parent_id integer
+);
+
+CREATE TABLE codeintel_scip_symbols_migration_progress (
+    upload_id integer NOT NULL,
+    symbol_id integer NOT NULL
 );
 
 CREATE TABLE codeintel_scip_symbols_schema_versions (
@@ -378,6 +380,9 @@ ALTER TABLE ONLY codeintel_scip_metadata
 ALTER TABLE ONLY codeintel_scip_symbol_names
     ADD CONSTRAINT codeintel_scip_symbol_names_pkey PRIMARY KEY (upload_id, id);
 
+ALTER TABLE ONLY codeintel_scip_symbols_migration_progress
+    ADD CONSTRAINT codeintel_scip_symbols_migration_progress_pkey PRIMARY KEY (upload_id);
+
 ALTER TABLE ONLY codeintel_scip_symbols
     ADD CONSTRAINT codeintel_scip_symbols_pkey PRIMARY KEY (upload_id, symbol_id, document_lookup_id);
 
@@ -417,7 +422,7 @@ CREATE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbol
 
 CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_precise ON codeintel_scip_symbols_lookup USING btree (upload_id, id);
 
-CREATE INDEX codeintel_scip_symbols_precise_selector ON codeintel_scip_symbols USING btree (scheme_id, package_manager_id, package_name_id, package_version_id, descriptor_id);
+CREATE INDEX codeintel_scip_symbols_precise_selector ON codeintel_scip_symbols USING btree (upload_id, descriptor_id);
 
 CREATE INDEX codeisdntel_scip_symbol_names_upload_id_children ON codeintel_scip_symbol_names USING btree (upload_id, prefix_id) WHERE (prefix_id IS NOT NULL);
 

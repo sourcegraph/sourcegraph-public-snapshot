@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "cleanup.go",
         "insert.go",
+        "insert_util.go",
         "observability.go",
         "scan_documents.go",
         "store.go",
