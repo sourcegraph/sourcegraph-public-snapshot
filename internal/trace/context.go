@@ -39,12 +39,8 @@ func FromContext(ctx context.Context) *Trace {
 // CopyContext copies the tracing-related context items from one context to another and returns that
 // context.
 func CopyContext(ctx context.Context, from context.Context) context.Context {
-	if tr := FromContext(from); tr != nil {
-		ctx = contextWithTrace(ctx, tr)
-	}
-	if shouldTrace := policy.ShouldTrace(from); shouldTrace {
-		ctx = policy.WithShouldTrace(ctx, shouldTrace)
-	}
+	ctx = oteltrace.ContextWithSpan(ctx, oteltrace.SpanFromContext(from))
+	ctx = policy.WithShouldTrace(ctx, policy.ShouldTrace(from))
 	return ctx
 }
 
