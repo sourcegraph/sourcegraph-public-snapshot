@@ -384,6 +384,14 @@
         "icon": "$(sync~spin)"
       },
       {
+        "command": "cody.comment.collapse-all",
+        "title": "Collapse All Comments",
+        "category": "Cody Inline Chat",
+        "when": "cody.activated && config.cody.inlineChat.enabled",
+        "enablement": "!commentThreadIsEmpty",
+        "icon": "$(collapse-all)"
+      },
+      {
         "command": "cody.inline.new",
         "title": "Start a new Thread (Ctrl+Shift+C)",
         "category": "Cody Inline Chat",
@@ -554,6 +562,10 @@
         },
         {
           "command": "cody.comment.load",
+          "when": "false"
+        },
+        {
+          "command": "cody.comment.collapse-all",
           "when": "false"
         },
         {
@@ -743,6 +755,11 @@
           "command": "cody.comment.load",
           "group": "inline@2",
           "when": "cody.activated && commentController =~ /^cody-inline/ && cody.reply.pending && config.cody.inlineChat.enabled"
+        },
+        {
+          "command": "cody.comment.collapse-all",
+          "group": "inline@3",
+          "when": "cody.activated && commentController =~ /^cody-inline/ && config.cody.inlineChat.enabled"
         }
       ],
       "view/item/context": [
