@@ -12,7 +12,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -2008,8 +2007,8 @@ func setGitAttributes(dir common.GitDir) error {
 }
 
 func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoName) error {
-	// ➜ echo "/tmp/probable-happiness/.git/objects" >
-
+	// Do the equivalent of this command:
+	// echo "$REPO_DIR/.pool/$REPO_NAME/.git/objects" > $REPOS_DIR/$REPO_NAME/.git/objects/info/alternates
 	repoDir := s.dir(repo)
 
 	// "/data/repos/github.com/owner/this-repo/.git/objects/info/alternates"
@@ -2018,7 +2017,7 @@ func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoN
 	// "/data/repos/.pool/github.com/owner/this-repo/.git/objects"
 	poolRepoObjectsFilePath := filepath.Join(string(s.poolDir(repo)), "objects")
 
-	if err := ioutil.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), 0); err != nil {
+	if err := os.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
 	}
 
@@ -2386,9 +2385,14 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 			// We already cloned in the right dir here so only need to setup git-alternate stuff.
 		}
 
+		logger.Warn(">>> configureRepoAsGitAlternate started")
 		if err := s.configureRepoAsGitAlternate(ctx, repo); err != nil {
 			return errors.Wrap(err, "configureRepoAsGitAlternate")
+		} else {
+			logger.Warn("no error in configureRepoAsGitAlternate")
 		}
+	} else {
+		logger.Warn("<<< not a deduplicated clone")
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
