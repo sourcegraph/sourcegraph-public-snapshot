@@ -210,7 +210,7 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 	}
 	tr, txctx := s.Tracer.New(txctx, family)
 	ctx = trace.CopyContext(ctx, txctx)
-	return tr, ctx
+	return &tr, ctx
 }
 
 func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {

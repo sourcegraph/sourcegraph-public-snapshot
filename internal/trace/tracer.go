@@ -16,7 +16,7 @@ type Tracer struct {
 }
 
 // New returns a new Trace with the specified name. Must be closed with End().
-func (t Tracer) New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
+func (t Tracer) New(ctx context.Context, name string, attrs ...attribute.KeyValue) (Trace, context.Context) {
 	if t.TracerProvider == nil {
 		t.TracerProvider = otel.GetTracerProvider()
 	}
@@ -25,5 +25,5 @@ func (t Tracer) New(ctx context.Context, name string, attrs ...attribute.KeyValu
 		Tracer("sourcegraph/internal/trace").
 		Start(ctx, name, oteltrace.WithAttributes(attrs...))
 
-	return &Trace{otelSpan}, ctx
+	return Trace{otelSpan}, ctx
 }

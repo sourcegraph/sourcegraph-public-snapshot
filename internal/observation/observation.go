@@ -323,7 +323,7 @@ func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Cont
 	}
 
 	tr, ctx := op.context.Tracer.New(ctx, op.kebabName)
-	return tr, ctx
+	return &tr, ctx
 }
 
 // emitErrorLogs will log as message if the operation has failed. This log contains the error
