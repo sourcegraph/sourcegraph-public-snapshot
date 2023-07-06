@@ -520,6 +520,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			update: &ExternalServiceUpdate{
 				DisplayName: strptr("GITHUB (updated) #7"),
 				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				LastSyncAt:  pointers.Ptr(now),
 				NextSyncAt:  pointers.Ptr(now),
 			},
 			wantCloudDefault:   true,
