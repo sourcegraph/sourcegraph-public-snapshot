@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -576,6 +577,10 @@ func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.Git
 
 	if gsr != nil && gsr.PoolRepoID != nil {
 		logger.Warn("pool repo id found", log.Int32("pool_repo_id", int32(*gsr.PoolRepoID)))
+
+		// REVIEW: GitserverRepos().GetParentAndFork -> implement and use the name to get the shard
+		// id instead of reading from the DB.
+
 		return gsr.ShardID
 	}
 
@@ -2111,6 +2116,40 @@ func setGitAttributes(dir common.GitDir) error {
 	return nil
 }
 
+func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoName) error {
+	// ➜ echo "/tmp/probable-happiness/.git/objects" >
+
+	repoDir := s.dir(repo)
+
+	// "/data/repos/github.com/owner/this-repo/.git/objects/info/alternates"
+	repoAlternatesFilePath := filepath.Join(string(repoDir), "objects/info/alternates")
+
+	// "/data/repos/.pool/github.com/owner/this-repo/.git/objects"
+	poolRepoObjectsFilePath := filepath.Join(string(s.poolDir(repo)), "objects")
+
+	if err := ioutil.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), 0); err != nil {
+		return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
+	}
+
+	// Run in this in the repo and not the pool.
+	// NEVER run this in the pool repo.
+	cmd := exec.CommandContext(ctx, "git", "repack")
+	repoDir.Set(cmd)
+
+	if err := cmd.Run(); err != nil {
+		return errors.Wrap(err, "failed to run git repack in repo (deduplication will not work)")
+	}
+
+	cmd = exec.CommandContext(ctx, "git", "gc")
+	repoDir.Set(cmd)
+
+	if err := cmd.Run(); err != nil {
+		return errors.Wrap(err, "failed to run git gc in repo (deduplication will not work)")
+	}
+
+	return nil
+}
+
 // testRepoCorrupter is used by tests to disrupt a cloned repository (e.g. deleting
 // HEAD, zeroing it out, etc.)
 var testRepoCorrupter func(ctx context.Context, tmpDir common.GitDir)
@@ -2457,8 +2496,9 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 			// We already cloned in the right dir here so only need to setup git-alternate stuff.
 		}
 
-		// Setup git alternate stuff.
-		//
+		if err := s.configureRepoAsGitAlternate(ctx, repo); err != nil {
+			return errors.Wrap(err, "configureRepoAsGitAlternate")
+		}
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
