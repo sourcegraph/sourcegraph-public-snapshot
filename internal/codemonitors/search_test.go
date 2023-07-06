@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -105,10 +104,10 @@ func TestCodeMonitorHook(t *testing.T) {
 	type testFixtures struct {
 		User    *types.User
 		Repo    *types.Repo
-		Monitor *edb.Monitor
+		Monitor *database.Monitor
 	}
 	logger := logtest.Scoped(t)
-	populateFixtures := func(db edb.EnterpriseDB) testFixtures {
+	populateFixtures := func(db database.DB) testFixtures {
 		ctx := context.Background()
 		u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
 		require.NoError(t, err)
@@ -117,13 +116,13 @@ func TestCodeMonitorHook(t *testing.T) {
 		r, err := db.Repos().GetByName(ctx, "test")
 		require.NoError(t, err)
 		ctx = actor.WithActor(ctx, actor.FromUser(u.ID))
-		m, err := db.CodeMonitors().CreateMonitor(ctx, edb.MonitorArgs{NamespaceUserID: &u.ID})
+		m, err := db.CodeMonitors().CreateMonitor(ctx, database.MonitorArgs{NamespaceUserID: &u.ID})
 		require.NoError(t, err)
 		return testFixtures{User: u, Monitor: m, Repo: r}
 	}
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	fixtures := populateFixtures(edb.NewEnterpriseDB(db))
+	fixtures := populateFixtures(db)
 	ctx := context.Background()
 
 	gs := gitserver.NewMockClient()

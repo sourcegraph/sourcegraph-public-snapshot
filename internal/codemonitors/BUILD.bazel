@@ -4,10 +4,9 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "codemonitors",
     srcs = ["search.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codemonitors",
+    visibility = ["//:__subpackages__"],
     deps = [
-        "//enterprise/internal/database",
         "//internal/api",
         "//internal/api/internalapi",
         "//internal/database",
@@ -36,7 +35,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/database",
         "//internal/database/dbtest",

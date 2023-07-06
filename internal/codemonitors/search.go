@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -165,7 +164,7 @@ func hookWithID(
 	args *gitprotocol.SearchRequest,
 	doSearch commit.DoSearchFunc,
 ) error {
-	cm := edb.NewEnterpriseDB(db).CodeMonitors()
+	cm := db.CodeMonitors()
 
 	// Resolve the requested revisions into a static set of commit hashes
 	commitHashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
@@ -225,7 +224,7 @@ func snapshotHook(
 	monitorID int64,
 	repoID api.RepoID,
 ) error {
-	cm := edb.NewEnterpriseDB(db).CodeMonitors()
+	cm := db.CodeMonitors()
 
 	// Resolve the requested revisions into a static set of commit hashes
 	commitHashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)

@@ -149,7 +149,7 @@ func newTestResolver(t *testing.T, db database.DB) *Resolver {
 // newResolverWithClock is used in tests to set the clock manually.
 func newResolverWithClock(logger log.Logger, db database.DB, clock func() time.Time) *Resolver {
 	mockDB := edb.NewMockEnterpriseDBFrom(edb.NewEnterpriseDB(db))
-	mockDB.CodeMonitorsFunc.SetDefaultReturn(edb.CodeMonitorsWithClock(db, clock))
+	mockDB.CodeMonitorsFunc.SetDefaultReturn(database.CodeMonitorsWithClock(db, clock))
 	return &Resolver{logger: logger, db: mockDB}
 }
 

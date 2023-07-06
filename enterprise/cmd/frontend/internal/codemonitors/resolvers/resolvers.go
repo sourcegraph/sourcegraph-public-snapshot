@@ -11,10 +11,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors/background"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors/background"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
@@ -25,13 +25,13 @@ import (
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(logger log.Logger, db database.EnterpriseDB, enterpriseJobs jobutil.EnterpriseJobs) graphqlbackend.CodeMonitorsResolver {
+func NewResolver(logger log.Logger, db edb.EnterpriseDB, enterpriseJobs jobutil.EnterpriseJobs) graphqlbackend.CodeMonitorsResolver {
 	return &Resolver{logger: logger, db: db, enterpriseJobs: enterpriseJobs}
 }
 
 type Resolver struct {
 	logger         log.Logger
-	db             database.EnterpriseDB
+	db             edb.EnterpriseDB
 	enterpriseJobs jobutil.EnterpriseJobs
 }
 
@@ -640,7 +640,7 @@ func (r *Resolver) withTransact(ctx context.Context, f func(*Resolver) error) er
 	return r.db.WithTransact(ctx, func(tx database.DB) error {
 		return f(&Resolver{
 			logger: r.logger,
-			db:     database.NewEnterpriseDB(tx),
+			db:     edb.NewEnterpriseDB(tx),
 		})
 	})
 

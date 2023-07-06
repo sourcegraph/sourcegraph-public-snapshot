@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -54,10 +53,10 @@ func TestActionRunner(t *testing.T) {
 			// Create a TestStore.
 			now := time.Now()
 			clock := func() time.Time { return now }
-			s := edb.CodeMonitorsWithClock(db, clock)
-			ctx, ts := edb.NewTestStore(t, db)
+			s := database.CodeMonitorsWithClock(db, clock)
+			ctx, ts := database.NewTestStore(t, db)
 
-			_, _, _, userCtx := edb.NewTestUser(ctx, t, db)
+			_, _, _, userCtx := database.NewTestUser(ctx, t, db)
 
 			// Run a complete pipeline from creation of a code monitor to sending of an email.
 			_, err := ts.InsertTestMonitor(userCtx, t)

@@ -9,7 +9,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go/relay"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -64,7 +63,7 @@ type TemplateDataNewSearchResults struct {
 	IsTest                    bool
 }
 
-func NewTemplateDataForNewSearchResults(args actionArgs, email *edb.EmailAction) (d *TemplateDataNewSearchResults, err error) {
+func NewTemplateDataForNewSearchResults(args actionArgs, email *database.EmailAction) (d *TemplateDataNewSearchResults, err error) {
 	var (
 		priority string
 	)

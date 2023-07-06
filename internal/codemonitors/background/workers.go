@@ -9,9 +9,8 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codemonitors"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -29,7 +28,7 @@ const (
 	eventRetentionInDays int = 30
 )
 
-func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Context, db edb.EnterpriseDB, enterpriseJobs jobutil.EnterpriseJobs, metrics codeMonitorsMetrics) *workerutil.Worker[*edb.TriggerJob] {
+func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Context, db database.DB, enterpriseJobs jobutil.EnterpriseJobs, metrics codeMonitorsMetrics) *workerutil.Worker[*database.TriggerJob] {
 	options := workerutil.WorkerOptions{
 		Name:                 "code_monitors_trigger_jobs_worker",
 		Description:          "runs trigger queries for code monitors",
@@ -42,11 +41,11 @@ func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Cont
 
 	store := createDBWorkerStoreForTriggerJobs(observationCtx, db)
 
-	worker := dbworker.NewWorker[*edb.TriggerJob](ctx, store, &queryRunner{db: db, enterpriseJobs: enterpriseJobs}, options)
+	worker := dbworker.NewWorker[*database.TriggerJob](ctx, store, &queryRunner{db: db, enterpriseJobs: enterpriseJobs}, options)
 	return worker
 }
 
-func newTriggerQueryEnqueuer(ctx context.Context, store edb.CodeMonitorStore) goroutine.BackgroundRoutine {
+func newTriggerQueryEnqueuer(ctx context.Context, store database.CodeMonitorStore) goroutine.BackgroundRoutine {
 	enqueueActive := goroutine.HandlerFunc(
 
 		func(ctx context.Context) error {
@@ -62,7 +61,7 @@ func newTriggerQueryEnqueuer(ctx context.Context, store edb.CodeMonitorStore) go
 	)
 }
 
-func newTriggerQueryResetter(_ context.Context, observationCtx *observation.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*edb.TriggerJob] {
+func newTriggerQueryResetter(_ context.Context, observationCtx *observation.Context, s database.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*database.TriggerJob] {
 	workerStore := createDBWorkerStoreForTriggerJobs(observationCtx, s)
 
 	options := dbworker.ResetterOptions{
@@ -77,7 +76,7 @@ func newTriggerQueryResetter(_ context.Context, observationCtx *observation.Cont
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, options)
 }
 
-func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) goroutine.BackgroundRoutine {
+func newTriggerJobsLogDeleter(ctx context.Context, store database.CodeMonitorStore) goroutine.BackgroundRoutine {
 	deleteLogs := goroutine.HandlerFunc(
 		func(ctx context.Context) error {
 			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
@@ -91,7 +90,7 @@ func newTriggerJobsLogDeleter(ctx context.Context, store edb.CodeMonitorStore) g
 	)
 }
 
-func newActionRunner(ctx context.Context, observationCtx *observation.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker[*edb.ActionJob] {
+func newActionRunner(ctx context.Context, observationCtx *observation.Context, s database.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker[*database.ActionJob] {
 	options := workerutil.WorkerOptions{
 		Name:              "code_monitors_action_jobs_worker",
 		Description:       "runs actions for code monitors",
@@ -103,11 +102,11 @@ func newActionRunner(ctx context.Context, observationCtx *observation.Context, s
 
 	store := createDBWorkerStoreForActionJobs(observationCtx, s)
 
-	worker := dbworker.NewWorker[*edb.ActionJob](ctx, store, &actionRunner{s}, options)
+	worker := dbworker.NewWorker[*database.ActionJob](ctx, store, &actionRunner{s}, options)
 	return worker
 }
 
-func newActionJobResetter(_ context.Context, observationCtx *observation.Context, s edb.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*edb.ActionJob] {
+func newActionJobResetter(_ context.Context, observationCtx *observation.Context, s database.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*database.ActionJob] {
 	workerStore := createDBWorkerStoreForActionJobs(observationCtx, s)
 
 	options := dbworker.ResetterOptions{
@@ -122,14 +121,14 @@ func newActionJobResetter(_ context.Context, observationCtx *observation.Context
 	return dbworker.NewResetter(observationCtx.Logger, workerStore, options)
 }
 
-func createDBWorkerStoreForTriggerJobs(observationCtx *observation.Context, s basestore.ShareableStore) dbworkerstore.Store[*edb.TriggerJob] {
+func createDBWorkerStoreForTriggerJobs(observationCtx *observation.Context, s basestore.ShareableStore) dbworkerstore.Store[*database.TriggerJob] {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("triggerJobs.dbworker.Store", ""), observationCtx)
 
-	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*edb.TriggerJob]{
+	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*database.TriggerJob]{
 		Name:              "code_monitors_trigger_jobs_worker_store",
 		TableName:         "cm_trigger_jobs",
-		ColumnExpressions: edb.TriggerJobsColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(edb.ScanTriggerJob),
+		ColumnExpressions: database.TriggerJobsColumns,
+		Scan:              dbworkerstore.BuildWorkerScan(database.ScanTriggerJob),
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -137,14 +136,14 @@ func createDBWorkerStoreForTriggerJobs(observationCtx *observation.Context, s ba
 	})
 }
 
-func createDBWorkerStoreForActionJobs(observationCtx *observation.Context, s edb.CodeMonitorStore) dbworkerstore.Store[*edb.ActionJob] {
+func createDBWorkerStoreForActionJobs(observationCtx *observation.Context, s database.CodeMonitorStore) dbworkerstore.Store[*database.ActionJob] {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("actionJobs.dbworker.Store", ""), observationCtx)
 
-	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*edb.ActionJob]{
+	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*database.ActionJob]{
 		Name:              "code_monitors_action_jobs_worker_store",
 		TableName:         "cm_action_jobs",
-		ColumnExpressions: edb.ActionJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(edb.ScanActionJob),
+		ColumnExpressions: database.ActionJobColumns,
+		Scan:              dbworkerstore.BuildWorkerScan(database.ScanActionJob),
 		StalledMaxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
 		MaxNumRetries:     3,
@@ -153,11 +152,11 @@ func createDBWorkerStoreForActionJobs(observationCtx *observation.Context, s edb
 }
 
 type queryRunner struct {
-	db             edb.EnterpriseDB
+	db             database.DB
 	enterpriseJobs jobutil.EnterpriseJobs
 }
 
-func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob *edb.TriggerJob) (err error) {
+func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob *database.TriggerJob) (err error) {
 	defer func() {
 		if err != nil {
 			logger.Error("queryRunner.Handle", log.Error(err))
@@ -212,10 +211,10 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 }
 
 type actionRunner struct {
-	edb.CodeMonitorStore
+	database.CodeMonitorStore
 }
 
-func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, j *edb.ActionJob) (err error) {
+func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, j *database.ActionJob) (err error) {
 	logger.Info("actionRunner.Handle starting")
 	defer func() {
 		if err != nil {
@@ -235,7 +234,7 @@ func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, j *edb.Act
 	}
 }
 
-func (r *actionRunner) handleEmail(ctx context.Context, j *edb.ActionJob) error {
+func (r *actionRunner) handleEmail(ctx context.Context, j *database.ActionJob) error {
 	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -252,7 +251,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *edb.ActionJob) error 
 		return errors.Wrap(err, "GetEmailAction")
 	}
 
-	recs, err := s.ListRecipients(ctx, edb.ListRecipientsOpts{EmailID: j.Email})
+	recs, err := s.ListRecipients(ctx, database.ListRecipientsOpts{EmailID: j.Email})
 	if err != nil {
 		return errors.Wrap(err, "ListRecipients")
 	}
@@ -293,7 +292,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *edb.ActionJob) error 
 	return nil
 }
 
-func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) error {
+func (r *actionRunner) handleWebhook(ctx context.Context, j *database.ActionJob) error {
 	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err
@@ -329,7 +328,7 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *edb.ActionJob) erro
 	return sendWebhookNotification(ctx, w.URL, args)
 }
 
-func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *edb.ActionJob) error {
+func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *database.ActionJob) error {
 	s, err := r.CodeMonitorStore.Transact(ctx)
 	if err != nil {
 		return err

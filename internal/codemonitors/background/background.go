@@ -3,13 +3,13 @@ package background
 import (
 	"context"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 )
 
-func NewBackgroundJobs(observationCtx *observation.Context, db edb.EnterpriseDB, enterpriseJobs jobutil.EnterpriseJobs) []goroutine.BackgroundRoutine {
+func NewBackgroundJobs(observationCtx *observation.Context, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) []goroutine.BackgroundRoutine {
 	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BackgroundJobs", "code monitors background jobs"), observationCtx)
 
 	codeMonitorsStore := db.CodeMonitors()

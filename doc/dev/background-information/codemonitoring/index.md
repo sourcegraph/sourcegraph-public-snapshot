@@ -102,7 +102,7 @@ action.
 The back end of code monitoring is split into two parts, the GraphQL API, running
 on _frontend_, and the background workers, running on _repo-updater_. Both rely
 on the
-[store](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/internal/codemonitors/store.go)
+[store](https://github.com/sourcegraph/sourcegraph/blob/main/internal/codemonitors/store.go)
 to access the database.
 
 ### GraphQL API
@@ -112,12 +112,12 @@ The GraphQL API is defined
 The interfaces and stub-resolvers are defined
 [here](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go),
 while the enterprise resolvers are defined
-[here](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/internal/codemonitors/resolvers/resolvers.go).
+[here](https://github.com/sourcegraph/sourcegraph/blob/main/internal/codemonitors/resolvers/resolvers.go).
 
 ### Background workers
 
 The [background
-workers](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/internal/codemonitors/background/background.go)
+workers](https://github.com/sourcegraph/sourcegraph/blob/main/internal/codemonitors/background/background.go)
 utilize our `internal/workerutil` framework to [run as background jobs on
 `repo-updater`](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/repo-updater/main.go#L49).
 
@@ -134,7 +134,7 @@ utilize our `internal/workerutil` framework to [run as background jobs on
 3. Do the same for the [enterprise
    resolvers](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go).
 4. Take a look at the [background
-   workers](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/internal/codemonitors/background/background.go)
+   workers](https://github.com/sourcegraph/sourcegraph/blob/main/internal/codemonitors/background/background.go)
    and look through each of the jobs that run in the background.
 5. Start up Sourcegraph locally, connect to your local db instance, create a
    code monitor from the UI and follow its life cycle in the db. Start by
