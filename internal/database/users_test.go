@@ -566,6 +566,9 @@ func TestUsers_Update(t *testing.T) {
 	if want := "a1"; user.AvatarURL != want {
 		t.Errorf("got avatar URL %q, want %q", user.AvatarURL, want)
 	}
+	if want := false; user.CompletedPostSignup != want {
+		t.Errorf("got wrong CompletedPostSignUp %t, want %t", user.CompletedPostSignup, want)
+	}
 
 	if err := db.Users().Update(ctx, user.ID, UserUpdate{
 		DisplayName: strptr(""),

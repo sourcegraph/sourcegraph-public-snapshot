@@ -221,6 +221,16 @@ func (r *UserResolver) TosAccepted(_ context.Context) bool {
 	return r.user.TosAccepted
 }
 
+func (r *UserResolver) CompletedPostSignup(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: Only the user and admins are allowed to state of
+	// post-signup flow completion.
+	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+		return false, err
+	}
+
+	return r.user.CompletedPostSignup, nil
+}
+
 func (r *UserResolver) Searchable(_ context.Context) bool {
 	return r.user.Searchable
 }

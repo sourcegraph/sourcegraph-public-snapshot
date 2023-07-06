@@ -6187,6 +6187,11 @@ type User implements Node & SettingsSubject & Namespace {
     """
     hasVerifiedEmail: Boolean!
     """
+    Whether the user has completed the post-signup flow.
+    Only the user and site admins can access this field.
+    """
+    completedPostSignup: Boolean!
+    """
     The user's verified primary email address (if any).
     On dotcom only the user and site admins can access this field.
     """
