@@ -34,10 +34,7 @@ genrule(
 
 write_generated_to_source_files(
     name = "write_genql_yaml",
-    srcs = [":generate_genql_yaml"],
-    files = {
-        "operations.go": ":generate_genql_yaml",
-    },
+    src = ":generate_genql_yaml",
+    files = ["operations.go"],
     tags = ["go_generate"],
-    visibility = ["//visibility:public"],
 )
