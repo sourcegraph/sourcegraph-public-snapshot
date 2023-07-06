@@ -28,6 +28,7 @@ type Actor struct {
 	// Sourcegraph.com users, this is the string representation of the user ID.
 	ID string `json:"id"`
 	// Name is the human-readable name for this actor, e.g. username, account name.
+	// Optional for implementations - if unset, ID will be returned from GetName().
 	Name string `json:"name"`
 	// AccessEnabled is an evaluated field that summarizes whether or not Cody Gateway access
 	// is enabled.
