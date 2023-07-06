@@ -157,7 +157,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 
 			tr.SetError(err)
 			// Finish is called in Done in the non-error case
-			tr.Finish()
+			tr.End()
 		}
 	}(time.Now())
 
@@ -197,7 +197,7 @@ func (s *store) Done(err error) error {
 			s.Metrics.Done.Observe(secs, 1, nil)
 		}
 
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	return s.Store.Done(err)
@@ -231,7 +231,7 @@ func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	set := make(pq.Int64Array, 0, len(ids))
@@ -282,7 +282,7 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if !s.InTransaction() {
@@ -347,7 +347,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	metadata, err := json.Marshal(r.Metadata)
@@ -448,7 +448,7 @@ func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Rep
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if r.ID == 0 {
@@ -507,7 +507,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if r.ID == 0 {
@@ -610,7 +610,7 @@ func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.EnqueueSyncJobs.Observe(secs, 0, &err)
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	filter := "TRUE"

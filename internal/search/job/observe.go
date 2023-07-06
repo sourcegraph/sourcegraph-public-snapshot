@@ -25,7 +25,7 @@ func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (*trace.Tr
 			tr.SetAttributes(attribute.String("alert", alert.Title))
 		}
 		tr.SetAttributes(attribute.Int64("total_results", observingStream.totalEvents.Load()))
-		tr.Finish()
+		tr.End()
 	}
 }
 

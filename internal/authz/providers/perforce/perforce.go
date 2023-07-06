@@ -95,7 +95,7 @@ func (p *Provider) FetchAccount(ctx context.Context, user *types.User, _ []*exts
 			tr.SetError(err)
 		}
 
-		tr.Finish()
+		tr.End()
 	}()
 
 	emailSet := make(map[string]struct{}, len(verifiedEmails))

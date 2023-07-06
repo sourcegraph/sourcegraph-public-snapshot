@@ -103,7 +103,7 @@ func linksForRepository(
 	tr, ctx := trace.New(ctx, "linksForRepository",
 		repo.Name.Attr(),
 		attribute.Stringer("externalRepo", repo.ExternalRepo))
-	defer tr.Finish()
+	defer tr.End()
 
 	var err error
 	phabRepo, err = db.Phabricator().GetByName(ctx, repo.Name)

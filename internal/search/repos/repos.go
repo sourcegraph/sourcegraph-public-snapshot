@@ -536,7 +536,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}()
 
 	// Early return if there are no filters

@@ -73,7 +73,7 @@ func (m *meteredSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoe
 	tr, ctx := trace.New(ctx, "zoekt."+cat, attrs...)
 	defer func() {
 		tr.SetErrorIfNotContext(err)
-		tr.Finish()
+		tr.End()
 	}()
 	if opts != nil {
 		fields := []attribute.KeyValue{

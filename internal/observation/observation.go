@@ -383,7 +383,7 @@ func (op *Operation) finishTrace(err *error, tr *trace.Trace, attrs []attribute.
 	}
 
 	tr.SetAttributes(attrs...)
-	tr.Finish()
+	tr.End()
 }
 
 // applyErrorFilter returns nil if the given error does not pass the registered error filter.

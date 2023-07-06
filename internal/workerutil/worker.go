@@ -359,7 +359,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 			w.options.Metrics.numJobs.Dec()
 			w.handlerSemaphore <- struct{}{}
 			w.wg.Done()
-			workerSpan.Finish()
+			workerSpan.End()
 		}()
 
 		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {

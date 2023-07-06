@@ -1141,7 +1141,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	logger := s.Logger.Scoped("handleSearch", "http handler for search")
 	tr, ctx := trace.New(r.Context(), "handleSearch")
-	defer tr.Finish()
+	defer tr.End()
 
 	// Decode the request
 	protocol.RegisterGob()
@@ -1636,7 +1636,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				attribute.String("ensure_revision_status", ensureRevisionStatus),
 			)
 			tr.SetError(execErr)
-			tr.Finish()
+			tr.End()
 
 			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd).Dec()
@@ -1903,7 +1903,7 @@ func (s *Server) p4Exec(ctx context.Context, logger log.Logger, req *protocol.P4
 				attribute.Int64("stderr", stderrN),
 			)
 			tr.SetError(execErr)
-			tr.Finish()
+			tr.End()
 
 			duration := time.Since(start)
 			execRunning.WithLabelValues(cmd).Dec()

@@ -65,9 +65,9 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 	t.SetError(err)
 }
 
-// Finish declares that this trace and span is complete.
+// End declares that this trace and span is complete.
 // The trace should not be used after calling this method.
-func (t *Trace) Finish() {
+func (t *Trace) End() {
 	t.oteltraceSpan.End()
 }
 
@@ -76,5 +76,5 @@ func (t *Trace) Finish() {
 // in a defer statement.
 func (t *Trace) FinishWithErr(err *error) {
 	t.SetError(*err)
-	t.Finish()
+	t.End()
 }

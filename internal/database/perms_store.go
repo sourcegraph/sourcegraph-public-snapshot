@@ -1800,7 +1800,7 @@ func (s *permsStore) observe(ctx context.Context, family string) (context.Contex
 			tr.SetError(*err)
 		}
 
-		tr.Finish()
+		tr.End()
 	}
 }
 

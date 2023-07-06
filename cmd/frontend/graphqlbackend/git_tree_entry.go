@@ -198,7 +198,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 	tr, ctx := trace.New(ctx, "GitTreeEntryResolver.url")
-	defer tr.Finish()
+	defer tr.End()
 
 	if submodule := r.Submodule(); submodule != nil {
 		tr.SetAttributes(attribute.Bool("submodule", true))

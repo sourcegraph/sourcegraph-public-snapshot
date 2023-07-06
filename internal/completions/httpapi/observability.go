@@ -75,7 +75,7 @@ func (t *traceBuilder) Build() (context.Context, func()) {
 			err = *(t.err)
 		}
 		t.tr.SetError(err)
-		t.tr.Finish()
+		t.tr.End()
 
 		ev := t.event
 		if ev == nil {

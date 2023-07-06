@@ -293,7 +293,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 	logger.Debug("SyncRepo started")
 
 	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", name.Attr())
-	defer tr.Finish()
+	defer tr.End()
 
 	repo, err = s.Store.RepoStore().GetByName(ctx, name)
 	if err != nil && !errcode.IsNotFound(err) {
@@ -912,7 +912,7 @@ func (s *Syncer) observeSync(
 			syncErrors.WithLabelValues(name, owner, syncErrorReason(err)).Inc()
 		}
 
-		tr.Finish()
+		tr.End()
 	}
 }
 
