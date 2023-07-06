@@ -5,14 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
 	"github.com/hexops/autogold/v2"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 )
@@ -30,9 +27,18 @@ func TestThresholds(t *testing.T) {
 	autogold.Expect([]int{}).Equal(t, th.Get(codygateway.ActorSource("anonymous")))
 }
 
+type mockActor struct {
+	id     string
+	name   string
+	source codygateway.ActorSource
+}
+
+func (m *mockActor) GetID() string                      { return m.id }
+func (m *mockActor) GetName() string                    { return m.name }
+func (m *mockActor) GetSource() codygateway.ActorSource { return m.source }
+
 func TestSlackRateLimitNotifier(t *testing.T) {
 	logger := logtest.NoOp(t)
-	client := dotcom.NewMockClient()
 
 	tests := []struct {
 		name        string
@@ -86,7 +92,6 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 				logger,
 				test.mockRedis(t),
 				"https://sourcegraph.com/",
-				client,
 				Thresholds{codygateway.ActorSourceProductSubscription: []int{50, 80, 90}},
 				"https://hooks.slack.com",
 				func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
@@ -96,68 +101,15 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 			)
 
 			alerter(context.Background(),
-				"alice",
-				codygateway.ActorSourceProductSubscription,
+				&mockActor{
+					id:     "foobar",
+					name:   "alice",
+					source: codygateway.ActorSourceProductSubscription,
+				},
 				codygateway.FeatureChatCompletions,
 				test.usageRatio,
 				time.Minute)
 			assert.Equal(t, test.wantAlerted, alerted, "alert fired incorrectly")
-		})
-	}
-}
-
-func TestGetSubscriptionAccountName(t *testing.T) {
-	ctx := context.Background()
-	tests := []struct {
-		name         string
-		mockUsername string
-		mockTags     []string
-		wantName     string
-	}{
-		{
-			name:         "has special license tag",
-			mockUsername: "alice",
-			mockTags:     []string{"trial", "customer:acme"},
-			wantName:     "acme",
-		},
-		{
-			name:         "use account username",
-			mockUsername: "alice",
-			mockTags:     []string{"plan:enterprise-1"},
-			wantName:     "alice",
-		},
-		{
-			name:     "no account name",
-			wantName: "",
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			client := dotcom.NewMockClient()
-			client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-				resp.Data.(*dotcom.GetProductSubscriptionResponse).Dotcom = dotcom.GetProductSubscriptionDotcomDotcomQuery{
-					ProductSubscription: dotcom.GetProductSubscriptionDotcomDotcomQueryProductSubscription{
-						ProductSubscriptionState: dotcom.ProductSubscriptionState{
-							Account: &dotcom.ProductSubscriptionStateAccountUser{
-								Username: test.mockUsername,
-							},
-							ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-								Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-									Tags: test.mockTags,
-								},
-							},
-						},
-					},
-				}
-				return nil
-			})
-			got, err := getSubscriptionAccountName(ctx, client, "foobar")
-			if test.wantName == "" {
-				assert.Error(t, err)
-			} else {
-				require.NoError(t, err)
-				assert.Equal(t, test.wantName, got)
-			}
 		})
 	}
 }

@@ -28,8 +28,9 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 		return nil, actor.ErrNotFromSource{}
 	}
 	return &actor.Actor{
-		ID:            "anonymous", // TODO: Make this IP-based?
 		Key:           token,
+		ID:            "anonymous", // TODO: Make this IP-based?
+		Name:          "anonymous", // TODO: Make this IP-based?
 		AccessEnabled: s.allowAnonymous,
 		// Some basic defaults for chat and code completions.
 		RateLimits: map[codygateway.Feature]actor.RateLimit{

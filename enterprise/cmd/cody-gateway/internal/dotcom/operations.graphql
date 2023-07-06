@@ -67,6 +67,7 @@ query ListProductSubscriptions {
 
 fragment DotcomUserState on CodyGatewayDotcomUser {
     id
+    username
     codyGatewayAccess {
         ...CodyGatewayAccessFields
     }
@@ -78,14 +79,6 @@ query CheckDotcomUserAccessToken($token: String!) {
     dotcom {
         codyGatewayDotcomUserByToken(token: $token) {
             ...DotcomUserState
-        }
-    }
-}
-
-query GetProductSubscription($subscriptionUUID: String!) {
-    dotcom {
-        productSubscription(uuid: $subscriptionUUID) {
-            ...ProductSubscriptionState
         }
     }
 }
