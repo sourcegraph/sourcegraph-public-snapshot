@@ -31,6 +31,14 @@ func (s *Server) dir(name api.RepoName) common.GitDir {
 	return common.GitDir(filepath.Join(s.ReposDir, filepath.FromSlash(p), ".git"))
 }
 
+func (s *Server) poolDir(name api.RepoName) common.GitDir {
+	p := string(protocol.NormalizeRepo(name))
+
+	// FIXME: Hardcoded to $REPO_DIR/.pool
+	// Maybe make this configurable.
+	return common.GitDir(filepath.Join(s.ReposDir, ".pool", filepath.FromSlash(p), ".git"))
+}
+
 func (s *Server) name(dir common.GitDir) api.RepoName {
 	// dir == ${s.ReposDir}/${name}/.git
 	parent := filepath.Dir(string(dir))                   // remove suffix "/.git"

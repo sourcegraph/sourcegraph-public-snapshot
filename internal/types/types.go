@@ -580,6 +580,7 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 // GitserverRepo  represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
+
 	// Usually represented by a gitserver hostname
 	ShardID         string
 	CloneStatus     CloneStatus
@@ -600,6 +601,10 @@ type GitserverRepo struct {
 	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
 	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
 	CorruptionLogs []RepoCorruptionLog
+
+	// PoolRepoID is the repo_id of the parent repo of which this repo is a fork. This is referenced
+	// for deduplicated storage of the repo itself on disk.
+	PoolRepoID *api.RepoID
 }
 
 // RepoCorruptionLog represents a corruption event that has been detected on a repo.

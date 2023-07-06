@@ -154,6 +154,8 @@ type GitserverAddresses struct {
 	// ensures that, even if the number of gitservers changes, these repos will
 	// not be moved.
 	PinnedServers map[string]string
+
+	DeduplicatedForksAddresses map[api.RepoName]string
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.

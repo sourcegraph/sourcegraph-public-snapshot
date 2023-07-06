@@ -778,6 +778,7 @@ func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*
 			c.log.Warn("GitHub returned a repository without an ID", log.String("restRepository", fmt.Sprintf("%#v", restRepo)))
 			continue
 		}
+		c.log.Warn("rest repo", log.String("value", fmt.Sprintf("%#v", restRepo.Parent)))
 		repos = append(repos, convertRestRepo(restRepo))
 	}
 	return repos, respState.hasNextPage(), nil
