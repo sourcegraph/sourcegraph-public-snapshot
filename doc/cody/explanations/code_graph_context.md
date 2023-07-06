@@ -36,7 +36,7 @@ Whether created manually or through a policy, embeddings will be generated incre
 
 To use `fileFilters`, add it to your embeddings site config. 
 
-For example, to: exclude all files under `node_modules`, include only .go files, and limiting the maximum file size to 30KB, you would add the following setting to your configuration file:
+For example, to: exclude all files under `node_modules`, include only .go files, and limiting the maximum file size to 300KB, you would add the following setting to your configuration file:
 
 ```json
 {

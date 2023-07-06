@@ -814,7 +814,7 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	return computedConfig
 }
 
-const embeddingsMaxFileSize = 1000000
+const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
@@ -944,11 +944,11 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	// While its not removed, use both options
 	var includedFilePathPatterns []string
 	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
-	maxFileSizeLimit := embeddingsMaxFileSize
+	maxFileSizeLimit := embeddingsMaxFileSizeBytes
 	if embeddingsConfig.FileFilters != nil {
 		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
 		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
-		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSize {
+		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
 			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
 		}
 	}
