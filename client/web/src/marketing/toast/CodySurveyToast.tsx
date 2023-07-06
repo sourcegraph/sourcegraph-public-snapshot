@@ -5,7 +5,6 @@ import classNames from 'classnames'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Checkbox, Form, H3, Modal, Text, Button, Icon, useCookieStorage } from '@sourcegraph/wildcard'
 
@@ -14,6 +13,7 @@ import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
 import { isEmailVerificationNeededForCody } from '../../cody/isCodyEnabled'
 import { LoaderButton } from '../../components/LoaderButton'
 import { SubmitCodySurveyResult, SubmitCodySurveyVariables } from '../../graphql-operations'
+import { PageRoutes } from '../../routes.constants'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
 
 import styles from './CodySurveyToast.module.scss'
@@ -97,6 +97,7 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProp
                         type="submit"
                         loading={loading}
                         label="Get started"
+                        disabled={!(isCodyForPersonalStuff || isCodyForWork)}
                     />
                 </div>
             </Form>
@@ -104,11 +105,9 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProp
     )
 }
 
-const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps> = ({
-    onNext,
-    authenticatedUser,
-    telemetryService,
-}) => {
+const CodyVerifyEmailToast: React.FC<
+    { onNext: () => void; authenticatedUser: AuthenticatedUser; hasSubmittedSurvey?: boolean } & TelemetryProps
+> = ({ onNext, authenticatedUser, telemetryService, hasSubmittedSurvey }) => {
     const [sending, setSending] = useState(false)
     const [resentEmailTo, setResentEmailTo] = useState<string | null>(null)
     const [resendEmailError, setResendEmailError] = useState<ErrorLike | null>(null)
@@ -164,7 +163,7 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
             {resendEmailError && <Text>{resendEmailError.message}.</Text>}
             <div className="d-flex justify-content-end mt-4">
                 <Button className={styles.codySurveyToastModalButton} variant="primary" onClick={onNext}>
-                    Next
+                    {hasSubmittedSurvey ? 'Get Started' : 'Next'}
                 </Button>
             </div>
         </Modal>
@@ -172,32 +171,22 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
 }
 
 export const useCodySurveyToast = (): {
-    show: boolean
+    hasSubmittedSurvey: boolean
     dismiss: () => void
-    setShouldShowCodySurvey: (show: boolean) => void
 } => {
     // we specifically use cookie storage as we want consistent value between when user is logged out and logged in / signed up
     // as well as cross-domain such about.sourcegraph.com
-    const [shouldShowCodySurvey, setShouldShowCodySurvey] = useCookieStorage<boolean>('cody.survey.show', false, {
+    const [hasSubmitted, setHasSubmitted] = useCookieStorage<boolean>('cody.survey.submitted', false, {
         expires: 365,
     })
-    const [hasSubmitted, setHasSubmitted] = useTemporarySetting('cody.survey.submitted', false)
     const dismiss = useCallback(() => {
         setHasSubmitted(true)
-        setShouldShowCodySurvey(false)
-    }, [setHasSubmitted, setShouldShowCodySurvey])
-
-    useEffect(() => {
-        if (shouldShowCodySurvey && hasSubmitted) {
-            setShouldShowCodySurvey(false)
-        }
-    }, [shouldShowCodySurvey, hasSubmitted, setShouldShowCodySurvey])
+    }, [setHasSubmitted])
 
     return {
-        // we calculate "show" value based whether this a new signup and whether they already have submitted survey
-        show: !hasSubmitted && !!shouldShowCodySurvey,
+        // we calculate "hasSubmittedSurvey" value based on whether they already have submitted survey
+        hasSubmittedSurvey: !!hasSubmitted,
         dismiss,
-        setShouldShowCodySurvey,
     }
 }
 
@@ -206,16 +195,25 @@ export const CodySurveyToast: React.FC<
         authenticatedUser?: AuthenticatedUser
     } & TelemetryProps
 > = ({ authenticatedUser, telemetryService }) => {
-    const { show, dismiss } = useCodySurveyToast()
-    const [showVerifyEmail, setShowVerifyEmail] = useState(show && isEmailVerificationNeededForCody())
+    const { hasSubmittedSurvey, dismiss } = useCodySurveyToast()
+    const [showVerifyEmail, setShowVerifyEmail] = useState(isEmailVerificationNeededForCody())
+
+    const redirectToGetCody = (): void => window.location.replace(PageRoutes.GetCody)
+
+    const handleSubmitEnd = (): void => {
+        dismiss()
+        redirectToGetCody()
+    }
+
     const dismissVerifyEmail = useCallback(() => {
         telemetryService.log('VerifyEmailToastDismissed')
         setShowVerifyEmail(false)
-    }, [telemetryService])
 
-    if (!show) {
-        return null
-    }
+        // End flow on first step, if survey form has been completed
+        if (hasSubmittedSurvey) {
+            redirectToGetCody()
+        }
+    }, [hasSubmittedSurvey, telemetryService])
 
     if (showVerifyEmail && authenticatedUser) {
         return (
@@ -223,9 +221,14 @@ export const CodySurveyToast: React.FC<
                 onNext={dismissVerifyEmail}
                 authenticatedUser={authenticatedUser}
                 telemetryService={telemetryService}
+                hasSubmittedSurvey={hasSubmittedSurvey}
             />
         )
     }
 
-    return <CodySurveyToastInner onSubmitEnd={dismiss} telemetryService={telemetryService} />
+    if (hasSubmittedSurvey) {
+        return null
+    }
+
+    return <CodySurveyToastInner onSubmitEnd={handleSubmitEnd} telemetryService={telemetryService} />
 }
