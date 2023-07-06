@@ -139,6 +139,26 @@ func (r *schemaResolver) DeleteAccessToken(ctx context.Context, args *deleteAcce
 		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, token.SubjectUserID); err != nil {
 			return nil, err
 		}
+		// 🚨 SECURITY: Only Sourcegraph Operator (SOAP) users can delete a
+		// Sourcegraph Operator's access token. If actor is not token owner,
+		// and they aren't a SOAP user, make sure the token owner is not a
+		// SOAP user.
+		if a := actor.FromContext(ctx); a.UID != token.SubjectUserID && !a.SourcegraphOperator {
+			tokenOwnerExtAccounts, err := r.db.UserExternalAccounts().List(ctx,
+				database.ExternalAccountsListOptions{UserID: token.SubjectUserID})
+			if err != nil {
+				return nil, errors.Wrap(err, "list external accounts for token owner")
+			}
+			for _, acct := range tokenOwnerExtAccounts {
+				// If the delete target is a SOAP user, then this non-SOAP user
+				// cannot delete its tokens.
+				if acct.ServiceType == auth.SourcegraphOperatorProviderType {
+					return nil, errors.Newf("%[1]q user %[2]d's token cannot be deleted by a non-%[1]q user",
+						auth.SourcegraphOperatorProviderType, token.SubjectUserID)
+				}
+			}
+		}
+
 		if err := r.db.AccessTokens().DeleteByID(ctx, token.ID); err != nil {
 			return nil, err
 		}

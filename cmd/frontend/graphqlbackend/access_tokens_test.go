@@ -8,7 +8,9 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/hexops/autogold/v2"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -16,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -320,11 +323,15 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		return accessTokens
 	}
 
+	noExternalAccounts := database.NewMockUserExternalAccountsStore()
+	noExternalAccounts.ListFunc.SetDefaultReturn(nil, nil)
+
 	token1GQLID := graphql.ID("QWNjZXNzVG9rZW46MQ==")
 
 	t.Run("authenticated as user", func(t *testing.T) {
 		db := database.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
+		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
 		RunTests(t, []*Test{
 			{
@@ -356,6 +363,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
+		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
 		RunTests(t, []*Test{
 			{
@@ -384,6 +392,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db := database.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 		db.UsersFunc.SetDefaultReturn(users)
+		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
 		ctx := actor.WithActor(context.Background(), nil)
 		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
@@ -404,6 +413,7 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
+		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
 		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
@@ -413,5 +423,32 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		if result != nil {
 			t.Errorf("got result %v, want nil", result)
 		}
+	})
+
+	t.Run("non-SOAP user cannot delete SOAP access token", func(t *testing.T) {
+		const differentSiteAdminUID = 234
+
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: differentSiteAdminUID, SiteAdmin: true}, nil)
+		extAccounts := database.NewMockUserExternalAccountsStore()
+		extAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{{
+			AccountSpec: extsvc.AccountSpec{
+				ServiceType: auth.SourcegraphOperatorProviderType,
+			},
+		}}, nil)
+		db := database.NewMockDB()
+		db.UsersFunc.SetDefaultReturn(users)
+		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
+		db.UserExternalAccountsFunc.SetDefaultReturn(extAccounts)
+
+		ctx := actor.WithActor(context.Background(), &actor.Actor{
+			UID:                 differentSiteAdminUID,
+			SourcegraphOperator: false,
+		})
+		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).
+			DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
+		require.Error(t, err)
+		autogold.Expect(`"sourcegraph-operator" user 2's token cannot be deleted by a non-"sourcegraph-operator" user`).Equal(t, err.Error())
+		assert.Nil(t, result)
 	})
 }
