@@ -172,9 +172,9 @@ func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.Re
 
 // Search performs a symbol search on the symbols service.
 func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
-	tr, ctx := trace.New(ctx, "symbols", "Search",
-		attribute.String("repo", string(args.Repo)),
-		attribute.String("commitID", string(args.CommitID)))
+	tr, ctx := trace.New(ctx, "symbols.Search",
+		args.Repo.Attr(),
+		args.CommitID.Attr())
 	defer tr.FinishWithErr(&err)
 
 	var response search.SymbolsResponse
@@ -272,9 +272,9 @@ func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) 
 }
 
 func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	tr, ctx := trace.New(ctx, "symbols", "LocalCodeIntel",
-		attribute.String("repo", string(args.Repo)),
-		attribute.String("commitID", string(args.Commit)))
+	tr, ctx := trace.New(ctx, "symbols.LocalCodeIntel",
+		attribute.String("repo", args.Repo),
+		attribute.String("commitID", args.Commit))
 	defer tr.FinishWithErr(&err)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
@@ -337,9 +337,9 @@ func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPa
 }
 
 func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	tr, ctx := trace.New(ctx, "squirrel", "SymbolInfo",
-		attribute.String("repo", string(args.Repo)),
-		attribute.String("commitID", string(args.Commit)))
+	tr, ctx := trace.New(ctx, "squirrel.SymbolInfo",
+		attribute.String("repo", args.Repo),
+		attribute.String("commitID", args.Commit))
 	defer tr.FinishWithErr(&err)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
@@ -442,9 +442,9 @@ func (c *Client) httpPost(
 	repo api.RepoName,
 	payload any,
 ) (resp *http.Response, err error) {
-	tr, ctx := trace.New(ctx, "symbols", "httpPost",
+	tr, ctx := trace.New(ctx, "symbols.httpPost",
 		attribute.String("method", method),
-		attribute.String("repo", string(repo)))
+		repo.Attr())
 	defer tr.FinishWithErr(&err)
 
 	symbolsURL, err := c.url(repo)
