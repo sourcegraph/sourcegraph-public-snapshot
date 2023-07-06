@@ -2205,6 +2205,9 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	dedupeOptions := s.maybeGetDeduplicatedCloneOptions(ctx, repo)
 	if dedupeOptions != nil && dedupeOptions.which == dedupeSource {
 		dir = s.poolDir(repo)
+		if opts == nil {
+			opts = &cloneOptions{}
+		}
 		opts.DeduplicatedCloneOptions = dedupeOptions
 	}
 
