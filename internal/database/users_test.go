@@ -589,6 +589,20 @@ func TestUsers_Update(t *testing.T) {
 		t.Errorf("got avatar URL %q, want %q", user.AvatarURL, want)
 	}
 
+	// Update CompletedPostSignUp
+	if err := db.Users().Update(ctx, user.ID, UserUpdate{
+		CompletedPostSignup: boolptr(true),
+	}); err != nil {
+		t.Fatal(err)
+	}
+	user, err = db.Users().GetByID(ctx, user.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if want := true; user.CompletedPostSignup != want {
+		t.Errorf("got wrong CompletedPostSignUp %t, want %t", user.CompletedPostSignup, want)
+	}
+
 	// Can't update to duplicate username.
 	user2, err := db.Users().Create(ctx, NewUser{
 		Email:                 "a2@a.com",

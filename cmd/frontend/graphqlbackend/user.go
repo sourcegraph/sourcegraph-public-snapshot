@@ -442,7 +442,27 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserID *graphql.ID }) (*EmptyResponse, error) {
+// userMutationArgs hold an optional user ID for mutations that take in a user ID
+// or assume the current user when no ID is given.
+type userMutationArgs struct {
+	UserID *graphql.ID
+}
+
+func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
+	tosAccepted := true
+	update := database.UserUpdate{TosAccepted: &tosAccepted}
+
+	return r.updateAffectedUser(ctx, args, update)
+}
+
+func (r *schemaResolver) SetCompletedPostSignup(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
+	completedPostSignup := true
+	update := database.UserUpdate{CompletedPostSignup: &completedPostSignup}
+
+	return r.updateAffectedUser(ctx, args, update)
+}
+
+func (r *schemaResolver) updateAffectedUser(ctx context.Context, args *userMutationArgs, update database.UserUpdate) (*EmptyResponse, error) {
 	var affectedUserID int32
 	if args.UserID != nil {
 		var err error
@@ -462,11 +482,6 @@ func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *struct{ UserI
 	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
 	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
 		return nil, err
-	}
-
-	tosAccepted := true
-	update := database.UserUpdate{
-		TosAccepted: &tosAccepted,
 	}
 
 	if err := r.db.Users().Update(ctx, affectedUserID, update); err != nil {

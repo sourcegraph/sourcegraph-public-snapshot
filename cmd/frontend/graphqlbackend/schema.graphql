@@ -287,6 +287,13 @@ type Mutation {
     """
     setSearchable(searchable: Boolean!): EmptyResponse!
     """
+    Sets the user to have completed the post-signup flow.
+    If the ID is omitted, the current user is assumed.
+
+    Only the user or site admins may perform this mutation.
+    """
+    setCompletedPostSignup(userID: ID): EmptyResponse!
+    """
     Creates an access token that grants the privileges of the specified user (referred to as the access token's
     "subject" user after token creation). The result is the access token value, which the caller is responsible
     for storing (it is not accessible by Sourcegraph after creation).

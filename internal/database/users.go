@@ -530,6 +530,7 @@ type UserUpdate struct {
 	DisplayName, AvatarURL *string
 	TosAccepted            *bool
 	Searchable             *bool
+	CompletedPostSignup    *bool
 }
 
 // Update updates a user's profile information.
@@ -572,6 +573,9 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 	}
 	if update.Searchable != nil {
 		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("searchable=%s", *update.Searchable))
+	}
+	if update.CompletedPostSignup != nil {
+		fieldUpdates = append(fieldUpdates, sqlf.Sprintf("completed_post_signup=%s", *update.CompletedPostSignup))
 	}
 	query := sqlf.Sprintf("UPDATE users SET %s WHERE id=%d", sqlf.Join(fieldUpdates, ", "), id)
 	res, err := tx.ExecResult(ctx, query)
