@@ -39,7 +39,7 @@
       "request": "launch",
       "mode": "auto",
       "program": "${workspaceFolder}/dev/sg",
-      "args": ["rfc", "--private", "create", "test rfc (ignore)"]
+      "args": ["rfc", "--private", "--type", "solution", "create", "test rfc (ignore)"]
     },
     {
       "name": "Launch VS Code Extension",

@@ -13,8 +13,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func Create(ctx context.Context, title string, driveSpec DriveSpec, out *std.Output) error {
-	newFile, newRfcId, err := createRFCs(ctx, title, driveSpec, out)
+type RfcTemplate string
+
+// Template: RFC to frame a problem, propose a solution, and drive a decision.
+// https://docs.google.com/document/d/1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4
+const ProblemSolutionDriveTemplate = RfcTemplate("1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4")
+
+func Create(ctx context.Context, rfcType RfcTemplate, title string, driveSpec DriveSpec, out *std.Output) error {
+	newFile, newRfcId, err := createRFCs(ctx, title, rfcType, driveSpec, out)
 	if err != nil {
 		return errors.Wrap(err, "cannot create RFC")
 	}
@@ -200,14 +206,14 @@ func updateRfcContent(ctx context.Context, newFile *drive.File, nextRfcId int, t
 	return nil
 }
 
-func createRFCs(ctx context.Context, title string, driveSpec DriveSpec,
+func createRFCs(ctx context.Context, title string, rfcTemplate RfcTemplate, driveSpec DriveSpec,
 	out *std.Output) (*drive.File, int, error) {
 	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	template, err := srv.Files.Get(ProblemSolutionDriveTemplate).
+	template, err := srv.Files.Get(string(rfcTemplate)).
 		Context(ctx).
 		SupportsTeamDrives(true).
 		SupportsAllDrives(true).
