@@ -15,9 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -30,7 +30,7 @@ func clock() time.Time {
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	// Create repos needed
@@ -43,7 +43,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	}
 
 	// Create user with initially verified email
-	user, err := db.Users().Create(ctx, database.NewUser{
+	user, err := db.Users().Create(ctx, NewUser{
 		Email:           "alice@example.com",
 		Username:        "alice",
 		EmailIsVerified: true,
@@ -104,7 +104,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	tests := []struct {
 		name          string
 		config        *schema.PermissionsUserMapping
-		args          *database.GrantPendingPermissionsArgs
+		args          *GrantPendingPermissionsArgs
 		updates       []update
 		expectRepoIDs []int32
 	}{
@@ -113,7 +113,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			config: &schema.PermissionsUserMapping{
 				BindID: "email",
 			},
-			args: &database.GrantPendingPermissionsArgs{
+			args: &GrantPendingPermissionsArgs{
 				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
@@ -149,7 +149,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			config: &schema.PermissionsUserMapping{
 				BindID: "username",
 			},
-			args: &database.GrantPendingPermissionsArgs{
+			args: &GrantPendingPermissionsArgs{
 				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
@@ -178,7 +178,7 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 			config: &schema.PermissionsUserMapping{
 				BindID: "username",
 			},
-			args: &database.GrantPendingPermissionsArgs{
+			args: &GrantPendingPermissionsArgs{
 				UserID: user.ID,
 				Perm:   authz.Read,
 				Type:   authz.PermRepos,
@@ -246,14 +246,14 @@ func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 
 func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
 	// create users and repos
 	for _, userID := range []int32{1, 2} {
-		db.Users().Create(ctx, database.NewUser{
+		db.Users().Create(ctx, NewUser{
 			Username: fmt.Sprintf("user-%d", userID),
 		})
 	}
@@ -270,17 +270,17 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 	}
 	tests := []struct {
 		name        string
-		args        *database.AuthorizedReposArgs
+		args        *AuthorizedReposArgs
 		updates     []update
 		expectRepos []*types.Repo
 	}{
 		{
 			name: "no repos",
-			args: &database.AuthorizedReposArgs{},
+			args: &AuthorizedReposArgs{},
 		},
 		{
 			name: "has permissions for user=1",
-			args: &database.AuthorizedReposArgs{
+			args: &AuthorizedReposArgs{
 				Repos: []*types.Repo{
 					{ID: 1},
 					{ID: 2},
@@ -309,7 +309,7 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 		},
 		{
 			name: "no permissions for user=2",
-			args: &database.AuthorizedReposArgs{
+			args: &AuthorizedReposArgs{
 				Repos: []*types.Repo{
 					{ID: 1},
 					{ID: 2},
@@ -357,12 +357,12 @@ func TestAuthzStore_AuthorizedRepos(t *testing.T) {
 
 func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	s := NewAuthzStore(logger, db, clock).(*authzStore)
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "alice"})
+	user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -396,7 +396,7 @@ func TestAuthzStore_RevokeUserPermissions(t *testing.T) {
 	}
 
 	// Revoke all of them
-	if err := s.RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{
+	if err := s.RevokeUserPermissions(ctx, &RevokeUserPermissionsArgs{
 		UserID:   user.ID,
 		Accounts: []*extsvc.Accounts{accounts},
 	}); err != nil {

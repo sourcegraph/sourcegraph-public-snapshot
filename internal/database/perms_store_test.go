@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 	"sync"
-	"sync/atomic"
 	"testing"
 	"time"
 
@@ -33,7 +32,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -76,12 +74,6 @@ func toMapset(ids ...int32) map[int32]struct{} {
 		ms[id] = struct{}{}
 	}
 	return ms
-}
-
-var now = timeutil.Now().UnixNano()
-
-func clock() time.Time {
-	return time.Unix(0, atomic.LoadInt64(&now))
 }
 
 func TestPermsStore_LoadUserPermissions(t *testing.T) {

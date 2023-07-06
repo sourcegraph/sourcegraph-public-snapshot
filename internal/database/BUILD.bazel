@@ -183,6 +183,7 @@ go_test(
         "assigned_owners_test.go",
         "assigned_teams_test.go",
         "authenticator_test.go",
+        "authz_test.go",
         "bitbucket_project_permissions_test.go",
         "code_monitor_action_jobs_test.go",
         "code_monitor_emails_test.go",
