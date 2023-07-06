@@ -1,19 +1,20 @@
 <script lang="ts">
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: branchesData = data.branches
-    $: defaultBranch = !$branchesData.loading && $branchesData.data ? $branchesData.data.defaultBranch : null
-    $: activeBranches = !$branchesData.loading && $branchesData.data ? $branchesData.data.activeBranches : null
+    $: branches = asStore(data.branches.deferred)
+    $: defaultBranch = !$branches.loading && $branches.data ? $branches.data.defaultBranch : null
+    $: activeBranches = !$branches.loading && $branches.data ? $branches.data.activeBranches : null
 </script>
 
-{#if $branchesData.loading}
+{#if $branches.loading}
     <LoadingSpinner />
-{:else if $branchesData.data}
+{:else if $branches.data}
     {#if defaultBranch}
         <table class="mb-3">
             <thead><tr><th colspan="3">Default branch</th></tr></thead>
