@@ -101,7 +101,11 @@ type TraceLogger interface {
 // TestTraceLogger creates an empty TraceLogger that can be used for testing. The logger
 // should be 'logtest.Scoped(t)'.
 func TestTraceLogger(logger log.Logger) TraceLogger {
-	return &traceLogger{Logger: logger}
+	tr, _ := trace.New(context.Background(), "test")
+	return &traceLogger{
+		Logger: logger,
+		trace:  tr,
+	}
 }
 
 type traceLogger struct {
