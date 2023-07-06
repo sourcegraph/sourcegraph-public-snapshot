@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -56,6 +57,7 @@ func newExternalHTTPHandler(
 
 	// HTTP API handler, the call order of middleware is LIFO.
 	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
+	fmt.Println(handlers.EmbeddingsFileUploadHandler, "<=== handler embbeddings")
 	apiHandler := internalhttpapi.NewHandler(db, enterpriseJobs, r, schema, rateLimitWatcher, handlers)
 	if hooks.PostAuthMiddleware != nil {
 		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.

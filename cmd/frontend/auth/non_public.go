@@ -145,6 +145,10 @@ func AllowAnonymousRequest(req *http.Request) bool {
 		return true
 	}
 
+	if strings.HasPrefix(req.URL.Path, "/.api/embeddings") {
+		return true
+	}
+
 	// Authentication is performed in the webhook handler itself.
 	for _, prefix := range []string{
 		"/.api/webhooks",

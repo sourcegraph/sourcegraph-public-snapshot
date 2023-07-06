@@ -41,6 +41,8 @@ const (
 	BatchesFileExists = "batches.file.exists"
 	BatchesFileUpload = "batches.file.upload"
 
+	EmbeddingsFileUpload = "embeddings.file.upload"
+
 	CodeInsightsDataExport = "insights.data.export"
 
 	ExternalURL            = "internal.app-url"

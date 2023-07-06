@@ -62,6 +62,9 @@ type Handlers struct {
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 
+	// Embeddings file upload
+	EmbeddingsFileUploadHandler http.Handler
+
 	// SCIM
 	SCIMHandler http.Handler
 
@@ -151,6 +154,9 @@ func NewHandler(
 	m.Get(apirouter.BatchesFileGet).Handler(trace.Route(handlers.BatchesChangesFileGetHandler))
 	m.Get(apirouter.BatchesFileExists).Handler(trace.Route(handlers.BatchesChangesFileExistsHandler))
 	m.Get(apirouter.BatchesFileUpload).Handler(trace.Route(handlers.BatchesChangesFileUploadHandler))
+
+	m.Get(apirouter.EmbeddingsFileUpload).Handler(trace.Route(handlers.EmbeddingsFileUploadHandler))
+
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(lsifDeprecationHandler))
 	m.Get(apirouter.SCIPUpload).Handler(trace.Route(handlers.NewCodeIntelUploadHandler(true)))
 	m.Get(apirouter.SCIPUploadExists).Handler(trace.Route(noopHandler))

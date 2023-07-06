@@ -30,6 +30,9 @@ type Services struct {
 	BatchesChangesFileExistsHandler http.Handler
 	BatchesChangesFileUploadHandler http.Handler
 
+	// Handler for embeddings file upload
+	EmbeddingsFileUploadHandler http.Handler
+
 	// Repo related webhook handlers, currently only handle `push` events.
 	ReposGithubWebhook          webhooks.Registerer
 	ReposGitLabWebhook          webhooks.Registerer
@@ -57,6 +60,7 @@ type Services struct {
 	NewGitHubAppSetupHandler  NewGitHubAppSetupHandler
 	NewComputeStreamHandler   NewComputeStreamHandler
 	EnterpriseSearchJobs      jobutil.EnterpriseJobs
+
 	graphqlbackend.OptionalResolver
 }
 
@@ -119,6 +123,7 @@ func DefaultServices() Services {
 		NewChatCompletionsStreamHandler: func() http.Handler { return makeNotFoundHandler("chat completions streaming endpoint") },
 		NewCodeCompletionsHandler:       func() http.Handler { return makeNotFoundHandler("code completions streaming endpoint") },
 		EnterpriseSearchJobs:            jobutil.NewUnimplementedEnterpriseJobs(),
+		EmbeddingsFileUploadHandler:     makeNotFoundHandler("embeddings file upload handler"),
 	}
 }
 

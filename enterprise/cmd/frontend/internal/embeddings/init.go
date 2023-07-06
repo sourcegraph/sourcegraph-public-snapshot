@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/embeddings/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -32,6 +33,9 @@ func Init(
 		embeddingsClient,
 		repoEmbeddingsStore,
 	)
+
+	filehandler := httpapi.NewFileHandler()
+	enterpriseServices.EmbeddingsFileUploadHandler = filehandler.Upload()
 
 	return nil
 }
