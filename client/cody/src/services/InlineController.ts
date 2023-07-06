@@ -159,13 +159,7 @@ export class InlineController {
         thread.label = this.threadLabel
         thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
 
-        const comment = new Comment({
-            input: humanInput,
-            name: 'Me',
-            iconPath: this.userIcon,
-            parent: thread,
-            contextValue: 'loading',
-        })
+        const comment = new Comment({ input: humanInput, name: 'Me', iconPath: this.userIcon })
         thread.comments = [...thread.comments, comment]
 
         if (isFixMode) {
@@ -203,10 +197,7 @@ export class InlineController {
              */
             this.thread.comments = this.thread.comments.map(comment => {
                 if (comment instanceof Comment && comment.id === this.inProgressComment?.id) {
-                    return new Comment({
-                        id: this.inProgressComment.id,
-                        ...replyComment,
-                    })
+                    return new Comment({ id: this.inProgressComment.id, ...replyComment })
                 }
 
                 return comment
@@ -403,13 +394,11 @@ interface CommentOptions {
     input: string
     name: string
     iconPath: vscode.Uri
-    parent?: vscode.CommentThread
-    contextValue?: string
 }
 
-export class Comment implements vscode.Comment {
+class Comment implements vscode.Comment {
     public id: string
-    public body: string | vscode.MarkdownString
+    public body: vscode.MarkdownString
     public mode = vscode.CommentMode.Preview
     public author: vscode.CommentAuthorInformation
 
