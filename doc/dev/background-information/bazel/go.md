@@ -1,5 +1,7 @@
 # Bazel for Go 
 
+See also: [How-to use `go:generate` with Bazel](./go_generate.md)
+
 ## TL;DR 
 
 - Commands:
