@@ -10,7 +10,6 @@ go_library(
         "httptrace.go",
         "logger.go",
         "trace.go",
-        "tracer.go",
         "url.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/trace",
