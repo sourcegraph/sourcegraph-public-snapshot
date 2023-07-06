@@ -43,7 +43,7 @@ sg rfc --private open 420
 sg rfc create "title"
 
 # Create a new private RFC
-sg rfc --private --type <type> create "title"
+sg rfc --private create --type <type> "title"
 (types: solution)
 `,
 	Category: CategoryCompany,
@@ -53,11 +53,6 @@ sg rfc --private --type <type> create "title"
 			Usage:    "perform the RFC action on the private RFC drive",
 			Required: false,
 			Value:    false,
-		},
-		&cli.StringFlag{
-			Name:     "type",
-			Usage:    "the type of the RFC to create",
-			Required: true,
 		},
 	},
 	Subcommands: []*cli.Command{
@@ -105,8 +100,15 @@ sg rfc --private --type <type> create "title"
 		},
 		{
 			Name:      "create",
-			ArgsUsage: "[--private] --type <type> [title]",
-			Usage:     "Create Sourcegraph RFCs",
+			ArgsUsage: "--type <type> <title...>",
+			Flags: []cli.Flag{
+				&cli.StringFlag{
+					Name:     "type",
+					Usage:    "the type of the RFC to create (valid: solution)",
+					Required: true,
+				},
+			},
+			Usage: "Create Sourcegraph RFCs",
 			Action: func(c *cli.Context) error {
 				driveSpec := rfc.PublicDrive
 				if c.Bool("private") {
