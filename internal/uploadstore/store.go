@@ -33,7 +33,7 @@ type Store interface {
 	// the age of the object exceeds the given max age.
 	ExpireObjects(ctx context.Context, prefix string, maxAge time.Duration) error
 
-	// List returns an iterator over the keys.
+	// List returns an iterator over all keys.
 	List(ctx context.Context) (*iterator.Iterator[string], error)
 }
 
