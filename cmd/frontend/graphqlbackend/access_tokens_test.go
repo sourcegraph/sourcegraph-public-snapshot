@@ -323,15 +323,11 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		return accessTokens
 	}
 
-	noExternalAccounts := database.NewMockUserExternalAccountsStore()
-	noExternalAccounts.ListFunc.SetDefaultReturn(nil, nil)
-
 	token1GQLID := graphql.ID("QWNjZXNzVG9rZW46MQ==")
 
 	t.Run("authenticated as user", func(t *testing.T) {
 		db := database.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
-		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
 		RunTests(t, []*Test{
 			{
@@ -363,6 +359,9 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
+
+		noExternalAccounts := database.NewMockUserExternalAccountsStore()
+		noExternalAccounts.ListFunc.SetDefaultReturn(nil, nil)
 		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
 		RunTests(t, []*Test{
@@ -385,6 +384,9 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 			`,
 			},
 		})
+
+		// Should check that token owner is not a SOAP user
+		assert.NotEmpty(t, noExternalAccounts.ListFunc.History())
 	})
 
 	t.Run("unauthenticated", func(t *testing.T) {
@@ -392,7 +394,6 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db := database.NewMockDB()
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
 		db.UsersFunc.SetDefaultReturn(users)
-		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
 		ctx := actor.WithActor(context.Background(), nil)
 		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
@@ -413,7 +414,6 @@ func TestMutation_DeleteAccessToken(t *testing.T) {
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.AccessTokensFunc.SetDefaultReturn(newMockAccessTokens(t))
-		db.UserExternalAccountsFunc.SetDefaultReturn(noExternalAccounts)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: differentNonSiteAdminUID})
 		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).DeleteAccessToken(ctx, &deleteAccessTokenInput{ByID: &token1GQLID})
