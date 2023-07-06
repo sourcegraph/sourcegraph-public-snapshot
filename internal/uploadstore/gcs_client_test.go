@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -145,6 +146,42 @@ func TestGCSUpload(t *testing.T) {
 		t.Fatalf("unexpected number of NewWriter calls. want=%d have=%d", 1, len(calls))
 	} else if value := buf.String(); value != "TEST PAYLOAD" {
 		t.Errorf("unexpected payload. want=%s have=%s", "TEST PAYLOAD", value)
+	}
+}
+
+func TestGCSList(t *testing.T) {
+
+	gcsClient := NewMockGcsAPI()
+	bucketHandle := NewMockGcsBucketHandle()
+	objectHandle := NewMockGcsObjectHandle()
+
+	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
+	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
+
+	client := testGCSClient(gcsClient, false)
+
+	_, err := client.Upload(context.Background(), "test-file-1", bytes.NewReader([]byte("TEST PAYLOAD")))
+	if err != nil {
+		t.Fatalf("unexpected error uploading key: %s", err)
+	}
+
+	_, err = client.Upload(context.Background(), "test-file-2", bytes.NewReader([]byte("TEST PAYLOAD")))
+	if err != nil {
+		t.Fatalf("unexpected error uploading key: %s", err)
+	}
+
+	iter, err := client.List(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var names []string
+	for iter.Next() {
+		names = append(names, iter.Current())
+	}
+
+	if d := cmp.Diff([]string{"test-file-1", "test-file-2"}, names); d != "" {
+		t.Fatalf("-want, +got: %s\n", d)
 	}
 }
 
