@@ -112,7 +112,7 @@ func UpdateRepoEmbeddingIndex(
 
 func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (_ *RepoEmbeddingIndex, err error) {
 	tr, ctx := trace.New(ctx, "DownloadRepoEmbeddingIndex", attribute.String("key", key))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	dec, err := newDecoder(ctx, uploadStore, key)
 	if err != nil {

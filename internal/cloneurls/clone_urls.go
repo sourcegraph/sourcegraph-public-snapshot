@@ -25,7 +25,7 @@ import (
 // host to see if the repository actually exists.
 func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (repoName api.RepoName, err error) {
 	tr, ctx := trace.New(ctx, "RepoSourceCloneURLToRepoName", attribute.String("cloneURL", cloneURL))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
 		return repoName, nil
@@ -107,7 +107,7 @@ func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.Ext
 	tr, ctx := trace.New(ctx, "getRepoNameFromService",
 		attribute.Int64("externalService.ID", svc.ID),
 		attribute.String("externalService.Kind", svc.Kind))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {

@@ -320,7 +320,7 @@ func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordUID(), cancel) {
-		workerSpan.FinishWithErr(&ErrJobAlreadyExists)
+		workerSpan.EndWithErr(&ErrJobAlreadyExists)
 		return false, ErrJobAlreadyExists
 	}
 

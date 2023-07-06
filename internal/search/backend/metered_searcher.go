@@ -232,7 +232,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		attribute.Stringer("opts", opts),
 		attribute.String("query", qStr),
 	)
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	event := honey.NoopEvent()
 	if honey.Enabled() && cat == "ListAll" {

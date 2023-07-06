@@ -113,7 +113,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder
 		if err != nil {
 			tr.SetAttributes(attribute.Int("exitCode", exitCode))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 
 	exitCode = unsetExitStatus
@@ -481,7 +481,7 @@ func (s *Server) Handler() http.Handler {
 		// able to create some simple wrappers
 		tr, ctx := trace.New(ctx, "GetObject",
 			attribute.String("objectName", objectName))
-		defer tr.FinishWithErr(&err)
+		defer tr.EndWithErr(&err)
 
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
@@ -2554,7 +2554,7 @@ var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
 func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) (err error) {
 	tr, ctx := trace.New(ctx, "doRepoUpdate", repo.Attr())
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	s.repoUpdateLocksMu.Lock()
 	l, ok := s.repoUpdateLocks[repo]

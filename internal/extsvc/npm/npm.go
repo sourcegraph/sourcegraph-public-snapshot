@@ -143,7 +143,7 @@ func (client *HTTPClient) makeGetRequest(ctx context.Context, doer httpcli.Doer,
 
 	do := func() (_ *http.Response, err error) {
 		tr, ctx := trace.New(ctx, "npm")
-		defer tr.FinishWithErr(&err)
+		defer tr.EndWithErr(&err)
 		req = req.WithContext(ctx)
 
 		if err := client.limiter.Wait(ctx); err != nil {

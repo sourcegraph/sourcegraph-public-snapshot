@@ -397,7 +397,7 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 	}
 
 	tr, ctx := trace.New(ctx, "structuralSearch", repo.Attr())
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	// Cap the number of forked processes to limit the size of zip contents being mapped to memory. Resolving #7133 could help to lift this restriction.
 	numWorkers := 4

@@ -71,10 +71,10 @@ func (t *Trace) End() {
 	t.oteltraceSpan.End()
 }
 
-// FinishWithErr finishes the span and sets its error value.
+// EndWithErr finishes the span and sets its error value.
 // It takes a pointer to an error so it can be used directly
 // in a defer statement.
-func (t *Trace) FinishWithErr(err *error) {
+func (t *Trace) EndWithErr(err *error) {
 	t.SetError(*err)
 	t.End()
 }

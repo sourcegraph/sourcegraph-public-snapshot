@@ -91,7 +91,7 @@ func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRev
 	tr, ctx := trace.New(ctx, "symbols.searchInRepo",
 		repoRevs.Repo.Name.Attr(),
 		attribute.String("rev", inputRev))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	// Do not trigger a repo-updater lookup (e.g.,
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation

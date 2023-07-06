@@ -295,7 +295,7 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 
 func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (_ string, err error) {
 	tr, ctx := trace.New(ctx, "cloneURLToRepoName")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {

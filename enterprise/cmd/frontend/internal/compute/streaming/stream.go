@@ -53,7 +53,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tr, ctx := trace.New(ctx, "compute.ServeStream", attribute.String("query", args.Query))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	eventWriter, err := streamhttp.NewWriter(w)
 	if err != nil {

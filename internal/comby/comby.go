@@ -205,7 +205,7 @@ func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.
 // Matches returns all matches in all files for which comby finds matches.
 func Matches(ctx context.Context, args Args) (_ []*FileMatch, err error) {
 	tr, ctx := trace.New(ctx, "comby.Matches")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	args.ResultKind = MatchOnly
 	results, err := Run(ctx, args, ToFileMatch)
@@ -222,7 +222,7 @@ func Matches(ctx context.Context, args Args) (_ []*FileMatch, err error) {
 // Replacements performs in-place replacement for match and rewrite template.
 func Replacements(ctx context.Context, args Args) (_ []*FileReplacement, err error) {
 	tr, ctx := trace.New(ctx, "comby.Replacements")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	results, err := Run(ctx, args, toFileReplacement)
 	if err != nil {
@@ -239,7 +239,7 @@ func Replacements(ctx context.Context, args Args) (_ []*FileReplacement, err err
 // pattern in a rewrite template and outputs the result, newline-sparated.
 func Outputs(ctx context.Context, args Args) (_ string, err error) {
 	tr, ctx := trace.New(ctx, "comby.Outputs")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	results, err := Run(ctx, args, toOutput)
 	if err != nil {

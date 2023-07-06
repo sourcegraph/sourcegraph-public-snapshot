@@ -26,7 +26,7 @@ type Opts struct {
 func Search(ctx context.Context, query string, patternType *string, decoder streamhttp.FrontendStreamDecoder) (err error) {
 	tr, ctx := trace.New(ctx, "insights.StreamSearch",
 		attribute.String("query", query))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	req, err := streamhttp.NewRequest(internalapi.Client.URL+"/.internal", query)
 	if err != nil {
@@ -60,7 +60,7 @@ func Search(ctx context.Context, query string, patternType *string, decoder stre
 
 func genericComputeStream(ctx context.Context, handler func(io.Reader) error, query, operation string) (err error) {
 	tr, ctx := trace.New(ctx, operation)
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	req, err := client.NewComputeStreamRequest(internalapi.Client.URL+"/.internal", query)
 	if err != nil {

@@ -58,7 +58,7 @@ func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error)
 		if err != nil {
 			tr.SetAttributes(attribute.Int("exitCode", exitCode))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 
 	err = cmd.Run()

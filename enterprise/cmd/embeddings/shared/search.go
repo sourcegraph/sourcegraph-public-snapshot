@@ -30,7 +30,7 @@ func searchRepoEmbeddingIndexes(
 	weaviate *weaviateClient,
 ) (_ *embeddings.EmbeddingCombinedSearchResults, err error) {
 	tr, ctx := trace.New(ctx, "searchRepoEmbeddingIndexes", params.Attrs()...)
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	floatQuery, queryModel, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
@@ -51,7 +51,7 @@ func searchRepoEmbeddingIndexes(
 		tr, ctx := trace.New(ctx, "searchRepo",
 			attribute.String("repoName", string(repoName)),
 		)
-		defer tr.FinishWithErr(&err)
+		defer tr.EndWithErr(&err)
 
 		if weaviate.Use(ctx) {
 			return weaviate.Search(ctx, repoName, repoID, floatQuery, params.CodeResultsCount, params.TextResultsCount)
