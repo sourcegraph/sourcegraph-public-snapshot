@@ -108,9 +108,6 @@ func NewHandler(
 			usedTokens = ut
 			upstreamFinished = time.Since(upstreamStarted)
 			if err != nil {
-				// 5xx errors will get logged by JSONError, we don't need to log
-				// anything explicitly here.
-
 				// If a status error is returned, pass through the code and error
 				var statusCodeErr response.HTTPStatusCodeError
 				if errors.As(err, &statusCodeErr) {

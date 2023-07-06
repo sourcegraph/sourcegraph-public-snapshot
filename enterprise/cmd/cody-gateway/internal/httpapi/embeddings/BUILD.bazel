@@ -30,7 +30,9 @@ go_test(
     srcs = ["openai_test.go"],
     embed = [":embeddings"],
     deps = [
+        "//enterprise/cmd/cody-gateway/internal/response",
         "//internal/codygateway",
+        "//lib/errors",
         "@com_github_stretchr_testify//require",
     ],
 )
