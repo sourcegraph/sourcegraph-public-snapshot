@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 
 	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -85,7 +84,6 @@ EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
 		assert typestest.ReposAssertion
 		mw     httpcli.Middleware
 		conf   *schema.GitHubConnection
-		ghApp  conf.GitHubAppConfiguration
 		err    string
 	}{
 		{

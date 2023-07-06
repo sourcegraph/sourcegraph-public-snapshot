@@ -12,7 +12,6 @@ go_test(
         "//enterprise/internal/database",
         "//enterprise/internal/github_apps/auth",
         "//enterprise/internal/github_apps/types",
-        "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/encryption/keyring",
