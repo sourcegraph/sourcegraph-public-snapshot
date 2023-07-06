@@ -397,7 +397,6 @@ interface CommentOptions {
 
 export class Comment implements vscode.Comment {
     public id: string
-    public label: string | undefined
     public body: string | vscode.MarkdownString
     public mode = vscode.CommentMode.Preview
     public author: vscode.CommentAuthorInformation
