@@ -3,10 +3,10 @@ package com.sourcegraph.cody.vscode;
 import com.sourcegraph.cody.autocomplete.prompt_library.InlineAutoCompleteList;
 import java.util.concurrent.CompletableFuture;
 
-public abstract class InlineCompletionItemProvider {
-  public abstract CompletableFuture<InlineAutoCompleteList> provideInlineCompletions(
+public abstract class InlineAutoCompleteItemProvider {
+  public abstract CompletableFuture<InlineAutoCompleteList> provideInlineAutoCompleteItems(
       TextDocument document,
       Position position,
-      InlineCompletionContext context,
+      InlineAutoCompleteContext context,
       CancellationToken token);
 }

@@ -138,10 +138,10 @@ public class CodyAutoCompleteManager {
       @NotNull TextDocument textDocument,
       @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext) {
     return provider
-        .provideInlineCompletions(
+        .provideInlineAutoCompleteItems(
             textDocument,
             textDocument.positionAt(offset),
-            new InlineCompletionContext(InlineCompletionTriggerKind.Automatic, null),
+            new InlineAutoCompleteContext(InlineAutoCompleteTriggerKind.Automatic, null),
             token)
         .thenAccept(
             result -> {

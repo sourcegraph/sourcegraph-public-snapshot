@@ -22,7 +22,7 @@ import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.Position;
 import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
-import com.sourcegraph.cody.vscode.InlineCompletionTriggerKind;
+import com.sourcegraph.cody.vscode.InlineAutoCompleteTriggerKind;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -98,10 +98,10 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
         informAgentAboutEditorChange(this.editor);
         int changeOffset = event.getOffset() + event.getNewLength();
         if (this.editor.getCaretModel().getOffset() == changeOffset) {
-          InlineCompletionTriggerKind requestType =
+          InlineAutoCompleteTriggerKind requestType =
               event.getOldLength() != event.getNewLength()
-                  ? InlineCompletionTriggerKind.Invoke
-                  : InlineCompletionTriggerKind.Automatic;
+                  ? InlineAutoCompleteTriggerKind.Invoke
+                  : InlineAutoCompleteTriggerKind.Automatic;
           completions.triggerAutoComplete(this.editor, changeOffset);
         }
       }

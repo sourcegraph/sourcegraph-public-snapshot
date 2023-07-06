@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * Let's keep the unused code to make it easier to see the similarity between the two versions.
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal", "CommentedOutCode"})
-public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
+public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider {
   private static final Logger logger = Logger.getInstance(CodyAutoCompleteItemProvider.class);
   public static final int nThreads = 3; // up to 3 completion API calls to run in parallel
   // should we reuse the scheduler from CodyCompletionsManager here later on?
@@ -55,13 +55,13 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
   }
 
   @Override
-  public CompletableFuture<InlineAutoCompleteList> provideInlineCompletions(
+  public CompletableFuture<InlineAutoCompleteList> provideInlineAutoCompleteItems(
       TextDocument document,
       Position position,
-      InlineCompletionContext context,
+      InlineAutoCompleteContext context,
       CancellationToken token) {
     try {
-      return provideInlineCompletionItemsInner(document, position, context, token);
+      return provideInlineAutoCompleteItemsInner(document, position, context, token);
     } catch (Exception e) {
       if (e.getMessage().equals("aborted")) {
         return emptyResult();
@@ -78,10 +78,10 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
     return toks * charsPerToken;
   }
 
-  private CompletableFuture<InlineAutoCompleteList> provideInlineCompletionItemsInner(
+  private CompletableFuture<InlineAutoCompleteList> provideInlineAutoCompleteItemsInner(
       TextDocument document,
       Position position,
-      InlineCompletionContext context,
+      InlineAutoCompleteContext context,
       CancellationToken token) {
     this.abortOpenInlineCompletions.run();
     CancellationToken abortController = new CancellationToken();
@@ -145,7 +145,7 @@ public class CodyAutoCompleteItemProvider extends InlineCompletionItemProvider {
               "",
               2,
               document));
-    } else if (context.triggerKind == InlineCompletionTriggerKind.Invoke
+    } else if (context.triggerKind == InlineAutoCompleteTriggerKind.Invoke
         || precedingLine.endsWith(".")) {
       return emptyResult();
     } else {
