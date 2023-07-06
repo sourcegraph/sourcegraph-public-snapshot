@@ -11,10 +11,10 @@ DEF
 GHI
 `,
         ]
-        for (const text in texts) {
+        for (const text of texts) {
             const offset = new DocumentOffsets(text)
 
-            for (let i = 0; i < text.length; i++) {
+            for (let i = 0; i < text.length + 1; i++) {
                 const pos = offset.position(i)
                 const o2 = offset.offset(pos)
                 expect(i).toEqual(o2)

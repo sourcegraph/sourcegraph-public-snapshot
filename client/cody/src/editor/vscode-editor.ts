@@ -23,6 +23,18 @@ export class VSCodeEditor extends Editor {
         super()
     }
 
+    public static convertTextDocument(document: vscode.TextDocument): TextDocument {
+        return {
+            content: document.getText(),
+            repoName: null,
+            revision: null,
+            visible: null,
+            selection: null,
+            uri: document.uri.toString(),
+            languageId: document.languageId,
+        }
+    }
+
     // TODO: Bad internet so ironically enough I can't use Sourcegraph to figure this one out atm
     // public get fileName(): string {
     //     return vscode.window.activeTextEditor?.document.fileName ?? ''

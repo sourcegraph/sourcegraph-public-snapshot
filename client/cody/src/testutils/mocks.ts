@@ -2,6 +2,8 @@
 // TODO: use implements vscode.XXX on mocked classes to ensure they match the real vscode API.
 // import * as vscode from 'vscode'
 
+import url from 'url'
+
 /**
  * This module defines shared VSCode mocks for use in every Jest test.
  * Tests requiring no custom mocks will automatically apply the mocks defined in this file.
@@ -84,16 +86,22 @@ class Range {
 }
 
 class Uri {
-    public fsPath: string
-    public path: string
-    constructor(path: string) {
-        this.fsPath = path
-        this.path = path
+    constructor(private value: string, public scheme: string, public path: string, public fsPath: string) {}
+
+    public static parse(uri: string): Uri {
+        const purl = new URL(uri)
+        // NOTE: fsPath is actually way more complex than this but we have no cases
+        // in our tests where its complexities are required to be implemented
+        return new Uri(uri, purl.protocol, purl.pathname, purl.pathname)
     }
 
-    // public toString() {
-    //     return this.fsPath
-    // }
+    public static file(pathname: string): Uri {
+        return new Uri(url.pathToFileURL(pathname).toString(), 'file', pathname, pathname)
+    }
+
+    public toString() {
+        return this.value
+    }
 }
 
 class InlineCompletionItem {
@@ -161,34 +169,49 @@ export const vsCodeMocks = {
         showErrorMessage(message: string) {
             console.error(message)
         },
-        activeTextEditor: { document: { uri: { scheme: 'not-cody' } }, options: { tabSize: 4 } },
+        activeTextEditor: { document: { uri: Uri.file('/test.ts') }, options: { tabSize: 4 } },
         onDidChangeActiveTextEditor() {},
     },
     workspace: {
         getConfiguration() {
-            return undefined
+            return {
+                get(key: string) {
+                    switch (key) {
+                        case 'cody.debug.filter':
+                            return '.*'
+                        default:
+                            return ''
+                    }
+                },
+            }
         },
         openTextDocument: (uri: string) => ({
+            uri: Uri.parse(uri),
             getText: () => 'foo\nbar\nfoo',
             save: () => true,
         }),
         applyEdit: (edit: WorkspaceEdit) => true,
         save: () => true,
-        getWorkspaceFolder: (uri: Uri) => ({ uri: new Uri('/') }),
-        workspaceFolders: [{ uri: new Uri('/') }],
+        getWorkspaceFolder: (uri: Uri) => ({ uri: Uri.file('/') }),
+        workspaceFolders: [{ uri: Uri.file('/') }],
+        asRelativePath(path: string) {
+            return path
+        },
+        onDidChangeTextDocument() {
+            return null
+        },
     },
     ConfigurationTarget: {
         Global: undefined,
     },
-    Uri: {
-        file: (path: string) => ({
-            fsPath: path,
-            path,
-        }),
-    },
+    Uri,
     extensions: {
         getExtension() {
             return undefined
         },
+    },
+    InlineCompletionTriggerKind: {
+        Invoke: 0,
+        Automatic: 1,
     },
 } as const

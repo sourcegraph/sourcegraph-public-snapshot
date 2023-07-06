@@ -25,10 +25,8 @@ export class DocumentOffsets {
             index++
         }
 
-        if (this.content.length !== this.lines_[this.lines_.length - 1]) {
-            this.intervalTree.insert([this.lines_[this.lines_.length - 1], index], this.lines.length - 1)
-            this.lines_.push(this.content.length) // sentinel value
-        }
+        this.intervalTree.insert([this.lines_[this.lines_.length - 1], index], this.lines.length - 1)
+        this.lines_.push(this.content.length) // sentinel value
     }
 
     public get lines(): number[] {
@@ -104,12 +102,11 @@ export class DocumentOffsets {
             },
             end: {
                 line,
-                character: (this.lines[line + 1] ?? this.content.length) - this.lines[line],
+                character: (this.lines[line + 1] ?? this.content.length) - this.lines[line] - 1,
             },
         }
     }
 
-    /** NOTE: Includes \n; is this the desired behavior? */
     public getLine(line: number): string {
         return this.rangeSlice(this.getLineRange(line))
     }

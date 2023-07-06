@@ -7,49 +7,8 @@ import {
 } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/types'
 
 import { VSCodeEditor } from '../editor/vscode-editor'
-import { mockVSCodeExports } from '../testutils/vscode'
 
 import { CodyCompletionItemProvider } from '.'
-
-jest.mock('vscode', () => ({
-    ...mockVSCodeExports(),
-    InlineCompletionTriggerKind: {
-        Invoke: 0,
-        Automatic: 1,
-    },
-    workspace: {
-        asRelativePath(path: string) {
-            return path
-        },
-        getConfiguration() {
-            return {
-                get(key: string) {
-                    switch (key) {
-                        case 'cody.debug.filter':
-                            return '.*'
-                        default:
-                            return ''
-                    }
-                },
-            }
-        },
-        onDidChangeTextDocument() {
-            return null
-        },
-        getWorkspaceFolder: (uri: any) => ({
-            uri: {
-                fsPath: '/',
-            },
-        }),
-        workspaceFolders: [
-            {
-                uri: {
-                    fsPath: '/',
-                },
-            },
-        ],
-    },
-}))
 
 jest.mock('@sourcegraph/cody-shared/src/autocomplete/context-embeddings.ts', () => ({
     getContextFromEmbeddings: () => [],
@@ -130,13 +89,9 @@ async function complete(
             return null
         },
     }
+
     const document: any = {
-        uri: {
-            fsPath: 'test.ts',
-            toString() {
-                return 'file:///test.ts'
-            },
-        },
+        uri: vscode.Uri.parse('file:///test.ts'),
         languageId,
         offsetAt(): number {
             return 0
@@ -157,7 +112,8 @@ async function complete(
     }
 
     const splitPrefix = prefix.split('\n')
-    const position: any = { line: splitPrefix.length, character: splitPrefix[splitPrefix.length - 1].length }
+    // console.log(prefix, splitPrefix)
+    const position: any = { line: splitPrefix.length - 1, character: splitPrefix[splitPrefix.length - 1].length - 1 }
 
     const completions = await completionProvider.provideInlineCompletionItems(document, position, context, token)
 

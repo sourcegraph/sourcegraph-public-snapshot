@@ -6,9 +6,10 @@ import { InlineCompletionProvider } from '@sourcegraph/cody-shared/src/autocompl
 import { ProviderConfig } from '@sourcegraph/cody-shared/src/autocomplete/providers/provider'
 import { isAbortError } from '@sourcegraph/cody-shared/src/autocomplete/utils'
 import { CodebaseContext } from '@sourcegraph/cody-shared/src/codebase-context'
-import { Editor } from '@sourcegraph/cody-shared/src/editor'
+import { Editor, TextDocument } from '@sourcegraph/cody-shared/src/editor'
 import { DocumentOffsets } from '@sourcegraph/cody-shared/src/editor/offsets'
 
+import { VSCodeEditor } from '../editor/vscode-editor'
 import { debug } from '../log'
 import { CodyStatusBar } from '../services/StatusBar'
 
@@ -99,7 +100,7 @@ export class CodyCompletionItemProvider
             return []
         }
 
-        const doc = (await this.textEditor.getTextDocument(document.uri.toString()))!
+        const doc = VSCodeEditor.convertTextDocument(document)
 
         const docContext = getAutocompleteContext(doc, position, this.maxPrefixChars, this.maxSuffixChars)
 

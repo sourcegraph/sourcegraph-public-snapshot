@@ -42,6 +42,7 @@ export function getAutocompleteContext(
     for (let line = position.line - 1; line >= 0; line--) {
         if (offset.getLine(line).trim().length !== 0) {
             prevNonEmptyLine = offset.toJointRange(offset.getLineRange(line))
+            break
         }
     }
 
@@ -49,6 +50,7 @@ export function getAutocompleteContext(
     for (let line = position.line + 1; line < offset.lines.length; line++) {
         if (offset.getLine(line).trim().length !== 0) {
             nextNonEmptyLine = offset.toJointRange(offset.getLineRange(line))
+            break
         }
     }
 
