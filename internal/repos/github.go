@@ -383,6 +383,9 @@ func sanitizeToUTF8(s string) string {
 }
 
 func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
+	logger := log.Scoped("GitHubSource.makeRepo", "")
+	logger.Warn("repo", log.String("value", fmt.Sprintf("%#v", r)))
+
 	urn := s.svc.URN()
 	metadata := *r
 	// This field flip flops depending on which token was used to retrieve the repo
@@ -1280,4 +1283,9 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 		page++
 	}
 	return out, nil
+}
+
+func (s *GitHubSource) AbsoluteRepoName() string {
+	// reposource.GitHubRepoName(repositoryPathPattern string, host string, nameWithOwner string)
+	return ""
 }

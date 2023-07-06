@@ -930,35 +930,39 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 	}
 
 	grapherTutorialRepo := &Repository{
-		ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
-		DatabaseID:       14601798,
-		NameWithOwner:    "sourcegraph/grapher-tutorial",
-		Description:      "monkey language",
-		URL:              "https://github.com/sourcegraph/grapher-tutorial",
-		IsPrivate:        true,
-		IsFork:           false,
-		IsArchived:       true,
-		IsLocked:         true,
+		BaseRepository: &BaseRepository{
+			ID:            "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+			DatabaseID:    14601798,
+			NameWithOwner: "sourcegraph/grapher-tutorial",
+			Description:   "monkey language",
+			URL:           "https://github.com/sourcegraph/grapher-tutorial",
+			IsPrivate:     true,
+			IsFork:        false,
+			IsArchived:    true,
+			IsLocked:      true,
+			Visibility:    "internal",
+			RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
+				{Topic: Topic{Name: "topic1"}},
+				{Topic: Topic{Name: "topic2"}},
+			}},
+		},
 		ViewerPermission: "ADMIN",
-		Visibility:       "internal",
-		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
-			{Topic: Topic{Name: "topic1"}},
-			{Topic: Topic{Name: "topic2"}},
-		}},
 	}
 
 	clojureGrapherRepo := &Repository{
-		ID:               "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
-		DatabaseID:       15756908,
-		NameWithOwner:    "sourcegraph/clojure-grapher",
-		Description:      "clojure grapher",
-		URL:              "https://github.com/sourcegraph/clojure-grapher",
-		IsPrivate:        true,
-		IsFork:           false,
-		IsArchived:       true,
-		IsDisabled:       true,
+		BaseRepository: &BaseRepository{
+			ID:            "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+			DatabaseID:    15756908,
+			NameWithOwner: "sourcegraph/clojure-grapher",
+			Description:   "clojure grapher",
+			URL:           "https://github.com/sourcegraph/clojure-grapher",
+			IsPrivate:     true,
+			IsFork:        false,
+			IsArchived:    true,
+			IsDisabled:    true,
+			Visibility:    "private",
+		},
 		ViewerPermission: "ADMIN",
-		Visibility:       "private",
 	}
 
 	testCases := []struct {

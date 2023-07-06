@@ -7,6 +7,7 @@ import (
 	"container/list"
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
@@ -297,6 +298,8 @@ type Server struct {
 
 	// Perforce is a plugin-like service attached to Server for all things Perforce.
 	Perforce *perforce.Service
+
+	deduplicatedForksAddressCache map[api.RepoName]string
 }
 
 type locks struct {
@@ -517,6 +520,7 @@ func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 // expected to run in a background goroutine. We perform a full sync if the known
 // gitserver addresses has changed since the last run. Otherwise, we only sync
 // repos that have not yet been assigned a shard.
+// TODO: It seems like we don't cleanly exit from SyncRepoState on restarts. FIXME by passing context and using ctx.Done().
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
 	var previousPinned string
@@ -549,6 +553,32 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 }
 
 func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
+	// TODO: Ideally context is passed down the call stack. FIXME.
+
+	logger := s.ObservationCtx.Logger.Scoped("addrForRepo", "").With(log.String("repo", string(repoName)))
+
+	// FIXME: Implement a cache.
+	//
+	// HACK: If repoName is the name of the fork, we don't have any other way to determine if this
+	// needs to be deduplicated without reading from the DB. Acceptable for now in the PoC but needs
+	// to be fixed. One way is to update the address cache during code host sync because we know if
+	// a repo is a fork and needs deduplicated storage at that point. But it also means we have to
+	// maintain a cache for every other repo as well.
+	//
+	// FIXME: Being stateless, so far the method was able to work without the assumption that a row
+	// does not need to be present in the gitserver_repos table to return a name. We maintain this
+	// assumption and don't log errors for sql.ErrNoRows.
+	gsr, err := s.DB.GitserverRepos().GetByName(context.Background(), repoName)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		// This is odd. Log the error and fallback to default behaviour.
+		logger.Error("failed to get repo from DB, this error will not cause an application error and will use repoName to determine the gitserver address but this error should be investigated nonetheless", log.Error(err))
+	}
+
+	if gsr != nil && gsr.PoolRepoID != nil {
+		logger.Warn("pool repo id found", log.Int32("pool_repo_id", int32(*gsr.PoolRepoID)))
+		return gsr.ShardID
+	}
+
 	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
 }
 
@@ -758,6 +788,20 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 			// ensure that the shard check is correct and also so that we can find the
 			// directory.
 			repo.Name = api.UndeletedRepoName(repo.Name)
+
+			// NOTE: This fork has been configured to use deduplicated storage so will be present on
+			// the same shard as the parent repo.
+			if repo.GitserverRepo.PoolRepoID != nil {
+				// HACK: This has to be when Server is initialised. But we don't have a constructor yet, so this
+				// is doable for now and also won't have to update all the tests immediately.
+				if s.deduplicatedForksAddressCache == nil {
+					s.deduplicatedForksAddressCache = make(map[api.RepoName]string)
+				}
+
+				if _, ok := s.deduplicatedForksAddressCache[repo.Name]; ok {
+					// Use parent's addr.
+				}
+			}
 
 			// Ensure we're only dealing with repos we are responsible for.
 			addr := s.addrForRepo(repo.Name, gitServerAddrs)
@@ -2086,6 +2130,61 @@ type cloneOptions struct {
 	// repository. If this is a non-zero string, then gitserver will attempt to clone the repo from
 	// that gitserver instance instead of the upstream repo URL of the external service.
 	CloneFromShard string
+
+	DeduplicatedCloneOptions *deduplicatedCloneOptions
+}
+
+type dedupeType int
+
+const (
+	dedupeSource dedupeType = iota
+	// TODO: Maybe we don't need this state.
+	dedupeFork
+)
+
+type deduplicatedCloneOptions struct {
+	// FIXME: Find a better name.
+	which dedupeType
+}
+
+// FIXME: A better name please
+// maybeGetDeduplicatedCloneOptions will:
+// 1. Read the repo from the DB
+// 1. If deduplication is enabled for this repo, return a deduplicateOptions
+// 1. Check if current repo has a pool_repo_id
+// 1. If it is has a pool_repo_id return a deduplicateOptions
+// 1. If repo is fork and has a pool_repo_id, return a deduplicateOptions
+// 1. Else return nil
+// FIXME: Maybe we can return a bool instead. Wait until its clear we don't need anything else in options
+func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName api.RepoName) *deduplicatedCloneOptions {
+	logger := s.ObservationCtx.Logger.Scoped("deduplicateRepoClone", "").With(
+		log.String("repo", string(repoName)),
+	)
+
+	repoConf := conf.Get().Repositories
+	if repoConf == nil {
+		logger.Warn("no repositories in config")
+		return nil
+	}
+
+	for _, name := range repoConf.DeduplicateForks {
+		if string(repoName) == name {
+			logger.Warn("found repo in conf")
+			return &deduplicatedCloneOptions{which: dedupeSource}
+		}
+	}
+
+	gsr, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
+	if err != nil {
+		logger.Warn("failed to get by name from DB (repo will be cloned without deduplicated storage if this was supposed to be deduplicated)", log.Error(err))
+		return nil
+	}
+
+	if gsr.PoolRepoID == nil {
+		return nil
+	}
+
+	return &deduplicatedCloneOptions{which: dedupeFork}
 }
 
 // cloneRepo performs a clone operation for the given repository. It is
@@ -2102,6 +2201,12 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	}()
 
 	dir := s.dir(repo)
+
+	dedupeOptions := s.maybeGetDeduplicatedCloneOptions(ctx, repo)
+	if dedupeOptions != nil && dedupeOptions.which == dedupeSource {
+		dir = s.poolDir(repo)
+		opts.DeduplicatedCloneOptions = dedupeOptions
+	}
 
 	// PERF: Before doing the network request to check if isCloneable, lets
 	// ensure we are not already cloning.
@@ -2299,10 +2404,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		return err
 	}
 
-	// Set gc.auto depending on gitGCMode.
+	// if opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.which != dedupeSource {
 	if err := gitSetAutoGC(tmp); err != nil {
 		return err
 	}
+	// }
 
 	if overwrite {
 		// remove the current repo by putting it into our temporary directory
@@ -2317,6 +2423,39 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	}
 	if err := fileutil.RenameAndSync(tmpPath, dstPath); err != nil {
 		return err
+	}
+
+	// For a source repo:
+	//
+	// 1. Clone repo in pool dir (if not already cloned)
+	// 2. Clone source (from pool dir eventually)
+	//
+	// For a fork repo:
+	//
+	// 1. FIXME (next phase): If not cloned, clone source in pool dir
+	// 2. Clone fork (from pool dir eventually)
+	//
+	// And then:
+	//
+	// 3. Setup git-alternate config
+	// 4. Run git repack
+	// 5. Run git gc
+
+	if opts.DeduplicatedCloneOptions != nil {
+		switch opts.DeduplicatedCloneOptions.which {
+		case dedupeSource:
+			sourceRepoCloneOpts := *opts
+			sourceRepoCloneOpts.DeduplicatedCloneOptions = nil
+			if err := s.doClone(ctx, repo, s.dir(repo), syncer, lock, remoteURL, &sourceRepoCloneOpts); err != nil {
+				logger.Error("failed to clone source repo after pool was cloned", log.Error(err))
+			}
+
+		case dedupeFork:
+			// We already cloned in the right dir here so only need to setup git-alternate stuff.
+		}
+
+		// Setup git alternate stuff.
+		//
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on

@@ -1808,8 +1808,7 @@ func (r *Repository) Name() (string, error) {
 	}
 }
 
-// Repository is a GitHub repository.
-type Repository struct {
+type BaseRepository struct {
 	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
 	DatabaseID    int64  // The integer database id
 	NameWithOwner string // full name of repository ("owner/name")
@@ -1820,9 +1819,6 @@ type Repository struct {
 	IsArchived    bool   // whether the repository is archived on the code host
 	IsLocked      bool   // whether the repository is locked on the code host
 	IsDisabled    bool   // whether the repository is disabled on the code host
-	// This field will always be blank on repos stored in our database because the value will be different
-	// depending on which token was used to fetch it
-	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 
 	// a list of topics the repository is tagged with
 	RepositoryTopics RepositoryTopics
@@ -1835,6 +1831,23 @@ type Repository struct {
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
+}
+
+// Repository is a GitHub repository.
+type Repository struct {
+	*BaseRepository
+	// This field will always be blank on repos stored in our database because the value will be different
+	// depending on which token was used to fetch it
+	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
+	//
+	Parent *BaseRepository
+}
+
+// TODO: Maybe we need all the fields from BaseRepository anyway.
+type RepositoryParent struct {
+	ID            string
+	DatabaseID    int64
+	NameWithOwner string
 }
 
 type RepositoryTopics struct {
@@ -1855,22 +1868,49 @@ type restRepositoryPermissions struct {
 	Pull  bool `json:"pull"`
 }
 
-type restRepository struct {
+// baseRESTRepository is the core set of fields available on a repository. Forked repositories will
+// refer to their parent / source repository which contains the same set of fields. This struct
+// allows us to reuse them inside restRepository which is the API for all interactions within this
+// package.
+//
+// NOTE: baseRESTRepository itself should **NEVER** be used directly in any function or method call.
+type baseRESTRepository struct {
 	ID          string `json:"node_id"` // GraphQL ID
 	DatabaseID  int64  `json:"id"`
 	FullName    string `json:"full_name"` // same as nameWithOwner
 	Description string
-	HTMLURL     string                    `json:"html_url"` // web URL
-	Private     bool                      `json:"private"`
-	Fork        bool                      `json:"fork"`
-	Archived    bool                      `json:"archived"`
-	Locked      bool                      `json:"locked"`
-	Disabled    bool                      `json:"disabled"`
+	HTMLURL     string   `json:"html_url"` // web URL
+	Private     bool     `json:"private"`
+	Fork        bool     `json:"fork"`
+	Archived    bool     `json:"archived"`
+	Locked      bool     `json:"locked"`
+	Disabled    bool     `json:"disabled"`
+	Stars       int      `json:"stargazers_count"`
+	Forks       int      `json:"forks_count"`
+	Visibility  string   `json:"visibility"`
+	Topics      []string `json:"topics"`
+}
+
+// restRepository is the resource that all functions and methods in this package should use. Any
+// attributes that are **only** ever present as a top level attribute of a repository but never as
+// part of a "source" or a "parent" which is of type repository in itself should be added explicitly
+// to restRepository. On the contrary, other fields that are **always** present in a repository
+// resource type including that in a source or a parent should be added directly to
+// baseRESTRepository.
+type restRepository struct {
+	baseRESTRepository
+
 	Permissions restRepositoryPermissions `json:"permissions"`
-	Stars       int                       `json:"stargazers_count"`
-	Forks       int                       `json:"forks_count"`
-	Visibility  string                    `json:"visibility"`
-	Topics      []string                  `json:"topics"`
+
+	// The GitHub API returns both "parent" and "source" for a forked repository. parent is the
+	// repository this repository was forked from, source is the ultimate source for the network.
+	//
+	// At the moment, the fork related metadata serves only one purpose - to use deduplicated
+	// storage for forks and their parent repositories (if enabled). But we do not support second
+	// degree relations and treat a fork of a fork as a direct fork of the source repository itself
+	// for deduplicated storage. As a result we use "source" instead of "parent" to rely on the
+	// network information.
+	Parent baseRESTRepository `json:"parent"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1892,25 +1932,10 @@ func (c *V3Client) getRepositoryFromAPI(ctx context.Context, owner, name string)
 // convertRestRepo converts repo information returned by the rest API
 // to a standard format.
 func convertRestRepo(restRepo restRepository) *Repository {
-	topics := make([]RepositoryTopic, 0, len(restRepo.Topics))
-	for _, topic := range restRepo.Topics {
-		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
-	}
 	repo := Repository{
-		ID:               restRepo.ID,
-		DatabaseID:       restRepo.DatabaseID,
-		NameWithOwner:    restRepo.FullName,
-		Description:      restRepo.Description,
-		URL:              restRepo.HTMLURL,
-		IsPrivate:        restRepo.Private,
-		IsFork:           restRepo.Fork,
-		IsArchived:       restRepo.Archived,
-		IsLocked:         restRepo.Locked,
-		IsDisabled:       restRepo.Disabled,
+		BaseRepository:   convertBaseRestRepo(&restRepo.baseRESTRepository),
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
-		StargazerCount:   restRepo.Stars,
-		ForkCount:        restRepo.Forks,
-		RepositoryTopics: RepositoryTopics{topics},
+		Parent:           convertBaseRestRepo(&restRepo.Parent),
 	}
 
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
@@ -1918,6 +1943,33 @@ func convertRestRepo(restRepo restRepository) *Repository {
 	}
 
 	return &repo
+}
+
+func convertBaseRestRepo(baseRepo *baseRESTRepository) *BaseRepository {
+	if baseRepo == nil {
+		return nil
+	}
+
+	topics := make([]RepositoryTopic, 0, len(baseRepo.Topics))
+	for _, topic := range baseRepo.Topics {
+		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
+	}
+
+	return &BaseRepository{
+		ID:               baseRepo.ID,
+		DatabaseID:       baseRepo.DatabaseID,
+		NameWithOwner:    baseRepo.FullName,
+		Description:      baseRepo.Description,
+		URL:              baseRepo.HTMLURL,
+		IsPrivate:        baseRepo.Private,
+		IsFork:           baseRepo.Fork,
+		IsArchived:       baseRepo.Archived,
+		IsLocked:         baseRepo.Locked,
+		IsDisabled:       baseRepo.Disabled,
+		StargazerCount:   baseRepo.Stars,
+		ForkCount:        baseRepo.Forks,
+		RepositoryTopics: RepositoryTopics{topics},
+	}
 }
 
 // convertRestRepoPermissions converts repo information returned by the rest API

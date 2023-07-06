@@ -15,9 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -791,6 +793,13 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 				return Diff{}, LicenseError{errors.Wrapf(err, "syncer: failed to update repo %s", sourced.Name)}
 			}
 		}
+
+		if err := s.maybePrepareForDeduplication(ctx, svc, sourced); err != nil {
+			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
+		} else {
+			s.ObsvCtx.Logger.Warn("no error in maybePrepareForDeduplication", log.String("repo", string(sourced.Name)))
+		}
+
 		modified := stored[0].Update(sourced)
 		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
@@ -817,6 +826,15 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			return Diff{}, errors.Wrapf(err, "syncer: failed to create external service repo: %s", sourced.Name)
 		}
 
+		// XXX NOTE: This is a better place for updating fork dedupe related DB stuff.
+
+		// sourced.Name
+		if err := s.maybePrepareForDeduplication(ctx, svc, sourced); err != nil {
+			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
+		} else {
+			s.ObsvCtx.Logger.Warn("no error in maybePrepareForDeduplication", log.String("repo", string(sourced.Name)))
+		}
+
 		d.Added = append(d.Added, sourced)
 		s.ObsvCtx.Logger.Debug("appended to added repos")
 	default: // Impossible since we have two separate unique constraints on name and external repo spec
@@ -825,6 +843,62 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 	s.ObsvCtx.Logger.Debug("completed")
 	return d, nil
+}
+
+// prepareForDeduplication will:
+// 1. Get the repo_id of the parent repo
+// 2. Insert that as the pool_id into gitserver_repos table
+func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, svc *types.ExternalService, repo *types.Repo) error {
+	logger := log.Scoped("Syncer.maybePrepareForDeduplication", "").With(log.String("repo", string(repo.Name)))
+
+	// Nothing special needs to be done for non-forks.
+	if !repo.Fork {
+		logger.Warn("not a fork")
+		return nil
+	}
+
+	metadata, ok := repo.Metadata.(*github.Repository)
+	if !ok {
+		logger.Warn("not a github repository")
+		return errors.New("only GitHub repositories are supported for deduplication")
+	}
+
+	parentRepo := github.Repository{
+		BaseRepository: metadata.Parent,
+	}
+
+	// HACK: The current API is not making it easy to retrieve the "originalHostname" here. Revisit
+	// and find a better way.
+	parentRepoName := reposource.GitHubRepoName("", "github.com", parentRepo.NameWithOwner)
+
+	// HACK: This loop is not very great. For PoC **only**. Maybe build a map inside Syncer.Run with
+	// conf.Watch and sync.Mutex?
+	prepare := false
+	repoConf := conf.Get().Repositories
+
+	if repoConf == nil {
+		logger.Warn("no repositories in config")
+		return nil
+	}
+
+	logger.Warn("config", log.String("value", fmt.Sprintf("%#v", repoConf)))
+	for _, name := range repoConf.DeduplicateForks {
+		if string(parentRepoName) == name {
+			prepare = true
+			logger.Warn("found in conf")
+			break
+		}
+	}
+
+	if !prepare {
+		logger.Warn("won't prepare")
+		return nil
+	}
+
+	// HACK: Same hack as above. FIXME.
+	// forkedRepoName := reposource.GitHubRepoName("", "github.com", repo.Name)
+
+	return s.Store.GitserverReposStore().AddPoolRepoID(ctx, parentRepoName, repo.Name)
 }
 
 func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen map[api.RepoID]struct{}) (int, error) {
