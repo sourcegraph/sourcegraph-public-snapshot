@@ -49,6 +49,11 @@ func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProduc
 	return v.ProductSubscriptionState.Uuid
 }
 
+// GetAccount returns CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription.Account, and is useful for accessing the field via an interface.
+func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.ProductSubscriptionState.Account
+}
+
 // GetIsArchived returns CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription.IsArchived, and is useful for accessing the field via an interface.
 func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) GetIsArchived() bool {
 	return v.ProductSubscriptionState.IsArchived
@@ -94,6 +99,8 @@ type __premarshalCheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTok
 
 	Uuid string `json:"uuid"`
 
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
+
 	IsArchived bool `json:"isArchived"`
 
 	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
@@ -114,6 +121,7 @@ func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProduc
 
 	retval.Id = v.ProductSubscriptionState.Id
 	retval.Uuid = v.ProductSubscriptionState.Uuid
+	retval.Account = v.ProductSubscriptionState.Account
 	retval.IsArchived = v.ProductSubscriptionState.IsArchived
 	retval.CodyGatewayAccess = v.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
@@ -621,6 +629,136 @@ func (v *DotcomUserStateCodyGatewayAccess) __premarshalJSON() (*__premarshalDotc
 	return &retval, nil
 }
 
+// GetProductSubscriptionDotcomDotcomQuery includes the requested fields of the GraphQL type DotcomQuery.
+// The GraphQL type's documentation follows.
+//
+// Mutations that are only used on Sourcegraph.com.
+// FOR INTERNAL USE ONLY.
+type GetProductSubscriptionDotcomDotcomQuery struct {
+	// The product subscription with the given UUID. An error is returned if no such product
+	// subscription exists.
+	// Only Sourcegraph.com site admins and the account owners of the product subscription may
+	// perform this query.
+	// FOR INTERNAL USE ONLY.
+	ProductSubscription GetProductSubscriptionDotcomDotcomQueryProductSubscription `json:"productSubscription"`
+}
+
+// GetProductSubscription returns GetProductSubscriptionDotcomDotcomQuery.ProductSubscription, and is useful for accessing the field via an interface.
+func (v *GetProductSubscriptionDotcomDotcomQuery) GetProductSubscription() GetProductSubscriptionDotcomDotcomQueryProductSubscription {
+	return v.ProductSubscription
+}
+
+// GetProductSubscriptionDotcomDotcomQueryProductSubscription includes the requested fields of the GraphQL type ProductSubscription.
+// The GraphQL type's documentation follows.
+//
+// A product subscription that was created on Sourcegraph.com.
+// FOR INTERNAL USE ONLY.
+type GetProductSubscriptionDotcomDotcomQueryProductSubscription struct {
+	ProductSubscriptionState `json:"-"`
+}
+
+// GetId returns GetProductSubscriptionDotcomDotcomQueryProductSubscription.Id, and is useful for accessing the field via an interface.
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) GetId() string {
+	return v.ProductSubscriptionState.Id
+}
+
+// GetUuid returns GetProductSubscriptionDotcomDotcomQueryProductSubscription.Uuid, and is useful for accessing the field via an interface.
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) GetUuid() string {
+	return v.ProductSubscriptionState.Uuid
+}
+
+// GetAccount returns GetProductSubscriptionDotcomDotcomQueryProductSubscription.Account, and is useful for accessing the field via an interface.
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.ProductSubscriptionState.Account
+}
+
+// GetIsArchived returns GetProductSubscriptionDotcomDotcomQueryProductSubscription.IsArchived, and is useful for accessing the field via an interface.
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) GetIsArchived() bool {
+	return v.ProductSubscriptionState.IsArchived
+}
+
+// GetCodyGatewayAccess returns GetProductSubscriptionDotcomDotcomQueryProductSubscription.CodyGatewayAccess, and is useful for accessing the field via an interface.
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) GetCodyGatewayAccess() ProductSubscriptionStateCodyGatewayAccess {
+	return v.ProductSubscriptionState.CodyGatewayAccess
+}
+
+// GetActiveLicense returns GetProductSubscriptionDotcomDotcomQueryProductSubscription.ActiveLicense, and is useful for accessing the field via an interface.
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) GetActiveLicense() *ProductSubscriptionStateActiveLicenseProductLicense {
+	return v.ProductSubscriptionState.ActiveLicense
+}
+
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) UnmarshalJSON(b []byte) error {
+
+	if string(b) == "null" {
+		return nil
+	}
+
+	var firstPass struct {
+		*GetProductSubscriptionDotcomDotcomQueryProductSubscription
+		graphql.NoUnmarshalJSON
+	}
+	firstPass.GetProductSubscriptionDotcomDotcomQueryProductSubscription = v
+
+	err := json.Unmarshal(b, &firstPass)
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(
+		b, &v.ProductSubscriptionState)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+type __premarshalGetProductSubscriptionDotcomDotcomQueryProductSubscription struct {
+	Id string `json:"id"`
+
+	Uuid string `json:"uuid"`
+
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
+
+	IsArchived bool `json:"isArchived"`
+
+	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
+
+	ActiveLicense *ProductSubscriptionStateActiveLicenseProductLicense `json:"activeLicense"`
+}
+
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) MarshalJSON() ([]byte, error) {
+	premarshaled, err := v.__premarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+	return json.Marshal(premarshaled)
+}
+
+func (v *GetProductSubscriptionDotcomDotcomQueryProductSubscription) __premarshalJSON() (*__premarshalGetProductSubscriptionDotcomDotcomQueryProductSubscription, error) {
+	var retval __premarshalGetProductSubscriptionDotcomDotcomQueryProductSubscription
+
+	retval.Id = v.ProductSubscriptionState.Id
+	retval.Uuid = v.ProductSubscriptionState.Uuid
+	retval.Account = v.ProductSubscriptionState.Account
+	retval.IsArchived = v.ProductSubscriptionState.IsArchived
+	retval.CodyGatewayAccess = v.ProductSubscriptionState.CodyGatewayAccess
+	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
+	return &retval, nil
+}
+
+// GetProductSubscriptionResponse is returned by GetProductSubscription on success.
+type GetProductSubscriptionResponse struct {
+	// Queries that are only used on Sourcegraph.com.
+	//
+	// FOR INTERNAL USE ONLY.
+	Dotcom GetProductSubscriptionDotcomDotcomQuery `json:"dotcom"`
+}
+
+// GetDotcom returns GetProductSubscriptionResponse.Dotcom, and is useful for accessing the field via an interface.
+func (v *GetProductSubscriptionResponse) GetDotcom() GetProductSubscriptionDotcomDotcomQuery {
+	return v.Dotcom
+}
+
 // ListProductSubscriptionFields includes the GraphQL fields of ProductSubscription requested by the fragment ListProductSubscriptionFields.
 // The GraphQL type's documentation follows.
 //
@@ -643,6 +781,11 @@ func (v *ListProductSubscriptionFields) GetId() string { return v.ProductSubscri
 
 // GetUuid returns ListProductSubscriptionFields.Uuid, and is useful for accessing the field via an interface.
 func (v *ListProductSubscriptionFields) GetUuid() string { return v.ProductSubscriptionState.Uuid }
+
+// GetAccount returns ListProductSubscriptionFields.Account, and is useful for accessing the field via an interface.
+func (v *ListProductSubscriptionFields) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.ProductSubscriptionState.Account
+}
 
 // GetIsArchived returns ListProductSubscriptionFields.IsArchived, and is useful for accessing the field via an interface.
 func (v *ListProductSubscriptionFields) GetIsArchived() bool {
@@ -691,6 +834,8 @@ type __premarshalListProductSubscriptionFields struct {
 
 	Uuid string `json:"uuid"`
 
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
+
 	IsArchived bool `json:"isArchived"`
 
 	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
@@ -712,6 +857,7 @@ func (v *ListProductSubscriptionFields) __premarshalJSON() (*__premarshalListPro
 	retval.SourcegraphAccessTokens = v.SourcegraphAccessTokens
 	retval.Id = v.ProductSubscriptionState.Id
 	retval.Uuid = v.ProductSubscriptionState.Uuid
+	retval.Account = v.ProductSubscriptionState.Account
 	retval.IsArchived = v.ProductSubscriptionState.IsArchived
 	retval.CodyGatewayAccess = v.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
@@ -788,6 +934,11 @@ func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSub
 	return v.ListProductSubscriptionFields.ProductSubscriptionState.Uuid
 }
 
+// GetAccount returns ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription.Account, and is useful for accessing the field via an interface.
+func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.ListProductSubscriptionFields.ProductSubscriptionState.Account
+}
+
 // GetIsArchived returns ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription.IsArchived, and is useful for accessing the field via an interface.
 func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) GetIsArchived() bool {
 	return v.ListProductSubscriptionFields.ProductSubscriptionState.IsArchived
@@ -835,6 +986,8 @@ type __premarshalListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsPr
 
 	Uuid string `json:"uuid"`
 
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
+
 	IsArchived bool `json:"isArchived"`
 
 	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
@@ -856,6 +1009,7 @@ func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSub
 	retval.SourcegraphAccessTokens = v.ListProductSubscriptionFields.SourcegraphAccessTokens
 	retval.Id = v.ListProductSubscriptionFields.ProductSubscriptionState.Id
 	retval.Uuid = v.ListProductSubscriptionFields.ProductSubscriptionState.Uuid
+	retval.Account = v.ListProductSubscriptionFields.ProductSubscriptionState.Account
 	retval.IsArchived = v.ListProductSubscriptionFields.ProductSubscriptionState.IsArchived
 	retval.CodyGatewayAccess = v.ListProductSubscriptionFields.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ListProductSubscriptionFields.ProductSubscriptionState.ActiveLicense
@@ -907,6 +1061,8 @@ type ProductSubscriptionState struct {
 	// The unique UUID of this product subscription. Unlike ProductSubscription.id, this does not
 	// encode the type and is not a GraphQL node ID.
 	Uuid string `json:"uuid"`
+	// The user (i.e., customer) to whom this subscription is granted, or null if the account has been deleted.
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
 	// Whether this product subscription was archived.
 	IsArchived bool `json:"isArchived"`
 	// Cody Gateway access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
@@ -921,6 +1077,11 @@ func (v *ProductSubscriptionState) GetId() string { return v.Id }
 // GetUuid returns ProductSubscriptionState.Uuid, and is useful for accessing the field via an interface.
 func (v *ProductSubscriptionState) GetUuid() string { return v.Uuid }
 
+// GetAccount returns ProductSubscriptionState.Account, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionState) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.Account
+}
+
 // GetIsArchived returns ProductSubscriptionState.IsArchived, and is useful for accessing the field via an interface.
 func (v *ProductSubscriptionState) GetIsArchived() bool { return v.IsArchived }
 
@@ -933,6 +1094,18 @@ func (v *ProductSubscriptionState) GetCodyGatewayAccess() ProductSubscriptionSta
 func (v *ProductSubscriptionState) GetActiveLicense() *ProductSubscriptionStateActiveLicenseProductLicense {
 	return v.ActiveLicense
 }
+
+// ProductSubscriptionStateAccountUser includes the requested fields of the GraphQL type User.
+// The GraphQL type's documentation follows.
+//
+// A user.
+type ProductSubscriptionStateAccountUser struct {
+	// The user's username.
+	Username string `json:"username"`
+}
+
+// GetUsername returns ProductSubscriptionStateAccountUser.Username, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateAccountUser) GetUsername() string { return v.Username }
 
 // ProductSubscriptionStateActiveLicenseProductLicense includes the requested fields of the GraphQL type ProductLicense.
 // The GraphQL type's documentation follows.
@@ -1099,6 +1272,14 @@ type __CheckDotcomUserAccessTokenInput struct {
 // GetToken returns __CheckDotcomUserAccessTokenInput.Token, and is useful for accessing the field via an interface.
 func (v *__CheckDotcomUserAccessTokenInput) GetToken() string { return v.Token }
 
+// __GetProductSubscriptionInput is used internally by genqlient
+type __GetProductSubscriptionInput struct {
+	SubscriptionUUID string `json:"subscriptionUUID"`
+}
+
+// GetSubscriptionUUID returns __GetProductSubscriptionInput.SubscriptionUUID, and is useful for accessing the field via an interface.
+func (v *__GetProductSubscriptionInput) GetSubscriptionUUID() string { return v.SubscriptionUUID }
+
 // CheckAccessToken returns traits of the product subscription associated with
 // the given access token.
 func CheckAccessToken(
@@ -1119,6 +1300,9 @@ query CheckAccessToken ($token: String!) {
 fragment ProductSubscriptionState on ProductSubscription {
 	id
 	uuid
+	account {
+		username
+	}
 	isArchived
 	codyGatewayAccess {
 		... CodyGatewayAccessFields
@@ -1226,6 +1410,74 @@ fragment RateLimitFields on CodyGatewayRateLimit {
 	return &data, err
 }
 
+func GetProductSubscription(
+	ctx context.Context,
+	client graphql.Client,
+	subscriptionUUID string,
+) (*GetProductSubscriptionResponse, error) {
+	req := &graphql.Request{
+		OpName: "GetProductSubscription",
+		Query: `
+query GetProductSubscription ($subscriptionUUID: String!) {
+	dotcom {
+		productSubscription(uuid: $subscriptionUUID) {
+			... ProductSubscriptionState
+		}
+	}
+}
+fragment ProductSubscriptionState on ProductSubscription {
+	id
+	uuid
+	account {
+		username
+	}
+	isArchived
+	codyGatewayAccess {
+		... CodyGatewayAccessFields
+	}
+	activeLicense {
+		info {
+			tags
+		}
+	}
+}
+fragment CodyGatewayAccessFields on CodyGatewayAccess {
+	enabled
+	chatCompletionsRateLimit {
+		... RateLimitFields
+	}
+	codeCompletionsRateLimit {
+		... RateLimitFields
+	}
+	embeddingsRateLimit {
+		... RateLimitFields
+	}
+}
+fragment RateLimitFields on CodyGatewayRateLimit {
+	allowedModels
+	source
+	limit
+	intervalSeconds
+}
+`,
+		Variables: &__GetProductSubscriptionInput{
+			SubscriptionUUID: subscriptionUUID,
+		},
+	}
+	var err error
+
+	var data GetProductSubscriptionResponse
+	resp := &graphql.Response{Data: &data}
+
+	err = client.MakeRequest(
+		ctx,
+		req,
+		resp,
+	)
+
+	return &data, err
+}
+
 func ListProductSubscriptions(
 	ctx context.Context,
 	client graphql.Client,
@@ -1254,6 +1506,9 @@ fragment ListProductSubscriptionFields on ProductSubscription {
 fragment ProductSubscriptionState on ProductSubscription {
 	id
 	uuid
+	account {
+		username
+	}
 	isArchived
 	codyGatewayAccess {
 		... CodyGatewayAccessFields

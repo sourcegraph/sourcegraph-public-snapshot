@@ -74,13 +74,14 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		}
 	}
 
+	dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
+
 	// Supported actor/auth sources
 	sources := actor.NewSources(anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
 	if config.Dotcom.AccessToken != "" {
 		// dotcom-based actor sources only if an access token is provided for
 		// us to talk with the client
 		obctx.Logger.Info("dotcom-based actor sources are enabled")
-		dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
@@ -114,6 +115,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		obctx.Logger,
 		redispool.Cache,
 		dotcomURL.String(),
+		dotcomClient,
 		notify.Thresholds{
 			// Detailed notifications for product subscriptions.
 			codygateway.ActorSourceProductSubscription: []int{90, 95, 100},

@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
+	"github.com/Khan/genqlient/graphql"
 	"github.com/gomodule/redigo/redis"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
@@ -13,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/redislock"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
@@ -49,6 +52,7 @@ func NewSlackRateLimitNotifier(
 	baseLogger log.Logger,
 	rs redispool.KeyValue,
 	dotcomURL string,
+	dotcomClient graphql.Client,
 	actorSourceThresholds Thresholds,
 	slackWebhookURL string,
 	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
@@ -73,7 +77,7 @@ func NewSlackRateLimitNotifier(
 				attribute.Float64("alert.ttlSeconds", ttl.Seconds())))
 		logger := sgtrace.Logger(ctx, baseLogger)
 
-		if err := handleNotify(ctx, logger, rs, dotcomURL, thresholds, slackWebhookURL, slackSender, actorID, actorSource, feature, usagePercentage, ttl); err != nil {
+		if err := handleNotify(ctx, logger, rs, dotcomURL, dotcomClient, thresholds, slackWebhookURL, slackSender, actorID, actorSource, feature, usagePercentage, ttl); err != nil {
 			span.RecordError(err)
 			logger.Error("failed to notification", log.Error(err))
 		}
@@ -88,6 +92,7 @@ func handleNotify(
 
 	rs redispool.KeyValue,
 	dotcomURL string,
+	dotcomClient graphql.Client,
 	thresholds []int,
 	slackWebhookURL string,
 	slackSender func(ctx context.Context, url string, msg *slack.WebhookMessage) error,
@@ -152,7 +157,20 @@ func handleNotify(
 	var actorLink string
 	switch actorSource {
 	case codygateway.ActorSourceProductSubscription:
-		actorLink = fmt.Sprintf("<%[1]s/site-admin/dotcom/product/subscriptions/%[2]s|%[2]s>", dotcomURL, actorID)
+		actorLinkText := actorID
+		if actorSource == codygateway.ActorSourceProductSubscription {
+			accountName, err := getSubscriptionAccountName(ctx, dotcomClient, actorID)
+			if err != nil {
+				// We want to send the notification even if we can't get the account name
+				logger.Error("failed to get subscription account name",
+					log.String("actorID", actorID),
+					log.Error(err),
+				)
+			} else {
+				actorLinkText = accountName
+			}
+		}
+		actorLink = fmt.Sprintf("<%s/site-admin/dotcom/product/subscriptions/%s|%s>", dotcomURL, actorID, actorLinkText)
 	default:
 		actorLink = fmt.Sprintf("`%s`", actorID)
 	}
@@ -184,4 +202,28 @@ func handleNotify(
 			},
 		},
 	)
+}
+
+func getSubscriptionAccountName(ctx context.Context, dotcomClient graphql.Client, actorID string) (string, error) {
+	resp, err := dotcom.GetProductSubscription(ctx, dotcomClient, actorID)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to get product subscription")
+	}
+
+	// 1. Check if the special "customer:" tag is present
+	if resp.Dotcom.ProductSubscription.ActiveLicense != nil &&
+		resp.Dotcom.ProductSubscription.ActiveLicense.Info != nil {
+		for _, tag := range resp.Dotcom.ProductSubscription.ActiveLicense.Info.Tags {
+			if strings.HasPrefix(tag, "customer:") {
+				return strings.TrimPrefix(tag, "customer:"), nil
+			}
+		}
+	}
+
+	// 2. Use the username of the account
+	if resp.Dotcom.ProductSubscription.Account != nil &&
+		resp.Dotcom.ProductSubscription.Account.Username != "" {
+		return resp.Dotcom.ProductSubscription.Account.Username, nil
+	}
+	return "", errors.New("no account name available")
 }
