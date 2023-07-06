@@ -50,7 +50,7 @@ For example, to: exclude all files under `node_modules`, include only .go files,
       "includedFilePathPatterns": [
         "*.go"
       ],
-      "maxFileSizeBytes": 300000 //30 KB
+      "maxFileSizeBytes": 300000 //300 KB
     }
   }
 }
