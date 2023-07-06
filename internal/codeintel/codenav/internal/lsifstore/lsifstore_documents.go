@@ -3,6 +3,8 @@ package lsifstore
 import (
 	"bytes"
 	"context"
+	"sort"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -102,17 +104,25 @@ var scanExplodedSymbols = basestore.NewSliceScanner(func(s dbutil.Scanner) (*sym
 })
 
 func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
-	explodedSymbols := make([]string, 0, len(symbolNames))
+	trimmedDescriptorMap := make(map[string]struct{}, len(symbolNames))
 	for _, symbolName := range symbolNames {
 		ex, err := symbols.NewExplodedSymbol(symbolName)
 		if err != nil {
 			return nil, err
 		}
-		explodedSymbols = append(
-			explodedSymbols,
-			"%"+ex.Descriptor+"%",
-		)
+
+		// TODO: BIT OF A HACK
+		parts := strings.Split(ex.Descriptor, "/")
+		trimmedDescriptorMap[parts[len(parts)-1]] = struct{}{}
 	}
 
-	return explodedSymbols, nil
+	descriptorWildcards := make([]string, 0, len(trimmedDescriptorMap))
+	for symbol := range trimmedDescriptorMap {
+		if symbol != "" {
+			descriptorWildcards = append(descriptorWildcards, "%"+symbol)
+		}
+	}
+	sort.Strings(descriptorWildcards)
+
+	return descriptorWildcards, nil
 }
