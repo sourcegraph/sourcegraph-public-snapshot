@@ -404,7 +404,7 @@ commands:
 
   docsite:
     description: Docsite instance serving the docs
-    cmd: bazel run //doc:serve
+    cmd: bazel run --noshow_progress --noshow_loading_progress //doc:serve
 
   syntax-highlighter:
     ignoreStdout: true
