@@ -2580,6 +2580,44 @@ COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
 
+CREATE TABLE file_embedding_job_stats (
+    job_id integer NOT NULL,
+    is_incremental boolean DEFAULT false NOT NULL,
+    files_total integer DEFAULT 0 NOT NULL,
+    files_embedded integer DEFAULT 0 NOT NULL,
+    chunks_embedded integer DEFAULT 0 NOT NULL,
+    files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
+    bytes_embedded integer DEFAULT 0 NOT NULL
+);
+
+CREATE TABLE file_embedding_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    file_id text NOT NULL,
+    file_type text DEFAULT 'html'::text NOT NULL
+);
+
+CREATE SEQUENCE file_embedding_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE file_embedding_jobs_id_seq OWNED BY file_embedding_jobs.id;
+
 CREATE TABLE github_app_installs (
     id integer NOT NULL,
     app_id integer NOT NULL,
@@ -4997,6 +5035,8 @@ ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SE
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
 
+ALTER TABLE ONLY file_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('file_embedding_jobs_id_seq'::regclass);
+
 ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
 
 ALTER TABLE ONLY github_apps ALTER COLUMN id SET DEFAULT nextval('github_apps_id_seq'::regclass);
@@ -5355,6 +5395,12 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
+
+ALTER TABLE ONLY file_embedding_job_stats
+    ADD CONSTRAINT file_embedding_job_stats_pkey PRIMARY KEY (job_id);
+
+ALTER TABLE ONLY file_embedding_jobs
+    ADD CONSTRAINT file_embedding_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY github_app_installs
     ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
@@ -6510,6 +6556,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY file_embedding_job_stats
+    ADD CONSTRAINT file_embedding_job_stats_job_id_fkey FOREIGN KEY (job_id) REFERENCES file_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY codeintel_initial_path_ranks_processed
     ADD CONSTRAINT fk_codeintel_initial_path_ranks FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE;
