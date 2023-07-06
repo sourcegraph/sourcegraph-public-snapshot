@@ -9,31 +9,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
-type traceContextKey string
-
-const traceKey = traceContextKey("trace")
-
-// contextWithTrace returns a new context.Context that holds a reference to trace's
-// SpanContext. External callers should likely use CopyContext, as this properly propagates all
-// tracing context from one context to another.
-func contextWithTrace(ctx context.Context, tr *Trace) context.Context {
-	ctx = oteltrace.ContextWithSpan(ctx, tr.oteltraceSpan)
-	ctx = context.WithValue(ctx, traceKey, tr)
-	return ctx
-}
-
 // FromContext returns the Trace previously associated with ctx, or
 // nil if no such Trace could be found.
 func FromContext(ctx context.Context) *Trace {
-	tr, _ := ctx.Value(traceKey).(*Trace)
-	if tr == nil {
-		// There is no Trace in the context, so check for a raw OTel span we can use.
-		span := oteltrace.SpanFromContext(ctx)
-		if span.IsRecording() {
-			tr = &Trace{oteltraceSpan: span}
-		}
+	if span := oteltrace.SpanFromContext(ctx); span.SpanContext().IsValid() {
+		return &Trace{span}
 	}
-	return tr
+	return nil
 }
 
 // CopyContext copies the tracing-related context items from one context to another and returns that

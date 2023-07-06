@@ -27,5 +27,5 @@ func (t Tracer) New(ctx context.Context, name string, attrs ...attribute.KeyValu
 		Start(ctx, name, oteltrace.WithAttributes(attrs...))
 
 	trace := &Trace{oteltraceSpan: otelSpan}
-	return trace, contextWithTrace(ctx, trace)
+	return trace, ctx
 }
