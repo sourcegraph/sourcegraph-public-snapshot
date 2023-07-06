@@ -13,7 +13,7 @@ type Operations struct {
 	Compose       *observation.Operation
 	Delete        *observation.Operation
 	ExpireObjects *observation.Operation
-	List		  *observation.Operation
+	List          *observation.Operation
 }
 
 func NewOperations(observationCtx *observation.Context, domain, storeName string) *Operations {
