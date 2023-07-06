@@ -4,6 +4,7 @@
     import { page } from '$app/stores'
     import Icon from '$lib/Icon.svelte'
     import FileTree from '$lib/repo/FileTree.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
@@ -13,7 +14,7 @@
         return arr[arr.length - 1]
     }
 
-    $: treeOrError = data.treeEntries
+    $: treeOrError = asStore(data.treeEntries.deferred)
     let showSidebar = true
 </script>
 

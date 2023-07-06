@@ -1,12 +1,13 @@
 <script lang="ts">
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: branches = data.branches
+    $: branches = asStore(data.branches.deferred)
     $: nodes = !$branches.loading && $branches.data ? $branches.data.nodes : null
     $: total = !$branches.loading && $branches.data ? $branches.data.totalCount : null
 </script>
