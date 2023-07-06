@@ -124,8 +124,8 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
   interfaces:
     - JobTokenStore
-- filename: enterprise/internal/github_apps/store/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store
+- filename: internal/github_apps/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/github_apps/store
   interfaces:
     - GitHubAppsStore
 - filename: internal/embeddings/mocks_temp.go

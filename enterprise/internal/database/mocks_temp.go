@@ -11,10 +11,10 @@ import (
 	"database/sql"
 	"sync"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
+	store "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
 // MockEnterpriseDB is a mock implementation of the EnterpriseDB interface

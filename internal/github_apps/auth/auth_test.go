@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"

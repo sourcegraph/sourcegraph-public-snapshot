@@ -10,12 +10,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

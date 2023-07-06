@@ -14,11 +14,11 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/lib/errors"

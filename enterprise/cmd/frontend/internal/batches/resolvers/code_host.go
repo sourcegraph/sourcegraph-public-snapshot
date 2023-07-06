@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	ghstore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 

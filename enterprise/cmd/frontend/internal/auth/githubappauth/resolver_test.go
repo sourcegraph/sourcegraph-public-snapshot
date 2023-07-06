@@ -13,10 +13,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )

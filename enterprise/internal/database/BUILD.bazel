@@ -5,24 +5,17 @@ go_library(
     name = "database",
     srcs = [
         "database.go",
-        "external_services.go",
         "mocks_temp.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/database",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/authz/bitbucketserver",
-        "//enterprise/internal/authz/github",
-        "//enterprise/internal/authz/gitlab",
-        "//enterprise/internal/authz/perforce",
-        "//enterprise/internal/github_apps/store",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbconn",
         "//internal/database/dbutil",
         "//internal/encryption",
-        "//internal/types",
-        "//schema",
+        "//internal/github_apps/store",
         "@com_github_sourcegraph_log//:log",
     ],
 )
@@ -31,25 +24,11 @@ go_test(
     name = "database_test",
     size = "large",
     timeout = "long",
-    srcs = [
-        "db_test.go",
-        "external_services_test.go",
-        "main_test.go",
-    ],
+    srcs = ["main_test.go"],
     embed = [":database"],
     tags = [
         # Test requires localhost database
         "requires-network",
     ],
-    deps = [
-        "//internal/conf",
-        "//internal/database",
-        "//internal/extsvc",
-        "//internal/licensing",
-        "//lib/errors",
-        "//schema",
-        "@com_github_google_go_cmp//cmp",
-        "@com_github_kylelemons_godebug//pretty",
-        "@com_github_sourcegraph_log//logtest",
-    ],
+    deps = ["@com_github_sourcegraph_log//logtest"],
 )

@@ -11,16 +11,16 @@ import (
 	"sync"
 
 	log "github.com/sourcegraph/log"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	encryption "github.com/sourcegraph/sourcegraph/internal/encryption"
+	types "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	types1 "github.com/sourcegraph/sourcegraph/internal/types"
 	errors "github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // MockGitHubAppsStore is a mock implementation of the GitHubAppsStore
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/github_apps/store) used for
+// unit testing.
 type MockGitHubAppsStore struct {
 	// BulkRemoveInstallationsFunc is an instance of a mock function object
 	// controlling the behavior of the method BulkRemoveInstallations.

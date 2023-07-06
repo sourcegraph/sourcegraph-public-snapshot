@@ -12,8 +12,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

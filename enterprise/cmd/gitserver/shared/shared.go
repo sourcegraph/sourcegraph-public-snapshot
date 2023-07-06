@@ -9,11 +9,11 @@ import (
 	"github.com/sourcegraph/log"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
+	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 )
 
 func enterpriseInit(db database.DB, keyring keyring.Ring) {

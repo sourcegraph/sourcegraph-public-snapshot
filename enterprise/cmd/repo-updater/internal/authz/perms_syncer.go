@@ -56,7 +56,7 @@ type PermsSyncer struct {
 	// operation (usually <1s).
 	permsUpdateLock sync.Mutex
 	// The database interface for any permissions operations.
-	permsStore edb.PermsStore
+	permsStore database.PermsStore
 }
 
 // NewPermsSyncer returns a new permissions syncer.
@@ -64,7 +64,7 @@ func NewPermsSyncer(
 	logger log.Logger,
 	db database.DB,
 	reposStore repos.Store,
-	permsStore edb.PermsStore,
+	permsStore database.PermsStore,
 	clock func() time.Time,
 ) *PermsSyncer {
 	return &PermsSyncer{

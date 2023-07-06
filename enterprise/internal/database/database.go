@@ -6,11 +6,11 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	gha "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
 type EnterpriseDB interface {

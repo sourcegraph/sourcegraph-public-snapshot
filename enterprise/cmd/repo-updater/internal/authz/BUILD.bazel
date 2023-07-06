@@ -56,7 +56,6 @@ go_test(
     ],
     deps = [
         "//enterprise/internal/authz/github",
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
