@@ -432,65 +432,67 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 	}
 	defer rc.Close()
 
-	trySaveToDisk := func(_ io.Reader) (gzipReadSeeker, *os.File, error) {
-		var indexReader gzipReadSeeker
-		tmpFilePattern := fmt.Sprintf("upload-%d-tmp.gz", uploadStats.ID)
-		tmpFile, err := os.CreateTemp("", tmpFilePattern)
-		if err != nil {
-			logger.Warn("Failed to create temporary file to save upload for streaming",
-				log.NamedError("err", err),
-				log.String("filename", uploadFilename))
-		} else if indexReader, err = newGzipReadSeeker(tmpFile); err != nil {
-			return indexReader, nil, errors.Wrapf(err, "failed to seek for file: %s", tmpFile.Name())
-		}
-		return indexReader, tmpFile, nil
-	}
+	indexReader, cleanup, err := func() (_ gzipReadSeeker, cleanup func() error, err error) {
+		// If we have an uncompressed size available on the record and that exceeds what
+		// we want to keep resident in memory during processing, we'll want to write the
+		// file to disk so we can seek it locally for a multi-pass read.
+		shouldWriteToDisk := uploadStats.UncompressedSize != nil && *uploadStats.UncompressedSize > uncompressedSizeLimitBytes
 
-	var readerForDiskWrite io.Reader = nil
-	var buf []byte
-	compressedSizeHint := int64(0)
-	if uploadStats.UploadSize != nil {
-		compressedSizeHint = *uploadStats.UploadSize
-	}
-	if uploadStats.UncompressedSize != nil && *uploadStats.UncompressedSize > uncompressedSizeLimitBytes {
-		readerForDiskWrite = rc
-	} else {
-		buf, err = readAllWithSizeHint(rc, compressedSizeHint)
-		if err != nil {
-			return errors.Wrap(err, "failed to read upload file")
-		}
-		compressedSize := len(buf)
-		// The factor of 5 is based on ~worst-case gzip compression ratio.
-		// See NOTE(scip-index-size-stats)
-		uncompressedSizeEstimate := compressedSize * 5
-		if uncompressedSizeEstimate > uncompressedSizeLimitBytes {
-			readerForDiskWrite = bytes.NewReader(buf)
-		}
-	}
-	var indexReader gzipReadSeeker
-	if readerForDiskWrite != nil {
-		var tmpFile *os.File
-		indexReader, tmpFile, err = trySaveToDisk(readerForDiskWrite)
-		if tmpFile != nil {
-			defer os.RemoveAll(tmpFile.Name())
-		}
-		if err != nil {
-			return err
-		}
-	}
-	if indexReader.inner == nil {
-		if buf == nil {
-			// trySaveToDisk may return err == nil and indexReader.inner == nil,
-			// e.g. if it fails to create a temporary file.
-			// In that case, we haven't read the data yet.
-			if buf, err = readAllWithSizeHint(rc, compressedSizeHint); err != nil {
-				return errors.Wrap(err, "failed to read upload file")
+		if !shouldWriteToDisk {
+			compressedSizeHint := int64(0)
+			if uploadStats.UploadSize != nil {
+				compressedSizeHint = *uploadStats.UploadSize
 			}
+			buf, err := readAllWithSizeHint(rc, compressedSizeHint)
+			if err != nil {
+				return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to read upload file")
+			}
+
+			// Re-check the size of the payload. Once we've read it into memory we may
+			// choose to dump it to disk anyway. The following factor of 5 is based on
+			// ~worst-case gzip compression ratio. See NOTE(scip-index-size-stats).
+			compressedSize := len(buf)
+			uncompressedSizeEstimate := compressedSize * 5
+			shouldWriteToDisk := uncompressedSizeEstimate > uncompressedSizeLimitBytes
+
+			if !shouldWriteToDisk {
+				// No temp files created, nothing to cleanup
+				cleanup := func() error { return nil }
+
+				// Payload is small enough to process in-memory, return a reader backed
+				// by the slice we've already read from the blobstore
+				indexReader, err := newGzipReadSeeker(bytes.NewReader(buf))
+				return indexReader, cleanup, err
+			}
+
+			// Fallthrough:
+			// Replace the reader we'll write to disk with the content we've already read
+			rc = io.NopCloser(bytes.NewReader(buf))
 		}
-		if indexReader, err = newGzipReadSeeker(bytes.NewReader(buf)); err != nil {
-			return errors.Wrap(err, "failed to create gzip reader")
+
+		tempFile, err := os.CreateTemp("", fmt.Sprintf("upload-%d-tmp.gz", uploadStats.ID))
+		if err != nil {
+			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to create temporary file to save upload for streaming")
 		}
+
+		// Immediately create cleanup function after successful creation of a temporary file
+		// and on any non-nil error from this function ensure we clean up any resources we've
+		// created on the failure path.
+		cleanup = func() error { return os.RemoveAll(tempFile.Name()) }
+		defer func() {
+			if err != nil {
+				_ = cleanup()
+			}
+		}()
+
+		// Wrap the file reader
+		indexReader, err := newGzipReadSeeker(tempFile)
+		return indexReader, cleanup, errors.Wrapf(err, "failed to decompress file %q", tempFile.Name())
+	}()
+	if err != nil {
+		return err
 	}
+	defer func() { _ = cleanup() }()
 
 	if err := fn(indexReader); err != nil {
 		return err
