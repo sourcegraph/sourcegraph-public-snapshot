@@ -4,8 +4,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "cloud",
     srcs = ["site_config.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/cloud",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/cloud",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",
         "//lib/errors",
