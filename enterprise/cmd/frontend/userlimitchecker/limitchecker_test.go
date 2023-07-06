@@ -11,6 +11,35 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+func TestGetUserCount(t *testing.T) {
+	logger := log.NoOp()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+	userStore := db.Users()
+
+	var createdUsers []*types.User
+	for i, user := range users {
+		newUser, err := userStore.Create(ctx, user)
+		if err != nil {
+			t.Errorf("could not create new user %s", err)
+		}
+		createdUsers = append(createdUsers, newUser)
+		if i == 0 {
+			createdUsers[i].SiteAdmin = true
+		}
+	}
+
+	got, err := getUserCount(ctx, db)
+	if err != nil {
+		t.Errorf("could not get user count: %s", err)
+	}
+
+	want := 4
+	if got != want {
+		t.Errorf("got %d want %d", got, want)
+	}
+}
+
 func TestGetSiteAdmins(t *testing.T) {
 	logger := log.NoOp()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))

@@ -3,7 +3,6 @@ package userlimitchecker
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -55,7 +54,7 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 
 // function to check whether the user count is approaching the license user limit
 func atOrOverUserLimit(ctx context.Context, db database.DB) (bool, error) {
-	userCount, err := getUserCount(ctx, log.NoOp())
+	userCount, err := getUserCount(ctx, db)
 	if err != nil {
 		return false, err
 	}
@@ -72,8 +71,9 @@ func atOrOverUserLimit(ctx context.Context, db database.DB) (bool, error) {
 }
 
 // function to get the user count
-func getUserCount(ctx context.Context, logger log.Logger) (int, error) {
-	userCount, err := database.Users(logger).Count(ctx, &database.UsersListOptions{})
+func getUserCount(ctx context.Context, db database.DB) (int, error) {
+	userStore := db.Users()
+	userCount, err := userStore.Count(ctx, &database.UsersListOptions{})
 	if err != nil {
 		return 0, err
 	}
