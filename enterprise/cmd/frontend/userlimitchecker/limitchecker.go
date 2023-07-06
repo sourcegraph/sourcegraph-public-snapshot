@@ -2,13 +2,30 @@ package userlimitchecker
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/log"
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
+
+var approachingUserLimitEmailTemplate = txemail.MustValidate(txtypes.Templates{
+	Subject: `Your user count is approaching your license's limit`,
+	Text: `
+Hi there! You're approaching the user limit allowed by your Sourcegraph License. You currently have {{.RemainingUsers}} left.
+
+Reach out to your rep at Sourcegraph if you'd like to increase the limit.
+`,
+	HTML: `
+<p>
+Hi there! You're approaching the user limit allowed by your Sourcegraph License. You currently have {{.RemainingUsers}} left.
+</p>
+<p>Reach out to your rep at Sourcegraph if you'd like to increase the limit.</p>
+`,
+})
 
 // function to send email if approaching
 func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
@@ -18,9 +35,21 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	}
 
 	if atOrOverUserLimit {
-		// TODO replace with logic for sending email
-		fmt.Println("Send email!")
+		if err := txemail.Send(ctx, "approaching_user_limit", txemail.Message{
+			To:       []string{"jasonhawkharris@gmail.com"},
+			Template: approachingUserLimitEmailTemplate,
+			Data: struct {
+				FromName string
+				Message  string
+			}{
+				FromName: "Jason Hawk Harris",
+				Message:  "This is a test email",
+			},
+		}); err != nil {
+			return err
+		}
 	}
+
 	return nil
 }
 
@@ -71,4 +100,32 @@ func getUserLimit(ctx context.Context, db database.DB) (int, error) {
 	}
 
 	return 0, nil
+}
+
+func getSiteAdmins(ctx context.Context, db database.DB, logger log.Logger) ([]string, error) {
+	var siteAdminEmails []string
+
+	userStore := database.Users(logger)
+	users, err := userStore.List(ctx, &database.UsersListOptions{})
+	if err != nil {
+		return []string{}, err
+	}
+
+	for _, user := range users {
+		if user.SiteAdmin {
+			email, verified, err := getUserEmail(ctx, db, user)
+			if err != nil {
+				return siteAdminEmails, err
+			}
+
+			if verified {
+				siteAdminEmails = append(siteAdminEmails, email)
+			}
+		}
+	}
+	return siteAdminEmails, nil
+}
+
+func getUserEmail(ctx context.Context, db database.DB, u *types.User) (string, bool, error) {
+	return database.UserEmailsWith(db).GetPrimaryEmail(ctx, u.ID)
 }

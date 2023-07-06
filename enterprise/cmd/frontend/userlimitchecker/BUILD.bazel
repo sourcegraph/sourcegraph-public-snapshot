@@ -1,0 +1,29 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "userlimitchecker",
+    srcs = ["limitchecker.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/userlimitchecker",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//enterprise/cmd/frontend/internal/dotcom/productsubscription",
+        "//internal/database",
+        "//internal/txemail",
+        "//internal/txemail/txtypes",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "userlimitchecker_test",
+    srcs = ["limitchecker_test.go"],
+    embed = [":userlimitchecker"],
+    deps = [
+        "//internal/database",
+        "//internal/database/dbtest",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
