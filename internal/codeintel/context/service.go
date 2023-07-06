@@ -105,9 +105,13 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		return nil, err
 	}
 
-	symbolNames := make([]string, 0, len(syntectDocument.Occurrences))
+	symbolNameMap := map[string]struct{}{}
 	for _, occurrence := range syntectDocument.Occurrences {
-		symbolNames = append(symbolNames, occurrence.Symbol)
+		symbolNameMap[occurrence.Symbol] = struct{}{}
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
 	}
 	sort.Strings(symbolNames)
 
