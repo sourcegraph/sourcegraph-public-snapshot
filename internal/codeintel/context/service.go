@@ -168,6 +168,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		return nil, err
 	}
 
+	syntectNameSetBySymbol := map[string]map[string]struct{}{}
+	for syntectName, explodedSymbols := range scipNamesBySyntectName {
+		for _, explodedSymbol := range explodedSymbols {
+			symbol := explodedSymbol.Symbol()
+			if _, ok := syntectNameSetBySymbol[symbol]; !ok {
+				syntectNameSetBySymbol[symbol] = map[string]struct{}{}
+			}
+
+			syntectNameSetBySymbol[symbol][syntectName] = struct{}{}
+		}
+	}
+
 	fmt.Printf("PHASE 3\n")
 	// PHASE 3: Gather definitions for each relevant SCIP symbol
 
@@ -178,19 +190,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}
 	preciseDataList := []*preciseData{}
 
-	for syntectName, names := range scipNamesBySyntectName {
-		for _, name := range names {
-			ident := name.Symbol()
+	for ident, syntectNames := range syntectNameSetBySymbol {
+		// TODO - these are duplicated and should also be batched
+		fmt.Printf("> Fetching definitions of %q\n", ident)
 
-			// TODO - these are duplicated and should also be batched
-			fmt.Printf("> Fetching definitions of %q\n", ident)
+		// for _, upload := range uploads {
+		ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{ident})
+		if err != nil {
+			return nil, err
+		}
 
-			// for _, upload := range uploads {
-			ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{ident})
-			if err != nil {
-				return nil, err
-			}
-
+		// TODO - should this ever be non-singleton?
+		for syntectName := range syntectNames {
 			preciseDataList = append(preciseDataList, &preciseData{
 				syntectName: syntectName,
 				symbolName:  ident,
