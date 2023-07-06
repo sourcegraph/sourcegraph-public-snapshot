@@ -152,6 +152,11 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				}
 			}
 
+			if len(symbolNames) > 20 {
+				fmt.Printf("TOO MANY RESULTS FOR %q\n", syntectName)
+				symbolNames = nil
+			}
+
 			if len(symbolNames) > 0 {
 				scipNamesBySyntectName[syntectName] = symbolNames
 			}
