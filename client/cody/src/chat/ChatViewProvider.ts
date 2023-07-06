@@ -523,7 +523,11 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 // todo: add plugins' results to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     [...getPreamble(this.codebaseContext.getCodebase()), ...pluginContextMessages],
+<<<<<<< Updated upstream
                     this.maxPromptLimit
+=======
+                    this.maxPromptTokens
+>>>>>>> Stashed changes
                 )
                 console.log('prompt:\n%j', prompt)
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
