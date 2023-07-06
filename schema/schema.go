@@ -662,6 +662,8 @@ type Embeddings struct {
 	Endpoint string `json:"endpoint,omitempty"`
 	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
 	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// FileFilters description: Filters that will decode which files om a repository get embedded.
+	FileFilters *FileFilters `json:"fileFilters,omitempty"`
 	// Incremental description: Whether to generate embeddings incrementally. If true, only files that have changed since the last run will be processed.
 	Incremental *bool `json:"incremental,omitempty"`
 	// MaxCodeEmbeddingsPerRepo description: The maximum number of embeddings for code files to generate per repo
@@ -977,6 +979,16 @@ type ExternalIdentity struct {
 	// GitlabProvider description: The name that identifies the authentication provider to GitLab. This is passed to the `?provider=` query parameter in calls to the GitLab Users API. If you're not sure what this value is, you can look at the `identities` field of the GitLab Users API result (`curl  -H 'PRIVATE-TOKEN: $YOUR_TOKEN' $GITLAB_URL/api/v4/users`).
 	GitlabProvider string `json:"gitlabProvider"`
 	Type           string `json:"type"`
+}
+
+// FileFilters description: Filters that will decode which files om a repository get embedded.
+type FileFilters struct {
+	// ExcludedFilePathPatterns description: A list of glob patterns that match file paths you want to exclude from embeddings. This is useful to exclude files with low information value (e.g., SVG files, test fixtures, mocks, auto-generated files, etc.).
+	ExcludedFilePathPatterns []string `json:"excludedFilePathPatterns,omitempty"`
+	// IncludedFilePathPatterns description: A list of glob patterns that match file paths you want to include in embeddings. If specified, all files not matching these include patterns are excluded.
+	IncludedFilePathPatterns []string `json:"includedFilePathPatterns,omitempty"`
+	// MaxFileSizeBytes description: The maximum file size (in bytes) to include in embeddings. Must be between 0 and 100000 (1 MB).
+	MaxFileSizeBytes int `json:"maxFileSizeBytes,omitempty"`
 }
 
 // FusionClient description: Configuration for the experimental p4-fusion client
