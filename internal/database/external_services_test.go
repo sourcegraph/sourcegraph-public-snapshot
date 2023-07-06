@@ -395,7 +395,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	now := time.Now()
+	now := timeutil.Now()
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
