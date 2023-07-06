@@ -123,11 +123,23 @@ func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel,
 		// return a 503 to the client. It's not them being limited, it's us and that an operations
 		// error on our side.
 		if resp.StatusCode == http.StatusTooManyRequests {
-			return nil, response.NewHTTPStatusCodeError(http.StatusServiceUnavailable, errors.Newf("we're facing too much load at the moment, please retry"))
+			return nil, response.NewHTTPStatusCodeError(http.StatusServiceUnavailable,
+				errors.Newf("we're facing too much load at the moment, please retry"))
 		}
+
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		// We don't forward the status code here, everything but 429 should turn into a 500 error.
-		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
+
+		// If OpenAI tells us we gave them a bad request, blame the client and
+		// tell them.
+		if resp.StatusCode == http.StatusBadRequest {
+			return nil, response.NewHTTPStatusCodeError(http.StatusBadRequest,
+				errors.Newf("bad request: %s", string(respBody)))
+		}
+
+		// We don't forward other status codes, we just return a generic error
+		// instead.
+		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s",
+			req.Method, req.URL.String(), resp.StatusCode, string(respBody))
 	}
 
 	var response openaiEmbeddingsResponse
