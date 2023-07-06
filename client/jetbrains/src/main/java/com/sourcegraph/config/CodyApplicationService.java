@@ -30,7 +30,12 @@ public class CodyApplicationService
   @Nullable public String anonymousUserId;
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
-  @Nullable public Boolean areCodyCompletionsEnabled;
+
+  @Deprecated(since = "3.0.4")
+  @Nullable
+  public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
+
+  @Nullable public Boolean isCodyAutoCompleteEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
 
@@ -87,9 +92,7 @@ public class CodyApplicationService
   @Nullable
   public String getEnterpriseAccessToken() {
     // configuring enterpriseAccessToken overrides the deprecated accessToken field
-    String configuredEnterpriseAccessToken =
-        StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
-    return configuredEnterpriseAccessToken;
+    return StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
   }
 
   @Override
@@ -117,8 +120,10 @@ public class CodyApplicationService
     return isUrlNotificationDismissed;
   }
 
-  public boolean areCodyCompletionsEnabled() {
-    return Optional.ofNullable(areCodyCompletionsEnabled).orElse(false);
+  public boolean isCodyAutoCompleteEnabled() {
+    return Optional.ofNullable(isCodyAutoCompleteEnabled) // the current key takes priority
+        .or(() -> Optional.ofNullable(areCodyCompletionsEnabled)) // fallback to the old key
+        .orElse(false);
   }
 
   public boolean isAccessTokenNotificationDismissed() {
@@ -153,6 +158,7 @@ public class CodyApplicationService
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
     this.areCodyCompletionsEnabled = settings.areCodyCompletionsEnabled;
+    this.isCodyAutoCompleteEnabled = settings.isCodyAutoCompleteEnabled;
     this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;
     this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
