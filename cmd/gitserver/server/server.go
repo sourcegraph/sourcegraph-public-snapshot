@@ -2404,11 +2404,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		return err
 	}
 
-	// if opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.which != dedupeSource {
-	if err := gitSetAutoGC(tmp); err != nil {
-		return err
+	if opts != nil && opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.which != dedupeSource {
+		if err := gitSetAutoGC(tmp); err != nil {
+			return err
+		}
 	}
-	// }
 
 	if overwrite {
 		// remove the current repo by putting it into our temporary directory
@@ -2441,7 +2441,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	// 4. Run git repack
 	// 5. Run git gc
 
-	if opts.DeduplicatedCloneOptions != nil {
+	if opts != nil && opts.DeduplicatedCloneOptions != nil {
 		switch opts.DeduplicatedCloneOptions.which {
 		case dedupeSource:
 			sourceRepoCloneOpts := *opts
