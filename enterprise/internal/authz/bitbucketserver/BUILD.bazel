@@ -11,11 +11,11 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/internal/authz/types",
-        "//enterprise/internal/licensing",
         "//internal/authz",
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketserver",
+        "//internal/licensing",
         "//internal/trace",
         "//internal/types",
         "//lib/errors",

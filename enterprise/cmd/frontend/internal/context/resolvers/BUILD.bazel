@@ -8,8 +8,8 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/codycontext:context",
         "//internal/authz",
+        "//internal/codycontext:context",
         "//internal/database",
         "//internal/gitserver",
         "//internal/trace",
@@ -29,11 +29,11 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/codycontext:context",
         "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/codycontext:context",
         "//internal/conf",
         "//internal/database",
         "//internal/database/dbtest",
