@@ -11,9 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Trace is a combined version of opentelemetry.Span and (optionally)
-// golang.org/x/net/trace.Trace, applying its various API functions to both
-// underlying trace types. Use New to construct one.
+// Trace is a wrapper of opentelemetry.Span. Use New to construct one.
 type Trace struct {
 	// oteltraceSpan is always set.
 	oteltraceSpan oteltrace.Span
@@ -35,7 +33,7 @@ func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
 // AddEvent records an event on this span with the given name and attributes.
 //
 // Note that it differs from the underlying (oteltrace.Span).AddEvent slightly, and only
-// accepts attributes for simplicity, and for ease of adapting to nettrace.
+// accepts attributes for simplicity.
 func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
 	t.oteltraceSpan.AddEvent(name, oteltrace.WithAttributes(attributes...))
 }
