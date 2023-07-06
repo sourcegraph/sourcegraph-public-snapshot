@@ -30,7 +30,7 @@ export class InlineController {
     private commentController: vscode.CommentController | null = null
     public thread: vscode.CommentThread | null = null // a thread is a comment
     private threads = new Map<string, vscode.CommentThread>()
-    private comment: Comment | null = null
+    private inProgressComment: Comment | null = null
 
     private currentTaskId = ''
     // Workspace State
@@ -154,7 +154,6 @@ export class InlineController {
         this.isInProgress = true
         const humanInput = reply.text
         const thread = reply.thread
-
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
@@ -162,7 +161,7 @@ export class InlineController {
 
         const comment = new Comment({
             input: humanInput,
-            name: 'You',
+            name: 'Me',
             iconPath: this.userIcon,
             parent: thread,
             contextValue: 'loading',
@@ -175,7 +174,10 @@ export class InlineController {
 
         this.thread = thread
         this.selection = await this.makeSelection(isFixMode)
-        this.threads.set(thread.uri.toString(), thread)
+        const firstComment = thread.comments[0]
+        if (firstComment && firstComment instanceof Comment) {
+            this.threads.set(firstComment.id, thread)
+        }
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
     /**
@@ -193,11 +195,16 @@ export class InlineController {
             parent: this.thread,
         }
 
-        if (this.comment) {
+        if (this.inProgressComment) {
+            /**
+             * We have to reassign this.thread.comments in order for the UI to re-render in VS Code.
+             * Note: VS Code throttles comment updates so they are only applied every 100ms, so this is suboptimal streaming.
+             * Relevant VS Code logic: https://sourcegraph.com/github.com/microsoft/vscode@6c8cdf325eb1dc8a0e2ea9205a1d2ca05f69c101/-/blob/src/vs/workbench/api/common/extHostComments.ts?L461-492
+             */
             this.thread.comments = this.thread.comments.map(comment => {
-                if (comment instanceof Comment && comment.id === this.comment?.id) {
+                if (comment instanceof Comment && comment.id === this.inProgressComment?.id) {
                     return new Comment({
-                        id: this.comment.id,
+                        id: this.inProgressComment.id,
                         ...replyComment,
                     })
                 }
@@ -205,13 +212,18 @@ export class InlineController {
                 return comment
             })
         } else {
-            this.comment = new Comment(replyComment)
-            this.thread.comments = [...this.thread.comments, this.comment]
+            this.inProgressComment = new Comment(replyComment)
+            this.thread.comments = [...this.thread.comments, this.inProgressComment]
+        }
+
+        const firstComment = this.thread.comments[0]
+        if (firstComment && firstComment instanceof Comment) {
+            this.threads.set(firstComment.id, this.thread)
         }
 
         // Terminal states
         if (state === 'complete' || state === 'error') {
-            this.comment = null
+            this.inProgressComment = null
             this.thread.state = state === 'error' ? 1 : 0
             this.thread.canReply = state !== 'error'
             void vscode.commands.executeCommand('setContext', 'cody.replied', true)
@@ -245,7 +257,7 @@ export class InlineController {
     }
 
     public async error(): Promise<void> {
-        this.reply('Request failed. Please close this and try again.', true)
+        this.reply('Request failed. Please close this and try again.', 'error')
         if (this.currentTaskId) {
             await this.stopFixMode(true)
         }
