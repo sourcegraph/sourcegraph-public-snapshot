@@ -331,7 +331,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 text += content
                 this.transcript.addAssistantResponse(reformatBotMessage(text, responsePrefix))
                 this.sendTranscript()
-                this.editor.controllers.inline.reply(text, false, 'streaming')
+                this.editor.controllers.inline.reply(text, 'streaming')
                 return Promise.resolve()
             },
             onTurnComplete: async () => {
@@ -353,7 +353,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                     // TODO(keegancsmith) guardrails may be slow, we need to make this async update the interaction.
                     highlightedDisplayText = await this.guardrailsAnnotateAttributions(highlightedDisplayText)
                     this.transcript.addAssistantResponse(text || '', highlightedDisplayText)
-                    this.editor.controllers.inline.reply(text, false, 'complete')
+                    this.editor.controllers.inline.reply(text, 'complete')
                 }
                 void this.onCompletionEnd()
             },

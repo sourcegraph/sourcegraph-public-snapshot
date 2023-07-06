@@ -150,51 +150,50 @@ export class InlineController {
     /**
      * List response from Human as comment
      */
-    public async chat(threads: vscode.CommentReply, isFixMode: boolean = false): Promise<void> {
+    public async chat(reply: vscode.CommentReply, isFixMode: boolean = false): Promise<void> {
         this.isInProgress = true
-        const humanInput = threads.text
-        const thread = threads.thread
+        const humanInput = reply.text
+        const thread = reply.thread
+
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
         thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
-        const comment = new Comment(humanInput, 'Me', this.userIcon, isFixMode, thread, 'loading')
+
+        const comment = new Comment(humanInput, 'You', this.userIcon, isFixMode, thread, 'loading')
         thread.comments = [...thread.comments, comment]
-        await this.runFixMode(isFixMode, comment, thread)
+
+        if (isFixMode) {
+            await this.runFixMode(comment, thread)
+        }
+
         this.thread = thread
         this.selection = await this.makeSelection(isFixMode)
-        const firstCommentId = thread.comments[0].label
-        if (firstCommentId) {
-            this.threads.set(firstCommentId, thread)
-        }
+        this.threads.set(thread.uri.toString(), thread)
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
     /**
      * List response from Cody as comment
      */
-    public reply(text: string, error = false, state: 'streaming' | 'complete'): void {
+    public reply(text: string, state: 'streaming' | 'complete' | 'error'): void {
         if (!this.thread || this.thread.state) {
             return
         }
         const replyText = text
         if (this.comment) {
-            console.log('Updating comment...')
             this.comment.update(replyText)
             // eslint-disable-next-line no-self-assign
             this.thread.comments = this.thread.comments
-            console.log('Updated comment...')
         } else {
             this.comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
             this.thread.comments = [...this.thread.comments, this.comment]
         }
-        // this.thread.canReply = !error
-        // this.thread.state = error ? 1 : 0
-        // const firstCommentId = this.thread.comments[0].label
-        // if (firstCommentId) {
-        //     this.threads.set(firstCommentId, this.thread)
-        // }
-        if (state === 'complete') {
+
+        // Terminal states
+        if (state === 'complete' || state === 'error') {
             this.comment = null
+            this.thread.state = state === 'error' ? 1 : 0
+            this.thread.canReply = state !== 'error'
             void vscode.commands.executeCommand('setContext', 'cody.replied', true)
         }
     }
@@ -234,10 +233,7 @@ export class InlineController {
     /**
      * Create code lense and initiate decorators for fix mode
      */
-    private async runFixMode(isFixMode: boolean, comment: Comment, thread: vscode.CommentThread): Promise<void> {
-        if (!isFixMode) {
-            return
-        }
+    private async runFixMode(comment: Comment, thread: vscode.CommentThread): Promise<void> {
         const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
         lens.updateState(CodyTaskState.asking, thread.range)
         this.codeLenses.set(comment.id, lens)
@@ -388,7 +384,6 @@ export class Comment implements vscode.Comment {
         this.id = timestamp.getTime().toString()
         this.body = this.markdown(input)
         this.author = { name, iconPath }
-        this.label = '#' + this.id
     }
 
     public update(input: string): void {
