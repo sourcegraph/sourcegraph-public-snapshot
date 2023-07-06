@@ -18,13 +18,6 @@ func Create(ctx context.Context, title string, driveSpec DriveSpec, out *std.Out
 	if err != nil {
 		return errors.Wrap(err, "cannot create RFC")
 	}
-	// newRfcId := 800
-
-	// srv, err := getService(ctx, ScopePermissionsReadWrite, out)
-	// if err != nil {
-	// 	return err
-	// }
-	// newFile, _ := srv.Files.Get("1d2SVjNAsBRkjZv28EuMPpaW7cSrXUGEi6mtVMTyO7qU").SupportsAllDrives(true).SupportsTeamDrives(true).Do()
 
 	if driveSpec == PrivateDrive {
 		newFile2, err := leaveBreadcrumbForPrivateOnPublic(ctx, newFile, newRfcId, out)
@@ -117,8 +110,6 @@ func updateRfcContent(ctx context.Context, newFile *drive.File, nextRfcId int, t
 				titleSize := int64(len(matches[4]))
 
 				nextRfcIdStr := strconv.Itoa(nextRfcId)
-				// rfcIdSize := int64(len(nextRfcIdStr))
-				// deltaNumber := numberSize - rfcIdSize
 				change = append(change, []*docs.Request{
 					// Replace the title
 					{
