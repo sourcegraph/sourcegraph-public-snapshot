@@ -11,6 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const tracerName = "sourcegraph/internal/trace"
+
+func GetTracer() oteltrace.Tracer {
+	return otel.GetTracerProvider().Tracer(tracerName)
+}
+
 // Trace is a wrapper of opentelemetry.Span. Use New to construct one.
 type Trace struct {
 	oteltrace.Span // never nil
@@ -20,9 +26,12 @@ type Trace struct {
 // For tips on naming, see the OpenTelemetry Span documentation:
 // https://opentelemetry.io/docs/specs/otel/trace/api/#span
 func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (Trace, context.Context) {
-	tracer := Tracer{TracerProvider: otel.GetTracerProvider()}
-	tr, ctx := tracer.New(ctx, name, attrs...)
-	return tr, ctx
+	return NewInTracer(ctx, GetTracer(), name, attrs...)
+}
+
+func NewInTracer(ctx context.Context, tracer oteltrace.Tracer, name string, attrs ...attribute.KeyValue) (Trace, context.Context) {
+	ctx, span := tracer.Start(ctx, name, oteltrace.WithAttributes(attrs...))
+	return Trace{span}, ctx
 }
 
 // AddEvent records an event on this span with the given name and attributes.

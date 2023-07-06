@@ -9,7 +9,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
@@ -35,8 +34,6 @@ type Store interface {
 
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
-	// SetTracer updates tracer for the store in place.
-	SetTracer(t trace.Tracer)
 
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) Store
@@ -99,8 +96,6 @@ type store struct {
 	Logger log.Logger
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
-	// Used for tracing calls to store methods. Uses otel.GetTracerProvider() by default.
-	Tracer trace.Tracer
 
 	txtrace *trace.Trace
 	txctx   context.Context
@@ -112,7 +107,6 @@ func NewStore(logger log.Logger, db database.DB) Store {
 	return &store{
 		Store:  s,
 		Logger: logger,
-		Tracer: trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 	}
 }
 
@@ -129,14 +123,12 @@ func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
-func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
 
 func (s *store) With(other basestore.ShareableStore) Store {
 	return &store{
 		Store:   s.Store.With(other),
 		Logger:  s.Logger,
 		Metrics: s.Metrics,
-		Tracer:  s.Tracer,
 	}
 }
 
@@ -169,7 +161,6 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 		Store:   txBase,
 		Logger:  s.Logger,
 		Metrics: s.Metrics,
-		Tracer:  s.Tracer,
 		txtrace: tr,
 		txctx:   ctx,
 	}, nil
@@ -208,7 +199,7 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 	if txctx == nil {
 		txctx = ctx
 	}
-	tr, txctx := s.Tracer.New(txctx, family)
+	tr, txctx := trace.New(txctx, family)
 	ctx = trace.CopyContext(ctx, txctx)
 	return &tr, ctx
 }

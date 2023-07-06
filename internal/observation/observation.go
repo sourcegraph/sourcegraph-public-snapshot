@@ -312,7 +312,11 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 // startTrace creates a new Trace object and returns the wrapped context. This returns
 // an unmodified context and a nil startTrace if no tracer was supplied on the observation context.
 func (op *Operation) startTrace(ctx context.Context) (trace.Trace, context.Context) {
-	return op.context.Tracer.New(ctx, op.kebabName)
+	tracer := op.context.Tracer
+	if tracer == nil {
+		tracer = trace.GetTracer()
+	}
+	return trace.NewInTracer(ctx, tracer, op.kebabName)
 }
 
 // emitErrorLogs will log as message if the operation has failed. This log contains the error
