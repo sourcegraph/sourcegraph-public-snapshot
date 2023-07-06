@@ -2,8 +2,6 @@ package lsifstore
 
 import (
 	"context"
-	"encoding/base64"
-	"fmt"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -12,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -65,25 +62,13 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		}
 
 		if _, ok := rangeBySymbol[occurrence.Symbol]; !ok {
-			symbolNames = append(symbolNames, occurrence.Symbol)
-			rangeBySymbol[occurrence.Symbol] = translateRange(scip.NewRange(occurrence.Range))
-
-			s, err := symbols.NewExplodedSymbol(occurrence.Symbol)
+			explodedSymbol, err := explodeSymbol(occurrence.Symbol)
 			if err != nil {
 				return "", shared.Range{}, false, err
 			}
-			explodedSymbols = append(
-				explodedSymbols,
-				fmt.Sprintf(
-					"%s$%s$%s$%s$%s",
-					base64.StdEncoding.EncodeToString([]byte(s.Scheme)),
-					base64.StdEncoding.EncodeToString([]byte(s.PackageManager)),
-					base64.StdEncoding.EncodeToString([]byte(s.PackageName)),
-					base64.StdEncoding.EncodeToString([]byte(s.PackageVersion)),
-					base64.StdEncoding.EncodeToString([]byte(s.Descriptor)),
-				),
-			)
-
+			symbolNames = append(symbolNames, occurrence.Symbol)
+			explodedSymbols = append(explodedSymbols, explodedSymbol)
+			rangeBySymbol[occurrence.Symbol] = translateRange(scip.NewRange(occurrence.Range))
 		}
 	}
 
@@ -99,9 +84,6 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		pq.Array([]int{bundleID}),
 		bundleID,
 	)
-
-	// debug := fmt.Sprintf("**********QUERY************* \n query: %s \n variables: %s", query.Query(sqlf.PostgresBindVar), query.Args())
-	// fmt.Println(debug)
 
 	documents, err := s.scanDocumentData(s.db.Query(ctx, query))
 	if err != nil {

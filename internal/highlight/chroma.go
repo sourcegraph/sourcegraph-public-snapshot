@@ -41,7 +41,8 @@ func highlightWithChroma(code string, filepath string) (*scip.Document, error) {
 }
 
 // A Chroma formatter which produces a SCIP occurrences  with highlighting information.
-type chromaSCIPFormatter struct{}
+type chromaSCIPFormatter struct {
+}
 
 func (f *chromaSCIPFormatter) Format(iterator chroma.Iterator) (occurrences []*scip.Occurrence, err error) {
 	tokens := iterator.Tokens()

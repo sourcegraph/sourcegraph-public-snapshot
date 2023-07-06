@@ -736,7 +736,7 @@ func zoektAddr(environ []string) (string, error) {
 	deployType := deploy.Type()
 
 	const port = "6070"
-	baseName := "indexed-search"
+	var baseName = "indexed-search"
 	if deployType == deploy.DockerCompose {
 		baseName = "zoekt-webserver"
 	}
