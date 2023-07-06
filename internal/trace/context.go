@@ -9,13 +9,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 )
 
-// FromContext returns the Trace previously associated with ctx, or
-// nil if no such Trace could be found.
-func FromContext(ctx context.Context) *Trace {
-	if span := oteltrace.SpanFromContext(ctx); span.SpanContext().IsValid() {
-		return &Trace{span}
-	}
-	return nil
+// FromContext returns the Trace previously associated with ctx.
+func FromContext(ctx context.Context) Trace {
+	return Trace{oteltrace.SpanFromContext(ctx)}
 }
 
 // CopyContext copies the tracing-related context items from one context to another and returns that

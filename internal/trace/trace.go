@@ -29,12 +29,12 @@ func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (Trace, 
 //
 // Note that it differs from the underlying (oteltrace.Span).AddEvent slightly, and only
 // accepts attributes for simplicity.
-func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
+func (t Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
 	t.Span.AddEvent(name, oteltrace.WithAttributes(attributes...))
 }
 
 // SetError declares that this trace and span resulted in an error.
-func (t *Trace) SetError(err error) {
+func (t Trace) SetError(err error) {
 	if err == nil {
 		return
 	}
@@ -48,7 +48,7 @@ func (t *Trace) SetError(err error) {
 
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
 // context.DeadlineExceeded.
-func (t *Trace) SetErrorIfNotContext(err error) {
+func (t Trace) SetErrorIfNotContext(err error) {
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		err = truncateError(err, defaultErrorRuneLimit)
 		t.RecordError(err)
@@ -61,7 +61,7 @@ func (t *Trace) SetErrorIfNotContext(err error) {
 // EndWithErr finishes the span and sets its error value.
 // It takes a pointer to an error so it can be used directly
 // in a defer statement.
-func (t *Trace) EndWithErr(err *error) {
+func (t Trace) EndWithErr(err *error) {
 	t.SetError(*err)
 	t.End()
 }
