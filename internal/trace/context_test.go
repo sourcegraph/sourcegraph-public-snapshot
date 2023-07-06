@@ -12,18 +12,18 @@ import (
 func TestTraceFromContext(t *testing.T) {
 	t.Run("set in context", func(t *testing.T) {
 		ctx := contextWithTrace(context.Background(), &Trace{})
-		tr := TraceFromContext(ctx)
+		tr := FromContext(ctx)
 		require.NotNil(t, tr)
 	})
 
 	t.Run("not set in context", func(t *testing.T) {
-		tr := TraceFromContext(context.Background())
+		tr := FromContext(context.Background())
 		require.Nil(t, tr)
 	})
 
 	t.Run("not set in context, but raw opentelemetry span is", func(t *testing.T) {
 		ctx := oteltrace.ContextWithSpan(context.Background(), recordingSpan{})
-		tr := TraceFromContext(ctx)
+		tr := FromContext(ctx)
 		require.NotNil(t, tr)
 	})
 }

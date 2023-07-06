@@ -22,9 +22,9 @@ func contextWithTrace(ctx context.Context, tr *Trace) context.Context {
 	return ctx
 }
 
-// TraceFromContext returns the Trace previously associated with ctx, or
+// FromContext returns the Trace previously associated with ctx, or
 // nil if no such Trace could be found.
-func TraceFromContext(ctx context.Context) *Trace {
+func FromContext(ctx context.Context) *Trace {
 	tr, _ := ctx.Value(traceKey).(*Trace)
 	if tr == nil {
 		// There is no Trace in the context, so check for a raw OTel span we can use.
@@ -39,7 +39,7 @@ func TraceFromContext(ctx context.Context) *Trace {
 // CopyContext copies the tracing-related context items from one context to another and returns that
 // context.
 func CopyContext(ctx context.Context, from context.Context) context.Context {
-	if tr := TraceFromContext(from); tr != nil {
+	if tr := FromContext(from); tr != nil {
 		ctx = contextWithTrace(ctx, tr)
 	}
 	if shouldTrace := policy.ShouldTrace(from); shouldTrace {

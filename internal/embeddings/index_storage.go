@@ -153,7 +153,7 @@ func newDecoder(ctx context.Context, uploadStore uploadstore.Store, key string) 
 	if err := dec.Decode(&formatVersion); err != nil {
 		// If there's an error, assume this is an old index that doesn't encode the
 		// version. Open the file again to reset the reader.
-		if tr := trace.TraceFromContext(ctx); tr != nil {
+		if tr := trace.FromContext(ctx); tr != nil {
 			tr.AddEvent("failed to decode IndexFormatVersion, assuming that this is an old index that doesn't start with a version", trace.Error(err))
 		}
 
