@@ -6,6 +6,7 @@
     import { getRelativeTime } from '$lib/relativeTime'
     import { currentDate } from '$lib/stores'
     import UserAvatar from '$lib/UserAvatar.svelte'
+    import { asStore } from '$lib/utils'
     import { Button, ButtonGroup } from '$lib/wildcard'
 
     import type { PageData } from './$types'
@@ -20,7 +21,7 @@
     ]
 
     $: timePeriod = data.after
-    $: contributorsLoader = data.contributors
+    $: contributorsLoader = asStore(data.deferred.contributors)
     $: loading = $contributorsLoader.loading
     let connection: Extract<typeof $contributorsLoader, { loading: false }>['data']
     $: if (!$contributorsLoader.loading && $contributorsLoader.data) {

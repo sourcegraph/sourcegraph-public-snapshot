@@ -87,7 +87,7 @@ func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
 	logger.Warn("Slow codeintel request", fields...)
 }
 
-func getObservationArgs(args codenav.RequestArgs) observation.Args {
+func getObservationArgs(args codenav.PositionalRequestArgs) observation.Args {
 	return observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),

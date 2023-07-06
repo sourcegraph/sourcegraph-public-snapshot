@@ -73,7 +73,7 @@ func NewRootResolver(
 func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
 	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repoID", int(args.Repo.ID)),
-		attribute.String("commit", string(args.Commit)),
+		args.Commit.Attr(),
 		attribute.String("path", args.Path),
 		attribute.Bool("exactPath", args.ExactPath),
 		attribute.String("toolName", args.ToolName),

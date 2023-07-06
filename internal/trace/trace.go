@@ -15,16 +15,16 @@ import (
 // golang.org/x/net/trace.Trace, applying its various API functions to both
 // underlying trace types. Use New to construct one.
 type Trace struct {
-	family string
-
 	// oteltraceSpan is always set.
 	oteltraceSpan oteltrace.Span
 }
 
-// New returns a new Trace with the specified family and title.
-func New(ctx context.Context, family, title string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
+// New returns a new Trace with the specified name.
+// For tips on naming, see the OpenTelemetry Span documentation:
+// https://opentelemetry.io/docs/specs/otel/trace/api/#span
+func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
 	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
-	return tr.New(ctx, family, title, attrs...)
+	return tr.New(ctx, name, attrs...)
 }
 
 // SetAttributes sets kv as attributes of the Span.

@@ -22,7 +22,14 @@ func (r *gitBlobLSIFDataResolver) Diagnostics(ctx context.Context, args *resolve
 		return nil, ErrIllegalLimit
 	}
 
-	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path, Limit: limit}
+	requestArgs := codenav.PositionalRequestArgs{
+		RequestArgs: codenav.RequestArgs{
+			RepositoryID: r.requestState.RepositoryID,
+			Commit:       r.requestState.Commit,
+			Limit:        limit,
+		},
+		Path: r.requestState.Path,
+	}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.diagnostics, time.Second, getObservationArgs(requestArgs))
 	defer endObservation()
 

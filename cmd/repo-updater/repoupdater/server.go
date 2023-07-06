@@ -118,7 +118,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
-	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
+	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", attribute.Stringer("req", req))
 	defer func() {
 		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
 		if resp != nil {
@@ -301,7 +301,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	tr, ctx := trace.New(ctx, "repoLookup", args.String())
+	tr, ctx := trace.New(ctx, "repoLookup", attribute.Stringer("args", &args))
 	defer func() {
 		s.Logger.Debug("repoLookup", log.String("result", fmt.Sprint(result)), log.Error(err))
 		tr.SetError(err)
