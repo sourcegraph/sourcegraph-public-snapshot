@@ -85,11 +85,15 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		revision:  record.Revision,
 		gitserver: h.gitserverClient,
 	}
-
+	includedFiles, excludedFiles := getFileFilterPathPatterns(embeddingsConfig)
 	opts := embed.EmbedRepoOpts{
-		RepoName:          repo.Name,
-		Revision:          record.Revision,
-		ExcludePatterns:   getExcludedFilePathPatterns(embeddingsConfig),
+		RepoName: repo.Name,
+		Revision: record.Revision,
+		FileFilters: embed.FileFilters{
+			ExcludePatterns:  excludedFiles,
+			IncludePatterns:  includedFiles,
+			MaxFileSizeBytes: embeddingsConfig.FileFilters.MaxFileSizeBytes,
+		},
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
@@ -138,14 +142,20 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	}
 }
 
-func getExcludedFilePathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) []*paths.GlobPattern {
-	var excludedGlobPatterns []*paths.GlobPattern
-	if embeddingsConfig != nil && len(embeddingsConfig.ExcludedFilePathPatterns) != 0 {
-		excludedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.ExcludedFilePathPatterns)
-	} else {
+func getFileFilterPathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) (includedFiles, excludedFiles []*paths.GlobPattern) {
+	var includedGlobPatterns, excludedGlobPatterns []*paths.GlobPattern
+	if embeddingsConfig != nil {
+		if len(embeddingsConfig.FileFilters.ExcludedFilePathPatterns) != 0 {
+			excludedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.FileFilters.ExcludedFilePathPatterns)
+		}
+		if len(embeddingsConfig.FileFilters.IncludedFilePathPatterns) != 0 {
+			includedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.FileFilters.IncludedFilePathPatterns)
+		}
+	}
+	if len(excludedGlobPatterns) == 0 {
 		excludedGlobPatterns = embed.GetDefaultExcludedFilePathPatterns()
 	}
-	return excludedGlobPatterns
+	return includedGlobPatterns, excludedGlobPatterns
 }
 
 // getPreviousEmbeddingIndex checks the last successfully indexed revision and returns its embeddings index. If there
