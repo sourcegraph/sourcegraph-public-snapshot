@@ -39,7 +39,9 @@ var PrivateDrive = DriveSpec{
 	OrderBy:     "createdTime,name",
 }
 
-const RfcTemplateDoc = "1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4"
+// Template: RFC to frame a problem, propose a solution, and drive a decision.
+// https://docs.google.com/document/d/1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4
+const ProblemSolutionDriveTemplate = "1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4"
 
 type DriveSpec struct {
 	DisplayName string

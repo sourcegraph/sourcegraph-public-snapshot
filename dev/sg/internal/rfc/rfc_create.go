@@ -207,7 +207,7 @@ func createRFCs(ctx context.Context, title string, driveSpec DriveSpec,
 		return nil, 0, err
 	}
 
-	template, err := srv.Files.Get(RfcTemplateDoc).
+	template, err := srv.Files.Get(ProblemSolutionDriveTemplate).
 		Context(ctx).
 		SupportsTeamDrives(true).
 		SupportsAllDrives(true).
