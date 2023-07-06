@@ -56,6 +56,9 @@ func (a *Actor) GetName() string {
 }
 
 func (a *Actor) GetSource() codygateway.ActorSource {
+	if a.Source == nil {
+		return "unknown"
+	}
 	return codygateway.ActorSource(a.Source.Name())
 }
 
