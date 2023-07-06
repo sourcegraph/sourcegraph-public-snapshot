@@ -5,6 +5,7 @@ go_library(
     srcs = [
         "dotcom.go",
         "gen.go",
+        "mocks.go",
         "operations.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom",
