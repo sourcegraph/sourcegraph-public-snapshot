@@ -41,7 +41,9 @@
         settingsCascade: data.settings,
         searchContextsEnabled: false,
         streamSearch: aggregateStreamingSearch,
+        isSourcegraphApp: false,
+        ownEnabled: false,
     } satisfies GlobalNotebooksAreaProps
 </script>
 
-<ReactComponent route="/notebooks/*" component={GlobalNotebooksArea} {props} />
+<ReactComponent route="/notebooks/*" settings={data.settings} component={GlobalNotebooksArea} {props} />

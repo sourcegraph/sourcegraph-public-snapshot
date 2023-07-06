@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -55,7 +55,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tr, ctx := trace.New(ctx, "compute.ServeStream", args.Query)
+	tr, ctx := trace.New(ctx, "compute.ServeStream", attribute.String("query", args.Query))
 	defer tr.FinishWithErr(&err)
 
 	eventWriter, err := streamhttp.NewWriter(w)

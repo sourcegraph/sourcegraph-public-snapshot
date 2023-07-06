@@ -18,6 +18,7 @@ export {
     type AggregateStreamingSearchResults,
     type StreamSearchOptions,
     type SearchMatch,
+    type OwnerMatch,
     getRepoMatchLabel,
     getRepoMatchUrl,
     type RepositoryMatch,
@@ -36,7 +37,13 @@ export { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 export { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 export { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 export type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-export { type SettingsCascade, type SettingsSubject, gqlToCascade } from '@sourcegraph/shared/src/settings/settings'
+export {
+    type SettingsCascade,
+    type SettingsSubject,
+    type SettingsCascadeOrError,
+    SettingsProvider,
+    gqlToCascade,
+} from '@sourcegraph/shared/src/settings/settings'
 export { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 export { QueryChangeSource, type QueryState } from '@sourcegraph/shared/src/search/helpers'
 export { migrateLocalStorageToTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/migrateLocalStorageToTemporarySettings'

@@ -172,18 +172,40 @@ export class AuthProvider {
             this.client = new SourcegraphGraphQLAPIClient(config)
         }
         // Version is for frontend to check if Cody is not enabled due to unsupported version when siteHasCodyEnabled is false
-        const { enabled, version } = await this.client.isCodyEnabled()
+        const [{ enabled, version }, codyLLMConfiguration] = await Promise.all([
+            this.client.isCodyEnabled(),
+            this.client.getCodyLLMConfiguration(),
+        ])
+
+        const configOverwrites = !isError(codyLLMConfiguration) ? codyLLMConfiguration : undefined
+
         const isDotComOrApp = this.client.isDotCom() || isLocalApp(endpoint)
         if (!isDotComOrApp) {
             const currentUserID = await this.client.getCurrentUserId()
             const hasVerifiedEmail = false
-            return newAuthStatus(endpoint, isDotComOrApp, !isError(currentUserID), hasVerifiedEmail, enabled, version)
+            return newAuthStatus(
+                endpoint,
+                isDotComOrApp,
+                !isError(currentUserID),
+                hasVerifiedEmail,
+                enabled,
+                version,
+                configOverwrites
+            )
         }
         const userInfo = await this.client.getCurrentUserIdAndVerifiedEmail()
         const isCodyEnabled = true
         return isError(userInfo)
             ? { ...unauthenticatedStatus, endpoint }
-            : newAuthStatus(endpoint, isDotComOrApp, !!userInfo.id, userInfo.hasVerifiedEmail, isCodyEnabled, version)
+            : newAuthStatus(
+                  endpoint,
+                  isDotComOrApp,
+                  !!userInfo.id,
+                  userInfo.hasVerifiedEmail,
+                  isCodyEnabled,
+                  version,
+                  configOverwrites
+              )
     }
 
     public getAuthStatus(): AuthStatus {

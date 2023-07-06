@@ -93,7 +93,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/globals",
-        "//enterprise/internal/licensing",
         "//enterprise/internal/own/codeowners/v1:codeowners",
         "//enterprise/internal/own/types",
         "//internal/actor",
@@ -106,6 +105,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "//internal/extsvc",
+        "//internal/licensing",
         "//internal/search/result",
         "//internal/timeutil",
         "//internal/types",

@@ -116,7 +116,7 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 }
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Resolve", op.String())
+	tr, ctx := trace.New(ctx, "searchrepos.Resolve", attribute.Stringer("opts", &op))
 	defer tr.FinishWithErr(&errs)
 
 	excludePatterns := op.MinusRepoFilters
@@ -532,7 +532,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	_ int,
 	err error,
 ) {
-	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent", "")
+	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent")
 	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
@@ -756,7 +756,7 @@ func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.Mi
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
 // used to show in the search UI what repos are excluded precisely.
 func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOptions) (ex ExcludedRepos, err error) {
-	tr, ctx := trace.New(ctx, "searchrepos.Excluded", op.String())
+	tr, ctx := trace.New(ctx, "searchrepos.Excluded", attribute.Stringer("opts", &op))
 	defer func() {
 		tr.SetAttributes(
 			attribute.Int("excludedForks", ex.Forks),

@@ -17,7 +17,7 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-import { MAX_AVAILABLE_PROMPT_LENGTH, SOLUTION_TOKEN_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -32,7 +32,7 @@ import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
-import { getPluginContextData, PLUGINS } from '../plugins'
+import { getPluginContextData } from '../plugins'
 import { AuthProvider } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
@@ -64,6 +64,19 @@ export type Config = Pick<
     | 'experimentalGuardrails'
 >
 
+/**
+ * The problem with a token limit for the prompt is that we can only
+ * estimate tokens (and do so in a very cheap way), so it can be that
+ * we undercount tokens. If we exceed the maximum tokens, things will
+ * start to break, so we should have some safety cushion for when we're wrong in estimating.
+ *
+ * Ie.: Long text, 10000 characters, we estimate it to be 2500 tokens.
+ * That would fit into a limit of 3000 tokens easily. Now, it's actually
+ * 3500 tokens, because it splits weird and our estimation is off, it will
+ * fail. That's where we want to add this safety cushion in.
+ */
+const SAFETY_PROMPT_TOKENS = 100
+
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
@@ -75,7 +88,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
 
-    private maxPromptLimit = MAX_AVAILABLE_PROMPT_LENGTH
     private transcript: Transcript = new Transcript()
 
     // Allows recipes to hook up subscribers to process sub-streams of bot output
@@ -119,12 +131,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }),
             vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
         )
-        const codyConfig = vscode.workspace.getConfiguration('cody')
-        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
-        const solutionLimit = codyConfig.get<number>('provider.limit.solution') || SOLUTION_TOKEN_LENGTH
-        if (tokenLimit) {
-            this.maxPromptLimit = tokenLimit - solutionLimit
-        }
     }
 
     private idleCallbacks_: (() => void)[] = []
@@ -516,18 +522,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.sendTranscript()
 
                 // todo: choose which plugins should be run based on the recipe and message
-                    // aka indent detection goes on
+                // aka indent detection goes on
                 // todo: run plugins' search functions in parallel
                 const pluginContextMessages = getPluginContextData('todo: supply query here')
 
                 // todo: add plugins' results to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     [...getPreamble(this.codebaseContext.getCodebase()), ...pluginContextMessages],
-<<<<<<< Updated upstream
-                    this.maxPromptLimit
-=======
                     this.maxPromptTokens
->>>>>>> Stashed changes
                 )
                 console.log('prompt:\n%j', prompt)
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
@@ -561,7 +563,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.codebaseContext.getCodebase()),
-            this.maxPromptLimit
+            this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
@@ -925,6 +927,27 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             disposable.dispose()
         }
         this.disposables = []
+    }
+
+    private get maxPromptTokens(): number {
+        const authStatus = this.authProvider.getAuthStatus()
+
+        const codyConfig = vscode.workspace.getConfiguration('cody')
+        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
+        const localSolutionLimit = codyConfig.get<number>('provider.limit.solution')
+
+        // The local config takes precedence over the server config.
+        if (tokenLimit && localSolutionLimit) {
+            return tokenLimit - localSolutionLimit
+        }
+
+        const solutionLimit = (localSolutionLimit || ANSWER_TOKENS) + SAFETY_PROMPT_TOKENS
+
+        if (authStatus.configOverwrites?.chatModelMaxTokens) {
+            return authStatus.configOverwrites.chatModelMaxTokens - solutionLimit
+        }
+
+        return DEFAULT_MAX_TOKENS - solutionLimit
     }
 }
 
