@@ -528,3 +528,5 @@ go_test(
         "@com_github_throttled_throttled_v2//store/memstore",
     ],
 )
+
+exports_files(glob(["*.graphql"]))
