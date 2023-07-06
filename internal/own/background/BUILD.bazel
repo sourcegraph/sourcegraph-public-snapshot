@@ -62,7 +62,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/globals",
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

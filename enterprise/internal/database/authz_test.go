@@ -3,7 +3,9 @@ package database
 import (
 	"context"
 	"fmt"
+	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
@@ -19,6 +21,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+var now = timeutil.Now().UnixNano()
+
+func clock() time.Time {
+	return time.Unix(0, atomic.LoadInt64(&now))
+}
 
 func TestAuthzStore_GrantPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)

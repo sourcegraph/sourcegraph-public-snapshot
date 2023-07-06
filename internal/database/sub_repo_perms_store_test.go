@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -26,7 +25,7 @@ func TestSubRepoPermsInsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -58,7 +57,7 @@ func TestSubRepoPermsDeleteByUser(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -93,7 +92,7 @@ func TestSubRepoPermsUpsert(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -134,7 +133,7 @@ func TestSubRepoPermsUpsertWithSpec(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	prepareSubRepoTestData(ctx, t, db)
@@ -182,7 +181,7 @@ func TestSubRepoPermsGetByUser(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -265,7 +264,7 @@ func TestSubRepoPermsGetByUserAndService(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()
@@ -343,7 +342,7 @@ func TestSubRepoPermsSupportedForRepoId(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
-	db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	s := db.SubRepoPerms()

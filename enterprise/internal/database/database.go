@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/sourcegraph/log"
 
@@ -16,8 +15,6 @@ import (
 
 type EnterpriseDB interface {
 	database.DB
-	Perms() PermsStore
-	SubRepoPerms() SubRepoPermsStore
 	GitHubApps() gha.GitHubAppsStore
 }
 
@@ -34,14 +31,6 @@ func NewEnterpriseDB(db database.DB) EnterpriseDB {
 
 type enterpriseDB struct {
 	database.DB
-}
-
-func (edb *enterpriseDB) Perms() PermsStore {
-	return &permsStore{Store: basestore.NewWithHandle(edb.Handle()), clock: time.Now, ossDB: edb.DB}
-}
-
-func (edb *enterpriseDB) SubRepoPerms() SubRepoPermsStore {
-	return SubRepoPermsWith(basestore.NewWithHandle(edb.Handle()))
 }
 
 func (edb *enterpriseDB) GitHubApps() gha.GitHubAppsStore {

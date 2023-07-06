@@ -10,8 +10,6 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
   interfaces:
     - EnterpriseDB
-    - PermsStore
-    - SubRepoPermsStore
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
@@ -45,6 +43,9 @@
     - ConfStore
     - DB
     - EventLogStore
+    - ExecutorSecretAccessLogStore
+    - ExecutorSecretStore
+    - ExecutorStore
     - ExternalServiceStore
     - FeatureFlagStore
     - GitserverLocalCloneStore
@@ -54,39 +55,37 @@
     - OrgInvitationStore
     - OrgMemberStore
     - OrgStore
-    - OutboundWebhookStore
     - OutboundWebhookJobStore
     - OutboundWebhookLogStore
+    - OutboundWebhookStore
     - OwnershipStatsStore
+    - PermissionStore
+    - PermissionSyncJobStore
     - PhabricatorStore
+    - RecentContributionSignalStore
+    - RecentViewSignalStore
     - RepoCommitsChangelistsStore
     - RepoPathStore
+    - RepoStatisticsStore
     - RepoStore
+    - RolePermissionStore
+    - RoleStore
     - SavedSearchStore
     - SearchContextsStore
     - SecurityEventLogsStore
     - SettingsStore
+    - SignalConfigurationStore
+    - SubRepoPermsStore
+    - TeamStore
     - TemporarySettingsStore
     - UserCredentialsStore
     - UserEmailsStore
     - UserExternalAccountsStore
-    - UserStore
-    - WebhookStore
-    - WebhookLogStore
-    - ExecutorStore
-    - ExecutorSecretStore
-    - ExecutorSecretAccessLogStore
-    - ZoektReposStore
-    - PermissionSyncJobStore
-    - TeamStore
-    - RoleStore
     - UserRoleStore
-    - PermissionStore
-    - RolePermissionStore
-    - RepoStatisticsStore
-    - RecentContributionSignalStore
-    - RecentViewSignalStore
-    - SignalConfigurationStore
+    - UserStore
+    - WebhookLogStore
+    - WebhookStore
+    - ZoektReposStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:

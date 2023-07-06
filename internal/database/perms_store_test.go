@@ -29,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -58,7 +57,7 @@ func cleanupPermsTables(t *testing.T, s *permsStore) {
 	t.Helper()
 
 	q := `TRUNCATE TABLE permission_sync_jobs, user_permissions, repo_permissions, user_pending_permissions, repo_pending_permissions, user_repo_permissions;`
-	execQuery(t, context.Background(), s, sqlf.Sprintf(q))
+	executeQuery(t, context.Background(), s, sqlf.Sprintf(q))
 }
 
 func mapsetToArray(ms map[int32]struct{}) []int {
@@ -92,7 +91,7 @@ func TestPermsStore_LoadUserPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	ctx := context.Background()
 
 	t.Run("no matching", func(t *testing.T) {
@@ -190,7 +189,7 @@ func TestPermsStore_LoadRepoPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	ctx := context.Background()
 
 	t.Run("no matching", func(t *testing.T) {
@@ -245,7 +244,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	const countToExceedParameterLimit = 17000 // ~ 65535 / 4 parameters per row
 
@@ -260,7 +259,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 		slowTest      bool
 		updates       []testUpdate
 		expectedPerms []authz.Permission
-		expectedStats []*database.SetPermissionsResult
+		expectedStats []*SetPermissionsResult
 	}{
 		{
 			name: "empty",
@@ -270,7 +269,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 				repoIDs:           []int32{},
 			}},
 			expectedPerms: []authz.Permission{},
-			expectedStats: []*database.SetPermissionsResult{{
+			expectedStats: []*SetPermissionsResult{{
 				Added:   0,
 				Removed: 0,
 				Found:   0,
@@ -317,7 +316,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 				RepoID:            4,
 				Source:            authz.SourceUserSync,
 			}},
-			expectedStats: []*database.SetPermissionsResult{{
+			expectedStats: []*SetPermissionsResult{{
 				Added:   1,
 				Removed: 0,
 				Found:   1,
@@ -371,7 +370,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 				RepoID:            3,
 				Source:            authz.SourceUserSync,
 			}},
-			expectedStats: []*database.SetPermissionsResult{{
+			expectedStats: []*SetPermissionsResult{{
 				Added:   1,
 				Removed: 0,
 				Found:   1,
@@ -401,7 +400,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 				repoIDs:           []int32{},
 			}},
 			expectedPerms: []authz.Permission{},
-			expectedStats: []*database.SetPermissionsResult{{
+			expectedStats: []*SetPermissionsResult{{
 				Added:   3,
 				Removed: 0,
 				Found:   3,
@@ -437,10 +436,10 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 				}
 				return p
 			}(),
-			expectedStats: func() []*database.SetPermissionsResult {
-				result := make([]*database.SetPermissionsResult, countToExceedParameterLimit)
+			expectedStats: func() []*SetPermissionsResult {
+				result := make([]*SetPermissionsResult, countToExceedParameterLimit)
 				for i := 0; i < countToExceedParameterLimit; i++ {
-					result[i] = &database.SetPermissionsResult{
+					result[i] = &SetPermissionsResult{
 						Added:   1,
 						Removed: 0,
 						Found:   1,
@@ -460,7 +459,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 			cleanupPermsTables(t, s)
 		})
 
-		expectedStats := &database.SetPermissionsResult{
+		expectedStats := &SetPermissionsResult{
 			Added:   1,
 			Removed: 0,
 			Found:   1,
@@ -475,7 +474,7 @@ func TestPermsStore_SetUserExternalAccountPerms(t *testing.T) {
 			ExternalAccountID: 1,
 		}
 		repoIDs := []int32{1}
-		var stats *database.SetPermissionsResult
+		var stats *SetPermissionsResult
 		var err error
 		if stats, err = s.SetUserExternalAccountPerms(context.Background(), u, repoIDs, authz.SourceUserSync); err != nil {
 			t.Fatal(err)
@@ -603,7 +602,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	source := authz.SourceUserSync
 
@@ -613,7 +612,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 		permissions         []authz.Permission
 		expectedPermissions []authz.Permission
 		entity              authz.PermissionEntity
-		expectedResult      *database.SetPermissionsResult
+		expectedResult      *SetPermissionsResult
 		keepPerms           bool
 	}{
 		{
@@ -621,7 +620,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			permissions:         []authz.Permission{},
 			expectedPermissions: []authz.Permission{},
 			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			expectedResult:      &database.SetPermissionsResult{Added: 0, Removed: 0, Found: 0},
+			expectedResult:      &SetPermissionsResult{Added: 0, Removed: 0, Found: 0},
 		},
 		{
 			name: "add",
@@ -636,7 +635,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: source},
 			},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			expectedResult: &database.SetPermissionsResult{Added: 3, Removed: 0, Found: 3},
+			expectedResult: &SetPermissionsResult{Added: 3, Removed: 0, Found: 3},
 		},
 		{
 			name: "add, update and remove",
@@ -654,7 +653,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
 			},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 2},
+			expectedResult: &SetPermissionsResult{Added: 1, Removed: 2, Found: 2},
 		},
 		{
 			name: "remove only",
@@ -666,7 +665,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			permissions:         []authz.Permission{},
 			expectedPermissions: []authz.Permission{},
 			entity:              authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			expectedResult:      &database.SetPermissionsResult{Added: 0, Removed: 3, Found: 0},
+			expectedResult:      &SetPermissionsResult{Added: 0, Removed: 3, Found: 0},
 		},
 		{
 			name: "does not touch explicit permissions when source is sync",
@@ -683,7 +682,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
 			},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 1},
+			expectedResult: &SetPermissionsResult{Added: 1, Removed: 2, Found: 1},
 		},
 		{
 			name: "does not delete old permissions when bool is false",
@@ -702,7 +701,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 4, Source: source},
 			},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
-			expectedResult: &database.SetPermissionsResult{Added: 2, Removed: 0, Found: 2},
+			expectedResult: &SetPermissionsResult{Added: 2, Removed: 0, Found: 2},
 			keepPerms:      true,
 		},
 	}
@@ -741,7 +740,7 @@ func TestPermsStore_SetUserRepoPermissions(t *testing.T) {
 			if len(test.permissions) > 0 {
 				setupPermsRelatedEntities(t, s, test.permissions)
 			}
-			var stats *database.SetPermissionsResult
+			var stats *SetPermissionsResult
 			var err error
 			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, source, replacePerms); err != nil {
 				t.Fatal("testing user repo permissions", err)
@@ -766,7 +765,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	tests := []struct {
 		name                    string
@@ -774,7 +773,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 		origSyncedPermissions   []authz.Permission
 		permissions             []authz.Permission
 		expectedPermissions     []authz.Permission
-		expectedResult          *database.SetPermissionsResult
+		expectedResult          *SetPermissionsResult
 		entity                  authz.PermissionEntity
 		source                  authz.PermsSource
 	}{
@@ -792,7 +791,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
 			},
-			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
+			expectedResult: &SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 			source:         authz.SourceAPI,
 		},
@@ -810,7 +809,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				{UserID: 1, RepoID: 3, Source: authz.SourceAPI},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 2, Source: authz.SourceUserSync},
 			},
-			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
+			expectedResult: &SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 			source:         authz.SourceUserSync,
 		},
@@ -834,7 +833,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				{UserID: 1, ExternalAccountID: 1, RepoID: 3, Source: authz.SourceUserSync},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 5, Source: authz.SourceUserSync},
 			},
-			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 1, Found: 2},
+			expectedResult: &SetPermissionsResult{Added: 1, Removed: 1, Found: 2},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 			source:         authz.SourceUserSync,
 		},
@@ -850,7 +849,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				{UserID: 1, RepoID: 1, Source: authz.SourceAPI},
 				{UserID: 1, ExternalAccountID: 1, RepoID: 1, Source: authz.SourceUserSync},
 			},
-			expectedResult: &database.SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
+			expectedResult: &SetPermissionsResult{Added: 1, Removed: 0, Found: 1},
 			entity:         authz.PermissionEntity{UserID: 1, ExternalAccountID: 1},
 			source:         authz.SourceUserSync,
 		},
@@ -882,7 +881,7 @@ func TestPermsStore_UnionExplicitAndSyncedPermissions(t *testing.T) {
 				setupPermsRelatedEntities(t, s, test.permissions)
 			}
 
-			var stats *database.SetPermissionsResult
+			var stats *SetPermissionsResult
 			var err error
 			if stats, err = s.setUserRepoPermissions(ctx, test.permissions, test.entity, test.source, true); err != nil {
 				t.Fatal("testing user repo permissions", err)
@@ -907,7 +906,7 @@ func TestPermsStore_FetchReposByExternalAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	source := authz.SourceRepoSync
 
@@ -1002,7 +1001,7 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	ctx := context.Background()
 	s := setupTestPerms(t, db, clock)
@@ -1064,15 +1063,15 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 
 	createRepo := func(t *testing.T, id int) {
 		t.Helper()
-		execQuery(t, ctx, s, sqlf.Sprintf(`
+		executeQuery(t, ctx, s, sqlf.Sprintf(`
 		INSERT INTO repo (id, name, private)
 		VALUES (%d, %s, TRUE)`, id, fmt.Sprintf("repo-%d", id)))
 	}
 
 	setupData := func() {
 		// Add a couple of repos and a user
-		execQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('alice')`))
-		execQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('bob')`))
+		executeQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('alice')`))
+		executeQuery(t, ctx, s, sqlf.Sprintf(`INSERT INTO users (username) VALUES ('bob')`))
 		for i := 0; i < 2; i++ {
 			createRepo(t, i+1)
 			if _, err := s.SetRepoPerms(context.Background(), int32(i+1), []authz.UserIDWithExternalAccountID{{UserID: 2}}, authz.SourceRepoSync); err != nil {
@@ -1177,7 +1176,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	type testUpdate struct {
 		repoID int32
@@ -1187,7 +1186,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 		name          string
 		updates       []testUpdate
 		expectedPerms []authz.Permission
-		expectedStats []*database.SetPermissionsResult
+		expectedStats []*SetPermissionsResult
 	}{
 		{
 			name: "empty",
@@ -1196,7 +1195,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 				users:  []authz.UserIDWithExternalAccountID{},
 			}},
 			expectedPerms: []authz.Permission{},
-			expectedStats: []*database.SetPermissionsResult{
+			expectedStats: []*SetPermissionsResult{
 				{
 					Added:   0,
 					Removed: 0,
@@ -1236,7 +1235,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 				{RepoID: 3, UserID: 3, ExternalAccountID: 3, Source: authz.SourceRepoSync},
 				{RepoID: 3, UserID: 4, ExternalAccountID: 4, Source: authz.SourceRepoSync},
 			},
-			expectedStats: []*database.SetPermissionsResult{
+			expectedStats: []*SetPermissionsResult{
 				{
 					Added:   1,
 					Removed: 0,
@@ -1293,7 +1292,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 				{RepoID: 2, UserID: 3, ExternalAccountID: 3, Source: authz.SourceRepoSync},
 				{RepoID: 2, UserID: 4, ExternalAccountID: 4, Source: authz.SourceRepoSync},
 			},
-			expectedStats: []*database.SetPermissionsResult{
+			expectedStats: []*SetPermissionsResult{
 				{
 					Added:   1,
 					Removed: 0,
@@ -1334,7 +1333,7 @@ func TestPermsStore_SetRepoPerms(t *testing.T) {
 				users:  []authz.UserIDWithExternalAccountID{},
 			}},
 			expectedPerms: []authz.Permission{},
-			expectedStats: []*database.SetPermissionsResult{
+			expectedStats: []*SetPermissionsResult{
 				{
 					Added:   3,
 					Removed: 0,
@@ -1427,7 +1426,7 @@ func TestPermsStore_LoadUserPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	t.Run("no matching with different account ID", func(t *testing.T) {
 		s := perms(logger, db, clock)
@@ -1724,7 +1723,7 @@ func TestPermsStore_SetRepoPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	alice := extsvc.AccountSpec{
 		ServiceType: authz.SourcegraphServiceType,
@@ -2007,7 +2006,7 @@ func TestPermsStore_ListPendingUsers(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	type update struct {
 		accounts *extsvc.Accounts
@@ -2125,7 +2124,7 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
 
@@ -2157,10 +2156,10 @@ func TestPermsStore_GrantPendingPermissions(t *testing.T) {
 				a.ID, a.UserID, a.ServiceType, a.ServiceID, a.AccountID, a.ClientID))
 		}
 		userQuery := sqlf.Sprintf("INSERT INTO users(id, username) VALUES %s", sqlf.Join(maps.Values(users), ","))
-		execQuery(t, ctx, s, userQuery)
+		executeQuery(t, ctx, s, userQuery)
 
 		accountQuery := sqlf.Sprintf("INSERT INTO user_external_accounts(id, user_id, service_type, service_id, account_id, client_id) VALUES %s", sqlf.Join(values, ","))
-		execQuery(t, ctx, s, accountQuery)
+		executeQuery(t, ctx, s, accountQuery)
 	}
 
 	// this limit will also exceed param limit for user_repo_permissions,
@@ -2766,7 +2765,7 @@ func TestPermsStore_SetPendingPermissionsAfterGrant(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	defer cleanupPermsTables(t, s)
 
@@ -2838,7 +2837,7 @@ func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	t.Cleanup(func() {
 		cleanupPermsTables(t, s)
@@ -2866,7 +2865,7 @@ func TestPermsStore_DeleteAllUserPermissions(t *testing.T) {
 		sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`), // ID=2
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// Set permissions for user 1 and 2
@@ -2923,7 +2922,7 @@ func TestPermsStore_DeleteAllUserPendingPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	t.Cleanup(func() {
 		cleanupPermsTables(t, s)
@@ -2985,7 +2984,7 @@ func TestPermsStore_DatabaseDeadlocks(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 	t.Cleanup(func() {
 		cleanupPermsTables(t, s)
@@ -3086,10 +3085,10 @@ func cleanupUsersTable(t *testing.T, s *permsStore) {
 	t.Helper()
 
 	q := `DELETE FROM user_external_accounts;`
-	execQuery(t, context.Background(), s, sqlf.Sprintf(q))
+	executeQuery(t, context.Background(), s, sqlf.Sprintf(q))
 
 	q = `TRUNCATE TABLE users RESTART IDENTITY CASCADE;`
-	execQuery(t, context.Background(), s, sqlf.Sprintf(q))
+	executeQuery(t, context.Background(), s, sqlf.Sprintf(q))
 }
 
 func TestPermsStore_GetUserIDsByExternalAccounts(t *testing.T) {
@@ -3100,7 +3099,7 @@ func TestPermsStore_GetUserIDsByExternalAccounts(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	s := perms(logger, db, time.Now)
 	t.Cleanup(func() {
@@ -3162,7 +3161,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 	assert.Empty(t, userIDs)
 }
 
-func execQuery(t *testing.T, ctx context.Context, s *permsStore, q *sqlf.Query) {
+func executeQuery(t *testing.T, ctx context.Context, s *permsStore, q *sqlf.Query) {
 	t.Helper()
 	if t.Failed() {
 		return
@@ -3182,7 +3181,7 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
 	t.Cleanup(func() {
@@ -3204,7 +3203,7 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// "alice", "bob" and "david" have no permissions
@@ -3220,8 +3219,8 @@ func TestPermsStore_UserIDsWithNoPerms(t *testing.T) {
 	}
 
 	// mark sync jobs as completed for "alice" and add permissions for "bob"
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonUserNoPermissions)
-	execQuery(t, ctx, s, q)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, ReasonUserNoPermissions)
+	executeQuery(t, ctx, s, q)
 
 	_, err = s.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{UserID: 2, ExternalAccountID: 1}, []int32{1}, authz.SourceUserSync)
 	require.NoError(t, err)
@@ -3244,7 +3243,7 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
 	t.Cleanup(func() {
@@ -3266,7 +3265,7 @@ func TestPermsStore_CountUsersWithNoPerms(t *testing.T) {
 				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// "alice", "bob" and "david" have no permissions.
@@ -3288,7 +3287,7 @@ func cleanupReposTable(t *testing.T, s *permsStore) {
 	t.Helper()
 
 	q := `TRUNCATE TABLE repo RESTART IDENTITY CASCADE;`
-	execQuery(t, context.Background(), s, sqlf.Sprintf(q))
+	executeQuery(t, context.Background(), s, sqlf.Sprintf(q))
 }
 
 func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
@@ -3299,7 +3298,7 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
 	t.Cleanup(func() {
@@ -3321,7 +3320,7 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// Should get back two private repos that are not deleted
@@ -3337,8 +3336,8 @@ func TestPermsStore_RepoIDsWithNoPerms(t *testing.T) {
 	}
 
 	// mark sync jobs as completed for "private_repo" and add permissions for "private_repo_2"
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, database.ReasonRepoNoPermissions)
-	execQuery(t, ctx, s, q)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, NOW(), %s)`, 1, ReasonRepoNoPermissions)
+	executeQuery(t, ctx, s, q)
 
 	_, err = s.SetRepoPerms(ctx, 3, []authz.UserIDWithExternalAccountID{{UserID: 1, ExternalAccountID: 1}}, authz.SourceRepoSync)
 	require.NoError(t, err)
@@ -3358,7 +3357,7 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, time.Now)
 
 	t.Cleanup(func() {
@@ -3380,7 +3379,7 @@ func TestPermsStore_CountReposWithNoPerms(t *testing.T) {
 				VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)`, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// Should get back two private repos that are not deleted.
@@ -3405,7 +3404,7 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
 
@@ -3422,19 +3421,19 @@ func TestPermsStore_UserIDsWithOldestPerms(t *testing.T) {
 		sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'cindy', NOW())`),
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// mark sync jobs as completed for users 1, 2 and 3
 	user1UpdatedAt := clock().Add(-15 * time.Minute)
 	user2UpdatedAt := clock().Add(-5 * time.Minute)
 	user3UpdatedAt := clock().Add(-11 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1UpdatedAt, database.ReasonUserOutdatedPermissions)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2UpdatedAt, database.ReasonUserOutdatedPermissions)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3UpdatedAt, database.ReasonUserOutdatedPermissions)
-	execQuery(t, ctx, s, q)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1UpdatedAt, ReasonUserOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2UpdatedAt, ReasonUserOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3UpdatedAt, ReasonUserOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
 		// Should only get user 1 back, because limit is 1
@@ -3510,7 +3509,7 @@ func TestPermsStore_CountUsersWithStalePerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
 
@@ -3527,19 +3526,19 @@ func TestPermsStore_CountUsersWithStalePerms(t *testing.T) {
 		sqlf.Sprintf(`INSERT INTO users(id, username, deleted_at) VALUES(3, 'cindy', NOW())`),
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// Mark sync jobs as completed for users 1, 2 and 3.
 	user1FinishedAt := clock().Add(-15 * time.Minute)
 	user2FinishedAt := clock().Add(-5 * time.Minute)
 	user3FinishedAt := clock().Add(-11 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1FinishedAt, database.ReasonUserOutdatedPermissions)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2FinishedAt, database.ReasonUserOutdatedPermissions)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3FinishedAt, database.ReasonUserOutdatedPermissions)
-	execQuery(t, ctx, s, q)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, user1FinishedAt, ReasonUserOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, user2FinishedAt, ReasonUserOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(user_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, user3FinishedAt, ReasonUserOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
 
 	t.Run("One result when age is 10 minutes", func(t *testing.T) {
 		// Should only get user 1 back, because age is 10 minutes.
@@ -3578,7 +3577,7 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
 	t.Cleanup(func() {
@@ -3593,19 +3592,19 @@ func TestPermsStore_ReposIDsWithOldestPerms(t *testing.T) {
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`), // id=3
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// mark sync jobs as completed for private_repo_1 and private_repo_2
 	repo1UpdatedAt := clock().Add(-15 * time.Minute)
 	repo2UpdatedAt := clock().Add(-5 * time.Minute)
 	repo3UpdatedAt := clock().Add(-10 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1UpdatedAt, database.ReasonRepoOutdatedPermissions)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2UpdatedAt, database.ReasonRepoOutdatedPermissions)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3UpdatedAt, database.ReasonRepoOutdatedPermissions)
-	execQuery(t, ctx, s, q)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1UpdatedAt, ReasonRepoOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2UpdatedAt, ReasonRepoOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3UpdatedAt, ReasonRepoOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
 
 	t.Run("One result when limit is 1", func(t *testing.T) {
 		// Should only get private_repo_1 back, because limit is 1
@@ -3681,7 +3680,7 @@ func TestPermsStore_CountReposWithStalePerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
 	t.Cleanup(func() {
@@ -3696,19 +3695,19 @@ func TestPermsStore_CountReposWithStalePerms(t *testing.T) {
 		sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`), // id=3
 	}
 	for _, q := range qs {
-		execQuery(t, ctx, s, q)
+		executeQuery(t, ctx, s, q)
 	}
 
 	// Mark sync jobs as completed for all repos.
 	repo1FinishedAt := clock().Add(-15 * time.Minute)
 	repo2FinishedAt := clock().Add(-5 * time.Minute)
 	repo3FinishedAt := clock().Add(-10 * time.Minute)
-	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1FinishedAt, database.ReasonRepoOutdatedPermissions)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2FinishedAt, database.ReasonRepoOutdatedPermissions)
-	execQuery(t, ctx, s, q)
-	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3FinishedAt, database.ReasonRepoOutdatedPermissions)
-	execQuery(t, ctx, s, q)
+	q := sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 1, repo1FinishedAt, ReasonRepoOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 2, repo2FinishedAt, ReasonRepoOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
+	q = sqlf.Sprintf(`INSERT INTO permission_sync_jobs(repository_id, finished_at, reason) VALUES(%d, %s, %s)`, 3, repo3FinishedAt, ReasonRepoOutdatedPermissions)
+	executeQuery(t, ctx, s, q)
 
 	t.Run("One result when age is 10 minutes", func(t *testing.T) {
 		// Should only get private_repo_1 back, because age is 10 minutes.
@@ -3747,7 +3746,7 @@ func TestPermsStore_MapUsers(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
 
@@ -3766,7 +3765,7 @@ func TestPermsStore_MapUsers(t *testing.T) {
 	users := db.Users()
 
 	igor, err := users.Create(ctx,
-		database.NewUser{
+		NewUser{
 			Email:           "igor@example.com",
 			Username:        "igor",
 			EmailIsVerified: true,
@@ -3774,7 +3773,7 @@ func TestPermsStore_MapUsers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	shreah, err := users.Create(ctx,
-		database.NewUser{
+		NewUser{
 			Email:           "shreah@example.com",
 			Username:        "shreah",
 			EmailIsVerified: true,
@@ -3782,7 +3781,7 @@ func TestPermsStore_MapUsers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	omar, err := users.Create(ctx,
-		database.NewUser{
+		NewUser{
 			Email:           "omar@example.com",
 			Username:        "omar",
 			EmailIsVerified: true,
@@ -3819,7 +3818,7 @@ func TestPermsStore_Metrics(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 
 	ctx := context.Background()
@@ -3913,7 +3912,7 @@ func TestPermsStore_Metrics(t *testing.T) {
 	}
 }
 
-func setupTestPerms(t *testing.T, db database.DB, clock func() time.Time) *permsStore {
+func setupTestPerms(t *testing.T, db DB, clock func() time.Time) *permsStore {
 	t.Helper()
 	logger := logtest.Scoped(t)
 	s := perms(logger, db, clock)
@@ -3930,7 +3929,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 	s := perms(logger, db, clock)
 	ctx := context.Background()
 
@@ -3946,7 +3945,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 		}
 	})
 	// Set fake authz providers otherwise authz is bypassed
-	authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+	authz.SetProviders(false, []authz.Provider{&fakePermsProvider{}})
 	defer authz.SetProviders(true, nil)
 	// Set up some repositories and permissions
 	qs := []*sqlf.Query{
@@ -4000,7 +3999,7 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			Name:   "TestPagination",
 			UserID: 555,
 			Args: &ListUserPermissionsArgs{
-				PaginationArgs: &database.PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: database.OrderBy{{Field: "repo.name"}}},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(2), After: pointers.Ptr("'public_repo_5'"), OrderBy: OrderBy{{Field: "repo.name"}}},
 			},
 			WantResults: []*listUserPermissionsResult{
 				{
@@ -4091,7 +4090,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	testDb := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDb)
+	db := NewDB(logger, testDb)
 
 	s := perms(logtest.Scoped(t), db, clock)
 	ctx := context.Background()
@@ -4185,7 +4184,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 			Name:   "TestPaginationWithPrivateRepo",
 			RepoID: 1,
 			Args: &ListRepoPermissionsArgs{
-				PaginationArgs: &database.PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: database.OrderBy{{Field: "users.id"}}, Ascending: true},
+				PaginationArgs: &PaginationArgs{First: pointers.Ptr(1), After: pointers.Ptr("555"), OrderBy: OrderBy{{Field: "users.id"}}, Ascending: true},
 			},
 			WantResults: []*listRepoPermissionsResult{
 				{
@@ -4311,7 +4310,7 @@ func TestPermsStore_ListRepoPermissions(t *testing.T) {
 		t.Run(test.Name, func(t *testing.T) {
 			if !test.NoAuthzProviders {
 				// Set fake authz providers otherwise authz is bypassed
-				authz.SetProviders(false, []authz.Provider{&fakeProvider{}})
+				authz.SetProviders(false, []authz.Provider{&fakePermsProvider{}})
 				defer authz.SetProviders(true, nil)
 			}
 
@@ -4365,25 +4364,32 @@ type listRepoPermissionsResult struct {
 	Reason UserRepoPermissionReason
 }
 
-type fakeProvider struct {
+type fakePermsProvider struct {
 	codeHost *extsvc.CodeHost
 	extAcct  *extsvc.Account
 }
 
-func (p *fakeProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
+func (p *fakePermsProvider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
 	return p.extAcct, nil
 }
 
-func (p *fakeProvider) ServiceType() string { return p.codeHost.ServiceType }
-func (p *fakeProvider) ServiceID() string   { return p.codeHost.ServiceID }
-func (p *fakeProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
+func (p *fakePermsProvider) ServiceType() string { return p.codeHost.ServiceType }
+func (p *fakePermsProvider) ServiceID() string   { return p.codeHost.ServiceID }
+func (p *fakePermsProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
 
-func (p *fakeProvider) ValidateConnection(context.Context) error { return nil }
+func (p *fakePermsProvider) ValidateConnection(context.Context) error { return nil }
 
-func (p *fakeProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *fakePermsProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
 	return nil, nil
 }
 
-func (p *fakeProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+func (p *fakePermsProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	return nil, nil
+}
+
+func equal(t testing.TB, name string, want, have any) {
+	t.Helper()
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatalf("%q: %s", name, diff)
+	}
 }

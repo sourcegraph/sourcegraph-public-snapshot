@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -51,9 +50,9 @@ type PermsStore interface {
 	// Slice with length 1 and userID == 0 is returned for unrestricted repo.
 	LoadRepoPermissions(ctx context.Context, repoID int32) ([]authz.Permission, error)
 	// SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses setUserRepoPermissions internally.
-	SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error)
+	SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*SetPermissionsResult, error)
 	// SetRepoPerms sets the users that can access a repo. Uses setUserRepoPermissions internally.
-	SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error)
+	SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*SetPermissionsResult, error)
 	// SetRepoPermissionsUnrestricted sets the unrestricted on the
 	// repo_permissions table for all the provided repos. Either all or non
 	// are updated. If the repository ID is not in repo_permissions yet, a row
@@ -187,7 +186,7 @@ type PermsStore interface {
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
 // 'repo_permissions', 'user_pending_permissions', and 'repo_pending_permissions' tables.
 type permsStore struct {
-	ossDB  database.DB
+	ossDB  DB
 	logger log.Logger
 	*basestore.Store
 
@@ -197,27 +196,27 @@ type permsStore struct {
 var _ PermsStore = (*permsStore)(nil)
 
 // Perms returns a new PermsStore with given parameters.
-func Perms(logger log.Logger, db database.DB, clock func() time.Time) PermsStore {
+func Perms(logger log.Logger, db DB, clock func() time.Time) PermsStore {
 	return perms(logger, db, clock)
 }
 
-func perms(logger log.Logger, db database.DB, clock func() time.Time) *permsStore {
+func perms(logger log.Logger, db DB, clock func() time.Time) *permsStore {
 	store := basestore.NewWithHandle(db.Handle())
 
-	return &permsStore{logger: logger, Store: store, clock: clock, ossDB: database.NewDBWith(logger, store)}
+	return &permsStore{logger: logger, Store: store, clock: clock, ossDB: NewDBWith(logger, store)}
 
 }
 
 func PermsWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) PermsStore {
 	store := basestore.NewWithHandle(other.Handle())
 
-	return &permsStore{logger: logger, Store: store, clock: clock, ossDB: database.NewDBWith(logger, store)}
+	return &permsStore{logger: logger, Store: store, clock: clock, ossDB: NewDBWith(logger, store)}
 }
 
 func (s *permsStore) With(other basestore.ShareableStore) PermsStore {
 	store := s.Store.With(other)
 
-	return &permsStore{logger: s.logger, Store: store, clock: s.clock, ossDB: database.NewDBWith(s.logger, store)}
+	return &permsStore{logger: s.logger, Store: store, clock: s.clock, ossDB: NewDBWith(s.logger, store)}
 }
 
 func (s *permsStore) Transact(ctx context.Context) (PermsStore, error) {
@@ -290,11 +289,11 @@ func (s *permsStore) LoadRepoPermissions(ctx context.Context, repoID int32) (p [
 }
 
 // SetUserExternalAccountPerms sets the users permissions for repos in the database. Uses setUserRepoPermissions internally.
-func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+func (s *permsStore) SetUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*SetPermissionsResult, error) {
 	return s.setUserExternalAccountPerms(ctx, user, repoIDs, source, true)
 }
 
-func (s *permsStore) setUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource, replacePerms bool) (*database.SetPermissionsResult, error) {
+func (s *permsStore) setUserExternalAccountPerms(ctx context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource, replacePerms bool) (*SetPermissionsResult, error) {
 	p := make([]authz.Permission, 0, len(repoIDs))
 
 	for _, repoID := range repoIDs {
@@ -314,7 +313,7 @@ func (s *permsStore) setUserExternalAccountPerms(ctx context.Context, user authz
 }
 
 // SetRepoPerms sets the users that can access a repo. Uses setUserRepoPermissions internally.
-func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
+func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*SetPermissionsResult, error) {
 	p := make([]authz.Permission, 0, len(userIDs))
 
 	for _, user := range userIDs {
@@ -366,7 +365,7 @@ func (s *permsStore) SetRepoPerms(ctx context.Context, repoID int32, userIDs []a
 //	       1 |     233 |             42 | 2023-01-28T14:24:15Z | 2023-01-28T14:24:12Z | 'sync'
 //
 // So one repo {id:2} was removed and one was added {id:233} to the user
-func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source authz.PermsSource, replacePerms bool) (_ *database.SetPermissionsResult, err error) {
+func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permission, entity authz.PermissionEntity, source authz.PermsSource, replacePerms bool) (_ *SetPermissionsResult, err error) {
 	ctx, save := s.observe(ctx, "setUserRepoPermissions")
 	defer func() {
 		f := []attribute.KeyValue{}
@@ -411,7 +410,7 @@ func (s *permsStore) setUserRepoPermissions(ctx context.Context, p []authz.Permi
 		}
 	}
 
-	return &database.SetPermissionsResult{
+	return &SetPermissionsResult{
 		Added:   added,
 		Removed: len(deleted),
 		Found:   len(p),
@@ -1823,7 +1822,7 @@ func (s *permsStore) MapUsers(ctx context.Context, bindIDs []string, mapping *sc
 
 	switch mapping.BindID {
 	case "email":
-		emails, err := database.UserEmailsWith(s).GetVerifiedEmails(ctx, filtered...)
+		emails, err := UserEmailsWith(s).GetVerifiedEmails(ctx, filtered...)
 		if err != nil {
 			return nil, err
 		}
@@ -1838,7 +1837,7 @@ func (s *permsStore) MapUsers(ctx context.Context, bindIDs []string, mapping *sc
 			}
 		}
 	case "username":
-		users, err := database.UsersWith(s.logger, s).GetByUsernames(ctx, filtered...)
+		users, err := UsersWith(s.logger, s).GetByUsernames(ctx, filtered...)
 		if err != nil {
 			return nil, err
 		}
@@ -1867,7 +1866,7 @@ func computeDiff[T comparable](oldIDs collections.Set[T], newIDs collections.Set
 
 type ListUserPermissionsArgs struct {
 	Query          string
-	PaginationArgs *database.PaginationArgs
+	PaginationArgs *PaginationArgs
 }
 
 type UserPermission struct {
@@ -1881,7 +1880,7 @@ type UserPermission struct {
 func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args *ListUserPermissionsArgs) ([]*UserPermission, error) {
 	// Set actor with provided userID to context.
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
-	authzParams, err := database.GetAuthzQueryParameters(ctx, s.ossDB)
+	authzParams, err := GetAuthzQueryParameters(ctx, s.ossDB)
 	if err != nil {
 		return nil, err
 	}
@@ -1979,14 +1978,14 @@ FROM
 
 var defaultPageSize = 100
 
-var defaultPaginationArgs = database.PaginationArgs{
+var defaultPaginationArgs = PaginationArgs{
 	First:   &defaultPageSize,
-	OrderBy: database.OrderBy{{Field: "users.id"}},
+	OrderBy: OrderBy{{Field: "users.id"}},
 }
 
 type ListRepoPermissionsArgs struct {
 	Query          string
-	PaginationArgs *database.PaginationArgs
+	PaginationArgs *PaginationArgs
 }
 
 type RepoPermission struct {
@@ -1998,7 +1997,7 @@ type RepoPermission struct {
 // ListRepoPermissions gets the list of users who has access to the repository, along with the reason
 // and timestamp for each permission.
 func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID, args *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
-	authzParams, err := database.GetAuthzQueryParameters(context.Background(), s.ossDB)
+	authzParams, err := GetAuthzQueryParameters(context.Background(), s.ossDB)
 	if err != nil {
 		return nil, err
 	}
@@ -2133,7 +2132,7 @@ WHERE
 `
 
 func (s *permsStore) IsRepoUnrestricted(ctx context.Context, repoID api.RepoID) (bool, error) {
-	authzParams, err := database.GetAuthzQueryParameters(context.Background(), s.ossDB)
+	authzParams, err := GetAuthzQueryParameters(context.Background(), s.ossDB)
 	if err != nil {
 		return false, err
 	}
@@ -2141,11 +2140,11 @@ func (s *permsStore) IsRepoUnrestricted(ctx context.Context, repoID api.RepoID) 
 	return s.isRepoUnrestricted(ctx, repoID, authzParams)
 }
 
-func (s *permsStore) isRepoUnrestricted(ctx context.Context, repoID api.RepoID, authzParams *database.AuthzQueryParameters) (bool, error) {
-	conditions := []*sqlf.Query{database.GetUnrestrictedReposCond()}
+func (s *permsStore) isRepoUnrestricted(ctx context.Context, repoID api.RepoID, authzParams *AuthzQueryParameters) (bool, error) {
+	conditions := []*sqlf.Query{GetUnrestrictedReposCond()}
 
 	if !authzParams.UsePermissionsUserMapping {
-		conditions = append(conditions, database.ExternalServiceUnrestrictedCondition)
+		conditions = append(conditions, ExternalServiceUnrestrictedCondition)
 	}
 
 	query := sqlf.Sprintf(isRepoUnrestrictedQueryFmt, sqlf.Join(conditions, "\nOR\n"), repoID)

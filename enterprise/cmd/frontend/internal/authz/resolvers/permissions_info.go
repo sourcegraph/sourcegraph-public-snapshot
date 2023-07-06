@@ -107,7 +107,7 @@ func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*i
 }
 
 func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoRepositoryResolver, error) {
-	permissions, err := s.db.Perms().ListUserPermissions(ctx, s.userID, &edb.ListUserPermissionsArgs{Query: s.query, PaginationArgs: args})
+	permissions, err := s.db.Perms().ListUserPermissions(ctx, s.userID, &database.ListUserPermissionsArgs{Query: s.query, PaginationArgs: args})
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, arg
 
 type permissionsInfoRepositoryResolver struct {
 	db   database.DB
-	perm *edb.UserPermission
+	perm *database.UserPermission
 }
 
 func (r permissionsInfoRepositoryResolver) ID() graphql.ID {
@@ -196,7 +196,7 @@ func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (*int32, e
 }
 
 func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoUserResolver, error) {
-	permissions, err := s.db.Perms().ListRepoPermissions(ctx, s.repoID, &edb.ListRepoPermissionsArgs{Query: s.query, PaginationArgs: args})
+	permissions, err := s.db.Perms().ListRepoPermissions(ctx, s.repoID, &database.ListRepoPermissionsArgs{Query: s.query, PaginationArgs: args})
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *data
 
 type permissionsInfoUserResolver struct {
 	db   database.DB
-	perm *edb.RepoPermission
+	perm *database.RepoPermission
 }
 
 func (r permissionsInfoUserResolver) ID() graphql.ID {
