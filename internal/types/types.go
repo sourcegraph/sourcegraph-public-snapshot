@@ -580,6 +580,7 @@ func ParseCloneStatusFromGraphQL(s string) CloneStatus {
 // GitserverRepo represents the data gitserver knows about a repo
 type GitserverRepo struct {
 	RepoID api.RepoID
+
 	// Usually represented by a gitserver hostname
 	ShardID         string
 	CloneStatus     CloneStatus
