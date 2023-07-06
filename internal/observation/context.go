@@ -20,7 +20,7 @@ import (
 // any location that wants to use it for observing operations.
 type Context struct {
 	Logger       log.Logger
-	Tracer       *trace.Tracer
+	Tracer       trace.Tracer
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
 }
@@ -97,7 +97,7 @@ func (c *Context) Operation(args Op) *Operation {
 func NewContext(logger log.Logger, opts ...Opt) *Context {
 	ctx := &Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Tracer:     trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -112,7 +112,7 @@ type Opt func(*Context)
 
 func Tracer(provider oteltrace.TracerProvider) Opt {
 	return func(ctx *Context) {
-		ctx.Tracer = &trace.Tracer{TracerProvider: provider}
+		ctx.Tracer = trace.Tracer{TracerProvider: provider}
 	}
 }
 

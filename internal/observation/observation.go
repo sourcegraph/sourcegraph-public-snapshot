@@ -107,7 +107,7 @@ func TestTraceLogger(logger log.Logger) TraceLogger {
 type traceLogger struct {
 	opName  string
 	event   honey.Event
-	trace   *trace.Trace
+	trace   trace.Trace
 	context *Context
 
 	log.Logger
@@ -121,9 +121,7 @@ func (t *traceLogger) initWithTags(attrs ...attribute.KeyValue) {
 			t.event.AddField(t.opName+"."+toSnakeCase(string(field.Key)), field.Value.AsInterface())
 		}
 	}
-	if t.trace != nil {
-		t.trace.SetAttributes(attrs...)
-	}
+	t.trace.SetAttributes(attrs...)
 }
 
 func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
@@ -143,9 +141,7 @@ func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
 		// won't be sent but the "parent" may be sent.
 		event.Send()
 	}
-	if t.trace != nil {
-		t.trace.AddEvent(name, attributes...)
-	}
+	t.trace.AddEvent(name, attributes...)
 }
 
 func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
@@ -154,9 +150,7 @@ func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
 			t.event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value)
 		}
 	}
-	if t.trace != nil {
-		t.trace.SetAttributes(attributes...)
-	}
+	t.trace.SetAttributes(attributes...)
 	t.Logger = t.Logger.With(attributesToLogFields(attributes)...)
 }
 
@@ -317,13 +311,8 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 
 // startTrace creates a new Trace object and returns the wrapped context. This returns
 // an unmodified context and a nil startTrace if no tracer was supplied on the observation context.
-func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Context) {
-	if op.context.Tracer == nil {
-		return nil, ctx
-	}
-
-	tr, ctx := op.context.Tracer.New(ctx, op.kebabName)
-	return &tr, ctx
+func (op *Operation) startTrace(ctx context.Context) (trace.Trace, context.Context) {
+	return op.context.Tracer.New(ctx, op.kebabName)
 }
 
 // emitErrorLogs will log as message if the operation has failed. This log contains the error
@@ -373,11 +362,7 @@ func (op *Operation) emitMetrics(err *error, count, elapsed float64, labels []st
 // finishTrace will set the error value, log additional fields supplied after the operation's
 // execution, and finalize the trace span. This does nothing if no trace was constructed at
 // the start of the operation.
-func (op *Operation) finishTrace(err *error, tr *trace.Trace, attrs []attribute.KeyValue) {
-	if tr == nil {
-		return
-	}
-
+func (op *Operation) finishTrace(err *error, tr trace.Trace, attrs []attribute.KeyValue) {
 	if err != nil {
 		tr.SetError(*err)
 	}
