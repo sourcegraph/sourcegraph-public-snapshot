@@ -102,25 +102,23 @@ func getUserLimit(ctx context.Context, db database.DB) (int, error) {
 	return 0, nil
 }
 
-func getSiteAdmins(ctx context.Context, db database.DB, logger log.Logger) ([]string, error) {
+func getSiteAdmins(ctx context.Context, db database.DB) ([]string, error) {
 	var siteAdminEmails []string
 
-	userStore := database.Users(logger)
+	userStore := db.Users()
 	users, err := userStore.List(ctx, &database.UsersListOptions{})
 	if err != nil {
-		return []string{}, err
+		return siteAdminEmails, err
 	}
 
 	for _, user := range users {
 		if user.SiteAdmin {
-			email, verified, err := getUserEmail(ctx, db, user)
+			email, _, err := getUserEmail(ctx, db, user)
 			if err != nil {
 				return siteAdminEmails, err
 			}
 
-			if verified {
-				siteAdminEmails = append(siteAdminEmails, email)
-			}
+			siteAdminEmails = append(siteAdminEmails, email)
 		}
 	}
 	return siteAdminEmails, nil
