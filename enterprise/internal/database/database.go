@@ -18,7 +18,6 @@ type EnterpriseDB interface {
 	database.DB
 	Perms() PermsStore
 	SubRepoPerms() SubRepoPermsStore
-	Codeowners() CodeownersStore
 	GitHubApps() gha.GitHubAppsStore
 }
 
@@ -43,10 +42,6 @@ func (edb *enterpriseDB) Perms() PermsStore {
 
 func (edb *enterpriseDB) SubRepoPerms() SubRepoPermsStore {
 	return SubRepoPermsWith(basestore.NewWithHandle(edb.Handle()))
-}
-
-func (edb *enterpriseDB) Codeowners() CodeownersStore {
-	return CodeownersWith(basestore.NewWithHandle(edb.Handle()))
 }
 
 func (edb *enterpriseDB) GitHubApps() gha.GitHubAppsStore {

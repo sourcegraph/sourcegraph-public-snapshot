@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/own/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"

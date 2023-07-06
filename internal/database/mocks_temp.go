@@ -21,6 +21,7 @@ import (
 	extsvc "github.com/sourcegraph/sourcegraph/internal/extsvc"
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	featureflag "github.com/sourcegraph/sourcegraph/internal/featureflag"
+	types1 "github.com/sourcegraph/sourcegraph/internal/own/types"
 	result "github.com/sourcegraph/sourcegraph/internal/search/result"
 	temporarysettings "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
@@ -11746,6 +11747,1029 @@ func (c CodeMonitorStoreUpsertLastSearchedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// MockCodeownersStore is a mock implementation of the CodeownersStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockCodeownersStore struct {
+	// CountCodeownersFilesFunc is an instance of a mock function object
+	// controlling the behavior of the method CountCodeownersFiles.
+	CountCodeownersFilesFunc *CodeownersStoreCountCodeownersFilesFunc
+	// CreateCodeownersFileFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateCodeownersFile.
+	CreateCodeownersFileFunc *CodeownersStoreCreateCodeownersFileFunc
+	// DeleteCodeownersForReposFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteCodeownersForRepos.
+	DeleteCodeownersForReposFunc *CodeownersStoreDeleteCodeownersForReposFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *CodeownersStoreDoneFunc
+	// GetCodeownersForRepoFunc is an instance of a mock function object
+	// controlling the behavior of the method GetCodeownersForRepo.
+	GetCodeownersForRepoFunc *CodeownersStoreGetCodeownersForRepoFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *CodeownersStoreHandleFunc
+	// ListCodeownersFunc is an instance of a mock function object
+	// controlling the behavior of the method ListCodeowners.
+	ListCodeownersFunc *CodeownersStoreListCodeownersFunc
+	// UpdateCodeownersFileFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateCodeownersFile.
+	UpdateCodeownersFileFunc *CodeownersStoreUpdateCodeownersFileFunc
+}
+
+// NewMockCodeownersStore creates a new mock of the CodeownersStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockCodeownersStore() *MockCodeownersStore {
+	return &MockCodeownersStore{
+		CountCodeownersFilesFunc: &CodeownersStoreCountCodeownersFilesFunc{
+			defaultHook: func(context.Context) (r0 int32, r1 error) {
+				return
+			},
+		},
+		CreateCodeownersFileFunc: &CodeownersStoreCreateCodeownersFileFunc{
+			defaultHook: func(context.Context, *types1.CodeownersFile) (r0 error) {
+				return
+			},
+		},
+		DeleteCodeownersForReposFunc: &CodeownersStoreDeleteCodeownersForReposFunc{
+			defaultHook: func(context.Context, ...api.RepoID) (r0 error) {
+				return
+			},
+		},
+		DoneFunc: &CodeownersStoreDoneFunc{
+			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		GetCodeownersForRepoFunc: &CodeownersStoreGetCodeownersForRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 *types1.CodeownersFile, r1 error) {
+				return
+			},
+		},
+		HandleFunc: &CodeownersStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		ListCodeownersFunc: &CodeownersStoreListCodeownersFunc{
+			defaultHook: func(context.Context, ListCodeownersOpts) (r0 []*types1.CodeownersFile, r1 int32, r2 error) {
+				return
+			},
+		},
+		UpdateCodeownersFileFunc: &CodeownersStoreUpdateCodeownersFileFunc{
+			defaultHook: func(context.Context, *types1.CodeownersFile) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockCodeownersStore creates a new mock of the CodeownersStore
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockCodeownersStore() *MockCodeownersStore {
+	return &MockCodeownersStore{
+		CountCodeownersFilesFunc: &CodeownersStoreCountCodeownersFilesFunc{
+			defaultHook: func(context.Context) (int32, error) {
+				panic("unexpected invocation of MockCodeownersStore.CountCodeownersFiles")
+			},
+		},
+		CreateCodeownersFileFunc: &CodeownersStoreCreateCodeownersFileFunc{
+			defaultHook: func(context.Context, *types1.CodeownersFile) error {
+				panic("unexpected invocation of MockCodeownersStore.CreateCodeownersFile")
+			},
+		},
+		DeleteCodeownersForReposFunc: &CodeownersStoreDeleteCodeownersForReposFunc{
+			defaultHook: func(context.Context, ...api.RepoID) error {
+				panic("unexpected invocation of MockCodeownersStore.DeleteCodeownersForRepos")
+			},
+		},
+		DoneFunc: &CodeownersStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockCodeownersStore.Done")
+			},
+		},
+		GetCodeownersForRepoFunc: &CodeownersStoreGetCodeownersForRepoFunc{
+			defaultHook: func(context.Context, api.RepoID) (*types1.CodeownersFile, error) {
+				panic("unexpected invocation of MockCodeownersStore.GetCodeownersForRepo")
+			},
+		},
+		HandleFunc: &CodeownersStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockCodeownersStore.Handle")
+			},
+		},
+		ListCodeownersFunc: &CodeownersStoreListCodeownersFunc{
+			defaultHook: func(context.Context, ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error) {
+				panic("unexpected invocation of MockCodeownersStore.ListCodeowners")
+			},
+		},
+		UpdateCodeownersFileFunc: &CodeownersStoreUpdateCodeownersFileFunc{
+			defaultHook: func(context.Context, *types1.CodeownersFile) error {
+				panic("unexpected invocation of MockCodeownersStore.UpdateCodeownersFile")
+			},
+		},
+	}
+}
+
+// NewMockCodeownersStoreFrom creates a new mock of the MockCodeownersStore
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockCodeownersStoreFrom(i CodeownersStore) *MockCodeownersStore {
+	return &MockCodeownersStore{
+		CountCodeownersFilesFunc: &CodeownersStoreCountCodeownersFilesFunc{
+			defaultHook: i.CountCodeownersFiles,
+		},
+		CreateCodeownersFileFunc: &CodeownersStoreCreateCodeownersFileFunc{
+			defaultHook: i.CreateCodeownersFile,
+		},
+		DeleteCodeownersForReposFunc: &CodeownersStoreDeleteCodeownersForReposFunc{
+			defaultHook: i.DeleteCodeownersForRepos,
+		},
+		DoneFunc: &CodeownersStoreDoneFunc{
+			defaultHook: i.Done,
+		},
+		GetCodeownersForRepoFunc: &CodeownersStoreGetCodeownersForRepoFunc{
+			defaultHook: i.GetCodeownersForRepo,
+		},
+		HandleFunc: &CodeownersStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		ListCodeownersFunc: &CodeownersStoreListCodeownersFunc{
+			defaultHook: i.ListCodeowners,
+		},
+		UpdateCodeownersFileFunc: &CodeownersStoreUpdateCodeownersFileFunc{
+			defaultHook: i.UpdateCodeownersFile,
+		},
+	}
+}
+
+// CodeownersStoreCountCodeownersFilesFunc describes the behavior when the
+// CountCodeownersFiles method of the parent MockCodeownersStore instance is
+// invoked.
+type CodeownersStoreCountCodeownersFilesFunc struct {
+	defaultHook func(context.Context) (int32, error)
+	hooks       []func(context.Context) (int32, error)
+	history     []CodeownersStoreCountCodeownersFilesFuncCall
+	mutex       sync.Mutex
+}
+
+// CountCodeownersFiles delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeownersStore) CountCodeownersFiles(v0 context.Context) (int32, error) {
+	r0, r1 := m.CountCodeownersFilesFunc.nextHook()(v0)
+	m.CountCodeownersFilesFunc.appendCall(CodeownersStoreCountCodeownersFilesFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CountCodeownersFiles
+// method of the parent MockCodeownersStore instance is invoked and the hook
+// queue is empty.
+func (f *CodeownersStoreCountCodeownersFilesFunc) SetDefaultHook(hook func(context.Context) (int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountCodeownersFiles method of the parent MockCodeownersStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeownersStoreCountCodeownersFilesFunc) PushHook(hook func(context.Context) (int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeownersStoreCountCodeownersFilesFunc) SetDefaultReturn(r0 int32, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeownersStoreCountCodeownersFilesFunc) PushReturn(r0 int32, r1 error) {
+	f.PushHook(func(context.Context) (int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeownersStoreCountCodeownersFilesFunc) nextHook() func(context.Context) (int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeownersStoreCountCodeownersFilesFunc) appendCall(r0 CodeownersStoreCountCodeownersFilesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeownersStoreCountCodeownersFilesFuncCall
+// objects describing the invocations of this function.
+func (f *CodeownersStoreCountCodeownersFilesFunc) History() []CodeownersStoreCountCodeownersFilesFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeownersStoreCountCodeownersFilesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeownersStoreCountCodeownersFilesFuncCall is an object that describes
+// an invocation of method CountCodeownersFiles on an instance of
+// MockCodeownersStore.
+type CodeownersStoreCountCodeownersFilesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeownersStoreCountCodeownersFilesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeownersStoreCountCodeownersFilesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeownersStoreCreateCodeownersFileFunc describes the behavior when the
+// CreateCodeownersFile method of the parent MockCodeownersStore instance is
+// invoked.
+type CodeownersStoreCreateCodeownersFileFunc struct {
+	defaultHook func(context.Context, *types1.CodeownersFile) error
+	hooks       []func(context.Context, *types1.CodeownersFile) error
+	history     []CodeownersStoreCreateCodeownersFileFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateCodeownersFile delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeownersStore) CreateCodeownersFile(v0 context.Context, v1 *types1.CodeownersFile) error {
+	r0 := m.CreateCodeownersFileFunc.nextHook()(v0, v1)
+	m.CreateCodeownersFileFunc.appendCall(CodeownersStoreCreateCodeownersFileFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CreateCodeownersFile
+// method of the parent MockCodeownersStore instance is invoked and the hook
+// queue is empty.
+func (f *CodeownersStoreCreateCodeownersFileFunc) SetDefaultHook(hook func(context.Context, *types1.CodeownersFile) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateCodeownersFile method of the parent MockCodeownersStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeownersStoreCreateCodeownersFileFunc) PushHook(hook func(context.Context, *types1.CodeownersFile) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeownersStoreCreateCodeownersFileFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *types1.CodeownersFile) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeownersStoreCreateCodeownersFileFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *types1.CodeownersFile) error {
+		return r0
+	})
+}
+
+func (f *CodeownersStoreCreateCodeownersFileFunc) nextHook() func(context.Context, *types1.CodeownersFile) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeownersStoreCreateCodeownersFileFunc) appendCall(r0 CodeownersStoreCreateCodeownersFileFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeownersStoreCreateCodeownersFileFuncCall
+// objects describing the invocations of this function.
+func (f *CodeownersStoreCreateCodeownersFileFunc) History() []CodeownersStoreCreateCodeownersFileFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeownersStoreCreateCodeownersFileFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeownersStoreCreateCodeownersFileFuncCall is an object that describes
+// an invocation of method CreateCodeownersFile on an instance of
+// MockCodeownersStore.
+type CodeownersStoreCreateCodeownersFileFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types1.CodeownersFile
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeownersStoreCreateCodeownersFileFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeownersStoreCreateCodeownersFileFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeownersStoreDeleteCodeownersForReposFunc describes the behavior when
+// the DeleteCodeownersForRepos method of the parent MockCodeownersStore
+// instance is invoked.
+type CodeownersStoreDeleteCodeownersForReposFunc struct {
+	defaultHook func(context.Context, ...api.RepoID) error
+	hooks       []func(context.Context, ...api.RepoID) error
+	history     []CodeownersStoreDeleteCodeownersForReposFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteCodeownersForRepos delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockCodeownersStore) DeleteCodeownersForRepos(v0 context.Context, v1 ...api.RepoID) error {
+	r0 := m.DeleteCodeownersForReposFunc.nextHook()(v0, v1...)
+	m.DeleteCodeownersForReposFunc.appendCall(CodeownersStoreDeleteCodeownersForReposFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteCodeownersForRepos method of the parent MockCodeownersStore
+// instance is invoked and the hook queue is empty.
+func (f *CodeownersStoreDeleteCodeownersForReposFunc) SetDefaultHook(hook func(context.Context, ...api.RepoID) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteCodeownersForRepos method of the parent MockCodeownersStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *CodeownersStoreDeleteCodeownersForReposFunc) PushHook(hook func(context.Context, ...api.RepoID) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeownersStoreDeleteCodeownersForReposFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoID) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeownersStoreDeleteCodeownersForReposFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, ...api.RepoID) error {
+		return r0
+	})
+}
+
+func (f *CodeownersStoreDeleteCodeownersForReposFunc) nextHook() func(context.Context, ...api.RepoID) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeownersStoreDeleteCodeownersForReposFunc) appendCall(r0 CodeownersStoreDeleteCodeownersForReposFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// CodeownersStoreDeleteCodeownersForReposFuncCall objects describing the
+// invocations of this function.
+func (f *CodeownersStoreDeleteCodeownersForReposFunc) History() []CodeownersStoreDeleteCodeownersForReposFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeownersStoreDeleteCodeownersForReposFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeownersStoreDeleteCodeownersForReposFuncCall is an object that
+// describes an invocation of method DeleteCodeownersForRepos on an instance
+// of MockCodeownersStore.
+type CodeownersStoreDeleteCodeownersForReposFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c CodeownersStoreDeleteCodeownersForReposFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeownersStoreDeleteCodeownersForReposFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeownersStoreDoneFunc describes the behavior when the Done method of
+// the parent MockCodeownersStore instance is invoked.
+type CodeownersStoreDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []CodeownersStoreDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeownersStore) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(CodeownersStoreDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockCodeownersStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeownersStoreDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockCodeownersStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeownersStoreDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeownersStoreDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeownersStoreDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *CodeownersStoreDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeownersStoreDoneFunc) appendCall(r0 CodeownersStoreDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeownersStoreDoneFuncCall objects
+// describing the invocations of this function.
+func (f *CodeownersStoreDoneFunc) History() []CodeownersStoreDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeownersStoreDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeownersStoreDoneFuncCall is an object that describes an invocation of
+// method Done on an instance of MockCodeownersStore.
+type CodeownersStoreDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeownersStoreDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeownersStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeownersStoreGetCodeownersForRepoFunc describes the behavior when the
+// GetCodeownersForRepo method of the parent MockCodeownersStore instance is
+// invoked.
+type CodeownersStoreGetCodeownersForRepoFunc struct {
+	defaultHook func(context.Context, api.RepoID) (*types1.CodeownersFile, error)
+	hooks       []func(context.Context, api.RepoID) (*types1.CodeownersFile, error)
+	history     []CodeownersStoreGetCodeownersForRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// GetCodeownersForRepo delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeownersStore) GetCodeownersForRepo(v0 context.Context, v1 api.RepoID) (*types1.CodeownersFile, error) {
+	r0, r1 := m.GetCodeownersForRepoFunc.nextHook()(v0, v1)
+	m.GetCodeownersForRepoFunc.appendCall(CodeownersStoreGetCodeownersForRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetCodeownersForRepo
+// method of the parent MockCodeownersStore instance is invoked and the hook
+// queue is empty.
+func (f *CodeownersStoreGetCodeownersForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (*types1.CodeownersFile, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetCodeownersForRepo method of the parent MockCodeownersStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeownersStoreGetCodeownersForRepoFunc) PushHook(hook func(context.Context, api.RepoID) (*types1.CodeownersFile, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeownersStoreGetCodeownersForRepoFunc) SetDefaultReturn(r0 *types1.CodeownersFile, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) (*types1.CodeownersFile, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeownersStoreGetCodeownersForRepoFunc) PushReturn(r0 *types1.CodeownersFile, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) (*types1.CodeownersFile, error) {
+		return r0, r1
+	})
+}
+
+func (f *CodeownersStoreGetCodeownersForRepoFunc) nextHook() func(context.Context, api.RepoID) (*types1.CodeownersFile, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeownersStoreGetCodeownersForRepoFunc) appendCall(r0 CodeownersStoreGetCodeownersForRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeownersStoreGetCodeownersForRepoFuncCall
+// objects describing the invocations of this function.
+func (f *CodeownersStoreGetCodeownersForRepoFunc) History() []CodeownersStoreGetCodeownersForRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeownersStoreGetCodeownersForRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeownersStoreGetCodeownersForRepoFuncCall is an object that describes
+// an invocation of method GetCodeownersForRepo on an instance of
+// MockCodeownersStore.
+type CodeownersStoreGetCodeownersForRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types1.CodeownersFile
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeownersStoreGetCodeownersForRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeownersStoreGetCodeownersForRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// CodeownersStoreHandleFunc describes the behavior when the Handle method
+// of the parent MockCodeownersStore instance is invoked.
+type CodeownersStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []CodeownersStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockCodeownersStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(CodeownersStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockCodeownersStore instance is invoked and the hook queue is
+// empty.
+func (f *CodeownersStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockCodeownersStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *CodeownersStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeownersStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeownersStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *CodeownersStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeownersStoreHandleFunc) appendCall(r0 CodeownersStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeownersStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *CodeownersStoreHandleFunc) History() []CodeownersStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeownersStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeownersStoreHandleFuncCall is an object that describes an invocation
+// of method Handle on an instance of MockCodeownersStore.
+type CodeownersStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeownersStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeownersStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// CodeownersStoreListCodeownersFunc describes the behavior when the
+// ListCodeowners method of the parent MockCodeownersStore instance is
+// invoked.
+type CodeownersStoreListCodeownersFunc struct {
+	defaultHook func(context.Context, ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error)
+	hooks       []func(context.Context, ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error)
+	history     []CodeownersStoreListCodeownersFuncCall
+	mutex       sync.Mutex
+}
+
+// ListCodeowners delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeownersStore) ListCodeowners(v0 context.Context, v1 ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error) {
+	r0, r1, r2 := m.ListCodeownersFunc.nextHook()(v0, v1)
+	m.ListCodeownersFunc.appendCall(CodeownersStoreListCodeownersFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the ListCodeowners
+// method of the parent MockCodeownersStore instance is invoked and the hook
+// queue is empty.
+func (f *CodeownersStoreListCodeownersFunc) SetDefaultHook(hook func(context.Context, ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListCodeowners method of the parent MockCodeownersStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *CodeownersStoreListCodeownersFunc) PushHook(hook func(context.Context, ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeownersStoreListCodeownersFunc) SetDefaultReturn(r0 []*types1.CodeownersFile, r1 int32, r2 error) {
+	f.SetDefaultHook(func(context.Context, ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeownersStoreListCodeownersFunc) PushReturn(r0 []*types1.CodeownersFile, r1 int32, r2 error) {
+	f.PushHook(func(context.Context, ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *CodeownersStoreListCodeownersFunc) nextHook() func(context.Context, ListCodeownersOpts) ([]*types1.CodeownersFile, int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeownersStoreListCodeownersFunc) appendCall(r0 CodeownersStoreListCodeownersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeownersStoreListCodeownersFuncCall
+// objects describing the invocations of this function.
+func (f *CodeownersStoreListCodeownersFunc) History() []CodeownersStoreListCodeownersFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeownersStoreListCodeownersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeownersStoreListCodeownersFuncCall is an object that describes an
+// invocation of method ListCodeowners on an instance of
+// MockCodeownersStore.
+type CodeownersStoreListCodeownersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 ListCodeownersOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*types1.CodeownersFile
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int32
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeownersStoreListCodeownersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeownersStoreListCodeownersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// CodeownersStoreUpdateCodeownersFileFunc describes the behavior when the
+// UpdateCodeownersFile method of the parent MockCodeownersStore instance is
+// invoked.
+type CodeownersStoreUpdateCodeownersFileFunc struct {
+	defaultHook func(context.Context, *types1.CodeownersFile) error
+	hooks       []func(context.Context, *types1.CodeownersFile) error
+	history     []CodeownersStoreUpdateCodeownersFileFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateCodeownersFile delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockCodeownersStore) UpdateCodeownersFile(v0 context.Context, v1 *types1.CodeownersFile) error {
+	r0 := m.UpdateCodeownersFileFunc.nextHook()(v0, v1)
+	m.UpdateCodeownersFileFunc.appendCall(CodeownersStoreUpdateCodeownersFileFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateCodeownersFile
+// method of the parent MockCodeownersStore instance is invoked and the hook
+// queue is empty.
+func (f *CodeownersStoreUpdateCodeownersFileFunc) SetDefaultHook(hook func(context.Context, *types1.CodeownersFile) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateCodeownersFile method of the parent MockCodeownersStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *CodeownersStoreUpdateCodeownersFileFunc) PushHook(hook func(context.Context, *types1.CodeownersFile) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *CodeownersStoreUpdateCodeownersFileFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *types1.CodeownersFile) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *CodeownersStoreUpdateCodeownersFileFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *types1.CodeownersFile) error {
+		return r0
+	})
+}
+
+func (f *CodeownersStoreUpdateCodeownersFileFunc) nextHook() func(context.Context, *types1.CodeownersFile) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *CodeownersStoreUpdateCodeownersFileFunc) appendCall(r0 CodeownersStoreUpdateCodeownersFileFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of CodeownersStoreUpdateCodeownersFileFuncCall
+// objects describing the invocations of this function.
+func (f *CodeownersStoreUpdateCodeownersFileFunc) History() []CodeownersStoreUpdateCodeownersFileFuncCall {
+	f.mutex.Lock()
+	history := make([]CodeownersStoreUpdateCodeownersFileFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// CodeownersStoreUpdateCodeownersFileFuncCall is an object that describes
+// an invocation of method UpdateCodeownersFile on an instance of
+// MockCodeownersStore.
+type CodeownersStoreUpdateCodeownersFileFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types1.CodeownersFile
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c CodeownersStoreUpdateCodeownersFileFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c CodeownersStoreUpdateCodeownersFileFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // MockConfStore is a mock implementation of the ConfStore interface (from
 // the package github.com/sourcegraph/sourcegraph/internal/database) used
 // for unit testing.
@@ -12652,6 +13676,9 @@ type MockDB struct {
 	// CodeMonitorsFunc is an instance of a mock function object controlling
 	// the behavior of the method CodeMonitors.
 	CodeMonitorsFunc *DBCodeMonitorsFunc
+	// CodeownersFunc is an instance of a mock function object controlling
+	// the behavior of the method Codeowners.
+	CodeownersFunc *DBCodeownersFunc
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *DBConfFunc
@@ -12850,6 +13877,11 @@ func NewMockDB() *MockDB {
 		},
 		CodeMonitorsFunc: &DBCodeMonitorsFunc{
 			defaultHook: func() (r0 CodeMonitorStore) {
+				return
+			},
+		},
+		CodeownersFunc: &DBCodeownersFunc{
+			defaultHook: func() (r0 CodeownersStore) {
 				return
 			},
 		},
@@ -13160,6 +14192,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.CodeMonitors")
 			},
 		},
+		CodeownersFunc: &DBCodeownersFunc{
+			defaultHook: func() CodeownersStore {
+				panic("unexpected invocation of MockDB.Codeowners")
+			},
+		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() ConfStore {
 				panic("unexpected invocation of MockDB.Conf")
@@ -13452,6 +14489,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		CodeMonitorsFunc: &DBCodeMonitorsFunc{
 			defaultHook: i.CodeMonitors,
+		},
+		CodeownersFunc: &DBCodeownersFunc{
+			defaultHook: i.Codeowners,
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: i.Conf,
@@ -14303,6 +15343,104 @@ func (c DBCodeMonitorsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBCodeMonitorsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBCodeownersFunc describes the behavior when the Codeowners method of the
+// parent MockDB instance is invoked.
+type DBCodeownersFunc struct {
+	defaultHook func() CodeownersStore
+	hooks       []func() CodeownersStore
+	history     []DBCodeownersFuncCall
+	mutex       sync.Mutex
+}
+
+// Codeowners delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) Codeowners() CodeownersStore {
+	r0 := m.CodeownersFunc.nextHook()()
+	m.CodeownersFunc.appendCall(DBCodeownersFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Codeowners method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBCodeownersFunc) SetDefaultHook(hook func() CodeownersStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Codeowners method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBCodeownersFunc) PushHook(hook func() CodeownersStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBCodeownersFunc) SetDefaultReturn(r0 CodeownersStore) {
+	f.SetDefaultHook(func() CodeownersStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBCodeownersFunc) PushReturn(r0 CodeownersStore) {
+	f.PushHook(func() CodeownersStore {
+		return r0
+	})
+}
+
+func (f *DBCodeownersFunc) nextHook() func() CodeownersStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBCodeownersFunc) appendCall(r0 DBCodeownersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBCodeownersFuncCall objects describing the
+// invocations of this function.
+func (f *DBCodeownersFunc) History() []DBCodeownersFuncCall {
+	f.mutex.Lock()
+	history := make([]DBCodeownersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBCodeownersFuncCall is an object that describes an invocation of method
+// Codeowners on an instance of MockDB.
+type DBCodeownersFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 CodeownersStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBCodeownersFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBCodeownersFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
