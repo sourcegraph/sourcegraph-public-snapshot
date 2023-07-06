@@ -14,7 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -101,15 +100,15 @@ type codeMonitorStore struct {
 
 var _ CodeMonitorStore = (*codeMonitorStore)(nil)
 
-// CodeMonitors returns a new Store backed by the given database.
-func CodeMonitors(db database.DB) *codeMonitorStore {
-	return CodeMonitorsWithClock(db, timeutil.Now)
+// CodeMonitorsWith returns a new Store backed by the given database.
+func CodeMonitorsWith(other basestore.ShareableStore) *codeMonitorStore {
+	return CodeMonitorsWithClock(other, timeutil.Now)
 }
 
 // CodeMonitorsWithClock returns a new Store backed by the given database and
 // clock for timestamps.
-func CodeMonitorsWithClock(db database.DB, clock func() time.Time) *codeMonitorStore {
-	return &codeMonitorStore{Store: basestore.NewWithHandle(db.Handle()), now: clock}
+func CodeMonitorsWithClock(other basestore.ShareableStore, clock func() time.Time) *codeMonitorStore {
+	return &codeMonitorStore{Store: basestore.NewWithHandle(other.Handle()), now: clock}
 }
 
 // Clock returns the clock of the underlying store.
@@ -156,13 +155,6 @@ SET state = %s,
     finished_at = %s
 WHERE id = %s;
 `
-
-// quote wraps the given string in a *sqlf.Query so that it is not passed to the database
-// as a parameter. It is necessary to quote things such as table names, columns, and other
-// expressions that are not simple values.
-func quote(s string) *sqlf.Query {
-	return sqlf.Sprintf(s)
-}
 
 func (s *TestStore) SetJobStatus(ctx context.Context, table JobTable, state JobState, id int) error {
 	st := []string{"queued", "processing", "completed", "errored", "failed"}[state]
@@ -229,7 +221,7 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 	return m, nil
 }
 
-func NewTestStore(t *testing.T, db database.DB) (context.Context, *TestStore) {
+func NewTestStore(t *testing.T, db DB) (context.Context, *TestStore) {
 	ctx := actor.WithInternalActor(context.Background())
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, &TestStore{CodeMonitorsWithClock(db, func() time.Time { return now })}
@@ -250,10 +242,10 @@ const (
 	testDescription = "test description"
 )
 
-func newTestStore(t *testing.T) (context.Context, database.DB, *codeMonitorStore) {
+func newTestStore(t *testing.T) (context.Context, DB, *codeMonitorStore) {
 	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := NewDB(logger, dbtest.NewDB(logger, t))
 	now := time.Now().Truncate(time.Microsecond)
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }

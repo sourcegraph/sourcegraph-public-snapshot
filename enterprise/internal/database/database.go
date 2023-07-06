@@ -16,7 +16,6 @@ import (
 
 type EnterpriseDB interface {
 	database.DB
-	CodeMonitors() CodeMonitorStore
 	Perms() PermsStore
 	SubRepoPerms() SubRepoPermsStore
 	Codeowners() CodeownersStore
@@ -36,10 +35,6 @@ func NewEnterpriseDB(db database.DB) EnterpriseDB {
 
 type enterpriseDB struct {
 	database.DB
-}
-
-func (edb *enterpriseDB) CodeMonitors() CodeMonitorStore {
-	return &codeMonitorStore{Store: basestore.NewWithHandle(edb.Handle()), now: time.Now}
 }
 
 func (edb *enterpriseDB) Perms() PermsStore {

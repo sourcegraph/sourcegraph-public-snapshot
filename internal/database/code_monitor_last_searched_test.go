@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
@@ -19,7 +18,7 @@ func TestCodeMonitorStoreLastSearched(t *testing.T) {
 	t.Run("insert get upsert get", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
-		db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+		db := NewDB(logger, dbtest.NewDB(logger, t))
 		fixtures := populateCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
@@ -47,7 +46,7 @@ func TestCodeMonitorStoreLastSearched(t *testing.T) {
 	t.Run("no error for missing get", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
-		db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+		db := NewDB(logger, dbtest.NewDB(logger, t))
 		fixtures := populateCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
@@ -61,7 +60,7 @@ func TestCodeMonitorStoreLastSearched(t *testing.T) {
 	t.Run("no error for missing get", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
-		db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+		db := NewDB(logger, dbtest.NewDB(logger, t))
 		fixtures := populateCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
@@ -92,7 +91,7 @@ func TestCodeMonitorHasAnyLastSearched(t *testing.T) {
 	t.Run("has none", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
-		db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+		db := NewDB(logger, dbtest.NewDB(logger, t))
 		fixtures := populateCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
@@ -104,7 +103,7 @@ func TestCodeMonitorHasAnyLastSearched(t *testing.T) {
 	t.Run("has some", func(t *testing.T) {
 		t.Parallel()
 		ctx := context.Background()
-		db := NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+		db := NewDB(logger, dbtest.NewDB(logger, t))
 		fixtures := populateCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 

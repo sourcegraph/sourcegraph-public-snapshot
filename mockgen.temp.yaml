@@ -9,7 +9,6 @@
 - filename: enterprise/internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
   interfaces:
-    - CodeMonitorStore
     - EnterpriseDB
     - PermsStore
     - SubRepoPermsStore
@@ -42,6 +41,7 @@
     - AssignedTeamsStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
+    - CodeMonitorStore
     - ConfStore
     - DB
     - EventLogStore

@@ -7,7 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -74,9 +73,9 @@ type codeMonitorTestFixtures struct {
 	Repo    *types.Repo
 }
 
-func populateCodeMonitorFixtures(t *testing.T, db EnterpriseDB) codeMonitorTestFixtures {
+func populateCodeMonitorFixtures(t *testing.T, db DB) codeMonitorTestFixtures {
 	ctx := context.Background()
-	u, err := db.Users().Create(ctx, database.NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
+	u, err := db.Users().Create(ctx, NewUser{Email: "test", Username: "test", EmailVerificationCode: "test"})
 	require.NoError(t, err)
 	err = db.Repos().Create(ctx, &types.Repo{Name: "test"})
 	require.NoError(t, err)
