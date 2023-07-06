@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import React, { FC, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -20,6 +20,9 @@ import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
+import {SimpleSearch} from "./SimpleSearch";
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
@@ -58,6 +61,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         }
     }, [experimentalQueryInput, selectedSearchContextSpec])
 
+    const [simpleSearch, setSimpleSearch] = useState<boolean>(true)
+
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
             <BrandLogo className={styles.logo} isLightTheme={isLightTheme} variant="logo" />
@@ -68,6 +73,11 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
             )}
 
             <div className={styles.searchContainer}>
+                <div className='mb-2'>
+                    <label className='mr-2'>Simple search</label>
+                    <Toggle value={simpleSearch} onToggle={setSimpleSearch}></Toggle>
+                </div>
+
                 {shouldShowAddCodeHostWidget ? (
                     <>
                         <Tooltip
@@ -82,7 +92,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     </>
                 ) : (
                     <>
-                        <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                        <SearchPageInput simpleSearch={simpleSearch} queryState={queryState} setQueryState={setQueryState} />
                         {authenticatedUser ? (
                             <TryCodyCtaSection
                                 className="mx-auto my-5"
@@ -95,7 +105,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     </>
                 )}
             </div>
-            <div className={classNames(styles.panelsContainer)}>
+            {! simpleSearch && <div className={classNames(styles.panelsContainer)}>
                 {(!!authenticatedUser || isSourcegraphDotCom) && (
                     <QueryExamples
                         selectedSearchContextSpec={selectedSearchContextSpec}
@@ -105,7 +115,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                         isSourcegraphDotCom={isSourcegraphDotCom}
                     />
                 )}
-            </div>
+            </div>}
 
             <SearchPageFooter />
         </div>
