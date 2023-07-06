@@ -7,13 +7,11 @@ import (
 	"container/list"
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/gob"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -569,19 +567,19 @@ func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.Git
 	// FIXME: Being stateless, so far the method was able to work without the assumption that a row
 	// does not need to be present in the gitserver_repos table to return a name. We maintain this
 	// assumption and don't log errors for sql.ErrNoRows.
-	gsr, err := s.DB.GitserverRepos().GetByName(context.Background(), repoName)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		// This is odd. Log the error and fallback to default behaviour.
-		logger.Error("failed to get repo from DB, this error will not cause an application error and will use repoName to determine the gitserver address but this error should be investigated nonetheless", log.Error(err))
+
+	forkedRepoPoolID, parentRepoName, err := s.DB.GitserverRepos().GetForkedAndParentRepo(context.Background(), repoName)
+	if err != nil {
+		logger.Error("failed to find a relationship between the forked repo and its parent from DB, this does not cause an application error and will use repoName to determine the gitserver address but this error does indicate a bug", log.Error(err))
 	}
 
-	if gsr != nil && gsr.PoolRepoID != nil {
-		logger.Warn("pool repo id found", log.Int32("pool_repo_id", int32(*gsr.PoolRepoID)))
-
-		// REVIEW: GitserverRepos().GetParentAndFork -> implement and use the name to get the shard
-		// id instead of reading from the DB.
-
-		return gsr.ShardID
+	// For a forked repo which has a pool_repo_id in the gitserver_repos table, return the shard ID
+	// of its parent repo. This ensures if deduplication is enabled on a specific repo, all forks of
+	// that repo will reside on the same shard. This is a pre-requisite to support deduplication on
+	// all forks of the repo.
+	if forkedRepoPoolID != nil && parentRepoName != nil {
+		logger.Warn("pool repo id found", log.Int32("pool_repo_id", int32(*forkedRepoPoolID)))
+		return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), *parentRepoName)
 	}
 
 	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
@@ -2117,8 +2115,8 @@ func setGitAttributes(dir common.GitDir) error {
 }
 
 func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoName) error {
-	// ➜ echo "/tmp/probable-happiness/.git/objects" >
-
+	// Do the equivalent of this command:
+	// echo "$REPO_DIR/.pool/$REPO_NAME/.git/objects" > $REPOS_DIR/$REPO_NAME/.git/objects/info/alternates
 	repoDir := s.dir(repo)
 
 	// "/data/repos/github.com/owner/this-repo/.git/objects/info/alternates"
@@ -2127,7 +2125,7 @@ func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoN
 	// "/data/repos/.pool/github.com/owner/this-repo/.git/objects"
 	poolRepoObjectsFilePath := filepath.Join(string(s.poolDir(repo)), "objects")
 
-	if err := ioutil.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), 0); err != nil {
+	if err := os.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
 	}
 
@@ -2496,9 +2494,14 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 			// We already cloned in the right dir here so only need to setup git-alternate stuff.
 		}
 
+		logger.Warn(">>> configureRepoAsGitAlternate started")
 		if err := s.configureRepoAsGitAlternate(ctx, repo); err != nil {
 			return errors.Wrap(err, "configureRepoAsGitAlternate")
+		} else {
+			logger.Warn("no error in configureRepoAsGitAlternate")
 		}
+	} else {
+		logger.Warn("<<< not a deduplicated clone")
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on

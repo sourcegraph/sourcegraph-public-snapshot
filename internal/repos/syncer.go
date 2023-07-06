@@ -898,7 +898,7 @@ func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, svc *types.Ex
 	// HACK: Same hack as above. FIXME.
 	// forkedRepoName := reposource.GitHubRepoName("", "github.com", repo.Name)
 
-	return s.Store.GitserverReposStore().AddPoolRepoID(ctx, parentRepoName, repo.Name)
+	return s.Store.GitserverReposStore().UpdatePoolRepoID(ctx, parentRepoName, repo.Name)
 }
 
 func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen map[api.RepoID]struct{}) (int, error) {
