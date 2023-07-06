@@ -51,7 +51,7 @@ To configure ownership in Sourcegraph, you have two options:
 
 > Use this approach if you prefer versioned ownership data.
 
-You can simply commit a `CODEOWNERS` file at any of the following locations for it to be picked up automatically by Own:
+You can simply commit a `CODEOWNERS` file at any of the following locations for it to be picked up automatically by code ownership:
 
 ```
 CODEOWNERS

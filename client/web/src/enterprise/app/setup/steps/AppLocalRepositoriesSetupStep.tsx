@@ -66,13 +66,13 @@ export const AddLocalRepositoriesSetupPage: FC<StepComponentProps> = ({ classNam
                     >
                         embeddings
                     </Link>
-                    , which help Cody generate more accurate answers about your code.
+                    , which helps Cody build the code graph and generate more accurate answers about your code.
                 </Text>
 
                 <Tooltip
                     content={
                         repositories.length > MAX_NUMBER_OF_REPOSITORIES
-                            ? `Select fewer repositories, Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos`
+                            ? `Select fewer repositories, Currently Cody supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repositories`
                             : repositories.length === 0
                             ? 'Select at least one repository to continue'
                             : undefined
@@ -133,7 +133,7 @@ const PathsPickerActions: FC<PathsPickerActionsProps> = props => {
 
     return (
         <Tooltip
-            content={disabled ? `Right now Cody only supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repos` : ''}
+            content={disabled ? `Currently Cody supports a maximum of ${MAX_NUMBER_OF_REPOSITORIES} repositories` : ''}
         >
             <Button variant="primary" disabled={disabled} className={className} onClick={handleClickCallPathPicker}>
                 <Icon svgPath={mdiGit} aria-hidden={true} /> Add a repository

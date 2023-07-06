@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -1333,7 +1334,7 @@ ORDER BY es.id, essj.finished_at DESC
 }
 
 func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesListOptions) (_ []*types.ExternalService, err error) {
-	tr, ctx := trace.New(ctx, "externalServiceStore", "List")
+	tr, ctx := trace.New(ctx, "externalServiceStore.List")
 	defer tr.FinishWithErr(&err)
 
 	if opt.OrderByDirection != "ASC" {
@@ -1428,7 +1429,7 @@ func (e *externalServiceStore) List(ctx context.Context, opt ExternalServicesLis
 }
 
 func (e *externalServiceStore) ListRepos(ctx context.Context, opt ExternalServiceReposListOptions) (_ []*types.ExternalServiceRepo, err error) {
-	tr, ctx := trace.New(ctx, "externalServiceStore", "ListRepos")
+	tr, ctx := trace.New(ctx, "externalServiceStore.ListRepos")
 	defer tr.FinishWithErr(&err)
 
 	predicate := sqlf.Sprintf("TRUE")
@@ -1578,8 +1579,12 @@ func (e *externalServiceStore) recalculateFields(es *types.ExternalService, rawC
 	// For existing auth providers, this is forwards compatible. While at the same time if they also
 	// wanted to get on the `enforcePermissions` pattern, this change is backwards compatible.
 	enforcePermissions := gjson.Get(rawConfig, "enforcePermissions")
-	if !envvar.SourcegraphDotComMode() && enforcePermissions.Exists() {
-		es.Unrestricted = !enforcePermissions.Bool()
+	if !envvar.SourcegraphDotComMode() {
+		if globals.PermissionsUserMapping().Enabled {
+			es.Unrestricted = false
+		} else if enforcePermissions.Exists() {
+			es.Unrestricted = !enforcePermissions.Bool()
+		}
 	}
 
 	hasWebhooks := false

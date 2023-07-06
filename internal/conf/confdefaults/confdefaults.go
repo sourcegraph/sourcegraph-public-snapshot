@@ -93,6 +93,7 @@ var App = conftypes.RawUnified{
 		"structuralSearch": "disabled"
 	},
 	"cody.enabled": true,
+	"repoListUpdateInterval": 0,
 	"completions": {
 		"enabled": true,
 		"provider": "sourcegraph"

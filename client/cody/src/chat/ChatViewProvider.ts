@@ -17,7 +17,7 @@ import { SourcegraphEmbeddingsSearchClient } from '@sourcegraph/cody-shared/src/
 import { Guardrails, annotateAttribution } from '@sourcegraph/cody-shared/src/guardrails'
 import { highlightTokens } from '@sourcegraph/cody-shared/src/hallucinations-detector'
 import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
-import { MAX_AVAILABLE_PROMPT_LENGTH, SOLUTION_TOKEN_LENGTH } from '@sourcegraph/cody-shared/src/prompt/constants'
+import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
@@ -63,6 +63,19 @@ export type Config = Pick<
     | 'experimentalGuardrails'
 >
 
+/**
+ * The problem with a token limit for the prompt is that we can only
+ * estimate tokens (and do so in a very cheap way), so it can be that
+ * we undercount tokens. If we exceed the maximum tokens, things will
+ * start to break, so we should have some safety cushion for when we're wrong in estimating.
+ *
+ * Ie.: Long text, 10000 characters, we estimate it to be 2500 tokens.
+ * That would fit into a limit of 3000 tokens easily. Now, it's actually
+ * 3500 tokens, because it splits weird and our estimation is off, it will
+ * fail. That's where we want to add this safety cushion in.
+ */
+const SAFETY_PROMPT_TOKENS = 100
+
 export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disposable, IdleRecipeRunner {
     private isMessageInProgress = false
     private cancelCompletionCallback: (() => void) | null = null
@@ -74,7 +87,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private inputHistory: string[] = []
     private chatHistory: ChatHistory = {}
 
-    private maxPromptLimit = MAX_AVAILABLE_PROMPT_LENGTH
     private transcript: Transcript = new Transcript()
 
     // Allows recipes to hook up subscribers to process sub-streams of bot output
@@ -118,12 +130,6 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }),
             vscode.commands.registerCommand('cody.auth.sync', () => this.syncAuthStatus())
         )
-        const codyConfig = vscode.workspace.getConfiguration('cody')
-        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
-        const solutionLimit = codyConfig.get<number>('provider.limit.solution') || SOLUTION_TOKEN_LENGTH
-        if (tokenLimit) {
-            this.maxPromptLimit = tokenLimit - solutionLimit
-        }
     }
 
     private idleCallbacks_: (() => void)[] = []
@@ -299,6 +305,18 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 }
                 break
             }
+            case 'chat-button': {
+                switch (message.action) {
+                    case 'explain-code-high-level':
+                    case 'find-code-smells':
+                    case 'generate-unit-test':
+                        void this.executeRecipe(message.action)
+                        break
+                    default:
+                        break
+                }
+                break
+            }
             default:
                 this.sendErrorToWebview('Invalid request type from Webview')
         }
@@ -361,7 +379,8 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             onError: (err, statusCode) => {
                 // TODO notify the multiplexer of the error
                 debug('ChatViewProvider:onError', err)
-                if (err === 'aborted') {
+
+                if (isAbortError(err)) {
                     return
                 }
                 // Display error message as assistant response
@@ -502,7 +521,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     getPreamble(this.codebaseContext.getCodebase()),
-                    this.maxPromptLimit
+                    this.maxPromptTokens
                 )
                 this.transcript.setUsedContextFilesForLastInteraction(contextFiles)
                 this.sendPrompt(prompt, interaction.getAssistantMessage().prefix ?? '')
@@ -535,7 +554,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
         const { prompt, contextFiles } = await transcript.getPromptForLastInteraction(
             getPreamble(this.codebaseContext.getCodebase()),
-            this.maxPromptLimit
+            this.maxPromptTokens
         )
         transcript.setUsedContextFilesForLastInteraction(contextFiles)
 
@@ -768,17 +787,10 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
      */
     public sendEvent(event: string, value: string): void {
         const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
-        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
         const endpointUri = { serverEndpoint: endpoint }
-        const chatTranscript = { chatTranscript: this.transcript.toChat() }
         switch (event) {
             case 'feedback':
-                // Only include context for dot com users with connected codebase
-                logEvent(
-                    `CodyVSCodeExtension:codyFeedback:${value}`,
-                    null,
-                    !isPrivateInstance && this.codebaseContext.getCodebase() ? chatTranscript : null
-                )
+                logEvent(`CodyVSCodeExtension:codyFeedback:${value}`, null, this.codyFeedbackPayload())
                 break
             case 'token':
                 logEvent(`CodyVSCodeExtension:cody${value}AccessToken:clicked`, endpointUri, endpointUri)
@@ -790,6 +802,28 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'click':
                 logEvent(`CodyVSCodeExtension:${value}:clicked`, endpointUri, endpointUri)
                 break
+        }
+    }
+
+    private codyFeedbackPayload(): any {
+        const endpoint = this.config.serverEndpoint || DOTCOM_URL.href
+        const isPrivateInstance = new URL(endpoint).href !== DOTCOM_URL.href
+
+        // The user should only be able to submit feedback on transcripts, but just in case we guard against this happening.
+        const privateChatTranscript = this.transcript.toChat()
+        if (privateChatTranscript.length === 0) {
+            return null
+        }
+
+        const lastContextFiles = privateChatTranscript.at(-1)?.contextFiles
+        const lastChatUsedEmbeddings = lastContextFiles?.some(file => file.source === 'embeddings')
+
+        // We only include full chat transcript for dot com users with connected codebase
+        const chatTranscript = !isPrivateInstance && this.codebaseContext.getCodebase() ? privateChatTranscript : null
+
+        return {
+            chatTranscript,
+            lastChatUsedEmbeddings,
         }
     }
 
@@ -885,6 +919,27 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         }
         this.disposables = []
     }
+
+    private get maxPromptTokens(): number {
+        const authStatus = this.authProvider.getAuthStatus()
+
+        const codyConfig = vscode.workspace.getConfiguration('cody')
+        const tokenLimit = codyConfig.get<number>('provider.limit.prompt')
+        const localSolutionLimit = codyConfig.get<number>('provider.limit.solution')
+
+        // The local config takes precedence over the server config.
+        if (tokenLimit && localSolutionLimit) {
+            return tokenLimit - localSolutionLimit
+        }
+
+        const solutionLimit = (localSolutionLimit || ANSWER_TOKENS) + SAFETY_PROMPT_TOKENS
+
+        if (authStatus.configOverwrites?.chatModelMaxTokens) {
+            return authStatus.configOverwrites.chatModelMaxTokens - solutionLimit
+        }
+
+        return DEFAULT_MAX_TOKENS - solutionLimit
+    }
 }
 
 /**
@@ -931,4 +986,8 @@ export async function getCodebaseContext(
         undefined,
         getRerankWithLog(chatClient)
     )
+}
+
+function isAbortError(error: string): boolean {
+    return error === 'aborted' || error === 'socket hang up'
 }

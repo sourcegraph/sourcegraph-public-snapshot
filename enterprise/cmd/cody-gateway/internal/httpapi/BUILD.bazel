@@ -14,6 +14,7 @@ go_library(
         "//enterprise/cmd/cody-gateway/internal/events",
         "//enterprise/cmd/cody-gateway/internal/httpapi/completions",
         "//enterprise/cmd/cody-gateway/internal/httpapi/embeddings",
+        "//enterprise/cmd/cody-gateway/internal/httpapi/featurelimiter",
         "//enterprise/cmd/cody-gateway/internal/httpapi/requestlogger",
         "//enterprise/cmd/cody-gateway/internal/limiter",
         "//enterprise/cmd/cody-gateway/internal/notify",

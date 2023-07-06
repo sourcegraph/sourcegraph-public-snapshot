@@ -16,10 +16,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/dotcom"
-	elicensing "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	elicensing "github.com/sourcegraph/sourcegraph/internal/licensing"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -178,7 +178,10 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 
 	for _, gqlerr := range gqlerrs {
 		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == codygateway.GQLErrCodeProductSubscriptionNotFound {
-			return nil, actor.ErrAccessTokenDenied{Reason: "associated product subscription not found"}
+			return nil, actor.ErrAccessTokenDenied{
+				Source: s.Name(),
+				Reason: "associated product subscription not found",
+			}
 		}
 	}
 	return nil, err

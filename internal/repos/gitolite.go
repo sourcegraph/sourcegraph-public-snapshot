@@ -123,5 +123,6 @@ func (s GitoliteSource) makeRepo(repo *gitolite.Repo) *types.Repo {
 			},
 		},
 		Metadata: repo,
+		Private:  !s.svc.Unrestricted,
 	}
 }

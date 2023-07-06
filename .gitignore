@@ -77,7 +77,6 @@ pnpm-debug.log
 /ui/assets/*.br
 /ui/assets/*.gz
 /ui/assets/stats-*
-/ui/assets/enterprise/
 
 *.json.actual
 

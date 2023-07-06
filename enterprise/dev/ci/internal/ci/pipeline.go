@@ -3,6 +3,7 @@
 package ci
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -14,6 +15,7 @@ import (
 	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var legacyDockerImages = []string{
@@ -92,14 +94,42 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// Set up operations that add steps to a pipeline.
 	ops := operations.NewSet()
 
-	if op, err := exposeBuildMetadata(c); err == nil {
-		ops.Merge(operations.NewNamedSet("Metadata", op))
-	}
-
 	// This statement outlines the pipeline steps for each CI case.
 	//
 	// PERF: Try to order steps such that slower steps are first.
 	switch c.RunType {
+	case runtype.BazelDo:
+		// parse the commit message, looking for the bazel command to run
+		var bzlCmd string
+		scanner := bufio.NewScanner(strings.NewReader(env["CI_COMMIT_MESSAGE"]))
+		for scanner.Scan() {
+			line := strings.TrimSpace(scanner.Text())
+			if strings.HasPrefix(line, "!bazel") {
+				bzlCmd = strings.TrimSpace(strings.TrimPrefix(line, "!bazel"))
+
+				// sanitize the input
+				if err := verifyBazelCommand(bzlCmd); err != nil {
+					return nil, errors.Wrapf(err, "cannot generate bazel-do")
+				}
+
+				ops.Append(func(pipeline *bk.Pipeline) {
+					pipeline.AddStep(":bazel::desktop_computer: bazel "+bzlCmd,
+						bk.Key("bazel-do"),
+						bk.Agent("queue", "bazel"),
+						bk.Cmd(bazelCmd(bzlCmd)),
+					)
+				})
+				break
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			return nil, err
+		}
+
+		if bzlCmd == "" {
+			return nil, errors.Newf("no bazel command was given")
+		}
 	case runtype.WolfiExpBranch:
 		// Rebuild packages if package configs have changed
 		updatePackages := c.Diff.Has(changed.WolfiPackages)
@@ -275,6 +305,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			MinimumUpgradeableVersion: minimumUpgradeableVersion,
 			ForceReadyForReview:       c.MessageFlags.ForceReadyForReview,
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
+			IsMainBranch:              true,
 		}))
 
 		// Publish candidate images to dev registry

@@ -162,6 +162,7 @@ type internalGRPCErrorChecker func(*status.Status) bool
 var allCheckers = []internalGRPCErrorChecker{
 	gRPCPrefixChecker,
 	gRPCResourceExhaustedChecker,
+	gRPCUnexpectedContentTypeChecker,
 }
 
 // gRPCPrefixChecker checks if a gRPC status likely represents an error that comes from the go-grpc library, by checking if the error message
@@ -175,6 +176,13 @@ func gRPCPrefixChecker(s *status.Status) bool {
 func gRPCResourceExhaustedChecker(s *status.Status) bool {
 	// Observed from https://github.com/grpc/grpc-go/blob/756119c7de49e91b6f3b9d693b9850e1598938eb/stream.go#L884
 	return s.Code() == codes.ResourceExhausted && strings.HasPrefix(s.Message(), "trying to send message larger than max (")
+}
+
+// gRPCUnexpectedContentTypeChecker checks if a gRPC status likely represents an error that comes from the go-grpc library, by checking if the error message
+// is prefixed with "transport: received unexpected content-type".
+func gRPCUnexpectedContentTypeChecker(s *status.Status) bool {
+	// Observed from https://github.com/grpc/grpc-go/blob/2997e84fd8d18ddb000ac6736129b48b3c9773ec/internal/transport/http2_client.go#L1415-L1417
+	return s.Code() != codes.OK && strings.Contains(s.Message(), "transport: received unexpected content-type")
 }
 
 // splitMethodName splits a full gRPC method name in to its components (service, method)

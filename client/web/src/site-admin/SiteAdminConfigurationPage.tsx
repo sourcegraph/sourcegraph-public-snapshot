@@ -413,7 +413,10 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                     description={
                         <>
                             View and edit the Sourcegraph site configuration. See{' '}
-                            <Link to="/help/admin/config/site_config">documentation</Link> for more information.
+                            <Link target="_blank" to="/help/admin/config/site_config">
+                                documentation
+                            </Link>{' '}
+                            for more information.
                         </>
                     }
                     className="mb-3"

@@ -24,6 +24,8 @@ There are two steps required to enable Cody on your enterprise instance:
 This requires site-admin privileges.
 
 1. First, configure your desired LLM provider:
+    > NOTE: If you are a Sourcegraph Cloud customer, skip to (3).
+
     - Recommended: [Using Sourcegraph Cody Gateway](./cody_gateway.md#using-cody-gateway-in-sourcegraph-enterprise)
     - [Using a third-party LLM provider directly](#using-a-third-party-llm-provider-directly)
 2. Go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:

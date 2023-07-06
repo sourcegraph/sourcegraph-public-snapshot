@@ -175,7 +175,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
-            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Own' },
+            ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Code ownership' },
             codySearchEnabled && {
                 path: EnterprisePageRoutes.CodySearch,
                 content: (

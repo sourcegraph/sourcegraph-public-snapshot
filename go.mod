@@ -268,6 +268,7 @@ require (
 	github.com/hashicorp/cronexpr v1.1.1
 	github.com/jackc/pgerrcode v0.0.0-20220416144525-469b46aa5efa
 	github.com/mitchellh/go-homedir v1.1.0
+	github.com/mroth/weightedrand/v2 v2.0.1
 	github.com/ricochet2200/go-disk-usage/du v0.0.0-20210707232629-ac9918953285
 	github.com/vektah/gqlparser/v2 v2.4.5
 	go.opentelemetry.io/collector/exporter v0.75.0
@@ -513,7 +514,7 @@ require (
 	github.com/sourcegraph/conc v0.2.0
 	github.com/sourcegraph/mountinfo v0.0.0-20230106004439-7026e28cef67
 	github.com/sourcegraph/sourcegraph/monitoring v0.0.0-20230124144931-b2d81b1accb6
-	github.com/sourcegraph/zoekt v0.0.0-20230620185637-63241cb1b17a
+	github.com/sourcegraph/zoekt v0.0.0-20230629101834-7643f3b313a2
 	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect

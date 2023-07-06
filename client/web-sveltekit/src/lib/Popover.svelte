@@ -37,7 +37,7 @@
 <slot {toggle} {registerTrigger} />
 {#if isOpen}
     <div class="content" bind:this={content} use:onClickOutside on:click-outside={clickOutside}>
-        <slot name="content" />
+        <slot name="content" {toggle} />
     </div>
 {/if}
 

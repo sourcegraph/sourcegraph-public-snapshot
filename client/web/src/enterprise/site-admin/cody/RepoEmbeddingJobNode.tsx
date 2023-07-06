@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import { FC, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 
@@ -100,12 +100,13 @@ const RepoEmbeddingJobExecutionInfo: FC<
     >
 > = ({ state, cancel, finishedAt, queuedAt, startedAt, failureMessage, stats }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
-    const estimatedFinish = calculateEstimatedFinish(
-        startedAt,
-        stats.filesScheduled,
-        stats.filesEmbedded,
-        stats.filesSkipped
-    )
+
+    const [estimatedFinish, setEstimatedFinish] = useState<Date | null>(null)
+    useEffect(() => {
+        setEstimatedFinish(
+            calculateEstimatedFinish(startedAt, stats.filesScheduled, stats.filesEmbedded, stats.filesSkipped)
+        )
+    }, [startedAt, stats.filesScheduled, stats.filesEmbedded, stats.filesSkipped])
 
     return (
         <>

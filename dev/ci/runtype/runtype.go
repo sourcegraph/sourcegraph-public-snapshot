@@ -47,6 +47,7 @@ const (
 	// Special test branches
 
 	BackendIntegrationTests // run backend tests that are used on main
+	BazelDo                 // run a specific bazel command
 
 	// None is a no-op, add all run types above this type.
 	None
@@ -178,6 +179,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "backend-integration/",
 		}
+	case BazelDo:
+		return &RunTypeMatcher{
+			Branch: "bazel-do/",
+		}
 	}
 
 	return nil
@@ -226,6 +231,8 @@ func (t RunType) String() string {
 
 	case BackendIntegrationTests:
 		return "Backend integration tests"
+	case BazelDo:
+		return "Bazel command"
 	}
 	return ""
 }

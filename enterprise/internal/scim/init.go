@@ -10,11 +10,11 @@ import (
 	"github.com/elimity-com/scim/optional"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -61,7 +61,7 @@ func newHandler(ctx context.Context, db database.DB, observationCtx *observation
 		},
 	}
 
-	var userResourceHandler = NewUserResourceHandler(ctx, observationCtx, db)
+	userResourceHandler := NewUserResourceHandler(ctx, observationCtx, db)
 
 	resourceTypes := []scim.ResourceType{
 		createResourceType("User", "/Users", "User Account", userResourceHandler),

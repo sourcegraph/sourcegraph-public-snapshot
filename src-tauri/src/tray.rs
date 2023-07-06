@@ -25,6 +25,10 @@ fn create_system_tray_menu() -> SystemTrayMenu {
         .add_item(
             CustomMenuItem::new("settings".to_string(), "Settings").accelerator("CmdOrCtrl+,"),
         )
+        .add_item(CustomMenuItem::new(
+            "update".to_string(),
+            "Check for updates",
+        ))
         .add_submenu(troubleshooting_menu)
         .add_native_item(SystemTrayMenuItem::Separator)
         .add_item(CustomMenuItem::new(
@@ -51,9 +55,11 @@ pub fn on_system_tray_event(app: &AppHandle, event: SystemTrayEvent) {
             "clear_all_data" => prompt_to_clear_all_data(app),
 
             "about" => {
-                shell::open(&app.shell_scope(), "https://about.sourcegraph.com", None).unwrap()
+                shell::open(&app.shell_scope(), "https://about.sourcegraph.com", None)
+                    .unwrap_or_else(|e| eprintln!("Failed to open URL: {:?}", e));
             }
             "restart" => app.restart(),
+            "update" => app.trigger_global("tauri://update", None),
             "quit" => app.exit(0),
             _ => {}
         }

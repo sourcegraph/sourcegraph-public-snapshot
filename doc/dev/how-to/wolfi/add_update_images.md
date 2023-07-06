@@ -18,7 +18,7 @@ In order to pull in updated packages with new features or fixed vulnerabilities,
 
 This is currently a two-step process, but will be automated in the future:
 
-- Run the [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@will/wolfi-docs/-/blob/wolfi-images/rebuild-images.sh?L1) script (with an optional argument to just update one base image), commit the updated YAML files, and merge to main.
+- Run the [`wolfi-images/rebuild-images.sh`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@588463afbb0904c125cdcf78c7b182f43328504e/-/blob/wolfi-images/rebuild-images.sh) script (with an optional argument to just update one base image), commit the updated YAML files, and merge to main.
   - This will trigger Buildkite to rebuild the base images and publish them.
 - Update the relevant Dockerfiles with the new base image's `sha256` hash, commit the change, and merge to main.
   - NOTE: Currently we use the `latest` label, but we will switch to using a `sha256` tag once deployed in production.

@@ -113,7 +113,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.SearcherURLs, clients.SearcherGRPCConnectionCache, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.SetAttributes(
-							attribute.String("repo", string(repo.Name)),
+							repo.Name.Attr(),
 							trace.Error(err),
 							attribute.Bool("timeout", errcode.IsTimeout(err)),
 							attribute.Bool("temporary", errcode.IsTemporary(err)))

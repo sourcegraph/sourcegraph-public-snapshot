@@ -3,6 +3,6 @@ include: ./sourcegraph-base.yaml
 contents:
   packages:
     ## node-exporter-specific packages
-    - 'prometheus-node-exporter=1.5.0-r3' # IMPORTANT: Pinned version for managed updates
+    - 'prometheus-node-exporter=1.6.0-r1' # IMPORTANT: Pinned version for managed updates
 
 # MANUAL REBUILD: Thu Jun 22 13:43:35 BST 2023

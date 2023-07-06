@@ -66,18 +66,14 @@ const AppSettingsLayout: FC = () => {
 
 const RemoteRepositoriesTab: FC<TelemetryProps> = ({ telemetryService }) => (
     <div className={styles.content}>
-        <PageHeader
-            headingElement="h2"
-            path={[{ text: 'Remote repositories' }]}
-            description="Add your remote repositories from GitHub, GitLab or Bitbucket"
-            className="mb-3"
-        />
+        <PageHeader headingElement="h2" path={[{ text: 'Remote repositories' }]} className="mb-3" />
 
         <RemoteRepositoriesStep
             baseURL={`app-settings/${AppSettingURL.RemoteRepositories}`}
             description={false}
             progressBar={false}
             telemetryService={telemetryService}
+            isSourcegraphApp={true}
         />
     </div>
 )
