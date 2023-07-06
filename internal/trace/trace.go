@@ -13,8 +13,7 @@ import (
 
 // Trace is a wrapper of opentelemetry.Span. Use New to construct one.
 type Trace struct {
-	// oteltraceSpan is always set.
-	oteltraceSpan oteltrace.Span
+	oteltrace.Span // never nil
 }
 
 // New returns a new Trace with the specified name.
@@ -26,17 +25,12 @@ func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (Trace, 
 	return tr, ctx
 }
 
-// SetAttributes sets kv as attributes of the Span.
-func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
-	t.oteltraceSpan.SetAttributes(attributes...)
-}
-
 // AddEvent records an event on this span with the given name and attributes.
 //
 // Note that it differs from the underlying (oteltrace.Span).AddEvent slightly, and only
 // accepts attributes for simplicity.
 func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
-	t.oteltraceSpan.AddEvent(name, oteltrace.WithAttributes(attributes...))
+	t.Span.AddEvent(name, oteltrace.WithAttributes(attributes...))
 }
 
 // SetError declares that this trace and span resulted in an error.
@@ -48,8 +42,8 @@ func (t *Trace) SetError(err error) {
 	// Truncate the error string to avoid tracing massive error messages.
 	err = truncateError(err, defaultErrorRuneLimit)
 
-	t.oteltraceSpan.RecordError(err)
-	t.oteltraceSpan.SetStatus(codes.Error, err.Error())
+	t.RecordError(err)
+	t.SetStatus(codes.Error, err.Error())
 }
 
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
@@ -57,17 +51,11 @@ func (t *Trace) SetError(err error) {
 func (t *Trace) SetErrorIfNotContext(err error) {
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		err = truncateError(err, defaultErrorRuneLimit)
-		t.oteltraceSpan.RecordError(err)
+		t.RecordError(err)
 		return
 	}
 
 	t.SetError(err)
-}
-
-// End declares that this trace and span is complete.
-// The trace should not be used after calling this method.
-func (t *Trace) End() {
-	t.oteltraceSpan.End()
 }
 
 // EndWithErr finishes the span and sets its error value.
