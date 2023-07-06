@@ -19,9 +19,6 @@ interface CreateTypewriterParams {
 const MAX_DELAY_MS = 200
 const MIN_DELAY_MS = 5
 
-// Maximum/minimum character chunk sizes.
-// The maximum is only used when the typewriter is falling behind incoming text and the minimum delay is not enough.
-const MAX_CHAR_CHUNK_SIZE = 2
 const MIN_CHAR_CHUNK_SIZE = 1
 
 export const createTypewriter = ({ emit }: CreateTypewriterParams): Typewriter => {
@@ -51,10 +48,19 @@ export const createTypewriter = ({ emit }: CreateTypewriterParams): Typewriter =
 
             /**
              * We limit how small our delay can be to ensure we always have some form of typing effect.
-             * To ensure we still can keep up with the updated text, we instead increase the character chunk size.
              */
             const dynamicDelay = Math.max(calculatedDelay, MIN_DELAY_MS)
-            const charChunkSize = calculatedDelay < MIN_DELAY_MS ? MAX_CHAR_CHUNK_SIZE : MIN_CHAR_CHUNK_SIZE
+
+            /**
+             * To ensure we still can keep up with the updated text, we instead increase the character chunk size.
+             * We calculate this by working out how many characters we would need to maintain the same minimum delay.
+             * This ensures we always keep up with the text, no matter how large the incoming chunks are.
+             *
+             * Note: For particularly large chunks, this will result in a character chunk size that is far bigger than you would expect for a typing effect.
+             * This is an accepted trade-off in order to ensure we stay in sync with the incoming text.
+             */
+            const charChunkSize =
+                calculatedDelay < MIN_DELAY_MS ? Math.round(MIN_DELAY_MS / calculatedDelay) : MIN_CHAR_CHUNK_SIZE
 
             interval = setInterval(() => {
                 processedText += updatedText.slice(processedText.length, processedText.length + charChunkSize)
