@@ -385,6 +385,8 @@
     - path: github.com/gregjones/httpcache
       interfaces:
         - Cache
+- filename: enterprise/cmd/cody-gateway/internal/dotcom/mocks.go
+  sources:
     - path: github.com/Khan/genqlient/graphql
       interfaces:
         - Client

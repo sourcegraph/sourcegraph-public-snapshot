@@ -16,8 +16,8 @@ var AllFeatures = []Feature{
 
 // NOTE: When you add a new feature here, make sure to add it to the slice above as well.
 const (
-	FeatureCodeCompletions Feature = Feature(types.CompletionsFeatureCode)
-	FeatureChatCompletions Feature = Feature(types.CompletionsFeatureChat)
+	FeatureCodeCompletions         = Feature(types.CompletionsFeatureCode)
+	FeatureChatCompletions         = Feature(types.CompletionsFeatureChat)
 	FeatureEmbeddings      Feature = "embeddings"
 )
 
