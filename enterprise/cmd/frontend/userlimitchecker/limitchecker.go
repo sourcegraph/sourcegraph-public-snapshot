@@ -33,9 +33,14 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 		return errors.Wrap(err, "could not check user limit")
 	}
 
+	siteAdminEmails, err := getSiteAdmins(ctx, db)
+	if err != nil {
+		return errors.Wrap(err, "could not get site admins")
+	}
+
 	if atOrOverUserLimit {
 		if err := txemail.Send(ctx, "approaching_user_limit", txemail.Message{
-			To:       []string{"jasonhawkharris@gmail.com"},
+			To:       siteAdminEmails,
 			Template: approachingUserLimitEmailTemplate,
 			Data: struct {
 				FromName string
