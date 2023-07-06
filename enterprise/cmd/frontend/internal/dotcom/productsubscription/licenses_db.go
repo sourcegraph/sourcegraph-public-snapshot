@@ -36,6 +36,10 @@ type dbLicense struct {
 	SalesforceOpportunityID  *string
 }
 
+func NewDbLicense(db database.DB) dbLicenses {
+	return dbLicenses{db: db}
+}
+
 // errLicenseNotFound occurs when a database operation expects a specific Sourcegraph
 // license to exist but it does not exist.
 var errLicenseNotFound = errors.New("product license not found")
@@ -151,6 +155,16 @@ type dbLicensesListOptions struct {
 	Revoked               *bool  // only return revoked or non-revoked licenses
 	Expired               *bool  // only return expired or non-expired licenses
 	*database.LimitOffset
+}
+
+func DbLicencesListNoOpt() dbLicensesListOptions {
+	return dbLicensesListOptions{
+		LicenseKeySubstring:   "",
+		ProductSubscriptionID: "",
+		WithSiteIDsOnly:       false,
+		Revoked:               nil,
+		Expired:               nil,
+	}
 }
 
 func (o dbLicensesListOptions) sqlConditions() []*sqlf.Query {
