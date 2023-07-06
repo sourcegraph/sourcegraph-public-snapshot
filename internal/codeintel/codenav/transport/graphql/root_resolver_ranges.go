@@ -20,7 +20,13 @@ var ErrIllegalBounds = errors.New("illegal bounds")
 // results are partial and do not include references outside the current file, or any location that
 // requires cross-linking of bundles (cross-repo or cross-root).
 func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstubs.LSIFRangesArgs) (_ resolverstubs.CodeIntelligenceRangeConnectionResolver, err error) {
-	requestArgs := codenav.RequestArgs{RepositoryID: r.requestState.RepositoryID, Commit: r.requestState.Commit, Path: r.requestState.Path}
+	requestArgs := codenav.PositionalRequestArgs{
+		RequestArgs: codenav.RequestArgs{
+			RepositoryID: r.requestState.RepositoryID,
+			Commit:       r.requestState.Commit,
+		},
+		Path: r.requestState.Path,
+	}
 	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", requestArgs.RepositoryID),
 		attribute.String("commit", requestArgs.Commit),

@@ -54,6 +54,7 @@ go_library(
         "//internal/codeintel/dependencies",
         "//internal/conf",
         "//internal/conf/conftypes",
+        "//internal/conf/deploy",
         "//internal/conf/reposource",
         "//internal/database",
         "//internal/database/basestore",

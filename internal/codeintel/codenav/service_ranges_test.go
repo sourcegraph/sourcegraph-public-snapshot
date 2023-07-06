@@ -89,13 +89,15 @@ func TestRanges(t *testing.T) {
 	mockLsifStore.GetRangesFunc.PushReturn(ranges[1:4], nil)
 	mockLsifStore.GetRangesFunc.PushReturn(ranges[4:], nil)
 
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedRanges, err := svc.GetRanges(context.Background(), mockRequest, mockRequestState, 10, 20)
 	if err != nil {

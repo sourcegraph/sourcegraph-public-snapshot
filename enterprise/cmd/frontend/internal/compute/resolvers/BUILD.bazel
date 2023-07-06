@@ -8,7 +8,7 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/compute",
+        "//internal/compute",
         "//internal/database",
         "//internal/gitserver",
         "//internal/search/job/jobutil",
@@ -26,7 +26,7 @@ go_test(
     srcs = ["resolvers_test.go"],
     embed = [":resolvers"],
     deps = [
-        "//enterprise/internal/compute",
+        "//internal/compute",
         "//internal/database",
         "//internal/search/result",
         "@com_github_hexops_autogold_v2//:autogold",

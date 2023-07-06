@@ -55,7 +55,8 @@ func (p *provider) Config() schema.AuthProviders {
 	// non-Sourcegraph employees.
 	return schema.AuthProviders{
 		Openidconnect: &schema.OpenIDConnectAuthProvider{
-			ConfigID: auth.SourcegraphOperatorProviderType,
+			ConfigID:    auth.SourcegraphOperatorProviderType,
+			DisplayName: "Sourcegraph Operators",
 		},
 	}
 }
