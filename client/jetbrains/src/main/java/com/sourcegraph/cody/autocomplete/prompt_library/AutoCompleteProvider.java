@@ -63,35 +63,6 @@ public abstract class AutoCompleteProvider {
 
     int remainingChars = promptChars - emptyPromptLength();
 
-    //    if (suffix.length() > 0) {
-    //      String suffix = "";
-    //      String[] suffixLines = suffix.split("\n");
-    //      if (suffixLines.length > 5) {
-    //        suffix = String.join("\n", Arrays.copyOfRange(suffixLines, 5, suffixLines.length));
-    //      }
-    //
-    //      if (suffix.length() > 0) {
-    //        List<Message> suffixContext =
-    //            List.of(
-    //                new Message(
-    //                    Speaker.HUMAN,
-    //                    "Add the following code snippet to your knowledge base:\n```\n"
-    //                        + suffix
-    //                        + "\n```"),
-    //                new Message(Speaker.ASSISTANT, "Okay, I have added it to my knowledge
-    // base."));
-    //
-    //        int numSnippetChars =
-    //
-    // suffixContext.stream().map(Message::prompt).collect(Collectors.joining("")).length()
-    //                + 1;
-    //        if (numSnippetChars <= remainingChars) {
-    //          referenceSnippetMessages.addAll(suffixContext);
-    //          remainingChars -= numSnippetChars;
-    //        }
-    //      }
-    //    }
-
     for (ReferenceSnippet snippet : snippets) {
       List<Message> snippetMessages =
           List.of(

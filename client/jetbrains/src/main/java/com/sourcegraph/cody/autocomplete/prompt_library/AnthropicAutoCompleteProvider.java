@@ -8,6 +8,7 @@ import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.cody.vscode.Completion;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -40,7 +41,7 @@ public class AnthropicAutoCompleteProvider extends AutoCompleteProvider {
   @Override
   protected List<Message> createPromptPrefix() {
     String[] prefixLines = this.prefix.split("\n");
-    if (prefixLines.length == 0) logger.error("Cody: missing prefix lines");
+    if (prefixLines.length == 0) logger.error("Cody: Anthropic: missing prefix lines");
 
     PrefixComponents pc = getHeadAndTail(this.prefix);
 
@@ -67,21 +68,24 @@ public class AnthropicAutoCompleteProvider extends AutoCompleteProvider {
     // Create prompt
     List<Message> prompt = this.createPrompt();
     if (prompt.size() > this.promptChars) {
-      throw new Error("prompt length exceeded maximum alloted chars");
+      logger.error("Cody: Anthropic: prompt length exceeded maximum allotted chars");
+      return CompletableFuture.completedFuture(Collections.emptyList());
     }
 
     // Issue request
+    int maxTokensToSample = Math.min(100, this.responseTokens);
+    List<String> stopSequences = List.of(Speaker.HUMAN.prompt(), CLOSING_CODE_TAG, "\n\n");
     CompletableFuture<List<CompletionResponse>> promises =
         batchCompletions(
             this.completionsClient,
             new CompletionParameters()
                 .withMessages(prompt)
-                .withMaxTokensToSample(this.responseTokens)
-                .withStopSequences(List.of(Speaker.HUMAN.prompt(), "\n"))
-                .withTemperature(1)
+                .withMaxTokensToSample(maxTokensToSample)
+                .withStopSequences(stopSequences)
+                .withTemperature(0.5f)
                 .withTopK(-1)
                 .withTopP(-1),
-            n.isEmpty() ? this.defaultN : n.get());
+            n.orElseGet(() -> this.defaultN));
 
     // Post-process
     return promises.thenApply(
