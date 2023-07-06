@@ -33,7 +33,6 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 const (
 	getEmbeddingsMaxRetries = 5
 	embeddingsBatchSize     = 512
-	maxFileSize             = 1_000_000 // 1MB
 )
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -97,7 +96,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -108,7 +107,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -129,13 +128,19 @@ func EmbedRepo(
 type EmbedRepoOpts struct {
 	RepoName          api.RepoName
 	Revision          api.CommitID
-	ExcludePatterns   []*paths.GlobPattern
+	FileFilters       FileFilters
 	SplitOptions      codeintelContext.SplitOptions
 	MaxCodeEmbeddings int
 	MaxTextEmbeddings int
 
 	// If set, we already have an index for a previous commit.
 	IndexedRevision api.CommitID
+}
+
+type FileFilters struct {
+	ExcludePatterns  []*paths.GlobPattern
+	IncludePatterns  []*paths.GlobPattern
+	MaxFileSizeBytes int
 }
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
@@ -146,7 +151,7 @@ func embedFiles(
 	files []FileEntry,
 	client client.EmbeddingsClient,
 	contextService ContextService,
-	excludePatterns []*paths.GlobPattern,
+	fileFilters FileFilters,
 	splitOptions codeintelContext.SplitOptions,
 	reader FileReader,
 	maxEmbeddingVectors int,
@@ -219,13 +224,18 @@ func embedFiles(
 			continue
 		}
 
-		if file.Size > maxFileSize {
+		if file.Size > int64(fileFilters.MaxFileSizeBytes) {
 			stats.Skip(SkipReasonLarge, int(file.Size))
 			continue
 		}
 
-		if isExcludedFilePath(file.Name, excludePatterns) {
+		if isExcludedFilePathMatch(file.Name, fileFilters.ExcludePatterns) {
 			stats.Skip(SkipReasonExcluded, int(file.Size))
+			continue
+		}
+
+		if !isIncludedFilePathMatch(file.Name, fileFilters.IncludePatterns) {
+			stats.Skip(SkipReasonNotIncluded, int(file.Size))
 			continue
 		}
 

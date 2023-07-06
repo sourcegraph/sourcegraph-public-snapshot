@@ -58,9 +58,22 @@ func CompileGlobPatterns(patterns []string) []*paths.GlobPattern {
 	return globPatterns
 }
 
-func isExcludedFilePath(filePath string, excludedFilePathPatterns []*paths.GlobPattern) bool {
+func isExcludedFilePathMatch(filePath string, excludedFilePathPatterns []*paths.GlobPattern) bool {
 	for _, excludedFilePathPattern := range excludedFilePathPatterns {
 		if excludedFilePathPattern.Match(filePath) {
+			return true
+		}
+	}
+	return false
+}
+
+func isIncludedFilePathMatch(filePath string, includedFilePathPatterns []*paths.GlobPattern) bool {
+	// If we have no included file paths, then all file paths are included.
+	if len(includedFilePathPatterns) == 0 {
+		return true
+	}
+	for _, includedFilePathPattern := range includedFilePathPatterns {
+		if includedFilePathPattern.Match(filePath) {
 			return true
 		}
 	}
@@ -90,6 +103,9 @@ const (
 
 	// File was excluded by configuration rules
 	SkipReasonExcluded SkipReason = "excluded"
+
+	// File was not included by configuration rules
+	SkipReasonNotIncluded SkipReason = "notIncluded"
 
 	// File was excluded because we hit the max embedding limit for the repo
 	SkipReasonMaxEmbeddings SkipReason = "maxEmbeddings"

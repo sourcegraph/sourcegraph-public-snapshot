@@ -43,6 +43,7 @@ go_test(
         "//internal/codeintel/types",
         "//internal/embeddings/background/repo",
         "//internal/embeddings/embed/client",
+        "//internal/paths",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//require",

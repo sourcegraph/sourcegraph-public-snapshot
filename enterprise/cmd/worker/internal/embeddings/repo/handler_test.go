@@ -113,44 +113,56 @@ func (fi FakeFileInfo) Sys() interface{} {
 	return nil
 }
 
-func TestGetExcludedFilePathPatterns(t *testing.T) {
+func TestGetFileFilterPathPatterns(t *testing.T) {
 	// nil embeddingsConfig. This shouldn't happen, but just in case
 	var embeddingsConfig *conftypes.EmbeddingsConfig
-	result := getExcludedFilePathPatterns(embeddingsConfig)
-	if len(result) != len(embed.DefaultExcludedFilePathPatterns) {
-		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(result))
+	_, exclude := getFileFilterPathPatterns(embeddingsConfig)
+	if len(exclude) != len(embed.DefaultExcludedFilePathPatterns) {
+		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(exclude))
 	}
 
 	// Empty embeddingsConfig
 	embeddingsConfig = &conftypes.EmbeddingsConfig{}
-	result = getExcludedFilePathPatterns(embeddingsConfig)
-	if len(result) != len(embed.DefaultExcludedFilePathPatterns) {
-		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(result))
+	_, exclude = getFileFilterPathPatterns(embeddingsConfig)
+	if len(exclude) != len(embed.DefaultExcludedFilePathPatterns) {
+		t.Fatalf("Expected %d items, got %d", len(embed.DefaultExcludedFilePathPatterns), len(exclude))
 	}
 
 	// Non-empty embeddingsConfig
 	embeddingsConfig = &conftypes.EmbeddingsConfig{
-		ExcludedFilePathPatterns: []string{
-			"*.foo",
-			"*.bar",
+		FileFilters: conftypes.EmbeddingsFileFilters{
+			ExcludedFilePathPatterns: []string{
+				"*.foo",
+				"*.bar",
+			},
+			IncludedFilePathPatterns: []string{"*.go"},
 		},
 	}
-	result = getExcludedFilePathPatterns(embeddingsConfig)
-	if len(result) != 2 {
-		t.Fatalf("Expected 2 items, got %d", len(result))
+	include, exclude := getFileFilterPathPatterns(embeddingsConfig)
+	if len(exclude) != 2 {
+		t.Fatalf("Expected 2 items, got %d", len(exclude))
+	}
+	if len(include) != 1 {
+		t.Fatalf("Expected 1 items, got %d", len(include))
 	}
 
-	if result[0].Match("test.foo") == false {
+	if exclude[0].Match("test.foo") == false {
 		t.Fatalf("Expected true, got false")
 	}
-	if result[0].Match("test.bar") == true {
+	if exclude[0].Match("test.bar") == true {
 		t.Fatalf("Expected false, got true")
 	}
 
-	if result[1].Match("test.bar") == false {
+	if exclude[1].Match("test.bar") == false {
 		t.Fatalf("Expected true, got false")
 	}
-	if result[1].Match("test.foo") == true {
+	if exclude[1].Match("test.foo") == true {
+		t.Fatalf("Expected false, got true")
+	}
+	if include[0].Match("test.go") == false {
+		t.Fatalf("Expected true, got false")
+	}
+	if include[0].Match("test.bar") == true {
 		t.Fatalf("Expected false, got true")
 	}
 }
