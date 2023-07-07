@@ -13,7 +13,7 @@
 
     export let data: PageData
 
-    $: treeOrError = asStore(data.treeEntries.deferred)
+    $: treeOrError = asStore(data.commitWithTree.deferred.then(commit => (isErrorLike(commit) ? null : commit?.tree)))
     $: commits = asStore(data.commits.deferred)
 </script>
 

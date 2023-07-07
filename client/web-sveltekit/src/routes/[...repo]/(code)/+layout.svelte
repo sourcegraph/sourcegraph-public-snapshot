@@ -3,22 +3,44 @@
 
     import { afterNavigate, disableScrollHandling } from '$app/navigation'
     import { page } from '$app/stores'
-    import FileTree from '$lib/repo/FileTree.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
+    import { isErrorLike } from '$lib/common'
+    import { FileTreeProvider } from '$lib/repo/api/tree'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { scrollAll } from '$lib/stores'
-    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
+    import FileTree from './FileTree.svelte'
 
     export let data: PageData
 
-    function last<T>(arr: T[]): T {
-        return arr[arr.length - 1]
+    let treeProvider: FileTreeProvider | null = null
+
+    async function updateFileTreeProvider(repoName: string, revision: string | undefined, parentPath: string) {
+        treeProvider = null
+        const commit = await data.commitWithTree.deferred
+
+        // Do nothing if update was called with new arguments in the meantime
+        if (repoName !== data.repoName || revision !== data.revision || parentPath !== data.parentPath) {
+            return
+        }
+
+        treeProvider =
+            !isErrorLike(commit) && commit?.tree
+                ? new FileTreeProvider({
+                      tree: commit.tree,
+                      repoName,
+                      revision: revision ?? '',
+                      commitID: commit.oid,
+                  })
+                : null
     }
 
-    $: treeOrError = asStore(data.treeEntries.deferred)
+    // Only update the tree provider (which causes the file tree to rerender) if the new file tree would be rooted at an
+    // ancestor of the current file tree
+    $: ({ repoName, revision, parentPath } = data)
+    $: updateFileTreeProvider(repoName, revision, parentPath)
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -37,15 +59,11 @@
 
 <section>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
-        {#if !$treeOrError.loading && $treeOrError.data}
-            <FileTree
-                activeEntry={$page.params.path ? last($page.params.path.split('/')) : ''}
-                treeOrError={$treeOrError.data}
-            >
-                <h3 slot="title">
-                    <SidebarToggleButton />&nbsp; Files
-                </h3>
-            </FileTree>
+        <h3>
+            <SidebarToggleButton />&nbsp; Files
+        </h3>
+        {#if treeProvider}
+            <FileTree {treeProvider} selectedPath={$page.params.path ?? ''} />
         {/if}
     </div>
     {#if $sidebarOpen}
