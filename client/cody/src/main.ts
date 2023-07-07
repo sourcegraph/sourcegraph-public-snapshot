@@ -112,6 +112,7 @@ const register = async (
         completionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
+        restApiClient,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
@@ -122,6 +123,7 @@ const register = async (
         context.extensionPath,
         initialConfig,
         chatClient,
+        restApiClient,
         intentDetector,
         codebaseContext,
         guardrails,
