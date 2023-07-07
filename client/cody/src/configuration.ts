@@ -108,6 +108,11 @@ export async function updateConfiguration(configKey: string, configValue: string
     await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Global)
 }
 
+// Update workspace configurations in VS Code for Cody
+export async function updateWorkSpaceConfiguration(configKey: string, configValue: string): Promise<void> {
+    await codyConfiguration.update(configKey, configValue, vscode.ConfigurationTarget.Workspace)
+}
+
 export const getFullConfig = async (
     secretStorage: SecretStorage,
     localStorage?: LocalStorage
@@ -115,6 +120,7 @@ export const getFullConfig = async (
     const config = getConfiguration(vscode.workspace.getConfiguration())
     // Migrate endpoints to local storage
     config.serverEndpoint = localStorage?.getEndpoint() || config.serverEndpoint
+    await updateWorkSpaceConfiguration('serverEndpoint', config.serverEndpoint)
     const accessToken = (await getAccessToken(secretStorage)) || null
     return { ...config, accessToken }
 }
