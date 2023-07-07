@@ -1273,6 +1273,12 @@ $ sg app update-manifest --no-upload
 
 # Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
 $ sg app update-manifest --update-signatures
+
+# Resets the dev app's db and web cache
+$ sg app reset
+
+# Prints the locations to be removed without deleting
+$ sg app reset --dry-run
 ```
 
 ### sg app update-manifest
@@ -1288,6 +1294,16 @@ Flags:
 * `--no-upload`: do everything except upload the final manifest
 * `--release-tag="<value>"`: GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used (default: latest)
 * `--update-signatures`: update the signatures in the update manifest by retrieving the signature content from the GitHub release
+
+### sg app reset
+
+Resets the dev app's db and web cache.
+
+
+Flags:
+
+* `--dry-run`: write out paths to be removed
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg teammate
 
