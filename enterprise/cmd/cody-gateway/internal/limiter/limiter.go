@@ -73,7 +73,9 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 			attribute.Int64("limit", l.Limit),
 			attribute.Float64("intervalSeconds", intervalSeconds)))
 	defer func() {
-		span.RecordError(err)
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
 		span.SetAttributes(attribute.Int("currentUsage", currentUsage))
 		span.End()
 	}()

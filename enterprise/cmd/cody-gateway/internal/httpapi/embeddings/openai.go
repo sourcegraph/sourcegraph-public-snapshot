@@ -10,6 +10,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
@@ -40,7 +41,9 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 			attribute.Int("input.model", len(input.Model)),
 			attribute.Int("input.length", len(input.Input))))
 	defer func() {
-		span.RecordError(err)
+		if err != nil {
+			span.SetStatus(codes.Error, "GenerateEmbeddings failed") // Record generic error to avoid response body
+		}
 		span.End()
 	}()
 
