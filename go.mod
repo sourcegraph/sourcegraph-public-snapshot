@@ -158,7 +158,6 @@ require (
 	github.com/klauspost/cpuid/v2 v2.2.4
 	github.com/kljensen/snowball v0.6.0
 	github.com/kr/text v0.2.0
-	github.com/kylelemons/godebug v1.1.0
 	github.com/lib/pq v1.10.7
 	github.com/machinebox/graphql v0.2.2
 	github.com/mattn/go-sqlite3 v1.14.16
@@ -464,7 +463,7 @@ require (
 	github.com/klauspost/compress v1.16.3 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/knadh/koanf v1.5.0 // indirect
-	github.com/kr/pretty v0.3.1 // indirect
+	github.com/kr/pretty v0.3.1
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattermost/xml-roundtrip-validator v0.1.0 // indirect

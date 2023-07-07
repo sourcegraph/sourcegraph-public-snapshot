@@ -21,15 +21,14 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	authcheck "github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,8 +50,7 @@ func Middleware(db database.DB) *auth.Middleware {
 
 const cacheTTLSeconds = 60 * 60 // 1 hour
 
-func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	db := edb.NewEnterpriseDB(ossDB)
+func newMiddleware(db database.DB, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
 	handler := newServeMux(db, authPrefix, ghAppState)
 
@@ -72,7 +70,7 @@ func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next
 }
 
 // checkSiteAdmin checks if the current user is a site admin and sets http error if not
-func checkSiteAdmin(db edb.EnterpriseDB, w http.ResponseWriter, req *http.Request) error {
+func checkSiteAdmin(db database.DB, w http.ResponseWriter, req *http.Request) error {
 	err := authcheck.CheckCurrentUserIsSiteAdmin(req.Context(), db)
 	if err == nil {
 		return nil
@@ -117,7 +115,7 @@ type gitHubAppStateDetails struct {
 	AppID       int    `json:"app_id,omitempty"`
 }
 
-func newServeMux(db edb.EnterpriseDB, prefix string, cache *rcache.Cache) http.Handler {
+func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handler {
 	r := mux.NewRouter()
 
 	r.Path(prefix + "/state").Methods("GET").HandlerFunc(func(w http.ResponseWriter, req *http.Request) {

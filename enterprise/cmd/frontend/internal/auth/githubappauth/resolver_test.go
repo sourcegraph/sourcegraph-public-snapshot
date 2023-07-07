@@ -12,11 +12,10 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -53,7 +52,7 @@ func TestResolver_DeleteGitHubApp(t *testing.T) {
 		return nil
 	})
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -129,7 +128,7 @@ func TestResolver_GitHubApps(t *testing.T) {
 		return []*ghtypes.GitHubApp{{ID: 1}, {ID: 2}}, nil
 	})
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -227,7 +226,7 @@ func TestResolver_GitHubApp(t *testing.T) {
 		BaseURL: "https://github.com",
 	}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -296,7 +295,7 @@ func TestResolver_GitHubAppByAppID(t *testing.T) {
 		Name:    name,
 	}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 
 	db.GitHubAppsFunc.SetDefaultReturn(gitHubAppsStore)
 	db.UsersFunc.SetDefaultReturn(userStore)
