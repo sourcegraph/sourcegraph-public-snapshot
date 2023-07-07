@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -227,7 +226,7 @@ func (r *ownResolver) RepoIngestedCodeowners(ctx context.Context, repoID api.Rep
 
 type codeownersIngestedFileResolver struct {
 	gitserver      gitserver.Client
-	db             edb.EnterpriseDB
+	db             database.DB
 	codeownersFile *types.CodeownersFile
 	repository     *itypes.Repo
 }

@@ -9,7 +9,6 @@ go_library(
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//enterprise/cmd/worker/internal/githubapps/worker",
-        "//enterprise/internal/database",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",

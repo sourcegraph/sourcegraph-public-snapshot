@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"

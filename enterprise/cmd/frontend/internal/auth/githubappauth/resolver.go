@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks/resolvers"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -28,13 +27,13 @@ import (
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(logger log.Logger, db edb.EnterpriseDB) graphqlbackend.GitHubAppsResolver {
+func NewResolver(logger log.Logger, db database.DB) graphqlbackend.GitHubAppsResolver {
 	return &resolver{logger: logger, db: db}
 }
 
 type resolver struct {
 	logger log.Logger
-	db     edb.EnterpriseDB
+	db     database.DB
 }
 
 const gitHubAppIDKind = "GitHubApp"
@@ -177,7 +176,7 @@ func (r *resolver) gitHubAppByAppID(ctx context.Context, appID int, baseURL stri
 }
 
 // NewGitHubAppResolver creates a new GitHubAppResolver from a GitHubApp.
-func NewGitHubAppResolver(db edb.EnterpriseDB, app *types.GitHubApp, logger log.Logger) *gitHubAppResolver {
+func NewGitHubAppResolver(db database.DB, app *types.GitHubApp, logger log.Logger) *gitHubAppResolver {
 	return &gitHubAppResolver{app: app, db: db, logger: logger}
 }
 
@@ -198,7 +197,7 @@ func (r *gitHubAppConnectionResolver) TotalCount(ctx context.Context) int32 {
 type gitHubAppResolver struct {
 	logger log.Logger
 	app    *types.GitHubApp
-	db     edb.EnterpriseDB
+	db     database.DB
 
 	once          sync.Once
 	installations []graphqlbackend.GitHubAppInstallation

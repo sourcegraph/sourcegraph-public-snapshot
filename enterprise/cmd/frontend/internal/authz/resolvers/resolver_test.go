@@ -1616,7 +1616,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		subrepos := edb.NewStrictMockSubRepoPermsStore()
+		subrepos := database.NewStrictMockSubRepoPermsStore()
 		subrepos.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
 			return nil
 		})
@@ -1654,7 +1654,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 			}, nil
 		})
 
-		subReposStore := edb.NewStrictMockSubRepoPermsStore()
+		subReposStore := database.NewStrictMockSubRepoPermsStore()
 		subReposStore.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
 			return nil
 		})

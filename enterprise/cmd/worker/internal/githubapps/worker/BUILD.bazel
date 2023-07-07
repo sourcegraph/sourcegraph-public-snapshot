@@ -7,7 +7,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/githubapps/worker",
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
-        "//enterprise/internal/database",
+        "//internal/database",
         "//internal/extsvc/github",
         "//internal/github_apps/auth",
         "//internal/github_apps/types",
@@ -22,7 +22,7 @@ go_test(
     srcs = ["installation_backfill_test.go"],
     embed = [":worker"],
     deps = [
-        "//enterprise/internal/database",
+        "//internal/database",
         "//internal/github_apps/store",
         "//internal/github_apps/types",
         "//internal/types",

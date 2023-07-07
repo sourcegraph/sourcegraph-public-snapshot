@@ -8,7 +8,6 @@ package shared
 import (
 	"github.com/sourcegraph/log"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -19,7 +18,7 @@ import (
 func enterpriseInit(db database.DB, keyring keyring.Ring) {
 	logger := log.Scoped("enterprise", "gitserver enterprise edition")
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}

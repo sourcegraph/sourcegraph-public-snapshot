@@ -19,7 +19,6 @@ go_library(
         "//cmd/frontend/globals",
         "//enterprise/internal/authz",
         "//enterprise/internal/authz/subrepoperms",
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

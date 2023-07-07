@@ -16,7 +16,6 @@ go_library(
         "//cmd/frontend/enterprise",
         "//cmd/frontend/graphqlbackend",
         "//enterprise/cmd/frontend/internal/repos/webhooks/resolvers",
-        "//enterprise/internal/database",
         "//internal/auth",
         "//internal/codeintel",
         "//internal/conf/conftypes",
@@ -56,7 +55,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/database",
         "//internal/encryption",

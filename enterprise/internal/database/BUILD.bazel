@@ -1,34 +1,14 @@
-load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "database",
-    srcs = [
-        "database.go",
-        "mocks_temp.go",
-    ],
+    srcs = ["database.go"],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/database",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbconn",
         "//internal/database/dbutil",
-        "//internal/encryption",
-        "//internal/github_apps/store",
         "@com_github_sourcegraph_log//:log",
     ],
-)
-
-go_test(
-    name = "database_test",
-    size = "large",
-    timeout = "long",
-    srcs = ["main_test.go"],
-    embed = [":database"],
-    tags = [
-        # Test requires localhost database
-        "requires-network",
-    ],
-    deps = ["@com_github_sourcegraph_log//logtest"],
 )

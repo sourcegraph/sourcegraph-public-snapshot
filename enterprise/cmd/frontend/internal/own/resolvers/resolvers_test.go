@@ -18,10 +18,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	owntypes "github.com/sourcegraph/sourcegraph/internal/own/types"
-	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
@@ -29,15 +25,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/own"
 	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	owntypes "github.com/sourcegraph/sourcegraph/internal/own/types"
+	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	enterprisedb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 const (
@@ -462,7 +459,7 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 		},
 	}
 	fakeDB := fakedb.New()
-	db := enterprisedb.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
 	db.CodeownersFunc.SetDefaultReturn(database.NewMockCodeownersStore())

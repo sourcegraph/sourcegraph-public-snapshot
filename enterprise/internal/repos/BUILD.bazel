@@ -9,7 +9,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/encryption/keyring",

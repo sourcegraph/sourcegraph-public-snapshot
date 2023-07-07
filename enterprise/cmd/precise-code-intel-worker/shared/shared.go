@@ -11,7 +11,6 @@ import (
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"

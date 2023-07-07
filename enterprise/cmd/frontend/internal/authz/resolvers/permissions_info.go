@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -69,7 +68,6 @@ func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlba
 	connectionStore := &permissionsInfoRepositoriesStore{
 		userID: r.userID,
 		db:     r.db,
-		ossDB:  r.ossDB,
 		query:  query,
 	}
 
@@ -79,7 +77,6 @@ func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlba
 type permissionsInfoRepositoriesStore struct {
 	userID int32
 	db     database.DB
-	ossDB  database.DB
 	query  string
 }
 
@@ -96,7 +93,7 @@ func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ data
 }
 
 func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.ossDB.Repos().Count(actor.WithActor(ctx, actor.FromUser(s.userID)), database.ReposListOptions{Query: s.query})
+	count, err := s.db.Repos().Count(actor.WithActor(ctx, actor.FromUser(s.userID)), database.ReposListOptions{Query: s.query})
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +110,7 @@ func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, arg
 
 	var permissionResolvers []graphqlbackend.PermissionsInfoRepositoryResolver
 	for _, perm := range permissions {
-		permissionResolvers = append(permissionResolvers, permissionsInfoRepositoryResolver{perm: perm, db: s.ossDB})
+		permissionResolvers = append(permissionResolvers, permissionsInfoRepositoryResolver{perm: perm, db: s.db})
 	}
 
 	return permissionResolvers, nil
@@ -200,7 +197,7 @@ func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *data
 
 	permissionResolvers := make([]graphqlbackend.PermissionsInfoUserResolver, 0, len(permissions))
 	for _, perm := range permissions {
-		permissionResolvers = append(permissionResolvers, permissionsInfoUserResolver{perm: perm, db: s.ossDB})
+		permissionResolvers = append(permissionResolvers, permissionsInfoUserResolver{perm: perm, db: s.db})
 	}
 
 	return permissionResolvers, nil
