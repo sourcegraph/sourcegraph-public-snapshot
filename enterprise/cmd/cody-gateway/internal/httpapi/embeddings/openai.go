@@ -8,6 +8,10 @@ import (
 	"net/http"
 	"sort"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,9 +29,21 @@ type openaiClient struct {
 	accessToken string
 }
 
+var tracer = otel.Tracer("cody-gateway/httpapi/embeddings")
+
 const apiURL = "https://api.openai.com/v1/embeddings"
 
-func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, int, error) {
+func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway.EmbeddingsRequest) (_ *codygateway.EmbeddingsResponse, _ int, err error) {
+	var span trace.Span
+	ctx, span = tracer.Start(ctx, "openai.GenerateEmbeddings",
+		trace.WithAttributes(
+			attribute.Int("input.model", len(input.Model)),
+			attribute.Int("input.length", len(input.Input))))
+	defer func() {
+		span.RecordError(err)
+		span.End()
+	}()
+
 	for _, s := range input.Input {
 		if s == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
