@@ -8,7 +8,7 @@ steps:
           env:
             PLATFORM: x86_64-pc-windows-msvc
           command:
-            - './enterprise/dev/app/build-windows.sh'
+            - 'enterprise/dev/app/build-windows.sh'
 
   #     - label: ':bazel::linux: Build for Linux'
   #       key: 'build-sourcegraph-app-linux'
