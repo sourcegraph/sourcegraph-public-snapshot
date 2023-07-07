@@ -212,10 +212,8 @@ class CodyToolWindowContent implements UpdatableChat {
     contentPanel.setLayout(new BorderLayout(0, 0));
     contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
 
-    // Create a layered pane and add the main panel and button to it
     JLayeredPane layeredPane = new JLayeredPane();
     layeredPane.setLayout(new BorderLayout());
-    // Add a button to the south of the main panel
     JButton button = new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
     stopGeneratingButtonPanel = new JPanel();
     button.addActionListener(
@@ -229,6 +227,7 @@ class CodyToolWindowContent implements UpdatableChat {
     stopGeneratingButtonPanel.setVisible(false);
     layeredPane.add(chatPanel, BorderLayout.CENTER);
     layeredPane.add(stopGeneratingButtonPanel, BorderLayout.SOUTH, JLayeredPane.POPUP_LAYER);
+
     contentPanel.add(layeredPane, BorderLayout.CENTER);
     contentPanel.add(lowerPanel, BorderLayout.SOUTH);
 
