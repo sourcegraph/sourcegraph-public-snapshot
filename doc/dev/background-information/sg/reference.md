@@ -164,6 +164,7 @@ Flags:
 
 * `--describe`: Print details about selected run target
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--legacy`: Force run to pick the non-bazel variant of the command
 
 ## sg ci
 
@@ -216,6 +217,18 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--format="<value>"`: Output format for the preview (one of 'markdown', 'json', or 'yaml') (default: markdown)
 
+### sg ci bazel
+
+Fires a CI build running a given bazel command.
+
+Arguments: `[--web|--wait] [test|build] <target1> <target2> ... <bazel flags>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--wait`: Wait until build completion and then print logs for the Bazel command
+* `--web`: Print the web URL for the build and return immediately
+
 ### sg ci status
 
 Get the status of the CI run associated with the currently checked out branch.
@@ -253,6 +266,7 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * docker-images-patch-notest - Patch image without testing
 * executor-patch-notest - Build executor without testing
 * backend-integration - Backend integration tests
+* bazel-do - Bazel command
 
 For run types that require branch arguments, you will be prompted for an argument, or you
 can provide it directly (for example, 'sg ci build [runtype] <argument>').

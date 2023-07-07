@@ -97,7 +97,7 @@ func (s *searchClient) Plan(
 	searchMode search.Mode,
 	protocol search.Protocol,
 ) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
+	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
 	defer tr.FinishWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
@@ -159,7 +159,7 @@ func (s *searchClient) Execute(
 	stream streaming.Sender,
 	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "Execute", "")
+	tr, ctx := trace.New(ctx, "Execute")
 	defer tr.FinishWithErr(&err)
 
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)

@@ -7,9 +7,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -198,76 +198,6 @@ func TestAuthLockout(t *testing.T) {
 
 			got := AuthLockout()
 			assert.Equal(t, test.want, got)
-		})
-	}
-}
-
-func TestGitHubAppConfig(t *testing.T) {
-	tests := []struct {
-		name    string
-		sc      *Unified
-		want    GitHubAppConfiguration
-		wantErr bool
-	}{
-		{
-			name: "not set should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{}},
-			want: GitHubAppConfiguration{},
-		},
-		{
-			name: "bad value should return error",
-			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					GitHubApp: &schema.GitHubApp{PrivateKey: "f00b4r"},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "configured should return configured",
-			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					GitHubApp: &schema.GitHubApp{
-						PrivateKey:   `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`,
-						ClientID:     "1",
-						ClientSecret: "hush",
-						Slug:         "slugs-are-cool",
-						AppID:        "99",
-					},
-				},
-			},
-			want: GitHubAppConfiguration{
-				ClientID:     "1",
-				ClientSecret: "hush",
-				Slug:         "slugs-are-cool",
-				AppID:        "99",
-				PrivateKey: []byte(`-----BEGIN RSA PRIVATE KEY-----
-MIIBPAIBAAJBAPJHijktmT1IKaGta5Eep3AZ9CeOeL8jPDIFT7wQgKZmt3EFqDhB
-Own+QUHJuK9fovRDNJeVL2oY5BOIz4rw/G0CAwEAAQJBAMA+J92K4wcPVYlmc+3o
-pu96iJNCp2jy6na+ZDBT3+EoIJ5TRFvswGi/Lu3e8XQl1L3S3mnoLOJVMq1tmLN2
-HcECIQD+wZy/7FV1PAmviWyiXVIDO2g5bNiBengJCxEksbkUmQIhAPN2VZs3zPQp
-MDTooNRWrytEmTDDdjgb8ZsNWX/RODb1AiBecJnSUCNSBYK1ryU1f5DSn+hAOYh9
-X1A2UgL17mhlKQIhAO+bL6dCZKiLfNElfVtdMKqBqc6PH+MaxU6W9dVQoGWdAiEA
-mtfypOsa1bKhEL84nZ/ivEbBriRGjP2kyDDv3RX4WBk=
------END RSA PRIVATE KEY-----
-`),
-			},
-		},
-	}
-
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			Mock(test.sc)
-			have, err := GitHubAppConfig()
-			if err != nil && !test.wantErr {
-				t.Fatalf("unexpected err: %s", err)
-			}
-			if err == nil && test.wantErr {
-				t.Fatal("want err but got none")
-			}
-			if diff := cmp.Diff(have, test.want); diff != "" {
-				t.Fatalf("GitHubAppConfig() wrong: %s", diff)
-			}
 		})
 	}
 }
@@ -707,6 +637,9 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		MaxCodeEmbeddingsPerRepo:   3_072_000,
 		MaxTextEmbeddingsPerRepo:   512_000,
 		PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+		FileFilters: conftypes.EmbeddingsFileFilters{
+			MaxFileSizeBytes: 1000000,
+		},
 	}
 
 	testCases := []struct {
@@ -783,6 +716,38 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			wantConfig: zeroConfigDefaultWithLicense,
 		},
 		{
+			name: "File filters",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						MaxFileSizeBytes:         200,
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+			},
+		},
+		{
 			name: "No provider and no token, assume Sourcegraph",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
@@ -802,6 +767,9 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
 			},
 		},
 		{
@@ -836,6 +804,9 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
 			},
 		},
 		{
@@ -869,6 +840,9 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
 			},
 		},
 		{
@@ -904,6 +878,9 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
 			},
 		},
 		{
@@ -927,6 +904,9 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				MaxCodeEmbeddingsPerRepo:   3_072_000,
 				MaxTextEmbeddingsPerRepo:   512_000,
 				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
 			},
 		},
 		{

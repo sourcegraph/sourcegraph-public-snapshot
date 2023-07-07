@@ -23,6 +23,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
+        "//lib/iterator",
         "@com_github_aws_aws_sdk_go_v2//aws",
         "@com_github_aws_aws_sdk_go_v2_config//:config",
         "@com_github_aws_aws_sdk_go_v2_credentials//:credentials",
@@ -60,5 +61,6 @@ go_test(
         "@com_github_grafana_regexp//:regexp",
         "@com_github_inconshreveable_log15//:log15",
         "@com_google_cloud_go_storage//:storage",
+        "@org_golang_google_api//iterator",
     ],
 )

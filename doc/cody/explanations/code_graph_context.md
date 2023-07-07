@@ -8,9 +8,6 @@ Cody reads relevant code files to increase the accuracy and quality of the respo
 
 ### Embeddings
 
-> NOTE: Enterprise Cloud customers should reach out to their Sourcegraph representative to enable embeddings.
-> See [Enabling Cody Enterprise: Cody on Sourcegraph Cloud](./enabling_cody_enterprise.md#cody-on-sourcegraph-cloud)
-
 Embeddings are a semantic representation of text that allow us to create a search index over an entire codebase. The process of creating embeddings involves us splitting the entire codebase into searchable chunks and sending them to the external service specified in the site config for embedding. The final embedding index is stored in a managed object storage service.
 
 Embeddings for relevant code files must be enabled for each repository that you'd like Cody to have context on.
@@ -23,8 +20,6 @@ Embeddings for relevant code files must be enabled for each repository that you'
 
 Embeddings are automatically enabled and configured once [Cody is enabled](../quickstart.md). You can also [use third-party embeddings provider directly](#using-a-third-party-embeddings-provider-directly) for embeddings.
 
-> NOTE: Unless both completions and embeddings are configured, the `/site-admin/cody` page will not be available.
-
 Embeddings will not be generated for any repo unless an admin takes action. There are two ways to do this.
 
 The recommended way of configuring embeddings is to use a policy. These are configured through the Admin UI using [policies](https://docs.sourcegraph.com/cody/explanations/policies). Policy based embeddings will be automatically updated based on the [update interval](#adjust-the-minimum-time-interval-between-automatically-scheduled-embeddings).
@@ -35,20 +30,28 @@ Whether created manually or through a policy, embeddings will be generated incre
 
 > NOTE: Generating embeddings sends code snippets to a third-party language party provider. By enabling Cody, you agree to the [Cody Notice and Usage Policy](https://about.sourcegraph.com/terms/cody-notice).
 
-### Excluding files from embeddings
+### Filtering files from embeddings
 
-The `excludedFilePathPatterns` is a setting in the Sourcegraph embeddings configuration that allows you to exclude certain file paths from being used in generating embeddings. By specifying glob patterns that match file paths, you can exclude files that have low information value, such as test fixtures, mocks, auto-generated files, and other files that are not relevant to the codebase.
+`fileFilters` is a setting in the Sourcegraph embeddings configuration that allows you to filter file paths meeting certain conditions from being used in generating embeddings. By specifying glob patterns in `excludedFilePathPatterns` and `includedFilePathPatterns` that match file paths, you can exclude files that have low information value, such as test fixtures, mocks, auto-generated files, and other files that are not relevant to the codebase.
 
-To use `excludedFilePathPatterns`, add it to your embeddings site config with a list of glob patterns. For example, to exclude all SVG files, you would add the following setting to your configuration file:
+To use `fileFilters`, add it to your embeddings site config. 
+
+For example, to: exclude all files under `node_modules`, include only .go files, and limiting the maximum file size to 300KB, you would add the following setting to your configuration file:
 
 ```json
 {
   // [...]
   "embeddings": {
     // [...]
-    "excludedFilePathPatterns": [
-      "*.svg"
-    ]
+    "fileFilters": {
+      "excludedFilePathPatterns": [
+        "node_modules/"
+      ],
+      "includedFilePathPatterns": [
+        "*.go"
+      ],
+      "maxFileSizeBytes": 300000 //300 KB
+    }
   }
 }
 ```

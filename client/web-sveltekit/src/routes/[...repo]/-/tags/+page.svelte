@@ -1,12 +1,13 @@
 <script lang="ts">
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: tags = data.tags
+    $: tags = asStore(data.tags.deferred)
     $: nodes = !$tags.loading && $tags.data ? $tags.data.nodes : null
     $: total = !$tags.loading && $tags.data ? $tags.data.totalCount : null
 </script>

@@ -36,6 +36,20 @@ query CurrentUser {
     }
 }`
 
+export const CURRENT_SITE_CODY_LLM_CONFIGURATION = `
+query CurrentSiteCodyLlmConfiguration {
+    site {
+        codyLLMConfiguration {
+            chatModel
+            chatModelMaxTokens
+            fastChatModel
+            fastChatModelMaxTokens
+            completionModel
+            completionModelMaxTokens
+        }
+    }
+}`
+
 export const REPOSITORY_ID_QUERY = `
 query Repository($name: String!) {
 	repository(name: $name) {

@@ -11,12 +11,11 @@ import (
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel"
-	codeintelshared "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/shared/lsifuploadstore"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/uploads"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -56,7 +55,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Initialize sub-repo permissions client
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "creating sub-repo client")
 	}

@@ -584,7 +584,7 @@ func (e badRequestError) BadRequest() bool { return true }
 func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err error) {
 	ctx, cancel := context.WithCancel(ctx)
 	ctx, _, endObservation := c.execOp.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(c.repo)),
+		c.repo.Attr(),
 		attribute.StringSlice("args", c.args[1:]),
 	}})
 	done := func() {
@@ -753,7 +753,7 @@ func isRevisionNotFound(err string) bool {
 
 func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, err error) {
 	ctx, _, endObservation := c.operations.search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(args.Repo)),
+		args.Repo.Attr(),
 		attribute.Stringer("query", args.Query),
 		attribute.Bool("diff", args.IncludeDiff),
 		attribute.Int("limit", args.Limit),
@@ -1575,7 +1575,7 @@ func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName,
 	}
 
 	ctx, trLogger, endObservation := c.operations.do.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repoForTracing)),
+		repoForTracing.Attr(),
 		attribute.String("method", method),
 		attribute.String("path", parsedURL.Path),
 	}})

@@ -26,6 +26,14 @@ Host *
 
 See [git configuration](./git_config.md) for more details.
 
+### Error: `sign_and_send_pubkey: no mutual signature supported`
+
+In Sourcegraph 5.1.0 and later, the insecure SSH rsa-sha1 signature algorithm is no longer supported when fetching data from code hosts.
+
+If you use an RSA SSH key to authenticate to your code host, you should ensure that your code host runs OpenSSL 7.2 or newer.
+
+If it is not possible to update the code host, you should generate a new ed25519 SSH key to use for authentication. This can be achieved by running `ssh-keygen -t ed25519`, and [configuring Sourcegraph](https://docs.sourcegraph.com/admin/repo/git_config) to use this new key.
+
 ### Error: `Host key verification failed`
 
 This indicates an invalid key is being used. You can confirm the error by cloning inside the gitserver directly. For example:

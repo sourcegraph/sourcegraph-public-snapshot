@@ -17,7 +17,7 @@ import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
-import com.sourcegraph.cody.completions.CodyCompletionsManager;
+import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import java.awt.event.InputEvent;
@@ -93,17 +93,18 @@ public class SettingsChangeListener implements Disposable {
                   });
             }
 
-            // clear completions if freshly disabled
-            if (context.oldCodyCompletionsEnabled && !context.newCodyCompletionsEnabled) {
+            // clear autocomplete suggestions if freshly disabled
+            if (context.oldCodyAutoCompleteEnabled && !context.newCodyAutoCompleteEnabled) {
               Project[] openProjects = ProjectManager.getInstance().getOpenProjects();
-              CodyCompletionsManager codyCompletionsManager = CodyCompletionsManager.getInstance();
+              CodyAutoCompleteManager codyAutoCompleteManager =
+                  CodyAutoCompleteManager.getInstance();
               Arrays.stream(openProjects)
                   .flatMap(
                       project ->
                           Arrays.stream(FileEditorManager.getInstance(project).getAllEditors()))
                   .filter(fileEditor -> fileEditor instanceof TextEditor)
                   .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
-                  .forEach(codyCompletionsManager::clearCompletions);
+                  .forEach(codyAutoCompleteManager::clearAutoCompleteSuggestions);
             }
           }
         });

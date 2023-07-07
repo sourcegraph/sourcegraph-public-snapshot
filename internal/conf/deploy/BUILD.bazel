@@ -2,7 +2,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "deploy",
-    srcs = ["deploytype.go"],
+    srcs = [
+        "deploytype.go",
+        "endpoints.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/conf/deploy",
     visibility = ["//:__subpackages__"],
+    deps = ["//internal/env"],
 )

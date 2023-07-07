@@ -12,7 +12,6 @@ import (
 	"golang.org/x/exp/maps"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
@@ -56,7 +55,7 @@ type PermsSyncer struct {
 	// operation (usually <1s).
 	permsUpdateLock sync.Mutex
 	// The database interface for any permissions operations.
-	permsStore edb.PermsStore
+	permsStore database.PermsStore
 }
 
 // NewPermsSyncer returns a new permissions syncer.
@@ -64,7 +63,7 @@ func NewPermsSyncer(
 	logger log.Logger,
 	db database.DB,
 	reposStore repos.Store,
-	permsStore edb.PermsStore,
+	permsStore database.PermsStore,
 	clock func() time.Time,
 ) *PermsSyncer {
 	return &PermsSyncer{
@@ -80,7 +79,7 @@ func NewPermsSyncer(
 // When `noPerms` is true, the method will use partial results to update permissions
 // tables even when error occurs.
 func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
-	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms", "")
+	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms")
 	defer save(requestTypeRepo, int32(repoID), &err)
 
 	repo, err := s.reposStore.RepoStore().Get(ctx, repoID)
@@ -257,7 +256,7 @@ func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPe
 // the method will use partial results to update permissions tables even when error occurs.
 func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
 	var err error
-	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms", "")
+	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms")
 	defer save(requestTypeUser, userID, &err)
 
 	user, err := s.db.Users().GetByID(ctx, userID)
@@ -303,7 +302,7 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 	}
 
 	// Set sub-repository permissions.
-	srp := edb.NewEnterpriseDB(s.db).SubRepoPerms()
+	srp := s.db.SubRepoPerms()
 	for spec, perm := range results.subRepoPerms {
 		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
 			return result, providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %q (id: %d)", spec, user.Username, user.ID)
@@ -532,7 +531,7 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 				extPerms = new(authz.ExternalUserPermissions)
 
 				// Load last synced sub-repo perms for this user and provider.
-				currentSubRepoPerms, err := edb.NewEnterpriseDB(s.db).SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
+				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
 				if err != nil {
 					return results, errors.Wrap(err, "fetching existing sub-repo permissions")
 				}
@@ -709,9 +708,9 @@ func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32,
 	return stats, nil
 }
 
-func (s *PermsSyncer) observe(ctx context.Context, family, title string) (context.Context, func(requestType, int32, *error)) {
+func (s *PermsSyncer) observe(ctx context.Context, name string) (context.Context, func(requestType, int32, *error)) {
 	began := s.clock()
-	tr, ctx := trace.New(ctx, family, title)
+	tr, ctx := trace.New(ctx, name)
 
 	return ctx, func(typ requestType, id int32, err *error) {
 		defer tr.Finish()

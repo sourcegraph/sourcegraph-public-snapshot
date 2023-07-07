@@ -1,16 +1,11 @@
 package com.sourcegraph.cody;
 
 import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
-import static java.awt.event.InputEvent.ALT_DOWN_MASK;
-import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
-import static java.awt.event.InputEvent.META_DOWN_MASK;
-import static java.awt.event.InputEvent.SHIFT_DOWN_MASK;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
-import com.intellij.ide.ui.laf.darcula.ui.DarculaTextAreaUI;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CustomShortcutSet;
@@ -58,8 +53,8 @@ import com.sourcegraph.cody.recipes.ImproveVariableNamesAction;
 import com.sourcegraph.cody.recipes.RecipeRunner;
 import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
 import com.sourcegraph.cody.recipes.TranslateToLanguageAction;
+import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.ui.HtmlViewer;
-import com.sourcegraph.cody.ui.RoundedJBTextArea;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.config.SettingsComponent.InstanceType;
@@ -85,7 +80,6 @@ import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
-import javax.swing.plaf.basic.BasicTextAreaUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -180,17 +174,23 @@ class CodyToolWindowContent implements UpdatableChat {
     JPanel controlsPanel = new JPanel();
     controlsPanel.setLayout(new BorderLayout());
     controlsPanel.setBorder(new EmptyBorder(JBUI.insets(14)));
-    sendButton = createSendButton(this.project);
-    promptInput = createPromptInput(this.project);
-
     JPanel messagePanel = new JPanel(new BorderLayout());
+    sendButton = createSendButton(this.project);
+    AutoGrowingTextArea autoGrowingTextArea = new AutoGrowingTextArea(2, 9, messagePanel);
+    promptInput = autoGrowingTextArea.getTextArea();
+    /* Submit on enter */
+    KeyboardShortcut JUST_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, 0), null);
+    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT = new CustomShortcutSet(JUST_ENTER);
+    AnAction sendMessageAction =
+        new DumbAwareAction() {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent e) {
+            sendMessage(project);
+          }
+        };
+    sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
 
-    JBScrollPane promptInputWithScroll =
-        new JBScrollPane(
-            promptInput,
-            JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-            JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-    messagePanel.add(promptInputWithScroll, BorderLayout.CENTER);
+    messagePanel.add(autoGrowingTextArea.getScrollPane(), BorderLayout.CENTER);
     messagePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
     controlsPanel.add(messagePanel, BorderLayout.NORTH);
     controlsPanel.add(sendButton, BorderLayout.EAST);
@@ -367,51 +367,6 @@ class CodyToolWindowContent implements UpdatableChat {
           sendMessage(project);
         });
     return sendButton;
-  }
-
-  @NotNull
-  private JBTextArea createPromptInput(@NotNull Project project) {
-    JBTextArea promptInput = new RoundedJBTextArea(4, 0, 10);
-    BasicTextAreaUI textUI = (BasicTextAreaUI) DarculaTextAreaUI.createUI(promptInput);
-    promptInput.setUI(textUI);
-    promptInput.setFont(UIUtil.getLabelFont());
-    promptInput.setLineWrap(true);
-    promptInput.setWrapStyleWord(true);
-    promptInput.requestFocusInWindow();
-
-    /* Insert Enter on Shift+Enter, Ctrl+Enter, Alt/Option+Enter, and Meta+Enter */
-    KeyboardShortcut SHIFT_ENTER =
-        new KeyboardShortcut(getKeyStroke(VK_ENTER, SHIFT_DOWN_MASK), null);
-    KeyboardShortcut CTRL_ENTER =
-        new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
-    KeyboardShortcut ALT_OR_OPTION_ENTER =
-        new KeyboardShortcut(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), null);
-    KeyboardShortcut META_ENTER =
-        new KeyboardShortcut(getKeyStroke(VK_ENTER, META_DOWN_MASK), null);
-    ShortcutSet INSERT_ENTER_SHORTCUT =
-        new CustomShortcutSet(CTRL_ENTER, SHIFT_ENTER, META_ENTER, ALT_OR_OPTION_ENTER);
-    AnAction insertEnterAction =
-        new DumbAwareAction() {
-          @Override
-          public void actionPerformed(@NotNull AnActionEvent e) {
-            promptInput.insert("\n", promptInput.getCaretPosition());
-          }
-        };
-    insertEnterAction.registerCustomShortcutSet(INSERT_ENTER_SHORTCUT, promptInput);
-
-    /* Submit on enter */
-    KeyboardShortcut JUST_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, 0), null);
-    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT = new CustomShortcutSet(JUST_ENTER);
-    AnAction sendMessageAction =
-        new DumbAwareAction() {
-          @Override
-          public void actionPerformed(@NotNull AnActionEvent e) {
-            sendMessage(project);
-          }
-        };
-    sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
-
-    return promptInput;
   }
 
   public synchronized void addMessageToChat(@NotNull ChatMessage message) {

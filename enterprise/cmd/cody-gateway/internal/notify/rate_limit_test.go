@@ -27,6 +27,16 @@ func TestThresholds(t *testing.T) {
 	autogold.Expect([]int{}).Equal(t, th.Get(codygateway.ActorSource("anonymous")))
 }
 
+type mockActor struct {
+	id     string
+	name   string
+	source codygateway.ActorSource
+}
+
+func (m *mockActor) GetID() string                      { return m.id }
+func (m *mockActor) GetName() string                    { return m.name }
+func (m *mockActor) GetSource() codygateway.ActorSource { return m.source }
+
 func TestSlackRateLimitNotifier(t *testing.T) {
 	logger := logtest.NoOp(t)
 
@@ -91,8 +101,11 @@ func TestSlackRateLimitNotifier(t *testing.T) {
 			)
 
 			alerter(context.Background(),
-				"alice",
-				codygateway.ActorSourceProductSubscription,
+				&mockActor{
+					id:     "foobar",
+					name:   "alice",
+					source: codygateway.ActorSourceProductSubscription,
+				},
 				codygateway.FeatureChatCompletions,
 				test.usageRatio,
 				time.Minute)

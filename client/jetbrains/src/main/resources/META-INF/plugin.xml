@@ -46,9 +46,9 @@
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
 
 
-        <!-- Code completions -->
-        <applicationService serviceImplementation="com.sourcegraph.cody.completions.CodyCompletionsManager"/>
-        <editorFactoryListener implementation="com.sourcegraph.cody.completions.CodyEditorFactoryListener"/>
+        <!-- autocomplete -->
+        <applicationService serviceImplementation="com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager"/>
+        <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.UpdatableChatHolderService"/>
 
@@ -120,10 +120,10 @@
             icon="/icons/sourcegraphLogo.svg">
         </action>
 
-        <!-- Code completions -->
-        <action id="cody.acceptCompletion" class="com.sourcegraph.cody.completions.AcceptCodyCompletionAction">
+        <!-- autocomplete -->
+        <action id="cody.acceptAutoCompleteAction" class="com.sourcegraph.cody.autocomplete.AcceptCodyAutoCompleteAction">
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
-            <override-text place="MainMenu" text="Accept Completion"/>
+            <override-text place="MainMenu" text="Accept Autocomplete Suggestion"/>
         </action>
 
         <action id="cody.resetCurrentConversation" icon="AllIcons.Actions.Refresh"
@@ -135,6 +135,18 @@
                 text="Refresh"
                 class="com.sourcegraph.cody.chat.RefreshCodyAppDetection">
         </action>
+
+        <action
+            id="cody.downloadAndInstallCodyAction"
+            class="com.sourcegraph.cody.recipes.DownloadCodyAppAction"
+            text="Download Cody App"
+            icon="/icons/codyLogoSm.svg" />
+
+        <action
+            id="cody.runCodyAppAction"
+            class="com.sourcegraph.cody.recipes.RunCodyAppAction"
+            text="Run Cody App"
+            icon="/icons/codyLogoSm.svg" />
 
         <action
             id="cody.recipe.explainCodeHighLevel"
@@ -185,6 +197,8 @@
 
         <group id="CodyEditorActions" icon="/icons/codyLogoSm.svg" popup="true" text="Cody"
                searchable="false">
+            <reference ref="cody.downloadAndInstallCodyAction"/>
+            <reference ref="cody.runCodyAppAction"/>
             <reference ref="cody.recipe.explainCodeDetailed"/>
             <reference ref="cody.recipe.explainCodeHighLevel"/>
             <reference ref="cody.recipe.findCodeSmells"/>

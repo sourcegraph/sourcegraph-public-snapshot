@@ -2,6 +2,7 @@ package com.sourcegraph.cody.completions;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.sourcegraph.cody.autocomplete.UnstableCodegenLanguageUtil;
 import com.sourcegraph.cody.vscode.TestTextDocument;
 import com.sourcegraph.cody.vscode.TextDocument;
 import java.net.URI;

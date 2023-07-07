@@ -9,6 +9,8 @@ import { ExternalServiceKind, FetchOwnersAndHistoryResult, RepositoryType } from
 import { FETCH_OWNERS_AND_HISTORY } from './grapqlQueries'
 import { HistoryAndOwnBar } from './HistoryAndOwnBar'
 
+window.context.experimentalFeatures = { perforceChangelistMapping: 'enabled' }
+
 const barData: FetchOwnersAndHistoryResult = {
     node: {
         sourceType: RepositoryType.GIT_REPOSITORY,

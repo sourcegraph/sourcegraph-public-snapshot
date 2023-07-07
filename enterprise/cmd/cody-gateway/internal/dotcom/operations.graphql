@@ -21,6 +21,9 @@ fragment CodyGatewayAccessFields on CodyGatewayAccess {
 fragment ProductSubscriptionState on ProductSubscription {
     id
     uuid
+    account {
+        username
+    }
     isArchived
     codyGatewayAccess {
         ...CodyGatewayAccessFields
@@ -64,6 +67,7 @@ query ListProductSubscriptions {
 
 fragment DotcomUserState on CodyGatewayDotcomUser {
     id
+    username
     codyGatewayAccess {
         ...CodyGatewayAccessFields
     }

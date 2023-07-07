@@ -25,6 +25,8 @@ type Limiter interface {
 	// The commit callback accepts a parameter that dictates how much rate
 	// limit to consume for this request.
 	TryAcquire(ctx context.Context) (commit func(context.Context, int) error, err error)
+	// Usage returns the current usage in this limiter and the expiry time.
+	Usage(ctx context.Context) (int, time.Time, error)
 }
 
 type StaticLimiter struct {
@@ -175,6 +177,45 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 
 		return nil
 	}, nil
+}
+
+func (l StaticLimiter) Usage(ctx context.Context) (_ int, _ time.Time, err error) {
+	if l.LimiterName == "" {
+		l.LimiterName = "StaticLimiter"
+	}
+
+	// TODO: ctx is unused after this, but if a usage is added, we need
+	// to update this assignment - removed for now because of ineffassign
+	_, span := tracer.Start(ctx, l.LimiterName+".Usage",
+		trace.WithAttributes(
+			attribute.Int64("limit", l.Limit),
+		))
+	defer func() {
+		span.RecordError(err)
+		span.End()
+	}()
+
+	// Zero values implies no access.
+	if l.Identifier == "" || l.Limit <= 0 || l.Interval <= 0 {
+		return 0, time.Time{}, NoAccessError{}
+	}
+
+	// Check the current usage. If no record exists, redis will return 0.
+	currentUsage, err := l.Redis.GetInt(l.Identifier)
+	if err != nil {
+		return 0, time.Time{}, errors.Wrap(err, "failed to read rate limit counter")
+	}
+	if currentUsage == 0 {
+		return 0, time.Time{}, nil
+	}
+
+	// Get the current expiry.
+	ttl, err := l.Redis.TTL(l.Identifier)
+	if err != nil {
+		return 0, time.Time{}, errors.Wrap(err, "failed to get TTL for rate limit counter")
+	}
+
+	return currentUsage, time.Now().Add(time.Duration(ttl) * time.Second).Truncate(time.Second), nil
 }
 
 func backgroundContextWithSpan(ctx context.Context) context.Context {
