@@ -79,6 +79,7 @@ func New(base *mux.Router) *mux.Router {
 	base.Path("/files/batch-changes/{spec}/{file}").Methods("GET").Name(BatchesFileGet)
 	base.Path("/files/batch-changes/{spec}/{file}").Methods("HEAD").Name(BatchesFileExists)
 	base.Path("/files/batch-changes/{spec}").Methods("POST").Name(BatchesFileUpload)
+	base.Path("files/embeddings").Methods("POST").Name(EmbeddingsFileUpload)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
 	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)
