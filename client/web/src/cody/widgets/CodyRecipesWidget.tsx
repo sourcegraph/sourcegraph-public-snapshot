@@ -58,6 +58,11 @@ export const CodyRecipesWidget: React.FC<{ editor?: CodeMirrorEditor }> = ({ edi
                     onClick={() => void executeRecipe('generate-docstring', { scope: { editor } })}
                     disabled={isMessageInProgress}
                 />
+                <RecipeAction
+                    title="A diagram"
+                    disabled={false}
+                    onClick={() => void executeRecipe('generate-diagram', { scope: { editor } })}
+                />
             </Recipe>
 
             <Recipe title="Transpile" icon={mdiShuffleVariant}>

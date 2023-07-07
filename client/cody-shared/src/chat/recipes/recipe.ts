@@ -33,6 +33,7 @@ export type RecipeID =
     | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
+    | 'generate-diagram'
 
 export interface Recipe {
     id: RecipeID

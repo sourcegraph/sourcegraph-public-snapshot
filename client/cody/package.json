@@ -283,6 +283,14 @@
         "title": "Find Code Smells"
       },
       {
+        "command": "cody.recipe.generate-diagram",
+        "title": "Ask Cody: Generate a Diagram"
+      },
+      {
+        "command": "cody.set-access-token",
+        "title": "Cody: Set Access Token"
+      },
+      {
         "command": "cody.test.token",
         "category": "Cody",
         "title": "Set Access Token"

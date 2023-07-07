@@ -523,6 +523,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'context-search':
                 this.onCompletionEnd()
                 break
+            case 'generate-diagram':
+                await this.runServiceRecipe()
+                break
             default: {
                 this.sendTranscript()
 
