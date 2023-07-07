@@ -397,7 +397,7 @@ func ResetApp(ctx *cli.Context) error {
 	dbSocketDir = filepath.Join(userHome, ".sourcegraph-psql")
 	appCacheDir = filepath.Join(userCache, "sourcegraph-dev")
 	appDataDir = filepath.Join(userConfig, "sourcegraph-dev")
-	appWebCacheDir = filepath.Join(userHome, "Library/WebKit/sourcegraph-dev")
+	appWebCacheDir = filepath.Join(userHome, "Library/WebKit/Sourcegraph")
 
 	appPaths := []string{dbSocketDir, appCacheDir, appDataDir, appWebCacheDir}
 	msg := "removing"
