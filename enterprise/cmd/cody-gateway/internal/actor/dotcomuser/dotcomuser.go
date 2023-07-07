@@ -178,6 +178,15 @@ func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, conc
 		)
 	}
 
+	if rl := user.CodyGatewayAccess.ServicesRateLimit; rl != nil {
+		a.RateLimits[codygateway.Services] = actor.NewRateLimitWithPercentageConcurrency(
+			rl.Limit,
+			time.Duration(rl.IntervalSeconds)*time.Second,
+			rl.AllowedModels,
+			concurrencyConfig,
+		)
+	}
+
 	return a
 }
 
@@ -186,6 +195,7 @@ func zeroRequestsAllowed() map[codygateway.Feature]actor.RateLimit {
 		codygateway.FeatureChatCompletions: {},
 		codygateway.FeatureCodeCompletions: {},
 		codygateway.FeatureEmbeddings:      {},
+		codygateway.Services:               {},
 	}
 }
 

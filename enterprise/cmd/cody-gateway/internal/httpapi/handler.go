@@ -11,8 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
+<<<<<<< HEAD
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/featurelimiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/requestlogger"
+=======
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/services"
+>>>>>>> b39ae474e1 (gateway third party service calls)
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -20,6 +24,7 @@ import (
 )
 
 type Config struct {
+<<<<<<< HEAD
 	RateLimitNotifier          notify.RateLimitNotifier
 	AnthropicAccessToken       string
 	AnthropicAllowedModels     []string
@@ -28,6 +33,17 @@ type Config struct {
 	OpenAIOrgID                string
 	OpenAIAllowedModels        []string
 	EmbeddingsAllowedModels    []string
+=======
+	RateLimitNotifier       notify.RateLimitNotifier
+	AnthropicAccessToken    string
+	AnthropicAllowedModels  []string
+	OpenAIAccessToken       string
+	OpenAIOrgID             string
+	OpenAIAllowedModels     []string
+	EmbeddingsAllowedModels []string
+	EraserAccessToken       string
+	AllowedServices         []string
+>>>>>>> b39ae474e1 (gateway third party service calls)
 }
 
 func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, authr *auth.Authenticator, config *Config) http.Handler {
@@ -114,6 +130,24 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 		)
 	}
 
+	// Calls the eraser API to support the generate-diagram recipe
+	if config.EraserAccessToken != "" {
+		v1router.Path("/services/eraser/diagram").Methods(http.MethodPost).Handler(
+			instrumentation.HTTPMiddleware("v1.services.eraser.diagram",
+				authr.Middleware(
+					services.NewEraserDiagramHandler(
+						logger,
+						eventLogger,
+						rs,
+						config.RateLimitNotifier,
+						config.EraserAccessToken,
+						config.AllowedServices,
+					),
+				),
+			),
+		)
+	}
+
 	// Register a route where actors can retrieve their current rate limit state.
 	v1router.Path("/limits").Methods(http.MethodGet).Handler(
 		instrumentation.HTTPMiddleware("v1.limits",
@@ -126,6 +160,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 			otelhttp.WithPublicEndpoint(),
 		),
 	)
+
 
 	return r
 }

@@ -20,6 +20,7 @@ const (
 	EventNameRateLimited         EventName = "RateLimited"
 	EventNameCompletionsFinished EventName = "CompletionsFinished"
 	EventNameEmbeddingsFinished  EventName = "EmbeddingsFinished"
+	EventNameServiceFinished     EventName = "ServiceFinished"
 )
 
 const FeatureHeaderName = "X-Sourcegraph-Feature"
