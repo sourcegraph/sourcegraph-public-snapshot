@@ -24,7 +24,11 @@ create_version() {
         ;;
     esac
 
-    echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
+    if [[ $(uname -s) == "Windows" ]]; then
+      echo "$(date '+%y.%-m.%-d')"
+    else
+      echo "$(date '+%Y.%-m.%-d')+${build}.${sha}"
+    fi
 }
 
 if [[ ${CI:-""} == "true" ]]; then

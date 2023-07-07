@@ -2,11 +2,13 @@ steps:
   - group: ":bazel::go:Build backend for different platforms"
     key: "backend-builds"
     steps:
-        - label: 'Test windows'
-          key: 'test-windows'
+      - label: ':windows: Build for Windows'
+          key: 'build-sourcegraph-app_windows'
           agents: { queue: windows }
+          env:
+            PLATFORM: x86_64-pc-windows-msvc
           command:
-            - 'echo "Hi Nelson"'
+            - './enterprise/dev/app/build-windows.sh'
 
   #     - label: ':bazel::linux: Build for Linux'
   #       key: 'build-sourcegraph-app-linux'
