@@ -3,7 +3,10 @@ load("//dev:go_defs.bzl", "go_test")
 
 go_library(
     name = "userlimitchecker",
-    srcs = ["limitchecker.go"],
+    srcs = [
+        "limitchecker.go",
+        "template.go",
+    ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/userlimitchecker",
     visibility = ["//visibility:public"],
     deps = [
@@ -25,7 +28,11 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/license",
+        "//internal/txemail",
+        "//internal/txemail/txtypes",
         "//internal/types",
+        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_stretchr_testify//require",
     ],
 )

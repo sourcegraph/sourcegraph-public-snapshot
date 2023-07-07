@@ -14,66 +14,54 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestAtOrOverUserLimit(t *testing.T) {
-	ctx := context.Background()
-	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	userStore := db.Users()
-
-	var createdUsers []*types.User
-	for i, user := range users {
-		newUser, err := userStore.Create(ctx, user)
-		if err != nil {
-			t.Errorf("could not create new user %s", err)
-		}
-		createdUsers = append(createdUsers, newUser)
-		if i == 0 {
-			createdUsers[i].SiteAdmin = true
-		}
+func TestApproachingOrOverUserLimit(t *testing.T) {
+	cases := []struct {
+		want      bool
+		userCount int
+		userLimit int
+	}{
+		{want: false, userCount: 0, userLimit: 100},
+		{want: false, userCount: 50, userLimit: 100},
+		{want: false, userCount: 90, userLimit: 100},
+		{want: false, userCount: 94, userLimit: 100},
+		{want: true, userCount: 95, userLimit: 100},
+		{want: true, userCount: 97, userLimit: 100},
+		{want: true, userCount: 100, userLimit: 100},
+		{want: true, userCount: 105, userLimit: 100},
 	}
 
-	got, _ := atOrOverUserLimit(ctx, db)
-	want := true
-	if got != want {
-		t.Errorf("got %v want %v", got, want)
+	for _, tc := range cases {
+		got := approachingOrOverUserLimit(tc.userCount, tc.userLimit)
+		if got != tc.want {
+			t.Errorf("got %v want %v", got, tc.want)
+		}
 	}
 }
-
-// for product_licenses
-// - product_subscription maps to product_subscription(id)
-// for product_subscription
-// - user_id maps to users(id)
-
-// steps to resolve this test:
-// create a user.
-// create a product_subscription with user_id set to the created user(id)
-// create a product_license with the product_subscription_id set to created product_subscription(id)
 
 func TestGetLicenseUserLimit(t *testing.T) {
 	logger := log.NoOp()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// product subscription has foreign key of user_id, so we create a user.
+	// need a user to satisfy product_subscription foreign key constraint
 	userStore := db.Users()
 	user, err := userStore.Create(ctx, users[0])
 	if err != nil {
 		t.Errorf("could not create user: %s", err)
 	}
 
-	// product_license has foreign key of product_subscription_id, so we create a product_subscription.
+	// need a product_subscription to satisfy product_license foreign key constraint
 	subStore := ps.NewDbSubscription(db)
-	sub, err := subStore.Create(ctx, user.ID, user.Username)
+	subId, err := subStore.Create(ctx, user.ID, user.Username)
 	if err != nil {
 		t.Errorf("could not create subscription: %s", err)
 	}
 
-	// use product_subscription_id when creating the license
 	licensesStore := ps.NewDbLicense(db)
 	for _, license := range licensesToCreate {
 		_, err = licensesStore.Create(
 			ctx,
-			sub,
+			subId,
 			license.licenseId,
 			license.version,
 			license.licenseInfo,

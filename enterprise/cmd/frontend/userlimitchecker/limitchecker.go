@@ -7,31 +7,20 @@ import (
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var approachingUserLimitEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `Your user count is approaching your license's limit`,
-	Text: `
-Hi there! You're approaching the user limit allowed by your Sourcegraph License. You currently have {{.RemainingUsers}} left.
-
-Reach out to your rep at Sourcegraph if you'd like to increase the limit.
-`,
-	HTML: `
-<p>
-Hi there! You're approaching the user limit allowed by your Sourcegraph License. You currently have {{.RemainingUsers}} left.
-</p>
-<p>Reach out to your rep at Sourcegraph if you'd like to increase the limit.</p>
-`,
-})
-
-// function to send email if approaching
+// send email to site admins if approaching user limit on active license
 func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
-	atOrOverUserLimit, err := atOrOverUserLimit(ctx, db)
+	userCount, err := getUserCount(ctx, db)
 	if err != nil {
-		return errors.Wrap(err, "could not check user limit")
+		return errors.Wrap(err, "could not get user count")
+	}
+
+	userLimit, err := getLicenseUserLimit(ctx, db)
+	if err != nil {
+		return errors.Wrap(err, "could not get license user limit")
 	}
 
 	siteAdminEmails, err := getSiteAdmins(ctx, db)
@@ -39,16 +28,14 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 		return errors.Wrap(err, "could not get site admins")
 	}
 
-	if atOrOverUserLimit {
+	if approachingOrOverUserLimit(userCount, userLimit) {
 		if err := txemail.Send(ctx, "approaching_user_limit", txemail.Message{
 			To:       siteAdminEmails,
 			Template: approachingUserLimitEmailTemplate,
 			Data: struct {
-				FromName string
-				Message  string
+				RemainingUsers int
 			}{
-				FromName: "Jason Hawk Harris",
-				Message:  "This is a test email",
+				RemainingUsers: userLimit - userCount,
 			},
 		}); err != nil {
 			return errors.Wrap(err, "could not send email")
@@ -59,21 +46,8 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 }
 
 // function to check whether the user count is approaching the license user limit
-func atOrOverUserLimit(ctx context.Context, db database.DB) (bool, error) {
-	userCount, err := getUserCount(ctx, db)
-	if err != nil {
-		return false, err
-	}
-
-	userLimit, err := getLicenseUserLimit(ctx, db)
-	if err != nil {
-		return false, err
-	}
-
-	if userCount >= userLimit-5 {
-		return true, nil
-	}
-	return false, nil
+func approachingOrOverUserLimit(userCount, userLimit int) bool {
+	return userCount >= userLimit-5
 }
 
 // function to get the user count
