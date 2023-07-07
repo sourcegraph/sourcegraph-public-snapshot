@@ -50,7 +50,7 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 				Message:  "This is a test email",
 			},
 		}); err != nil {
-			return err
+			return errors.Wrap(err, "could not send email")
 		}
 	}
 
