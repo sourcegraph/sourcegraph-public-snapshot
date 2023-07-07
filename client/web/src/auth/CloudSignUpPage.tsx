@@ -12,6 +12,7 @@ import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
@@ -107,6 +108,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                 githubLabel="Continue with GitHub"
                 gitlabLabel="Continue with GitLab"
                 onClick={logEventAndSetFlags}
+                redirect={isSourcegraphDotCom ? PageRoutes.PostSignUp : undefined}
             />
 
             <div className="mb-4">

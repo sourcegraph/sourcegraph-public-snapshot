@@ -98,7 +98,6 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const isSiteInit = location.pathname === PageRoutes.SiteAdminInit
     const isSignInOrUp = useIsSignInOrSignUpPage()
     const isGetCodyPage = location.pathname === PageRoutes.GetCody
-    const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -202,7 +201,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     authenticatedUser={props.authenticatedUser}
                 />
             )}
-            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
+            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && (
                 <GlobalNavbar
                     {...props}
                     routes={[]}

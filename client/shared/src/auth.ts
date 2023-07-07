@@ -43,6 +43,7 @@ export const currentAuthStateQuery = gql`
             tosAccepted
             searchable
             hasVerifiedEmail
+            completedPostSignup
             emails {
                 email
                 verified

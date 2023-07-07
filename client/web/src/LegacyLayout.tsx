@@ -8,7 +8,7 @@ import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { useTheme, Theme } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
-import { FeedbackPrompt, LoadingSpinner, useCookieStorage, useLocalStorage } from '@sourcegraph/wildcard'
+import { FeedbackPrompt, LoadingSpinner, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
@@ -117,8 +117,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const hideKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(false), [])
     const showFeedbackModal = useCallback(() => setFeedbackModalOpen(true), [])
 
-    const [hasSubmittedCodySurvey] = useCookieStorage('cody.survey.submitted', false)
-
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
         routeMatch,
     })
@@ -198,11 +196,11 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <ApplicationRoutes routes={props.routes} />
     }
 
-    // Redirect to post-sign-up page if email is not verified and lead form is not submitted
     if (
         props.isSourcegraphDotCom &&
         props.authenticatedUser &&
-        (!props.authenticatedUser.hasVerifiedEmail || !hasSubmittedCodySurvey)
+        !props.authenticatedUser.completedPostSignup &&
+        !isPostSignUpPage
     ) {
         return <Navigate to={PageRoutes.PostSignUp} replace={true} />
     }
