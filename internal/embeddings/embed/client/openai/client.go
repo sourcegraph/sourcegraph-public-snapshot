@@ -88,7 +88,7 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 			// HACK(camdencheek): Nondeterministically, the OpenAI API will
 			// occasionally send back a `null` for an embedding in the
 			// response. Try it again a few times and hope for the best.
-			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 0)
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
 			if err != nil {
 				return nil, client.PartialError{Err: err, Index: embedding.Index}
 			}
