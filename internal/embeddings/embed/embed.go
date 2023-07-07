@@ -22,7 +22,7 @@ import (
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
 	switch config.Provider {
 	case "sourcegraph":
-		return sourcegraph.NewClient(config), nil
+		return sourcegraph.NewClient(httpcli.ExternalClient, config), nil
 	case "openai":
 		return openai.NewClient(httpcli.ExternalClient, config), nil
 	default:

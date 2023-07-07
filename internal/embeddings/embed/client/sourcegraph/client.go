@@ -15,12 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient {
+func NewClient(client *http.Client, config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient {
 	return &sourcegraphEmbeddingsClient{
+		httpClient:  client,
 		model:       config.Model,
 		dimensions:  config.Dimensions,
 		endpoint:    config.Endpoint,
@@ -29,6 +29,7 @@ func NewClient(config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient 
 }
 
 type sourcegraphEmbeddingsClient struct {
+	httpClient  *http.Client
 	model       string
 	dimensions  int
 	endpoint    string
@@ -114,7 +115,7 @@ func (c *sourcegraphEmbeddingsClient) do(ctx context.Context, request codygatewa
 	if len(request.Input) > 1 {
 		req.Header.Set("X-Cody-Embed-Batch-Size", strconv.Itoa(len(request.Input)))
 	}
-	resp, err := httpcli.ExternalDoer.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
