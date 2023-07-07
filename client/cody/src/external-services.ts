@@ -10,6 +10,7 @@ import { SourcegraphIntentDetectorClient } from '@sourcegraph/cody-shared/src/in
 import { SourcegraphCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/client'
 import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/completions/nodeClient'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { SourcegraphRestAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/rest'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
@@ -22,6 +23,7 @@ interface ExternalServices {
     codebaseContext: CodebaseContext
     chatClient: ChatClient
     completionsClient: SourcegraphCompletionsClient
+    restApiClient: SourcegraphRestAPIClient
     guardrails: Guardrails
 
     /** Update configuration for all of the services in this interface. */
@@ -40,6 +42,7 @@ export async function configureExternalServices(
 ): Promise<ExternalServices> {
     const client = new SourcegraphGraphQLAPIClient(initialConfig)
     const completions = new SourcegraphNodeCompletionsClient(initialConfig, logger)
+    const restApiClient = new SourcegraphRestAPIClient(initialConfig)
 
     const repoId = initialConfig.codebase ? await client.getRepoId(initialConfig.codebase) : null
     if (isError(repoId)) {
@@ -69,6 +72,7 @@ export async function configureExternalServices(
         chatClient,
         completionsClient: completions,
         guardrails,
+        restApiClient,
         onConfigurationChange: newConfig => {
             client.onConfigurationChange(newConfig)
             completions.onConfigurationChange(newConfig)
