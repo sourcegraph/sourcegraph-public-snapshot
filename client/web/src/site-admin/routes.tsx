@@ -1,5 +1,6 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
+import { AboutTab } from '../enterprise/app/settings/about/AboutPage'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
@@ -241,6 +242,10 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/permissions-syncs',
         render: props => <PermissionsSyncJobsTable {...props} />,
+    },
+    {
+        path: '/about',
+        render: props => <AboutTab {...props} />,
     },
 ]
 

@@ -5,6 +5,7 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
+import { AboutTabTitle } from '../enterprise/app/settings/about/AboutPage'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
@@ -210,6 +211,11 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             label: 'Background jobs',
             to: '/site-admin/background-jobs',
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+        },
+        {
+            label: AboutTabTitle,
+            to: '/site-admin/about',
+            condition: ({ isSourcegraphApp }) => isSourcegraphApp,
         },
     ],
 }
