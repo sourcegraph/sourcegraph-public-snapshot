@@ -45,13 +45,13 @@ func TestRepoEmbeddingJobsStore(t *testing.T) {
 	require.Equal(t, exists, false)
 
 	// Create three repo embedding jobs.
-	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
+	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef", "queued")
 	require.NoError(t, err)
 
-	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
+	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee", "queued")
 	require.NoError(t, err)
 
-	id3, err := store.CreateRepoEmbeddingJob(ctx, createdRepo2.ID, "tea")
+	id3, err := store.CreateRepoEmbeddingJob(ctx, createdRepo2.ID, "tea", "queued")
 	require.NoError(t, err)
 
 	count, err := store.CountRepoEmbeddingJobs(ctx, ListOpts{})
@@ -155,10 +155,10 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	store := NewRepoEmbeddingJobsStore(db)
 
 	// Create two repo embedding jobs.
-	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
+	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef", "queued")
 	require.NoError(t, err)
 
-	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
+	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee", "queued")
 	require.NoError(t, err)
 
 	// Cancel the first one.
@@ -187,7 +187,7 @@ func TestCancelRepoEmbeddingJob(t *testing.T) {
 	require.Error(t, err)
 
 	// Attempting to cancel a completed job should fail
-	id3, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "avocado")
+	id3, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "avocado", "queued")
 	require.NoError(t, err)
 
 	setJobState(t, ctx, store, id3, "completed")
@@ -231,7 +231,7 @@ func TestGetEmbeddableRepos(t *testing.T) {
 	require.Equal(t, 2, len(repos))
 
 	// Create and queue an embedding job for the first repo.
-	_, err = store.CreateRepoEmbeddingJob(ctx, firstRepo.ID, "coffee")
+	_, err = store.CreateRepoEmbeddingJob(ctx, firstRepo.ID, "coffee", "queued")
 	require.NoError(t, err)
 
 	// Only the second repo should be embeddable, since the first was recently queued

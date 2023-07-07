@@ -99,7 +99,7 @@ type RepoEmbeddingJobsStore interface {
 	Exec(ctx context.Context, query *sqlf.Query) error
 	Done(err error) error
 
-	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error)
+	CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID, state string) (int, error)
 	GetLastCompletedRepoEmbeddingJob(ctx context.Context, repoID api.RepoID) (*RepoEmbeddingJob, error)
 	GetLastRepoEmbeddingJobForRevision(ctx context.Context, repoID api.RepoID, revision api.CommitID) (*RepoEmbeddingJob, error)
 	ListRepoEmbeddingJobs(ctx context.Context, args ListOpts) ([]*RepoEmbeddingJob, error)
@@ -245,10 +245,10 @@ func (s *repoEmbeddingJobsStore) Transact(ctx context.Context) (RepoEmbeddingJob
 	return &repoEmbeddingJobsStore{Store: tx}, nil
 }
 
-const createRepoEmbeddingJobFmtStr = `INSERT INTO repo_embedding_jobs (repo_id, revision) VALUES (%s, %s) RETURNING id`
+const createRepoEmbeddingJobFmtStr = `INSERT INTO repo_embedding_jobs (repo_id, revision, state) VALUES (%s, %s, %s) RETURNING id`
 
-func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID) (int, error) {
-	q := sqlf.Sprintf(createRepoEmbeddingJobFmtStr, repoID, revision)
+func (s *repoEmbeddingJobsStore) CreateRepoEmbeddingJob(ctx context.Context, repoID api.RepoID, revision api.CommitID, state string) (int, error) {
+	q := sqlf.Sprintf(createRepoEmbeddingJobFmtStr, repoID, revision, state)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return id, err
 }

@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ScheduleRepositoriesForEmbedding(
@@ -30,15 +29,17 @@ func ScheduleRepositoriesForEmbedding(
 		err = func() error {
 			r, err := repoStore.GetByName(ctx, repoName)
 			if err != nil {
-				return err
+				return nil
 			}
 
 			refName, latestRevision, err := gitserverClient.GetDefaultBranch(ctx, r.Name, false)
-			if err != nil {
-				return err
-			}
-			if refName == "" {
-				return errors.Newf("could not get latest commit for repo %s", r.Name)
+			if err != nil || refName == "" {
+				// enqueue a failed job
+				_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision, "failed")
+				if err != nil {
+					return err
+				}
+				return nil
 			}
 
 			// Skip creating a repo embedding job for a repo at revision, if there already exists
@@ -50,7 +51,7 @@ func ScheduleRepositoriesForEmbedding(
 				}
 			}
 
-			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision)
+			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision, "queued")
 			return err
 		}()
 		if err != nil {

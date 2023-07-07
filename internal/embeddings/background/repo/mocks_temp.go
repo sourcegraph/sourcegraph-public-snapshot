@@ -80,7 +80,7 @@ func NewMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 			},
 		},
 		CreateRepoEmbeddingJobFunc: &RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc{
-			defaultHook: func(context.Context, api.RepoID, api.CommitID) (r0 int, r1 error) {
+			defaultHook: func(context.Context, api.RepoID, api.CommitID, string) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -153,7 +153,7 @@ func NewStrictMockRepoEmbeddingJobsStore() *MockRepoEmbeddingJobsStore {
 			},
 		},
 		CreateRepoEmbeddingJobFunc: &RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc{
-			defaultHook: func(context.Context, api.RepoID, api.CommitID) (int, error) {
+			defaultHook: func(context.Context, api.RepoID, api.CommitID, string) (int, error) {
 				panic("unexpected invocation of MockRepoEmbeddingJobsStore.CreateRepoEmbeddingJob")
 			},
 		},
@@ -482,24 +482,24 @@ func (c RepoEmbeddingJobsStoreCountRepoEmbeddingJobsFuncCall) Results() []interf
 // when the CreateRepoEmbeddingJob method of the parent
 // MockRepoEmbeddingJobsStore instance is invoked.
 type RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc struct {
-	defaultHook func(context.Context, api.RepoID, api.CommitID) (int, error)
-	hooks       []func(context.Context, api.RepoID, api.CommitID) (int, error)
+	defaultHook func(context.Context, api.RepoID, api.CommitID, string) (int, error)
+	hooks       []func(context.Context, api.RepoID, api.CommitID, string) (int, error)
 	history     []RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFuncCall
 	mutex       sync.Mutex
 }
 
 // CreateRepoEmbeddingJob delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockRepoEmbeddingJobsStore) CreateRepoEmbeddingJob(v0 context.Context, v1 api.RepoID, v2 api.CommitID) (int, error) {
-	r0, r1 := m.CreateRepoEmbeddingJobFunc.nextHook()(v0, v1, v2)
-	m.CreateRepoEmbeddingJobFunc.appendCall(RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFuncCall{v0, v1, v2, r0, r1})
+func (m *MockRepoEmbeddingJobsStore) CreateRepoEmbeddingJob(v0 context.Context, v1 api.RepoID, v2 api.CommitID, v3 string) (int, error) {
+	r0, r1 := m.CreateRepoEmbeddingJobFunc.nextHook()(v0, v1, v2, v3)
+	m.CreateRepoEmbeddingJobFunc.appendCall(RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the
 // CreateRepoEmbeddingJob method of the parent MockRepoEmbeddingJobsStore
 // instance is invoked and the hook queue is empty.
-func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) SetDefaultHook(hook func(context.Context, api.RepoID, api.CommitID) (int, error)) {
+func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) SetDefaultHook(hook func(context.Context, api.RepoID, api.CommitID, string) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -508,7 +508,7 @@ func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) SetDefaultHook(hook f
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) PushHook(hook func(context.Context, api.RepoID, api.CommitID) (int, error)) {
+func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) PushHook(hook func(context.Context, api.RepoID, api.CommitID, string) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -517,19 +517,19 @@ func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) PushHook(hook func(co
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoID, api.CommitID) (int, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, api.CommitID, string) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, api.RepoID, api.CommitID) (int, error) {
+	f.PushHook(func(context.Context, api.RepoID, api.CommitID, string) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) nextHook() func(context.Context, api.RepoID, api.CommitID) (int, error) {
+func (f *RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFunc) nextHook() func(context.Context, api.RepoID, api.CommitID, string) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -573,6 +573,9 @@ type RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 api.CommitID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -584,7 +587,7 @@ type RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c RepoEmbeddingJobsStoreCreateRepoEmbeddingJobFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
