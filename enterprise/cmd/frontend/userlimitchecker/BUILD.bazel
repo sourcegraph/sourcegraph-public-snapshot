@@ -28,7 +28,9 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/license",
+        "//internal/txemail",
         "//internal/types",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_stretchr_testify//assert",
     ],
 )

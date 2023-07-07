@@ -5,6 +5,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 )
 
+type SetApproachingUserLimitTemplateData struct {
+	RemainingUsers int
+}
+
 var approachingUserLimitEmailTemplate = txemail.MustValidate(txtypes.Templates{
 	Subject: `Your user count is approaching your license's limit`,
 	Text: `

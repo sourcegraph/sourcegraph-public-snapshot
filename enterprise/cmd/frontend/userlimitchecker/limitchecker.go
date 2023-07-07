@@ -23,15 +23,20 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 		return errors.Wrap(err, "could not get license user limit")
 	}
 
-	siteAdminEmails, err := getSiteAdmins(ctx, db)
+	siteAdminEmails, err := getSiteAdminEmails(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, "could not get site admins")
 	}
 
+	replyTo := "support@sourcegraph.com"
+	messageId := "approaching_user_limit"
+
 	if approachingOrOverUserLimit(userCount, userLimit) {
 		if err := txemail.Send(ctx, "approaching_user_limit", txemail.Message{
-			To:       siteAdminEmails,
-			Template: approachingUserLimitEmailTemplate,
+			To:        siteAdminEmails,
+			Template:  approachingUserLimitEmailTemplate,
+			MessageID: &messageId,
+			ReplyTo:   &replyTo,
 			Data: struct {
 				RemainingUsers int
 			}{
@@ -50,7 +55,8 @@ func approachingOrOverUserLimit(userCount, userLimit int) bool {
 }
 
 func getUserCount(ctx context.Context, db database.DB) (int, error) {
-	userCount, err := db.Users().Count(ctx, &database.UsersListOptions{})
+	userStore := db.Users()
+	userCount, err := userStore.Count(ctx, &database.UsersListOptions{})
 	if err != nil {
 		return 0, err
 	}
@@ -72,7 +78,7 @@ func getLicenseUserLimit(ctx context.Context, db database.DB) (int, error) {
 	return 0, nil
 }
 
-func getSiteAdmins(ctx context.Context, db database.DB) ([]string, error) {
+func getSiteAdminEmails(ctx context.Context, db database.DB) ([]string, error) {
 	var siteAdminEmails []string
 	users, err := db.Users().List(ctx, &database.UsersListOptions{})
 	if err != nil {

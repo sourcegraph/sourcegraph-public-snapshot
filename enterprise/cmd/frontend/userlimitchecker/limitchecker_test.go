@@ -11,8 +11,56 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/stretchr/testify/assert"
 )
+
+func TestSendApproachingUserLimitAlert(t *testing.T) {
+	logger := log.NoOp()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	userStore := db.Users()
+	_, err := userStore.Create(ctx, users[0])
+	if err != nil {
+		t.Errorf("could not create user: %s", err)
+	}
+
+	t.Run("sends correctly formatted email", func(t *testing.T) {
+		var gotEmail txemail.Message
+		txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+			gotEmail = message
+			return nil
+		}
+		t.Cleanup(func() { txemail.MockSend = nil })
+
+		err = sendApproachingUserLimitAlert(context.Background(), db)
+		if err != nil {
+			t.Errorf("could not send email: %s", err)
+		}
+
+		replyTo := "support@sourcegraph.com"
+		messageId := "approaching_user_limit"
+		want := &txemail.Message{
+			To:        []string{"test@test.com"},
+			Template:  approachingUserLimitEmailTemplate,
+			MessageID: &messageId,
+			ReplyTo:   &replyTo,
+			Data: SetApproachingUserLimitTemplateData{
+				RemainingUsers: 4,
+			},
+		}
+
+		assert.Equal(t, want.To, gotEmail.To)
+		assert.Equal(t, approachingUserLimitEmailTemplate, gotEmail.Template)
+		assert.Equal(t, want.MessageID, gotEmail.MessageID)
+		assert.Equal(t, want.ReplyTo, gotEmail.ReplyTo)
+		assert.Equal(t, want.MessageID, gotEmail.MessageID)
+		gotEmailData := want.Data.(SetApproachingUserLimitTemplateData)
+		assert.Equal(t, 4, gotEmailData.RemainingUsers)
+	})
+}
 
 func TestApproachingOrOverUserLimit(t *testing.T) {
 	cases := []struct {
@@ -111,7 +159,7 @@ func TestGetUserCount(t *testing.T) {
 	}
 }
 
-func TestGetSiteAdmins(t *testing.T) {
+func TestGetSiteAdminEmails(t *testing.T) {
 	logger := log.NoOp()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
@@ -130,7 +178,7 @@ func TestGetSiteAdmins(t *testing.T) {
 		}
 	}
 
-	got, _ := getSiteAdmins(ctx, db)
+	got, _ := getSiteAdminEmails(ctx, db)
 	want := []string{"test@test.com", "test3@test.com"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("got %v want %v", got, want)
