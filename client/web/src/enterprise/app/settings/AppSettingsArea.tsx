@@ -10,12 +10,14 @@ import { RemoteRepositoriesStep } from '../../../setup-wizard/components'
 
 import { AboutTab } from './about/AboutPage'
 import { LocalRepositoriesTab } from './local-repositories/LocalRepositoriesTab'
+import { RateLimitsTab } from './rate-limits/RateLimitsTab'
 
 import styles from './AppSettingsArea.module.scss'
 
 enum AppSettingURL {
     LocalRepositories = 'local-repositories',
     RemoteRepositories = 'remote-repositories',
+    RateLimits = 'rate-limits',
 }
 
 export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
@@ -26,6 +28,7 @@ export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
                 path={`${AppSettingURL.RemoteRepositories}/*`}
                 element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
             />
+            <Route path={AppSettingURL.RateLimits} element={<RateLimitsTab />} />
             <Route path="about" element={<AboutTab />} />
             <Route path="*" element={<Navigate to={AppSettingURL.LocalRepositories} replace={true} />} />
         </Route>
@@ -40,6 +43,7 @@ interface AppSetting {
 const APP_SETTINGS: AppSetting[] = [
     { url: AppSettingURL.LocalRepositories, name: 'Local repositories' },
     { url: AppSettingURL.RemoteRepositories, name: 'Remote repositories' },
+    { url: AppSettingURL.RateLimits, name: 'Usage Limits' },
 ]
 
 const AppSettingsLayout: FC = () => {
