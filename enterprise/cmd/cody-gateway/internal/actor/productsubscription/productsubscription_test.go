@@ -115,3 +115,44 @@ func TestNewActor(t *testing.T) {
 		})
 	}
 }
+
+func TestGetSubscriptionAccountName(t *testing.T) {
+	tests := []struct {
+		name         string
+		mockUsername string
+		mockTags     []string
+		wantName     string
+	}{
+		{
+			name:         "has special license tag",
+			mockUsername: "alice",
+			mockTags:     []string{"trial", "customer:acme"},
+			wantName:     "acme",
+		},
+		{
+			name:         "use account username",
+			mockUsername: "alice",
+			mockTags:     []string{"plan:enterprise-1"},
+			wantName:     "alice",
+		},
+		{
+			name:     "no account name",
+			wantName: "",
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := getSubscriptionAccountName(dotcom.ProductSubscriptionState{
+				Account: &dotcom.ProductSubscriptionStateAccountUser{
+					Username: test.mockUsername,
+				},
+				ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
+					Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
+						Tags: test.mockTags,
+					},
+				},
+			})
+			assert.Equal(t, test.wantName, got)
+		})
+	}
+}

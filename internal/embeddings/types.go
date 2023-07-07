@@ -20,8 +20,8 @@ func (index *EmbeddingIndex) Row(n int) []int8 {
 	return index.Embeddings[n*index.ColumnDimension : (n+1)*index.ColumnDimension]
 }
 
-func (index *EmbeddingIndex) EstimateSize() int64 {
-	return int64(len(index.Embeddings) + len(index.RowMetadata)*(16+8+8) + len(index.Ranks)*4)
+func (index *EmbeddingIndex) EstimateSize() uint64 {
+	return uint64(len(index.Embeddings) + len(index.RowMetadata)*(16+8+8) + len(index.Ranks)*4)
 }
 
 // Filter removes all files from the index that are in the set and updates the ranks
@@ -71,7 +71,7 @@ type RepoEmbeddingIndex struct {
 	TextIndex       EmbeddingIndex
 }
 
-func (i *RepoEmbeddingIndex) EstimateSize() int64 {
+func (i *RepoEmbeddingIndex) EstimateSize() uint64 {
 	return i.CodeIndex.EstimateSize() + i.TextIndex.EstimateSize()
 }
 

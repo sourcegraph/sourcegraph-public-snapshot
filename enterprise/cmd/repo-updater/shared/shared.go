@@ -12,14 +12,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
+	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -29,7 +28,7 @@ import (
 
 func EnterpriseInit(
 	observationCtx *observation.Context,
-	db ossDB.DB,
+	db database.DB,
 	repoStore repos.Store,
 	keyring keyring.Ring,
 	cf *httpcli.Factory,
@@ -52,10 +51,10 @@ func EnterpriseInit(
 		}
 	}
 
-	ghAppsStore := edb.NewEnterpriseDB(db).GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
+	ghAppsStore := db.GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
 	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, keyring.GitHubAppKey)
 
-	permsStore := edb.Perms(observationCtx.Logger, db, timeutil.Now)
+	permsStore := database.Perms(observationCtx.Logger, db, timeutil.Now)
 	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, repoStore, permsStore, timeutil.Now)
 
 	if server != nil {
@@ -67,7 +66,7 @@ func EnterpriseInit(
 
 	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
 	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
-	permissionSyncJobStore := ossDB.PermissionSyncJobsWith(observationCtx.Logger, db)
+	permissionSyncJobStore := database.PermissionSyncJobsWith(observationCtx.Logger, db)
 	repoSyncWorker := authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore)
 	userSyncWorker := authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore)
 	// Type of store (repo/user) for resetter doesn't matter, because it has its
@@ -79,7 +78,7 @@ func EnterpriseInit(
 }
 
 // watchAuthzProviders updates authz providers if config changes.
-func watchAuthzProviders(ctx context.Context, db ossDB.DB) {
+func watchAuthzProviders(ctx context.Context, db database.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
 		t := time.NewTicker(frontendAuthz.RefreshInterval())

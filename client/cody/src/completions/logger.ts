@@ -137,6 +137,12 @@ const otherCompletionProviders = [
     'GitHub.copilot-nightly',
     'TabNine.tabnine-vscode',
     'TabNine.tabnine-vscode-self-hosted-updater',
+    'AmazonWebServices.aws-toolkit-vscode', // Includes CodeWhisperer
+    'Codeium.codeium',
+    'Codeium.codeium-enterprise-updater',
+    'CodeComplete.codecomplete-vscode',
+    'Venthe.fauxpilot',
+    'TabbyML.vscode-tabby',
 ]
 function otherCompletionProviderEnabled(): boolean {
     return !!otherCompletionProviders.find(id => vscode.extensions.getExtension(id)?.isActive)

@@ -37,7 +37,7 @@ import (
 
 const addr = ":3189"
 
-type EnterpriseInit = func(ossDB database.DB)
+type EnterpriseInit = func(db database.DB)
 
 type namedBackgroundRoutine struct {
 	Routine goroutine.BackgroundRoutine

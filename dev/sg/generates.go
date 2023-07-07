@@ -65,7 +65,7 @@ func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
 
 	// Don't run buf gen if no .proto files changed or not in CI
 	if !strings.Contains(string(out), ".proto") {
-		return &generate.Report{Output: "No .proto files changed or not in CI. Skippping buf gen."}
+		return &generate.Report{Output: "No .proto files changed or not in CI. Skipping buf gen.\n"}
 	}
 	// Run buf gen by default
 	return proto.Generate(ctx, verbose)

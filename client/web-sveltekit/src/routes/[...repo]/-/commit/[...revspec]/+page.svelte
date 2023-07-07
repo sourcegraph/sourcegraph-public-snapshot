@@ -1,13 +1,15 @@
 <script lang="ts">
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
     import FileDiff from './FileDiff.svelte'
 
     export let data: PageData
 
-    $: ({ commit, diff } = data)
+    $: commit = asStore(data.commit.deferred)
+    $: diff = asStore(data.diff.deferred)
 </script>
 
 <section>

@@ -4081,6 +4081,7 @@ CREATE TABLE users (
     searchable boolean DEFAULT true NOT NULL,
     completions_quota integer,
     code_completions_quota integer,
+    completed_post_signup boolean DEFAULT false NOT NULL,
     CONSTRAINT users_display_name_max_length CHECK ((char_length(display_name) <= 255)),
     CONSTRAINT users_username_max_length CHECK ((char_length((username)::text) <= 255)),
     CONSTRAINT users_username_valid_chars CHECK ((username OPERATOR(~) '^\w(?:\w|[-.](?=\w))*-?$'::citext))
