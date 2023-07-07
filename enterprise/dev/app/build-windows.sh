@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+set -eux
+
+echo "IN BUILD SCRIPT"
 version="$(./enterprise/dev/app/app-version.sh)"
 echo "Building version: ${version}"
 
