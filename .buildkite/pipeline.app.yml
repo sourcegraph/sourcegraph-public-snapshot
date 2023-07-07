@@ -8,6 +8,8 @@ steps:
           env:
             PLATFORM: x86_64-pc-windows-msvc
           command:
+            - |
+              dir c:\buildkite-agent
             - '.\enterprise\dev\app\build-windows.sh'
 
   #     - label: ':bazel::linux: Build for Linux'
