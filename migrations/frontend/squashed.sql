@@ -2604,7 +2604,7 @@ CREATE TABLE file_embedding_jobs (
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
-    file_id text NOT NULL,
+    archive_id text NOT NULL,
     file_type text DEFAULT 'html'::text NOT NULL
 );
 

@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS file_embedding_jobs (
    cancel boolean DEFAULT FALSE NOT NULL,
 
    -- file metadata columns
-   file_id TEXT NOT NULL, -- this should be text, depending on the blob store we use it might not always be numeric
+   archive_id TEXT NOT NULL, -- this should be text, depending on the blob store we use it might not always be numeric
    file_type TEXT DEFAULT 'html' NOT NULL
 );
 

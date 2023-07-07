@@ -1770,7 +1770,7 @@ Foreign-key constraints:
  execution_logs    | json[]                   |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  cancel            | boolean                  |           | not null | false
- file_id           | text                     |           | not null | 
+ archive_id        | text                     |           | not null | 
  file_type         | text                     |           | not null | 'html'::text
 Indexes:
     "file_embedding_jobs_pkey" PRIMARY KEY, btree (id)

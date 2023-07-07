@@ -12801,6 +12801,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "archive_id",
+          "Index": 14,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "cancel",
           "Index": 13,
           "TypeName": "boolean",
@@ -12831,19 +12844,6 @@
           "Index": 3,
           "TypeName": "text",
           "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "file_id",
-          "Index": 14,
-          "TypeName": "text",
-          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
