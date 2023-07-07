@@ -85,11 +85,6 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
 		} else {
-			err := os.WriteFile("/tmp/badchunk", []byte(augmentedTexts[embedding.Index]), 0755)
-			if err != nil {
-				panic(err)
-			}
-
 			// HACK(camdencheek): Nondeterministically, the OpenAI API will
 			// occasionally send back a `null` for an embedding in the
 			// response. Try it again a few times and hope for the best.
