@@ -2198,6 +2198,8 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName 
 		log.String("repo", string(repoName)),
 	)
 
+	logger.Warn("^^^^^ Starting maybe get dedupe options")
+
 	repoConf := conf.Get().Repositories
 	if repoConf == nil {
 		logger.Warn("no repositories in config")
@@ -2218,9 +2220,11 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName 
 	}
 
 	if gsr.PoolRepoID == nil {
+		logger.Warn("nil pool repo ID")
 		return nil
 	}
 
+	logger.Warn("dedupeFork options set")
 	return &deduplicatedCloneOptions{which: dedupeFork}
 }
 
@@ -2239,13 +2243,22 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 
 	dir := s.dir(repo)
 
+	logger := s.ObservationCtx.Logger.Scoped("cloenRepo", "").With(log.String("repo", string(repo)))
+
 	dedupeOptions := s.maybeGetDeduplicatedCloneOptions(ctx, repo)
-	if dedupeOptions != nil && dedupeOptions.which == dedupeSource {
-		dir = s.poolDir(repo)
+	if dedupeOptions != nil {
+		if dedupeOptions.which == dedupeSource {
+			logger.Warn("######## Configuring pool dir")
+			dir = s.poolDir(repo)
+		}
+
 		if opts == nil {
 			opts = &cloneOptions{}
 		}
+
 		opts.DeduplicatedCloneOptions = dedupeOptions
+	} else {
+		logger.Warn("####### Skipping pool dir config")
 	}
 
 	// PERF: Before doing the network request to check if isCloneable, lets
@@ -2318,6 +2331,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// clones in the repo tree. This also avoids leaving behind corrupt clones
 	// if the clone is interrupted.
 	if opts != nil && opts.Block {
+		logger.Warn("@@@@@@@@@ Blocking clone")
 		ctx, cancel, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
 			return "", err
