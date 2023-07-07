@@ -1,11 +1,10 @@
-import { FC, ReactNode } from 'react'
+import { FC } from 'react'
 
-import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { formatRelative, parseISO } from 'date-fns'
 
 import { useQuery, gql } from '@sourcegraph/http-client'
-import { Text, Icon, Container, PageHeader, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
+import { Text, Container, PageHeader, LoadingSpinner, ErrorAlert } from '@sourcegraph/wildcard'
 
 import { CodyGatewayRateLimitStatusResult } from '../../../../graphql-operations'
 
@@ -98,7 +97,7 @@ interface RateLimitRowProps {
 const RateLimitRow: FC<RateLimitRowProps> = ({ limit }) => (
     <tr>
         <td>
-            <Text className={styles.listItemName}>{limit.feature}</Text>
+            <Text>{limit.feature}</Text>
         </td>
         <td>
             <Text>{limit.usage}</Text>
