@@ -5,7 +5,6 @@ import ConsoleIcon from 'mdi-react/ConsoleIcon'
 import MonitorStarIcon from 'mdi-react/MonitorStarIcon'
 import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
-import { AboutTabTitle } from '../enterprise/app/settings/about/AboutPage'
 import { checkRequestAccessAllowed } from '../util/checkRequestAccessAllowed'
 
 import { isPackagesEnabled } from './flags'
@@ -149,6 +148,8 @@ export const maintenanceGroupMigrationsItemLabel = 'Migrations'
 
 export const maintenanceGroupTracingItemLabel = 'Tracing'
 
+export const maintenanceGroupAboutItemLabel = 'About Cody App'
+
 export const maintenanceGroup: SiteAdminSideBarGroup = {
     header: {
         label: maintenanceGroupHeaderLabel,
@@ -213,7 +214,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
             condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
-            label: AboutTabTitle,
+            label: maintenanceGroupAboutItemLabel,
             to: '/site-admin/about',
             condition: ({ isSourcegraphApp }) => isSourcegraphApp,
         },
