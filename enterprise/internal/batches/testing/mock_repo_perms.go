@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 	"golang.org/x/exp/maps"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,7 +20,7 @@ func MockRepoPermissions(t *testing.T, db database.DB, userID int32, repoIDs ...
 	t.Helper()
 
 	logger := logtest.Scoped(t)
-	permsStore := edb.Perms(logger, db, time.Now)
+	permsStore := database.Perms(logger, db, time.Now)
 	ctx := context.Background()
 
 	repoIDMap := make(map[int32]struct{})

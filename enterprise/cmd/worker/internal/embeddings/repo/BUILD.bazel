@@ -17,7 +17,6 @@ go_library(
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//enterprise/cmd/worker/shared/init/codeintel",
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
         "//internal/api/internalapi",

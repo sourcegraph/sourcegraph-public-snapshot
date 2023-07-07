@@ -11,7 +11,6 @@ import (
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
@@ -56,7 +55,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Initialize sub-repo permissions client
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "creating sub-repo client")
 	}
