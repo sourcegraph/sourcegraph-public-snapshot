@@ -2201,6 +2201,23 @@ CREATE SEQUENCE discussion_threads_target_repo_id_seq
 
 ALTER SEQUENCE discussion_threads_target_repo_id_seq OWNED BY discussion_threads_target_repo.id;
 
+CREATE TABLE embedding_plugin_files (
+    id integer NOT NULL,
+    file_path text NOT NULL,
+    contents text NOT NULL,
+    embedding_plugin_id integer NOT NULL
+);
+
+CREATE SEQUENCE embedding_plugin_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE embedding_plugin_files_id_seq OWNED BY embedding_plugin_files.id;
+
 CREATE TABLE event_logs (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -5016,6 +5033,8 @@ ALTER TABLE ONLY discussion_threads ALTER COLUMN id SET DEFAULT nextval('discuss
 
 ALTER TABLE ONLY discussion_threads_target_repo ALTER COLUMN id SET DEFAULT nextval('discussion_threads_target_repo_id_seq'::regclass);
 
+ALTER TABLE ONLY embedding_plugin_files ALTER COLUMN id SET DEFAULT nextval('embedding_plugin_files_id_seq'::regclass);
+
 ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_seq'::regclass);
 
 ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval('event_logs_export_allowlist_id_seq'::regclass);
@@ -5345,6 +5364,9 @@ ALTER TABLE ONLY discussion_threads
 
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY embedding_plugin_files
+    ADD CONSTRAINT embedding_plugin_files_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY event_logs_export_allowlist
     ADD CONSTRAINT event_logs_export_allowlist_pkey PRIMARY KEY (id);

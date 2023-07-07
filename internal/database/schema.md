@@ -1331,6 +1331,19 @@ Referenced by:
 
 ```
 
+# Table "public.embedding_plugin_files"
+```
+       Column        |  Type   | Collation | Nullable |                      Default                       
+---------------------+---------+-----------+----------+----------------------------------------------------
+ id                  | integer |           | not null | nextval('embedding_plugin_files_id_seq'::regclass)
+ file_path           | text    |           | not null | 
+ contents            | text    |           | not null | 
+ embedding_plugin_id | integer |           | not null | 
+Indexes:
+    "embedding_plugin_files_pkey" PRIMARY KEY, btree (id)
+
+```
+
 # Table "public.event_logs"
 ```
       Column       |           Type           | Collation | Nullable |                Default                 
