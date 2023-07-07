@@ -70,25 +70,23 @@ export const RateLimitsTab: FC<RateLimitsTabProps> = props => {
 interface RateLimitTableProps {
     limits: RateLimitStatus[]
 }
-const RateLimitTable: FC<RateLimitTableProps> = ({ limits }) => {
-    return (
-        <table className="table">
-            <thead>
-                <tr>
-                    <th>Feature</th>
-                    <th>Used</th>
-                    <th>Allowed</th>
-                    <th>Next reset</th>
-                </tr>
-            </thead>
-            <tbody>
-                {limits.map(limit => (
-                    <RateLimitRow key={limit.feature} limit={limit} />
-                ))}
-            </tbody>
-        </table>
-    )
-}
+const RateLimitTable: FC<RateLimitTableProps> = ({ limits }) => (
+    <table className="table">
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Used</th>
+                <th>Allowed</th>
+                <th>Next reset</th>
+            </tr>
+        </thead>
+        <tbody>
+            {limits.map(limit => (
+                <RateLimitRow key={limit.feature} limit={limit} />
+            ))}
+        </tbody>
+    </table>
+)
 
 interface RateLimitRowProps {
     limit: RateLimitStatus
