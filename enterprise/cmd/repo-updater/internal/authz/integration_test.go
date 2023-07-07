@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	authzGitHub "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -136,7 +135,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			permsStore := database.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
@@ -222,7 +221,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			permsStore := database.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
@@ -346,7 +345,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			permsStore := database.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
@@ -435,7 +434,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			permsStore := database.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
 			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})

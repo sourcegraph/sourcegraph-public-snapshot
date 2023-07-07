@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -51,7 +50,7 @@ func TestPermissionLevels(t *testing.T) {
 	key := et.TestKey{}
 
 	bstore := store.New(db, &observation.TestContext, key)
-	sr := New(edb.NewEnterpriseDB(db), bstore, gitserver.NewMockClient(), logger)
+	sr := New(db, bstore, gitserver.NewMockClient(), logger)
 	s, err := newSchema(db, sr)
 	if err != nil {
 		t.Fatal(err)

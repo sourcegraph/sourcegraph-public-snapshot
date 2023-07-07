@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//enterprise/internal/authz",
         "//enterprise/internal/authz/subrepoperms",
-        "//enterprise/internal/database",
         "//internal/authz",
         "//internal/codeintel",
         "//internal/codeintel/shared",
