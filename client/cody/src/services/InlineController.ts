@@ -1,3 +1,4 @@
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
@@ -162,7 +163,7 @@ export class InlineController {
         thread.label = this.threadLabel
         thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
 
-        const comment = new Comment({ input: humanInput, name: 'Me', iconPath: this.userIcon })
+        const comment = new Comment(humanInput, 'Me', this.userIcon, reply.thread)
         thread.comments = [...thread.comments, comment]
 
         if (isFixMode) {
@@ -190,23 +191,10 @@ export class InlineController {
             this.setResponsePending(false)
         }
 
-        const replyComment = {
-            input: text,
-            name: 'Cody',
-            iconPath: this.codyIcon,
-        }
-
         if (this.inProgressComment) {
             this.inProgressComment.update(text)
-            /**
-             * We have to reassign this.thread.comments in order for the UI to re-render in VS Code.
-             * Note: VS Code throttles comment updates so they are only applied every 100ms, so this is suboptimal streaming.
-             * Relevant VS Code logic: https://sourcegraph.com/github.com/microsoft/vscode@6c8cdf325eb1dc8a0e2ea9205a1d2ca05f69c101/-/blob/src/vs/workbench/api/common/extHostComments.ts?L461-492
-             */
-            // eslint-disable-next-line no-self-assign
-            this.thread.comments = this.thread.comments
         } else {
-            this.inProgressComment = new Comment(replyComment)
+            this.inProgressComment = new Comment(text, 'Cody', this.codyIcon, this.thread)
             this.thread.comments = [...this.thread.comments, this.inProgressComment]
         }
 
@@ -412,27 +400,39 @@ export class InlineController {
     }
 }
 
-interface CommentOptions {
-    input: string
-    name: string
-    iconPath: vscode.Uri
-}
-
 class Comment implements vscode.Comment {
     public id: string
     public body: vscode.MarkdownString
     public mode = vscode.CommentMode.Preview
     public author: vscode.CommentAuthorInformation
 
-    constructor(options: CommentOptions) {
+    constructor(
+        public input: string,
+        public name: string,
+        public iconPath: vscode.Uri,
+        public parent: vscode.CommentThread
+    ) {
         const timestamp = new Date(Date.now())
         this.id = timestamp.getTime().toString()
-        this.body = this.markdown(options.input)
-        this.author = { name: options.name, iconPath: options.iconPath }
+        this.body = this.markdown(input)
+        this.author = { name, iconPath }
+        /**
+         * Although we can stream responses in fast intervals, VS Code limits comment updates to every 100ms.
+         * We throttle the update function to ensure we do not try to update the comment too much.
+         * Relevant VS Code logic: https://sourcegraph.com/github.com/microsoft/vscode@6c8cdf325eb1dc8a0e2ea9205a1d2ca05f69c101/-/blob/src/vs/workbench/api/common/extHostComments.ts?L461-492
+         */
+        this.update = throttle(this.update.bind(this), 100)
     }
 
     public update(input: string): void {
         this.body = this.markdown(input)
+        this.refresh()
+    }
+
+    private refresh(): void {
+        // Reassigning .comments is required in order for the UI to re-render in VS Code.
+        // eslint-disable-next-line no-self-assign
+        this.parent.comments = this.parent.comments
     }
 
     /**
