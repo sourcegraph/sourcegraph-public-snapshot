@@ -67,7 +67,7 @@ type AuthzStore interface {
 // handle. In the OSS version, this is a no-op AuthzStore, but this constructor
 // is overridden in enterprise versions.
 var AuthzWith = func(other basestore.ShareableStore) AuthzStore {
-	return &authzStore{}
+	return &noopAuthzStore{}
 }
 
 // noopAuthzStore is a no-op placeholder for the OSS version.
