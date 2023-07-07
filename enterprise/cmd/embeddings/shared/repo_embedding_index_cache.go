@@ -57,12 +57,12 @@ var (
 type embeddingsIndexCache struct {
 	mu                 sync.Mutex
 	cache              *lru.Cache[embeddings.RepoEmbeddingIndexName, repoEmbeddingIndexCacheEntry]
-	maxSizeBytes       int64
-	remainingSizeBytes int64
+	maxSizeBytes       uint64
+	remainingSizeBytes uint64
 }
 
 // newEmbeddingsIndexCache creates a cache with reasonable settings for an embeddings cache
-func newEmbeddingsIndexCache(maxSizeBytes int64) (_ *embeddingsIndexCache, err error) {
+func newEmbeddingsIndexCache(maxSizeBytes uint64) (_ *embeddingsIndexCache, err error) {
 	c := &embeddingsIndexCache{
 		maxSizeBytes:       maxSizeBytes,
 		remainingSizeBytes: maxSizeBytes,
@@ -125,7 +125,7 @@ func NewCachedEmbeddingIndexGetter(
 	repoStore database.RepoStore,
 	repoEmbeddingJobStore repo.RepoEmbeddingJobsStore,
 	downloadRepoEmbeddingIndex downloadRepoEmbeddingIndexFn,
-	cacheSizeBytes int64,
+	cacheSizeBytes uint64,
 ) (*CachedEmbeddingIndexGetter, error) {
 	cache, err := newEmbeddingsIndexCache(cacheSizeBytes)
 	if err != nil {
