@@ -113,7 +113,7 @@ If you would like to allow your Sourcegraph instance to control the creation and
 
 ### Environment variables for the `embeddings` service
 
-- `EMBEDDINGS_CACHE_SIZE`: The maximum size of the in-memory cache (in bytes) that holds the embeddings for commonly-searched repos. If embeddings for a repo are larger than this size, the repo will not be held in the cache and must be re-fetched for each embeddings search. Defaults to `6442450944` (6 GiB).
+- `EMBEDDINGS_CACHE_SIZE`: The maximum size of the in-memory cache that holds the embeddings for commonly-searched repos. If embeddings for a repo are larger than this size, the repo will not be held in the cache and must be re-fetched for each embeddings search. Defaults to `6GiB`.
 
 ### Incremental embeddings
 
