@@ -44,13 +44,13 @@ fn create_system_tray_menu() -> SystemTrayMenu {
         let jump_to_chat_item = CustomMenuItem::new("dev_jump_chat".to_string(), "Jump to chat");
         let jump_to_repo_setup_item =
             CustomMenuItem::new("dev_jump_repo_setup".to_string(), "Jump to repo setup");
-        let developer_menu = SystemTraySubmenu::new(
-            "Developer",
+        let dev_navigation_menu = SystemTraySubmenu::new(
+            "Dev Navigation",
             SystemTrayMenu::new()
                 .add_item(jump_to_chat_item)
                 .add_item(jump_to_repo_setup_item),
         );
-        return menu.clone().add_submenu(developer_menu);
+        return menu.clone().add_submenu(dev_navigation_menu);
     }
 
     return menu;
