@@ -39,8 +39,7 @@ public class Chat {
     completionsService.streamCompletion(
         new CompletionsInput(prompt, 0.5f, null, 1000, -1, -1),
         new ChatUpdaterCallbacks(chat, cancellationToken, prefix),
-        CompletionsService.Endpoint.Stream
-    );
+        CompletionsService.Endpoint.Stream);
   }
 
   public void sendMessageViaAgent(

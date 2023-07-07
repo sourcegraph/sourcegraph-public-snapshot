@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.sourcegraph.api.GraphQlClient;
-
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 
@@ -64,8 +63,7 @@ public class CompletionsService {
     String body = gson.toJsonTree(input).getAsJsonObject().toString();
 
     SSEClient sseClient =
-        new SSEClient(
-            instanceUrl + endpoint.urlPath, accessToken, body, cb, endpoint);
+        new SSEClient(instanceUrl + endpoint.urlPath, accessToken, body, cb, endpoint);
     sseClient.start();
   }
 }
