@@ -50,6 +50,7 @@ func NewAppResolver(logger log.Logger, db database.DB, gitClient gitserver.Clien
 		logger:    logger,
 		db:        db,
 		gitClient: gitClient,
+		doer:      httpcli.InternalDoer,
 	}
 }
 

@@ -53,9 +53,9 @@ type RateLimitStatus {
     interval: String!
 
     """
-    When the rate limit next resets
+    When the rate limit next resets if an interval has already started
     """
-    nextLimitReset: DateTime!
+    nextLimitReset: DateTime
 }
 
 """

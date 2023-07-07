@@ -10,34 +10,33 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func getLimitsURL(endpoint string, path string) (string, error) {
+func getLimitsURL(endpoint string) (string, error) {
 	u, err := url.Parse(endpoint)
 	if err != nil {
 		return "", err
 	}
-	u.Path = path
+	u.Path = "v1/limits"
 	return u.String(), nil
 }
 
 func getLimitsRequest(cc *conftypes.CompletionsConfig, ec *conftypes.EmbeddingsConfig) (*http.Request, error) {
-	var url string
-	var err error
-	var token string
 	// It's possible the user is only using sourcegraph gateway for completions or embeddings
 	// make sure to get the url/token for the sourcegraph provider
-	if cc.Provider == conftypes.CompletionsProviderNameSourcegraph {
-		url, err = getLimitsURL(cc.Endpoint, "v1/limits")
-		token = cc.AccessToken
-	} else {
-		url, err = getLimitsURL(ec.Endpoint, "v1/limits")
+	// start with the embeddings since there are fewer options
+	endPoint := ec.Endpoint
+	token := ec.AccessToken
+	if ec.Provider != conftypes.EmbeddingsProviderNameSourcegraph {
+		endPoint = cc.Endpoint
 		token = cc.AccessToken
 	}
+	url, err := getLimitsURL(endPoint)
 	if err != nil {
 		return nil, err
 	}
@@ -50,6 +49,10 @@ func getLimitsRequest(cc *conftypes.CompletionsConfig, ec *conftypes.EmbeddingsC
 }
 
 func (r *appResolver) CodyGatewayRateLimitStatus(ctx context.Context) ([]graphqlbackend.RateLimitStatus, error) {
+	// 🚨 SECURITY: Only site admins may check rate limits.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
 
 	config := conf.Get().SiteConfig()
 	cc := conf.GetCompletionsConfig(config)
@@ -57,7 +60,9 @@ func (r *appResolver) CodyGatewayRateLimitStatus(ctx context.Context) ([]graphql
 
 	// If the user doesn't have an dotcom auth token
 	// or isn't using the cody gateway, there are no limits
-	if (config.App == nil || len(config.App.DotcomAuthToken) == 0) || (cc.Provider != conftypes.CompletionsProviderNameSourcegraph && ec.Provider != conftypes.EmbeddingsProviderNameSourcegraph) {
+	if (config.App == nil || len(config.App.DotcomAuthToken) == 0) ||
+		(cc.Provider != conftypes.CompletionsProviderNameSourcegraph &&
+			ec.Provider != conftypes.EmbeddingsProviderNameSourcegraph) {
 		return []graphqlbackend.RateLimitStatus{}, nil
 	}
 
@@ -92,10 +97,10 @@ func (r *appResolver) CodyGatewayRateLimitStatus(ctx context.Context) ([]graphql
 }
 
 type rateLimit struct {
-	IntervalLimit int64     `json:"limit"`
-	IntervalUsage int64     `json:"usage"`
-	TimeInterval  string    `json:"interval"`
-	Expiry        time.Time `json:"expiry"`
+	IntervalLimit int64      `json:"limit"`
+	IntervalUsage int64      `json:"usage"`
+	TimeInterval  string     `json:"interval"`
+	Expiry        *time.Time `json:"expiry"`
 }
 
 var featureDisplayNames map[string]string = map[string]string{"chat_completions": "Chat", "code_completions": "Autocomplete", "embeddings": "Embeddings"}
@@ -129,8 +134,8 @@ func (c *codyRateLimit) PercentUsed() int32 {
 	return int32(math.Ceil(float64(c.IntervalUsage) / float64(c.IntervalLimit) * 100))
 }
 
-func (c *codyRateLimit) NextLimitReset() gqlutil.DateTime {
-	return *gqlutil.FromTime(c.Expiry)
+func (c *codyRateLimit) NextLimitReset() *gqlutil.DateTime {
+	return gqlutil.DateTimeOrNil(c.Expiry)
 }
 
 func (c *codyRateLimit) Interval() string {

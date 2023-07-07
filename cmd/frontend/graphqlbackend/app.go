@@ -66,5 +66,5 @@ type RateLimitStatus interface {
 	Usage() BigInt
 	PercentUsed() int32
 	Interval() string
-	NextLimitReset() gqlutil.DateTime
+	NextLimitReset() *gqlutil.DateTime
 }
