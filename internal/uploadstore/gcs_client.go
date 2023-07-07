@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sgiterator "github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type gcsStore struct {
@@ -74,6 +75,37 @@ func (s *gcsStore) Init(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+// Equals the default of S3's ListObjectsV2Input.MaxKeys
+const maxKeys = 1_000
+
+func (s *gcsStore) List(ctx context.Context) (*sgiterator.Iterator[string], error) {
+	query := storage.Query{}
+
+	// Performance optimization
+	query.SetAttrSelection([]string{"Name"})
+
+	iter := s.client.Bucket(s.bucket).Objects(ctx, &query)
+
+	next := func() ([]string, error) {
+		var keys []string
+		for len(keys) < maxKeys {
+			attr, err := iter.Next()
+			if err != nil && err != iterator.Done {
+				s.operations.List.Logger.Error("Failed to list objects in GCS bucket", sglog.Error(err))
+				return nil, err
+			}
+			if err == iterator.Done {
+				break
+			}
+			keys = append(keys, attr.Name)
+		}
+
+		return keys, nil
+	}
+
+	return sgiterator.New[string](next), nil
 }
 
 func (s *gcsStore) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {

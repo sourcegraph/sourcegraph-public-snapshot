@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type noOpUploadStore struct{}
@@ -28,6 +29,10 @@ func (s *noOpUploadStore) Init(ctx context.Context) error {
 }
 
 func (s *noOpUploadStore) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+	return nil, nil
+}
+
+func (s *noOpUploadStore) List(ctx context.Context) (*iterator.Iterator[string], error) {
 	return nil, nil
 }
 
@@ -78,6 +83,15 @@ func (s *mockUploadStore) Get(ctx context.Context, key string) (io.ReadCloser, e
 		return nil, errors.Newf("file %s not found", key)
 	}
 	return io.NopCloser(bytes.NewReader(file)), nil
+}
+
+func (s *mockUploadStore) List(ctx context.Context) (*iterator.Iterator[string], error) {
+	var names []string
+	for k := range s.files {
+		names = append(names, k)
+	}
+
+	return iterator.From[string](names), nil
 }
 
 func (s *mockUploadStore) Upload(ctx context.Context, key string, r io.Reader) (int64, error) {
