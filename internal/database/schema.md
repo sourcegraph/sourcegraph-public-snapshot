@@ -1735,6 +1735,50 @@ Referenced by:
 
 **rollout**: Rollout only defined when flag_type is rollout. Increments of 0.01%
 
+# Table "public.file_embedding_job_stats"
+```
+     Column      |  Type   | Collation | Nullable |   Default   
+-----------------+---------+-----------+----------+-------------
+ job_id          | integer |           | not null | 
+ is_incremental  | boolean |           | not null | false
+ files_total     | integer |           | not null | 0
+ files_embedded  | integer |           | not null | 0
+ chunks_embedded | integer |           | not null | 0
+ files_skipped   | jsonb   |           | not null | '{}'::jsonb
+ bytes_embedded  | integer |           | not null | 0
+Indexes:
+    "file_embedding_job_stats_pkey" PRIMARY KEY, btree (job_id)
+Foreign-key constraints:
+    "file_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES file_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
+# Table "public.file_embedding_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                     Default                     
+-------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                | integer                  |           | not null | nextval('file_embedding_jobs_id_seq'::regclass)
+ state             | text                     |           |          | 'queued'::text
+ failure_message   | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+ cancel            | boolean                  |           | not null | false
+ archive_id        | text                     |           | not null | 
+ file_type         | text                     |           | not null | 'html'::text
+Indexes:
+    "file_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "file_embedding_job_stats" CONSTRAINT "file_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES file_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
+
+```
+
 # Table "public.github_app_installs"
 ```
        Column       |           Type           | Collation | Nullable |                     Default                     
