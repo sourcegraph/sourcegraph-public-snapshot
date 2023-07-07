@@ -32,12 +32,15 @@ public class Chat {
   }
 
   public void sendMessageWithoutAgent(
-      @NotNull List<Message> prompt, @Nullable String prefix, @NotNull UpdatableChat chat) {
+      @NotNull List<Message> prompt,
+      @Nullable String prefix,
+      @NotNull UpdatableChat chat,
+      @NotNull CancellationToken cancellationToken) {
     completionsService.streamCompletion(
         new CompletionsInput(prompt, 0.5f, null, 1000, -1, -1),
         new ChatUpdaterCallbacks(chat, prefix),
         CompletionsService.Endpoint.Stream,
-        new CancellationToken());
+        cancellationToken);
   }
 
   public void sendMessageViaAgent(

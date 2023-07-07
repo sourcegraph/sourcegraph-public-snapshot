@@ -56,7 +56,7 @@ public class CompletionsService {
       @NotNull CompletionsInput input,
       @NotNull CompletionsCallbacks cb,
       @NotNull Endpoint endpoint,
-      CancellationToken token) {
+      @NotNull CancellationToken cancellationToken) {
     Gson gson =
         new GsonBuilder()
             .registerTypeAdapter(Speaker.class, new SpeakerLowercaseSerializer())
@@ -65,7 +65,8 @@ public class CompletionsService {
     String body = gson.toJsonTree(input).getAsJsonObject().toString();
 
     SSEClient sseClient =
-        new SSEClient(instanceUrl + endpoint.urlPath, accessToken, body, cb, endpoint, token);
+        new SSEClient(
+            instanceUrl + endpoint.urlPath, accessToken, body, cb, endpoint, cancellationToken);
     sseClient.start();
   }
 }
