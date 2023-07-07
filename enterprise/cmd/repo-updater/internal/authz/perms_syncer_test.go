@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -124,7 +123,7 @@ func TestPermsSyncer_syncUserPerms(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, _ authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		wantIDs := []int32{1, 2, 3, 4}
 		assert.Equal(t, wantIDs, repoIDs)
@@ -201,7 +200,7 @@ func TestPermsSyncer_syncUserPerms_listExternalAccountsError(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{1, 2, 3, 4, 5}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
@@ -284,7 +283,7 @@ func TestPermsSyncer_syncUserPerms_fetchAccount(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		return &database.SetPermissionsResult{
 			Added:   len(repoIDs),
@@ -438,13 +437,13 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	})
 	featureFlags := database.NewMockFeatureFlagStore()
 
-	subRepoPerms := edb.NewMockSubRepoPermsStore()
+	subRepoPerms := database.NewMockSubRepoPermsStore()
 	subRepoPerms.GetByUserAndServiceFunc.SetDefaultReturn(nil, nil)
 
 	syncJobs := database.NewMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-	db := edb.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
@@ -456,7 +455,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
@@ -538,7 +537,7 @@ func TestPermsSyncer_syncUserPerms_noPerms(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, int32(1), user.UserID)
 		assert.Equal(t, []int32{1}, repoIDs)
@@ -628,7 +627,7 @@ func TestPermsSyncer_syncUserPerms_tokenExpire(t *testing.T) {
 
 	reposStore := repos.NewMockStore()
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 
 	t.Run("invalid token", func(t *testing.T) {
@@ -733,7 +732,7 @@ func TestPermsSyncer_syncUserPerms_prefixSpecs(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
@@ -792,14 +791,14 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
 
-	subRepoPerms := edb.NewMockSubRepoPermsStore()
+	subRepoPerms := database.NewMockSubRepoPermsStore()
 
 	featureFlags := database.NewMockFeatureFlagStore()
 
 	syncJobs := database.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-	db := edb.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
@@ -813,7 +812,7 @@ func TestPermsSyncer_syncUserPerms_subRepoPermissions(t *testing.T) {
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 	reposStore.ExternalServiceStoreFunc.SetDefaultReturn(externalServices)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultReturn(&database.SetPermissionsResult{}, nil)
 
 	s := NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
@@ -853,7 +852,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	db.FeatureFlagsFunc.SetDefaultReturn(mockFeatureFlags)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(mockSyncJobs)
 
-	newPermsSyncer := func(reposStore repos.Store, perms edb.PermsStore) *PermsSyncer {
+	newPermsSyncer := func(reposStore repos.Store, perms database.PermsStore) *PermsSyncer {
 		return NewPermsSyncer(logtest.Scoped(t), db, reposStore, perms, timeutil.Now)
 	}
 
@@ -875,7 +874,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-		perms := edb.NewMockPermsStore()
+		perms := database.NewMockPermsStore()
 		s := newPermsSyncer(reposStore, perms)
 
 		// error should be nil in this case
@@ -929,7 +928,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-		perms := edb.NewMockPermsStore()
+		perms := database.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
@@ -961,7 +960,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-		perms := edb.NewMockPermsStore()
+		perms := database.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
@@ -1012,7 +1011,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 		reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 		reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-		perms := edb.NewMockPermsStore()
+		perms := database.NewMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 		perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
@@ -1065,7 +1064,7 @@ func TestPermsSyncer_syncRepoPerms(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.TransactFunc.SetDefaultReturn(perms, nil)
 	perms.GetUserIDsByExternalAccountsFunc.SetDefaultReturn(map[string]authz.UserIDWithExternalAccountID{"user": {UserID: 1, ExternalAccountID: 1}}, nil)
 	perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, userIDs []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {

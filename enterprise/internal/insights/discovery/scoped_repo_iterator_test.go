@@ -11,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -67,7 +66,7 @@ func TestScopedRepoIteratorForEach(t *testing.T) {
 
 func TestScopedRepoIterator_PrivateRepos(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
 	store := db.Repos()
