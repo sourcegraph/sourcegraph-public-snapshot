@@ -578,7 +578,7 @@ func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.Git
 	// that repo will reside on the same shard. This is a pre-requisite to support deduplication on
 	// all forks of the repo.
 	if forkedRepoPoolID != nil && parentRepoName != nil {
-		logger.Warn("pool repo id found", log.Int32("pool_repo_id", int32(*forkedRepoPoolID)))
+		// logger.Warn("pool repo id found", log.Int32("pool_repo_id", int32(*forkedRepoPoolID)))
 		return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), *parentRepoName)
 	}
 
@@ -2114,20 +2114,38 @@ func setGitAttributes(dir common.GitDir) error {
 	return nil
 }
 
-func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoName) error {
+func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoName, dedupeWhich dedupeType, tmpPath string) error {
 	// Do the equivalent of this command:
 	// echo "$REPO_DIR/.pool/$REPO_NAME/.git/objects" > $REPOS_DIR/$REPO_NAME/.git/objects/info/alternates
-	repoDir := s.dir(repo)
+	// repoDir := s.dir(repo)
 
 	// "/data/repos/github.com/owner/this-repo/.git/objects/info/alternates"
-	repoAlternatesFilePath := filepath.Join(string(repoDir), "objects/info/alternates")
+	repoAlternatesFilePath := filepath.Join(tmpPath, "objects/info/alternates")
+
+	poolRepo := repo
+	if dedupeWhich == dedupeFork {
+		_, parentRepo, err := s.DB.GitserverRepos().GetForkedAndParentRepo(ctx, repo)
+		if err != nil {
+			return errors.Wrap(err, "failed to determine relationship between forked and parent repo (this repo will not be configured as a git-alternate and will not benefit from deduplicated storage)")
+		}
+
+		poolRepo = *parentRepo
+	}
 
 	// "/data/repos/.pool/github.com/owner/this-repo/.git/objects"
-	poolRepoObjectsFilePath := filepath.Join(string(s.poolDir(repo)), "objects")
+	poolRepoObjectsFilePath := filepath.Join(string(s.poolDir(poolRepo)), "objects")
 
+	// FIXME: Directly return and skip the error checking.
+	// FIXME: Find a different file permissions bit.
 	if err := os.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), os.ModePerm); err != nil {
 		return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
 	}
+
+	return nil
+
+}
+
+func optimizeForGitAlternateRepo(ctx context.Context, repoDir common.GitDir) error {
 
 	// Run in this in the repo and not the pool.
 	// NEVER run this in the pool repo.
@@ -2177,11 +2195,14 @@ const (
 	dedupeSource dedupeType = iota
 	// TODO: Maybe we don't need this state.
 	dedupeFork
+	dedupePool
 )
 
 type deduplicatedCloneOptions struct {
 	// FIXME: Find a better name.
 	which dedupeType
+
+	poolDir common.GitDir
 }
 
 // FIXME: A better name please
@@ -2198,34 +2219,30 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName 
 		log.String("repo", string(repoName)),
 	)
 
-	logger.Warn("^^^^^ Starting maybe get dedupe options")
-
 	repoConf := conf.Get().Repositories
 	if repoConf == nil {
-		logger.Warn("no repositories in config")
 		return nil
 	}
 
 	for _, name := range repoConf.DeduplicateForks {
 		if string(repoName) == name {
-			logger.Warn("found repo in conf")
-			return &deduplicatedCloneOptions{which: dedupeSource}
+			return &deduplicatedCloneOptions{which: dedupeSource, poolDir: s.poolDir(repoName)}
 		}
 	}
 
-	gsr, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
+	forkedRepoPoolID, parentRepoName, err := s.DB.GitserverRepos().GetForkedAndParentRepo(ctx, repoName)
+
+	// gsr, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
 	if err != nil {
 		logger.Warn("failed to get by name from DB (repo will be cloned without deduplicated storage if this was supposed to be deduplicated)", log.Error(err))
 		return nil
 	}
 
-	if gsr.PoolRepoID == nil {
-		logger.Warn("nil pool repo ID")
-		return nil
+	if forkedRepoPoolID != nil && parentRepoName != nil {
+		return &deduplicatedCloneOptions{which: dedupeFork, poolDir: s.poolDir(*parentRepoName)}
 	}
 
-	logger.Warn("dedupeFork options set")
-	return &deduplicatedCloneOptions{which: dedupeFork}
+	return nil
 }
 
 // cloneRepo performs a clone operation for the given repository. It is
@@ -2243,22 +2260,20 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 
 	dir := s.dir(repo)
 
-	logger := s.ObservationCtx.Logger.Scoped("cloenRepo", "").With(log.String("repo", string(repo)))
+	logger := s.ObservationCtx.Logger.Scoped("cloneRepo", "").With(log.String("repo", string(repo)))
 
 	dedupeOptions := s.maybeGetDeduplicatedCloneOptions(ctx, repo)
 	if dedupeOptions != nil {
-		if dedupeOptions.which == dedupeSource {
-			logger.Warn("######## Configuring pool dir")
-			dir = s.poolDir(repo)
-		}
+		// if dedupeOptions.which == dedupeSource {
+		logger.Warn("######## Configuring pool dir", log.String("options", fmt.Sprintf("%#v", *dedupeOptions)))
+		// dir = s.poolDir(repo)
+		// }
 
 		if opts == nil {
 			opts = &cloneOptions{}
 		}
 
 		opts.DeduplicatedCloneOptions = dedupeOptions
-	} else {
-		logger.Warn("####### Skipping pool dir config")
 	}
 
 	// PERF: Before doing the network request to check if isCloneable, lets
@@ -2331,7 +2346,6 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// clones in the repo tree. This also avoids leaving behind corrupt clones
 	// if the clone is interrupted.
 	if opts != nil && opts.Block {
-		logger.Warn("@@@@@@@@@ Blocking clone")
 		ctx, cancel, err := s.acquireCloneLimiter(ctx)
 		if err != nil {
 			return "", err
@@ -2360,9 +2374,20 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 }
 
 func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
-	logger := s.Logger.Scoped("doClone", "").With(log.String("repo", string(repo)))
+	logger := s.Logger.Scoped("doClone", "").With(
+		log.String("repo", string(repo)),
+		log.String("dir", string(dir)),
+	)
+	logger.Warn("starting clone")
+
+	isDedupeClone := opts != nil && opts.DeduplicatedCloneOptions != nil
+
+	if isDedupeClone {
+		logger.Warn("dedupeclone options", log.String("options", fmt.Sprintf("%#v", opts.DeduplicatedCloneOptions)))
+	}
 
 	defer lock.Release()
+
 	defer func() {
 		if err != nil {
 			repoCloneFailedCounter.Inc()
@@ -2405,12 +2430,56 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
 	}()
 
+	// For git repositories we just initialised a bare git repo and have a fetch command.
 	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
 	if err != nil {
 		return errors.Wrap(err, "get clone command")
 	}
 	if cmd.Env == nil {
 		cmd.Env = os.Environ()
+	}
+
+	if isDedupeClone {
+		// Update or create pool.
+		//
+		poolDir := opts.DeduplicatedCloneOptions.poolDir
+
+		_, err := os.Stat(string(poolDir))
+		if err != nil {
+			if errors.Is(err, os.ErrNotExist) {
+				// Clone pool
+				opts.DeduplicatedCloneOptions.which = dedupePool
+
+				poolLock, ok := s.locker.TryAcquire(poolDir, "starting pool repo clone")
+				if !ok {
+					// logger.Error("failed to acquire lock over poolDir, a clone may already be in progress", log.String("poolDir", string(poolDir)))
+					// It's better to abort this clone operation for now since pool is already being
+					// cloned by someone else (another fork or parent might be being cloned first
+					// which would have triggered the pool repo to be created.)
+					//
+					// Let us error out now and let the cloning mechanism retry it again after
+					// sometime.
+					// Someone else beat us to it
+					status, _ := s.locker.Status(poolDir)
+					return errors.Newf("failed to acquire lock poolDir %q, will retry soon, status %v", string(poolDir), status)
+				}
+
+				logger.Warn("acquired lock on poolDir", log.String("poolDir", string(poolDir)))
+				err := s.doClone(ctx, repo, poolDir, syncer, poolLock, remoteURL, opts)
+				// TODO: Do something about the error.
+				if err != nil {
+					logger.Error("failed to clone pool repo", log.Error(err))
+					return err
+				}
+			} else {
+				logger.Error("failed to determine if pool repo exists, deduplicated storage will not be available for this repo", log.Error(err))
+			}
+		}
+
+		// Configure git alternate for repo.
+		if err := s.configureRepoAsGitAlternate(ctx, repo, opts.DeduplicatedCloneOptions.which, tmpPath); err != nil {
+			logger.Error("failed to configure reop as git-alternate, deduplciated storage will not be available for this repo", log.Error(err))
+		}
 	}
 
 	// see issue #7322: skip LFS content in repositories with Git LFS configured
@@ -2423,6 +2492,17 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	redactor := newURLRedactor(remoteURL)
 
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+
+	if opts != nil && opts.DeduplicatedCloneOptions != nil {
+		// 1. Check if poolDir exists.
+		// 2. If it exists:
+		// 		2.a: Run git rev-parse HEAD to verify the pool repo is in a cloned state.
+		// 3. If it does not exist:
+		//      3.b: Create git init for poolDir and git fetch.
+
+		// ensurePoolRepoIsCloned()
+
+	}
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
 
@@ -2495,27 +2575,35 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	// 4. Run git repack
 	// 5. Run git gc
 
-	if opts != nil && opts.DeduplicatedCloneOptions != nil {
-		switch opts.DeduplicatedCloneOptions.which {
-		case dedupeSource:
-			sourceRepoCloneOpts := *opts
-			sourceRepoCloneOpts.DeduplicatedCloneOptions = nil
-			if err := s.doClone(ctx, repo, s.dir(repo), syncer, lock, remoteURL, &sourceRepoCloneOpts); err != nil {
-				logger.Error("failed to clone source repo after pool was cloned", log.Error(err))
-			}
+	// if opts != nil && opts.DeduplicatedCloneOptions != nil {
+	// 	// switch opts.DeduplicatedCloneOptions.which {
+	// 	// case dedupeSource:
+	// 	// 	sourceRepoCloneOpts := *opts
+	// 	// 	sourceRepoCloneOpts.DeduplicatedCloneOptions = nil
+	// 	// 	// FIXME FIXME FIXME FIXME
+	// 	// 	if err := s.doClone(ctx, repo, s.dir(repo), syncer, lock, remoteURL, &sourceRepoCloneOpts); err != nil {
+	// 	// 		logger.Error("failed to clone source repo after pool was cloned", log.Error(err))
+	// 	// 	}
 
-		case dedupeFork:
-			// We already cloned in the right dir here so only need to setup git-alternate stuff.
-		}
+	// 	// case dedupeFork:
+	// 	// 	// We already cloned in the right dir here so only need to setup git-alternate stuff.
+	// 	// }
 
-		logger.Warn(">>> configureRepoAsGitAlternate started")
-		if err := s.configureRepoAsGitAlternate(ctx, repo); err != nil {
-			return errors.Wrap(err, "configureRepoAsGitAlternate")
-		} else {
-			logger.Warn("no error in configureRepoAsGitAlternate")
+	// 	logger.Warn(">>> configureRepoAsGitAlternate started")
+	// 	if err := s.configureRepoAsGitAlternate(ctx, repo, opts.DeduplicatedCloneOptions.which); err != nil {
+	// 		return errors.Wrap(err, "configureRepoAsGitAlternate")
+	// 	} else {
+	// 		logger.Warn("no error in configureRepoAsGitAlternate")
+	// 	}
+	// } else {
+	// 	logger.Warn("<<< not a deduplicated clone")
+	// }
+	//
+
+	if isDedupeClone && opts.DeduplicatedCloneOptions.which != dedupePool {
+		if err := optimizeForGitAlternateRepo(ctx, s.dir(repo)); err != nil {
+			logger.Error("failed to optimise repo, deduplicated storage will not be available", log.Error(err))
 		}
-	} else {
-		logger.Warn("<<< not a deduplicated clone")
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
@@ -2538,6 +2626,42 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	return nil
 }
+
+func cloneGitAlternate(ctx context.Context, repo, dir common.GitDir, remoteURL string) error {
+	return nil
+}
+
+// func (s *Server) ensurePoolRepoIsCloned(ctx context.Context, repoName api.RepoName, opts deduplicatedCloneOptions) error {
+// 	_, err := os.Stat(string(opts.poolDir))
+// 	if err != nil && !errors.Is(err, os.ErrNotExist) {
+// 		return errors.Wrapf(err, "failed to check if poolDir %q for repo %q exists", opts.poolDir, repoName)
+// 	}
+
+// 	if errors.Is(err, os.ErrNotExist) {
+// 		tmpPath, err := s.tempDir("clone-")
+// 		if err != nil {
+// 			return err
+// 		}
+// 		defer os.RemoveAll(tmpPath)
+// 		tmpPath = filepath.Join(tmpPath, ".git")
+// 		tmp := common.GitDir(tmpPath)
+
+// 		cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
+// 		if err != nil {
+// 			return errors.Wrap(err, "get clone command")
+// 		}
+// 		if cmd.Env == nil {
+// 			cmd.Env = os.Environ()
+// 		}
+
+// 		// see issue #7322: skip LFS content in repositories with Git LFS configured
+// 		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
+// 		logger.Info("cloning pool repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
+
+// 	}
+
+// 	return nil
+// }
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
