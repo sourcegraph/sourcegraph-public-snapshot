@@ -2,7 +2,7 @@ steps:
   - group: ":bazel::go:Build backend for different platforms"
     key: "backend-builds"
     steps:
-      - label: ':windows: Build for Windows'
+        - label: ':windows: Build for Windows'
           key: 'build-sourcegraph-app_windows'
           agents: { queue: windows }
           env:
