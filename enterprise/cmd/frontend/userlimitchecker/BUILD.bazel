@@ -22,9 +22,9 @@ go_test(
     embed = [":userlimitchecker"],
     deps = [
         "//enterprise/cmd/frontend/internal/dotcom/productsubscription",
-        "//enterprise/internal/license",
         "//internal/database",
         "//internal/database/dbtest",
+        "//internal/license",
         "//internal/types",
         "@com_github_sourcegraph_log//:log",
     ],

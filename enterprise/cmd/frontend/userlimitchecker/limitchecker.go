@@ -2,6 +2,7 @@ package userlimitchecker
 
 import (
 	"context"
+	"time"
 
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -64,7 +65,7 @@ func atOrOverUserLimit(ctx context.Context, db database.DB) (bool, error) {
 		return false, err
 	}
 
-	userLimit, err := getUserLimit(ctx, db)
+	userLimit, err := getLicenseUserLimit(ctx, db)
 	if err != nil {
 		return false, err
 	}
@@ -85,8 +86,7 @@ func getUserCount(ctx context.Context, db database.DB) (int, error) {
 	return userCount, nil
 }
 
-// function to get the license user count
-func getUserLimit(ctx context.Context, db database.DB) (int, error) {
+func getLicenseUserLimit(ctx context.Context, db database.DB) (int, error) {
 	items, err := ps.NewDbLicense(db).List(ctx, ps.DbLicencesListNoOpt())
 	if err != nil {
 		return 0, err
@@ -95,11 +95,8 @@ func getUserLimit(ctx context.Context, db database.DB) (int, error) {
 		return 0, nil
 	}
 
-	// loop over all licenses and look for a RevokeReason == nil
-	// we know this license is active, so return the user count
-	// if loop finishes, we know there are no active licenses, return 0
 	for _, item := range items {
-		if item.RevokeReason != nil {
+		if item.LicenseExpiresAt.UTC().After(time.Now().UTC()) {
 			return *item.LicenseUserCount, nil
 		}
 	}
