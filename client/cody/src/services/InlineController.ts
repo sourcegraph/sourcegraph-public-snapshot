@@ -33,7 +33,7 @@ export class InlineController {
     private inProgressComment: Comment | null = null
 
     // A repeating, text-based, loading indicator ("." -> ".." -> "...")
-    private pendingResponseInterval: NodeJS.Timeout | null = null
+    private responsePendingInterval: NodeJS.Timeout | null = null
 
     private currentTaskId = ''
     // Workspace State
@@ -176,7 +176,6 @@ export class InlineController {
             this.threads.set(firstComment.id, thread)
         }
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
-        this.setLoading(true)
     }
     /**
      * List response from Cody as comment
@@ -187,15 +186,14 @@ export class InlineController {
         }
 
         // Clear out any loading indicator
-        if (state !== 'loading' && this.pendingResponseInterval) {
-            this.setLoading(false)
+        if (state !== 'loading' && this.responsePendingInterval) {
+            this.setResponsePending(false)
         }
 
         const replyComment = {
             input: text,
             name: 'Cody',
             iconPath: this.codyIcon,
-            parent: this.thread,
         }
 
         if (this.inProgressComment) {
@@ -232,19 +230,19 @@ export class InlineController {
     /**
      * Display a "..." loading style reply from Cody.
      */
-    private setLoading(showLoadingIndicator: boolean): void {
+    public setResponsePending(isResponsePending: boolean): void {
         let iterations = 0
 
-        if (!showLoadingIndicator && this.pendingResponseInterval) {
-            clearInterval(this.pendingResponseInterval)
-            this.pendingResponseInterval = null
+        if (!isResponsePending && this.responsePendingInterval) {
+            clearInterval(this.responsePendingInterval)
+            this.responsePendingInterval = null
             iterations = 0
             return
         }
 
-        this.reply('', 'loading')
         const dot = '.'
-        this.pendingResponseInterval = setInterval(() => {
+        this.reply(dot, 'loading')
+        this.responsePendingInterval = setInterval(() => {
             iterations++
             const replyText = dot.repeat((iterations % 3) + 1)
             this.reply(replyText, 'loading')

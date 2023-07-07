@@ -323,6 +323,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
     private sendPrompt(promptMessages: Message[], responsePrefix = ''): void {
         this.cancelCompletion()
         void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
+        this.editor.controllers.inline.setResponsePending(true)
 
         let text = ''
 
