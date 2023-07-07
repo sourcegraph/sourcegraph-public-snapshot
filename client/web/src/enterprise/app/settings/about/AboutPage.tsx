@@ -6,7 +6,9 @@ import styles from './AboutPage.module.scss'
 
 export const AboutTabTitle = 'About Cody App'
 
-export const AboutTab: React.FC = () => (
+interface AboutTabProps {}
+
+export const AboutTab: React.FC<AboutTabProps> = () => (
     <div className={classNames(styles.root)}>
         <PageHeader headingElement="h2" path={[{ text: AboutTabTitle }]} actions={[]} className="mb-3" />
         <Container className="mb-3">Version: {window.context.version}</Container>
