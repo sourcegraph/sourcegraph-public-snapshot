@@ -907,3 +907,107 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 		})
 	})
 }
+
+func TestSchema_SetCompletedPostSignup(t *testing.T) {
+	db := database.NewMockDB()
+
+	currentUserID := int32(2)
+
+	t.Run("not site admin, not current user", func(t *testing.T) {
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+			return &types.User{
+				ID:       id,
+				Username: strconv.Itoa(int(id)),
+			}, nil
+		})
+		// Different user.
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: currentUserID, Username: "2"}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+
+		userID := MarshalUserID(1)
+		result, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).SetCompletedPostSignup(context.Background(),
+			&userMutationArgs{UserID: &userID},
+		)
+		got := fmt.Sprintf("%v", err)
+		want := auth.ErrMustBeSiteAdminOrSameUser.Error()
+		assert.Equal(t, want, got)
+		assert.Nil(t, result)
+	})
+
+	t.Run("current user can set field on themselves", func(t *testing.T) {
+		currentUser := &types.User{ID: currentUserID, Username: "2", SiteAdmin: true}
+
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(currentUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(currentUser, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var called bool
+		users.UpdateFunc.SetDefaultHook(func(ctx context.Context, id int32, update database.UserUpdate) error {
+			called = true
+			return nil
+		})
+
+		RunTest(t, &Test{
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: currentUserID}),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+			mutation {
+				setCompletedPostSignup(userID: "VXNlcjoy") {
+					alwaysNil
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"setCompletedPostSignup": {
+					"alwaysNil": null
+				}
+			}
+		`,
+		})
+
+		if !called {
+			t.Errorf("updatefunc was not called, but should have been")
+		}
+	})
+
+	t.Run("site admin can set post-signup complete", func(t *testing.T) {
+		mockUser := &types.User{
+			ID:       1,
+			Username: "alice",
+		}
+		users := database.NewMockUserStore()
+		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: currentUserID, Username: "2", SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefaultReturn(users)
+		var called bool
+		users.UpdateFunc.SetDefaultHook(func(ctx context.Context, id int32, update database.UserUpdate) error {
+			called = true
+			return nil
+		})
+
+		RunTest(t, &Test{
+			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+			Schema:  mustParseGraphQLSchema(t, db),
+			Query: `
+			mutation {
+				setCompletedPostSignup(userID: "VXNlcjox") {
+					alwaysNil
+				}
+			}
+		`,
+			ExpectedResult: `
+			{
+				"setCompletedPostSignup": {
+					"alwaysNil": null
+				}
+			}
+		`,
+		})
+
+		if !called {
+			t.Errorf("updatefunc was not called, but should have been")
+		}
+	})
+}
