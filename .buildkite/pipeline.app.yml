@@ -10,7 +10,8 @@ steps:
           command:
             - |
               dir c:\buildkite-agent
-            - '.\enterprise\dev\app\build-windows.sh'
+            - |
+              dir '.\enterprise\dev\app\build-windows.sh'
 
   #     - label: ':bazel::linux: Build for Linux'
   #       key: 'build-sourcegraph-app-linux'
