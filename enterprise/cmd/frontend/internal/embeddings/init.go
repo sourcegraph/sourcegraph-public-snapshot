@@ -34,7 +34,9 @@ func Init(
 		repoEmbeddingsStore,
 	)
 
-	filehandler := httpapi.NewFileHandler()
+	operations := httpapi.NewOperations(observationCtx)
+	filehandler := httpapi.NewFileHandler(operations)
+
 	enterpriseServices.EmbeddingsFileUploadHandler = filehandler.Upload()
 
 	return nil
