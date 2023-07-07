@@ -60,7 +60,7 @@ func TestOpenAI(t *testing.T) {
 			return oldTransport.RoundTrip(r)
 		})
 
-		client := NewClient(httpClient, &conftypes.EmbeddingsConfig{})
+		client := NewClient(httpClient, &conftypes.EmbeddingsConfig{Dimensions: 1536})
 		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
 		require.NoError(t, err)
 		var expected []float32
@@ -112,7 +112,7 @@ func TestOpenAI(t *testing.T) {
 			return oldTransport.RoundTrip(r)
 		})
 
-		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
+		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: 1536})
 		_, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
 		require.Error(t, err, "expected request to error on failed retry")
 	})
