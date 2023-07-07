@@ -32,6 +32,9 @@ export class InlineController {
     private threads = new Map<string, vscode.CommentThread>()
     private inProgressComment: Comment | null = null
 
+    // A repeating, text-based, loading indicator ("." -> ".." -> "...")
+    private pendingResponseInterval: NodeJS.Timeout | null = null
+
     private currentTaskId = ''
     // Workspace State
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
@@ -173,13 +176,19 @@ export class InlineController {
             this.threads.set(firstComment.id, thread)
         }
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
+        this.setLoading(true)
     }
     /**
      * List response from Cody as comment
      */
-    public reply(text: string, state: 'streaming' | 'complete' | 'error'): void {
+    public reply(text: string, state: 'streaming' | 'complete' | 'error' | 'loading'): void {
         if (!this.thread || this.thread.state) {
             return
+        }
+
+        // Clear out any loading indicator
+        if (state !== 'loading' && this.pendingResponseInterval) {
+            this.setLoading(false)
         }
 
         const replyComment = {
@@ -220,7 +229,27 @@ export class InlineController {
             void vscode.commands.executeCommand('setContext', 'cody.replied', true)
         }
     }
+    /**
+     * Display a "..." loading style reply from Cody.
+     */
+    private setLoading(showLoadingIndicator: boolean): void {
+        let iterations = 0
 
+        if (!showLoadingIndicator && this.pendingResponseInterval) {
+            clearInterval(this.pendingResponseInterval)
+            this.pendingResponseInterval = null
+            iterations = 0
+            return
+        }
+
+        this.reply('', 'loading')
+        const dot = '.'
+        this.pendingResponseInterval = setInterval(() => {
+            iterations++
+            const replyText = dot.repeat((iterations % 3) + 1)
+            this.reply(replyText, 'loading')
+        }, 500)
+    }
     private undo(id: string): void {
         void this.codeLenses.get(id)?.undo(id)
         this.codeLenses.delete(id)
