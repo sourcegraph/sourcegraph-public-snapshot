@@ -19,7 +19,7 @@ actions.
 
 ## Starting up your environment
 
-Code monitoring is an enterprise functionality. To run it locally you need to start Sourcegraph as enterprise service:
+To run it locally you need to start Sourcegraph:
 
 ```bash
 sg start # which defaults to `sg start enterprise`
@@ -111,7 +111,7 @@ The GraphQL API is defined
 [here](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/schema.graphql).
 The interfaces and stub-resolvers are defined
 [here](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go),
-while the enterprise resolvers are defined
+while the resolvers are defined
 [here](https://github.com/sourcegraph/sourcegraph/blob/main/internal/codemonitors/resolvers/resolvers.go).
 
 ### Background workers
@@ -131,7 +131,7 @@ utilize our `internal/workerutil` framework to [run as background jobs on
    resolvers](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go)
    and understand how they relate to the [GraphQL
    schema](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go).
-3. Do the same for the [enterprise
+3. Do the same for the [
    resolvers](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/frontend/graphqlbackend/code_monitors.go).
 4. Take a look at the [background
    workers](https://github.com/sourcegraph/sourcegraph/blob/main/internal/codemonitors/background/background.go)
