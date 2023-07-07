@@ -1,4 +1,4 @@
-ALTER TABLE users ADD COLUMN IF NOT EXISTS completed_post_signup BOOLEAN DEFAULT FALSE;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS completed_post_signup BOOLEAN NOT NULL DEFAULT FALSE;
 
 -- We mark all users that have verified their email as having completed_post_signup
 -- the post-signup flow

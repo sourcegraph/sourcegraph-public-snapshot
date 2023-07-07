@@ -26804,7 +26804,7 @@
           "Name": "completed_post_signup",
           "Index": 22,
           "TypeName": "boolean",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
