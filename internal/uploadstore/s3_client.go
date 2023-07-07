@@ -94,7 +94,7 @@ func (s *s3Store) List(ctx context.Context) (*iterator.Iterator[string], error) 
 			return nil, nil
 		}
 
-		nextPage, err := paginator.NextPage(context.Background())
+		nextPage, err := paginator.NextPage(ctx)
 		if err != nil {
 			return nil, err
 		}
