@@ -28,11 +28,7 @@ go_test(
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/license",
-        "//internal/txemail",
-        "//internal/txemail/txtypes",
         "//internal/types",
-        "@com_github_hexops_autogold_v2//:autogold",
         "@com_github_sourcegraph_log//:log",
-        "@com_github_stretchr_testify//require",
     ],
 )

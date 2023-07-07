@@ -125,7 +125,6 @@ func TestGetSiteAdmins(t *testing.T) {
 		}
 		createdUsers = append(createdUsers, newUser)
 
-		// set users 1 and 3 to admins
 		if i == 0 || i == 2 {
 			userStore.SetIsSiteAdmin(ctx, createdUsers[i].ID, true)
 		}

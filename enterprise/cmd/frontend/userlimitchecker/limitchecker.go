@@ -45,15 +45,12 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-// function to check whether the user count is approaching the license user limit
 func approachingOrOverUserLimit(userCount, userLimit int) bool {
 	return userCount >= userLimit-5
 }
 
-// function to get the user count
 func getUserCount(ctx context.Context, db database.DB) (int, error) {
-	userStore := db.Users()
-	userCount, err := userStore.Count(ctx, &database.UsersListOptions{})
+	userCount, err := db.Users().Count(ctx, &database.UsersListOptions{})
 	if err != nil {
 		return 0, err
 	}
@@ -64,9 +61,6 @@ func getLicenseUserLimit(ctx context.Context, db database.DB) (int, error) {
 	items, err := ps.NewDbLicense(db).List(ctx, ps.DbLicencesListNoOpt())
 	if err != nil {
 		return 0, err
-	}
-	if len(items) == 0 {
-		return 0, nil
 	}
 
 	for _, item := range items {
@@ -80,9 +74,7 @@ func getLicenseUserLimit(ctx context.Context, db database.DB) (int, error) {
 
 func getSiteAdmins(ctx context.Context, db database.DB) ([]string, error) {
 	var siteAdminEmails []string
-
-	userStore := db.Users()
-	users, err := userStore.List(ctx, &database.UsersListOptions{})
+	users, err := db.Users().List(ctx, &database.UsersListOptions{})
 	if err != nil {
 		return siteAdminEmails, err
 	}
@@ -93,7 +85,6 @@ func getSiteAdmins(ctx context.Context, db database.DB) ([]string, error) {
 			if err != nil {
 				return siteAdminEmails, err
 			}
-
 			siteAdminEmails = append(siteAdminEmails, email)
 		}
 	}
