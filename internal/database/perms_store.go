@@ -186,7 +186,7 @@ type PermsStore interface {
 // It is concurrency-safe and maintains data consistency over the 'user_permissions',
 // 'repo_permissions', 'user_pending_permissions', and 'repo_pending_permissions' tables.
 type permsStore struct {
-	ossDB  DB
+	db     DB
 	logger log.Logger
 	*basestore.Store
 
@@ -203,20 +203,20 @@ func Perms(logger log.Logger, db DB, clock func() time.Time) PermsStore {
 func perms(logger log.Logger, db DB, clock func() time.Time) *permsStore {
 	store := basestore.NewWithHandle(db.Handle())
 
-	return &permsStore{logger: logger, Store: store, clock: clock, ossDB: NewDBWith(logger, store)}
+	return &permsStore{logger: logger, Store: store, clock: clock, db: NewDBWith(logger, store)}
 
 }
 
 func PermsWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) PermsStore {
 	store := basestore.NewWithHandle(other.Handle())
 
-	return &permsStore{logger: logger, Store: store, clock: clock, ossDB: NewDBWith(logger, store)}
+	return &permsStore{logger: logger, Store: store, clock: clock, db: NewDBWith(logger, store)}
 }
 
 func (s *permsStore) With(other basestore.ShareableStore) PermsStore {
 	store := s.Store.With(other)
 
-	return &permsStore{logger: s.logger, Store: store, clock: s.clock, ossDB: NewDBWith(s.logger, store)}
+	return &permsStore{logger: s.logger, Store: store, clock: s.clock, db: NewDBWith(s.logger, store)}
 }
 
 func (s *permsStore) Transact(ctx context.Context) (PermsStore, error) {
@@ -1880,7 +1880,7 @@ type UserPermission struct {
 func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args *ListUserPermissionsArgs) ([]*UserPermission, error) {
 	// Set actor with provided userID to context.
 	ctx = actor.WithActor(ctx, actor.FromUser(userID))
-	authzParams, err := GetAuthzQueryParameters(ctx, s.ossDB)
+	authzParams, err := GetAuthzQueryParameters(ctx, s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -1997,7 +1997,7 @@ type RepoPermission struct {
 // ListRepoPermissions gets the list of users who has access to the repository, along with the reason
 // and timestamp for each permission.
 func (s *permsStore) ListRepoPermissions(ctx context.Context, repoID api.RepoID, args *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
-	authzParams, err := GetAuthzQueryParameters(context.Background(), s.ossDB)
+	authzParams, err := GetAuthzQueryParameters(context.Background(), s.db)
 	if err != nil {
 		return nil, err
 	}
@@ -2132,7 +2132,7 @@ WHERE
 `
 
 func (s *permsStore) IsRepoUnrestricted(ctx context.Context, repoID api.RepoID) (bool, error) {
-	authzParams, err := GetAuthzQueryParameters(context.Background(), s.ossDB)
+	authzParams, err := GetAuthzQueryParameters(context.Background(), s.db)
 	if err != nil {
 		return false, err
 	}
