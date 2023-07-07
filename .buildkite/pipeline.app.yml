@@ -11,6 +11,11 @@ steps:
             - |
               dir c:\buildkite-agent
             - |
+              cd
+            - |
+              cd
+              dir
+            - |
               dir '.\enterprise\dev\app\build-windows.sh'
 
   #     - label: ':bazel::linux: Build for Linux'
