@@ -2204,7 +2204,7 @@ ALTER SEQUENCE discussion_threads_target_repo_id_seq OWNED BY discussion_threads
 CREATE TABLE embedding_plugin_files (
     id integer NOT NULL,
     file_path text NOT NULL,
-    contents text NOT NULL,
+    contents bytea NOT NULL,
     embedding_plugin_id integer NOT NULL
 );
 

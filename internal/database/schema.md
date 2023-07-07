@@ -1337,7 +1337,7 @@ Referenced by:
 ---------------------+---------+-----------+----------+----------------------------------------------------
  id                  | integer |           | not null | nextval('embedding_plugin_files_id_seq'::regclass)
  file_path           | text    |           | not null | 
- contents            | text    |           | not null | 
+ contents            | bytea   |           | not null | 
  embedding_plugin_id | integer |           | not null | 
 Indexes:
     "embedding_plugin_files_pkey" PRIMARY KEY, btree (id)
