@@ -24,13 +24,17 @@ export class GenerateDiagram implements Recipe {
         void this.callEraser({ promptText, restApiClient: context.restApiClient })
             .then(formatResponse)
             .then((md: string) => {
+                // Pass formatted response to chat UI and end interaction
                 context.responseMultiplexer.publish(md)
+                context.responseMultiplexer.notifyTurnComplete()
             })
             .catch(async err => {
-                await showError(context, `Error generating diagram: ${err.message}`)
-            })
-            .finally(() => {
+                // Pass the message to the Chat UI and end interaction
+                // Also notify more prominently via toast
+                const msg = `Error generating diagram: ${err.message}`
+                context.responseMultiplexer.publish(msg)
                 context.responseMultiplexer.notifyTurnComplete()
+                await showError(context, msg)
             })
 
         return new Interaction(
