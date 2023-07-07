@@ -16,7 +16,7 @@ import (
 
 // NewGitHubInstallationWorker returns a goroutine.Handler that will backfill GitHub App
 // installation information from the GitHub API into the database.
-func NewGitHubInstallationWorker(db database.EnterpriseDB, logger log.Logger) goroutine.Handler {
+func NewGitHubInstallationWorker(db database.DB, logger log.Logger) goroutine.Handler {
 	return &githubAppInstallationWorker{
 		db:     db,
 		logger: logger,
@@ -24,7 +24,7 @@ func NewGitHubInstallationWorker(db database.EnterpriseDB, logger log.Logger) go
 }
 
 type githubAppInstallationWorker struct {
-	db     database.EnterpriseDB
+	db     database.DB
 	logger log.Logger
 }
 

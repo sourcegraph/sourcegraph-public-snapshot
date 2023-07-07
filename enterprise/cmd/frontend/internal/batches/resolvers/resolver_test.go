@@ -53,7 +53,7 @@ func TestNullIDResilience(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	sr := New(edb.NewEnterpriseDB(db), store.New(db, &observation.TestContext, nil), gitserver.NewMockClient(), logger)
+	sr := New(db, store.New(db, &observation.TestContext, nil), gitserver.NewMockClient(), logger)
 
 	s, err := newSchema(db, sr)
 	if err != nil {

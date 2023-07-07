@@ -36,12 +36,11 @@ func (gh *githupAppsInstallationJob) Routines(ctx context.Context, observationCt
 		return nil, errors.Wrap(err, "init DB")
 	}
 
-	edb := database.NewEnterpriseDB(db)
 	logger := log.Scoped("github_apps_installation", "")
 	return []goroutine.BackgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
 			context.Background(),
-			worker.NewGitHubInstallationWorker(edb, logger),
+			worker.NewGitHubInstallationWorker(db, logger),
 			goroutine.WithName("github_apps.installation_backfill"),
 			goroutine.WithDescription("backfills github apps installation ids and removes deleted github app installations"),
 			goroutine.WithInterval(24*time.Hour),

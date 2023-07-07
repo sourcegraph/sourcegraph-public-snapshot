@@ -6,36 +6,10 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
-
-type EnterpriseDB interface {
-	database.DB
-	GitHubApps() gha.GitHubAppsStore
-}
-
-func NewEnterpriseDB(db database.DB) EnterpriseDB {
-	// If the underlying type already implements EnterpriseDB,
-	// return that rather than wrapping it. This enables us to
-	// pass a mock EnterpriseDB through as a database.DB, and
-	// avoid overwriting its mocked methods by wrapping it.
-	if edb, ok := db.(EnterpriseDB); ok {
-		return edb
-	}
-	return &enterpriseDB{db}
-}
-
-type enterpriseDB struct {
-	database.DB
-}
-
-func (edb *enterpriseDB) GitHubApps() gha.GitHubAppsStore {
-	return gha.GitHubAppsWith(basestore.NewWithHandle(edb.Handle()))
-}
 
 type InsightsDB interface {
 	dbutil.DB

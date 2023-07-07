@@ -125,7 +125,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 }
 
 func newSchema(db database.DB, bcr graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	ghar := githubapp.NewResolver(log.NoOp(), edb.NewEnterpriseDB(db))
+	ghar := githubapp.NewResolver(log.NoOp(), db)
 	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, bcr, ghar)
 }
 

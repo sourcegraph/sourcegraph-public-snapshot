@@ -42,7 +42,7 @@ func TestGitHubInstallationWorker(t *testing.T) {
 		return nil
 	})
 
-	db := database.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 	db.GitHubAppsFunc.SetDefaultReturn(ghStore)
 
 	logger := logtest.Scoped(t)

@@ -34,7 +34,7 @@ import (
 
 func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlbackend.OwnResolver {
 	return &ownResolver{
-		db:           edb.NewEnterpriseDB(db),
+		db:           db,
 		gitserver:    gitserver,
 		ownServiceFn: func() own.Service { return own.NewService(gitserver, db) },
 		logger:       logger,
@@ -43,7 +43,7 @@ func New(db database.DB, gitserver gitserver.Client, logger log.Logger) graphqlb
 
 func NewWithService(db database.DB, gitserver gitserver.Client, ownService own.Service, logger log.Logger) graphqlbackend.OwnResolver {
 	return &ownResolver{
-		db:           edb.NewEnterpriseDB(db),
+		db:           db,
 		gitserver:    gitserver,
 		ownServiceFn: func() own.Service { return ownService },
 		logger:       logger,

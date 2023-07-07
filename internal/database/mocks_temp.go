@@ -22,6 +22,7 @@ import (
 	extsvc "github.com/sourcegraph/sourcegraph/internal/extsvc"
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	featureflag "github.com/sourcegraph/sourcegraph/internal/featureflag"
+	store "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	types1 "github.com/sourcegraph/sourcegraph/internal/own/types"
 	result "github.com/sourcegraph/sourcegraph/internal/search/result"
 	temporarysettings "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
@@ -13707,6 +13708,9 @@ type MockDB struct {
 	// FeatureFlagsFunc is an instance of a mock function object controlling
 	// the behavior of the method FeatureFlags.
 	FeatureFlagsFunc *DBFeatureFlagsFunc
+	// GitHubAppsFunc is an instance of a mock function object controlling
+	// the behavior of the method GitHubApps.
+	GitHubAppsFunc *DBGitHubAppsFunc
 	// GitserverLocalCloneFunc is an instance of a mock function object
 	// controlling the behavior of the method GitserverLocalClone.
 	GitserverLocalCloneFunc *DBGitserverLocalCloneFunc
@@ -13755,6 +13759,9 @@ type MockDB struct {
 	// PermissionsFunc is an instance of a mock function object controlling
 	// the behavior of the method Permissions.
 	PermissionsFunc *DBPermissionsFunc
+	// PermsFunc is an instance of a mock function object controlling the
+	// behavior of the method Perms.
+	PermsFunc *DBPermsFunc
 	// PhabricatorFunc is an instance of a mock function object controlling
 	// the behavior of the method Phabricator.
 	PhabricatorFunc *DBPhabricatorFunc
@@ -13934,6 +13941,11 @@ func NewMockDB() *MockDB {
 				return
 			},
 		},
+		GitHubAppsFunc: &DBGitHubAppsFunc{
+			defaultHook: func() (r0 store.GitHubAppsStore) {
+				return
+			},
+		},
 		GitserverLocalCloneFunc: &DBGitserverLocalCloneFunc{
 			defaultHook: func() (r0 GitserverLocalCloneStore) {
 				return
@@ -14011,6 +14023,11 @@ func NewMockDB() *MockDB {
 		},
 		PermissionsFunc: &DBPermissionsFunc{
 			defaultHook: func() (r0 PermissionStore) {
+				return
+			},
+		},
+		PermsFunc: &DBPermsFunc{
+			defaultHook: func() (r0 PermsStore) {
 				return
 			},
 		},
@@ -14251,6 +14268,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.FeatureFlags")
 			},
 		},
+		GitHubAppsFunc: &DBGitHubAppsFunc{
+			defaultHook: func() store.GitHubAppsStore {
+				panic("unexpected invocation of MockDB.GitHubApps")
+			},
+		},
 		GitserverLocalCloneFunc: &DBGitserverLocalCloneFunc{
 			defaultHook: func() GitserverLocalCloneStore {
 				panic("unexpected invocation of MockDB.GitserverLocalClone")
@@ -14329,6 +14351,11 @@ func NewStrictMockDB() *MockDB {
 		PermissionsFunc: &DBPermissionsFunc{
 			defaultHook: func() PermissionStore {
 				panic("unexpected invocation of MockDB.Permissions")
+			},
+		},
+		PermsFunc: &DBPermsFunc{
+			defaultHook: func() PermsStore {
+				panic("unexpected invocation of MockDB.Perms")
 			},
 		},
 		PhabricatorFunc: &DBPhabricatorFunc{
@@ -14534,6 +14561,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: i.FeatureFlags,
 		},
+		GitHubAppsFunc: &DBGitHubAppsFunc{
+			defaultHook: i.GitHubApps,
+		},
 		GitserverLocalCloneFunc: &DBGitserverLocalCloneFunc{
 			defaultHook: i.GitserverLocalClone,
 		},
@@ -14581,6 +14611,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		PermissionsFunc: &DBPermissionsFunc{
 			defaultHook: i.Permissions,
+		},
+		PermsFunc: &DBPermsFunc{
+			defaultHook: i.Perms,
 		},
 		PhabricatorFunc: &DBPhabricatorFunc{
 			defaultHook: i.Phabricator,
@@ -16369,6 +16402,104 @@ func (c DBFeatureFlagsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// DBGitHubAppsFunc describes the behavior when the GitHubApps method of the
+// parent MockDB instance is invoked.
+type DBGitHubAppsFunc struct {
+	defaultHook func() store.GitHubAppsStore
+	hooks       []func() store.GitHubAppsStore
+	history     []DBGitHubAppsFuncCall
+	mutex       sync.Mutex
+}
+
+// GitHubApps delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) GitHubApps() store.GitHubAppsStore {
+	r0 := m.GitHubAppsFunc.nextHook()()
+	m.GitHubAppsFunc.appendCall(DBGitHubAppsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the GitHubApps method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBGitHubAppsFunc) SetDefaultHook(hook func() store.GitHubAppsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitHubApps method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBGitHubAppsFunc) PushHook(hook func() store.GitHubAppsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBGitHubAppsFunc) SetDefaultReturn(r0 store.GitHubAppsStore) {
+	f.SetDefaultHook(func() store.GitHubAppsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBGitHubAppsFunc) PushReturn(r0 store.GitHubAppsStore) {
+	f.PushHook(func() store.GitHubAppsStore {
+		return r0
+	})
+}
+
+func (f *DBGitHubAppsFunc) nextHook() func() store.GitHubAppsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBGitHubAppsFunc) appendCall(r0 DBGitHubAppsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBGitHubAppsFuncCall objects describing the
+// invocations of this function.
+func (f *DBGitHubAppsFunc) History() []DBGitHubAppsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBGitHubAppsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBGitHubAppsFuncCall is an object that describes an invocation of method
+// GitHubApps on an instance of MockDB.
+type DBGitHubAppsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 store.GitHubAppsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBGitHubAppsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBGitHubAppsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
 // DBGitserverLocalCloneFunc describes the behavior when the
 // GitserverLocalClone method of the parent MockDB instance is invoked.
 type DBGitserverLocalCloneFunc struct {
@@ -17953,6 +18084,104 @@ func (c DBPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBPermsFunc describes the behavior when the Perms method of the parent
+// MockDB instance is invoked.
+type DBPermsFunc struct {
+	defaultHook func() PermsStore
+	hooks       []func() PermsStore
+	history     []DBPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// Perms delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Perms() PermsStore {
+	r0 := m.PermsFunc.nextHook()()
+	m.PermsFunc.appendCall(DBPermsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Perms method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBPermsFunc) SetDefaultHook(hook func() PermsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Perms method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBPermsFunc) PushHook(hook func() PermsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBPermsFunc) SetDefaultReturn(r0 PermsStore) {
+	f.SetDefaultHook(func() PermsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBPermsFunc) PushReturn(r0 PermsStore) {
+	f.PushHook(func() PermsStore {
+		return r0
+	})
+}
+
+func (f *DBPermsFunc) nextHook() func() PermsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBPermsFunc) appendCall(r0 DBPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBPermsFuncCall objects describing the
+// invocations of this function.
+func (f *DBPermsFunc) History() []DBPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBPermsFuncCall is an object that describes an invocation of method Perms
+// on an instance of MockDB.
+type DBPermsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 PermsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBPermsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBPermsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -51085,6 +51314,3801 @@ func (c PermissionSyncJobStoreWithFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c PermissionSyncJobStoreWithFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockPermsStore is a mock implementation of the PermsStore interface (from
+// the package github.com/sourcegraph/sourcegraph/internal/database) used
+// for unit testing.
+type MockPermsStore struct {
+	// CountReposWithNoPermsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountReposWithNoPerms.
+	CountReposWithNoPermsFunc *PermsStoreCountReposWithNoPermsFunc
+	// CountReposWithStalePermsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountReposWithStalePerms.
+	CountReposWithStalePermsFunc *PermsStoreCountReposWithStalePermsFunc
+	// CountUsersWithNoPermsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountUsersWithNoPerms.
+	CountUsersWithNoPermsFunc *PermsStoreCountUsersWithNoPermsFunc
+	// CountUsersWithStalePermsFunc is an instance of a mock function object
+	// controlling the behavior of the method CountUsersWithStalePerms.
+	CountUsersWithStalePermsFunc *PermsStoreCountUsersWithStalePermsFunc
+	// DeleteAllUserPendingPermissionsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// DeleteAllUserPendingPermissions.
+	DeleteAllUserPendingPermissionsFunc *PermsStoreDeleteAllUserPendingPermissionsFunc
+	// DeleteAllUserPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteAllUserPermissions.
+	DeleteAllUserPermissionsFunc *PermsStoreDeleteAllUserPermissionsFunc
+	// DoneFunc is an instance of a mock function object controlling the
+	// behavior of the method Done.
+	DoneFunc *PermsStoreDoneFunc
+	// FetchReposByExternalAccountFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// FetchReposByExternalAccount.
+	FetchReposByExternalAccountFunc *PermsStoreFetchReposByExternalAccountFunc
+	// GetUserIDsByExternalAccountsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// GetUserIDsByExternalAccounts.
+	GetUserIDsByExternalAccountsFunc *PermsStoreGetUserIDsByExternalAccountsFunc
+	// GrantPendingPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method GrantPendingPermissions.
+	GrantPendingPermissionsFunc *PermsStoreGrantPendingPermissionsFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *PermsStoreHandleFunc
+	// IsRepoUnrestrictedFunc is an instance of a mock function object
+	// controlling the behavior of the method IsRepoUnrestricted.
+	IsRepoUnrestrictedFunc *PermsStoreIsRepoUnrestrictedFunc
+	// ListPendingUsersFunc is an instance of a mock function object
+	// controlling the behavior of the method ListPendingUsers.
+	ListPendingUsersFunc *PermsStoreListPendingUsersFunc
+	// ListRepoPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListRepoPermissions.
+	ListRepoPermissionsFunc *PermsStoreListRepoPermissionsFunc
+	// ListUserPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method ListUserPermissions.
+	ListUserPermissionsFunc *PermsStoreListUserPermissionsFunc
+	// LoadRepoPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method LoadRepoPermissions.
+	LoadRepoPermissionsFunc *PermsStoreLoadRepoPermissionsFunc
+	// LoadUserPendingPermissionsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// LoadUserPendingPermissions.
+	LoadUserPendingPermissionsFunc *PermsStoreLoadUserPendingPermissionsFunc
+	// LoadUserPermissionsFunc is an instance of a mock function object
+	// controlling the behavior of the method LoadUserPermissions.
+	LoadUserPermissionsFunc *PermsStoreLoadUserPermissionsFunc
+	// MapUsersFunc is an instance of a mock function object controlling the
+	// behavior of the method MapUsers.
+	MapUsersFunc *PermsStoreMapUsersFunc
+	// MetricsFunc is an instance of a mock function object controlling the
+	// behavior of the method Metrics.
+	MetricsFunc *PermsStoreMetricsFunc
+	// RepoIDsWithNoPermsFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoIDsWithNoPerms.
+	RepoIDsWithNoPermsFunc *PermsStoreRepoIDsWithNoPermsFunc
+	// ReposIDsWithOldestPermsFunc is an instance of a mock function object
+	// controlling the behavior of the method ReposIDsWithOldestPerms.
+	ReposIDsWithOldestPermsFunc *PermsStoreReposIDsWithOldestPermsFunc
+	// SetRepoPendingPermissionsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SetRepoPendingPermissions.
+	SetRepoPendingPermissionsFunc *PermsStoreSetRepoPendingPermissionsFunc
+	// SetRepoPermissionsUnrestrictedFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SetRepoPermissionsUnrestricted.
+	SetRepoPermissionsUnrestrictedFunc *PermsStoreSetRepoPermissionsUnrestrictedFunc
+	// SetRepoPermsFunc is an instance of a mock function object controlling
+	// the behavior of the method SetRepoPerms.
+	SetRepoPermsFunc *PermsStoreSetRepoPermsFunc
+	// SetUserExternalAccountPermsFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SetUserExternalAccountPerms.
+	SetUserExternalAccountPermsFunc *PermsStoreSetUserExternalAccountPermsFunc
+	// TransactFunc is an instance of a mock function object controlling the
+	// behavior of the method Transact.
+	TransactFunc *PermsStoreTransactFunc
+	// UserIDsWithNoPermsFunc is an instance of a mock function object
+	// controlling the behavior of the method UserIDsWithNoPerms.
+	UserIDsWithNoPermsFunc *PermsStoreUserIDsWithNoPermsFunc
+	// UserIDsWithOldestPermsFunc is an instance of a mock function object
+	// controlling the behavior of the method UserIDsWithOldestPerms.
+	UserIDsWithOldestPermsFunc *PermsStoreUserIDsWithOldestPermsFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *PermsStoreWithFunc
+}
+
+// NewMockPermsStore creates a new mock of the PermsStore interface. All
+// methods return zero values for all results, unless overwritten.
+func NewMockPermsStore() *MockPermsStore {
+	return &MockPermsStore{
+		CountReposWithNoPermsFunc: &PermsStoreCountReposWithNoPermsFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
+		CountReposWithStalePermsFunc: &PermsStoreCountReposWithStalePermsFunc{
+			defaultHook: func(context.Context, time.Duration) (r0 int, r1 error) {
+				return
+			},
+		},
+		CountUsersWithNoPermsFunc: &PermsStoreCountUsersWithNoPermsFunc{
+			defaultHook: func(context.Context) (r0 int, r1 error) {
+				return
+			},
+		},
+		CountUsersWithStalePermsFunc: &PermsStoreCountUsersWithStalePermsFunc{
+			defaultHook: func(context.Context, time.Duration) (r0 int, r1 error) {
+				return
+			},
+		},
+		DeleteAllUserPendingPermissionsFunc: &PermsStoreDeleteAllUserPendingPermissionsFunc{
+			defaultHook: func(context.Context, *extsvc.Accounts) (r0 error) {
+				return
+			},
+		},
+		DeleteAllUserPermissionsFunc: &PermsStoreDeleteAllUserPermissionsFunc{
+			defaultHook: func(context.Context, int32) (r0 error) {
+				return
+			},
+		},
+		DoneFunc: &PermsStoreDoneFunc{
+			defaultHook: func(error) (r0 error) {
+				return
+			},
+		},
+		FetchReposByExternalAccountFunc: &PermsStoreFetchReposByExternalAccountFunc{
+			defaultHook: func(context.Context, int32) (r0 []api.RepoID, r1 error) {
+				return
+			},
+		},
+		GetUserIDsByExternalAccountsFunc: &PermsStoreGetUserIDsByExternalAccountsFunc{
+			defaultHook: func(context.Context, *extsvc.Accounts) (r0 map[string]authz.UserIDWithExternalAccountID, r1 error) {
+				return
+			},
+		},
+		GrantPendingPermissionsFunc: &PermsStoreGrantPendingPermissionsFunc{
+			defaultHook: func(context.Context, *authz.UserGrantPermissions) (r0 error) {
+				return
+			},
+		},
+		HandleFunc: &PermsStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		IsRepoUnrestrictedFunc: &PermsStoreIsRepoUnrestrictedFunc{
+			defaultHook: func(context.Context, api.RepoID) (r0 bool, r1 error) {
+				return
+			},
+		},
+		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
+			defaultHook: func(context.Context, string, string) (r0 []string, r1 error) {
+				return
+			},
+		},
+		ListRepoPermissionsFunc: &PermsStoreListRepoPermissionsFunc{
+			defaultHook: func(context.Context, api.RepoID, *ListRepoPermissionsArgs) (r0 []*RepoPermission, r1 error) {
+				return
+			},
+		},
+		ListUserPermissionsFunc: &PermsStoreListUserPermissionsFunc{
+			defaultHook: func(context.Context, int32, *ListUserPermissionsArgs) (r0 []*UserPermission, r1 error) {
+				return
+			},
+		},
+		LoadRepoPermissionsFunc: &PermsStoreLoadRepoPermissionsFunc{
+			defaultHook: func(context.Context, int32) (r0 []authz.Permission, r1 error) {
+				return
+			},
+		},
+		LoadUserPendingPermissionsFunc: &PermsStoreLoadUserPendingPermissionsFunc{
+			defaultHook: func(context.Context, *authz.UserPendingPermissions) (r0 error) {
+				return
+			},
+		},
+		LoadUserPermissionsFunc: &PermsStoreLoadUserPermissionsFunc{
+			defaultHook: func(context.Context, int32) (r0 []authz.Permission, r1 error) {
+				return
+			},
+		},
+		MapUsersFunc: &PermsStoreMapUsersFunc{
+			defaultHook: func(context.Context, []string, *schema.PermissionsUserMapping) (r0 map[string]int32, r1 error) {
+				return
+			},
+		},
+		MetricsFunc: &PermsStoreMetricsFunc{
+			defaultHook: func(context.Context, time.Duration) (r0 *PermsMetrics, r1 error) {
+				return
+			},
+		},
+		RepoIDsWithNoPermsFunc: &PermsStoreRepoIDsWithNoPermsFunc{
+			defaultHook: func(context.Context) (r0 []api.RepoID, r1 error) {
+				return
+			},
+		},
+		ReposIDsWithOldestPermsFunc: &PermsStoreReposIDsWithOldestPermsFunc{
+			defaultHook: func(context.Context, int, time.Duration) (r0 map[api.RepoID]time.Time, r1 error) {
+				return
+			},
+		},
+		SetRepoPendingPermissionsFunc: &PermsStoreSetRepoPendingPermissionsFunc{
+			defaultHook: func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) (r0 error) {
+				return
+			},
+		},
+		SetRepoPermissionsUnrestrictedFunc: &PermsStoreSetRepoPermissionsUnrestrictedFunc{
+			defaultHook: func(context.Context, []int32, bool) (r0 error) {
+				return
+			},
+		},
+		SetRepoPermsFunc: &PermsStoreSetRepoPermsFunc{
+			defaultHook: func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (r0 *SetPermissionsResult, r1 error) {
+				return
+			},
+		},
+		SetUserExternalAccountPermsFunc: &PermsStoreSetUserExternalAccountPermsFunc{
+			defaultHook: func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (r0 *SetPermissionsResult, r1 error) {
+				return
+			},
+		},
+		TransactFunc: &PermsStoreTransactFunc{
+			defaultHook: func(context.Context) (r0 PermsStore, r1 error) {
+				return
+			},
+		},
+		UserIDsWithNoPermsFunc: &PermsStoreUserIDsWithNoPermsFunc{
+			defaultHook: func(context.Context) (r0 []int32, r1 error) {
+				return
+			},
+		},
+		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
+			defaultHook: func(context.Context, int, time.Duration) (r0 map[int32]time.Time, r1 error) {
+				return
+			},
+		},
+		WithFunc: &PermsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 PermsStore) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockPermsStore creates a new mock of the PermsStore interface.
+// All methods panic on invocation, unless overwritten.
+func NewStrictMockPermsStore() *MockPermsStore {
+	return &MockPermsStore{
+		CountReposWithNoPermsFunc: &PermsStoreCountReposWithNoPermsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockPermsStore.CountReposWithNoPerms")
+			},
+		},
+		CountReposWithStalePermsFunc: &PermsStoreCountReposWithStalePermsFunc{
+			defaultHook: func(context.Context, time.Duration) (int, error) {
+				panic("unexpected invocation of MockPermsStore.CountReposWithStalePerms")
+			},
+		},
+		CountUsersWithNoPermsFunc: &PermsStoreCountUsersWithNoPermsFunc{
+			defaultHook: func(context.Context) (int, error) {
+				panic("unexpected invocation of MockPermsStore.CountUsersWithNoPerms")
+			},
+		},
+		CountUsersWithStalePermsFunc: &PermsStoreCountUsersWithStalePermsFunc{
+			defaultHook: func(context.Context, time.Duration) (int, error) {
+				panic("unexpected invocation of MockPermsStore.CountUsersWithStalePerms")
+			},
+		},
+		DeleteAllUserPendingPermissionsFunc: &PermsStoreDeleteAllUserPendingPermissionsFunc{
+			defaultHook: func(context.Context, *extsvc.Accounts) error {
+				panic("unexpected invocation of MockPermsStore.DeleteAllUserPendingPermissions")
+			},
+		},
+		DeleteAllUserPermissionsFunc: &PermsStoreDeleteAllUserPermissionsFunc{
+			defaultHook: func(context.Context, int32) error {
+				panic("unexpected invocation of MockPermsStore.DeleteAllUserPermissions")
+			},
+		},
+		DoneFunc: &PermsStoreDoneFunc{
+			defaultHook: func(error) error {
+				panic("unexpected invocation of MockPermsStore.Done")
+			},
+		},
+		FetchReposByExternalAccountFunc: &PermsStoreFetchReposByExternalAccountFunc{
+			defaultHook: func(context.Context, int32) ([]api.RepoID, error) {
+				panic("unexpected invocation of MockPermsStore.FetchReposByExternalAccount")
+			},
+		},
+		GetUserIDsByExternalAccountsFunc: &PermsStoreGetUserIDsByExternalAccountsFunc{
+			defaultHook: func(context.Context, *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error) {
+				panic("unexpected invocation of MockPermsStore.GetUserIDsByExternalAccounts")
+			},
+		},
+		GrantPendingPermissionsFunc: &PermsStoreGrantPendingPermissionsFunc{
+			defaultHook: func(context.Context, *authz.UserGrantPermissions) error {
+				panic("unexpected invocation of MockPermsStore.GrantPendingPermissions")
+			},
+		},
+		HandleFunc: &PermsStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockPermsStore.Handle")
+			},
+		},
+		IsRepoUnrestrictedFunc: &PermsStoreIsRepoUnrestrictedFunc{
+			defaultHook: func(context.Context, api.RepoID) (bool, error) {
+				panic("unexpected invocation of MockPermsStore.IsRepoUnrestricted")
+			},
+		},
+		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
+			defaultHook: func(context.Context, string, string) ([]string, error) {
+				panic("unexpected invocation of MockPermsStore.ListPendingUsers")
+			},
+		},
+		ListRepoPermissionsFunc: &PermsStoreListRepoPermissionsFunc{
+			defaultHook: func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+				panic("unexpected invocation of MockPermsStore.ListRepoPermissions")
+			},
+		},
+		ListUserPermissionsFunc: &PermsStoreListUserPermissionsFunc{
+			defaultHook: func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error) {
+				panic("unexpected invocation of MockPermsStore.ListUserPermissions")
+			},
+		},
+		LoadRepoPermissionsFunc: &PermsStoreLoadRepoPermissionsFunc{
+			defaultHook: func(context.Context, int32) ([]authz.Permission, error) {
+				panic("unexpected invocation of MockPermsStore.LoadRepoPermissions")
+			},
+		},
+		LoadUserPendingPermissionsFunc: &PermsStoreLoadUserPendingPermissionsFunc{
+			defaultHook: func(context.Context, *authz.UserPendingPermissions) error {
+				panic("unexpected invocation of MockPermsStore.LoadUserPendingPermissions")
+			},
+		},
+		LoadUserPermissionsFunc: &PermsStoreLoadUserPermissionsFunc{
+			defaultHook: func(context.Context, int32) ([]authz.Permission, error) {
+				panic("unexpected invocation of MockPermsStore.LoadUserPermissions")
+			},
+		},
+		MapUsersFunc: &PermsStoreMapUsersFunc{
+			defaultHook: func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error) {
+				panic("unexpected invocation of MockPermsStore.MapUsers")
+			},
+		},
+		MetricsFunc: &PermsStoreMetricsFunc{
+			defaultHook: func(context.Context, time.Duration) (*PermsMetrics, error) {
+				panic("unexpected invocation of MockPermsStore.Metrics")
+			},
+		},
+		RepoIDsWithNoPermsFunc: &PermsStoreRepoIDsWithNoPermsFunc{
+			defaultHook: func(context.Context) ([]api.RepoID, error) {
+				panic("unexpected invocation of MockPermsStore.RepoIDsWithNoPerms")
+			},
+		},
+		ReposIDsWithOldestPermsFunc: &PermsStoreReposIDsWithOldestPermsFunc{
+			defaultHook: func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error) {
+				panic("unexpected invocation of MockPermsStore.ReposIDsWithOldestPerms")
+			},
+		},
+		SetRepoPendingPermissionsFunc: &PermsStoreSetRepoPendingPermissionsFunc{
+			defaultHook: func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) error {
+				panic("unexpected invocation of MockPermsStore.SetRepoPendingPermissions")
+			},
+		},
+		SetRepoPermissionsUnrestrictedFunc: &PermsStoreSetRepoPermissionsUnrestrictedFunc{
+			defaultHook: func(context.Context, []int32, bool) error {
+				panic("unexpected invocation of MockPermsStore.SetRepoPermissionsUnrestricted")
+			},
+		},
+		SetRepoPermsFunc: &PermsStoreSetRepoPermsFunc{
+			defaultHook: func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*SetPermissionsResult, error) {
+				panic("unexpected invocation of MockPermsStore.SetRepoPerms")
+			},
+		},
+		SetUserExternalAccountPermsFunc: &PermsStoreSetUserExternalAccountPermsFunc{
+			defaultHook: func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*SetPermissionsResult, error) {
+				panic("unexpected invocation of MockPermsStore.SetUserExternalAccountPerms")
+			},
+		},
+		TransactFunc: &PermsStoreTransactFunc{
+			defaultHook: func(context.Context) (PermsStore, error) {
+				panic("unexpected invocation of MockPermsStore.Transact")
+			},
+		},
+		UserIDsWithNoPermsFunc: &PermsStoreUserIDsWithNoPermsFunc{
+			defaultHook: func(context.Context) ([]int32, error) {
+				panic("unexpected invocation of MockPermsStore.UserIDsWithNoPerms")
+			},
+		},
+		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
+			defaultHook: func(context.Context, int, time.Duration) (map[int32]time.Time, error) {
+				panic("unexpected invocation of MockPermsStore.UserIDsWithOldestPerms")
+			},
+		},
+		WithFunc: &PermsStoreWithFunc{
+			defaultHook: func(basestore.ShareableStore) PermsStore {
+				panic("unexpected invocation of MockPermsStore.With")
+			},
+		},
+	}
+}
+
+// NewMockPermsStoreFrom creates a new mock of the MockPermsStore interface.
+// All methods delegate to the given implementation, unless overwritten.
+func NewMockPermsStoreFrom(i PermsStore) *MockPermsStore {
+	return &MockPermsStore{
+		CountReposWithNoPermsFunc: &PermsStoreCountReposWithNoPermsFunc{
+			defaultHook: i.CountReposWithNoPerms,
+		},
+		CountReposWithStalePermsFunc: &PermsStoreCountReposWithStalePermsFunc{
+			defaultHook: i.CountReposWithStalePerms,
+		},
+		CountUsersWithNoPermsFunc: &PermsStoreCountUsersWithNoPermsFunc{
+			defaultHook: i.CountUsersWithNoPerms,
+		},
+		CountUsersWithStalePermsFunc: &PermsStoreCountUsersWithStalePermsFunc{
+			defaultHook: i.CountUsersWithStalePerms,
+		},
+		DeleteAllUserPendingPermissionsFunc: &PermsStoreDeleteAllUserPendingPermissionsFunc{
+			defaultHook: i.DeleteAllUserPendingPermissions,
+		},
+		DeleteAllUserPermissionsFunc: &PermsStoreDeleteAllUserPermissionsFunc{
+			defaultHook: i.DeleteAllUserPermissions,
+		},
+		DoneFunc: &PermsStoreDoneFunc{
+			defaultHook: i.Done,
+		},
+		FetchReposByExternalAccountFunc: &PermsStoreFetchReposByExternalAccountFunc{
+			defaultHook: i.FetchReposByExternalAccount,
+		},
+		GetUserIDsByExternalAccountsFunc: &PermsStoreGetUserIDsByExternalAccountsFunc{
+			defaultHook: i.GetUserIDsByExternalAccounts,
+		},
+		GrantPendingPermissionsFunc: &PermsStoreGrantPendingPermissionsFunc{
+			defaultHook: i.GrantPendingPermissions,
+		},
+		HandleFunc: &PermsStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		IsRepoUnrestrictedFunc: &PermsStoreIsRepoUnrestrictedFunc{
+			defaultHook: i.IsRepoUnrestricted,
+		},
+		ListPendingUsersFunc: &PermsStoreListPendingUsersFunc{
+			defaultHook: i.ListPendingUsers,
+		},
+		ListRepoPermissionsFunc: &PermsStoreListRepoPermissionsFunc{
+			defaultHook: i.ListRepoPermissions,
+		},
+		ListUserPermissionsFunc: &PermsStoreListUserPermissionsFunc{
+			defaultHook: i.ListUserPermissions,
+		},
+		LoadRepoPermissionsFunc: &PermsStoreLoadRepoPermissionsFunc{
+			defaultHook: i.LoadRepoPermissions,
+		},
+		LoadUserPendingPermissionsFunc: &PermsStoreLoadUserPendingPermissionsFunc{
+			defaultHook: i.LoadUserPendingPermissions,
+		},
+		LoadUserPermissionsFunc: &PermsStoreLoadUserPermissionsFunc{
+			defaultHook: i.LoadUserPermissions,
+		},
+		MapUsersFunc: &PermsStoreMapUsersFunc{
+			defaultHook: i.MapUsers,
+		},
+		MetricsFunc: &PermsStoreMetricsFunc{
+			defaultHook: i.Metrics,
+		},
+		RepoIDsWithNoPermsFunc: &PermsStoreRepoIDsWithNoPermsFunc{
+			defaultHook: i.RepoIDsWithNoPerms,
+		},
+		ReposIDsWithOldestPermsFunc: &PermsStoreReposIDsWithOldestPermsFunc{
+			defaultHook: i.ReposIDsWithOldestPerms,
+		},
+		SetRepoPendingPermissionsFunc: &PermsStoreSetRepoPendingPermissionsFunc{
+			defaultHook: i.SetRepoPendingPermissions,
+		},
+		SetRepoPermissionsUnrestrictedFunc: &PermsStoreSetRepoPermissionsUnrestrictedFunc{
+			defaultHook: i.SetRepoPermissionsUnrestricted,
+		},
+		SetRepoPermsFunc: &PermsStoreSetRepoPermsFunc{
+			defaultHook: i.SetRepoPerms,
+		},
+		SetUserExternalAccountPermsFunc: &PermsStoreSetUserExternalAccountPermsFunc{
+			defaultHook: i.SetUserExternalAccountPerms,
+		},
+		TransactFunc: &PermsStoreTransactFunc{
+			defaultHook: i.Transact,
+		},
+		UserIDsWithNoPermsFunc: &PermsStoreUserIDsWithNoPermsFunc{
+			defaultHook: i.UserIDsWithNoPerms,
+		},
+		UserIDsWithOldestPermsFunc: &PermsStoreUserIDsWithOldestPermsFunc{
+			defaultHook: i.UserIDsWithOldestPerms,
+		},
+		WithFunc: &PermsStoreWithFunc{
+			defaultHook: i.With,
+		},
+	}
+}
+
+// PermsStoreCountReposWithNoPermsFunc describes the behavior when the
+// CountReposWithNoPerms method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreCountReposWithNoPermsFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []PermsStoreCountReposWithNoPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountReposWithNoPerms delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) CountReposWithNoPerms(v0 context.Context) (int, error) {
+	r0, r1 := m.CountReposWithNoPermsFunc.nextHook()(v0)
+	m.CountReposWithNoPermsFunc.appendCall(PermsStoreCountReposWithNoPermsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountReposWithNoPerms method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreCountReposWithNoPermsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountReposWithNoPerms method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreCountReposWithNoPermsFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreCountReposWithNoPermsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreCountReposWithNoPermsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreCountReposWithNoPermsFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreCountReposWithNoPermsFunc) appendCall(r0 PermsStoreCountReposWithNoPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreCountReposWithNoPermsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreCountReposWithNoPermsFunc) History() []PermsStoreCountReposWithNoPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreCountReposWithNoPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreCountReposWithNoPermsFuncCall is an object that describes an
+// invocation of method CountReposWithNoPerms on an instance of
+// MockPermsStore.
+type PermsStoreCountReposWithNoPermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreCountReposWithNoPermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreCountReposWithNoPermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreCountReposWithStalePermsFunc describes the behavior when the
+// CountReposWithStalePerms method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreCountReposWithStalePermsFunc struct {
+	defaultHook func(context.Context, time.Duration) (int, error)
+	hooks       []func(context.Context, time.Duration) (int, error)
+	history     []PermsStoreCountReposWithStalePermsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountReposWithStalePerms delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) CountReposWithStalePerms(v0 context.Context, v1 time.Duration) (int, error) {
+	r0, r1 := m.CountReposWithStalePermsFunc.nextHook()(v0, v1)
+	m.CountReposWithStalePermsFunc.appendCall(PermsStoreCountReposWithStalePermsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountReposWithStalePerms method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreCountReposWithStalePermsFunc) SetDefaultHook(hook func(context.Context, time.Duration) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountReposWithStalePerms method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreCountReposWithStalePermsFunc) PushHook(hook func(context.Context, time.Duration) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreCountReposWithStalePermsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreCountReposWithStalePermsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, time.Duration) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreCountReposWithStalePermsFunc) nextHook() func(context.Context, time.Duration) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreCountReposWithStalePermsFunc) appendCall(r0 PermsStoreCountReposWithStalePermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreCountReposWithStalePermsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreCountReposWithStalePermsFunc) History() []PermsStoreCountReposWithStalePermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreCountReposWithStalePermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreCountReposWithStalePermsFuncCall is an object that describes an
+// invocation of method CountReposWithStalePerms on an instance of
+// MockPermsStore.
+type PermsStoreCountReposWithStalePermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreCountReposWithStalePermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreCountReposWithStalePermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreCountUsersWithNoPermsFunc describes the behavior when the
+// CountUsersWithNoPerms method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreCountUsersWithNoPermsFunc struct {
+	defaultHook func(context.Context) (int, error)
+	hooks       []func(context.Context) (int, error)
+	history     []PermsStoreCountUsersWithNoPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountUsersWithNoPerms delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) CountUsersWithNoPerms(v0 context.Context) (int, error) {
+	r0, r1 := m.CountUsersWithNoPermsFunc.nextHook()(v0)
+	m.CountUsersWithNoPermsFunc.appendCall(PermsStoreCountUsersWithNoPermsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountUsersWithNoPerms method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreCountUsersWithNoPermsFunc) SetDefaultHook(hook func(context.Context) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountUsersWithNoPerms method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreCountUsersWithNoPermsFunc) PushHook(hook func(context.Context) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreCountUsersWithNoPermsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreCountUsersWithNoPermsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreCountUsersWithNoPermsFunc) nextHook() func(context.Context) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreCountUsersWithNoPermsFunc) appendCall(r0 PermsStoreCountUsersWithNoPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreCountUsersWithNoPermsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreCountUsersWithNoPermsFunc) History() []PermsStoreCountUsersWithNoPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreCountUsersWithNoPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreCountUsersWithNoPermsFuncCall is an object that describes an
+// invocation of method CountUsersWithNoPerms on an instance of
+// MockPermsStore.
+type PermsStoreCountUsersWithNoPermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreCountUsersWithNoPermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreCountUsersWithNoPermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreCountUsersWithStalePermsFunc describes the behavior when the
+// CountUsersWithStalePerms method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreCountUsersWithStalePermsFunc struct {
+	defaultHook func(context.Context, time.Duration) (int, error)
+	hooks       []func(context.Context, time.Duration) (int, error)
+	history     []PermsStoreCountUsersWithStalePermsFuncCall
+	mutex       sync.Mutex
+}
+
+// CountUsersWithStalePerms delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) CountUsersWithStalePerms(v0 context.Context, v1 time.Duration) (int, error) {
+	r0, r1 := m.CountUsersWithStalePermsFunc.nextHook()(v0, v1)
+	m.CountUsersWithStalePermsFunc.appendCall(PermsStoreCountUsersWithStalePermsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// CountUsersWithStalePerms method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreCountUsersWithStalePermsFunc) SetDefaultHook(hook func(context.Context, time.Duration) (int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CountUsersWithStalePerms method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreCountUsersWithStalePermsFunc) PushHook(hook func(context.Context, time.Duration) (int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreCountUsersWithStalePermsFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration) (int, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreCountUsersWithStalePermsFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, time.Duration) (int, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreCountUsersWithStalePermsFunc) nextHook() func(context.Context, time.Duration) (int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreCountUsersWithStalePermsFunc) appendCall(r0 PermsStoreCountUsersWithStalePermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreCountUsersWithStalePermsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreCountUsersWithStalePermsFunc) History() []PermsStoreCountUsersWithStalePermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreCountUsersWithStalePermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreCountUsersWithStalePermsFuncCall is an object that describes an
+// invocation of method CountUsersWithStalePerms on an instance of
+// MockPermsStore.
+type PermsStoreCountUsersWithStalePermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 int
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreCountUsersWithStalePermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreCountUsersWithStalePermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreDeleteAllUserPendingPermissionsFunc describes the behavior when
+// the DeleteAllUserPendingPermissions method of the parent MockPermsStore
+// instance is invoked.
+type PermsStoreDeleteAllUserPendingPermissionsFunc struct {
+	defaultHook func(context.Context, *extsvc.Accounts) error
+	hooks       []func(context.Context, *extsvc.Accounts) error
+	history     []PermsStoreDeleteAllUserPendingPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteAllUserPendingPermissions delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) DeleteAllUserPendingPermissions(v0 context.Context, v1 *extsvc.Accounts) error {
+	r0 := m.DeleteAllUserPendingPermissionsFunc.nextHook()(v0, v1)
+	m.DeleteAllUserPendingPermissionsFunc.appendCall(PermsStoreDeleteAllUserPendingPermissionsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteAllUserPendingPermissions method of the parent MockPermsStore
+// instance is invoked and the hook queue is empty.
+func (f *PermsStoreDeleteAllUserPendingPermissionsFunc) SetDefaultHook(hook func(context.Context, *extsvc.Accounts) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteAllUserPendingPermissions method of the parent MockPermsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *PermsStoreDeleteAllUserPendingPermissionsFunc) PushHook(hook func(context.Context, *extsvc.Accounts) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreDeleteAllUserPendingPermissionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *extsvc.Accounts) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreDeleteAllUserPendingPermissionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *extsvc.Accounts) error {
+		return r0
+	})
+}
+
+func (f *PermsStoreDeleteAllUserPendingPermissionsFunc) nextHook() func(context.Context, *extsvc.Accounts) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreDeleteAllUserPendingPermissionsFunc) appendCall(r0 PermsStoreDeleteAllUserPendingPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermsStoreDeleteAllUserPendingPermissionsFuncCall objects describing the
+// invocations of this function.
+func (f *PermsStoreDeleteAllUserPendingPermissionsFunc) History() []PermsStoreDeleteAllUserPendingPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreDeleteAllUserPendingPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreDeleteAllUserPendingPermissionsFuncCall is an object that
+// describes an invocation of method DeleteAllUserPendingPermissions on an
+// instance of MockPermsStore.
+type PermsStoreDeleteAllUserPendingPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *extsvc.Accounts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreDeleteAllUserPendingPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreDeleteAllUserPendingPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreDeleteAllUserPermissionsFunc describes the behavior when the
+// DeleteAllUserPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreDeleteAllUserPermissionsFunc struct {
+	defaultHook func(context.Context, int32) error
+	hooks       []func(context.Context, int32) error
+	history     []PermsStoreDeleteAllUserPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteAllUserPermissions delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) DeleteAllUserPermissions(v0 context.Context, v1 int32) error {
+	r0 := m.DeleteAllUserPermissionsFunc.nextHook()(v0, v1)
+	m.DeleteAllUserPermissionsFunc.appendCall(PermsStoreDeleteAllUserPermissionsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteAllUserPermissions method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreDeleteAllUserPermissionsFunc) SetDefaultHook(hook func(context.Context, int32) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteAllUserPermissions method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreDeleteAllUserPermissionsFunc) PushHook(hook func(context.Context, int32) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreDeleteAllUserPermissionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreDeleteAllUserPermissionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int32) error {
+		return r0
+	})
+}
+
+func (f *PermsStoreDeleteAllUserPermissionsFunc) nextHook() func(context.Context, int32) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreDeleteAllUserPermissionsFunc) appendCall(r0 PermsStoreDeleteAllUserPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreDeleteAllUserPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreDeleteAllUserPermissionsFunc) History() []PermsStoreDeleteAllUserPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreDeleteAllUserPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreDeleteAllUserPermissionsFuncCall is an object that describes an
+// invocation of method DeleteAllUserPermissions on an instance of
+// MockPermsStore.
+type PermsStoreDeleteAllUserPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreDeleteAllUserPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreDeleteAllUserPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreDoneFunc describes the behavior when the Done method of the
+// parent MockPermsStore instance is invoked.
+type PermsStoreDoneFunc struct {
+	defaultHook func(error) error
+	hooks       []func(error) error
+	history     []PermsStoreDoneFuncCall
+	mutex       sync.Mutex
+}
+
+// Done delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermsStore) Done(v0 error) error {
+	r0 := m.DoneFunc.nextHook()(v0)
+	m.DoneFunc.appendCall(PermsStoreDoneFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Done method of the
+// parent MockPermsStore instance is invoked and the hook queue is empty.
+func (f *PermsStoreDoneFunc) SetDefaultHook(hook func(error) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Done method of the parent MockPermsStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *PermsStoreDoneFunc) PushHook(hook func(error) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreDoneFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(error) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreDoneFunc) PushReturn(r0 error) {
+	f.PushHook(func(error) error {
+		return r0
+	})
+}
+
+func (f *PermsStoreDoneFunc) nextHook() func(error) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreDoneFunc) appendCall(r0 PermsStoreDoneFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreDoneFuncCall objects describing
+// the invocations of this function.
+func (f *PermsStoreDoneFunc) History() []PermsStoreDoneFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreDoneFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreDoneFuncCall is an object that describes an invocation of
+// method Done on an instance of MockPermsStore.
+type PermsStoreDoneFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 error
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreDoneFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreDoneFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreFetchReposByExternalAccountFunc describes the behavior when the
+// FetchReposByExternalAccount method of the parent MockPermsStore instance
+// is invoked.
+type PermsStoreFetchReposByExternalAccountFunc struct {
+	defaultHook func(context.Context, int32) ([]api.RepoID, error)
+	hooks       []func(context.Context, int32) ([]api.RepoID, error)
+	history     []PermsStoreFetchReposByExternalAccountFuncCall
+	mutex       sync.Mutex
+}
+
+// FetchReposByExternalAccount delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) FetchReposByExternalAccount(v0 context.Context, v1 int32) ([]api.RepoID, error) {
+	r0, r1 := m.FetchReposByExternalAccountFunc.nextHook()(v0, v1)
+	m.FetchReposByExternalAccountFunc.appendCall(PermsStoreFetchReposByExternalAccountFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// FetchReposByExternalAccount method of the parent MockPermsStore instance
+// is invoked and the hook queue is empty.
+func (f *PermsStoreFetchReposByExternalAccountFunc) SetDefaultHook(hook func(context.Context, int32) ([]api.RepoID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FetchReposByExternalAccount method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreFetchReposByExternalAccountFunc) PushHook(hook func(context.Context, int32) ([]api.RepoID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreFetchReposByExternalAccountFunc) SetDefaultReturn(r0 []api.RepoID, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) ([]api.RepoID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreFetchReposByExternalAccountFunc) PushReturn(r0 []api.RepoID, r1 error) {
+	f.PushHook(func(context.Context, int32) ([]api.RepoID, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreFetchReposByExternalAccountFunc) nextHook() func(context.Context, int32) ([]api.RepoID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreFetchReposByExternalAccountFunc) appendCall(r0 PermsStoreFetchReposByExternalAccountFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermsStoreFetchReposByExternalAccountFuncCall objects describing the
+// invocations of this function.
+func (f *PermsStoreFetchReposByExternalAccountFunc) History() []PermsStoreFetchReposByExternalAccountFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreFetchReposByExternalAccountFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreFetchReposByExternalAccountFuncCall is an object that describes
+// an invocation of method FetchReposByExternalAccount on an instance of
+// MockPermsStore.
+type PermsStoreFetchReposByExternalAccountFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.RepoID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreFetchReposByExternalAccountFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreFetchReposByExternalAccountFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreGetUserIDsByExternalAccountsFunc describes the behavior when
+// the GetUserIDsByExternalAccounts method of the parent MockPermsStore
+// instance is invoked.
+type PermsStoreGetUserIDsByExternalAccountsFunc struct {
+	defaultHook func(context.Context, *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error)
+	hooks       []func(context.Context, *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error)
+	history     []PermsStoreGetUserIDsByExternalAccountsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUserIDsByExternalAccounts delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) GetUserIDsByExternalAccounts(v0 context.Context, v1 *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error) {
+	r0, r1 := m.GetUserIDsByExternalAccountsFunc.nextHook()(v0, v1)
+	m.GetUserIDsByExternalAccountsFunc.appendCall(PermsStoreGetUserIDsByExternalAccountsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetUserIDsByExternalAccounts method of the parent MockPermsStore instance
+// is invoked and the hook queue is empty.
+func (f *PermsStoreGetUserIDsByExternalAccountsFunc) SetDefaultHook(hook func(context.Context, *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUserIDsByExternalAccounts method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreGetUserIDsByExternalAccountsFunc) PushHook(hook func(context.Context, *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreGetUserIDsByExternalAccountsFunc) SetDefaultReturn(r0 map[string]authz.UserIDWithExternalAccountID, r1 error) {
+	f.SetDefaultHook(func(context.Context, *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreGetUserIDsByExternalAccountsFunc) PushReturn(r0 map[string]authz.UserIDWithExternalAccountID, r1 error) {
+	f.PushHook(func(context.Context, *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreGetUserIDsByExternalAccountsFunc) nextHook() func(context.Context, *extsvc.Accounts) (map[string]authz.UserIDWithExternalAccountID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreGetUserIDsByExternalAccountsFunc) appendCall(r0 PermsStoreGetUserIDsByExternalAccountsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermsStoreGetUserIDsByExternalAccountsFuncCall objects describing the
+// invocations of this function.
+func (f *PermsStoreGetUserIDsByExternalAccountsFunc) History() []PermsStoreGetUserIDsByExternalAccountsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreGetUserIDsByExternalAccountsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreGetUserIDsByExternalAccountsFuncCall is an object that
+// describes an invocation of method GetUserIDsByExternalAccounts on an
+// instance of MockPermsStore.
+type PermsStoreGetUserIDsByExternalAccountsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *extsvc.Accounts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string]authz.UserIDWithExternalAccountID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreGetUserIDsByExternalAccountsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreGetUserIDsByExternalAccountsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreGrantPendingPermissionsFunc describes the behavior when the
+// GrantPendingPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreGrantPendingPermissionsFunc struct {
+	defaultHook func(context.Context, *authz.UserGrantPermissions) error
+	hooks       []func(context.Context, *authz.UserGrantPermissions) error
+	history     []PermsStoreGrantPendingPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// GrantPendingPermissions delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) GrantPendingPermissions(v0 context.Context, v1 *authz.UserGrantPermissions) error {
+	r0 := m.GrantPendingPermissionsFunc.nextHook()(v0, v1)
+	m.GrantPendingPermissionsFunc.appendCall(PermsStoreGrantPendingPermissionsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// GrantPendingPermissions method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreGrantPendingPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.UserGrantPermissions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GrantPendingPermissions method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreGrantPendingPermissionsFunc) PushHook(hook func(context.Context, *authz.UserGrantPermissions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreGrantPendingPermissionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *authz.UserGrantPermissions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreGrantPendingPermissionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *authz.UserGrantPermissions) error {
+		return r0
+	})
+}
+
+func (f *PermsStoreGrantPendingPermissionsFunc) nextHook() func(context.Context, *authz.UserGrantPermissions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreGrantPendingPermissionsFunc) appendCall(r0 PermsStoreGrantPendingPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreGrantPendingPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreGrantPendingPermissionsFunc) History() []PermsStoreGrantPendingPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreGrantPendingPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreGrantPendingPermissionsFuncCall is an object that describes an
+// invocation of method GrantPendingPermissions on an instance of
+// MockPermsStore.
+type PermsStoreGrantPendingPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *authz.UserGrantPermissions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreGrantPendingPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreGrantPendingPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreHandleFunc describes the behavior when the Handle method of the
+// parent MockPermsStore instance is invoked.
+type PermsStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []PermsStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermsStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(PermsStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockPermsStore instance is invoked and the hook queue is empty.
+func (f *PermsStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockPermsStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PermsStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *PermsStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreHandleFunc) appendCall(r0 PermsStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreHandleFuncCall objects describing
+// the invocations of this function.
+func (f *PermsStoreHandleFunc) History() []PermsStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreHandleFuncCall is an object that describes an invocation of
+// method Handle on an instance of MockPermsStore.
+type PermsStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreIsRepoUnrestrictedFunc describes the behavior when the
+// IsRepoUnrestricted method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreIsRepoUnrestrictedFunc struct {
+	defaultHook func(context.Context, api.RepoID) (bool, error)
+	hooks       []func(context.Context, api.RepoID) (bool, error)
+	history     []PermsStoreIsRepoUnrestrictedFuncCall
+	mutex       sync.Mutex
+}
+
+// IsRepoUnrestricted delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) IsRepoUnrestricted(v0 context.Context, v1 api.RepoID) (bool, error) {
+	r0, r1 := m.IsRepoUnrestrictedFunc.nextHook()(v0, v1)
+	m.IsRepoUnrestrictedFunc.appendCall(PermsStoreIsRepoUnrestrictedFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the IsRepoUnrestricted
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreIsRepoUnrestrictedFunc) SetDefaultHook(hook func(context.Context, api.RepoID) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// IsRepoUnrestricted method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreIsRepoUnrestrictedFunc) PushHook(hook func(context.Context, api.RepoID) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreIsRepoUnrestrictedFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreIsRepoUnrestrictedFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreIsRepoUnrestrictedFunc) nextHook() func(context.Context, api.RepoID) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreIsRepoUnrestrictedFunc) appendCall(r0 PermsStoreIsRepoUnrestrictedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreIsRepoUnrestrictedFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreIsRepoUnrestrictedFunc) History() []PermsStoreIsRepoUnrestrictedFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreIsRepoUnrestrictedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreIsRepoUnrestrictedFuncCall is an object that describes an
+// invocation of method IsRepoUnrestricted on an instance of MockPermsStore.
+type PermsStoreIsRepoUnrestrictedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreIsRepoUnrestrictedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreIsRepoUnrestrictedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreListPendingUsersFunc describes the behavior when the
+// ListPendingUsers method of the parent MockPermsStore instance is invoked.
+type PermsStoreListPendingUsersFunc struct {
+	defaultHook func(context.Context, string, string) ([]string, error)
+	hooks       []func(context.Context, string, string) ([]string, error)
+	history     []PermsStoreListPendingUsersFuncCall
+	mutex       sync.Mutex
+}
+
+// ListPendingUsers delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) ListPendingUsers(v0 context.Context, v1 string, v2 string) ([]string, error) {
+	r0, r1 := m.ListPendingUsersFunc.nextHook()(v0, v1, v2)
+	m.ListPendingUsersFunc.appendCall(PermsStoreListPendingUsersFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListPendingUsers
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreListPendingUsersFunc) SetDefaultHook(hook func(context.Context, string, string) ([]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListPendingUsers method of the parent MockPermsStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PermsStoreListPendingUsersFunc) PushHook(hook func(context.Context, string, string) ([]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreListPendingUsersFunc) SetDefaultReturn(r0 []string, r1 error) {
+	f.SetDefaultHook(func(context.Context, string, string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreListPendingUsersFunc) PushReturn(r0 []string, r1 error) {
+	f.PushHook(func(context.Context, string, string) ([]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreListPendingUsersFunc) nextHook() func(context.Context, string, string) ([]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreListPendingUsersFunc) appendCall(r0 PermsStoreListPendingUsersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreListPendingUsersFuncCall objects
+// describing the invocations of this function.
+func (f *PermsStoreListPendingUsersFunc) History() []PermsStoreListPendingUsersFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreListPendingUsersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreListPendingUsersFuncCall is an object that describes an
+// invocation of method ListPendingUsers on an instance of MockPermsStore.
+type PermsStoreListPendingUsersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreListPendingUsersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreListPendingUsersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreListRepoPermissionsFunc describes the behavior when the
+// ListRepoPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreListRepoPermissionsFunc struct {
+	defaultHook func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error)
+	hooks       []func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error)
+	history     []PermsStoreListRepoPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListRepoPermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) ListRepoPermissions(v0 context.Context, v1 api.RepoID, v2 *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+	r0, r1 := m.ListRepoPermissionsFunc.nextHook()(v0, v1, v2)
+	m.ListRepoPermissionsFunc.appendCall(PermsStoreListRepoPermissionsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListRepoPermissions
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreListRepoPermissionsFunc) SetDefaultHook(hook func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListRepoPermissions method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreListRepoPermissionsFunc) PushHook(hook func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreListRepoPermissionsFunc) SetDefaultReturn(r0 []*RepoPermission, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreListRepoPermissionsFunc) PushReturn(r0 []*RepoPermission, r1 error) {
+	f.PushHook(func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreListRepoPermissionsFunc) nextHook() func(context.Context, api.RepoID, *ListRepoPermissionsArgs) ([]*RepoPermission, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreListRepoPermissionsFunc) appendCall(r0 PermsStoreListRepoPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreListRepoPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreListRepoPermissionsFunc) History() []PermsStoreListRepoPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreListRepoPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreListRepoPermissionsFuncCall is an object that describes an
+// invocation of method ListRepoPermissions on an instance of
+// MockPermsStore.
+type PermsStoreListRepoPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *ListRepoPermissionsArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*RepoPermission
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreListRepoPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreListRepoPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreListUserPermissionsFunc describes the behavior when the
+// ListUserPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreListUserPermissionsFunc struct {
+	defaultHook func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error)
+	hooks       []func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error)
+	history     []PermsStoreListUserPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// ListUserPermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) ListUserPermissions(v0 context.Context, v1 int32, v2 *ListUserPermissionsArgs) ([]*UserPermission, error) {
+	r0, r1 := m.ListUserPermissionsFunc.nextHook()(v0, v1, v2)
+	m.ListUserPermissionsFunc.appendCall(PermsStoreListUserPermissionsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the ListUserPermissions
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreListUserPermissionsFunc) SetDefaultHook(hook func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListUserPermissions method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreListUserPermissionsFunc) PushHook(hook func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreListUserPermissionsFunc) SetDefaultReturn(r0 []*UserPermission, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreListUserPermissionsFunc) PushReturn(r0 []*UserPermission, r1 error) {
+	f.PushHook(func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreListUserPermissionsFunc) nextHook() func(context.Context, int32, *ListUserPermissionsArgs) ([]*UserPermission, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreListUserPermissionsFunc) appendCall(r0 PermsStoreListUserPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreListUserPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreListUserPermissionsFunc) History() []PermsStoreListUserPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreListUserPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreListUserPermissionsFuncCall is an object that describes an
+// invocation of method ListUserPermissions on an instance of
+// MockPermsStore.
+type PermsStoreListUserPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *ListUserPermissionsArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []*UserPermission
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreListUserPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreListUserPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreLoadRepoPermissionsFunc describes the behavior when the
+// LoadRepoPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreLoadRepoPermissionsFunc struct {
+	defaultHook func(context.Context, int32) ([]authz.Permission, error)
+	hooks       []func(context.Context, int32) ([]authz.Permission, error)
+	history     []PermsStoreLoadRepoPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// LoadRepoPermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) LoadRepoPermissions(v0 context.Context, v1 int32) ([]authz.Permission, error) {
+	r0, r1 := m.LoadRepoPermissionsFunc.nextHook()(v0, v1)
+	m.LoadRepoPermissionsFunc.appendCall(PermsStoreLoadRepoPermissionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LoadRepoPermissions
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreLoadRepoPermissionsFunc) SetDefaultHook(hook func(context.Context, int32) ([]authz.Permission, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LoadRepoPermissions method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreLoadRepoPermissionsFunc) PushHook(hook func(context.Context, int32) ([]authz.Permission, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreLoadRepoPermissionsFunc) SetDefaultReturn(r0 []authz.Permission, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreLoadRepoPermissionsFunc) PushReturn(r0 []authz.Permission, r1 error) {
+	f.PushHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreLoadRepoPermissionsFunc) nextHook() func(context.Context, int32) ([]authz.Permission, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreLoadRepoPermissionsFunc) appendCall(r0 PermsStoreLoadRepoPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreLoadRepoPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreLoadRepoPermissionsFunc) History() []PermsStoreLoadRepoPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreLoadRepoPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreLoadRepoPermissionsFuncCall is an object that describes an
+// invocation of method LoadRepoPermissions on an instance of
+// MockPermsStore.
+type PermsStoreLoadRepoPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []authz.Permission
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreLoadRepoPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreLoadRepoPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreLoadUserPendingPermissionsFunc describes the behavior when the
+// LoadUserPendingPermissions method of the parent MockPermsStore instance
+// is invoked.
+type PermsStoreLoadUserPendingPermissionsFunc struct {
+	defaultHook func(context.Context, *authz.UserPendingPermissions) error
+	hooks       []func(context.Context, *authz.UserPendingPermissions) error
+	history     []PermsStoreLoadUserPendingPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// LoadUserPendingPermissions delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) LoadUserPendingPermissions(v0 context.Context, v1 *authz.UserPendingPermissions) error {
+	r0 := m.LoadUserPendingPermissionsFunc.nextHook()(v0, v1)
+	m.LoadUserPendingPermissionsFunc.appendCall(PermsStoreLoadUserPendingPermissionsFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// LoadUserPendingPermissions method of the parent MockPermsStore instance
+// is invoked and the hook queue is empty.
+func (f *PermsStoreLoadUserPendingPermissionsFunc) SetDefaultHook(hook func(context.Context, *authz.UserPendingPermissions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LoadUserPendingPermissions method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreLoadUserPendingPermissionsFunc) PushHook(hook func(context.Context, *authz.UserPendingPermissions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreLoadUserPendingPermissionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *authz.UserPendingPermissions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreLoadUserPendingPermissionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *authz.UserPendingPermissions) error {
+		return r0
+	})
+}
+
+func (f *PermsStoreLoadUserPendingPermissionsFunc) nextHook() func(context.Context, *authz.UserPendingPermissions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreLoadUserPendingPermissionsFunc) appendCall(r0 PermsStoreLoadUserPendingPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermsStoreLoadUserPendingPermissionsFuncCall objects describing the
+// invocations of this function.
+func (f *PermsStoreLoadUserPendingPermissionsFunc) History() []PermsStoreLoadUserPendingPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreLoadUserPendingPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreLoadUserPendingPermissionsFuncCall is an object that describes
+// an invocation of method LoadUserPendingPermissions on an instance of
+// MockPermsStore.
+type PermsStoreLoadUserPendingPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *authz.UserPendingPermissions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreLoadUserPendingPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreLoadUserPendingPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreLoadUserPermissionsFunc describes the behavior when the
+// LoadUserPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreLoadUserPermissionsFunc struct {
+	defaultHook func(context.Context, int32) ([]authz.Permission, error)
+	hooks       []func(context.Context, int32) ([]authz.Permission, error)
+	history     []PermsStoreLoadUserPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// LoadUserPermissions delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) LoadUserPermissions(v0 context.Context, v1 int32) ([]authz.Permission, error) {
+	r0, r1 := m.LoadUserPermissionsFunc.nextHook()(v0, v1)
+	m.LoadUserPermissionsFunc.appendCall(PermsStoreLoadUserPermissionsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the LoadUserPermissions
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreLoadUserPermissionsFunc) SetDefaultHook(hook func(context.Context, int32) ([]authz.Permission, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LoadUserPermissions method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreLoadUserPermissionsFunc) PushHook(hook func(context.Context, int32) ([]authz.Permission, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreLoadUserPermissionsFunc) SetDefaultReturn(r0 []authz.Permission, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreLoadUserPermissionsFunc) PushReturn(r0 []authz.Permission, r1 error) {
+	f.PushHook(func(context.Context, int32) ([]authz.Permission, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreLoadUserPermissionsFunc) nextHook() func(context.Context, int32) ([]authz.Permission, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreLoadUserPermissionsFunc) appendCall(r0 PermsStoreLoadUserPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreLoadUserPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreLoadUserPermissionsFunc) History() []PermsStoreLoadUserPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreLoadUserPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreLoadUserPermissionsFuncCall is an object that describes an
+// invocation of method LoadUserPermissions on an instance of
+// MockPermsStore.
+type PermsStoreLoadUserPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []authz.Permission
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreLoadUserPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreLoadUserPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreMapUsersFunc describes the behavior when the MapUsers method of
+// the parent MockPermsStore instance is invoked.
+type PermsStoreMapUsersFunc struct {
+	defaultHook func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error)
+	hooks       []func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error)
+	history     []PermsStoreMapUsersFuncCall
+	mutex       sync.Mutex
+}
+
+// MapUsers delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermsStore) MapUsers(v0 context.Context, v1 []string, v2 *schema.PermissionsUserMapping) (map[string]int32, error) {
+	r0, r1 := m.MapUsersFunc.nextHook()(v0, v1, v2)
+	m.MapUsersFunc.appendCall(PermsStoreMapUsersFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the MapUsers method of
+// the parent MockPermsStore instance is invoked and the hook queue is
+// empty.
+func (f *PermsStoreMapUsersFunc) SetDefaultHook(hook func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MapUsers method of the parent MockPermsStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PermsStoreMapUsersFunc) PushHook(hook func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreMapUsersFunc) SetDefaultReturn(r0 map[string]int32, r1 error) {
+	f.SetDefaultHook(func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreMapUsersFunc) PushReturn(r0 map[string]int32, r1 error) {
+	f.PushHook(func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreMapUsersFunc) nextHook() func(context.Context, []string, *schema.PermissionsUserMapping) (map[string]int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreMapUsersFunc) appendCall(r0 PermsStoreMapUsersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreMapUsersFuncCall objects
+// describing the invocations of this function.
+func (f *PermsStoreMapUsersFunc) History() []PermsStoreMapUsersFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreMapUsersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreMapUsersFuncCall is an object that describes an invocation of
+// method MapUsers on an instance of MockPermsStore.
+type PermsStoreMapUsersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *schema.PermissionsUserMapping
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[string]int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreMapUsersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreMapUsersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreMetricsFunc describes the behavior when the Metrics method of
+// the parent MockPermsStore instance is invoked.
+type PermsStoreMetricsFunc struct {
+	defaultHook func(context.Context, time.Duration) (*PermsMetrics, error)
+	hooks       []func(context.Context, time.Duration) (*PermsMetrics, error)
+	history     []PermsStoreMetricsFuncCall
+	mutex       sync.Mutex
+}
+
+// Metrics delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermsStore) Metrics(v0 context.Context, v1 time.Duration) (*PermsMetrics, error) {
+	r0, r1 := m.MetricsFunc.nextHook()(v0, v1)
+	m.MetricsFunc.appendCall(PermsStoreMetricsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Metrics method of
+// the parent MockPermsStore instance is invoked and the hook queue is
+// empty.
+func (f *PermsStoreMetricsFunc) SetDefaultHook(hook func(context.Context, time.Duration) (*PermsMetrics, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Metrics method of the parent MockPermsStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PermsStoreMetricsFunc) PushHook(hook func(context.Context, time.Duration) (*PermsMetrics, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreMetricsFunc) SetDefaultReturn(r0 *PermsMetrics, r1 error) {
+	f.SetDefaultHook(func(context.Context, time.Duration) (*PermsMetrics, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreMetricsFunc) PushReturn(r0 *PermsMetrics, r1 error) {
+	f.PushHook(func(context.Context, time.Duration) (*PermsMetrics, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreMetricsFunc) nextHook() func(context.Context, time.Duration) (*PermsMetrics, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreMetricsFunc) appendCall(r0 PermsStoreMetricsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreMetricsFuncCall objects
+// describing the invocations of this function.
+func (f *PermsStoreMetricsFunc) History() []PermsStoreMetricsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreMetricsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreMetricsFuncCall is an object that describes an invocation of
+// method Metrics on an instance of MockPermsStore.
+type PermsStoreMetricsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *PermsMetrics
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreMetricsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreMetricsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreRepoIDsWithNoPermsFunc describes the behavior when the
+// RepoIDsWithNoPerms method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreRepoIDsWithNoPermsFunc struct {
+	defaultHook func(context.Context) ([]api.RepoID, error)
+	hooks       []func(context.Context) ([]api.RepoID, error)
+	history     []PermsStoreRepoIDsWithNoPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// RepoIDsWithNoPerms delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) RepoIDsWithNoPerms(v0 context.Context) ([]api.RepoID, error) {
+	r0, r1 := m.RepoIDsWithNoPermsFunc.nextHook()(v0)
+	m.RepoIDsWithNoPermsFunc.appendCall(PermsStoreRepoIDsWithNoPermsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the RepoIDsWithNoPerms
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreRepoIDsWithNoPermsFunc) SetDefaultHook(hook func(context.Context) ([]api.RepoID, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// RepoIDsWithNoPerms method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreRepoIDsWithNoPermsFunc) PushHook(hook func(context.Context) ([]api.RepoID, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreRepoIDsWithNoPermsFunc) SetDefaultReturn(r0 []api.RepoID, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]api.RepoID, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreRepoIDsWithNoPermsFunc) PushReturn(r0 []api.RepoID, r1 error) {
+	f.PushHook(func(context.Context) ([]api.RepoID, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreRepoIDsWithNoPermsFunc) nextHook() func(context.Context) ([]api.RepoID, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreRepoIDsWithNoPermsFunc) appendCall(r0 PermsStoreRepoIDsWithNoPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreRepoIDsWithNoPermsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreRepoIDsWithNoPermsFunc) History() []PermsStoreRepoIDsWithNoPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreRepoIDsWithNoPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreRepoIDsWithNoPermsFuncCall is an object that describes an
+// invocation of method RepoIDsWithNoPerms on an instance of MockPermsStore.
+type PermsStoreRepoIDsWithNoPermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []api.RepoID
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreRepoIDsWithNoPermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreRepoIDsWithNoPermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreReposIDsWithOldestPermsFunc describes the behavior when the
+// ReposIDsWithOldestPerms method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreReposIDsWithOldestPermsFunc struct {
+	defaultHook func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error)
+	hooks       []func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error)
+	history     []PermsStoreReposIDsWithOldestPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// ReposIDsWithOldestPerms delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) ReposIDsWithOldestPerms(v0 context.Context, v1 int, v2 time.Duration) (map[api.RepoID]time.Time, error) {
+	r0, r1 := m.ReposIDsWithOldestPermsFunc.nextHook()(v0, v1, v2)
+	m.ReposIDsWithOldestPermsFunc.appendCall(PermsStoreReposIDsWithOldestPermsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// ReposIDsWithOldestPerms method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreReposIDsWithOldestPermsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReposIDsWithOldestPerms method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreReposIDsWithOldestPermsFunc) PushHook(hook func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreReposIDsWithOldestPermsFunc) SetDefaultReturn(r0 map[api.RepoID]time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreReposIDsWithOldestPermsFunc) PushReturn(r0 map[api.RepoID]time.Time, r1 error) {
+	f.PushHook(func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreReposIDsWithOldestPermsFunc) nextHook() func(context.Context, int, time.Duration) (map[api.RepoID]time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreReposIDsWithOldestPermsFunc) appendCall(r0 PermsStoreReposIDsWithOldestPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreReposIDsWithOldestPermsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreReposIDsWithOldestPermsFunc) History() []PermsStoreReposIDsWithOldestPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreReposIDsWithOldestPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreReposIDsWithOldestPermsFuncCall is an object that describes an
+// invocation of method ReposIDsWithOldestPerms on an instance of
+// MockPermsStore.
+type PermsStoreReposIDsWithOldestPermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[api.RepoID]time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreReposIDsWithOldestPermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreReposIDsWithOldestPermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreSetRepoPendingPermissionsFunc describes the behavior when the
+// SetRepoPendingPermissions method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreSetRepoPendingPermissionsFunc struct {
+	defaultHook func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) error
+	hooks       []func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) error
+	history     []PermsStoreSetRepoPendingPermissionsFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRepoPendingPermissions delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) SetRepoPendingPermissions(v0 context.Context, v1 *extsvc.Accounts, v2 *authz.RepoPermissions) error {
+	r0 := m.SetRepoPendingPermissionsFunc.nextHook()(v0, v1, v2)
+	m.SetRepoPendingPermissionsFunc.appendCall(PermsStoreSetRepoPendingPermissionsFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetRepoPendingPermissions method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreSetRepoPendingPermissionsFunc) SetDefaultHook(hook func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRepoPendingPermissions method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreSetRepoPendingPermissionsFunc) PushHook(hook func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreSetRepoPendingPermissionsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreSetRepoPendingPermissionsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) error {
+		return r0
+	})
+}
+
+func (f *PermsStoreSetRepoPendingPermissionsFunc) nextHook() func(context.Context, *extsvc.Accounts, *authz.RepoPermissions) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreSetRepoPendingPermissionsFunc) appendCall(r0 PermsStoreSetRepoPendingPermissionsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreSetRepoPendingPermissionsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreSetRepoPendingPermissionsFunc) History() []PermsStoreSetRepoPendingPermissionsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreSetRepoPendingPermissionsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreSetRepoPendingPermissionsFuncCall is an object that describes
+// an invocation of method SetRepoPendingPermissions on an instance of
+// MockPermsStore.
+type PermsStoreSetRepoPendingPermissionsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *extsvc.Accounts
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *authz.RepoPermissions
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreSetRepoPendingPermissionsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreSetRepoPendingPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreSetRepoPermissionsUnrestrictedFunc describes the behavior when
+// the SetRepoPermissionsUnrestricted method of the parent MockPermsStore
+// instance is invoked.
+type PermsStoreSetRepoPermissionsUnrestrictedFunc struct {
+	defaultHook func(context.Context, []int32, bool) error
+	hooks       []func(context.Context, []int32, bool) error
+	history     []PermsStoreSetRepoPermissionsUnrestrictedFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRepoPermissionsUnrestricted delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) SetRepoPermissionsUnrestricted(v0 context.Context, v1 []int32, v2 bool) error {
+	r0 := m.SetRepoPermissionsUnrestrictedFunc.nextHook()(v0, v1, v2)
+	m.SetRepoPermissionsUnrestrictedFunc.appendCall(PermsStoreSetRepoPermissionsUnrestrictedFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetRepoPermissionsUnrestricted method of the parent MockPermsStore
+// instance is invoked and the hook queue is empty.
+func (f *PermsStoreSetRepoPermissionsUnrestrictedFunc) SetDefaultHook(hook func(context.Context, []int32, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRepoPermissionsUnrestricted method of the parent MockPermsStore
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *PermsStoreSetRepoPermissionsUnrestrictedFunc) PushHook(hook func(context.Context, []int32, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreSetRepoPermissionsUnrestrictedFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, []int32, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreSetRepoPermissionsUnrestrictedFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, []int32, bool) error {
+		return r0
+	})
+}
+
+func (f *PermsStoreSetRepoPermissionsUnrestrictedFunc) nextHook() func(context.Context, []int32, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreSetRepoPermissionsUnrestrictedFunc) appendCall(r0 PermsStoreSetRepoPermissionsUnrestrictedFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermsStoreSetRepoPermissionsUnrestrictedFuncCall objects describing the
+// invocations of this function.
+func (f *PermsStoreSetRepoPermissionsUnrestrictedFunc) History() []PermsStoreSetRepoPermissionsUnrestrictedFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreSetRepoPermissionsUnrestrictedFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreSetRepoPermissionsUnrestrictedFuncCall is an object that
+// describes an invocation of method SetRepoPermissionsUnrestricted on an
+// instance of MockPermsStore.
+type PermsStoreSetRepoPermissionsUnrestrictedFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreSetRepoPermissionsUnrestrictedFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreSetRepoPermissionsUnrestrictedFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// PermsStoreSetRepoPermsFunc describes the behavior when the SetRepoPerms
+// method of the parent MockPermsStore instance is invoked.
+type PermsStoreSetRepoPermsFunc struct {
+	defaultHook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*SetPermissionsResult, error)
+	hooks       []func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*SetPermissionsResult, error)
+	history     []PermsStoreSetRepoPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRepoPerms delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockPermsStore) SetRepoPerms(v0 context.Context, v1 int32, v2 []authz.UserIDWithExternalAccountID, v3 authz.PermsSource) (*SetPermissionsResult, error) {
+	r0, r1 := m.SetRepoPermsFunc.nextHook()(v0, v1, v2, v3)
+	m.SetRepoPermsFunc.appendCall(PermsStoreSetRepoPermsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the SetRepoPerms method
+// of the parent MockPermsStore instance is invoked and the hook queue is
+// empty.
+func (f *PermsStoreSetRepoPermsFunc) SetDefaultHook(hook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*SetPermissionsResult, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRepoPerms method of the parent MockPermsStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *PermsStoreSetRepoPermsFunc) PushHook(hook func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*SetPermissionsResult, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreSetRepoPermsFunc) SetDefaultReturn(r0 *SetPermissionsResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*SetPermissionsResult, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreSetRepoPermsFunc) PushReturn(r0 *SetPermissionsResult, r1 error) {
+	f.PushHook(func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*SetPermissionsResult, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreSetRepoPermsFunc) nextHook() func(context.Context, int32, []authz.UserIDWithExternalAccountID, authz.PermsSource) (*SetPermissionsResult, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreSetRepoPermsFunc) appendCall(r0 PermsStoreSetRepoPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreSetRepoPermsFuncCall objects
+// describing the invocations of this function.
+func (f *PermsStoreSetRepoPermsFunc) History() []PermsStoreSetRepoPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreSetRepoPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreSetRepoPermsFuncCall is an object that describes an invocation
+// of method SetRepoPerms on an instance of MockPermsStore.
+type PermsStoreSetRepoPermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int32
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []authz.UserIDWithExternalAccountID
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 authz.PermsSource
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *SetPermissionsResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreSetRepoPermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreSetRepoPermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreSetUserExternalAccountPermsFunc describes the behavior when the
+// SetUserExternalAccountPerms method of the parent MockPermsStore instance
+// is invoked.
+type PermsStoreSetUserExternalAccountPermsFunc struct {
+	defaultHook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*SetPermissionsResult, error)
+	hooks       []func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*SetPermissionsResult, error)
+	history     []PermsStoreSetUserExternalAccountPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// SetUserExternalAccountPerms delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) SetUserExternalAccountPerms(v0 context.Context, v1 authz.UserIDWithExternalAccountID, v2 []int32, v3 authz.PermsSource) (*SetPermissionsResult, error) {
+	r0, r1 := m.SetUserExternalAccountPermsFunc.nextHook()(v0, v1, v2, v3)
+	m.SetUserExternalAccountPermsFunc.appendCall(PermsStoreSetUserExternalAccountPermsFuncCall{v0, v1, v2, v3, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// SetUserExternalAccountPerms method of the parent MockPermsStore instance
+// is invoked and the hook queue is empty.
+func (f *PermsStoreSetUserExternalAccountPermsFunc) SetDefaultHook(hook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*SetPermissionsResult, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetUserExternalAccountPerms method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreSetUserExternalAccountPermsFunc) PushHook(hook func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*SetPermissionsResult, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreSetUserExternalAccountPermsFunc) SetDefaultReturn(r0 *SetPermissionsResult, r1 error) {
+	f.SetDefaultHook(func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*SetPermissionsResult, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreSetUserExternalAccountPermsFunc) PushReturn(r0 *SetPermissionsResult, r1 error) {
+	f.PushHook(func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*SetPermissionsResult, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreSetUserExternalAccountPermsFunc) nextHook() func(context.Context, authz.UserIDWithExternalAccountID, []int32, authz.PermsSource) (*SetPermissionsResult, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreSetUserExternalAccountPermsFunc) appendCall(r0 PermsStoreSetUserExternalAccountPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// PermsStoreSetUserExternalAccountPermsFuncCall objects describing the
+// invocations of this function.
+func (f *PermsStoreSetUserExternalAccountPermsFunc) History() []PermsStoreSetUserExternalAccountPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreSetUserExternalAccountPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreSetUserExternalAccountPermsFuncCall is an object that describes
+// an invocation of method SetUserExternalAccountPerms on an instance of
+// MockPermsStore.
+type PermsStoreSetUserExternalAccountPermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 authz.UserIDWithExternalAccountID
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []int32
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 authz.PermsSource
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *SetPermissionsResult
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreSetUserExternalAccountPermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreSetUserExternalAccountPermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreTransactFunc describes the behavior when the Transact method of
+// the parent MockPermsStore instance is invoked.
+type PermsStoreTransactFunc struct {
+	defaultHook func(context.Context) (PermsStore, error)
+	hooks       []func(context.Context) (PermsStore, error)
+	history     []PermsStoreTransactFuncCall
+	mutex       sync.Mutex
+}
+
+// Transact delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermsStore) Transact(v0 context.Context) (PermsStore, error) {
+	r0, r1 := m.TransactFunc.nextHook()(v0)
+	m.TransactFunc.appendCall(PermsStoreTransactFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the Transact method of
+// the parent MockPermsStore instance is invoked and the hook queue is
+// empty.
+func (f *PermsStoreTransactFunc) SetDefaultHook(hook func(context.Context) (PermsStore, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Transact method of the parent MockPermsStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *PermsStoreTransactFunc) PushHook(hook func(context.Context) (PermsStore, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreTransactFunc) SetDefaultReturn(r0 PermsStore, r1 error) {
+	f.SetDefaultHook(func(context.Context) (PermsStore, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreTransactFunc) PushReturn(r0 PermsStore, r1 error) {
+	f.PushHook(func(context.Context) (PermsStore, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreTransactFunc) nextHook() func(context.Context) (PermsStore, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreTransactFunc) appendCall(r0 PermsStoreTransactFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreTransactFuncCall objects
+// describing the invocations of this function.
+func (f *PermsStoreTransactFunc) History() []PermsStoreTransactFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreTransactFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreTransactFuncCall is an object that describes an invocation of
+// method Transact on an instance of MockPermsStore.
+type PermsStoreTransactFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 PermsStore
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreTransactFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreTransactFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreUserIDsWithNoPermsFunc describes the behavior when the
+// UserIDsWithNoPerms method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreUserIDsWithNoPermsFunc struct {
+	defaultHook func(context.Context) ([]int32, error)
+	hooks       []func(context.Context) ([]int32, error)
+	history     []PermsStoreUserIDsWithNoPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// UserIDsWithNoPerms delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockPermsStore) UserIDsWithNoPerms(v0 context.Context) ([]int32, error) {
+	r0, r1 := m.UserIDsWithNoPermsFunc.nextHook()(v0)
+	m.UserIDsWithNoPermsFunc.appendCall(PermsStoreUserIDsWithNoPermsFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UserIDsWithNoPerms
+// method of the parent MockPermsStore instance is invoked and the hook
+// queue is empty.
+func (f *PermsStoreUserIDsWithNoPermsFunc) SetDefaultHook(hook func(context.Context) ([]int32, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UserIDsWithNoPerms method of the parent MockPermsStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *PermsStoreUserIDsWithNoPermsFunc) PushHook(hook func(context.Context) ([]int32, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreUserIDsWithNoPermsFunc) SetDefaultReturn(r0 []int32, r1 error) {
+	f.SetDefaultHook(func(context.Context) ([]int32, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreUserIDsWithNoPermsFunc) PushReturn(r0 []int32, r1 error) {
+	f.PushHook(func(context.Context) ([]int32, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreUserIDsWithNoPermsFunc) nextHook() func(context.Context) ([]int32, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreUserIDsWithNoPermsFunc) appendCall(r0 PermsStoreUserIDsWithNoPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreUserIDsWithNoPermsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreUserIDsWithNoPermsFunc) History() []PermsStoreUserIDsWithNoPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreUserIDsWithNoPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreUserIDsWithNoPermsFuncCall is an object that describes an
+// invocation of method UserIDsWithNoPerms on an instance of MockPermsStore.
+type PermsStoreUserIDsWithNoPermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []int32
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreUserIDsWithNoPermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreUserIDsWithNoPermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreUserIDsWithOldestPermsFunc describes the behavior when the
+// UserIDsWithOldestPerms method of the parent MockPermsStore instance is
+// invoked.
+type PermsStoreUserIDsWithOldestPermsFunc struct {
+	defaultHook func(context.Context, int, time.Duration) (map[int32]time.Time, error)
+	hooks       []func(context.Context, int, time.Duration) (map[int32]time.Time, error)
+	history     []PermsStoreUserIDsWithOldestPermsFuncCall
+	mutex       sync.Mutex
+}
+
+// UserIDsWithOldestPerms delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockPermsStore) UserIDsWithOldestPerms(v0 context.Context, v1 int, v2 time.Duration) (map[int32]time.Time, error) {
+	r0, r1 := m.UserIDsWithOldestPermsFunc.nextHook()(v0, v1, v2)
+	m.UserIDsWithOldestPermsFunc.appendCall(PermsStoreUserIDsWithOldestPermsFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// UserIDsWithOldestPerms method of the parent MockPermsStore instance is
+// invoked and the hook queue is empty.
+func (f *PermsStoreUserIDsWithOldestPermsFunc) SetDefaultHook(hook func(context.Context, int, time.Duration) (map[int32]time.Time, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UserIDsWithOldestPerms method of the parent MockPermsStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *PermsStoreUserIDsWithOldestPermsFunc) PushHook(hook func(context.Context, int, time.Duration) (map[int32]time.Time, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreUserIDsWithOldestPermsFunc) SetDefaultReturn(r0 map[int32]time.Time, r1 error) {
+	f.SetDefaultHook(func(context.Context, int, time.Duration) (map[int32]time.Time, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreUserIDsWithOldestPermsFunc) PushReturn(r0 map[int32]time.Time, r1 error) {
+	f.PushHook(func(context.Context, int, time.Duration) (map[int32]time.Time, error) {
+		return r0, r1
+	})
+}
+
+func (f *PermsStoreUserIDsWithOldestPermsFunc) nextHook() func(context.Context, int, time.Duration) (map[int32]time.Time, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreUserIDsWithOldestPermsFunc) appendCall(r0 PermsStoreUserIDsWithOldestPermsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreUserIDsWithOldestPermsFuncCall
+// objects describing the invocations of this function.
+func (f *PermsStoreUserIDsWithOldestPermsFunc) History() []PermsStoreUserIDsWithOldestPermsFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreUserIDsWithOldestPermsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreUserIDsWithOldestPermsFuncCall is an object that describes an
+// invocation of method UserIDsWithOldestPerms on an instance of
+// MockPermsStore.
+type PermsStoreUserIDsWithOldestPermsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 time.Duration
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[int32]time.Time
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreUserIDsWithOldestPermsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreUserIDsWithOldestPermsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// PermsStoreWithFunc describes the behavior when the With method of the
+// parent MockPermsStore instance is invoked.
+type PermsStoreWithFunc struct {
+	defaultHook func(basestore.ShareableStore) PermsStore
+	hooks       []func(basestore.ShareableStore) PermsStore
+	history     []PermsStoreWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockPermsStore) With(v0 basestore.ShareableStore) PermsStore {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(PermsStoreWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockPermsStore instance is invoked and the hook queue is empty.
+func (f *PermsStoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) PermsStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockPermsStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *PermsStoreWithFunc) PushHook(hook func(basestore.ShareableStore) PermsStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *PermsStoreWithFunc) SetDefaultReturn(r0 PermsStore) {
+	f.SetDefaultHook(func(basestore.ShareableStore) PermsStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *PermsStoreWithFunc) PushReturn(r0 PermsStore) {
+	f.PushHook(func(basestore.ShareableStore) PermsStore {
+		return r0
+	})
+}
+
+func (f *PermsStoreWithFunc) nextHook() func(basestore.ShareableStore) PermsStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *PermsStoreWithFunc) appendCall(r0 PermsStoreWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of PermsStoreWithFuncCall objects describing
+// the invocations of this function.
+func (f *PermsStoreWithFunc) History() []PermsStoreWithFuncCall {
+	f.mutex.Lock()
+	history := make([]PermsStoreWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// PermsStoreWithFuncCall is an object that describes an invocation of
+// method With on an instance of MockPermsStore.
+type PermsStoreWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 PermsStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c PermsStoreWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c PermsStoreWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

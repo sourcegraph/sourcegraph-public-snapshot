@@ -25,13 +25,13 @@ import (
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(logger log.Logger, db edb.EnterpriseDB, enterpriseJobs jobutil.EnterpriseJobs) graphqlbackend.CodeMonitorsResolver {
+func NewResolver(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) graphqlbackend.CodeMonitorsResolver {
 	return &Resolver{logger: logger, db: db, enterpriseJobs: enterpriseJobs}
 }
 
 type Resolver struct {
 	logger         log.Logger
-	db             edb.EnterpriseDB
+	db             database.DB
 	enterpriseJobs jobutil.EnterpriseJobs
 }
 
@@ -640,7 +640,7 @@ func (r *Resolver) withTransact(ctx context.Context, f func(*Resolver) error) er
 	return r.db.WithTransact(ctx, func(tx database.DB) error {
 		return f(&Resolver{
 			logger: r.logger,
-			db:     edb.NewEnterpriseDB(tx),
+			db:     tx,
 		})
 	})
 

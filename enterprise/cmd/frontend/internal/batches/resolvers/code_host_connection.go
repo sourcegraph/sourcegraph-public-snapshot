@@ -21,7 +21,7 @@ type batchChangesCodeHostConnectionResolver struct {
 	opts                  store.ListCodeHostsOpts
 	limitOffset           database.LimitOffset
 	store                 *store.Store
-	db                    edb.EnterpriseDB
+	db                    database.DB
 	logger                log.Logger
 
 	once          sync.Once

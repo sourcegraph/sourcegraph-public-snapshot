@@ -51,8 +51,7 @@ func Middleware(db database.DB) *auth.Middleware {
 
 const cacheTTLSeconds = 60 * 60 // 1 hour
 
-func newMiddleware(ossDB database.DB, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
-	db := edb.NewEnterpriseDB(ossDB)
+func newMiddleware(db database.DB, authPrefix string, isAPIHandler bool, next http.Handler) http.Handler {
 	ghAppState := rcache.NewWithTTL("github_app_state", cacheTTLSeconds)
 	handler := newServeMux(db, authPrefix, ghAppState)
 

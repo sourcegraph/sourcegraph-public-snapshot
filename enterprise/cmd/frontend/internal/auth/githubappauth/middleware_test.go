@@ -12,7 +12,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/require"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -118,7 +117,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 		}, nil
 	})
 
-	db := edb.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 
 	db.UsersFunc.SetDefaultReturn(mockUserStore)
 	db.WebhooksFunc.SetDefaultReturn(mockWebhookStore)

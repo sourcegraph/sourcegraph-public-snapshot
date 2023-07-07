@@ -6,10 +6,6 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: enterprise/internal/database/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
-  interfaces:
-    - EnterpriseDB
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
@@ -61,6 +57,7 @@
     - OwnershipStatsStore
     - PermissionStore
     - PermissionSyncJobStore
+    - PermsStore
     - PhabricatorStore
     - RecentContributionSignalStore
     - RecentViewSignalStore

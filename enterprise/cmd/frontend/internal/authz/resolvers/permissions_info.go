@@ -20,8 +20,7 @@ import (
 )
 
 type permissionsInfoResolver struct {
-	db           edb.EnterpriseDB
-	ossDB        database.DB
+	db           database.DB
 	userID       int32
 	repoID       api.RepoID
 	perms        authz.Perms
@@ -79,7 +78,7 @@ func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlba
 
 type permissionsInfoRepositoriesStore struct {
 	userID int32
-	db     edb.EnterpriseDB
+	db     database.DB
 	ossDB  database.DB
 	query  string
 }
@@ -163,7 +162,6 @@ func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend
 		ctx:    ctx,
 		repoID: r.repoID,
 		db:     r.db,
-		ossDB:  r.ossDB,
 		query:  query,
 	}
 
@@ -173,8 +171,7 @@ func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend
 type permissionsInfoUsersStore struct {
 	ctx    context.Context
 	repoID api.RepoID
-	db     edb.EnterpriseDB
-	ossDB  database.DB
+	db     database.DB
 	query  string
 }
 

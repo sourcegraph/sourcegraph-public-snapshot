@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz"
 	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -52,7 +51,7 @@ func EnterpriseInit(
 		}
 	}
 
-	ghAppsStore := edb.NewEnterpriseDB(db).GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
+	ghAppsStore := db.GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
 	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, keyring.GitHubAppKey)
 
 	permsStore := ossDB.Perms(observationCtx.Logger, db, timeutil.Now)

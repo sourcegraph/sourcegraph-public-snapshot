@@ -198,7 +198,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := newSchema(db, New(edb.NewEnterpriseDB(db), bstore, gitserver.NewMockClient(), logger))
+	s, err := newSchema(db, New(db, bstore, gitserver.NewMockClient(), logger))
 	if err != nil {
 		t.Fatal(err)
 	}

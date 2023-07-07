@@ -17,7 +17,6 @@ import (
 )
 
 func enterpriseInit(db database.DB, keyring keyring.Ring) {
-	enterpriseDB := edb.NewEnterpriseDB(db)
 	logger := log.Scoped("enterprise", "gitserver enterprise edition")
 	var err error
 	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
@@ -25,6 +24,6 @@ func enterpriseInit(db database.DB, keyring keyring.Ring) {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
-	ghAppsStore := enterpriseDB.GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
+	ghAppsStore := db.GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
 	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, keyring.GitHubAppKey)
 }

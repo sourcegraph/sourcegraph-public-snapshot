@@ -99,11 +99,9 @@ func setAuthzProviders(ctx context.Context, observationCtx *observation.Context)
 }
 
 func getEnterpriseInit(logger log.Logger) func(database.DB) {
-	return func(ossDB database.DB) {
-		enterpriseDB := edb.NewEnterpriseDB(ossDB)
-
+	return func(db database.DB) {
 		var err error
-		authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
+		authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 		if err != nil {
 			logger.Fatal("Failed to create sub-repo client", log.Error(err))
 		}

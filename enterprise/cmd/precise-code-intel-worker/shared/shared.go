@@ -56,7 +56,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// Initialize sub-repo permissions client
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(edb.NewEnterpriseDB(db).SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		return errors.Wrap(err, "creating sub-repo client")
 	}

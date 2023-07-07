@@ -26,7 +26,7 @@ import (
 )
 
 // CreateEnterpriseFromConnection creates a FromConnectionFunc that has access to
-// the provided EnterpriseDB. This gives the function access to GitHub App details
+// the provided db. This gives the function access to GitHub App details
 // in the database.
 func CreateEnterpriseFromConnection(ghApps store.GitHubAppsStore, encryptionKey encryption.Key) ghauth.FromConnectionFunc {
 	return func(ctx context.Context, conn *schema.GitHubConnection) (ghauth.RefreshableURLRequestAuthenticator, error) {

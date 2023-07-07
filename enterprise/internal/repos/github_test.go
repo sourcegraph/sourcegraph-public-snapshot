@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -106,7 +105,7 @@ EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ghAppsStore := edb.NewEnterpriseDB(db).GitHubApps().WithEncryptionKey(keyring.Default().GitHubAppKey)
+	ghAppsStore := db.GitHubApps().WithEncryptionKey(keyring.Default().GitHubAppKey)
 	_, err := ghAppsStore.Create(context.Background(), &ghtypes.GitHubApp{
 		AppID:        350528,
 		BaseURL:      "https://github.com/",

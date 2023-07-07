@@ -455,7 +455,7 @@ func TestPermsSyncer_syncUserPermsTemporaryProviderError(t *testing.T) {
 	reposStore := repos.NewMockStoreFrom(repos.NewStore(logtest.Scoped(t), db))
 	reposStore.RepoStoreFunc.SetDefaultReturn(mockRepos)
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.SetUserExternalAccountPermsFunc.SetDefaultHook(func(_ context.Context, user authz.UserIDWithExternalAccountID, repoIDs []int32, source authz.PermsSource) (*database.SetPermissionsResult, error) {
 		assert.Equal(t, []int32{}, repoIDs)
 		return &database.SetPermissionsResult{}, nil
