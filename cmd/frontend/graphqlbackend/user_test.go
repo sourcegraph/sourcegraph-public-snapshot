@@ -972,7 +972,7 @@ func TestSchema_SetCompletedPostSignup(t *testing.T) {
 		}
 	})
 
-	t.Run("site admin can change quota", func(t *testing.T) {
+	t.Run("site admin can set post-signup complete", func(t *testing.T) {
 		mockUser := &types.User{
 			ID:       1,
 			Username: "alice",
