@@ -651,7 +651,10 @@ func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) 
 		go func(task *cloneTask) {
 			defer cancel()
 
-			err := s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
+			progressPipe := newProgressPipe()
+			defer progressPipe.writer.Close()
+
+			err := s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options, progressPipe)
 			if err != nil {
 				logger.Error("failed to clone repo", log.Error(err))
 			}
@@ -2145,6 +2148,7 @@ func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoN
 
 }
 
+// TODO: Maybe we don't need this for new clones. Investigate side effects of disabling this on the clone path.
 func optimizeForGitAlternateRepo(ctx context.Context, repoDir common.GitDir) error {
 
 	// Run in this in the repo and not the pool.
@@ -2189,6 +2193,31 @@ type cloneOptions struct {
 	DeduplicatedCloneOptions *deduplicatedCloneOptions
 }
 
+func (c *cloneOptions) DeepCopy() *cloneOptions {
+	opts := &cloneOptions{
+		Block:          c.Block,
+		Overwrite:      c.Overwrite,
+		CloneFromShard: c.CloneFromShard,
+	}
+
+	d := c.DeduplicatedCloneOptions
+	if d != nil {
+		opts.DeduplicatedCloneOptions = &deduplicatedCloneOptions{
+			which:          d.which,
+			poolDir:        d.poolDir,
+			parentRepoName: d.parentRepoName,
+		}
+
+		// UGH: The fact that deep copying progressPipe is not looking such a great idea is a
+		// symptom that this whole "trying to pass down the pipe" over recursive calls is a terrible
+		// design that I am implementing.
+		//
+		// Maybe I should pull the whole pipe outside doClone anyway.
+	}
+
+	return opts
+}
+
 type dedupeType int
 
 const (
@@ -2203,6 +2232,13 @@ type deduplicatedCloneOptions struct {
 	which dedupeType
 
 	poolDir common.GitDir
+
+	parentRepoName api.RepoName
+
+	// progressPipe *struct {
+	// 	pr *io.PipeReader
+	// 	pw *io.PipeWriter
+	// }
 }
 
 // FIXME: A better name please
@@ -2243,7 +2279,11 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName 
 	}
 
 	if forkedRepoPoolID != nil && parentRepoName != nil {
-		return &deduplicatedCloneOptions{which: dedupeFork, poolDir: s.poolDir(*parentRepoName)}, nil
+		return &deduplicatedCloneOptions{
+			which:          dedupeFork,
+			poolDir:        s.poolDir(*parentRepoName),
+			parentRepoName: *parentRepoName,
+		}, nil
 	}
 
 	return nil, nil
@@ -2356,8 +2396,11 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		}
 		defer cancel()
 
+		progressPipe := newProgressPipe()
+		defer progressPipe.writer.Close()
+
 		// We are blocking, so use the passed in context.
-		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts)
+		err = s.doClone(ctx, repo, dir, syncer, lock, remoteURL, opts, progressPipe)
 		err = errors.Wrapf(err, "failed to clone %s", repo)
 		return "", err
 	}
@@ -2377,7 +2420,17 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	return "", nil
 }
 
-func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
+type progressPipe struct {
+	reader *io.PipeReader
+	writer *io.PipeWriter
+}
+
+func newProgressPipe() *progressPipe {
+	r, w := io.Pipe()
+	return &progressPipe{reader: r, writer: w}
+}
+
+func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions, progressPipe *progressPipe) (err error) {
 	logger := s.Logger.Scoped("doClone", "").With(
 		log.String("repo", string(repo)),
 		log.String("dir", string(dir)),
@@ -2443,10 +2496,35 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		cmd.Env = os.Environ()
 	}
 
+	pr := progressPipe.reader
+	pw := progressPipe.writer
+
+	if opts != nil {
+		if opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.which != dedupePool {
+			go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+
+			// 1. Check if poolDir exists.
+			// 2. If it exists:
+			// 		2.a: Run git rev-parse HEAD to verify the pool repo is in a cloned state.
+			// 3. If it does not exist:
+			//      3.b: Create git init for poolDir and git fetch.
+
+			// ensurePoolRepoIsCloned()
+		}
+	} else {
+		go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+	}
+
+	// if !isDedupeClone || (isDedupeClone && opts.DeduplicatedCloneOptions.which != dedupePool) {
+	// 	// UGH: Don't like the defer being so far away hidden inside an edge case.
+	// 	defer pw.Close()
+	// }
+
 	// If this repo is meant to be deduplicated, let us first check if the pool repo exists or not.
 	// If it doesn't clone it out of step and then continue with git fetch in this repo which will
 	// be efficient because this won't fetch the objects already in the pool repo.
 	if isDedupeClone && opts.DeduplicatedCloneOptions.which != dedupePool {
+
 		// Update or create pool.
 		//
 		poolDir := opts.DeduplicatedCloneOptions.poolDir
@@ -2455,8 +2533,10 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
 				// Clone pool
-				opts.DeduplicatedCloneOptions.which = dedupePool
 
+				// FIXME: Add commenton how this is safe from a race condition.
+				//
+				// TODO: Iterate on this and make this a backoff and retry instead of returning an error (we don't want these errors to pop out ....)
 				poolLock, ok := s.locker.TryAcquire(poolDir, "starting pool repo clone")
 				if !ok {
 					// It's better to abort this clone operation for now since pool is already being
@@ -2470,14 +2550,34 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 				}
 
 				logger.Warn("acquired lock on poolDir", log.String("poolDir", string(poolDir)))
-				err := s.doClone(ctx, repo, poolDir, syncer, poolLock, remoteURL, opts)
+
+				// FIXME FIXME FIXME: Always send parent repo here and not just the current repo.
+
+				// Ensure that if the pool repo clone is being triggered by a fork, we still clone
+				// the parent repo as the pool repo.
+				poolRepoName := repo
+				if opts.DeduplicatedCloneOptions.which == dedupeFork {
+					poolRepoName = opts.DeduplicatedCloneOptions.parentRepoName
+				}
+
+				// TODO: Maybe add a method called Copy / DeepCopy to cloneOptions.
+				poolCloneOpts := opts.DeepCopy()
+				poolCloneOpts.DeduplicatedCloneOptions.which = dedupePool
+
+				// poolCloneOpts.DeduplicatedCloneOptions.progressPipe = &struct {
+				// 	pr *io.PipeReader
+				// 	pw *io.PipeWriter
+				// }{pr: pr, pw: pw}
+
+				err := s.doClone(ctx, poolRepoName, poolDir, syncer, poolLock, remoteURL, poolCloneOpts, progressPipe)
 				// TODO: Do something about the error.
 				if err != nil {
 					logger.Error("failed to clone pool repo", log.Error(err))
 					return err
 				}
 			} else {
-				logger.Error("failed to determine if pool repo exists, deduplicated storage will not be available for this repo", log.Error(err))
+				// TODO: Update error more user friendly
+				return errors.Wrap(err, "failed to determine if pool repo exists, deduplicated storage will not be available for this repo")
 			}
 		}
 
@@ -2491,23 +2591,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
 
-	pr, pw := io.Pipe()
-	defer pw.Close()
-
 	redactor := newURLRedactor(remoteURL)
-
-	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
-
-	if opts != nil && opts.DeduplicatedCloneOptions != nil {
-		// 1. Check if poolDir exists.
-		// 2. If it exists:
-		// 		2.a: Run git rev-parse HEAD to verify the pool repo is in a cloned state.
-		// 3. If it does not exist:
-		//      3.b: Create git init for poolDir and git fetch.
-
-		// ensurePoolRepoIsCloned()
-
-	}
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
 
@@ -2543,7 +2627,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		return err
 	}
 
-	if opts != nil && opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.which != dedupeSource {
+	if opts != nil && opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.which != dedupePool {
 		if err := gitSetAutoGC(tmp); err != nil {
 			return err
 		}
