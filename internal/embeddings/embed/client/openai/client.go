@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"sort"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -83,12 +85,17 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
 		} else {
+			err := os.WriteFile("/tmp/badchunk", []byte(augmentedTexts[embedding.Index]), 0755)
+			if err != nil {
+				panic(err)
+			}
+
 			// HACK(camdencheek): Nondeterministically, the OpenAI API will
 			// occasionally send back a `null` for an embedding in the
 			// response. Try it again a few times and hope for the best.
-			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 0)
 			if err != nil {
-				return nil, err
+				return nil, client.PartialError{Err: err, Index: embedding.Index}
 			}
 			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}
