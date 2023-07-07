@@ -7,6 +7,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"sort"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -91,6 +92,10 @@ func (r *appResolver) CodyGatewayRateLimitStatus(ctx context.Context) ([]graphql
 			rateLimit: limit,
 		})
 	}
+
+	sort.Slice(rateLimits, func(i, j int) bool {
+		return rateLimits[i].Feature() < rateLimits[j].Feature()
+	})
 
 	return rateLimits, nil
 

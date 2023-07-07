@@ -71,7 +71,6 @@ interface RateLimitTableProps {
     limits: RateLimitStatus[]
 }
 const RateLimitTable: FC<RateLimitTableProps> = ({ limits }) => {
-    limits.sort((a, b) => a.feature.localeCompare(b.feature))
     return (
         <table className="table">
             <thead>
