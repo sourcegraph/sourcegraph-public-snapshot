@@ -22,6 +22,7 @@ jobs:
                   team/delivery=@sourcegraph/delivery
                   team/security=@dcomas
                   team/dev-experience=@jhchabran @kstretch9
-                  team/repo-management=@ryphil @mrnugget
                   team/devops=@sourcegraph/cloud-devops
-                  team/iam=@sourcegraph/iam
+                  team/repo-management=@sourcegraph/source
+                  team/iam=@sourcegraph/source
+                  team/source=@sourcegraph/source

@@ -9,6 +9,7 @@ use {tauri::api::process::Command, tauri::api::process::CommandEvent};
 mod common;
 mod tray;
 use common::{extract_path_from_scheme_url, show_window};
+use std::collections::HashMap;
 use std::sync::RwLock;
 use tauri::Manager;
 use tauri_utils::config::RemoteDomainAccessScope;
@@ -216,6 +217,10 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
         .args(args)
+        .envs(HashMap::from([(
+            "SRC_REPOS_DESIRED_PERCENT_FREE".to_string(),
+            "0".to_string(),
+        )]))
         .spawn()
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 

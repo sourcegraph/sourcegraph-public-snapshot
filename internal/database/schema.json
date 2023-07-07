@@ -26801,6 +26801,19 @@
           "Comment": ""
         },
         {
+          "Name": "completed_post_signup",
+          "Index": 22,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "completions_quota",
           "Index": 20,
           "TypeName": "integer",

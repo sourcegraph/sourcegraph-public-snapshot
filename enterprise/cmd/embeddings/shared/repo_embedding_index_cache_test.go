@@ -46,7 +46,7 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 				}, nil
 			}
 		},
-		int64(cacheSize),
+		uint64(cacheSize),
 	)
 	if err != nil {
 		t.Fatal(err)

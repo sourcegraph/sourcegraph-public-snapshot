@@ -54,11 +54,11 @@ var _ actor.Source = &Source{}
 var _ actor.SourceUpdater = &Source{}
 var _ actor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotComClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
+func NewSource(logger log.Logger, cache httpcache.Cache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
 		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
 		cache:  cache,
-		dotcom: dotComClient,
+		dotcom: dotcomClient,
 
 		internalMode: internalMode,
 
@@ -216,8 +216,32 @@ func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor,
 	return act, nil
 }
 
+// getSubscriptionAccountName attempts to get the account name from the product
+// subscription. It returns an empty string if no account name is available.
+func getSubscriptionAccountName(s dotcom.ProductSubscriptionState) string {
+	// 1. Check if the special "customer:" tag is present
+	if s.ActiveLicense != nil && s.ActiveLicense.Info != nil {
+		for _, tag := range s.ActiveLicense.Info.Tags {
+			if strings.HasPrefix(tag, "customer:") {
+				return strings.TrimPrefix(tag, "customer:")
+			}
+		}
+	}
+
+	// 2. Use the username of the account
+	if s.Account != nil && s.Account.Username != "" {
+		return s.Account.Username
+	}
+	return ""
+}
+
 // newActor creates an actor from Sourcegraph.com product subscription state.
 func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *actor.Actor {
+	name := getSubscriptionAccountName(s)
+	if name == "" {
+		name = s.Uuid
+	}
+
 	// In internal mode, only allow dev and internal licenses.
 	disallowedLicense := internalMode &&
 		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
@@ -227,6 +251,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 	a := &actor.Actor{
 		Key:           token,
 		ID:            s.Uuid,
+		Name:          name,
 		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
 		RateLimits:    map[codygateway.Feature]actor.RateLimit{},
 		LastUpdated:   &now,

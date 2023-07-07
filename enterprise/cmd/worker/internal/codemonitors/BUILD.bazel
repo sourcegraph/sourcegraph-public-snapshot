@@ -8,9 +8,8 @@ go_library(
     deps = [
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
-        "//enterprise/internal/codemonitors/background",
-        "//enterprise/internal/database",
         "//enterprise/internal/search",
+        "//internal/codemonitors/background",
         "//internal/env",
         "//internal/goroutine",
         "//internal/observation",
