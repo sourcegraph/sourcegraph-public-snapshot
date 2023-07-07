@@ -217,12 +217,13 @@ class CodyToolWindowContent implements UpdatableChat {
     layeredPane.setLayout(new BorderLayout());
     // Add a button to the south of the main panel
     JButton button = new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
+    stopGeneratingButtonPanel = new JPanel();
     button.addActionListener(
         e -> {
           cancellationToken.abort();
-          finishMessageProcessing();
+          stopGeneratingButtonPanel.setVisible(false);
+          sendButton.setEnabled(true);
         });
-    stopGeneratingButtonPanel = new JPanel();
     stopGeneratingButtonPanel.add(button);
     stopGeneratingButtonPanel.setOpaque(false);
     stopGeneratingButtonPanel.setVisible(false);
@@ -464,7 +465,6 @@ class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
-              stopGeneratingButtonPanel.setVisible(true);
               transcript.addAssistantResponse(message);
               if (messagesPanel.getComponentCount() > 0) {
                 JPanel lastBubblePanel =
@@ -567,7 +567,8 @@ class CodyToolWindowContent implements UpdatableChat {
                       CodyAgent.getClient(project),
                       CodyAgent.getInitializedServer(project),
                       humanMessage,
-                      this);
+                      this,
+                      cancellationToken);
                 } catch (Exception e) {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }

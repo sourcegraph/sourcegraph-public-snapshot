@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.intellij.openapi.diagnostic.Logger;
-import com.sourcegraph.cody.vscode.CancellationToken;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.URI;
@@ -26,7 +25,6 @@ public class SSEClient {
   private final String body;
   private final CompletionsCallbacks cb;
   private CompletionsService.Endpoint endpoint;
-  private final CancellationToken cancellationToken;
 
   private InputStream inputStream;
 
@@ -35,14 +33,12 @@ public class SSEClient {
       @NotNull String accessToken,
       @NotNull String body,
       @NotNull CompletionsCallbacks cb,
-      @NotNull CompletionsService.Endpoint endpoint,
-      @NotNull CancellationToken cancellationToken) {
+      @NotNull CompletionsService.Endpoint endpoint) {
     this.url = url;
     this.body = body;
     this.accessToken = accessToken;
     this.cb = cb;
     this.endpoint = endpoint;
-    this.cancellationToken = cancellationToken;
   }
 
   private class DebugInformation {
@@ -148,9 +144,7 @@ public class SSEClient {
             if (Objects.equals(eventName, "completion")) { // Completion
               JsonObject json = new Gson().fromJson(message, JsonObject.class);
               JsonPrimitive completion = json.getAsJsonPrimitive("completion");
-              if (!cancellationToken.isCancelled()) {
-                cb.onData(completion != null ? completion.getAsString().trim() : null);
-              }
+              cb.onData(completion != null ? completion.getAsString().trim() : null);
             } else if (Objects.equals(eventName, "done")) { // Done
               stopCurrentRequest();
               cb.onComplete();
@@ -158,9 +152,7 @@ public class SSEClient {
             }
             messageBuilder = new StringBuilder();
           } else if (endpoint == CompletionsService.Endpoint.Code) {
-            if (!cancellationToken.isCancelled()) {
-              cb.onData(line);
-            }
+            cb.onData(line);
             cb.onComplete();
           }
         }

@@ -35,8 +35,8 @@ public class SourcegraphNodeCompletionsClient {
             params.topK,
             params.topP),
         callbacks,
-        CompletionsService.Endpoint.Code,
-        this.token);
+        CompletionsService.Endpoint.Code
+    );
     return callbacks.promise;
   }
 
