@@ -33,7 +33,9 @@ func (i *instrumentedLogger) LogEvent(spanCtx context.Context, event Event) erro
 	}
 
 	if err := i.Logger.LogEvent(spanCtx, event); err != nil {
-		span.RecordError(err)
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
 		span.SetStatus(codes.Error, "failed to log event")
 		return err
 	}
