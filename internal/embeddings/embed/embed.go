@@ -193,7 +193,7 @@ func embedFiles(
 		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
 		if err != nil {
 			if partErr := (client.PartialError{}); errors.As(err, &partErr) {
-				return errors.Wrapf(err, "batch failed on file %q", batch[partErr.Index].FileName)
+				return errors.Wrapf(partErr.Err, "batch failed on file %q", batch[partErr.Index].FileName)
 			}
 			return errors.Wrap(err, "error while getting embeddings")
 		}
