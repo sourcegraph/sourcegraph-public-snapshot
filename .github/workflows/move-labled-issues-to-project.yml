@@ -20,12 +20,12 @@ jobs:
           labeled: team/cloud
           label-operator: OR
 
-      - name: Move team/repo-management issues
+      - name: Move team/source issues
         uses: actions/add-to-project@main
         with:
           project-url: https://github.com/orgs/sourcegraph/projects/209
           github-token: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
-          labeled: team/repo-management
+          labeled: team/source
           label-operator: OR
 
       - name: Move team/code-exploration issues
@@ -51,7 +51,7 @@ jobs:
           github-token: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
           labeled: team/code-insights
           label-operator: OR
-          
+
       - name: Move cody issues
         uses: actions/add-to-project@main
         with:
