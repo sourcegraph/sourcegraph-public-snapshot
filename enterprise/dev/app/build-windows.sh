@@ -3,7 +3,8 @@
 set -eux
 
 echo "IN BUILD SCRIPT"
-version="$(./enterprise/dev/app/app-version.sh)"
+#version="$(./enterprise/dev/app/app-version.sh)"
+version="23.7.1"
 echo "Building version: ${version}"
 
 echo "--- :chrome: Building web"
