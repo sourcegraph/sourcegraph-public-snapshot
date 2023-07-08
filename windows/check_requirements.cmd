@@ -33,7 +33,7 @@ GOTO PNPM
 
 :--------------------------------------
 :PNPM
-call pnpm -v 1>nul 2>nul
+call pnpm2 -v 1>nul 2>nul
 IF ERRORLEVEL 1 GOTO MISSING_PNPM
 echo pnpm    OK
 GOTO NODE
