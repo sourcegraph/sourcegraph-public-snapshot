@@ -1,7 +1,5 @@
 #!/usr/bin/env bash
 
-set -eux
-
 declare -r mydir=$(dirname "$0")
 
 if ! "${mydir}/../../../windows/check_requirements.cmd"; then
@@ -10,6 +8,7 @@ if ! "${mydir}/../../../windows/check_requirements.cmd"; then
 fi
 
 echo "IN BUILD SCRIPT"
+set -eux
 #version="$(./enterprise/dev/app/app-version.sh)"
 version="23.7.1"
 echo "Building version: ${version}"
