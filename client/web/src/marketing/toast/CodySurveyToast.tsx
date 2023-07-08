@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 
 import { mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useNavigate } from 'react-router-dom'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
@@ -194,6 +194,7 @@ export const CodySurveyToast: React.FC<
         authenticatedUser: AuthenticatedUser
     } & TelemetryProps
 > = ({ authenticatedUser, telemetryService }) => {
+    const navigate = useNavigate()
     const [showVerifyEmail, setShowVerifyEmail] = useState(isEmailVerificationNeededForCody())
     const [updatePostSignupCompletion] = useMutation<setCompletedPostSignupResult, setCompletedPostSignupVariables>(
         SET_COMPLETED_POST_SIGNUP,
@@ -204,11 +205,10 @@ export const CodySurveyToast: React.FC<
         }
     )
 
-    const handleSubmitEnd = (): JSX.Element => {
+    const handleSubmitEnd = (): void => {
         // eslint-disable-next-line no-console
         updatePostSignupCompletion().catch(console.error)
-
-        return <Navigate to={PageRoutes.GetCody} replace={true} />
+        navigate(PageRoutes.GetCody)
     }
 
     const dismissVerifyEmail = useCallback(() => {
