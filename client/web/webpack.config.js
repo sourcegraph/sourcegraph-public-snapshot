@@ -272,28 +272,20 @@ const config = {
         test: /\.[jt]sx?$/,
         exclude: hotLoadablePaths,
         use: [getBabelLoader()],
+        resolve: {
+          fullySpecified: false,
+        },
       },
       {
-        test: /\.(sass|scss)$/,
+        test: /\.(sass|s?css)$/,
         // CSS Modules loaders are only applied when the file is explicitly named as CSS module stylesheet using the extension `.module.scss`.
-        include: /\.module\.(sass|scss)$/,
+        include: /\.module\.(sass|s?css)$/,
         use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: IS_DEVELOPMENT })),
       },
       {
         test: /\.(sass|scss)$/,
         exclude: /\.module\.(sass|scss)$/,
         use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
-      },
-      {
-        test: /\.css$/,
-        include: [path.resolve(__dirname, '../cody-ui')],
-        exclude: /\.module\.css$/,
-        use: getCSSLoaders(styleLoader, getBasicCSSLoader()),
-      },
-      {
-        test: /\.module\.css$/,
-        include: [path.resolve(__dirname, '../cody-ui')],
-        use: getCSSLoaders(styleLoader, getCSSModulesLoader({ sourceMap: IS_DEVELOPMENT })),
       },
       getMonacoCSSRule(),
       getMonacoTTFRule(),
