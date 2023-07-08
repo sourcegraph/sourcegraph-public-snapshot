@@ -4,14 +4,14 @@
     import { createEventDispatcher } from 'svelte'
     import { Key } from 'ts-key-enum'
 
-    import type { NodeState, TreeProvider, TreeState } from './TreeView'
+    import { updateNodeState, type NodeState, type TreeProvider, type TreeState } from './TreeView'
     import TreeViewEntry from './TreeViewEntry.svelte'
 
     export let treeProvider: TreeProvider<N>
     export let treeState: TreeState
     export let isRoot: boolean
 
-    const dispatch = createEventDispatcher<{ select: Element }>()
+    const dispatch = createEventDispatcher<{ select: HTMLElement }>()
 
     let element: HTMLElement
 
@@ -22,9 +22,7 @@
     }
 
     function createNewTreeState(element: HTMLElement, newState: Partial<NodeState>): TreeState {
-        const nodeID = getNodeID(element)
-        const currentState = treeState.nodes[nodeID] ?? { expanded: false, selected: false }
-        return { ...treeState, nodes: { ...treeState.nodes, [nodeID]: { ...currentState, ...newState } } }
+        return { ...treeState, nodes: updateNodeState(treeState, getNodeID(element), newState)}
     }
 
     function getNodeID(element: HTMLElement): string {
@@ -64,7 +62,7 @@
         }
         let next: HTMLElement | null = null
         if (element.getAttribute('aria-expanded') === 'true') {
-            // Look inside children
+            // Get first child treeitem
             next = element.querySelector('[role="group"] [role="treeitem"]')
         }
         if (!next) {
@@ -73,7 +71,14 @@
         }
         if (!next) {
             // Go up
-            next = findSiblingNode(element.parentElement?.closest('[role="treeitem"]'), 'next')
+            let nextPossible: HTMLElement|null|undefined = element
+            do {
+                nextPossible = nextPossible.parentElement?.closest('[role="treeitem"]')
+                if (!nextPossible) {
+                    break
+                }
+                next = findSiblingNode(nextPossible, 'next')
+            } while (!next)
         }
         return next
     }
@@ -83,19 +88,20 @@
             return null
         }
         // Find previous sibling
-        let next: HTMLElement | null = findSiblingNode(element, 'previous')
-        if (next?.getAttribute('aria-expanded') === 'true') {
-            // Find last open node in sibling
-            const nodes = next.querySelectorAll<HTMLElement>("[role='treeitem']")
-            if (nodes.length > 0) {
-                next = nodes[nodes.length - 1]
+        let previous: HTMLElement | null = findSiblingNode(element, 'previous')
+        if (previous?.getAttribute('aria-expanded') === 'true') {
+            // Find last visible tree item in subtree rooted at the next sibling
+            const walker = document.createTreeWalker(previous, NodeFilter.SHOW_ELEMENT, node => (node as HTMLElement).getAttribute("role") === 'treeitem' ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP)
+            let possiblePrev: HTMLElement|null
+            while (possiblePrev = walker.lastChild() as HTMLElement|null) {
+                previous = possiblePrev
             }
         }
-        if (!next) {
+        if (!previous) {
             // Go up
-            next = element.parentElement?.closest('[role="treeitem"]') ?? null
+            previous = element.parentElement?.closest('[role="treeitem"]') ?? null
         }
-        return next
+        return previous
     }
 
     const handledKeys = new Set([Key.ArrowUp, Key.ArrowDown, Key.ArrowLeft, Key.ArrowRight, Key.Enter])
@@ -161,7 +167,7 @@
     function handleClick(event: MouseEvent) {
         const element = (event.target as HTMLElement).closest('[role="treeitem"]')
         if (element) {
-            dispatch('select', element)
+            dispatch('select', element as HTMLElement)
         }
     }
 </script>

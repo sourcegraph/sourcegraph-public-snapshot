@@ -7,7 +7,7 @@
     import { Button } from '$lib/wildcard'
 
     import LoadingSpinner from './LoadingSpinner.svelte'
-    import type { NodeState, TreeProvider, TreeState } from './TreeView'
+    import { updateNodeState, type NodeState, type TreeProvider, type TreeState } from './TreeView'
     import TreeView from './TreeView.svelte'
 
     export let entry: T
@@ -25,7 +25,7 @@
         if (expandable) {
             treeState = {
                 focused: key,
-                nodes: { ...treeState.nodes, [key]: { expanded: expand ?? !expanded, selected } },
+                nodes: updateNodeState(treeState, key, { expanded: expand ?? !expanded }) ,
             }
         }
     }
@@ -38,6 +38,8 @@
 </script>
 
 <li
+    class="treeitem"
+    class:selected
     use:scrollIntoView={selected}
     role="treeitem"
     aria-selected={selected}
@@ -45,9 +47,9 @@
     {tabindex}
     data-node-id={key}
 >
-    <span class="entry" class:selected>
+    <span class="label">
         <span class:hidden={!expandable}>
-            <Button variant="icon" on:click={() => toggleOpen()} tabindex={-1}>
+            <Button variant="icon" on:click={event => {event.stopPropagation(); toggleOpen()}} tabindex={-1}>
                 <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} inline />
             </Button>
         </span>
@@ -74,22 +76,15 @@
         &[aria-expanded='true']:focus {
             box-shadow: none;
 
-            > .entry {
+            > .label {
                 box-shadow: var(--focus-box-shadow);
             }
         }
     }
 
-    .entry {
+    .label {
         display: flex;
         align-items: center;
-        cursor: pointer;
-        border-radius: var(--border-radius);
-
-        &:hover,
-        &.selected {
-            background-color: var(--color-bg-2);
-        }
     }
 
     .children {

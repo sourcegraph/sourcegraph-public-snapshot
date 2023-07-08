@@ -8,6 +8,7 @@
     import type { FileTreeProvider } from '$lib/repo/api/tree'
     import type { TreeState } from '$lib/TreeView'
     import TreeView from '$lib/TreeView.svelte'
+    import { onMount } from 'svelte'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
@@ -71,16 +72,17 @@
         currentlySelectedPath = selectedPath
         treeState = { focused: selectedPath, nodes: nodesCopy }
     }
+    onMount(() => console.log('mounted'))
 </script>
 
 <div tabindex="-1">
     <TreeView {treeProvider} isRoot bind:treeState on:select={event => handleInteraction(event.detail)}>
         <svelte:fragment let:entry let:expanded>
             <!-- we progamatically handle navigation to preserve the focus state (see gotoEntry) -->
-            <a href={entry.url ?? ''} on:click|preventDefault={event => handleInteraction(event.target)} tabindex={-1}>
-                <Icon svgPath={getIconPath(entry, expanded)} inline />
-                {entry === treeRoot ? '..' : entry.name}
-            </a>
+                <a href={entry.url ?? ''} on:click|preventDefault={event => handleInteraction(event.target)} tabindex={-1}>
+                    <Icon svgPath={getIconPath(entry, expanded)} inline />
+                    {entry === treeRoot ? '..' : entry.name}
+                </a>
         </svelte:fragment>
     </TreeView>
 </div>
@@ -88,6 +90,20 @@
 <style lang="scss">
     div {
         overflow: scroll;
+
+        :global(.label) {
+            cursor: pointer;
+            border-radius: var(--border-radius);
+
+            &:hover {
+                background-color: var(--color-bg-2);
+            }
+        }
+
+        :global(.treeitem.selected) > :global(.label) {
+            background-color: var(--color-bg-2);
+        }
+
     }
 
     a {

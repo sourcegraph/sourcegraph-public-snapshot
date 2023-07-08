@@ -47,7 +47,7 @@ export const fetchTreeEntries = memoizeObservable(
                 }
                 fragment TreeFields on GitTree {
                     ...TreeEntryFields
-                    entries(first: $first, recursiveSingleChild: true) {
+                    entries(first: $first, recursiveSingleChild: false) {
                         ...TreeEntryFields
                     }
                 }

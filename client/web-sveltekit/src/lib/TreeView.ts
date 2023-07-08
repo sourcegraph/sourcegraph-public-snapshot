@@ -17,13 +17,14 @@ export interface TreeState {
     nodes: Record<string, NodeState>
 }
 
-export function updateNodeState(treeState: TreeState, nodeID: string, state: Partial<NodeState>): TreeState {
+export function updateNodeState(
+    treeState: TreeState,
+    nodeID: string,
+    state: Partial<NodeState>
+): Record<string, NodeState> {
     return {
-        ...treeState,
-        nodes: {
-            ...treeState.nodes,
-            [nodeID]: { ...treeState.nodes[nodeID], ...state },
-        },
+        ...treeState.nodes,
+        [nodeID]: { ...treeState.nodes[nodeID], ...state },
     }
 }
 
