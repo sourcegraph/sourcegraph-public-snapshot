@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -eux
+
 declare -r mydir=$(dirname "$0")
 
 if ! "${mydir}/../../../windows/check_requirements.cmd"; then
@@ -7,7 +9,9 @@ if ! "${mydir}/../../../windows/check_requirements.cmd"; then
   exit 1
 fi
 
-version="$(./enterprise/dev/app/app-version.sh)"
+echo "IN BUILD SCRIPT"
+#version="$(./enterprise/dev/app/app-version.sh)"
+version="23.7.1"
 echo "Building version: ${version}"
 
 echo "--- :chrome: Building web"
@@ -15,7 +19,7 @@ pnpm install
 NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 pnpm run build-web
 
 export PATH=$PATH:/c/msys64/ucrt64/bin
-platform="x86_64-pc-windows-msvc" # This is the name Tauri expects for the Windows executable
+platform=${PLATFORM:-"not-defined"}
 
 export GO111MODULE=on
 

@@ -7,7 +7,7 @@ mkdir -p ./annotations/
 
 # asdf setup
 # ----------
-if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" && "$BUILDKITE_AGENT_META_DATA_QUEUE" != "macos" ]]; then
+if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" != "bazel" && "$BUILDKITE_AGENT_META_DATA_QUEUE" != "macos" && "$BUILDKITE_AGENT_META_DATA_QUEUE" != "windows" ]]; then
   echo "~~~ Preparing asdf dependencies"
 
   if [[ "$BUILDKITE_STEP_KEY" == "pipeline-gen" ]]; then

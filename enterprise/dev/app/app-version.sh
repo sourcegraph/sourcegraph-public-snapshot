@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-set -eu
+set -exu
+
+echo "IN THIS SCRIPT"
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
