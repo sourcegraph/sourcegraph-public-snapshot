@@ -20,6 +20,7 @@ import { IntentDetector } from '@sourcegraph/cody-shared/src/intent-detector'
 import { ANSWER_TOKENS, DEFAULT_MAX_TOKENS } from '@sourcegraph/cody-shared/src/prompt/constants'
 import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
+import { SourcegraphRestAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/rest'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
 import { View } from '../../webviews/NavBar'
@@ -103,6 +104,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         private extensionPath: string,
         private config: Omit<Config, 'codebase'>, // should use codebaseContext.getCodebase() rather than config.codebase
         private chat: ChatClient,
+        private restApiClient: SourcegraphRestAPIClient,
         private intentDetector: IntentDetector,
         private codebaseContext: CodebaseContext,
         private guardrails: Guardrails,
@@ -502,7 +504,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             codebaseContext: this.codebaseContext,
             responseMultiplexer: this.multiplexer,
             firstInteraction: this.transcript.isEmpty,
+            restApiClient: this.restApiClient,
         })
+
         if (!interaction) {
             return
         }
@@ -519,6 +523,9 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             case 'context-search':
                 this.onCompletionEnd()
                 break
+            case 'generate-diagram':
+                await this.runServiceRecipe()
+                break
             default: {
                 this.sendTranscript()
 
@@ -532,6 +539,22 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             }
         }
         logEvent(`CodyVSCodeExtension:recipe:${recipe.id}:executed`)
+    }
+
+    private async runServiceRecipe() {
+        void vscode.commands.executeCommand('setContext', 'cody.reply.pending', true)
+        this.sendTranscript()
+
+        this.multiplexer.sub(BotResponseMultiplexer.DEFAULT_TOPIC, {
+            onResponse: (content: string) => {
+                this.transcript.addAssistantResponse(content)
+                this.sendTranscript()
+                return Promise.resolve()
+            },
+            onTurnComplete: async () => {
+                void this.onCompletionEnd()
+            },
+        })
     }
 
     private async runRecipeForSuggestion(recipeId: RecipeID, humanChatInput: string = ''): Promise<void> {
@@ -549,6 +572,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
             codebaseContext: this.codebaseContext,
             responseMultiplexer: multiplexer,
             firstInteraction: this.transcript.isEmpty,
+            restApiClient: this.restApiClient,
         })
         if (!interaction) {
             return

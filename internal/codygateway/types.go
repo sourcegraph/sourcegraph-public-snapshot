@@ -19,6 +19,7 @@ const (
 	FeatureCodeCompletions         = Feature(types.CompletionsFeatureCode)
 	FeatureChatCompletions         = Feature(types.CompletionsFeatureChat)
 	FeatureEmbeddings      Feature = "embeddings"
+	Services               Feature = "services"
 )
 
 type EmbeddingsRequest struct {

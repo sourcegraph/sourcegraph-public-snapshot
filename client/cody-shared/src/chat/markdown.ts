@@ -23,6 +23,7 @@ const DOMPURIFY_CONFIG = {
         'h5',
         'h6',
         'i',
+        'img',
         'em',
         'b',
         'strong',

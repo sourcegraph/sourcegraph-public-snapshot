@@ -149,6 +149,50 @@ func (r codyGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (gra
 	}, nil
 }
 
+func (r codyGatewayAccessResolver) ServicesRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
+	if !r.Enabled() {
+		return nil, nil
+	}
+
+	var rateLimit licensing.CodyGatewayRateLimit
+
+	// Get default access from active license. Call hydrate and access field directly to
+	// avoid parsing license key which is done in (*productLicense).Info(), instead just
+	// relying on what we know in DB.
+	activeLicense, err := r.sub.computeActiveLicense(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "could not get active license")
+	}
+
+	var source graphqlbackend.CodyGatewayRateLimitSource
+	if activeLicense != nil {
+		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
+		rateLimit = licensing.NewCodyGatewayServicesRateLimit(licensing.PlanFromTags(activeLicense.LicenseTags), activeLicense.LicenseUserCount, activeLicense.LicenseTags)
+	}
+
+	// Apply overrides
+	rateLimitOverrides := r.sub.v.CodyGatewayAccess
+	if rateLimitOverrides.ServicesRateLimit.RateLimit != nil {
+		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
+		rateLimit.Limit = *rateLimitOverrides.ServicesRateLimit.RateLimit
+	}
+	if rateLimitOverrides.ServicesRateLimit.RateIntervalSeconds != nil {
+		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
+		rateLimit.IntervalSeconds = *rateLimitOverrides.ServicesRateLimit.RateIntervalSeconds
+	}
+	if rateLimitOverrides.ServicesRateLimit.AllowedModels != nil {
+		source = graphqlbackend.CodyGatewayRateLimitSourceOverride
+		rateLimit.AllowedModels = rateLimitOverrides.ServicesRateLimit.AllowedModels
+	}
+
+	return &codyGatewayRateLimitResolver{
+		actorID:     r.sub.UUID(),
+		actorSource: codygateway.ActorSourceProductSubscription,
+		v:           rateLimit,
+		source:      source,
+	}, nil
+}
+
 type codyGatewayRateLimitResolver struct {
 	actorID     string
 	actorSource codygateway.ActorSource

@@ -116,3 +116,24 @@ func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []
 		}
 	}
 }
+
+// NewCodyGatewayEmbeddingsRateLimit returns a rate limit for 3rd party service calls 
+func NewCodyGatewayServicesRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+	uc := 0
+	if userCount != nil {
+		uc = *userCount
+	}
+	if uc < 1 {
+		uc = 1
+	}
+
+	services := []string{"eraser/diagram"}
+	
+	// Allow 20 service calls per user per day
+	return CodyGatewayRateLimit{
+		// Legacy name for convenience sake
+		AllowedModels:   services,
+		Limit:           int32(20 * uc),
+		IntervalSeconds: 60 * 60 * 24, // day
+	}
+}

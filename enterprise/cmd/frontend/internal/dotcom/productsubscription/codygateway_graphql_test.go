@@ -73,4 +73,17 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 		assert.Equal(t, graphqlbackend.BigInt(10), rateLimit.Limit())
 		assert.Equal(t, defaultRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
 	})
+
+	t.Run("default rate limit for 3rd party services", func(t *testing.T) {
+		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
+		require.NoError(t, err)
+
+		r := codyGatewayAccessResolver{sub: &productSubscription{v: sub, db: db}}
+		rateLimit, err := r.ServicesRateLimit(ctx)
+		require.NoError(t, err)
+
+		wantRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(int(info.UserCount)), []string{})
+		assert.Equal(t, wantRateLimit.Limit, rateLimit.Limit())
+		assert.Equal(t, wantRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
+	})
 }

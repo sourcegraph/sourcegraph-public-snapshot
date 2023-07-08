@@ -112,6 +112,7 @@ const register = async (
         completionsClient,
         guardrails,
         onConfigurationChange: externalServicesOnDidConfigurationChange,
+        restApiClient,
     } = await configureExternalServices(initialConfig, rgPath, editor)
 
     const authProvider = new AuthProvider(initialConfig, secretStorage, localStorage)
@@ -122,6 +123,7 @@ const register = async (
         context.extensionPath,
         initialConfig,
         chatClient,
+        restApiClient,
         intentDetector,
         codebaseContext,
         guardrails,
@@ -221,6 +223,7 @@ const register = async (
         ),
         vscode.commands.registerCommand('cody.recipe.generate-unit-test', () => executeRecipe('generate-unit-test')),
         vscode.commands.registerCommand('cody.recipe.generate-docstring', () => executeRecipe('generate-docstring')),
+        vscode.commands.registerCommand('code.recipe.generate-diagram', () => executeRecipe('generate-diagram')),
         vscode.commands.registerCommand('cody.recipe.fixup', () => executeRecipe('fixup')),
         vscode.commands.registerCommand('cody.recipe.translate-to-language', () =>
             executeRecipe('translate-to-language')

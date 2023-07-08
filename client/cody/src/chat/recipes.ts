@@ -16,6 +16,7 @@ import { NextQuestions } from '@sourcegraph/cody-shared/src/chat/recipes/next-qu
 import { NonStop } from '@sourcegraph/cody-shared/src/chat/recipes/non-stop'
 import { Recipe, RecipeID } from '@sourcegraph/cody-shared/src/chat/recipes/recipe'
 import { TranslateToLanguage } from '@sourcegraph/cody-shared/src/chat/recipes/translate'
+import { GenerateDiagram } from '@sourcegraph/cody-shared/src/chat/recipes/generate-diagram'
 
 import { debug } from '../log'
 
@@ -52,6 +53,7 @@ function init(): void {
         new ReleaseNotes(),
         new PrDescription(),
         new TranslateToLanguage(),
+        new GenerateDiagram(),
     ]
 
     for (const recipe of recipes) {

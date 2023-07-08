@@ -1,6 +1,7 @@
 import { CodebaseContext } from '../../codebase-context'
 import { Editor } from '../../editor'
 import { IntentDetector } from '../../intent-detector'
+import { SourcegraphRestAPIClient } from '../../sourcegraph-api/rest'
 import { BotResponseMultiplexer } from '../bot-response-multiplexer'
 import { Interaction } from '../transcript/interaction'
 
@@ -11,6 +12,7 @@ export interface RecipeContext {
     codebaseContext: CodebaseContext
     responseMultiplexer: BotResponseMultiplexer
     firstInteraction: boolean
+    restApiClient: SourcegraphRestAPIClient
 }
 
 export type RecipeID =
@@ -31,6 +33,7 @@ export type RecipeID =
     | 'pr-description'
     | 'release-notes'
     | 'translate-to-language'
+    | 'generate-diagram'
 
 export interface Recipe {
     id: RecipeID
