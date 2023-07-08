@@ -217,10 +217,13 @@ fn start_embedded_services(handle: &tauri::AppHandle) {
     let (mut rx, _child) = Command::new_sidecar(sidecar)
         .expect(format!("failed to create `{sidecar}` binary command").as_str())
         .args(args)
-        .envs(HashMap::from([(
-            "SRC_REPOS_DESIRED_PERCENT_FREE".to_string(),
-            "0".to_string(),
-        )]))
+        .envs(HashMap::from([
+            (
+                "SRC_REPOS_DESIRED_PERCENT_FREE".to_string(),
+                "0".to_string(),
+            ),
+            ("SRC_PROF_HTTP".to_string(), "".to_string()),
+        ]))
         .spawn()
         .expect(format!("failed to spawn {sidecar} sidecar").as_str());
 
