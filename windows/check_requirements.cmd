@@ -94,6 +94,9 @@ GOTO END
 :--------------------------------------
 :END
 IF %missing_req% == 1 GOTO FAILED
+echo.
+echo INFO: All Windows build requirements pass.
+echo.
 GOTO EOF
 
 :FAILED
