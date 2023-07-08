@@ -57,6 +57,7 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'latestSettings'
     | 'permissions'
     | 'hasVerifiedEmail'
+    | 'completedPostSignup'
 >
 
 /**
