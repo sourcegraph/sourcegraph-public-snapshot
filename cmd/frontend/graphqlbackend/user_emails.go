@@ -26,7 +26,7 @@ import (
 var timeNow = time.Now
 
 func (r *UserResolver) HasVerifiedEmail(ctx context.Context) (bool, error) {
-	if deploy.IsApp() {
+	if deploy.IsApp() && deploy.Type() == deploy.App {
 		return r.hasVerifiedEmailOnDotcom(ctx)
 	}
 

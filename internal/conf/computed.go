@@ -24,7 +24,7 @@ import (
 func init() {
 	deployType := deploy.Type()
 	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
+		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deploy.SingleBinary, deployType)
 	}
 
 	confdefaults.Default = defaultConfigForDeployment()
@@ -39,10 +39,10 @@ func defaultConfigForDeployment() conftypes.RawUnified {
 		return confdefaults.DockerContainer
 	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
 		return confdefaults.KubernetesOrDockerComposeOrPureDocker
-	case deploy.IsDeployTypeApp(deployType):
+	case deploy.IsDeployTypeApp(deployType), deploy.IsDeployTypeSingleBinary(deployType):
 		return confdefaults.App
 	default:
-		panic("deploy type did not register default configuration")
+		panic("deploy type did not register default configuration: " + deployType)
 	}
 }
 

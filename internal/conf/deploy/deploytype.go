@@ -13,6 +13,7 @@ const (
 	Helm          = "helm"
 	Kustomize     = "kustomize"
 	App           = "app"
+	SingleBinary  = "single-binary"
 	K3s           = "k3s"
 )
 
@@ -70,9 +71,14 @@ func IsDeployTypeSingleDockerContainer(deployType string) bool {
 	return deployType == SingleDocker
 }
 
-// IsDeployTypeSingleProgram tells if the given deployment type is a single Go program.
+// IsDeployTypeSingleProgram tells if the given deployment type is App.
 func IsDeployTypeApp(deployType string) bool {
 	return deployType == App
+}
+
+// IsDeployTypeSingleProgram tells if the given deployment type is a single Go program.
+func IsDeployTypeSingleBinary(deployType string) bool {
+	return deployType == App || deployType == SingleBinary
 }
 
 // IsDev tells if the given deployment type is "dev".
@@ -88,7 +94,8 @@ func IsValidDeployType(deployType string) bool {
 		IsDeployTypePureDocker(deployType) ||
 		IsDeployTypeSingleDockerContainer(deployType) ||
 		IsDev(deployType) ||
-		IsDeployTypeApp(deployType)
+		IsDeployTypeApp(deployType) ||
+		IsDeployTypeSingleBinary(deployType)
 }
 
 // IsApp tells if the running deployment is a Sourcegraph App deployment.
@@ -100,8 +107,10 @@ func IsValidDeployType(deployType string) bool {
 // be `sourcegraph --as=gitserver` or similar. Use IsSingleBinary() for code that should always
 // run in a single-binary setting, and use IsApp() for code that should only run as part of the
 // Sourcegraph desktop app.
+//
+// TODO(sqs): update most calls of IsApp() to IsSingleBinary()
 func IsApp() bool {
-	return Type() == App
+	return Type() == App || Type() == SingleBinary // TODO(sqs): remove latter == SingleBinary
 }
 
 // IsSingleBinary tells if the running deployment is a single-binary or not.
@@ -116,5 +125,5 @@ func IsApp() bool {
 func IsSingleBinary() bool {
 	// TODO(single-binary): check in the future if this is any single-binary deployment, not just
 	// app.
-	return Type() == App
+	return Type() == App || Type() == SingleBinary
 }

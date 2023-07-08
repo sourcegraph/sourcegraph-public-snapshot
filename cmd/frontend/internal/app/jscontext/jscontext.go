@@ -342,7 +342,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		DeployType:        deploy.Type(),
 
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		SourcegraphAppMode:    deploy.IsApp(),
+		SourcegraphAppMode:    deploy.Type() == deploy.App, // TODO(sqs)
 
 		BillingPublishableKey: BillingPublishableKey,
 
