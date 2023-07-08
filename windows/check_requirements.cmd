@@ -8,6 +8,18 @@ echo Checking system requirements...
 echo.
 
 :--------------------------------------
+:GIT
+git -v 1>nul 2>nul
+IF ERRORLEVEL 1 GOTO MISSING_GIT
+echo git     OK
+GOTO NPM
+
+:MISSING_GIT
+set missing_req=1
+echo git     MISSING
+GOTO NPM
+
+:--------------------------------------
 :NPM
 call npm -v 1>nul 2>nul
 IF ERRORLEVEL 1 GOTO MISSING_NPM
