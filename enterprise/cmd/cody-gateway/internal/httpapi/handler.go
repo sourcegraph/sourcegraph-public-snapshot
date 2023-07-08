@@ -11,12 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/completions"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/embeddings"
-<<<<<<< HEAD
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/featurelimiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/requestlogger"
-=======
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/httpapi/services"
->>>>>>> b39ae474e1 (gateway third party service calls)
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -24,7 +21,6 @@ import (
 )
 
 type Config struct {
-<<<<<<< HEAD
 	RateLimitNotifier          notify.RateLimitNotifier
 	AnthropicAccessToken       string
 	AnthropicAllowedModels     []string
@@ -33,17 +29,8 @@ type Config struct {
 	OpenAIOrgID                string
 	OpenAIAllowedModels        []string
 	EmbeddingsAllowedModels    []string
-=======
-	RateLimitNotifier       notify.RateLimitNotifier
-	AnthropicAccessToken    string
-	AnthropicAllowedModels  []string
-	OpenAIAccessToken       string
-	OpenAIOrgID             string
-	OpenAIAllowedModels     []string
-	EmbeddingsAllowedModels []string
-	EraserAccessToken       string
-	AllowedServices         []string
->>>>>>> b39ae474e1 (gateway third party service calls)
+	EraserAccessToken          string
+	AllowedServices            []string
 }
 
 func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, authr *auth.Authenticator, config *Config) http.Handler {
@@ -160,7 +147,6 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 			otelhttp.WithPublicEndpoint(),
 		),
 	)
-
 
 	return r
 }
