@@ -1,5 +1,12 @@
 #!/usr/bin/env bash
 
+declare -r mydir=$(dirname "$0")
+
+if ! "${mydir}/../../../windows/check_requirements.cmd"; then
+  echo "STOP! Requirements missing. Please fix before proceeding."
+  exit 1
+fi
+
 version="$(./enterprise/dev/app/app-version.sh)"
 echo "Building version: ${version}"
 
