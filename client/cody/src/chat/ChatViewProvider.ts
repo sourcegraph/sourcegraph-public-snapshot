@@ -444,12 +444,14 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
         await this.executeChatCommands(text)
     }
 
+    // MARK: executeChatCommands
     private async executeChatCommands(text: string): Promise<void> {
         switch (true) {
             case /^\/r(est)?\s/i.test(text):
                 await this.clearAndRestartSession()
                 break
-            case /^\/s(earch)?\s/i.test(text):
+            case isSearch(text):
+                // TODO: may need to process user query to get actual keyword query
                 await this.executeRecipe('context-search', text)
                 break
             default:
@@ -993,4 +995,14 @@ export async function getCodebaseContext(
 
 function isAbortError(error: string): boolean {
     return error === 'aborted' || error === 'socket hang up'
+}
+
+function isSearch(text: string): boolean {
+    if (/^\/s(earch)?\s/i.test(text)) {
+        return true
+    }
+    if (/\b(?:which files|where|find|search)\b/.test(text)) {
+        return true
+    }
+    return false
 }

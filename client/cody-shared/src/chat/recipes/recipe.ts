@@ -36,3 +36,15 @@ export interface Recipe {
     id: RecipeID
     getInteraction(humanChatInput: string, context: RecipeContext): Promise<Interaction | null>
 }
+
+export interface ShellAction {
+    id: string
+    inputs: ShellActionInput[]
+
+    // TODO: how to model output
+}
+
+export interface ShellActionInput {
+    name: string
+    value: string
+}
