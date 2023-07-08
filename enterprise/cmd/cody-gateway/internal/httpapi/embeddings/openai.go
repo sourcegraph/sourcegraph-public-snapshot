@@ -8,6 +8,11 @@ import (
 	"net/http"
 	"sort"
 
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -25,9 +30,23 @@ type openaiClient struct {
 	accessToken string
 }
 
+var tracer = otel.Tracer("cody-gateway/httpapi/embeddings")
+
 const apiURL = "https://api.openai.com/v1/embeddings"
 
-func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, int, error) {
+func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway.EmbeddingsRequest) (_ *codygateway.EmbeddingsResponse, _ int, err error) {
+	var span trace.Span
+	ctx, span = tracer.Start(ctx, "openai.GenerateEmbeddings",
+		trace.WithAttributes(
+			attribute.Int("input.model", len(input.Model)),
+			attribute.Int("input.length", len(input.Input))))
+	defer func() {
+		if err != nil {
+			span.SetStatus(codes.Error, "GenerateEmbeddings failed") // Record generic error to avoid response body
+		}
+		span.End()
+	}()
+
 	for _, s := range input.Input {
 		if s == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -123,11 +142,23 @@ func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel,
 		// return a 503 to the client. It's not them being limited, it's us and that an operations
 		// error on our side.
 		if resp.StatusCode == http.StatusTooManyRequests {
-			return nil, response.NewHTTPStatusCodeError(http.StatusServiceUnavailable, errors.Newf("we're facing too much load at the moment, please retry"))
+			return nil, response.NewHTTPStatusCodeError(http.StatusServiceUnavailable,
+				errors.New("we're facing too much load at the moment, please retry"))
 		}
+
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		// We don't forward the status code here, everything but 429 should turn into a 500 error.
-		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
+
+		// If OpenAI tells us we gave them a bad request, blame the client and
+		// tell them.
+		if resp.StatusCode == http.StatusBadRequest {
+			return nil, response.NewHTTPStatusCodeError(http.StatusBadRequest,
+				errors.Newf("bad request: %s", string(respBody)))
+		}
+
+		// We don't forward other status codes, we just return a generic error
+		// instead.
+		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s",
+			req.Method, req.URL.String(), resp.StatusCode, string(respBody))
 	}
 
 	var response openaiEmbeddingsResponse
