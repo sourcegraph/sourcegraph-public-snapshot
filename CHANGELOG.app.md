@@ -16,6 +16,7 @@ All notable changes to the Cody app are documented in this file.
 ## Unreleased
 
 - Added a new settings screen to view Cody rate limits and usage
+- Fixes conflicts on port 6060
 
 ## v2023.7.4
 
