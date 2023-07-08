@@ -6,23 +6,23 @@ FLAKES = {
         {
             "path": "enterprise/cmd/frontend/internal/batches/resolvers",
             "prefix": "TestRepositoryPermissions",
-            "reason": "Test was having incomplete data, fails now that constraints are in place"
+            "reason": "Test was having incomplete data, fails now that constraints are in place",
         },
         {
             "path": "dev/sg/linters",
             "prefix": "TestLibLogLinter",
-            "reason": "Test was having incomplete data, fails now that constraints are in place"
+            "reason": "Test was having incomplete data, fails now that constraints are in place",
         },
         {
             "path": "internal/database",
             "prefix": "TestRepos_List_LastChanged",
-            "reason": "Shifting constraints on table; ranking is experimental"
+            "reason": "Shifting constraints on table; ranking is experimental",
         },
         {
-            "path": "enterprise/internal/codeintel/ranking/internal/store",
+            "path": "internal/codeintel/ranking/internal/store",
             "prefix": "Test",
-            "reason": "Shifting constraints on table; ranking is experimental"
+            "reason": "Shifting constraints on table; ranking is experimental",
         },
     ],
-    "5.1.0": []
+    "5.1.0": [],
 }

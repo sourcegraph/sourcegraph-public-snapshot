@@ -14,12 +14,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/gitlab"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -191,3 +191,11 @@ func PermissionSyncingDisabled() bool {
 		licensing.Check(licensing.FeatureACLs) != nil ||
 		conf.Get().DisableAutoCodeHostSyncs
 }
+
+var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(
+	[]func(*types.GitHubConnection) error{github.ValidateAuthz},
+	[]func(*schema.GitLabConnection, []schema.AuthProviders) error{gitlab.ValidateAuthz},
+	[]func(*schema.BitbucketServerConnection) error{bitbucketserver.ValidateAuthz},
+	[]func(*schema.PerforceConnection) error{perforce.ValidateAuthz},
+	[]func(*schema.AzureDevOpsConnection) error{func(_ *schema.AzureDevOpsConnection) error { return nil }},
+) // TODO: @varsanojidan switch this with actual authz once its implemented.

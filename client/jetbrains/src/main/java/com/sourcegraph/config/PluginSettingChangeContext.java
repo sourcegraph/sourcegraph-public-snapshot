@@ -7,7 +7,7 @@ public class PluginSettingChangeContext {
 
   @Nullable public final String oldDotComAccessToken;
   @Nullable public final String oldEnterpriseAccessToken;
-  public final boolean oldCodyCompletionsEnabled;
+  public final boolean oldCodyAutoCompleteEnabled;
 
   @Nullable public final String newUrl;
 
@@ -15,26 +15,26 @@ public class PluginSettingChangeContext {
   @Nullable public final String newEnterpriseAccessToken;
 
   @Nullable public final String newCustomRequestHeaders;
-  public final boolean newCodyCompletionsEnabled;
+  public final boolean newCodyAutoCompleteEnabled;
 
   public PluginSettingChangeContext(
       @Nullable String oldUrl,
       @Nullable String oldDotComAccessToken,
       @Nullable String oldEnterpriseAccessToken,
-      boolean oldCodyCompletionsEnabled,
+      boolean oldCodyAutoCompleteEnabled,
       @Nullable String newUrl,
       @Nullable String newDotComAccessToken,
       @Nullable String newEnterpriseAccessToken,
       @Nullable String newCustomRequestHeaders,
-      boolean newCodyCompletionsEnabled) {
+      boolean newCodyAutoCompleteEnabled) {
     this.oldUrl = oldUrl;
     this.oldDotComAccessToken = oldDotComAccessToken;
     this.oldEnterpriseAccessToken = oldEnterpriseAccessToken;
-    this.oldCodyCompletionsEnabled = oldCodyCompletionsEnabled;
+    this.oldCodyAutoCompleteEnabled = oldCodyAutoCompleteEnabled;
     this.newUrl = newUrl;
     this.newDotComAccessToken = newDotComAccessToken;
     this.newEnterpriseAccessToken = newEnterpriseAccessToken;
     this.newCustomRequestHeaders = newCustomRequestHeaders;
-    this.newCodyCompletionsEnabled = newCodyCompletionsEnabled;
+    this.newCodyAutoCompleteEnabled = newCodyAutoCompleteEnabled;
   }
 }

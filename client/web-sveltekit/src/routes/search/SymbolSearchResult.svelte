@@ -1,14 +1,10 @@
 <svelte:options immutable />
 
 <script lang="ts">
-    import { map } from 'rxjs/operators'
-
-    import { HighlightResponseFormat } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
-    import { fetchFileRangeMatches } from '$lib/search/results'
+    import { fetchFileRangeMatches } from '$lib/search/api/highlighting'
     import { getSymbolIconPath } from '$lib/search/symbolIcons'
     import { displayRepoName, splitPath, getFileMatchUrl, getRepositoryUrl, type SymbolMatch } from '$lib/shared'
-    import { platformContext } from '$lib/stores'
 
     import CodeExcerpt from './CodeExcerpt.svelte'
     import SearchResult from './SearchResult.svelte'
@@ -18,23 +14,16 @@
     $: repoName = result.repository
     $: repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     $: [fileBase, fileName] = splitPath(result.path)
+    $: ranges = result.symbols.map(symbol => ({
+        startLine: symbol.line - 1,
+        endLine: symbol.line,
+    }))
 
-    function fetchHighlightedSymbolMatchLineRanges(startLine: number, endLine: number) {
-        return fetchFileRangeMatches({
-            result,
-            platformContext: $platformContext,
-            format: HighlightResponseFormat.HTML_HIGHLIGHT,
-            ranges: result.symbols.map(symbol => ({
-                startLine: symbol.line - 1,
-                endLine: symbol.line,
-            })),
-        }).pipe(
-            map(lines => {
-                return lines[
-                    result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
-                ]
-            })
-        )
+    async function fetchHighlightedSymbolMatchLineRanges(startLine: number, endLine: number) {
+        const highlightedSymbols = await fetchFileRangeMatches({ result, ranges })
+        return highlightedSymbols[
+            result.symbols.findIndex(symbol => symbol.line - 1 === startLine && symbol.line === endLine)
+        ]
     }
 </script>
 
@@ -54,7 +43,6 @@
             <CodeExcerpt
                 startLine={symbol.line - 1}
                 endLine={symbol.line}
-                matches={[]}
                 fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
                 --background-color="transparent"
             />

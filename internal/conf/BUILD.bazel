@@ -24,6 +24,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
+        "//internal/accesstoken",
         "//internal/api/internalapi",
         "//internal/conf/confdefaults",
         "//internal/conf/conftypes",
@@ -34,7 +35,6 @@ go_library(
         "//internal/hashutil",
         "//internal/httpcli",
         "//internal/jsonc",
-        "//internal/licensing",
         "//internal/src-cli",
         "//internal/version",
         "//lib/errors",
@@ -63,10 +63,10 @@ go_test(
     embed = [":conf"],
     deps = [
         "//cmd/frontend/envvar",
+        "//internal/accesstoken",
         "//internal/api/internalapi",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
-        "//internal/licensing",
         "//lib/errors",
         "//lib/pointers",
         "//schema",

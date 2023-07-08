@@ -271,7 +271,7 @@ commands:
       - lib
       - internal
       - enterprise/cmd/embeddings
-      - enterprise/internal/embeddings
+      - internal/embeddings
   worker:
     cmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -404,7 +404,7 @@ commands:
 
   docsite:
     description: Docsite instance serving the docs
-    cmd: bazel run //doc:serve
+    cmd: bazel run --noshow_progress --noshow_loading_progress //doc:serve
 
   syntax-highlighter:
     ignoreStdout: true

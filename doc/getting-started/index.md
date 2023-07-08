@@ -57,10 +57,12 @@ You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a p
 
 Sourcegraph Enterprise is Sourcegraph’s primary offering and includes all code intelligence platform features. Sourcegraph Enterprise is the best solution for enterprises who want to use Sourcegraph with their organization’s code.
 
-Some third party extensions are OSS licensed (Apache 2), such as:
-1. Sourcegraph browser extension
-2. Sourcegraph VS Code extension
-3. Sourcegraph Jetbrains extension
+[Cody](https://docs.sourcegraph.com/cody), Sourcegraph's AI-enabled editor assistant, is free and [open source](https://about.sourcegraph.com/blog/open-sourcing-cody) and is licensed under the Apache 2.0 license. 
+
+Sourcegraph extensions are also OSS licensed (Apache 2), such as:
+1. [Sourcegraph browser extension](https://github.com/sourcegraph/sourcegraph/tree/master/client/browser)
+2. [Sourcegraph VS Code extension](https://github.com/sourcegraph/sourcegraph/tree/main/client/vscode)
+3. [Sourcegraph Jetbrains extension](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains)
 
 ## How is Sourcegraph different than GitHub code search? 
 - [See how GitHub code search compares to Sourcegraph](./github-vs-sourcegraph.md)

@@ -1,3 +1,4 @@
+import { throttle } from 'lodash'
 import * as vscode from 'vscode'
 
 import { ActiveTextEditorSelection } from '@sourcegraph/cody-shared/src/editor'
@@ -30,6 +31,11 @@ export class InlineController {
     private commentController: vscode.CommentController | null = null
     public thread: vscode.CommentThread | null = null // a thread is a comment
     private threads = new Map<string, vscode.CommentThread>()
+    private inProgressComment: Comment | null = null
+
+    // A repeating, text-based, loading indicator ("." -> ".." -> "...")
+    private responsePendingInterval: NodeJS.Timeout | null = null
+
     private currentTaskId = ''
     // Workspace State
     private workspacePath = vscode.workspace.workspaceFolders?.[0].uri
@@ -148,44 +154,84 @@ export class InlineController {
     /**
      * List response from Human as comment
      */
-    public async chat(threads: vscode.CommentReply, isFixMode: boolean = false): Promise<void> {
+    public async chat(reply: vscode.CommentReply, isFixMode: boolean = false): Promise<void> {
         this.isInProgress = true
-        const humanInput = threads.text
-        const thread = threads.thread
+        const humanInput = reply.text
+        const thread = reply.thread
         // disable reply until the task is completed
         thread.canReply = false
         thread.label = this.threadLabel
         thread.collapsibleState = vscode.CommentThreadCollapsibleState.Collapsed
-        const comment = new Comment(humanInput, 'Me', this.userIcon, isFixMode, thread, 'loading')
+
+        const comment = new Comment(humanInput, 'Me', this.userIcon, reply.thread)
         thread.comments = [...thread.comments, comment]
-        await this.runFixMode(isFixMode, comment, thread)
+
+        if (isFixMode) {
+            await this.runFixMode(comment, thread)
+        }
+
         this.thread = thread
         this.selection = await this.makeSelection(isFixMode)
-        const firstCommentId = thread.comments[0].label
-        if (firstCommentId) {
-            this.threads.set(firstCommentId, thread)
+        const firstComment = thread.comments[0]
+        if (firstComment && firstComment instanceof Comment) {
+            this.threads.set(firstComment.id, thread)
         }
         void vscode.commands.executeCommand('setContext', 'cody.replied', false)
     }
     /**
      * List response from Cody as comment
      */
-    public reply(text: string, error = false): void {
+    public reply(text: string, state: 'streaming' | 'complete' | 'error' | 'loading'): void {
         if (!this.thread || this.thread.state) {
             return
         }
-        const replyText = text
-        const comment = new Comment(replyText, 'Cody', this.codyIcon, false, this.thread, undefined)
-        this.thread.comments = [...this.thread.comments, comment]
-        this.thread.canReply = !error
-        this.thread.state = error ? 1 : 0
-        const firstCommentId = this.thread.comments[0].label
-        if (firstCommentId) {
-            this.threads.set(firstCommentId, this.thread)
-        }
-        void vscode.commands.executeCommand('setContext', 'cody.replied', true)
-    }
 
+        // Clear out any loading indicator
+        if (state !== 'loading' && this.responsePendingInterval) {
+            this.setResponsePending(false)
+        }
+
+        if (this.inProgressComment) {
+            this.inProgressComment.update(text)
+        } else {
+            this.inProgressComment = new Comment(text, 'Cody', this.codyIcon, this.thread)
+            this.thread.comments = [...this.thread.comments, this.inProgressComment]
+        }
+
+        const firstComment = this.thread.comments[0]
+        if (firstComment && firstComment instanceof Comment) {
+            this.threads.set(firstComment.id, this.thread)
+        }
+
+        // Terminal states
+        if (state === 'complete' || state === 'error') {
+            this.inProgressComment = null
+            this.thread.state = state === 'error' ? 1 : 0
+            this.thread.canReply = state !== 'error'
+            void vscode.commands.executeCommand('setContext', 'cody.replied', true)
+        }
+    }
+    /**
+     * Display a "..." loading style reply from Cody.
+     */
+    public setResponsePending(isResponsePending: boolean): void {
+        let iterations = 0
+
+        if (!isResponsePending && this.responsePendingInterval) {
+            clearInterval(this.responsePendingInterval)
+            this.responsePendingInterval = null
+            iterations = 0
+            return
+        }
+
+        const dot = '.'
+        this.reply(dot, 'loading')
+        this.responsePendingInterval = setInterval(() => {
+            iterations++
+            const replyText = dot.repeat((iterations % 3) + 1)
+            this.reply(replyText, 'loading')
+        }, 500)
+    }
     private undo(id: string): void {
         void this.codeLenses.get(id)?.undo(id)
         this.codeLenses.delete(id)
@@ -213,7 +259,7 @@ export class InlineController {
     }
 
     public async error(): Promise<void> {
-        this.reply('Request failed. Please close this and try again.', true)
+        this.reply('Request failed. Please close this and try again.', 'error')
         if (this.currentTaskId) {
             await this.stopFixMode(true)
         }
@@ -221,10 +267,7 @@ export class InlineController {
     /**
      * Create code lense and initiate decorators for fix mode
      */
-    private async runFixMode(isFixMode: boolean, comment: Comment, thread: vscode.CommentThread): Promise<void> {
-        if (!isFixMode) {
-            return
-        }
+    private async runFixMode(comment: Comment, thread: vscode.CommentThread): Promise<void> {
         const lens = await this.makeCodeLenses(comment.id, this.extensionPath, thread)
         lens.updateState(CodyTaskState.asking, thread.range)
         this.codeLenses.set(comment.id, lens)
@@ -357,25 +400,39 @@ export class InlineController {
     }
 }
 
-export class Comment implements vscode.Comment {
+class Comment implements vscode.Comment {
     public id: string
-    public label: string | undefined
-    public body: string | vscode.MarkdownString
+    public body: vscode.MarkdownString
     public mode = vscode.CommentMode.Preview
     public author: vscode.CommentAuthorInformation
+
     constructor(
         public input: string,
         public name: string,
         public iconPath: vscode.Uri,
-        public isTask: boolean,
-        public parent?: vscode.CommentThread,
-        public contextValue?: string
+        public parent: vscode.CommentThread
     ) {
         const timestamp = new Date(Date.now())
         this.id = timestamp.getTime().toString()
         this.body = this.markdown(input)
         this.author = { name, iconPath }
-        this.label = '#' + this.id
+        /**
+         * Although we can stream responses in fast intervals, VS Code limits comment updates to every 100ms.
+         * We throttle the update function to ensure we do not try to update the comment too much.
+         * Relevant VS Code logic: https://sourcegraph.com/github.com/microsoft/vscode@6c8cdf325eb1dc8a0e2ea9205a1d2ca05f69c101/-/blob/src/vs/workbench/api/common/extHostComments.ts?L461-492
+         */
+        this.update = throttle(this.update.bind(this), 100)
+    }
+
+    public update(input: string): void {
+        this.body = this.markdown(input)
+        this.refresh()
+    }
+
+    private refresh(): void {
+        // Reassigning .comments is required in order for the UI to re-render in VS Code.
+        // eslint-disable-next-line no-self-assign
+        this.parent.comments = this.parent.comments
     }
 
     /**

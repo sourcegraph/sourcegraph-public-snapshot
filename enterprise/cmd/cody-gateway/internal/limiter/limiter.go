@@ -67,16 +67,16 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	}
 	intervalSeconds := l.Interval.Seconds()
 	var currentUsage int
-
-	// TODO: ctx is unused after this, but if a usage is added, we need
-	// to update this assignment - removed for now because of ineffassign
-	_, span := tracer.Start(ctx, l.LimiterName+".TryAcquire",
+	var span trace.Span
+	ctx, span = tracer.Start(ctx, l.LimiterName+".TryAcquire",
 		trace.WithAttributes(
 			attribute.Int64("limit", l.Limit),
-			attribute.Float64("intervalSeconds", intervalSeconds),
-			attribute.Int("currentUsage", currentUsage)))
+			attribute.Float64("intervalSeconds", intervalSeconds)))
 	defer func() {
-		span.RecordError(err)
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.SetAttributes(attribute.Int("currentUsage", currentUsage))
 		span.End()
 	}()
 

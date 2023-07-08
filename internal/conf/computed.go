@@ -2,23 +2,21 @@ package conf
 
 import (
 	"context"
-	"encoding/base64"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -79,56 +77,12 @@ func GitLabConfigs(ctx context.Context) ([]*schema.GitLabConnection, error) {
 	return config, nil
 }
 
-func GitoliteConfigs(ctx context.Context) ([]*schema.GitoliteConnection, error) {
-	var config []*schema.GitoliteConnection
-	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindGitolite, &config); err != nil {
-		return nil, err
-	}
-	return config, nil
-}
-
 func PhabricatorConfigs(ctx context.Context) ([]*schema.PhabricatorConnection, error) {
 	var config []*schema.PhabricatorConnection
 	if err := internalapi.Client.ExternalServiceConfigs(ctx, extsvc.KindPhabricator, &config); err != nil {
 		return nil, err
 	}
 	return config, nil
-}
-
-func GitHubAppEnabled() bool {
-	cfg, _ := GitHubAppConfig()
-	return cfg.Configured()
-}
-
-type GitHubAppConfiguration struct {
-	PrivateKey   []byte
-	AppID        string
-	Slug         string
-	ClientID     string
-	ClientSecret string
-}
-
-func (c GitHubAppConfiguration) Configured() bool {
-	return c.AppID != "" && len(c.PrivateKey) != 0 && c.Slug != "" && c.ClientID != "" && c.ClientSecret != ""
-}
-
-func GitHubAppConfig() (config GitHubAppConfiguration, err error) {
-	cfg := Get().GitHubApp
-	if cfg == nil {
-		return GitHubAppConfiguration{}, nil
-	}
-
-	privateKey, err := base64.StdEncoding.DecodeString(cfg.PrivateKey)
-	if err != nil {
-		return GitHubAppConfiguration{}, errors.Wrap(err, "decoding GitHub app private key failed")
-	}
-	return GitHubAppConfiguration{
-		PrivateKey:   privateKey,
-		AppID:        cfg.AppID,
-		Slug:         cfg.Slug,
-		ClientID:     cfg.ClientID,
-		ClientSecret: cfg.ClientSecret,
-	}, nil
 }
 
 type AccessTokenAllow string
@@ -347,20 +301,6 @@ func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
 	return "dev"
 }
 
-func CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix() string {
-	if val := Get().CodeIntelRankingDocumentReferenceCountsDerivativeGraphKeyPrefix; val != "" {
-		return val
-	}
-	return ""
-}
-
-func CodeIntelRankingStaleResultAge() time.Duration {
-	if val := Get().CodeIntelRankingStaleResultsAge; val > 0 {
-		return time.Duration(val) * time.Hour
-	}
-	return 24 * time.Hour
-}
-
 func EmbeddingsEnabled() bool {
 	return GetEmbeddingsConfig(Get().SiteConfiguration) != nil
 }
@@ -474,14 +414,6 @@ func ExperimentalFeatures() schema.ExperimentalFeatures {
 		return schema.ExperimentalFeatures{}
 	}
 	return *val
-}
-
-func Tracer() string {
-	ot := Get().ObservabilityTracing
-	if ot == nil {
-		return ""
-	}
-	return ot.Type
 }
 
 // AuthMinPasswordLength returns the value of minimum password length requirement.
@@ -814,6 +746,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	return computedConfig
 }
 
+const embeddingsMaxFileSizeBytes = 1000000
+
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
@@ -939,6 +873,23 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		return nil
 	}
 
+	// While its not removed, use both options
+	var includedFilePathPatterns []string
+	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
+	maxFileSizeLimit := embeddingsMaxFileSizeBytes
+	if embeddingsConfig.FileFilters != nil {
+		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
+		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
+		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
+			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
+		}
+	}
+	fileFilters := conftypes.EmbeddingsFileFilters{
+		IncludedFilePathPatterns: includedFilePathPatterns,
+		ExcludedFilePathPatterns: excludedFilePathPatterns,
+		MaxFileSizeBytes:         maxFileSizeLimit,
+	}
+
 	computedConfig := &conftypes.EmbeddingsConfig{
 		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
 		AccessToken: embeddingsConfig.AccessToken,
@@ -947,7 +898,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
 		Incremental:                *embeddingsConfig.Incremental,
-		ExcludedFilePathPatterns:   embeddingsConfig.ExcludedFilePathPatterns,
+		FileFilters:                fileFilters,
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,

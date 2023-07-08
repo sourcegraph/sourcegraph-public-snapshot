@@ -391,6 +391,7 @@ ts_project(
         "src/enterprise/app/routes.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
         "src/enterprise/app/settings/local-repositories/LocalRepositoriesTab.tsx",
+        "src/enterprise/app/settings/rate-limits/RateLimitsTab.tsx",
         "src/enterprise/app/setup/AppSetupWizard.tsx",
         "src/enterprise/app/setup/components/AppSetupProgressBar.tsx",
         "src/enterprise/app/setup/steps/AppAllSetSetupStep.tsx",

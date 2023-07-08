@@ -2,16 +2,18 @@ package com.sourcegraph.cody.ui;
 
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.components.JBTextArea;
-import java.awt.*;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.geom.RoundRectangle2D;
-import javax.swing.*;
+import javax.swing.BorderFactory;
 
 public class RoundedJBTextArea extends JBTextArea {
 
   private final int cornerRadius;
 
-  public RoundedJBTextArea(int rows, int columns, int cornerRadius) {
-    super(rows, columns);
+  public RoundedJBTextArea(int minRows, int cornerRadius) {
+    super(minRows, 0);
     this.cornerRadius = cornerRadius;
     setOpaque(false);
     setBorder(BorderFactory.createEmptyBorder(4, 4, 4, 4));
