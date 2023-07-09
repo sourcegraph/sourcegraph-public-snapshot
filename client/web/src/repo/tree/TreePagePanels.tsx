@@ -3,7 +3,7 @@ import React, { FC, useCallback, useRef, useState, useMemo, useEffect } from 're
 import { mdiFileDocumentOutline, mdiFolderOutline, mdiMenuDown, mdiMenuUp } from '@mdi/js'
 import classNames from 'classnames'
 
-import { NoopEditor } from '@sourcegraph/cody-shared/src/editor'
+import { NoopEditor } from '@sourcegraph/cody-shared/dist/editor'
 import { basename, dirname } from '@sourcegraph/common'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import {
