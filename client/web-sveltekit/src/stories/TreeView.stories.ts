@@ -15,7 +15,7 @@ class ExampleProvider implements TreeProvider<ExampleData> {
     isExpandable(entry: ExampleData): boolean {
         return !!entry.children
     }
-    getKey(entry: ExampleData): string {
+    getNodeID(entry: ExampleData): string {
         return this.parentPath + entry.name
     }
     getEntries(): ExampleData[] {

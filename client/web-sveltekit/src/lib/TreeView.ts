@@ -1,10 +1,24 @@
-import { writable } from 'svelte/store'
-
+/**
+ * Interface for providing the tree data.
+ */
 export interface TreeProvider<T> {
+    /**
+     * Returns the node values (e.g. the initial set of nodes for the root or child nodes for a node).
+     */
     getEntries(): T[]
+    /**
+     * Whether or not the provided entrty is has (possibly) children or not.
+     */
     isExpandable(entry: T): boolean
+    /**
+     * Called when the corresponding node id expanded.
+     */
     fetchChildren(entry: T): Promise<TreeProvider<T>>
-    getKey(entry: T): string
+    /**
+     * Returns a (tree-wide) unique ID for the provided value. The tree view uses this
+     * to track various state (open/closed, selected, ...).
+     */
+    getNodeID(entry: T): string
 }
 
 export interface NodeState {
@@ -17,6 +31,9 @@ export interface TreeState {
     nodes: Record<string, NodeState>
 }
 
+/**
+ * Helper function for augmenting a node's state.
+ */
 export function updateNodeState(
     treeState: TreeState,
     nodeID: string,
@@ -36,9 +53,9 @@ export class DummyTreeProvider implements TreeProvider<any> {
         return []
     }
     fetchChildren(_entry: any): Promise<TreeProvider<any>> {
-        return Promise.resolve(new this.constructor())
+        return Promise.resolve(new DummyTreeProvider())
     }
-    getKey(_entry: any): string {
+    getNodeID(_entry: any): string {
         return ''
     }
 }

@@ -1,5 +1,6 @@
 <script lang="ts">
     import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
+    import { writable } from 'svelte/store'
 
     import type { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -7,8 +8,7 @@
     import Icon from '$lib/Icon.svelte'
     import type { FileTreeProvider } from '$lib/repo/api/tree'
     import type { TreeState } from '$lib/TreeView'
-    import TreeView from '$lib/TreeView.svelte'
-    import { onMount } from 'svelte'
+    import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
@@ -57,11 +57,13 @@
         focused: '',
         nodes: {},
     }
+    let treeStateStore = writable(treeState)
+    setTreeContext(treeStateStore)
     let currentlySelectedPath: string
 
     // Update open and selected nodes when the path changes
     $: if (currentlySelectedPath !== selectedPath) {
-        const nodesCopy = { ...treeState.nodes }
+        const nodesCopy = { ...$treeStateStore.nodes }
         for (const ancestor of getAncestorPaths(selectedPath)) {
             nodesCopy[ancestor] = { ...nodesCopy[ancestor], expanded: true }
         }
@@ -70,19 +72,18 @@
             nodesCopy[currentlySelectedPath] = { ...nodesCopy[currentlySelectedPath], selected: false }
         }
         currentlySelectedPath = selectedPath
-        treeState = { focused: selectedPath, nodes: nodesCopy }
+        $treeStateStore = { focused: selectedPath, nodes: nodesCopy }
     }
-    onMount(() => console.log('mounted'))
 </script>
 
 <div tabindex="-1">
-    <TreeView {treeProvider} isRoot bind:treeState on:select={event => handleInteraction(event.detail)}>
+    <TreeView {treeProvider} isRoot on:select={event => handleInteraction(event.detail)}>
         <svelte:fragment let:entry let:expanded>
             <!-- we progamatically handle navigation to preserve the focus state (see gotoEntry) -->
-                <a href={entry.url ?? ''} on:click|preventDefault={event => handleInteraction(event.target)} tabindex={-1}>
-                    <Icon svgPath={getIconPath(entry, expanded)} inline />
-                    {entry === treeRoot ? '..' : entry.name}
-                </a>
+            <a href={entry.url ?? ''} on:click|preventDefault={event => handleInteraction(event.target)} tabindex={-1}>
+                <Icon svgPath={getIconPath(entry, expanded)} inline />
+                {entry === treeRoot ? '..' : entry.name}
+            </a>
         </svelte:fragment>
     </TreeView>
 </div>
@@ -103,7 +104,6 @@
         :global(.treeitem.selected) > :global(.label) {
             background-color: var(--color-bg-2);
         }
-
     }
 
     a {

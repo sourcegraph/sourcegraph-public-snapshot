@@ -1,20 +1,35 @@
 <svelte:options immutable />
 
+<script lang="ts" context="module">
+    import { setContext as setContextSvelte, getContext as getContextSvelte } from 'svelte'
+
+    import type { TreeState } from './TreeView'
+
+    const CONTEXT_KEY = 'treestore'
+
+    export function setTreeContext(initialState: Writable<TreeState>) {
+        return setContextSvelte(CONTEXT_KEY, initialState)
+    }
+
+    export function getTreeContext(): Writable<TreeState> {
+        return getContextSvelte(CONTEXT_KEY)
+    }
+</script>
+
 <script lang="ts" generics="N">
     import { createEventDispatcher } from 'svelte'
+    import type { Writable } from 'svelte/store'
     import { Key } from 'ts-key-enum'
 
-    import { updateNodeState, type NodeState, type TreeProvider, type TreeState } from './TreeView'
-    import TreeViewEntry from './TreeViewEntry.svelte'
+    import TreeNode from './TreeNode.svelte'
+    import { updateNodeState, type NodeState, type TreeProvider } from './TreeView'
 
     export let treeProvider: TreeProvider<N>
-    export let treeState: TreeState
-    export let isRoot: boolean
 
     const dispatch = createEventDispatcher<{ select: HTMLElement }>()
+    let treeState = getTreeContext()
 
     let element: HTMLElement
-
     $: entries = treeProvider.getEntries()
 
     function getFocusedElement(): HTMLElement | null {
@@ -22,7 +37,7 @@
     }
 
     function createNewTreeState(element: HTMLElement, newState: Partial<NodeState>): TreeState {
-        return { ...treeState, nodes: updateNodeState(treeState, getNodeID(element), newState)}
+        return { ...$treeState, nodes: updateNodeState($treeState, getNodeID(element), newState) }
     }
 
     function getNodeID(element: HTMLElement): string {
@@ -31,8 +46,11 @@
 
     function focusNode(element: HTMLElement | null | undefined): void {
         if (element) {
-            treeState = { ...treeState, focused: getNodeID(element) }
+            $treeState = { ...$treeState, focused: getNodeID(element) }
             element.focus()
+            // We want to scroll actual label into view, not the whole treeitem (including subtree), to
+            // prevent the list from jumping.
+            element.querySelector('.label')?.scrollIntoView({ block: 'nearest' })
         }
     }
 
@@ -71,7 +89,7 @@
         }
         if (!next) {
             // Go up
-            let nextPossible: HTMLElement|null|undefined = element
+            let nextPossible: HTMLElement | null | undefined = element
             do {
                 nextPossible = nextPossible.parentElement?.closest('[role="treeitem"]')
                 if (!nextPossible) {
@@ -91,9 +109,13 @@
         let previous: HTMLElement | null = findSiblingNode(element, 'previous')
         if (previous?.getAttribute('aria-expanded') === 'true') {
             // Find last visible tree item in subtree rooted at the next sibling
-            const walker = document.createTreeWalker(previous, NodeFilter.SHOW_ELEMENT, node => (node as HTMLElement).getAttribute("role") === 'treeitem' ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP)
-            let possiblePrev: HTMLElement|null
-            while (possiblePrev = walker.lastChild() as HTMLElement|null) {
+            const walker = document.createTreeWalker(previous, NodeFilter.SHOW_ELEMENT, node =>
+                (node as HTMLElement).getAttribute('role') === 'treeitem'
+                    ? NodeFilter.FILTER_ACCEPT
+                    : NodeFilter.FILTER_SKIP
+            )
+            let possiblePrev: HTMLElement | null
+            while ((possiblePrev = walker.lastChild() as HTMLElement | null)) {
                 previous = possiblePrev
             }
         }
@@ -107,7 +129,7 @@
     const handledKeys = new Set([Key.ArrowUp, Key.ArrowDown, Key.ArrowLeft, Key.ArrowRight, Key.Enter])
 
     function handleKeydown(event: KeyboardEvent) {
-        if (!handledKeys.has(event.key as Key)) {
+        if (!handledKeys.has(event.key as Key) || event.ctrlKey || event.metaKey || event.altKey) {
             return
         }
         // Prevent arrow keys from scrolling the tree view
@@ -126,7 +148,7 @@
                 if (focusedElement) {
                     switch (focusedElement.getAttribute('aria-expanded')) {
                         case 'false': {
-                            treeState = createNewTreeState(focusedElement, { expanded: true })
+                            $treeState = createNewTreeState(focusedElement, { expanded: true })
                             break
                         }
                         case 'true': {
@@ -142,7 +164,7 @@
                 if (focusedElement) {
                     switch (focusedElement.getAttribute('aria-expanded')) {
                         case 'true': {
-                            treeState = createNewTreeState(focusedElement, { expanded: false })
+                            $treeState = createNewTreeState(focusedElement, { expanded: false })
                             break
                         }
                         default: {
@@ -172,27 +194,29 @@
     }
 </script>
 
-<ul
-    bind:this={element}
-    role={isRoot ? 'tree' : 'group'}
-    on:keydown={isRoot ? handleKeydown : undefined}
-    on:click={isRoot ? handleClick : undefined}
->
-    {#each entries as entry (treeProvider.getKey(entry))}
-        <TreeViewEntry {entry} {treeProvider} bind:treeState>
+<ul bind:this={element} role="tree" on:keydown={handleKeydown} on:click={handleClick}>
+    {#each entries as entry (treeProvider.getNodeID(entry))}
+        <TreeNode {entry} {treeProvider}>
             <svelte:fragment let:entry let:toggle let:expanded>
                 <slot {entry} {toggle} {expanded} />
             </svelte:fragment>
-        </TreeViewEntry>
+        </TreeNode>
     {/each}
 </ul>
 
 <style lang="scss">
     ul {
-        flex: 1;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        min-height: 0;
+        // Padding ensures that focus rings of tree items are not cut off
+        padding: 0 0.25rem;
+
+        &,
+        :global(ul[role='group']) {
+            list-style: none;
+            margin: 0;
+        }
+
+        :global(ul[role='group']) {
+            padding: 0;
+        }
     }
 </style>

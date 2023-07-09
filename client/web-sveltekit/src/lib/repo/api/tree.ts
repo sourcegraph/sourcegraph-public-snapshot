@@ -1,13 +1,11 @@
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
-import { writable, readonly, type Writable } from 'svelte/store'
-import type { Readable } from 'svelte/store'
 
 import { createAggregateError, isErrorLike, memoizeObservable } from '$lib/common'
 import type { TreeEntriesResult, GitCommitFieldsWithTree, TreeFields, TreeEntryFields } from '$lib/graphql-operations'
 import { gql } from '$lib/http-client'
 import { makeRepoURI, type AbsoluteRepoFile } from '$lib/shared'
-import { DummyTreeProvider, type NodeState, type TreeProvider } from '$lib/TreeView'
+import { DummyTreeProvider, type TreeProvider } from '$lib/TreeView'
 import { requestGraphQL } from '$lib/web'
 
 export const fetchTreeEntries = memoizeObservable(
@@ -129,7 +127,7 @@ export class FileTreeProvider implements TreeProvider<TreeEntryFields> {
             parent: this,
         })
     }
-    getKey(entry: TreeEntryFields): string {
+    getNodeID(entry: TreeEntryFields): string {
         return entry.path
     }
     isExpandable(entry: TreeEntryFields): boolean {
