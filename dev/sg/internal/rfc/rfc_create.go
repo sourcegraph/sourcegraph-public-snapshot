@@ -20,24 +20,25 @@ type RfcTemplate string
 const ProblemSolutionDriveTemplate = RfcTemplate("1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4")
 
 func Create(ctx context.Context, rfcType RfcTemplate, title string, driveSpec DriveSpec, out *std.Output) error {
-	newFile, newRfcId, err := createRfc(ctx, title, rfcType, driveSpec, out)
+	newFile, newRfcID, err := createMainDoc(ctx, title, rfcType, driveSpec, out)
 	if err != nil {
 		return errors.Wrap(err, "cannot create RFC")
 	}
 
 	if driveSpec == PrivateDrive {
-		newFile2, err := leaveBreadcrumbForPrivateOnPublic(ctx, newFile, newRfcId, out)
+		newFile2, err := leaveBreadcrumbForPrivateOnPublic(ctx, newFile, newRfcID, out)
 		if err != nil {
 			return errors.Wrap(err, "Cannot create breadcrumb file")
 		}
 		openFile(newFile2, out)
 	}
+
 	openFile(newFile, out)
 	return nil
 }
 
-func findLastIdFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (int, error) {
-	var maxRfcId int = 0
+func findLastIDFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (int, error) {
+	var maxRfcID int = 0
 	if err := queryRFCs(ctx, "", driveSpec, func(r *drive.FileList) error {
 		if len(r.Files) == 0 {
 			return nil
@@ -46,8 +47,8 @@ func findLastIdFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (i
 			matches := rfcIDRegex.FindStringSubmatch(f.Name)
 			if len(matches) == 2 {
 				if number, err := strconv.Atoi(matches[1]); err == nil {
-					if number > maxRfcId {
-						maxRfcId = number
+					if number > maxRfcID {
+						maxRfcID = number
 					}
 				} else {
 					return errors.Wrap(err, "Cannot determine RFC ID")
@@ -58,35 +59,35 @@ func findLastIdFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (i
 	}, out); err != nil {
 		return 0, err
 	}
-	if maxRfcId == 0 {
+	if maxRfcID == 0 {
 		return 0, errors.Errorf("Cannot determine next RFC ID")
 	}
-	return maxRfcId, nil
+	return maxRfcID, nil
 }
 
-func findNextRfcId(ctx context.Context, out *std.Output) (int, error) {
+func findNextRfcID(ctx context.Context, out *std.Output) (int, error) {
 	out.Write("Checking public RFCs")
-	maxPublicRfcId, err := findLastIdFor(ctx, PublicDrive, out)
+	maxPublicRfcID, err := findLastIDFor(ctx, PublicDrive, out)
 	if err != nil {
 		return 0, err
 	}
-	out.Write(fmt.Sprintf("Last public RFC = %d", maxPublicRfcId))
+	out.Write(fmt.Sprintf("Last public RFC = %d", maxPublicRfcID))
 
 	out.Write("Checking private RFCs")
-	maxPrivateRfcId, err := findLastIdFor(ctx, PrivateDrive, out)
+	maxPrivateRfcID, err := findLastIDFor(ctx, PrivateDrive, out)
 	if err != nil {
 		return 0, err
 	}
-	out.Write(fmt.Sprintf("Last private RFC = %d", maxPrivateRfcId))
+	out.Write(fmt.Sprintf("Last private RFC = %d", maxPrivateRfcID))
 
-	if maxPublicRfcId > maxPrivateRfcId {
-		return maxPublicRfcId + 1, nil
+	if maxPublicRfcID > maxPrivateRfcID {
+		return maxPublicRfcID + 1, nil
 	} else {
-		return maxPrivateRfcId + 1, nil
+		return maxPrivateRfcID + 1, nil
 	}
 }
 
-func updateRfcContent(ctx context.Context, newFile *drive.File, nextRfcId int, title string,
+func updateContent(ctx context.Context, newFile *drive.File, nextRfcID int, title string,
 	driveSpec DriveSpec, out *std.Output) error {
 	docService, err := getDocsService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {
@@ -115,7 +116,7 @@ func updateRfcContent(ctx context.Context, newFile *drive.File, nextRfcId int, t
 				numberSize := int64(len(matches[2]))
 				titleSize := int64(len(matches[4]))
 
-				nextRfcIdStr := strconv.Itoa(nextRfcId)
+				nextRfcIDStr := strconv.Itoa(nextRfcID)
 				change = append(change, []*docs.Request{
 					// Replace the title
 					{
@@ -147,7 +148,7 @@ func updateRfcContent(ctx context.Context, newFile *drive.File, nextRfcId int, t
 					{
 						InsertText: &docs.InsertTextRequest{
 							Location: &docs.Location{Index: elem.StartIndex + 4},
-							Text:     nextRfcIdStr,
+							Text:     nextRfcIDStr,
 						},
 					},
 				}...)
@@ -206,7 +207,7 @@ func updateRfcContent(ctx context.Context, newFile *drive.File, nextRfcId int, t
 	return nil
 }
 
-func createRfc(ctx context.Context, title string, rfcTemplate RfcTemplate, driveSpec DriveSpec,
+func createMainDoc(ctx context.Context, title string, rfcTemplate RfcTemplate, driveSpec DriveSpec,
 	out *std.Output) (*drive.File, int, error) {
 	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {
@@ -223,7 +224,7 @@ func createRfc(ctx context.Context, title string, rfcTemplate RfcTemplate, drive
 	}
 	out.Write(fmt.Sprintf("Using template: %s", template.Name))
 
-	nextRfcId, err := findNextRfcId(ctx, out)
+	nextRfcID, err := findNextRfcID(ctx, out)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -231,7 +232,7 @@ func createRfc(ctx context.Context, title string, rfcTemplate RfcTemplate, drive
 	if driveSpec == PrivateDrive {
 		privateMark = "PRIVATE "
 	}
-	rfcFileTitle := fmt.Sprintf("RFC %d %sWIP: %s", nextRfcId, privateMark, title)
+	rfcFileTitle := fmt.Sprintf("RFC %d %sWIP: %s", nextRfcID, privateMark, title)
 	newFileDetails := drive.File{
 		Name:    rfcFileTitle,
 		Parents: []string{driveSpec.FolderID},
@@ -246,14 +247,14 @@ func createRfc(ctx context.Context, title string, rfcTemplate RfcTemplate, drive
 	}
 	out.Write(fmt.Sprintf("New RFC created: %s (%s)", newFile.Name, newFile.Id))
 
-	if err := updateRfcContent(ctx, newFile, nextRfcId, title, driveSpec, out); err != nil {
+	if err := updateContent(ctx, newFile, nextRfcID, title, driveSpec, out); err != nil {
 		return nil, 0, errors.Wrap(err, "Cannot update RFC content")
 	}
 
-	return newFile, nextRfcId, nil
+	return newFile, nextRfcID, nil
 }
 
-func leaveBreadcrumbForPrivateOnPublic(ctx context.Context, rfcDoc *drive.File, nextRfcId int,
+func leaveBreadcrumbForPrivateOnPublic(ctx context.Context, rfcDoc *drive.File, nextRfcID int,
 	out *std.Output) (*drive.File, error) {
 	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {
@@ -265,7 +266,7 @@ func leaveBreadcrumbForPrivateOnPublic(ctx context.Context, rfcDoc *drive.File, 
 		return nil, errors.Wrap(err, "Cannot create docs client")
 	}
 
-	title := fmt.Sprintf("RFC %d is private", nextRfcId)
+	title := fmt.Sprintf("RFC %d is private", nextRfcID)
 
 	newFile, err := srv.Files.Create(&drive.File{
 		Name:     title,
