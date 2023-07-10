@@ -5,6 +5,9 @@ def go_test(**kwargs):
     if "timeout" not in kwargs:
         kwargs["timeout"] = "short"
 
+    if "race" not in kwargs:
+        kwargs["race"] = "on"
+
     # All go tests are tagged with "go" by default
     if "tags" in kwargs:
         if "go" not in kwargs["tags"]:
@@ -12,4 +15,4 @@ def go_test(**kwargs):
     else:
         kwargs["tags"] = ["go"]
 
-    _go_test(race="on", **kwargs)
+    _go_test(**kwargs)

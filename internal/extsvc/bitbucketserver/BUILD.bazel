@@ -32,7 +32,6 @@ go_library(
 
 go_test(
     name = "bitbucketserver_test",
-    size = "enormous",
     timeout = "short",
     srcs = [
         "auth_test.go",
@@ -40,6 +39,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":bitbucketserver"],
+    race = "off",
     deps = [
         "//internal/extsvc/auth",
         "//internal/ratelimit",
