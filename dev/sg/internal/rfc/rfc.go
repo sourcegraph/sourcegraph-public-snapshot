@@ -306,7 +306,7 @@ func getClient(ctx context.Context, scope ScopePermissions, out *std.Output) (*h
 func getService(ctx context.Context, scope ScopePermissions, out *std.Output) (*drive.Service, error) {
 	client, err := getClient(ctx, scope, out)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to client Google client")
+		return nil, errors.Wrap(err, "Unable to retrieve Google client")
 	}
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
