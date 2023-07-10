@@ -20,7 +20,7 @@ type RfcTemplate string
 const ProblemSolutionDriveTemplate = RfcTemplate("1FJ6AhHmVInSE22EHcDZnzvvAd9KfwOkKvFpx7e346z4")
 
 func Create(ctx context.Context, rfcType RfcTemplate, title string, driveSpec DriveSpec, out *std.Output) error {
-	newFile, newRfcId, err := createRFCs(ctx, title, rfcType, driveSpec, out)
+	newFile, newRfcId, err := createRfc(ctx, title, rfcType, driveSpec, out)
 	if err != nil {
 		return errors.Wrap(err, "cannot create RFC")
 	}
@@ -36,14 +36,14 @@ func Create(ctx context.Context, rfcType RfcTemplate, title string, driveSpec Dr
 	return nil
 }
 
-func findLastRfcIdFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (int, error) {
+func findLastIdFor(ctx context.Context, driveSpec DriveSpec, out *std.Output) (int, error) {
 	var maxRfcId int = 0
 	if err := queryRFCs(ctx, "", driveSpec, func(r *drive.FileList) error {
 		if len(r.Files) == 0 {
 			return nil
 		}
 		for _, f := range r.Files {
-			matches := rfcIdRegex.FindStringSubmatch(f.Name)
+			matches := rfcIDRegex.FindStringSubmatch(f.Name)
 			if len(matches) == 2 {
 				if number, err := strconv.Atoi(matches[1]); err == nil {
 					if number > maxRfcId {
@@ -66,14 +66,14 @@ func findLastRfcIdFor(ctx context.Context, driveSpec DriveSpec, out *std.Output)
 
 func findNextRfcId(ctx context.Context, out *std.Output) (int, error) {
 	out.Write("Checking public RFCs")
-	maxPublicRfcId, err := findLastRfcIdFor(ctx, PublicDrive, out)
+	maxPublicRfcId, err := findLastIdFor(ctx, PublicDrive, out)
 	if err != nil {
 		return 0, err
 	}
 	out.Write(fmt.Sprintf("Last public RFC = %d", maxPublicRfcId))
 
 	out.Write("Checking private RFCs")
-	maxPrivateRfcId, err := findLastRfcIdFor(ctx, PrivateDrive, out)
+	maxPrivateRfcId, err := findLastIdFor(ctx, PrivateDrive, out)
 	if err != nil {
 		return 0, err
 	}
@@ -206,7 +206,7 @@ func updateRfcContent(ctx context.Context, newFile *drive.File, nextRfcId int, t
 	return nil
 }
 
-func createRFCs(ctx context.Context, title string, rfcTemplate RfcTemplate, driveSpec DriveSpec,
+func createRfc(ctx context.Context, title string, rfcTemplate RfcTemplate, driveSpec DriveSpec,
 	out *std.Output) (*drive.File, int, error) {
 	srv, err := getService(ctx, ScopePermissionsReadWrite, out)
 	if err != nil {

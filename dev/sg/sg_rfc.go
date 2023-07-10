@@ -42,9 +42,8 @@ sg rfc --private open 420
 # Create a new public RFC
 sg rfc create "title"
 
-# Create a new private RFC
+# Create a new private RFC. Possible types: [solution]
 sg rfc --private create --type <type> "title"
-(types: solution)
 `,
 	Category: CategoryCompany,
 	Flags: []cli.Flag{

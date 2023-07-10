@@ -55,6 +55,17 @@ const (
 
 const AuthEndpoint = "/oauth2/callback"
 
+func (sp ScopePermissions) DriveScope() (string, error) {
+	switch sp {
+	case ScopePermissionsReadOnly:
+		return drive.DriveMetadataReadonlyScope, nil
+	case ScopePermissionsReadWrite:
+		return drive.DriveScope, nil
+	default:
+		return "", errors.Errorf("Unknown scope: %d", sp)
+	}
+}
+
 func (d *DriveSpec) Query(q string) string {
 	return fmt.Sprintf("%s and parents in '%s'", q, d.FolderID)
 }
@@ -272,16 +283,6 @@ func getClient(ctx context.Context, scope ScopePermissions, out *std.Output) (*h
 		return nil, err
 	}
 
-	var driveScope string
-	switch scope {
-	case ScopePermissionsReadOnly:
-		driveScope = drive.DriveMetadataReadonlyScope
-	case ScopePermissionsReadWrite:
-		driveScope = drive.DriveScope
-	default:
-		return nil, errors.Errorf("Unknown scope: %d", scope)
-	}
-
 	clientCredentials, err := sec.GetExternal(ctx, secrets.ExternalSecret{
 		Project: "sourcegraph-local-dev",
 		// sg Google client credentials
@@ -291,6 +292,10 @@ func getClient(ctx context.Context, scope ScopePermissions, out *std.Output) (*h
 		return nil, errors.Wrap(err, "failed to get google client credentials")
 	}
 
+	driveScope, err := scope.DriveScope()
+	if err != nil {
+		return nil, errors.Wrap(err, "Unable to parse drive scope")
+	}
 	config, err := google.ConfigFromJSON([]byte(clientCredentials), driveScope)
 	if err != nil {
 		return nil, errors.Wrap(err, "Unable to parse client secret file to config")
@@ -306,7 +311,7 @@ func getClient(ctx context.Context, scope ScopePermissions, out *std.Output) (*h
 func getService(ctx context.Context, scope ScopePermissions, out *std.Output) (*drive.Service, error) {
 	client, err := getClient(ctx, scope, out)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to client Google client")
+		return nil, errors.Wrap(err, "Unable to retrieve Google client")
 	}
 	srv, err := drive.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
@@ -390,7 +395,7 @@ func Open(ctx context.Context, number string, driveSpec DriveSpec, out *std.Outp
 //	RFC 123 WIP: Foobar
 //	RFC 123 PRIVATE WIP: Foobar
 var rfcTitleRegex = regexp.MustCompile(`RFC\s(\d+):*\s([\w\s]+):\s(.*)$`)
-var rfcIdRegex = regexp.MustCompile(`RFC\s(\d+)`)
+var rfcIDRegex = regexp.MustCompile(`RFC\s(\d+)`)
 var rfcDocRegex = regexp.MustCompile(`(RFC.*)(number)(.*:.*)(title)`)
 
 func rfcTitlesPrinter(out *std.Output) func(r *drive.FileList) error {
