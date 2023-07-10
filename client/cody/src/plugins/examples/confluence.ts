@@ -103,6 +103,8 @@ export const confluencePlugin: IPlugin = {
     ],
 }
 
+// This function is meant to sanitize confluence content that's semi-html:
+// <h1> hello </h1> and @@@h1@@@ hello @@@endh1@@@ will both result in `hello`.
 function removeHtmlTags(input: string): string {
     return input.replace(/<[^>]+>|@@@[^@]+@@@/g, '')
 }
