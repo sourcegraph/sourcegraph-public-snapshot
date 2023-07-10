@@ -201,7 +201,7 @@ require (
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20230613175844-f031949c72f5
 	github.com/stretchr/testify v1.8.2
 	github.com/temoto/robotstxt v1.1.2
-	github.com/throttled/throttled/v2 v2.9.0
+	github.com/throttled/throttled/v2 v2.12.0
 	github.com/tidwall/gjson v1.14.0
 	github.com/tj/go-naturaldate v1.3.0
 	github.com/tomnomnom/linkheader v0.0.0-20180905144013-02ca5825eb80

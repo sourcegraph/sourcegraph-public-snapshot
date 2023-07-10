@@ -376,7 +376,7 @@ type LimitWatcher interface {
 	Get() (Limiter, bool)
 }
 
-func NewBasicLimitWatcher(logger log.Logger, store throttled.GCRAStore) *BasicLimitWatcher {
+func NewBasicLimitWatcher(logger log.Logger, store throttled.GCRAStoreCtx) *BasicLimitWatcher {
 	basic := &BasicLimitWatcher{
 		store: store,
 	}
@@ -392,7 +392,7 @@ func NewBasicLimitWatcher(logger log.Logger, store throttled.GCRAStore) *BasicLi
 }
 
 type BasicLimitWatcher struct {
-	store throttled.GCRAStore
+	store throttled.GCRAStoreCtx
 	rl    atomic.Value // *RateLimiter
 }
 
@@ -403,7 +403,7 @@ func (bl *BasicLimitWatcher) updateFromConfig(logger log.Logger, limit int) {
 		return
 	}
 	maxBurstPercentage := 0.2
-	l, err := throttled.NewGCRARateLimiter(
+	l, err := throttled.NewGCRARateLimiterCtx(
 		bl.store,
 		throttled.RateQuota{
 			MaxRate:  throttled.PerHour(limit),
@@ -428,23 +428,23 @@ func (bl *BasicLimitWatcher) Get() (Limiter, bool) {
 }
 
 type BasicLimiter struct {
-	*throttled.GCRARateLimiter
+	*throttled.GCRARateLimiterCtx
 	enabled bool
 }
 
 // RateLimit limits unauthenticated requests to the GraphQL API with an equal
 // quantity of 1.
 func (bl *BasicLimiter) RateLimit(_ string, _ int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
-	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther && bl.GCRARateLimiter != nil {
-		return bl.GCRARateLimiter.RateLimit("basic", 1)
+	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther && bl.GCRARateLimiterCtx != nil {
+		return bl.GCRARateLimiterCtx.RateLimit("basic", 1)
 	}
 	return false, throttled.RateLimitResult{}, nil
 }
 
 type RateLimiter struct {
 	enabled     bool
-	ipLimiter   *throttled.GCRARateLimiter
-	userLimiter *throttled.GCRARateLimiter
+	ipLimiter   *throttled.GCRARateLimiterCtx
+	userLimiter *throttled.GCRARateLimiterCtx
 	overrides   map[string]limiter
 }
 
