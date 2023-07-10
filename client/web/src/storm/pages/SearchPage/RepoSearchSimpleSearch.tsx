@@ -1,8 +1,8 @@
 import React, {FC, useEffect, useState} from 'react'
 
-import {Icon, Select, Tooltip, Input, Button, Text} from '@sourcegraph/wildcard';
+import {Icon, Select, Tooltip, Input, Button, Form, Label} from '@sourcegraph/wildcard';
 import { mdiHelpCircleOutline} from '@mdi/js';
-import {SimpleSearchProps} from "./CodeSearchSimpleSearch";
+import {SimpleSearchProps} from './CodeSearchSimpleSearch';
 
 const predicates = {
     'path': '',
@@ -37,9 +37,8 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
             terms.push(`context:${searchContext}`)
         }
 
+        // default to select:repo so that we always get the right result
         terms.push('select:repo')
-
-
         if (repoPattern?.length > 0) {
             terms.push(`repo:${repoPattern}`);
         }
@@ -47,16 +46,13 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
             terms.push(`repo:${repoNames}$`);
         }
 
-        console.log(predicateState)
         for (const predicateStateKey in predicateState) {
             const val = predicateState[predicateStateKey]
             if (val?.length === 0) {
                 continue
             }
-            // do a thing
             terms.push(`repo:has.${predicateStateKey}(${val})`)
         }
-
 
         // do these last
         if (useForks === 'yes' || useForks === 'only') {
@@ -69,20 +65,20 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
         return terms.join(' ');
     };
 
-    const updatePreds = (key, value) => {
+    const updatePreds = (key, value): void => {
         setPredicateState({...predicateState, [key]: value})
     }
 
     return (
         <div>
-            <form className='mt-4' onSubmit={onSubmit}>
+            <Form className='mt-4' onSubmit={onSubmit}>
                 <div id="repoFilterSection">
                     <div className="form-group row">
-                        <label htmlFor="repoName" className="col-4 col-form-label">Exact repository name
+                        <Label htmlFor="repoName" className="col-4 col-form-label">Exact repository name
                             <Tooltip content="Match repository names exactly.">
                                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
-                        </label>
+                        </Label>
 
                         <div className="col-8">
                             <div className="input-group">
@@ -93,11 +89,11 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
                     </div>
 
                     <div className="form-group row">
-                        <label htmlFor="repoNamePatterns" className="col-4 col-form-label">Match against a name pattern
+                        <Label htmlFor="repoNamePatterns" className="col-4 col-form-label">Match against a name pattern
                             <Tooltip content="Use a regular expression pattern to match against repository names.">
                                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
-                        </label>
+                        </Label>
                         <div className="col-8">
                             <Input id="repoNamePatterns" name="repoNamePatterns" placeholder="sourcegraph.*" type="text"
                                    onChange={event => setRepoPattern(event.target.value)}/>
@@ -105,12 +101,12 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
                     </div>
 
                     <div className="form-group row">
-                        <label htmlFor="searchForks" className="col-4 col-form-label">Search over repository forks?
+                        <Label htmlFor="searchForks" className="col-4 col-form-label">Search over repository forks?
                             <Tooltip
                                 content="Choose an option to include or exclude forks from the search, or search only over forks.">
                                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
-                        </label>
+                        </Label>
                         <div className="col-2">
                             <Select id="searchForks" name="searchForks"
                                     onChange={event => setUseForks(event.target.value)}>
@@ -120,12 +116,12 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
                             </Select>
                         </div>
 
-                        <label htmlFor="searchArchive" className="col-4 col-form-label">Search over archived repositories?
+                        <Label htmlFor="searchArchive" className="col-4 col-form-label">Search over archived repositories?
                             <Tooltip
                                 content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
                                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
-                        </label>
+                        </Label>
                         <div className="col-2">
                             <Select id="searchArchive" name="searchArchive"
                                     onChange={event => setUseArchive(event.target.value)}>
@@ -140,12 +136,12 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
                 <hr className='mt-4 mb-4'/>
                 <h3 className='mb-4'>Select repositories that have contents</h3>
                 <div className="form-group row">
-                    <label htmlFor="text" className="col-4 col-form-label">Contains file path
+                    <Label htmlFor="text" className="col-4 col-form-label">Contains file path
                         <Tooltip
                             content="Use a regular expression pattern to match against file paths, for example sourcegraph/.*/internal">
                             <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
-                    </label>
+                    </Label>
                     <div className="col-8">
                         <Input id="text" name="text" type="text" placeholder="enterprise/.*"
                                onChange={event => updatePreds('path', event.target.value)}/>
@@ -153,12 +149,12 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
                 </div>
 
                 <div className="form-group row">
-                    <label htmlFor="text" className="col-4 col-form-label">Contains file content
+                    <Label htmlFor="text" className="col-4 col-form-label">Contains file content
                         <Tooltip
                             content="Use a regular expression pattern to match against file content, for example \w*Manager">
                             <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
-                    </label>
+                    </Label>
                     <div className="col-8">
                         <Input id="text" name="text" type="text" placeholder=""
                                onChange={event => updatePreds('content', event.target.value)}/>
@@ -166,12 +162,12 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
                 </div>
 
                 <div className="form-group row">
-                    <label htmlFor="text" className="col-4 col-form-label">Repository description
+                    <Label htmlFor="text" className="col-4 col-form-label">Repository description
                         <Tooltip
                             content="Use a regular expression pattern to match against repository description, for example 'react library'">
                             <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
-                    </label>
+                    </Label>
                     <div className="col-8">
                         <Input id="text" name="text" type="text" placeholder=""
                                onChange={event => updatePreds('description', event.target.value)}/>
@@ -179,12 +175,12 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
                 </div>
 
                 <div className="form-group row">
-                    <label htmlFor="text" className="col-4 col-form-label">Repository metadata
+                    <Label htmlFor="text" className="col-4 col-form-label">Repository metadata
                         <Tooltip
                             content="Match repositories that have a metadata key / value pair {key:value}. Metadata is a Sourcegraph entity that provides key:value mappings to repositories.">
                             <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
-                    </label>
+                    </Label>
                     <div className="col-8">
                         <Input id="text" name="text" type="text" placeholder=""
                                onChange={event => updatePreds('meta', event.target.value)}/>
@@ -193,12 +189,12 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
 
                 <hr className='mt-4 mb-4'/>
                 <div className="form-group row">
-                    <label htmlFor="searchContext" className="col-4 col-form-label">Search context
+                    <Label htmlFor="searchContext" className="col-4 col-form-label">Search context
                         <Tooltip
                             content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. The global context  will search over all code on Sourcegraph.">
                             <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
-                    </label>
+                    </Label>
                     <div className="col-8">
                         <Input value={searchContext} id="text" name="text" type="text"
                                onChange={event => setSearchContext(event.target.value)}/>
@@ -210,7 +206,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpd
                         <Button variant="primary" name="submit" type="submit" className="btn btn-primary">Submit</Button>
                     </div>
                 </div>
-            </form>
+            </Form>
         </div>
     )
 }

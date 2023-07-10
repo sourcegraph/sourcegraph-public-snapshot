@@ -1,6 +1,6 @@
 import React, {FC, useEffect, useState} from 'react'
 
-import {Icon, Select, Tooltip, Input, Button, Text} from '@sourcegraph/wildcard';
+import {Icon, Select, Tooltip, Input, Button, Form} from '@sourcegraph/wildcard';
 import { mdiHelpCircleOutline} from '@mdi/js';
 import {SimpleSearchProps} from "./CodeSearchSimpleSearch";
 
@@ -48,6 +48,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUp
             terms.push(`repo:${repoNames}$`);
         }
 
+        // here we are going to default to commit search, and only override if there is code present. This is because diff search is a subset of commit search, so there is always
+        // a valid search available
         if (diffCodePattern?.length > 0) {
             terms.push(`type:diff`)
             terms.push(`${diffCodePattern}`)
@@ -79,7 +81,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUp
 
     return (
         <div>
-            <form className='mt-4' onSubmit={onSubmit}>
+            <Form className='mt-4' onSubmit={onSubmit}>
                 <div id='contentFilterSection'>
                     <div className="form-group row">
                         <label htmlFor="repoName" className="col-4 col-form-label">Commit message contains pattern
@@ -212,7 +214,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUp
                         <Button variant="primary" name="submit" type="submit" className="btn btn-primary">Submit</Button>
                     </div>
                 </div>
-            </form>
+            </Form>
         </div>
     )
 }
