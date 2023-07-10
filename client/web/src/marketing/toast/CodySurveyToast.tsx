@@ -80,9 +80,9 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void; userId: string }
             // eslint-disable-next-line no-console
             submitCodySurvey().catch(console.error)
             // eslint-disable-next-line no-console
-            updatePostSignupCompletion().catch(console.error).then(onSubmitEnd)
+            updatePostSignupCompletion().then(onSubmitEnd).catch(console.error)
         },
-        [isCodyForPersonalStuff, isCodyForWork, submitCodySurvey, telemetryService]
+        [isCodyForPersonalStuff, isCodyForWork, onSubmitEnd, submitCodySurvey, telemetryService]
     )
 
     useEffect(() => {
