@@ -405,6 +405,26 @@ func serveEmbed(db database.DB) handlerFunc {
 	}
 }
 
+// serveSearch allows the ability to use a feature flag to either serve the React or Svelte search experience.
+func serveSearch(db database.DB) handlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		flagSet := featureflag.FromContext(r.Context())
+		if enabled := flagSet.GetBoolOr("enable-svelte", false); enabled {
+			http.StripPrefix("/search", http.FileServer(http.Dir("./client/web-sveltekit/build"))).ServeHTTP(w, r)
+			return nil
+		}
+
+		return serveBasicPage(db, func(c *Common, r *http.Request) string {
+			shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
+			if shortQuery == "" {
+				return globals.Branding().BrandName
+			}
+			// e.g. "myquery - Sourcegraph"
+			return brandNameSubtitle(shortQuery)
+		}, nil, index)(w, r)
+	}
+}
+
 // redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
 // or a tree page to a blob page if the directory is actually a file.
 func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB, client gitserver.Client) (requestHandled bool, err error) {

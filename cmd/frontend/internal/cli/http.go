@@ -8,6 +8,7 @@ import (
 	gcontext "github.com/gorilla/context"
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/shurcooL/httpgzip"
 	"google.golang.org/grpc"
 
 	"github.com/sourcegraph/log"
@@ -105,6 +106,11 @@ func newExternalHTTPHandler(
 	// to allow the loading of the Phabricator native extension assets.
 	assetHandler := assetsutil.NewAssetHandler(sm)
 	sm.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, secureHeadersMiddleware(assetHandler, crossOriginPolicyAssets)))
+
+	// Sveltekit assets are written to the directory _app/. Need to set up a handler to load these assets.
+	const urlSvelteAssetPathPrefix = "/_app"
+	svelteAssetHandler := httpgzip.FileServer(http.Dir("./client/web-sveltekit/build/_app"), httpgzip.FileServerOptions{DisableDirListing: true})
+	sm.Handle(urlSvelteAssetPathPrefix+"/", http.StripPrefix(urlSvelteAssetPathPrefix, secureHeadersMiddleware(svelteAssetHandler, crossOriginPolicyAssets)))
 
 	var h http.Handler = sm
 
