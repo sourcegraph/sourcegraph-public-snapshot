@@ -25,5 +25,5 @@ window.context.codyRequiresVerifiedEmail = true
 export const UnverifiedEmail: Story = () => <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
 
 export const VerifiedEmail: Story = () => (
-    <WebStory>{() => <PostSignUpPage authenticatedUser={{ ...mockUser, hasVerifiedEmail: false }} />}</WebStory>
+    <WebStory>{() => <PostSignUpPage authenticatedUser={{ ...mockUser, hasVerifiedEmail: true }} />}</WebStory>
 )
