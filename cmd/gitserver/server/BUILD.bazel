@@ -164,6 +164,7 @@ go_test(
         "//internal/vcs",
         "//internal/wrexec",
         "//lib/errors",
+        "//lib/pointers",
         "//schema",
         "@com_github_google_go_cmp//cmp",
         "@com_github_google_go_cmp//cmp/cmpopts",
