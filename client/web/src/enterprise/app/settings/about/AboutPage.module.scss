@@ -4,3 +4,14 @@
     width: 100%;
     min-width: 0;
 }
+
+.panel {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.icon {
+    margin-right: 0.5rem;
+    height: 4rem;
+    width: 4rem;
+}

@@ -37,3 +37,19 @@ AdminSidebarItems.parameters = {
         url: 'https://www.figma.com/file/cT23UcGqbdjdV4H2yxweIu/%2311775-Map-the-current-information-architecture-%5BApproved%5D?node-id=68%3A1',
     },
 }
+
+export const CodySettings: Story = () => (
+    <WebStory>
+        {webProps => (
+            <SiteAdminSidebar
+                {...webProps}
+                groups={siteAdminSidebarGroups}
+                isSourcegraphDotCom={false}
+                isSourcegraphApp={true}
+                batchChangesEnabled={false}
+                batchChangesExecutionEnabled={false}
+                batchChangesWebhookLogsEnabled={false}
+            />
+        )}
+    </WebStory>
+)

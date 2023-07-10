@@ -1,3 +1,4 @@
+import AboutIcon from 'mdi-react/AboutOutlineIcon'
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import CogsIcon from 'mdi-react/CogsIcon'
@@ -148,13 +149,12 @@ export const maintenanceGroupMigrationsItemLabel = 'Migrations'
 
 export const maintenanceGroupTracingItemLabel = 'Tracing'
 
-export const maintenanceGroupAboutItemLabel = 'About Cody App'
-
 export const maintenanceGroup: SiteAdminSideBarGroup = {
     header: {
         label: maintenanceGroupHeaderLabel,
         icon: MonitorStarIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: maintenanceGroupUpdatesItemLabel,
@@ -163,60 +163,63 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Documentation',
             to: '/help',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Pings',
             to: '/site-admin/pings',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Report a bug',
             to: '/site-admin/report-bug',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupMigrationsItemLabel,
             to: '/site-admin/migrations',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupInstrumentationItemLabel,
             to: '/-/debug/',
             source: 'server',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupMonitoringItemLabel,
             to: '/-/debug/grafana',
             source: 'server',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupTracingItemLabel,
             to: '/-/debug/jaeger',
             source: 'server',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Outbound requests',
             to: '/site-admin/outbound-requests',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Slow requests',
             to: '/site-admin/slow-requests',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Background jobs',
             to: '/site-admin/background-jobs',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
+    ],
+}
+
+export const aboutCodyGroupHeaderLabel = 'About'
+
+export const aboutGroupAboutItemLabel = 'About Cody'
+
+export const aboutGroup: SiteAdminSideBarGroup = {
+    header: {
+        label: aboutCodyGroupHeaderLabel,
+        icon: AboutIcon,
+    },
+    condition: ({ isSourcegraphApp }) => isSourcegraphApp,
+    items: [
         {
-            label: maintenanceGroupAboutItemLabel,
+            label: aboutGroupAboutItemLabel,
             to: '/site-admin/about',
-            condition: ({ isSourcegraphApp }) => isSourcegraphApp,
         },
     ],
 }
@@ -241,5 +244,6 @@ export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
     repositoriesGroup,
     usersGroup,
     maintenanceGroup,
+    aboutGroup,
     apiConsoleGroup,
 ]

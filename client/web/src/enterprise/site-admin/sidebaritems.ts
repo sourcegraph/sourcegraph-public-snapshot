@@ -11,6 +11,7 @@ import {
     maintenanceGroup as ossMaintenanceGroup,
     repositoriesGroup as ossRepositoriesGroup,
     usersGroup as ossUsersGroup,
+    aboutGroup,
 } from '../../site-admin/sidebaritems'
 import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
@@ -196,6 +197,7 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     usersGroup,
     executorsGroup,
     maintenanceGroup,
+    aboutGroup,
     batchChangesGroup,
     businessGroup,
     apiConsoleGroup,

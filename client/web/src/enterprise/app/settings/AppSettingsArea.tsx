@@ -1,12 +1,14 @@
 import { FC } from 'react'
 
+import AboutOutlineIcon from 'mdi-react/AboutOutlineIcon'
 import { Routes, Route, Outlet, Navigate, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, PageHeader } from '@sourcegraph/wildcard'
+import { Button, Link, MenuDivider, PageHeader } from '@sourcegraph/wildcard'
 
 import { RemoteRepositoriesStep } from '../../../setup-wizard/components'
 
+import { AboutTab } from './about/AboutPage'
 import { LocalRepositoriesTab } from './local-repositories/LocalRepositoriesTab'
 
 import styles from './AppSettingsArea.module.scss'
@@ -24,6 +26,7 @@ export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
                 path={`${AppSettingURL.RemoteRepositories}/*`}
                 element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
             />
+            <Route path="about" element={<AboutTab />} />
             <Route path="*" element={<Navigate to={AppSettingURL.LocalRepositories} replace={true} />} />
         </Route>
     </Routes>
@@ -57,6 +60,19 @@ const AppSettingsLayout: FC = () => {
                         </Button>
                     </li>
                 ))}
+                <li>
+                    <MenuDivider />
+                </li>
+                <li>
+                    <Button
+                        as={Link}
+                        to="../about"
+                        variant={location.pathname.includes('../about') ? 'primary' : undefined}
+                        className={styles.navigationItemLink}
+                    >
+                        <AboutOutlineIcon size={16} /> About Cody
+                    </Button>
+                </li>
             </ul>
 
             <Outlet />

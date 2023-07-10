@@ -1,4 +1,4 @@
-import { useCallback, useMemo, ChangeEventHandler, FC } from 'react'
+import { ChangeEventHandler, FC, useCallback, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiCogOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
@@ -9,8 +9,11 @@ import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/u
 import { Shortcut } from '@sourcegraph/shared/src/react-shortcuts'
 import { useExperimentalFeatures } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useTheme, ThemeSetting } from '@sourcegraph/shared/src/theme'
+import { ThemeSetting, useTheme } from '@sourcegraph/shared/src/theme'
 import {
+    AnchorLink,
+    Icon,
+    Link,
     Menu,
     MenuButton,
     MenuDivider,
@@ -18,12 +21,9 @@ import {
     MenuItem,
     MenuLink,
     MenuList,
-    Link,
     Position,
-    AnchorLink,
-    Select,
-    Icon,
     ProductStatusBadge,
+    Select,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
