@@ -156,7 +156,7 @@
   team: code-intelligence
   component: codeintel-db.codeintel_scip_symbols
   description: Re-persists SCIP symbol names in a lookup table by-parts (previously stored as a trie).
-  non_destructive: false
+  non_destructive: true
   is_enterprise: true
   introduced_version_major: 5
   introduced_version_minor: 1

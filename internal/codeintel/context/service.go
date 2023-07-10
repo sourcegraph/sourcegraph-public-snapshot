@@ -71,6 +71,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	if err != nil {
 		return nil, err
 	}
+	if len(uploads) == 0 {
+		return nil, nil
+	}
 
 	requestArgs := codenavtypes.RequestArgs{
 		RepositoryID: int(repo.ID),
@@ -102,9 +105,13 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		return nil, err
 	}
 
-	symbolNames := make([]string, 0, len(syntectDocument.Occurrences))
+	symbolNameMap := map[string]struct{}{}
 	for _, occurrence := range syntectDocument.Occurrences {
-		symbolNames = append(symbolNames, occurrence.Symbol)
+		symbolNameMap[occurrence.Symbol] = struct{}{}
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
 	}
 	sort.Strings(symbolNames)
 
@@ -145,6 +152,11 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				}
 			}
 
+			if len(symbolNames) > 20 {
+				fmt.Printf("TOO MANY RESULTS FOR %q\n", syntectName)
+				symbolNames = nil
+			}
+
 			if len(symbolNames) > 0 {
 				scipNamesBySyntectName[syntectName] = symbolNames
 			}
@@ -154,6 +166,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}()
 	if err != nil {
 		return nil, err
+	}
+
+	syntectNameSetBySymbol := map[string]map[string]struct{}{}
+	for syntectName, explodedSymbols := range scipNamesBySyntectName {
+		for _, explodedSymbol := range explodedSymbols {
+			symbol := explodedSymbol.Symbol()
+			if _, ok := syntectNameSetBySymbol[symbol]; !ok {
+				syntectNameSetBySymbol[symbol] = map[string]struct{}{}
+			}
+
+			syntectNameSetBySymbol[symbol][syntectName] = struct{}{}
+		}
 	}
 
 	fmt.Printf("PHASE 3\n")
@@ -166,19 +190,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}
 	preciseDataList := []*preciseData{}
 
-	for syntectName, names := range scipNamesBySyntectName {
-		for _, name := range names {
-			ident := name.Symbol()
+	for ident, syntectNames := range syntectNameSetBySymbol {
+		// TODO - these are duplicated and should also be batched
+		fmt.Printf("> Fetching definitions of %q\n", ident)
 
-			// TODO - these are duplicated and should also be batched
-			fmt.Printf("> Fetching definitions of %q\n", ident)
+		// for _, upload := range uploads {
+		ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{ident})
+		if err != nil {
+			return nil, err
+		}
 
-			// for _, upload := range uploads {
-			ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{ident})
-			if err != nil {
-				return nil, err
-			}
-
+		// TODO - should this ever be non-singleton?
+		for syntectName := range syntectNames {
 			preciseDataList = append(preciseDataList, &preciseData{
 				syntectName: syntectName,
 				symbolName:  ident,

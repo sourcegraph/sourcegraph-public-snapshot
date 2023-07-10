@@ -10,10 +10,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
-
-	"github.com/sourcegraph/scip/bindings/go/scip"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
@@ -95,19 +94,14 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		s.db.Handle(),
 		"t_codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
-		"document_lookup_id",
 		"symbol_id",
+		"descriptor_id",
+		"descriptor_no_suffix_id",
+		"document_lookup_id",
 		"definition_ranges",
 		"reference_ranges",
 		"implementation_ranges",
 		"type_definition_ranges",
-
-		"scheme_id",
-		"package_manager_id",
-		"package_name_id",
-		"package_version_id",
-		"descriptor_id",
-		"descriptor_no_suffix_id",
 	)
 
 	symbolLookupInserter := batch.NewInserter(
@@ -115,10 +109,10 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		s.db.Handle(),
 		"t_codeintel_scip_symbols_lookup",
 		batch.MaxNumPostgresParameters,
-		"id",
-		"upload_id",
-		"name",
 		"scip_name_type",
+		"name",
+		"id",
+		"parent_id",
 	)
 
 	scipWriter := &scipWriter{
@@ -135,27 +129,22 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 const newSCIPWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
+	descriptor_id integer,
+	descriptor_no_suffix_id integer,
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
 	implementation_ranges bytea,
-	type_definition_ranges bytea,
-
-	scheme_id integer,
-	package_manager_id integer,
-	package_name_id integer,
-	package_version_id integer,
-	descriptor_id integer,
-	descriptor_no_suffix_id integer
+	type_definition_ranges bytea
 ) ON COMMIT DROP
 `
 
 const newSCIPWriterTemporarySymbolLookupTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
 	id integer NOT NULL,
-	upload_id integer NOT NULL,
 	name text NOT NULL,
-	scip_name_type text NOT NULL
+	scip_name_type text NOT NULL,
+	parent_id integer
 ) ON COMMIT DROP
 `
 
@@ -314,33 +303,28 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 	sort.Strings(symbolNames)
 
-	schemes := make(map[string]int)
-	managers := make(map[string]int)
-	packageNames := make(map[string]int)
-	packageVersions := make(map[string]int)
-	descriptors := make(map[string]int)
-	descriptorsNoSuffix := make(map[string]int)
+	// NOTE(scip-migration): This code also exists in the SCIP symbol names out-of-band migration.
+	// Changes (esp bug fixes) here that are backwards compatible should also be made in that copy
+	// as long as the migration has not been deprecated. Any backwards-incompatible changes should
+	// deprecate that migration and start a new version.
+	//
+	// See the migrator in .../codeintel/scip/symbols_migrator.go for more detail.
+
+	// Create helpers to create new tree nodes with (upload-)unique identifiers
+	id := func() int { id := s.nextSymbolLookupID; s.nextSymbolLookupID++; return id }
+	createSchemeNode := func() SchemeNode { return SchemeNode(newNodeWithID[PackageManagerNode](id())) }
+	createPackageManagerNode := func() PackageManagerNode { return PackageManagerNode(newNodeWithID[PackageNameNode](id())) }
+	createPackageNameNode := func() PackageNameNode { return PackageNameNode(newNodeWithID[PackageVersionNode](id())) }
+	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[DescriptorNode](id())) }
+	createDescriptor := func() DescriptorNode { return DescriptorNode(newNodeWithID[descriptor](id())) }
 
 	type explodedIDs struct {
-		schemeID             int
-		packageManagerID     int
-		packageNameID        int
-		packageVersionID     int
 		descriptorID         int
 		descriptorNoSuffixID int
 	}
-	cache := map[string]explodedIDs{}
-
-	getOrSetID := func(m map[string]int, key string) int {
-		if v, ok := m[key]; ok {
-			return v
-		}
-
-		id := s.nextSymbolLookupID
-		s.nextSymbolLookupID++
-		m[key] = id
-		return id
-	}
+	cache := map[string]explodedIDs{}              // Tracks symbol name -> identifiers in the scheme tree
+	schemeTree := map[string]SchemeNode{}          // Tracks scheme -> manager -> name -> version -> descriptor
+	descriptorsNoSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
 
 	for _, symbolName := range symbolNames {
 		symbol, err := symbols.NewExplodedSymbol(symbolName)
@@ -348,36 +332,44 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			return err
 		}
 
-		schemeID := getOrSetID(schemes, symbol.Scheme)
-		packageManagerID := getOrSetID(managers, symbol.PackageManager)
-		packageNameID := getOrSetID(packageNames, symbol.PackageName)
-		packageVersionID := getOrSetID(packageVersions, symbol.PackageVersion)
-		descriptorID := getOrSetID(descriptors, symbol.Descriptor)
-		descriptorNoSuffixID := getOrSetID(descriptorsNoSuffix, symbol.DescriptorNoSuffix)
+		// Assign the parts of the exploded symbol into the scheme tree. If a prefix of
+		// the exploded symbol is already in the tree then existing nodes will be re-used.
+		// Laying out the exploded in a tree structure will allow us to trace parentage
+		// (required for fast lookups) when we insert these into the database.
+
+		schemeNode := getOrCreate(schemeTree, symbol.Scheme, createSchemeNode)                                       // depth 0
+		packageManagerNode := getOrCreate(schemeNode.children, symbol.PackageManager, createPackageManagerNode)      // depth 1
+		packageNameNode := getOrCreate(packageManagerNode.children, symbol.PackageName, createPackageNameNode)       // depth 2
+		packageVersionNode := getOrCreate(packageNameNode.children, symbol.PackageVersion, createPackageVersionNode) // depth 3
+		descriptor := getOrCreate(packageVersionNode.children, symbol.Descriptor, createDescriptor)                  // depth 4
+		descriptorsNoSuffixID := getOrCreate(descriptorsNoSuffixMap, symbol.DescriptorNoSuffix, id)                  // map insertion
+
 		cache[symbolName] = explodedIDs{
-			schemeID:             schemeID,
-			packageManagerID:     packageManagerID,
-			packageNameID:        packageNameID,
-			packageVersionID:     packageVersionID,
-			descriptorID:         descriptorID,
-			descriptorNoSuffixID: descriptorNoSuffixID,
+			descriptorID:         descriptor.id,
+			descriptorNoSuffixID: descriptorsNoSuffixID,
 		}
 	}
 
-	maps := map[string]map[string]int{
-		"SCHEME":               schemes,
-		"PACKAGE_MANAGER":      managers,
-		"PACKAGE_NAME":         packageNames,
-		"PACKAGE_VERSION":      packageVersions,
-		"DESCRIPTOR":           descriptors,
-		"DESCRIPTOR_NO_SUFFIX": descriptorsNoSuffix,
+	scipNameTypeByDepth := []string{
+		"SCHEME",          // depth 0
+		"PACKAGE_MANAGER", // depth 1
+		"PACKAGE_NAME",    // depth 2
+		"PACKAGE_VERSION", // depth 3
+		"DESCRIPTOR",      // depth 4
+		/*              */ // depth PANIC
 	}
 
-	for nameType, m := range maps {
-		for symbolName, symbolID := range m {
-			if err := s.symbolLookupInserter.Insert(ctx, symbolID, s.uploadID, symbolName, nameType); err != nil {
-				return err
-			}
+	// Bulk insert the content of the tree
+	if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
+		return s.symbolLookupInserter.Insert(ctx, scipNameTypeByDepth[depth], name, id, parentID)
+	}); err != nil {
+		return err
+	}
+
+	// Bulk insert fuzzy descriptors
+	for name, id := range descriptorsNoSuffixMap {
+		if err := s.symbolLookupInserter.Insert(ctx, "DESCRIPTOR_NO_SUFFIX", name, id, nil); err != nil {
+			return err
 		}
 	}
 
@@ -405,19 +397,14 @@ func (s *scipWriter) flush(ctx context.Context) error {
 
 			if err := s.symbolInserter.Insert(
 				ctx,
-				documentLookupIDs[i],
 				s.nextSymbolID,
+				ids.descriptorID,
+				ids.descriptorNoSuffixID,
+				documentLookupIDs[i],
 				definitionRanges,
 				referenceRanges,
 				implementationRanges,
 				typeDefinitionRanges,
-
-				ids.schemeID,
-				ids.packageManagerID,
-				ids.packageNameID,
-				ids.packageVersionID,
-				ids.descriptorID,
-				ids.descriptorNoSuffixID,
 			); err != nil {
 				return err
 			}
@@ -467,13 +454,15 @@ INSERT INTO codeintel_scip_symbols_lookup (
 	upload_id,
 	id,
 	name,
-	scip_name_type
+	scip_name_type,
+	parent_id
 )
 SELECT
 	%s,
 	source.id,
 	source.name,
-	source.scip_name_type
+	source.scip_name_type,
+	source.parent_id
 FROM t_codeintel_scip_symbols_lookup source
 `
 
@@ -481,36 +470,26 @@ const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
 	symbol_id,
+	descriptor_id,
+	descriptor_no_suffix_id,
 	document_lookup_id,
 	schema_version,
 	definition_ranges,
 	reference_ranges,
 	implementation_ranges,
-	type_definition_ranges,
-
-	scheme_id,
-	package_manager_id,
-	package_name_id,
-	package_version_id,
-	descriptor_id,
-	descriptor_no_suffix_id
+	type_definition_ranges
 )
 SELECT
 	%s,
 	source.symbol_id,
+	source.descriptor_id,
+	source.descriptor_no_suffix_id,
 	source.document_lookup_id,
 	%s,
 	source.definition_ranges,
 	source.reference_ranges,
 	source.implementation_ranges,
-	source.type_definition_ranges,
-
-	source.scheme_id,
-	source.package_manager_id,
-	source.package_name_id,
-	source.package_version_id,
-	source.descriptor_id,
-	source.descriptor_no_suffix_id
+	source.type_definition_ranges
 FROM t_codeintel_scip_symbols source
 `
 
