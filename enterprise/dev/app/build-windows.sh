@@ -18,7 +18,7 @@ pnpm install
 NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 pnpm run build-web
 
 export PATH=$PATH:/c/msys64/ucrt64/bin
-platform=${PLATFORM:-"not-defined"}
+platform="x86_64-pc-windows-msvc" # This is the name Tauri expects for the Windows executable
 
 export GO111MODULE=on
 
