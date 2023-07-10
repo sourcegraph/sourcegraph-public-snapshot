@@ -1,216 +1,86 @@
-import React, {FC, useEffect, useState} from 'react'
-
+import React, {FC, useState} from 'react';
+import {CodeSearchSimpleSearch, SimpleSearchProps} from './CodeSearchSimpleSearch';
 import {Icon, Select, Tooltip, Input, Button, Text} from '@sourcegraph/wildcard';
-import { mdiHelpCircleOutline} from '@mdi/js';
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import {mdiArrowLeft, mdiHelpCircleOutline} from "@mdi/js";
+import {RepoSearchSimpleSearch} from "./RepoSearchSimpleSearch";
 
-interface SimpleSearchProps {
-    onSimpleSearchUpdate
-    onSubmit
-    searchContext?
-}
+export const SimpleSearch: FC<SimpleSearchProps> = props => {
+    const [showState, setShowState] = useState<string>('default')
 
-const languages = [
-    'JavaScript',
-    'TypeScript',
-    'Java',
-    'C++',
-    'Python',
-    'Go',
-    'C#',
-    'Ruby',
-]
-
-export const SimpleSearch: FC<SimpleSearchProps> = ({onSimpleSearchUpdate, onSubmit, defaultSearchContext}) => {
-    const [repoPattern, setRepoPattern] = useState<string>('')
-    const [repoNames, setRepoNames] = useState<string>('')
-    const [filePaths, setFilePaths] = useState<string>('')
-    const [useForks, setUseForks] = useState<string>('')
-    const [languageFilter, setLanguageFilter] = useState<string>('')
-    const [searchContext, setSearchContext] = useState<string>('global')
-
-    const [literalContent, setLiteralContent] = useState<string>('')
-    const [regexpContent, setRegexpContent] = useState<string>('')
-
-    useEffect(() => {
-        // Update the query whenever any of the other fields change
-        const updatedQuery = getQuery();
-        onSimpleSearchUpdate(updatedQuery)
-    }, [repoPattern, repoNames, filePaths, useForks, literalContent, regexpContent, languageFilter]);
-
-    const getQuery = (): string => {
-        // build query
-        const terms: string[] = [];
-
-        if (searchContext?.length > 0) {
-            terms.push(`context:${searchContext}`)
+    function pickRender(): JSX.Element {
+        switch(showState) {
+            case 'default':
+                return <SearchPicker setShowState={setShowState}/>
+            case 'code':
+                return <CodeSearchSimpleSearch {...props} />
+            case 'repo':
+                return <RepoSearchSimpleSearch {...props} />
         }
-
-        if (repoPattern?.length > 0) {
-            terms.push(`repo:${repoPattern}`);
-        }
-        if (repoNames?.length > 0) {
-            terms.push(`repo:${repoNames}$`);
-        }
-        if (filePaths?.length > 0) {
-            terms.push(`file:${filePaths}`);
-        }
-        if (useForks === 'yes' || useForks === 'only') {
-            terms.push(`fork:${useForks}`);
-        }
-        if (languageFilter?.length > 0 && languageFilter !== 'Choose') {
-            terms.push(`lang:${languageFilter}`)
-        }
-
-
-
-        // do these last
-
-        if (literalContent?.length > 0) {
-            terms.push(literalContent)
-        } else if (regexpContent?.length > 0) {
-            terms.push(`/${regexpContent}/`)
-        }
-
-        return terms.join(' ');
-    };
+    }
 
     return (
         <div>
-            <Text>Fill out the fields below to generate a search query</Text>
-            <form className='mt-4' onSubmit={onSubmit}>
-                <div id='contentFilterSection'>
-                    <div className="form-group row">
-                        <label htmlFor="repoName" className="col-4 col-form-label">Match literal string
-                            <Tooltip content="Search for matching content with an exact match.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </label>
-
-                        <div className="col-8">
-                            <div className="input-group">
-                                <Input disabled={regexpContent?.length > 0} id="repoName" name="repoName" placeholder="class CustomerManager" type="text"
-                                       onChange={event => setLiteralContent(event.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="form-group row">
-                        <label htmlFor="repoName" className="col-4 col-form-label">Match regular expression
-                            <Tooltip content="Search for matching content using a regular expression.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </label>
-
-                        <div className="col-8">
-                            <div className="input-group">
-                                <Input disabled={literalContent?.length > 0} id="repoName" name="repoName" placeholder="class \w*Manager" type="text"
-                                       onChange={event => setRegexpContent(event.target.value)}
-                                />
-                            </div>
-                        </div>
-                    </div>
+            {showState !== 'default' &&
+                <div>
+                    <Button className={'mb-2'} onClick={() => setShowState('default')}>
+                        <Icon svgPath={mdiArrowLeft}></Icon>
+                        Back
+                    </Button>
+                    <Text>Fill out the fields below to generate a search. Sourcegraph will generate the appropriate
+                        search query as you fill out form fields.</Text>
                 </div>
 
-                <hr className='mt-4 mb-4'/>
-
-                <div id="repoFilterSection">
-                    <div className="form-group row">
-                        <label htmlFor="repoName" className="col-4 col-form-label">In these repos
-                            <Tooltip content="Match repository names exactly.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </label>
-
-                        <div className="col-8">
-                            <div className="input-group">
-                                <Input id="repoName" name="repoName" placeholder="sourcegraph/sourcegraph" type="text"
-                                       onChange={event => setRepoNames(event.target.value)}/>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="form-group row">
-                        <label htmlFor="repoNamePatterns" className="col-4 col-form-label">In matching repos
-                            <Tooltip content="Use a regular expression pattern to match against repository names.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </label>
-                        <div className="col-8">
-                            <Input id="repoNamePatterns" name="repoNamePatterns" placeholder="sourcegraph.*" type="text"
-                                   onChange={event => setRepoPattern(event.target.value)}/>
-                        </div>
-                    </div>
-
-                    <div className="form-group row">
-                        <label htmlFor="searchForks" className="col-4 col-form-label">Search over repository forks?
-                            <Tooltip
-                                content="Choose an option to include or exclude forks from the search, or search only over forks.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </label>
-                        <div className="col-8">
-                            <Select id="searchForks" name="searchForks"
-                                    onChange={event => setUseForks(event.target.value)}>
-                                <option value="no">No</option>
-                                <option value="yes">Yes</option>
-                                <option value="only">Only forks</option>
-                            </Select>
-                        </div>
-                    </div>
-                </div>
-
-                <hr className='mt-4 mb-4'/>
-
-                <div className="form-group row">
-                    <label htmlFor="text" className="col-4 col-form-label">In matching file paths
-                        <Tooltip
-                            content="Use a regular expression pattern to match against file paths, for example sourcegraph/.*/internal">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
-                        </Tooltip>
-                    </label>
-                    <div className="col-8">
-                        <Input id="text" name="text" type="text" placeholder="enterprise/.*"
-                               onChange={event => setFilePaths(event.target.value)}/>
-                    </div>
-                </div>
-
-                <div className="form-group row">
-                    <label htmlFor="searchLang" className="col-4 col-form-label">Which programming language?
-                        <Tooltip
-                            content="Only match files for a given programming language.">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
-                        </Tooltip>
-                    </label>
-                    <div className="col-8">
-                        <Select id="searchLang" name="searchLang"
-                                onChange={event => setLanguageFilter(event.target.value)}>
-                            <option hidden>Choose</option>
-                            {languages.map(lang => <option value={lang}>{lang}</option>)}
-                        </Select>
-                    </div>
-                </div>
-
-                <div className="form-group row">
-                    <label htmlFor="searchContext" className="col-4 col-form-label">Search context
-                        <Tooltip
-                            content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. Global is the default and will search over all code on Sourcegraph.">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
-                        </Tooltip>
-                    </label>
-                    <div className="col-8">
-                        <Input value={searchContext} id="text" name="text" type="text"
-                               onChange={event => setSearchContext(event.target.value)}/>
-                    </div>
-                </div>
-
-                <div className="form-group row">
-                    <div className="offset-4 col-8">
-                        <Button variant="primary" name="submit" type="submit" className="btn btn-primary">Submit</Button>
-                    </div>
-                </div>
-            </form>
+            }
+            {pickRender()}
         </div>
     )
 }
+
+const buttonStyle = {width: '18rem', height: '10rem'}
+
+interface SearchPickerProps {
+    setShowState
+}
+
+const SearchPicker: FC<SearchPickerProps> = ({setShowState}) => (
+        <div className='offset-1'>
+            {/*<div className="card" style={{width: '18rem'}}>*/}
+            {/*    <div className="card-body">*/}
+            {/*        <h5 className="card-title">Card title</h5>*/}
+            {/*        <h6 className="card-subtitle mb-2 text-muted">Card subtitle</h6>*/}
+            {/*        <p className="card-text">Some quick example text to build on the card title and make up the bulk of the*/}
+            {/*            card's content.</p>*/}
+            {/*        <a href="#" className="card-link">Card link</a>*/}
+            {/*        <a href="#" className="card-link">Another link</a>*/}
+            {/*    </div>*/}
+            {/*</div>*/}
+            <Tooltip content="This is useful if you are looking for something specific, or examples of code. Error messages, class names, variable names, etc.">
+                <Button onClick={() => setShowState('code')} style={buttonStyle} variant='secondary' outline={true}>
+                    <div>
+                        <h3>Find code</h3>
+                        <Text className='mt-2'>Look for examples of code, specifically or with a pattern</Text>
+                        <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                    </div>
+                </Button>
+            </Tooltip>
+
+            <Tooltip content="This is useful if you are looking for repositories. For example, you are looking for a library you think might exist and search using repository description.">
+                <Button onClick={() => setShowState('repo')} style={buttonStyle} variant='secondary' outline={true}>
+                    <h3>Find repositories</h3>
+                    <Text className='mt-2'>Look for repositories by name, file contents, metadata, or owners</Text>
+                    <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                </Button>
+            </Tooltip>
+
+            <Tooltip content="This is useful if you are looking for something specific, or examples of code. Error messages, class names, variable names, etc.">
+                <Button onClick={() => setShowState('change')} style={buttonStyle} variant='secondary' outline={true}>
+                    <h3>Look for changes</h3>
+                    <Text className='mt-2'>Look for changes in commit messages or search over diffs in the code</Text>
+                    <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                </Button>
+            </Tooltip>
+
+
+
+        </div>
+    )

@@ -28,6 +28,7 @@ import { useExperimentalQueryInput } from '../../../search/useExperimentalSearch
 import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
 
 import styles from './SearchPageInput.module.scss'
+import {CodeSearchSimpleSearch} from "./CodeSearchSimpleSearch";
 import {SimpleSearch} from "./SimpleSearch";
 
 // We want to prevent autofocus by default on devices with touch as their only input method.

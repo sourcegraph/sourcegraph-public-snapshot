@@ -20,7 +20,7 @@ import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
-import {SimpleSearch} from "./SimpleSearch";
+import {CodeSearchSimpleSearch} from "./CodeSearchSimpleSearch";
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 
 
