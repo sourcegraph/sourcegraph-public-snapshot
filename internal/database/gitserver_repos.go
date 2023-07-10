@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type GitserverRepoStore interface {
@@ -368,7 +369,7 @@ SELECT
 	gr.corrupted_at,
 	gr.corruption_logs,
 	gr.pool_repo_id,
-	go.last_output,
+	go.last_output
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id

@@ -517,7 +517,9 @@ func TestServer_addrForRepo(t *testing.T) {
 	repo2 := api.RepoName("gitlab.com/sgtest/example")          // Returns address shard2 by default.
 
 	testCases := []struct {
-		name               string
+		name          string
+		pinnedServers map[string]string
+
 		forkedRepoPoolID   *api.RepoID
 		parentRepoName     *api.RepoName
 		error              error
@@ -530,7 +532,7 @@ func TestServer_addrForRepo(t *testing.T) {
 			expectedShardRepo2: shard2,
 		},
 		{
-			name:               "a forked and parent repo relationship exists",
+			name:               "a forked and parent repo relationship exists (deduplicated repo)",
 			forkedRepoPoolID:   pointers.Ptr(api.RepoID(2)),
 			parentRepoName:     &repo1,
 			expectedShardRepo1: shard1,
@@ -542,16 +544,47 @@ func TestServer_addrForRepo(t *testing.T) {
 			expectedShardRepo1: shard1,
 			expectedShardRepo2: shard2,
 		},
+		{
+			name: "pinned repo",
+			pinnedServers: map[string]string{
+				// By default repo1 is expected in shard2 unless pinned.
+				string(repo1): shard2,
+			},
+			expectedShardRepo1: shard2,
+			expectedShardRepo2: shard2,
+		},
+		{
+			name: "pinned and deduplicated repo, forked repo is already expected in shard2 by default",
+			pinnedServers: map[string]string{
+				// By default repo1 is expected in shard2 unless pinned.
+				string(repo1): shard2,
+			},
+			forkedRepoPoolID:   pointers.Ptr(api.RepoID(2)),
+			parentRepoName:     &repo1,
+			expectedShardRepo1: shard2,
+			expectedShardRepo2: shard2,
+		},
+		{
+			name: "pinned and deduplicated repo, forked repo is expected in shard2 but is in shard1 as a result of parent being pinned to shard1",
+			pinnedServers: map[string]string{
+				string(repo1): shard1,
+			},
+			forkedRepoPoolID:   pointers.Ptr(api.RepoID(2)),
+			parentRepoName:     &repo1,
+			expectedShardRepo1: shard1,
+			expectedShardRepo2: shard1,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
+			testAddrs.PinnedServers = tc.pinnedServers
+
 			gs.GetForkedAndParentRepoFunc.SetDefaultReturn(tc.forkedRepoPoolID, tc.parentRepoName, tc.error)
 
 			require.Equal(t, s.addrForRepo(api.RepoName(repo1), testAddrs), tc.expectedShardRepo1)
 			require.Equal(t, s.addrForRepo(api.RepoName(repo2), testAddrs), tc.expectedShardRepo2)
 		})
-
 	}
 }
 
