@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -25,4 +26,10 @@ go_library(
         "@com_github_masterminds_semver//:semver",
         "@com_github_sourcegraph_log//:log",
     ],
+)
+
+go_test(
+    name = "ci_test",
+    srcs = ["bazel_operations_test.go"],
+    embed = [":ci"],
 )

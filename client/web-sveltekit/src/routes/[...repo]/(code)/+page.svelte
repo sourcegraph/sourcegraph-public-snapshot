@@ -5,13 +5,14 @@
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: treeOrError = data.treeEntries
-    $: commits = data.commits
+    $: treeOrError = asStore(data.treeEntries.deferred)
+    $: commits = asStore(data.commits.deferred)
 </script>
 
 <div class="content">

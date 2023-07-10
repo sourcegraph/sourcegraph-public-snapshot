@@ -19,13 +19,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -40,6 +40,7 @@ type appResolver struct {
 	logger    log.Logger
 	db        database.DB
 	gitClient gitserver.Client
+	doer      httpcli.Doer
 }
 
 var _ graphqlbackend.AppResolver = &appResolver{}
@@ -49,6 +50,7 @@ func NewAppResolver(logger log.Logger, db database.DB, gitClient gitserver.Clien
 		logger:    logger,
 		db:        db,
 		gitClient: gitClient,
+		doer:      httpcli.InternalDoer,
 	}
 }
 
@@ -330,7 +332,6 @@ func (r localExternalServiceResolver) Repositories(ctx context.Context) ([]graph
 }
 
 func globalEmbeddingsPolicyExists(ctx context.Context) (bool, error) {
-
 	const queryPayload = `{
 		"operationName": "CodeIntelligenceConfigurationPolicies",
 		"variables": {
@@ -389,11 +390,9 @@ func globalEmbeddingsPolicyExists(ctx context.Context) (bool, error) {
 		return false, errors.Errorf("graphql: errors: %v", v.Errors)
 	}
 	return v.Data.CodeIntelligenceConfigurationPolicies.TotalCount > 0, nil
-
 }
 
 func createGlobalEmbeddingsPolicy(ctx context.Context) error {
-
 	alreadyExists, _ := globalEmbeddingsPolicyExists(ctx)
 	// ignoring error creating multiple policies is not problematic
 	if alreadyExists {

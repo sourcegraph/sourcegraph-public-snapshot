@@ -11,15 +11,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	codycontext "github.com/sourcegraph/sourcegraph/enterprise/internal/codycontext"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -35,7 +34,7 @@ func TestContextResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	repo1 := types.Repo{Name: "repo1"}
 	repo2 := types.Repo{Name: "repo2"}
 	// Create populates the IDs in the passed in types.Repo
@@ -122,7 +121,6 @@ func TestContextResolver(t *testing.T) {
 					ChunkMatches: lineRange(0, 4),
 				}},
 			})
-
 		}
 		return nil, nil
 	})

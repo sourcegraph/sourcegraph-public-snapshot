@@ -144,6 +144,7 @@ func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, conc
 	a := &actor.Actor{
 		Key:           cacheKey,
 		ID:            userID,
+		Name:          user.Username,
 		AccessEnabled: userID != "" && user.GetCodyGatewayAccess().Enabled,
 		RateLimits:    zeroRequestsAllowed(),
 		LastUpdated:   &now,

@@ -6,8 +6,8 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/compute/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 
@@ -24,7 +24,7 @@ type Opts struct {
 // Search calls the streaming search endpoint and uses decoder to decode the
 // response body.
 func Search(ctx context.Context, query string, patternType *string, decoder streamhttp.FrontendStreamDecoder) (err error) {
-	tr, ctx := trace.New(ctx, "insights", "StreamSearch",
+	tr, ctx := trace.New(ctx, "insights.StreamSearch",
 		attribute.String("query", query))
 	defer tr.FinishWithErr(&err)
 
@@ -59,7 +59,7 @@ func Search(ctx context.Context, query string, patternType *string, decoder stre
 }
 
 func genericComputeStream(ctx context.Context, handler func(io.Reader) error, query, operation string) (err error) {
-	tr, ctx := trace.New(ctx, operation, "")
+	tr, ctx := trace.New(ctx, operation)
 	defer tr.FinishWithErr(&err)
 
 	req, err := client.NewComputeStreamRequest(internalapi.Client.URL+"/.internal", query)

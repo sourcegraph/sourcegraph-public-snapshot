@@ -23,12 +23,16 @@ type RepoID int32
 // Previously, this was called RepoURI.
 type RepoName string
 
-// RepoHashedName is the hashed name of a repo
-type RepoHashedName string
+func (r RepoName) Attr() attribute.KeyValue {
+	return attribute.String("repo", string(r))
+}
 
 func (r RepoName) Equal(o RepoName) bool {
 	return strings.EqualFold(string(r), string(o))
 }
+
+// RepoHashedName is the hashed name of a repo
+type RepoHashedName string
 
 var deletedRegex = lazyregexp.New("DELETED-[0-9]+\\.[0-9]+-")
 
@@ -41,6 +45,10 @@ func UndeletedRepoName(name RepoName) RepoName {
 
 // CommitID is the 40-character SHA-1 hash for a Git commit.
 type CommitID string
+
+func (c CommitID) Attr() attribute.KeyValue {
+	return attribute.String("commitID", string(c))
+}
 
 // Short returns the SHA-1 commit hash truncated to 7 characters
 func (c CommitID) Short() string {
@@ -76,8 +84,8 @@ func (rc *RepoCommit) FromProto(p *proto.RepoCommit) {
 
 func (rc RepoCommit) Attrs() []attribute.KeyValue {
 	return []attribute.KeyValue{
-		attribute.String("repo", string(rc.Repo)),
-		attribute.String("commitID", string(rc.CommitID)),
+		rc.Repo.Attr(),
+		rc.CommitID.Attr(),
 	}
 }
 

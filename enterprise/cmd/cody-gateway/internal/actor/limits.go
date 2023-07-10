@@ -105,6 +105,10 @@ func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(context.Conte
 	return l.nextLimiter.TryAcquire(ctx)
 }
 
+func (l *concurrencyLimiter) Usage(ctx context.Context) (int, time.Time, error) {
+	return l.nextLimiter.Usage(ctx)
+}
+
 type ErrConcurrencyLimitExceeded struct {
 	feature    codygateway.Feature
 	limit      int
@@ -147,4 +151,8 @@ func (u updateOnErrorLimiter) TryAcquire(ctx context.Context) (func(context.Cont
 		u.actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
 	}
 	return commit, err
+}
+
+func (u updateOnErrorLimiter) Usage(ctx context.Context) (int, time.Time, error) {
+	return u.nextLimiter.Usage(ctx)
 }

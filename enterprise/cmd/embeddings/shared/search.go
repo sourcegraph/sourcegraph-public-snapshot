@@ -4,18 +4,23 @@ import (
 	"context"
 	"runtime"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
+	"go.opentelemetry.io/otel/attribute"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"go.opentelemetry.io/otel/attribute"
 )
 
-const similaritySearchMinRowsToSplit = 1000
-const queryEmbeddingRetries = 3
+const (
+	similaritySearchMinRowsToSplit = 1000
+	queryEmbeddingRetries          = 3
+)
 
-type getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
-type getQueryEmbeddingFn func(ctx context.Context, model string) ([]float32, string, error)
+type (
+	getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
+	getQueryEmbeddingFn     func(ctx context.Context, model string) ([]float32, string, error)
+)
 
 func searchRepoEmbeddingIndexes(
 	ctx context.Context,
@@ -24,7 +29,7 @@ func searchRepoEmbeddingIndexes(
 	getQueryEmbedding getQueryEmbeddingFn,
 	weaviate *weaviateClient,
 ) (_ *embeddings.EmbeddingCombinedSearchResults, err error) {
-	tr, ctx := trace.New(ctx, "searchRepoEmbeddingIndexes", "", params.Attrs()...)
+	tr, ctx := trace.New(ctx, "searchRepoEmbeddingIndexes", params.Attrs()...)
 	defer tr.FinishWithErr(&err)
 
 	floatQuery, queryModel, err := getQueryEmbedding(ctx, params.Query)
@@ -43,7 +48,7 @@ func searchRepoEmbeddingIndexes(
 	}
 
 	searchRepo := func(repoID api.RepoID, repoName api.RepoName) (codeResults, textResults []embeddings.EmbeddingSearchResult, err error) {
-		tr, ctx := trace.New(ctx, "searchRepo", "",
+		tr, ctx := trace.New(ctx, "searchRepo",
 			attribute.String("repoName", string(repoName)),
 		)
 		defer tr.FinishWithErr(&err)

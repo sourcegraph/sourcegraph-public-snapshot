@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"go.opentelemetry.io/otel/attribute"
 )
 
 var (
@@ -44,7 +44,7 @@ func Search(
 		return MockSearch(ctx, repo, repoID, commit, p, fetchTimeout, onMatches)
 	}
 
-	tr, ctx := trace.New(ctx, "searcher.client", fmt.Sprintf("%s@%s", repo, commit))
+	tr, ctx := trace.New(ctx, "searcher.client", repo.Attr(), commit.Attr())
 	defer tr.FinishWithErr(&err)
 
 	r := protocol.Request{
@@ -83,7 +83,7 @@ func Search(
 	// relatively expensive to fetch from gitserver. So we use consistent
 	// hashing to increase cache hits.
 	consistentHashKey := string(repo) + "@" + string(commit)
-	tr.LazyPrintf("%s", consistentHashKey)
+	tr.AddEvent("calculated hash", attribute.String("consistentHashKey", consistentHashKey))
 
 	nodes, err := searcherURLs.Endpoints()
 	if err != nil {
@@ -98,7 +98,7 @@ func Search(
 	for attempt := 0; attempt < 2; attempt++ {
 		url := urls[attempt%len(urls)]
 
-		tr.LazyPrintf("attempt %d: %s", attempt, url)
+		tr.AddEvent("attempting text search", attribute.String("url", url), attribute.Int("attempt", attempt))
 		limitHit, err = textSearchStream(ctx, url, body, onMatches)
 		if err == nil || errcode.IsTimeout(err) {
 			return limitHit, err
@@ -114,14 +114,14 @@ func Search(
 			return false, err
 		}
 
-		tr.LazyPrintf("transient error %s", err.Error())
+		tr.AddEvent("transient error", trace.Error(err))
 	}
 
 	return false, err
 }
 
 func textSearchStream(ctx context.Context, url string, body []byte, cb func([]*protocol.FileMatch)) (_ bool, err error) {
-	tr, ctx := trace.New(ctx, "searcher", "textSearchStream")
+	tr, ctx := trace.New(ctx, "searcher.textSearchStream")
 	defer tr.FinishWithErr(&err)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, bytes.NewReader(body))

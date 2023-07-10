@@ -1,11 +1,12 @@
 <script lang="ts">
     import Commit from '$lib/Commit.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: commits = data.commits
+    $: commits = asStore(data.commits.deferred)
 </script>
 
 <section>

@@ -4,12 +4,13 @@
     import { page } from '$app/stores'
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: treeDataStatus = data.treeEntries
+    $: treeDataStatus = asStore(data.treeEntries.deferred)
     $: treeOrError = (!$treeDataStatus.loading && $treeDataStatus.data) || null
     $: entries = treeOrError && !isErrorLike(treeOrError) ? treeOrError.entries : []
 </script>

@@ -88,7 +88,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	return featurelimiter.Handle(
 		baseLogger,
 		eventLogger,
-		limiter.NewPrefixRedisStore("rate_limit:", rs),
+		rs,
 		rateLimitNotifier,
 		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			act := actor.FromContext(r.Context())

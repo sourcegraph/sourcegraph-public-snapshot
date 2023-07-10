@@ -59,8 +59,8 @@ public class SettingsConfigurable implements Configurable {
             .equals(ConfigUtil.getRemoteUrlReplacements(project))
         || mySettingsComponent.isUrlNotificationDismissed()
             != ConfigUtil.isUrlNotificationDismissed()
-        || mySettingsComponent.areCodyCompletionsEnabled()
-            != ConfigUtil.areCodyCompletionsEnabled();
+        || mySettingsComponent.isCodyAutoCompleteEnabled()
+            != ConfigUtil.isCodyAutoCompleteEnabled();
   }
 
   @Override
@@ -72,7 +72,7 @@ public class SettingsConfigurable implements Configurable {
     CodyApplicationService aSettings = CodyApplicationService.getInstance();
     CodyProjectService pSettings = CodyService.getInstance(project);
 
-    boolean oldCodyCompletionsEnabled = ConfigUtil.areCodyCompletionsEnabled();
+    boolean oldCodyAutoCompleteEnabled = ConfigUtil.isCodyAutoCompleteEnabled();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
     String oldDotComAccessToken = ConfigUtil.getDotComAccessToken(project);
     String oldEnterpriseAccessToken = ConfigUtil.getEnterpriseAccessToken(project);
@@ -80,18 +80,18 @@ public class SettingsConfigurable implements Configurable {
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
     String newCustomRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
-    boolean newCodyCompletionsEnabled = mySettingsComponent.areCodyCompletionsEnabled();
+    boolean newCodyAutoCompleteEnabled = mySettingsComponent.isCodyAutoCompleteEnabled();
     PluginSettingChangeContext context =
         new PluginSettingChangeContext(
             oldUrl,
             oldDotComAccessToken,
             oldEnterpriseAccessToken,
-            oldCodyCompletionsEnabled,
+            oldCodyAutoCompleteEnabled,
             newUrl,
             newDotComAccessToken,
             newEnterpriseAccessToken,
             newCustomRequestHeaders,
-            newCodyCompletionsEnabled);
+            newCodyAutoCompleteEnabled);
 
     publisher.beforeAction(context);
 
@@ -131,7 +131,7 @@ public class SettingsConfigurable implements Configurable {
       aSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
     }
     aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
-    aSettings.areCodyCompletionsEnabled = newCodyCompletionsEnabled;
+    aSettings.isCodyAutoCompleteEnabled = newCodyAutoCompleteEnabled;
 
     publisher.afterAction(context);
   }
@@ -151,7 +151,7 @@ public class SettingsConfigurable implements Configurable {
     String remoteUrlReplacements = ConfigUtil.getRemoteUrlReplacements(project);
     mySettingsComponent.setRemoteUrlReplacements(remoteUrlReplacements);
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
-    mySettingsComponent.setCodyCompletionsEnabled(ConfigUtil.areCodyCompletionsEnabled());
+    mySettingsComponent.setCodyAutoCompleteEnabled(ConfigUtil.isCodyAutoCompleteEnabled());
   }
 
   @Override

@@ -6,18 +6,18 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
-	codeintelContext "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/context"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	bgrepo "github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/embed"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -25,7 +25,7 @@ import (
 )
 
 type handler struct {
-	db                     edb.EnterpriseDB
+	db                     database.DB
 	uploadStore            uploadstore.Store
 	gitserverClient        gitserver.Client
 	contextService         embed.ContextService
@@ -85,11 +85,15 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		revision:  record.Revision,
 		gitserver: h.gitserverClient,
 	}
-
+	includedFiles, excludedFiles := getFileFilterPathPatterns(embeddingsConfig)
 	opts := embed.EmbedRepoOpts{
-		RepoName:          repo.Name,
-		Revision:          record.Revision,
-		ExcludePatterns:   getExcludedFilePathPatterns(embeddingsConfig),
+		RepoName: repo.Name,
+		Revision: record.Revision,
+		FileFilters: embed.FileFilters{
+			ExcludePatterns:  excludedFiles,
+			IncludePatterns:  includedFiles,
+			MaxFileSizeBytes: embeddingsConfig.FileFilters.MaxFileSizeBytes,
+		},
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
@@ -138,14 +142,20 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	}
 }
 
-func getExcludedFilePathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) []*paths.GlobPattern {
-	var excludedGlobPatterns []*paths.GlobPattern
-	if embeddingsConfig != nil && len(embeddingsConfig.ExcludedFilePathPatterns) != 0 {
-		excludedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.ExcludedFilePathPatterns)
-	} else {
+func getFileFilterPathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) (includedFiles, excludedFiles []*paths.GlobPattern) {
+	var includedGlobPatterns, excludedGlobPatterns []*paths.GlobPattern
+	if embeddingsConfig != nil {
+		if len(embeddingsConfig.FileFilters.ExcludedFilePathPatterns) != 0 {
+			excludedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.FileFilters.ExcludedFilePathPatterns)
+		}
+		if len(embeddingsConfig.FileFilters.IncludedFilePathPatterns) != 0 {
+			includedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.FileFilters.IncludedFilePathPatterns)
+		}
+	}
+	if len(excludedGlobPatterns) == 0 {
 		excludedGlobPatterns = embed.GetDefaultExcludedFilePathPatterns()
 	}
-	return excludedGlobPatterns
+	return includedGlobPatterns, excludedGlobPatterns
 }
 
 // getPreviousEmbeddingIndex checks the last successfully indexed revision and returns its embeddings index. If there

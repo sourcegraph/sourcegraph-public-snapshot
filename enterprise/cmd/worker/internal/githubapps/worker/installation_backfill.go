@@ -6,17 +6,17 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // NewGitHubInstallationWorker returns a goroutine.Handler that will backfill GitHub App
 // installation information from the GitHub API into the database.
-func NewGitHubInstallationWorker(db database.EnterpriseDB, logger log.Logger) goroutine.Handler {
+func NewGitHubInstallationWorker(db database.DB, logger log.Logger) goroutine.Handler {
 	return &githubAppInstallationWorker{
 		db:     db,
 		logger: logger,
@@ -24,7 +24,7 @@ func NewGitHubInstallationWorker(db database.EnterpriseDB, logger log.Logger) go
 }
 
 type githubAppInstallationWorker struct {
-	db     database.EnterpriseDB
+	db     database.DB
 	logger log.Logger
 }
 

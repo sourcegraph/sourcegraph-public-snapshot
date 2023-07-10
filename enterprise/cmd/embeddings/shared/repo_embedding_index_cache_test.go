@@ -6,12 +6,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
@@ -45,7 +46,7 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 				}, nil
 			}
 		},
-		int64(cacheSize),
+		uint64(cacheSize),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -124,7 +125,6 @@ func Test_embeddingsIndexCache(t *testing.T) {
 
 	_, ok = c.Get("fitsOne")
 	require.False(t, ok, "after being evicted, a cache entry should not exist")
-
 }
 
 func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {

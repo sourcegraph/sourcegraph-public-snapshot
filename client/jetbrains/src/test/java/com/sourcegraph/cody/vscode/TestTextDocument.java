@@ -1,7 +1,7 @@
 package com.sourcegraph.cody.vscode;
 
 import com.google.common.collect.Iterables;
-import com.sourcegraph.cody.completions.CompletionDocumentContext;
+import com.sourcegraph.cody.autocomplete.AutoCompleteDocumentContext;
 import java.net.URI;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -57,13 +57,13 @@ public class TestTextDocument implements TextDocument {
   }
 
   @Override
-  public CompletionDocumentContext getCompletionContext(int offset) {
+  public AutoCompleteDocumentContext getAutoCompleteContext(int offset) {
     String sameLinePrefix =
         Iterables.getLast(this.text.substring(0, offset).lines().collect(Collectors.toList()));
     String sameLineSuffix =
         Iterables.getFirst(this.text.substring(offset).lines().collect(Collectors.toList()), "");
     assert sameLineSuffix != null;
-    return new CompletionDocumentContext(sameLinePrefix, sameLineSuffix);
+    return new AutoCompleteDocumentContext(sameLinePrefix, sameLineSuffix);
   }
 
   @Override

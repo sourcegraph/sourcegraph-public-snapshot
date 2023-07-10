@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.recipes;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.UpdatableChatHolderService;
@@ -10,7 +9,7 @@ import com.sourcegraph.cody.ui.SelectOptionManager;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import org.jetbrains.annotations.NotNull;
 
-public class TranslateToLanguageAction extends DumbAwareAction {
+public class TranslateToLanguageAction extends BaseRecipeAction {
   @Override
   public void actionPerformed(@NotNull AnActionEvent e) {
 

@@ -2,14 +2,13 @@ import { catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike, type ErrorLike } from '$lib/common'
 import { fetchTreeEntries } from '$lib/loader/repo'
-import { asStore } from '$lib/utils'
 import { requestGraphQL } from '$lib/web'
 
 import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ params, parent }) => ({
-    treeEntries: asStore(
-        parent().then(({ resolvedRevision, revision, repoName }) =>
+    treeEntries: {
+        deferred: parent().then(({ resolvedRevision, revision, repoName }) =>
             !isErrorLike(resolvedRevision)
                 ? fetchTreeEntries({
                       repoName,
@@ -22,6 +21,6 @@ export const load: PageLoad = ({ params, parent }) => ({
                       .pipe(catchError((error): [ErrorLike] => [asError(error)]))
                       .toPromise()
                 : null
-        )
-    ),
+        ),
+    },
 })
