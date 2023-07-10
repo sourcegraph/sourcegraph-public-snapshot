@@ -344,10 +344,6 @@ type Client interface {
 	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
 	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
 
-	// ListFiles returns a list of root-relative file paths matching the given
-	// pattern in a particular commit of a repository.
-	ListFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, opts *protocol.ListFilesOpts) ([]string, error)
-
 	// Commits returns all commits matching the options.
 	Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) ([]*gitdomain.Commit, error)
 
@@ -1767,9 +1763,4 @@ func readResponseBody(body io.Reader) string {
 	// strings.TrimSpace, see attached screenshots in this pull request:
 	// https://github.com/sourcegraph/sourcegraph/pull/39358.
 	return strings.TrimSpace(string(content))
-}
-
-type clientAndError struct {
-	client proto.GitserverServiceClient
-	err    error
 }

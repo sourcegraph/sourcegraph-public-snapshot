@@ -17,10 +17,8 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	godiff "github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-
 	"github.com/google/go-cmp/cmp"
+	godiff "github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -658,15 +656,6 @@ func TestLsFiles(t *testing.T) {
 	client := NewClient()
 	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
 		return client.LsFiles(ctx, checker, repo, api.CommitID(commit))
-	})
-}
-
-func TestListFiles(t *testing.T) {
-	ClientMocks.LocalGitserver = true
-	defer ResetClientMocks()
-	client := NewClient()
-	runFileListingTest(t, func(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit string) ([]string, error) {
-		return client.ListFiles(ctx, checker, repo, api.CommitID(commit), &protocol.ListFilesOpts{})
 	})
 }
 

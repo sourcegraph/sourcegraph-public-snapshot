@@ -10702,9 +10702,6 @@ type MockGitserverClient struct {
 	// ListDirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDirectoryChildren.
 	ListDirectoryChildrenFunc *GitserverClientListDirectoryChildrenFunc
-	// ListFilesFunc is an instance of a mock function object controlling
-	// the behavior of the method ListFiles.
-	ListFilesFunc *GitserverClientListFilesFunc
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *GitserverClientListRefsFunc
@@ -10922,11 +10919,6 @@ func NewMockGitserverClient() *MockGitserverClient {
 		},
 		ListDirectoryChildrenFunc: &GitserverClientListDirectoryChildrenFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, []string) (r0 map[string][]string, r1 error) {
-				return
-			},
-		},
-		ListFilesFunc: &GitserverClientListFilesFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) (r0 []string, r1 error) {
 				return
 			},
 		},
@@ -11197,11 +11189,6 @@ func NewStrictMockGitserverClient() *MockGitserverClient {
 				panic("unexpected invocation of MockGitserverClient.ListDirectoryChildren")
 			},
 		},
-		ListFilesFunc: &GitserverClientListFilesFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error) {
-				panic("unexpected invocation of MockGitserverClient.ListFiles")
-			},
-		},
 		ListRefsFunc: &GitserverClientListRefsFunc{
 			defaultHook: func(context.Context, api.RepoName) ([]gitdomain.Ref, error) {
 				panic("unexpected invocation of MockGitserverClient.ListRefs")
@@ -11411,9 +11398,6 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 		},
 		ListDirectoryChildrenFunc: &GitserverClientListDirectoryChildrenFunc{
 			defaultHook: i.ListDirectoryChildren,
-		},
-		ListFilesFunc: &GitserverClientListFilesFunc{
-			defaultHook: i.ListFiles,
 		},
 		ListRefsFunc: &GitserverClientListRefsFunc{
 			defaultHook: i.ListRefs,
@@ -14781,123 +14765,6 @@ func (c GitserverClientListDirectoryChildrenFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientListDirectoryChildrenFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// GitserverClientListFilesFunc describes the behavior when the ListFiles
-// method of the parent MockGitserverClient instance is invoked.
-type GitserverClientListFilesFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error)
-	history     []GitserverClientListFilesFuncCall
-	mutex       sync.Mutex
-}
-
-// ListFiles delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockGitserverClient) ListFiles(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 *protocol.ListFilesOpts) ([]string, error) {
-	r0, r1 := m.ListFilesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.ListFilesFunc.appendCall(GitserverClientListFilesFuncCall{v0, v1, v2, v3, v4, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListFiles method of
-// the parent MockGitserverClient instance is invoked and the hook queue is
-// empty.
-func (f *GitserverClientListFilesFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListFiles method of the parent MockGitserverClient instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *GitserverClientListFilesFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *GitserverClientListFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverClientListFilesFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *GitserverClientListFilesFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, *protocol.ListFilesOpts) ([]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *GitserverClientListFilesFunc) appendCall(r0 GitserverClientListFilesFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of GitserverClientListFilesFuncCall objects
-// describing the invocations of this function.
-func (f *GitserverClientListFilesFunc) History() []GitserverClientListFilesFuncCall {
-	f.mutex.Lock()
-	history := make([]GitserverClientListFilesFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// GitserverClientListFilesFuncCall is an object that describes an
-// invocation of method ListFiles on an instance of MockGitserverClient.
-type GitserverClientListFilesFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 authz.SubRepoPermissionChecker
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 api.RepoName
-	// Arg3 is the value of the 4th argument passed to this method
-	// invocation.
-	Arg3 api.CommitID
-	// Arg4 is the value of the 5th argument passed to this method
-	// invocation.
-	Arg4 *protocol.ListFilesOpts
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c GitserverClientListFilesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c GitserverClientListFilesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
