@@ -1,15 +1,32 @@
 import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
 
-const documents = [
-    {
-        title: 'People Operations',
-        url: 'https://confluence.sourcegraph.com/handbook/people-operations',
-        type: ['wiki page'],
-        content:
-            "People Operations is a team that focuses on the people that work at Sourcegraph. We're responsible for hiring, onboarding, and supporting our employees. We also work on initiatives to make Sourcegraph a great place to work, such as our diversity and inclusion efforts, and our employee resource groups.",
-    },
-]
+// todo: use env variables
+const email = 'EMAIL'
+const apiToken =
+    'API_TOKEN'
 
+const base_url = 'https://sourcegraph-source.atlassian.net'
+
+const searchWiki = (query: string): Promise<any> =>
+    fetch(`${base_url}/wiki/rest/api/search?cql=${encodeURIComponent(`text ~ "${query}"`)}`, {
+        method: 'GET',
+        headers: {
+            Authorization: 'Basic ' + btoa(email + ':' + apiToken),
+            'Content-Type': 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(
+            json =>
+                json?.results as {
+                    excerpt: string
+                    title: string
+                    url: string
+                }[]
+        )
+        .then(items => items.map(({ excerpt, title, url }) => ({ excerpt, title, url: `${base_url}/${url}` })))
+
+// todo: add isEnabled check function
 export const confluencePlugin: IPlugin = {
     name: 'Confluence Cody plugin',
     description:
@@ -22,19 +39,23 @@ export const confluencePlugin: IPlugin = {
             parameters: {
                 type: 'object',
                 properties: {
-                    titleQuery: {
+                    query: {
                         type: 'string',
-                        description: 'Query by page title',
-                    },
-                    pageContentQuery: {
-                        type: 'string',
-                        description: 'Query by page content',
+                        description: 'Query by page title or content',
                     },
                 },
-                required: ['pageContentQuery', 'titleQuery'],
+                required: ['query'],
             },
-            handler: (parameters: IPluginFunctionParameters): Promise<IPluginFunctionOutput[]> =>
-                Promise.resolve(documents),
+            handler: async (parameters: IPluginFunctionParameters): Promise<IPluginFunctionOutput[]> => {
+                const { query } = parameters
+
+                if (typeof query === 'string') {
+                    const items = await searchWiki(query)
+
+                    return items
+                }
+                return Promise.reject(new Error('Invalid parameters'))
+            },
         },
     ],
 }

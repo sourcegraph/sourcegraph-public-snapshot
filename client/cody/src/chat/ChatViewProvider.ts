@@ -523,6 +523,7 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
 
                 let pluginContextMessages: Message[] = []
                 try {
+                    // todo: get query together with previous context
                     // choose which plugins should be run based on the recipe and message
                     const dataSources = await plugins.chooseDataSources(humanChatInput, this.chat)
                     this.transcript.addAssistantResponse(
