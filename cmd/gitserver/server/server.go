@@ -2147,21 +2147,14 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName 
 		log.String("repo", string(repoName)),
 	)
 
-	repoConf := conf.Get().Repositories
-	if repoConf == nil {
-		return nil, nil
-	}
-
-	for _, name := range repoConf.DeduplicateForks {
-		if string(repoName) == name {
-			poolDir := s.poolDir(repoName)
-			// lock, ok := s.locker.TryAcquire(poolDir, "initiate pool repo clone")
-			// if !ok {
-			// 	return nil, errors.
-			// }
-
-			return &deduplicatedCloneOptions{which: dedupeSource, poolDir: poolDir}, nil
-		}
+	// We only ask users to list the name of the source repository. If this repository is a parent
+	// that is configured to be deduplicated, we can return early.
+	//
+	// Otherwise this may be a fork, so we check in the DB to see if this repo is a fork and if its
+	// parent is listed in for deduplication.
+	if s.DeduplicatedForksIndex.Contains(repoName) {
+		poolDir := s.poolDir(repoName)
+		return &deduplicatedCloneOptions{which: dedupeSource, poolDir: poolDir}, nil
 	}
 
 	forkedRepoPoolID, parentRepoName, err := s.DB.GitserverRepos().GetForkedAndParentRepo(ctx, repoName)
@@ -2170,15 +2163,23 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName 
 		return nil, nil
 	}
 
-	if forkedRepoPoolID != nil && parentRepoName != nil {
-		return &deduplicatedCloneOptions{
-			which:          dedupeFork,
-			poolDir:        s.poolDir(*parentRepoName),
-			parentRepoName: *parentRepoName,
-		}, nil
+	if forkedRepoPoolID != nil || parentRepoName == nil {
+		return nil, nil
 	}
 
-	return nil, nil
+	// IMPORTANT: Check in the config in case the DB is lagging behind, for example the user may
+	// have removed a repo from the config but the code host sync may not have been run or completed
+	// yet and this code path is being executed. So we want to be sure that this fork's parent
+	// repository is enlisted for deduplication.
+	if !s.DeduplicatedForksIndex.Contains(*parentRepoName) {
+		return nil, nil
+	}
+
+	return &deduplicatedCloneOptions{
+		which:          dedupeFork,
+		poolDir:        s.poolDir(*parentRepoName),
+		parentRepoName: *parentRepoName,
+	}, nil
 }
 
 // cloneRepo performs a clone operation for the given repository. It is

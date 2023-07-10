@@ -783,8 +783,8 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 	// and the user hasn't provided their own api token.
 	if deploy.IsApp() {
 		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Embeddings == nil || siteConfig.Embeddings.AccessToken == "") {
-			return nil
 		}
+		return nil
 	}
 
 	// If embeddings are explicitly disabled (legacy flag, TODO: remove after 5.1),
