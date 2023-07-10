@@ -80,7 +80,6 @@
         flex-shrink: 0;
         position: relative;
         width: 1px;
-        margin: 0 5px;
         background-color: var(--border-color);
         cursor: col-resize;
 
@@ -95,7 +94,6 @@
 
         &.dragging {
             background-color: var(--oc-blue-3);
-            margin: 0 4px;
             width: 3px;
         }
     }

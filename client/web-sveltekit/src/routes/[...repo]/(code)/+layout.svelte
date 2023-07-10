@@ -1,11 +1,10 @@
 <script lang="ts">
-    import { mdiChevronDoubleLeft, mdiChevronDoubleRight } from '@mdi/js'
-
     import { page } from '$app/stores'
-    import Icon from '$lib/Icon.svelte'
     import FileTree from '$lib/repo/FileTree.svelte'
-    import { asStore } from '$lib/utils'
+    import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
+    import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
@@ -17,33 +16,24 @@
 
     $: treeOrError = asStore(data.treeEntries.deferred)
 
-    let showSidebar = true
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
-    $: sidebarWidth = showSidebar ? `max(200px, ${$sidebarSize * 100}%)` : undefined
+    $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
 </script>
 
 <section>
-    <div class="sidebar" class:open={showSidebar} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
-        {#if showSidebar && !$treeOrError.loading && $treeOrError.data}
+    <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
+        {#if !$treeOrError.loading && $treeOrError.data}
             <FileTree
                 activeEntry={$page.params.path ? last($page.params.path.split('/')) : ''}
                 treeOrError={$treeOrError.data}
             >
                 <h3 slot="title">
-                    Files
-                    <button on:click={() => (showSidebar = false)}
-                        ><Icon svgPath={mdiChevronDoubleLeft} inline /></button
-                    >
+                    <SidebarToggleButton />&nbsp; Files
                 </h3>
             </FileTree>
         {/if}
-        {#if !showSidebar}
-            <button class="open-sidebar" on:click={() => (showSidebar = true)}
-                ><Icon svgPath={mdiChevronDoubleRight} inline /></button
-            >
-        {/if}
     </div>
-    {#if showSidebar}
+    {#if $sidebarOpen}
         <Separator currentPosition={sidebarSize} />
     {/if}
     <div class="content">
@@ -55,49 +45,32 @@
     section {
         display: flex;
         overflow: hidden;
-        margin: 1rem;
-        margin-bottom: 0;
         flex: 1;
+        background-color: var(--code-bg);
     }
 
     .sidebar {
         &.open {
-            width: 200px;
+            display: flex;
+            flex-direction: column;
         }
-
+        display: none;
         overflow: hidden;
-        display: flex;
-        flex-direction: column;
+        background-color: var(--body-bg);
+        padding: 0.5rem;
+        padding-bottom: 0;
     }
 
     .content {
         flex: 1;
-        margin: 0 1rem;
-        background-color: var(--code-bg);
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-    }
-
-    button {
-        border: 0;
-        background-color: transparent;
-        padding: 0;
-        margin: 0;
-        cursor: pointer;
     }
 
     h3 {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-    }
-
-    .open-sidebar {
-        position: absolute;
-        left: 0;
-        border: 1px solid var(--border-color);
+        margin-bottom: 0.5rem;
     }
 </style>
