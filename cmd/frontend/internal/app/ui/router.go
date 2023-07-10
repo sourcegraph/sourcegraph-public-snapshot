@@ -332,14 +332,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	}
 
 	// search
-	router.Get(routeSearch).Handler(handler(db, serveBasicPage(db, func(c *Common, r *http.Request) string {
-		shortQuery := limitString(r.URL.Query().Get("q"), 25, true)
-		if shortQuery == "" {
-			return globals.Branding().BrandName
-		}
-		// e.g. "myquery - Sourcegraph"
-		return brandNameSubtitle(shortQuery)
-	}, nil, index)))
+	router.Get(routeSearch).Handler(handler(db, serveSearch(db)))
 
 	// streaming search
 	router.Get(routeSearchStream).Handler(search.StreamHandler(db, enterpriseJobs))
