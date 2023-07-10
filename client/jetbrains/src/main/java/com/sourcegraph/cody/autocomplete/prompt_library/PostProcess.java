@@ -9,11 +9,13 @@ import java.util.regex.Pattern;
 // We will probably get rid of this in the future, but it's useful to have for now.
 public class PostProcess {
 
+  private static final Pattern newLineRegex = Pattern.compile("\n");
+
   public static String postProcess(String prefix, String rawResponse) {
     String completion = extractFromCodeBlock(rawResponse);
 
     boolean trimmedPrefixContainNewline =
-        Pattern.compile("\n").matcher(prefix.substring(0, prefix.trim().length())).find();
+        newLineRegex.matcher(prefix.substring(0, prefix.trim().length())).find();
     if (trimmedPrefixContainNewline) {
       completion = completion.stripLeading();
     } else {

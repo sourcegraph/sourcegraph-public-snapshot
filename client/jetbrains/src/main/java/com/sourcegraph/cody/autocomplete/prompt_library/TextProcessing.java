@@ -10,6 +10,9 @@ public class TextProcessing {
   public static final String OPENING_CODE_TAG = "<CODE5711>";
   public static final String CLOSING_CODE_TAG = "</CODE5711>";
 
+  private static final Pattern closingCodeTagPattern =
+      Pattern.compile(Pattern.quote(CLOSING_CODE_TAG));
+
   static class TrimmedString {
     String trimmed;
     String leadSpace;
@@ -74,7 +77,8 @@ public class TextProcessing {
       return "";
     }
 
-    String[] splitCompletion = completion.split(Pattern.quote(CLOSING_CODE_TAG));
+    String[] splitCompletion = closingCodeTagPattern.split(completion, 0);
+    ;
     String result = (splitCompletion.length > 0) ? splitCompletion[0] : "";
 
     return result.trim();
