@@ -322,7 +322,7 @@ func getDocsService(ctx context.Context, scope ScopePermissions, out *std.Output
 	}
 	srv, err := docs.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to retrieve Drive client")
+		return nil, errors.Wrap(err, "Unable to retrieve Docs client")
 	}
 	return srv, nil
 }
