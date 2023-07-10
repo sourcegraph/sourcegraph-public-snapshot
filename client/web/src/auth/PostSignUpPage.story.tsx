@@ -17,8 +17,13 @@ const mockUser = {
     username: 'user',
     emails: [{ email: 'user@me.com', isPrimary: true, verified: false }],
     hasVerifiedEmail: false,
+    completedPostSignup: false,
 } as AuthenticatedUser
 
 window.context.codyRequiresVerifiedEmail = true
 
-export const PostSignUp: Story = () => <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
+export const UnverifiedEmail: Story = () => <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
+
+export const VerifiedEmail: Story = () => (
+    <WebStory>{() => <PostSignUpPage authenticatedUser={{ ...mockUser, hasVerifiedEmail: false }} />}</WebStory>
+)
