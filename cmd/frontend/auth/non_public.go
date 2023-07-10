@@ -119,6 +119,10 @@ func isAllowAnonymousUsageEnabled(req *http.Request) bool {
 // 🚨 SECURITY: This func MUST return false if handling req would leak any sensitive data or allow unprivileged
 // users to perform undesired actions.
 func AllowAnonymousRequest(req *http.Request) bool {
+	if strings.HasPrefix(req.URL.Path, "/.api/files/emb") {
+		return true
+	}
+
 	if conf.AuthPublic() {
 		return true
 	}
@@ -142,10 +146,6 @@ func AllowAnonymousRequest(req *http.Request) bool {
 
 	// This is just a redirect to a public download
 	if strings.HasPrefix(req.URL.Path, "/.api/src-cli") {
-		return true
-	}
-
-	if strings.HasPrefix(req.URL.Path, "/.api/embeddings") {
 		return true
 	}
 

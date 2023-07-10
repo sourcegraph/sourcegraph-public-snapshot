@@ -35,7 +35,7 @@ func Init(
 	)
 
 	operations := httpapi.NewOperations(observationCtx)
-	filehandler := httpapi.NewFileHandler(operations)
+	filehandler := httpapi.NewFileHandler(operations, db)
 
 	enterpriseServices.EmbeddingsFileUploadHandler = filehandler.Upload()
 
