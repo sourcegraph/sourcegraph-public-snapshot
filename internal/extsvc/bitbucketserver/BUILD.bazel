@@ -39,6 +39,7 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":bitbucketserver"],
+    race = "off",
     deps = [
         "//internal/extsvc/auth",
         "//internal/ratelimit",
