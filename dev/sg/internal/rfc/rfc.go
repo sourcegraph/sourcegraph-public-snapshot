@@ -323,11 +323,11 @@ func getService(ctx context.Context, scope ScopePermissions, out *std.Output) (*
 func getDocsService(ctx context.Context, scope ScopePermissions, out *std.Output) (*docs.Service, error) {
 	client, err := getClient(ctx, scope, out)
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to client Google client")
+		return nil, errors.Wrap(err, "Unable to retrieve Google client")
 	}
 	srv, err := docs.NewService(ctx, option.WithHTTPClient(client))
 	if err != nil {
-		return nil, errors.Wrap(err, "Unable to retrieve Drive client")
+		return nil, errors.Wrap(err, "Unable to retrieve Docs client")
 	}
 	return srv, nil
 }
