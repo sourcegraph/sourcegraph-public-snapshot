@@ -1,13 +1,13 @@
 # How-to use `go:generate` with Bazel
 
-## TL;DR 
+## TL;DR
 
-- `go:generate` directive produces unpredictable outputs, which is incompatible with Bazel 
+- `go:generate` directive produces unpredictable outputs, which is incompatible with Bazel
 - `go:generate` is just about calling a program that outputs files
 - We can use Bazel `genrule` to achieve the exact same thing.
 - We want to write the files back to the source tree, with the `write_generated_to_source_files` macro.
 
-Common `go:generate` directives that have their own macro available: 
+Common `go:generate` directives that have their own macro available:
 
 - [`stringer`](https://pkg.go.dev/golang.org/x/tools/cmd/stringer), [examples](https://sourcegraph.com/search?q=context%3Aglobal+repo%3A%5Egithub%5C.com%2Fsourcegraph%2Fsourcegraph%24+lang%3AStarlark+go_stringer&patternType=standard&sm=1&groupBy=path).
 
@@ -15,7 +15,7 @@ Common `go:generate` directives that have their own macro available:
 
 #### What `go:generate` does exactly?
 
-Go compensate its inherent rigidity by enabling developers to use `go:generate` in order to generate files (and often code) on the fly. While this is a powerful technique, it's actually very simple: all Go does when you call `go generate` is to simply execute commands it finds scattered in source files, behind a `//go:generate ...` comment.
+Go compensates for its inherent rigidity by enabling developers to use `go:generate` in order to generate files (and often code) on the fly. While this is a powerful technique, it's actually very simple: all Go does when you call `go generate` is to simply execute commands it finds scattered in source files, behind a `//go:generate ...` comment.
 
 It doesn't do anything else. Writing the outputs of the command in the source tree is left as an implementation detail to the binary being called:
 
@@ -29,27 +29,27 @@ package main
 
 When `go generate` sees this, it will simply execute `sh -c "ls -al"` in the parent folder of `main.go` which will create a `list.txt` file. Yes, you can also call a shell script from a `go:generate` directive, because all it does is calling a binary.
 
-In the real world, it's often used to generate Go code from a GraphQL schema, generate Markdown documentation, etc ... and it's really neat. 
+In the real world, it's often used to generate Go code from a GraphQL schema, generate Markdown documentation, etc ... it's really neat.
 
 But this flexibility comes at a cost, like in the example above, you can call _anything_ in a `go:generate` directive. The binary could make network calls, generate different outputs after being bumped to a new version or run `git` commands it wants.
 
 #### Why Bazel will never support `go:generate`
 
-Because of the aforementioned flexibility, there is no way for Bazel to determine what will come out of running that binary or what it needs to produce correct outputs. So it's not possible to support it "as is", by design. 
+Due to the aforementioned flexibility, there is no way for Bazel to determine what will come out of running that binary or what it needs to produce correct outputs. So it's not possible to support it "as is", by design.
 
 > Ok, in that case, why don't you let me use `go:generate` outside of Bazel, and we run `go generate` in CI to check if the repository is dirty (i.e. files have changed after running the command) to ensure we always merge pull-requests with fully updated generated files.
 
-Well, because we have zero control on what are the inputs and outputs, it also means we cannot cache the generation results, since we don't know what they are nor if we need to generate them again. So if a `go:generate` command takes 30s to run, it means that _every_ build in CI will spend 30s to regenerate those files, just to ensure they are correct. 
+Well, because we have zero control on what are the inputs and outputs, it also means we cannot cache the generation results, since we don't know what they are nor if we need to generate them again. So if a `go:generate` command takes 30s to run, it means that _every_ build in CI will spend 30s to regenerate those files, just to ensure they are correct.
 
-> 💡 We regularly average 1500 builds per week on the monorepo, so that's 750 minutes of CI spent per week, on something that probably changes once a month. 
+> 💡 We regularly average 1500 builds per week on the monorepo, so that's 750 minutes of CI spent per week, on something that probably changes once a month.
 
-And because this requires to run `go` outside Bazel, it means we can't risk using it on Bazel agents, at the risk leaving breadcrumbs that would affect further builds. So it has to run in a stateless agent to ensure hermeticity, which is naturally slower. 
+And because this requires to run `go` outside Bazel, it means we can't risk using it on Bazel agents, due to it leaving breadcrumbs that would affect further builds. We therefore have to run in a stateless agent to ensure hermeticity, which is naturally slower.
 
-#### What to do instead? 
+#### What to do instead?
 
-Now we're clear on the fact that `go:generate` is merely about running a binary and writing something back to filesystem, we can see that Bazel provides a simple solution for that: [`genrule`](https://bazel.build/reference/be/general#genrule). 
+Now that we're clear on the fact that `go:generate` is merely about running a binary and writing something back to filesystem, we can utilize [`genrule`](https://bazel.build/reference/be/general#genrule) in Bazel to accomplish the same result.
 
-Here is a quick example on how it works: 
+Here is a quick example on how `genrule` works:
 
 ```
 genrule(
@@ -65,19 +65,19 @@ genrule(
 
 If you take a step back, forget for a moment all the Bazel lingo (`$(locations ...)`, `$@`, ...) you can see that all we're doing here, is simply calling `cat` with a bunch of files and storing the output in another file.
 
-Because Bazel sandboxes everything, you need to use `$(locations ...)` for Bazel to inject the proper paths in your final command. And `$@` while looking scary, is nothing else that the values you put into `outs`.
+Bazel sandboxes everything, thus you need to use `$(locations ...)` for Bazel to inject the proper paths in your final command. While `$@` may look scary, it is nothing else than the values you put into `outs`.
 
-In that example, the _inputs_ and _outputs_ are explicit, so Bazel can perfectly cache this, because it assumes that if the inputs are the same, the outputs will be the same (if your command doesn't do that, you're in for trouble). 
+In above example, the _inputs_ and _outputs_ are explicit, so Bazel can perfectly cache this, because it assumes that if the inputs are the same, the outputs will be the same (if your command doesn't do that, you're in for trouble).
 
 So we can use `genrule` to replace our wild `go:generate` directives and herd them back into being deterministic.
 
-## Rewriting a `go:generate` directive as a `genrule` 
+## Rewriting a `go:generate` directive as a `genrule`
 
-Let's take as an example, [github.com/Khan/genqlient` that we're using. 
+Let's take as an example, [github.com/Khan/genqlient` that we're using.
 
 The `go:generate` directive is `//go:generate go run github.com/Khan/genqlient genql.yaml`. It takes a YAML file and generates, from looking at the code, an `operations.go` file.
 
-So we if naively turn that into a `genrule`, we can write: 
+So if we naively turn that into a `genrule`, we can write:
 
 ```
 genrule(
@@ -89,12 +89,12 @@ genrule(
         "genql.yaml",
     ],
 
-    # what we're creating, our single output 
+    # what we're creating, our single output
     outs = ["operations.go"],
 
     # our command to run, we need to use execpath to get the path to the binary
     # we saw in the original go:generate directive, that it takes genql.yaml as its first argument
-    # so we do as Bazel ask, we use $(location ...) to get its path.
+    # so by using $(location ...), we ask Bazel to get its path.
     cmd = "$(execpath @com_github_khan_genqlient//:genqlient) $(location genql.yaml)",
 
     # we need to inform Bazel, that we need this binary for our cmd, otherwise, it won't find it.
@@ -102,7 +102,7 @@ genrule(
 )
 ```
 
-We can build that target, to see what we'll get: 
+When we build our defined target `enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml` we get the following:
 
 ```
 $ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
@@ -120,9 +120,9 @@ INFO: 2 processes: 2 internal.
 FAILED: Build did NOT complete successfully
 ```
 
-The line that tells us what went wrong is `cmd/frontend/graphqlbackend/schema.graphql did not match any files`. When running the `genqlient` generator, it exited with an error, because it cannot find the `schema.graphql` file.
+The line that tells us what went wrong is `cmd/frontend/graphqlbackend/schema.graphql did not match any files`. When running the `genqlient` generator, it exits with an error, because it cannot find the `schema.graphql` file.
 
-Perhaps we need more inputs? If we take a peek at the `genrql.yaml` file we can learn more about what's going on: 
+Perhaps we need more inputs? If we take a peek at the `genrql.yaml` file we can learn more about what's going on:
 
 ```
 # genql.yaml
@@ -135,7 +135,7 @@ generated: operations.go
 optional: pointer
 ```
 
-Ah yes, we're missing a few inputs. Let's add them: 
+Ah yes, we're missing a few inputs. Let's add them:
 
 ```
 genrule(
@@ -161,7 +161,7 @@ genrule(
 )
 ```
 
-This time, when we run it, we get: 
+This time round, when we build out target , we get:
 
 ```
 $ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
@@ -180,7 +180,7 @@ FAILED: Build did NOT complete successfully
 
 The `ERROR` lines mention that `operations.go` was not created. Bazel considers our build to be successful if and only if, our `cmd` exits with 0 and that it can find the declared outputs (the ones declared in the attribute `outs`). In our case, it did exit with 0, but we're missing the output.
 
-See, `genqlient` is a bit peculiar, you cannot configure where it should put the files. It simply puts then in the current working directory. So perhaps, it's not where Bazel expects it. 
+See, `genqlient` is a bit peculiar, you cannot configure where it should put the files. It simply puts them in the current working directory. So perhaps, it's not where Bazel expects it.
 
 The `cmd` attribute is just a shell command, so why not put a `find` in there to see where that `operations.go` went?
 
@@ -192,7 +192,7 @@ genrule(
 )
 ```
 
-And we get: 
+And we get:
 
 ```
 $ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml --sandbox_debug
@@ -213,7 +213,7 @@ INFO: 2 processes: 1 internal, 1 darwin-sandbox.
 FAILED: Build did NOT complete successfully
 ```
 
-Ah! We see it now: 
+Ah! We see it now:
 
 ```
 HERE
@@ -221,22 +221,22 @@ HERE
 HERE
 ```
 
-Bazel expects to find outputs at a particular path, that's the obscure `$@` we saw earlier in the first `genrule` example. And no where is our current example, we mentioned it. 
+Bazel expects to find outputs at a particular path, that's the obscure `$@` we saw earlier in the first `genrule` example. If we look back at our `genrule` definition, we never mentioned it!
 
-We can edit the `cmd` attribute as following: 
+We can edit the `cmd` attribute as following:
 
 ```
 genrule(
   # ...
   cmd = "$(execpath @com_github_khan_genqlient//:genqlient) $(location genql.yaml) && mv enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go $@",
-  # ... 
+  # ...
 )
 ```
 
-And this time, when we build it, it works: 
+And this time, when we build it, it works:
 
 ```
-$ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml                
+$ bazel build enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml
 INFO: Analyzed target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml (0 packages loaded, 0 targets configured).
 INFO: Found 1 target...
 Target //enterprise/cmd/frontend/internal/guardrails/dotcom:generate_genql_yaml up-to-date:
@@ -246,9 +246,9 @@ INFO: 1 process: 1 internal.
 INFO: Build completed successfully, 1 total action
 ```
 
-Great, we did it. Still there is something left. If we delete `operations.go`, run the build command again, nothing appears in the folder. 
+Great, we did it! Still, there is something left. If we delete `operations.go`, run the build command again, nothing appears in the folder.
 
-This is the case, because Bazel doesn't write back outputs to your source tree. It knows about it, you can even use it as inputs for other rules. For example, you could rewrite the `go_library` rule that builds that package to use it: 
+This is due to fact that Bazel doesn't write back outputs to your source tree. It knows about it, you can even use it as inputs for other rules. For example, you could rewrite the `go_library` rule that builds that package to use it:
 
 ```
 go_library(
@@ -282,7 +282,7 @@ INFO: 1 process: 1 internal.
 INFO: Build completed successfully, 1 total action
 ```
 
-It works! You could stop here, and call it a day, but that would create issues with our code editors, as it wouldn't be able to find the symbols and functions declared in that `operations.go` file. And if someone tried to build the code with normal Go tooling (as running a quick `go test` is very convenient) that would fail as well.
+It works! You could stop here, and call it a day, but that would create issues with our code editors, as it wouldn't be able to find the symbols and functions declared in that `operations.go` file. If someone tried to build the code with normal Go tooling (like running a quick `go test` which is very convenient) they'll encouter some problems as the tooling will fail.
 
 Solution exists to make `gopls` aware of the Bazel generated files, but it's not very convenient and breaks standard Go tooling. Another approach is to write that generated file back to our source tree, exactly like we originally did with the `go:generate` statement.
 
@@ -292,7 +292,7 @@ Luckily, that step is really straightforward, we can use the `write_generated_to
 
 ```
 # must be at the top of the file, before everything else
-load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files") # 
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files") #
 
 go_library(
   name = "dotcom",
@@ -335,7 +335,7 @@ Copying file /private/var/tmp/_bazel_tech/3eea80c6015362974b7d423d1f30cb62/execr
 enterprise/cmd/frontend/internal/guardrails/dotcom/copy_write_genql_yaml/operations.go to enterprise/cmd/frontend/internal/guardrails/dotcom/operations.go in /Users/tech/work/sourcegraph
 ```
 
-As a convenience for everyone, we can add our target to `dev/BUILD.bazel`, in the `write_all_generated` rule: 
+As a convenience for everyone, we can add our target to `dev/BUILD.bazel`, in the `write_all_generated` rule:
 
 ```
 # dev/BUILD.bazel
@@ -344,23 +344,23 @@ write_source_files(
     additional_update_targets = [
         "//lib/codeintel/lsif/protocol:write_symbol_kind",
         # ...
-        # We add this: 
+        # We add this:
         "//enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
     ],
 )
 ```
 
-Now when anyone wants to run our generators, all they have to do is to execute: 
+Now when anyone wants to run our generators, all they have to do is to execute:
 
 ```
 $ bazel run //dev:write_all_generated
 ```
 
-### What happens if the outputs gets outdated? 
+### What happens if the outputs gets outdated?
 
-The macro `write_generated_to_source_files`, doesn't just wrap a few details about copying files back to the source tree, it also creates test targets that ensure that our file is correct. 
+The macro `write_generated_to_source_files`, doesn't just wrap a few details about copying files back to the source tree, it also creates test targets that ensure that our file is correct.
 
-Let's see it in action: we drop a schema in `genql.yaml`, making the current `operations.go` out of sync: 
+Let's see it in action: we drop a schema in `genql.yaml`, making the current `operations.go` out of sync:
 
 ```
 diff --git a/enterprise/cmd/frontend/internal/guardrails/dotcom/genql.yaml b/enterprise/cmd/frontend/internal/guardrails/dotcom/genql.yaml
@@ -376,7 +376,7 @@ index 21b7290a62..9a17d30852 100644
  generated: operations.go
 ```
 
-And then we can run the following test:
+Now lets run the following test:
 
 ```
 $ bazel test //enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml_test
@@ -397,6 +397,6 @@ Executed 0 out of 1 test: 1 fails to build.
 FAILED: Build did NOT complete successfully
 ```
 
-Yup it fails. Please not that we don't have to remember the name of that target, we could simply run `bazel test //enterprise/cmd/frontend/internal/guardrails/...` to get the same results (along with a few other tests).
+Yup it fails. Please note that we don't have to remember the name of that target, we could simply run `bazel test //enterprise/cmd/frontend/internal/guardrails/...` to get the same results (along with a few other tests).
 
-> 💡 This is how the CI works, it simply runs `bazel test //...` so it will automatically catch any target getting out of sync. 
+> 💡 This is how the CI works, it simply runs `bazel test //...` so it will automatically catch any target getting out of sync.
