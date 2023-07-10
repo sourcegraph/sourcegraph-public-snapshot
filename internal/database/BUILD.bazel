@@ -25,6 +25,7 @@ go_library(
         "conf.go",
         "database.go",
         "doc.go",
+        "embedding_plugin_files.go",
         "encryption.go",
         "encryption_tables.go",
         "encryption_utils.go",

@@ -13684,6 +13684,9 @@ type MockDB struct {
 	// ConfFunc is an instance of a mock function object controlling the
 	// behavior of the method Conf.
 	ConfFunc *DBConfFunc
+	// EmbeddingPluginFilesFunc is an instance of a mock function object
+	// controlling the behavior of the method EmbeddingPluginFiles.
+	EmbeddingPluginFilesFunc *DBEmbeddingPluginFilesFunc
 	// EventLogsFunc is an instance of a mock function object controlling
 	// the behavior of the method EventLogs.
 	EventLogsFunc *DBEventLogsFunc
@@ -13898,6 +13901,11 @@ func NewMockDB() *MockDB {
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: func() (r0 ConfStore) {
+				return
+			},
+		},
+		EmbeddingPluginFilesFunc: &DBEmbeddingPluginFilesFunc{
+			defaultHook: func() (r0 EmbeddingPluginFileStore) {
 				return
 			},
 		},
@@ -14228,6 +14236,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Conf")
 			},
 		},
+		EmbeddingPluginFilesFunc: &DBEmbeddingPluginFilesFunc{
+			defaultHook: func() EmbeddingPluginFileStore {
+				panic("unexpected invocation of MockDB.EmbeddingPluginFiles")
+			},
+		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: func() EventLogStore {
 				panic("unexpected invocation of MockDB.EventLogs")
@@ -14536,6 +14549,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		ConfFunc: &DBConfFunc{
 			defaultHook: i.Conf,
+		},
+		EmbeddingPluginFilesFunc: &DBEmbeddingPluginFilesFunc{
+			defaultHook: i.EmbeddingPluginFiles,
 		},
 		EventLogsFunc: &DBEventLogsFunc{
 			defaultHook: i.EventLogs,
@@ -15589,6 +15605,105 @@ func (c DBConfFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBConfFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBEmbeddingPluginFilesFunc describes the behavior when the
+// EmbeddingPluginFiles method of the parent MockDB instance is invoked.
+type DBEmbeddingPluginFilesFunc struct {
+	defaultHook func() EmbeddingPluginFileStore
+	hooks       []func() EmbeddingPluginFileStore
+	history     []DBEmbeddingPluginFilesFuncCall
+	mutex       sync.Mutex
+}
+
+// EmbeddingPluginFiles delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockDB) EmbeddingPluginFiles() EmbeddingPluginFileStore {
+	r0 := m.EmbeddingPluginFilesFunc.nextHook()()
+	m.EmbeddingPluginFilesFunc.appendCall(DBEmbeddingPluginFilesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the EmbeddingPluginFiles
+// method of the parent MockDB instance is invoked and the hook queue is
+// empty.
+func (f *DBEmbeddingPluginFilesFunc) SetDefaultHook(hook func() EmbeddingPluginFileStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EmbeddingPluginFiles method of the parent MockDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *DBEmbeddingPluginFilesFunc) PushHook(hook func() EmbeddingPluginFileStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBEmbeddingPluginFilesFunc) SetDefaultReturn(r0 EmbeddingPluginFileStore) {
+	f.SetDefaultHook(func() EmbeddingPluginFileStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBEmbeddingPluginFilesFunc) PushReturn(r0 EmbeddingPluginFileStore) {
+	f.PushHook(func() EmbeddingPluginFileStore {
+		return r0
+	})
+}
+
+func (f *DBEmbeddingPluginFilesFunc) nextHook() func() EmbeddingPluginFileStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBEmbeddingPluginFilesFunc) appendCall(r0 DBEmbeddingPluginFilesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBEmbeddingPluginFilesFuncCall objects
+// describing the invocations of this function.
+func (f *DBEmbeddingPluginFilesFunc) History() []DBEmbeddingPluginFilesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBEmbeddingPluginFilesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBEmbeddingPluginFilesFuncCall is an object that describes an invocation
+// of method EmbeddingPluginFiles on an instance of MockDB.
+type DBEmbeddingPluginFilesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 EmbeddingPluginFileStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBEmbeddingPluginFilesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBEmbeddingPluginFilesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
