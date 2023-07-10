@@ -102,8 +102,6 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor-kubernetes
 * codeintel-worker
 * cody-gateway
-* cody-slack-dev: Start Cody-Slack dev locally
-* cody-slack-docker: Start Cody-Slack locally prod in Docker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
@@ -363,9 +361,6 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
-* cody-e2e
-* cody-integration
-* cody-unit
 * docsite
 * web-e2e
 * web-integration

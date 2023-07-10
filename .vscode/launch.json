@@ -8,24 +8,6 @@
       "mode": "local"
     },
     {
-      "name": "Launch Cody Extension",
-      "type": "extensionHost",
-      "request": "launch",
-      "runtimeExecutable": "${execPath}",
-      "preLaunchTask": "Build cody",
-      "args": [
-        "--extensionDevelopmentPath=${workspaceRoot}/client/cody",
-        "--disable-extension=hpargecruos.kodj",
-        "--disable-extension=sourcegraph.cody-ai"
-      ],
-      "sourceMaps": true,
-      "outFiles": ["${workspaceRoot}/client/cody/dist/*.js"],
-      "env": {
-        "NODE_ENV": "development",
-        "CODY_FOCUS_ON_STARTUP": "1"
-      }
-    },
-    {
       "name": "Launch sg rfc list",
       "type": "go",
       "request": "launch",

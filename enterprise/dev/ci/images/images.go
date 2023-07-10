@@ -68,7 +68,6 @@ var SourcegraphDockerImagesMisc = []string{
 	"jaeger-all-in-one",
 	"cody-gateway",
 	"sg",
-	"cody-slack",
 }
 
 // These are images that use the musl build chain for bazel, and break the cache if built

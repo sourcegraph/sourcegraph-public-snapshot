@@ -8,7 +8,7 @@ import org.eclipse.lsp4j.jsonrpc.services.JsonRequest;
 
 /**
  * Interface for the server-part of the Cody agent protocol. The implementation of this interface is
- * written in TypeScript in the file "client/cody-agent/src/agent.ts". The Eclipse LSP4J bindings
+ * written in TypeScript in the file "cody/agent/src/agent.ts". The Eclipse LSP4J bindings
  * create a Java implementation of this interface by using a JVM-reflection feature called "Proxy",
  * which works similar to JavaScript Proxy.
  */

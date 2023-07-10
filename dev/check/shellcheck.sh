@@ -12,7 +12,7 @@ SHELL_SCRIPTS=()
 
 # ignore dev/sg/internal/usershell/autocomplete which just houses scripts copied from elsewhere
 # ignore client/jetbrains since the shell scripts are created by gradle and not maintained by us
-GREP_IGNORE_FILES="dev/sg/internal/usershell/autocomplete\|client/jetbrains\|client/cody-jetbrains"
+GREP_IGNORE_FILES="dev/sg/internal/usershell/autocomplete\|client/jetbrains"
 
 while IFS='' read -r line; do SHELL_SCRIPTS+=("$line"); done < <(comm -12 <(git ls-files | sort) <(shfmt -f . | grep -v $GREP_IGNORE_FILES | sort))
 
