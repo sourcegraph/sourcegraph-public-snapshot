@@ -3,26 +3,31 @@ import { dirname } from 'path'
 import { browser } from '$app/environment'
 import { isErrorLike } from '$lib/common'
 import { fetchSidebarFileTree } from '$lib/repo/api/tree'
+import { parseRepoRevision } from '$lib/shared'
 
 import type { LayoutLoad } from './$types'
 
-let getRootPath = (path: string) => path
+// Signifies the path of the repository root
+const REPO_ROOT = '.'
 
-// We keep state in the browser to load the tree entries of the "highest"
-// path that we visisted.
+let getRootPath = (_repo: string, path: string) => path
+
+// We keep state in the browser to load the tree entries of the "highest" directory that was visited.
 if (browser) {
-    let topTreePath: string | undefined
+    let topTreePath: Record<string, string> = {}
 
-    getRootPath = (path: string) => {
-        if (topTreePath && (topTreePath === '.' || path.startsWith(topTreePath))) {
-            return topTreePath
+    getRootPath = (repo: string, path: string) => {
+        const treePath = topTreePath[repo]
+        if (treePath && (treePath === REPO_ROOT || path.startsWith(treePath))) {
+            return topTreePath[repo]
         }
-        return (topTreePath = path)
+        return (topTreePath[repo] = path)
     }
 }
 
 export const load: LayoutLoad = ({ parent, params }) => {
-    const parentPath = getRootPath(params.path ? dirname(params.path) : '.')
+    const { repoName } = parseRepoRevision(params.repo)
+    const parentPath = getRootPath(repoName, params.path ? dirname(params.path) : REPO_ROOT)
 
     return {
         parentPath,
