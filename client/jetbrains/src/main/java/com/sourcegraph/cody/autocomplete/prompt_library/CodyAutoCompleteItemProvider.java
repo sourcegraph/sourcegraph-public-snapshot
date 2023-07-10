@@ -200,7 +200,6 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
                 completions ->
                     completions.stream()
                         .flatMap(Collection::stream)
-                        .map(c -> PostProcess.postProcess(prefix, suffix, c))
                         .map(InlineAutoCompleteItem::fromCompletion)
                         .collect(Collectors.toList()));
 
@@ -283,7 +282,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
     Function<Optional<String>, AutoCompleteProvider> fallbackDefaultProvider =
         (maybeErrorToLog) -> {
           maybeErrorToLog.ifPresent(logger::error);
-          return new EndOfLineAutoCompleteProvider(
+          return new AnthropicAutoCompleteProvider(
               completionsClient,
               promptChars,
               responseTokens,
