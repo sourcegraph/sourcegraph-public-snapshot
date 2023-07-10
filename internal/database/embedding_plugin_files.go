@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
@@ -58,6 +57,14 @@ type embeddingPluginFileStore struct {
 
 var _ EmbeddingPluginFileStore = &embeddingPluginFileStore{}
 
+func scanEmbeddingPluginFile(s dbutil.Scanner) (*types.EmbeddingPluginFile, error) {
+	var epf types.EmbeddingPluginFile
+	err := s.Scan(&epf.ID, &epf.FilePath, &epf.Contents, &epf.EmbeddingPluginID)
+	return &epf, err
+}
+
+var scanFirstEmbeddingPluginFile = basestore.NewFirstScanner(scanEmbeddingPluginFile)
+
 const embeddingPluginFileCreateQueryFmtStr = `
 INSERT INTO
 	embedding_plugin_files (%s)
@@ -86,11 +93,6 @@ func (e *embeddingPluginFileStore) Create(ctx context.Context, filePath string, 
 	return scanEmbeddingPluginFile(e.QueryRow(ctx, q))
 }
 
-func scanEmbeddingPluginFile(s dbutil.Scanner) (value *types.EmbeddingPluginFile, err error) {
-	err = s.Scan(&value.ID, &value.FilePath, &value.Contents, &value.EmbeddingPluginID)
-	return
-}
-
 const getEmbeddingPlugingFileFmtStr = `
 SELECT %s FROM embedding_plugin_files
 WHERE %s
@@ -109,12 +111,12 @@ func (e *embeddingPluginFileStore) Get(ctx context.Context, id int32) (*types.Em
 		sqlf.Sprintf("id = %d", id),
 	)
 
-	epf, err := scanEmbeddingPluginFile(e.QueryRow(ctx, q))
+	epf, ok, err := scanFirstEmbeddingPluginFile(e.Query(ctx, q))
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, &EmbeddingPluginFileNotFoundErr{ID: id}
-		}
 		return nil, errors.Wrap(err, "scanning embedding plugin file")
+	}
+	if !ok {
+		return nil, &EmbeddingPluginFileNotFoundErr{ID: id}
 	}
 
 	return epf, nil
