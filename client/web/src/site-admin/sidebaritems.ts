@@ -1,4 +1,3 @@
-import AboutIcon from 'mdi-react/AboutOutlineIcon'
 import AccountMultipleIcon from 'mdi-react/AccountMultipleIcon'
 import ChartLineVariantIcon from 'mdi-react/ChartLineVariantIcon'
 import CogsIcon from 'mdi-react/CogsIcon'
@@ -206,24 +205,6 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
     ],
 }
 
-export const aboutCodyGroupHeaderLabel = 'About'
-
-export const aboutGroupAboutItemLabel = 'About Cody'
-
-export const aboutGroup: SiteAdminSideBarGroup = {
-    header: {
-        label: aboutCodyGroupHeaderLabel,
-        icon: AboutIcon,
-    },
-    condition: ({ isSourcegraphApp }) => isSourcegraphApp,
-    items: [
-        {
-            label: aboutGroupAboutItemLabel,
-            to: '/site-admin/about',
-        },
-    ],
-}
-
 export const apiConsoleGroup: SiteAdminSideBarGroup = {
     header: {
         label: 'API Console',
@@ -244,6 +225,5 @@ export const siteAdminSidebarGroups: SiteAdminSideBarGroups = [
     repositoriesGroup,
     usersGroup,
     maintenanceGroup,
-    aboutGroup,
     apiConsoleGroup,
 ]
