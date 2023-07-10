@@ -2,29 +2,72 @@ import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../ap
 
 // todo: use env variables
 const email = 'EMAIL'
-const apiToken =
-    'API_TOKEN'
+const apiToken = 'API_TOKEN'
 
 const base_url = 'https://sourcegraph-source.atlassian.net'
 
-const searchWiki = (query: string): Promise<any> =>
-    fetch(`${base_url}/wiki/rest/api/search?cql=${encodeURIComponent(`text ~ "${query}"`)}`, {
+interface SearchResult {
+    content: {
+        id: string
+    }
+    url: string
+    excerpt: string
+}
+
+interface WikiContent {
+    body: {
+        storage: {
+            value: string
+        }
+    }
+}
+
+const searchWiki = async (query: string): Promise<any> => {
+    const searchUrl = `${base_url}/wiki/rest/api/search?cql=${encodeURIComponent(`text ~ "${query}"`)}&limit=2`
+    const searchOptions = {
         method: 'GET',
         headers: {
             Authorization: 'Basic ' + btoa(email + ':' + apiToken),
             'Content-Type': 'application/json',
         },
-    })
-        .then(response => response.json())
-        .then(
-            json =>
-                json?.results as {
-                    excerpt: string
-                    title: string
-                    url: string
-                }[]
-        )
-        .then(items => items.map(({ excerpt, title, url }) => ({ excerpt, title, url: `${base_url}/${url}` })))
+    }
+
+    try {
+        const searchResponse = await fetch(searchUrl, searchOptions)
+        const searchJson = await searchResponse.json()
+
+        const results = searchJson?.results as SearchResult[]
+
+        const contentPromises = results.map(async result => {
+            const contentUrl = `${base_url}/wiki/rest/api/content/${result.content.id}?expand=body.storage`
+            const contentOptions = {
+                method: 'GET',
+                headers: {
+                    Authorization: 'Basic ' + btoa(email + ':' + apiToken),
+                    'Content-Type': 'application/json',
+                },
+            }
+
+            const contentResponse = await fetch(contentUrl, contentOptions)
+            const contentJson = await contentResponse.json()
+
+            const content = contentJson as WikiContent
+
+            const sanitizedParagraph = removeHtmlTags(content.body.storage.value)
+            const sanitizedBlurb = removeHtmlTags(result.excerpt)
+            const text = getSurroundingText(sanitizedParagraph, sanitizedBlurb)
+            return {
+                content: text,
+                url: `${base_url}/${result.url}`,
+            }
+        })
+        return contentPromises
+    } catch (error) {
+        // Handle and log any errors
+        console.error('Error in searchWiki:', error)
+        throw error
+    }
+}
 
 // todo: add isEnabled check function
 export const confluencePlugin: IPlugin = {
@@ -51,11 +94,26 @@ export const confluencePlugin: IPlugin = {
 
                 if (typeof query === 'string') {
                     const items = await searchWiki(query)
-
-                    return items
+                    const x = await Promise.all(items)
+                    return x
                 }
                 return Promise.reject(new Error('Invalid parameters'))
             },
         },
     ],
+}
+
+function removeHtmlTags(input: string): string {
+    return input.replace(/<[^>]+>|@@@[^@]+@@@/g, '')
+}
+
+function getSurroundingText(paragraph: string, blurb: string): string {
+    const blurbIndex = paragraph.indexOf(blurb)
+    if (blurbIndex === -1) {
+        return ''
+    }
+
+    const start = Math.max(0, blurbIndex - 300)
+    const end = Math.min(paragraph.length, blurbIndex + blurb.length + 300)
+    return paragraph.substring(start, end)
 }
