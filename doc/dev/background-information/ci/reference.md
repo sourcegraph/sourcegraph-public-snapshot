@@ -25,14 +25,14 @@ The default run type.
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
   - **Pipeline setup**: Trigger async
 
 - Pipeline for `GraphQL` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 
 - Pipeline for `DatabaseSchema` changes:
   - Ensure buildfiles are up to date
@@ -144,16 +144,6 @@ Base pipeline (more steps might be included based on branch changes):
 
 - Tests for VS Code extension
 
-### Cody VS Code extension nightly release build
-
-The run type for environment including `{"CODY_NIGHTLY":"true"}`.
-
-Base pipeline (more steps might be included based on branch changes):
-
-- Unit and integration tests for the Cody VS Code extension
-- E2E tests for the Cody VS Code extension
-- Cody release
-
 ### App release build
 
 The run type for branches matching `app/release` (exact match).
@@ -182,7 +172,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
@@ -199,7 +189,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
@@ -227,16 +217,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests for VS Code extension
 - Extension release
 
-### Cody VS Code extension release build
-
-The run type for branches matching `cody/release` (exact match).
-
-Base pipeline (more steps might be included based on branch changes):
-
-- Unit and integration tests for the Cody VS Code extension
-- E2E tests for the Cody VS Code extension
-- Cody release
-
 ### Main branch
 
 The run type for branches matching `main` (exact match).
@@ -249,7 +229,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Publish executor image, Publish executor binary, Push final images
@@ -271,7 +251,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
@@ -332,7 +312,7 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images

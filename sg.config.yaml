@@ -374,34 +374,6 @@ commands:
       INTEGRATION_TESTS: true
       NODE_ENV: production
 
-  cody-slack-dev:
-    description: Start Cody-Slack dev locally
-    cmd: pnpm --filter @sourcegraph/cody-slack run start
-    env: &cody_slack_env
-      GITHUB_TOKEN: XXX
-      OPENAI_API_KEY: XXX
-      SLACK_APP_TOKEN: XXX
-      SLACK_SIGNING_SECRET: XXX
-      SLACK_BOT_TOKEN: XXX
-      SOURCEGRAPH_ACCESS_TOKEN: XXX
-
-  cody-slack-docker:
-    description: Start Cody-Slack locally prod in Docker
-    cmd: |
-      docker run -p 0.0.0.0:${PORT}:${PORT} \
-      -e SRC_FRONTEND_INTERNAL="${SRC_FRONTEND_INTERNAL}" \
-      -e GITHUB_TOKEN="${GITHUB_TOKEN}" \
-      -e OPENAI_API_KEY="${OPENAI_API_KEY}" \
-      -e SLACK_APP_TOKEN="${SLACK_APP_TOKEN}" \
-      -e SLACK_SIGNING_SECRET="${SLACK_SIGNING_SECRET}" \
-      -e SLACK_BOT_TOKEN="${SLACK_BOT_TOKEN}" \
-      -e SOURCEGRAPH_ACCESS_TOKEN="${SOURCEGRAPH_ACCESS_TOKEN}" \
-      ${IMAGE}
-    env:
-      <<: *cody_slack_env
-      PORT: 3000
-      IMAGE: cody-slack:0.0.1
-
   docsite:
     description: Docsite instance serving the docs
     cmd: bazel run --noshow_progress --noshow_loading_progress //doc:serve
@@ -1480,21 +1452,6 @@ tests:
 
   client:
     cmd: pnpm jest --testPathIgnorePatterns end-to-end regression integration storybook
-
-  cody-e2e:
-    cmd: pnpm --filter @sourcegraph/cody run test:e2e
-    env:
-      CODY_TESTING: true
-
-  cody-integration:
-    cmd: pnpm --filter @sourcegraph/cody run test:integration
-    env:
-      CODY_TESTING: true
-
-  cody-unit:
-    cmd: pnpm --filter @sourcegraph/cody run test:unit
-    env:
-      CODY_TESTING: true
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc

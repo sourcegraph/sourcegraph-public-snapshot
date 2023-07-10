@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Manually translated logic from <code>client/cody/src/completions/index.ts</code> in the VS Code
+ * Manually translated logic from <code>cody/vscode/src/completions/index.ts</code> in the VS Code
  * extension. Some code in this class is not used since we haven't translated all the logic yet.
  * Let's keep the unused code to make it easier to see the similarity between the two versions.
  */
