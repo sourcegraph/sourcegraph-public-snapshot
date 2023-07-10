@@ -7,13 +7,14 @@
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
+    import { NODE_LIMIT } from '$lib/repo/api/tree'
     import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: treeOrError = asStore(data.commitWithTree.deferred.then(commit => (isErrorLike(commit) ? null : commit?.tree)))
+    $: treeEntries = asStore(data.fileTree.deferred.then(({ values }) => values))
     $: commits = asStore(data.commits.deferred)
 </script>
 
@@ -31,18 +32,20 @@
         </p>
     {/if}
 
-    {#if !$treeOrError.loading && $treeOrError.data && !isErrorLike($treeOrError.data)}
+    {#if !$treeEntries.loading && $treeEntries.data}
         <h3>Files and directories</h3>
         <ul class="files">
-            {#each $treeOrError.data.entries as entry}
+            {#each $treeEntries.data as entry}
                 <li>
-                    <a
-                        data-sveltekit-preload-data={entry.isDirectory ? 'hover' : 'tap'}
-                        data-sveltekit-preload-code="hover"
-                        href={entry.url}
-                        ><Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
-                        {entry.name}</a
-                    >
+                    {#if entry !== NODE_LIMIT}
+                        <a
+                            data-sveltekit-preload-data={entry.isDirectory ? 'hover' : 'tap'}
+                            data-sveltekit-preload-code="hover"
+                            href={entry.url}
+                            ><Icon svgPath={entry.isDirectory ? mdiFolderOutline : mdiFileDocumentOutline} inline />
+                            {entry.name}</a
+                        >
+                    {/if}
                 </li>
             {/each}
         </ul>

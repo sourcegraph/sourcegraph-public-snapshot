@@ -7,9 +7,13 @@ export interface TreeProvider<T> {
      */
     getEntries(): T[]
     /**
-     * Whether or not the provided entrty is has (possibly) children or not.
+     * Whether or not the provided entry is has (possibly) children or not.
      */
     isExpandable(entry: T): boolean
+    /**
+     * Whether or not the provided entry can be selected.
+     */
+    isSelectable(entry: T): boolean
     /**
      * Called when the corresponding node id expanded.
      */
@@ -21,32 +25,65 @@ export interface TreeProvider<T> {
     getNodeID(entry: T): string
 }
 
-export interface NodeState {
-    expanded: boolean
-    selected: boolean
-}
-
-export interface TreeState {
+export interface SingleSelectTreeState {
     focused: string
-    nodes: Record<string, NodeState>
+    selected: string
+    expandedNodes: Set<string>
 }
 
-/**
- * Helper function for augmenting a node's state.
- */
-export function updateNodeState(
-    treeState: TreeState,
-    nodeID: string,
-    state: Partial<NodeState>
-): Record<string, NodeState> {
+export type TreeState = SingleSelectTreeState
+
+export function createEmptySingleSelectTreeState(): SingleSelectTreeState {
     return {
-        ...treeState.nodes,
-        [nodeID]: { ...treeState.nodes[nodeID], ...state },
+        focused: '',
+        selected: '',
+        expandedNodes: new Set(),
     }
+}
+
+export enum TreeStateUpdate {
+    EXPAND = 2 ** 0,
+    FOCUS = 2 ** 1,
+    COLLAPSE = 2 ** 2,
+    SELECT = 2 ** 3,
+    COLLAPSEANDFOCUS = COLLAPSE | FOCUS,
+    EXPANDANDFOCUS = EXPAND | FOCUS,
+}
+
+export function updateTreeState<T extends TreeState>(state: T, nodeID: string, update: TreeStateUpdate): T {
+    if (update & TreeStateUpdate.FOCUS) {
+        if (state.focused !== nodeID) {
+            state = { ...state, focused: nodeID }
+        }
+    }
+    if (update & TreeStateUpdate.SELECT) {
+        if (state.selected !== nodeID) {
+            state = { ...state, selected: nodeID }
+        }
+    }
+    if (update & TreeStateUpdate.EXPAND) {
+        if (!state.expandedNodes.has(nodeID)) {
+            const expandedNodes = new Set(state.expandedNodes)
+            expandedNodes.add(nodeID)
+            state = { ...state, expandedNodes }
+        }
+    }
+    if (update & TreeStateUpdate.COLLAPSE) {
+        if (state.expandedNodes.has(nodeID)) {
+            const expandedNodes = new Set(state.expandedNodes)
+            expandedNodes.delete(nodeID)
+            state = { ...state, expandedNodes }
+        }
+    }
+
+    return state
 }
 
 export class DummyTreeProvider implements TreeProvider<any> {
     isExpandable(_entry: any): boolean {
+        return false
+    }
+    isSelectable(_entry: any): boolean {
         return false
     }
     getEntries(): any[] {

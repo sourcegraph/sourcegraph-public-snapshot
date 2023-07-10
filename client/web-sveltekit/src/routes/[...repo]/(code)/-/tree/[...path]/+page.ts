@@ -14,7 +14,7 @@ export const load: PageLoad = ({ params, parent }) => ({
                       commitID: resolvedRevision.commitID,
                       revision: revision ?? '',
                       filePath: params.path,
-                      first: 2500,
+                      first: 1000,
                   })
                       .pipe(catchError((error): [ErrorLike] => [asError(error)]))
                       .toPromise()

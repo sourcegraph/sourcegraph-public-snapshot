@@ -9,7 +9,7 @@
 <script lang="ts">
     import { writable } from 'svelte/store'
 
-    import { updateNodeState, type TreeProvider, type TreeState } from '$lib/TreeView'
+    import { updateTreeState, type TreeProvider, type TreeState, TreeStateUpdate } from '$lib/TreeView'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
 
     export let treeProvider: TreeProvider<ExampleData>
@@ -20,26 +20,20 @@
 
     $: $treeStateStore = treeState
 
-    let selected: string
-
     function handleSelect({ detail: node }: { detail: HTMLElement }) {
-        if (selected) {
-            treeState = { ...treeState, nodes: updateNodeState(treeState, selected, { selected: false }) }
-        }
         const nodeId = node.dataset.nodeId
         if (nodeId) {
-            treeState = {
-                ...treeState,
-                focused: nodeId,
-                nodes: updateNodeState(treeState, node.dataset.nodeId ?? '', { selected: true, expanded: true }),
-            }
-            selected = nodeId
+            $treeStateStore = updateTreeState(
+                $treeStateStore,
+                node.dataset.nodeId ?? '',
+                TreeStateUpdate.SELECT | TreeStateUpdate.EXPAND
+            )
             node.focus()
         }
     }
 </script>
 
-<TreeView {treeProvider} isRoot on:select={handleSelect}>
+<TreeView {treeProvider} on:select={handleSelect}>
     <svelte:fragment let:entry>
         {entry.name}
     </svelte:fragment>

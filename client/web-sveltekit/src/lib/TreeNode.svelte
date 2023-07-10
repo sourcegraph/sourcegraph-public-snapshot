@@ -7,46 +7,49 @@
     import { Button } from '$lib/wildcard'
 
     import LoadingSpinner from './LoadingSpinner.svelte'
-    import { updateNodeState, type TreeProvider } from './TreeView'
+    import { updateTreeState, type TreeProvider, TreeStateUpdate } from './TreeView'
     import { getTreeContext } from './TreeView.svelte'
 
     export let entry: T
     export let treeProvider: TreeProvider<T>
 
     $: treeState = getTreeContext()
-    $: key = treeProvider.getNodeID(entry)
+    $: nodeID = treeProvider.getNodeID(entry)
     $: expandable = treeProvider.isExpandable(entry)
-    $: expanded = $treeState.nodes[key]?.expanded ?? false
-    $: selected = $treeState.nodes[key]?.selected ?? false
-    $: tabindex = $treeState.focused === key ? 0 : -1
+    $: expanded = $treeState.expandedNodes.has(nodeID)
+    $: selectable = treeProvider.isSelectable(entry)
+    $: selected = $treeState.selected === nodeID
+    $: tabindex = $treeState.focused === nodeID ? 0 : -1
 
     $: children = expandable && expanded ? treeProvider.fetchChildren(entry) : null
 
     function toggleOpen(expand?: boolean) {
         if (expandable) {
-            $treeState = {
-                focused: key,
-                nodes: updateNodeState($treeState, key, { expanded: expand ?? !expanded }),
-            }
+            $treeState = updateTreeState(
+                $treeState,
+                nodeID,
+                expand ?? !expanded ? TreeStateUpdate.EXPANDANDFOCUS : TreeStateUpdate.COLLAPSEANDFOCUS
+            )
         }
     }
 
     function scrollIntoView(node: HTMLElement, scroll: boolean) {
         if (scroll) {
-            node.scrollIntoView()
+            node.scrollIntoView({ block: 'nearest' })
         }
     }
 </script>
 
 <li
     class="treeitem"
+    class:selectable
     class:selected
     use:scrollIntoView={selected}
     role="treeitem"
-    aria-selected={selected}
+    aria-selected={selectable ? selected : undefined}
     aria-expanded={expandable ? expanded : undefined}
     {tabindex}
-    data-node-id={key}
+    data-node-id={nodeID}
 >
     <span class="label">
         <!-- hide the open/close button to preserve alignment with expandable entries -->
@@ -87,7 +90,7 @@
         margin: 0.25rem 0;
         border-radius: var(--border-radius);
 
-        &[aria-expanded='true']:focus {
+        &[aria-expanded='true'][tabindex='0']:focus {
             box-shadow: none;
 
             > .label {

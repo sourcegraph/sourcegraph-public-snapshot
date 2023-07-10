@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/svelte'
 
-import type { TreeProvider } from '$lib/TreeView'
+import { createEmptySingleSelectTreeState, type TreeProvider } from '$lib/TreeView'
 
 import TreeViewExample from './TreeView.example.svelte'
 
@@ -12,6 +12,9 @@ interface ExampleData {
 
 class ExampleProvider implements TreeProvider<ExampleData> {
     constructor(private nodes: ExampleData[], private parentPath: string = '') {}
+    isSelectable(_entry: ExampleData): boolean {
+        return true
+    }
     isExpandable(entry: ExampleData): boolean {
         return !!entry.children
     }
@@ -50,7 +53,7 @@ export const Simple: Story = {
     }),
     args: {
         treeProvider: new ExampleProvider(makeExampleData([3, [2], [3]])),
-        treeState: { focused: '', nodes: {} },
+        treeState: createEmptySingleSelectTreeState(),
     },
 }
 
@@ -63,6 +66,6 @@ export const DeeplyNested: Story = {
         treeProvider: new ExampleProvider(
             makeExampleData([5, [3, [2, [2, [3]]], [1], [2, [1, [2]]]], , [3, [2, [2], [3]], [1], [2, [1, [2]]]], [3]])
         ),
-        treeState: { focused: '', nodes: {} },
+        treeState: createEmptySingleSelectTreeState(),
     },
 }

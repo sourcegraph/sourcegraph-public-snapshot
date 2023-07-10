@@ -1,10 +1,8 @@
 import { dirname } from 'path'
 
-import { catchError } from 'rxjs/operators'
-
 import { browser } from '$app/environment'
-import { asError, isErrorLike, type ErrorLike } from '$lib/common'
-import { fetchTreeEntries } from '$lib/repo/api/tree'
+import { isErrorLike } from '$lib/common'
+import { fetchSidebarFileTree } from '$lib/repo/api/tree'
 
 import type { LayoutLoad } from './$types'
 
@@ -28,20 +26,18 @@ export const load: LayoutLoad = ({ parent, params }) => {
 
     return {
         parentPath,
-        commitWithTree: {
-            deferred: parent().then(({ resolvedRevision, repoName, revision }) =>
-                !isErrorLike(resolvedRevision)
-                    ? fetchTreeEntries({
-                          repoName,
-                          commitID: resolvedRevision.commitID,
-                          revision: revision ?? '',
-                          filePath: parentPath,
-                          first: 2500,
-                      })
-                          .pipe(catchError((error): [ErrorLike] => [asError(error)]))
-                          .toPromise()
-                    : null
-            ),
+        fileTree: {
+            deferred: parent().then(({ resolvedRevision, repoName, revision = '' }) => {
+                if (isErrorLike(resolvedRevision)) {
+                    throw resolvedRevision
+                }
+                return fetchSidebarFileTree({
+                    repoName,
+                    commitID: resolvedRevision.commitID,
+                    revision,
+                    filePath: parentPath,
+                })
+            }),
         },
     }
 }

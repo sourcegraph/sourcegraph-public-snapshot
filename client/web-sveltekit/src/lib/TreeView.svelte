@@ -3,7 +3,7 @@
 <script lang="ts" context="module">
     import { setContext as setContextSvelte, getContext as getContextSvelte } from 'svelte'
 
-    import type { TreeState } from './TreeView'
+    import { updateTreeState, type TreeState, TreeStateUpdate } from './TreeView'
 
     const CONTEXT_KEY = 'treestore'
 
@@ -22,22 +22,17 @@
     import { Key } from 'ts-key-enum'
 
     import TreeNode from './TreeNode.svelte'
-    import { updateNodeState, type NodeState, type TreeProvider } from './TreeView'
+    import type { TreeProvider } from './TreeView'
 
     export let treeProvider: TreeProvider<N>
 
     const dispatch = createEventDispatcher<{ select: HTMLElement }>()
-    let treeState = getTreeContext()
 
-    let element: HTMLElement
-    $: entries = treeProvider.getEntries()
+    let treeState = getTreeContext()
+    let treeRoot: HTMLElement
 
     function getFocusedElement(): HTMLElement | null {
-        return element.querySelector<HTMLElement>("[role='treeitem'][tabindex='0'][data-node-id]")
-    }
-
-    function createNewTreeState(element: HTMLElement, newState: Partial<NodeState>): TreeState {
-        return { ...$treeState, nodes: updateNodeState($treeState, getNodeID(element), newState) }
+        return treeRoot.querySelector<HTMLElement>("[role='treeitem'][tabindex='0'][data-node-id]")
     }
 
     function getNodeID(element: HTMLElement): string {
@@ -46,7 +41,7 @@
 
     function focusNode(element: HTMLElement | null | undefined): void {
         if (element) {
-            $treeState = { ...$treeState, focused: getNodeID(element) }
+            $treeState = updateTreeState($treeState, getNodeID(element), TreeStateUpdate.FOCUS)
             element.focus()
             // We want to scroll actual label into view, not the whole treeitem (including subtree), to
             // prevent the list from jumping.
@@ -54,7 +49,7 @@
         }
     }
 
-    function findSiblingNode(
+    function findSiblingTreeItem(
         element: HTMLElement | null | undefined,
         direction: 'next' | 'previous'
     ): HTMLElement | null {
@@ -65,13 +60,32 @@
         // Find next sibling
         let sibling: Element | null = element
         do {
-            sibling = direction === 'next' ? element.nextElementSibling : element.previousElementSibling
+            sibling = direction === 'next' ? sibling.nextElementSibling : sibling.previousElementSibling
             if (sibling?.getAttribute('role') === 'treeitem') {
                 return sibling as HTMLElement
             }
         } while (sibling)
 
         return null
+    }
+
+    function findLastDescendantTreeItem(element: HTMLElement | null | undefined): HTMLElement | null {
+        if (!element) {
+            return null
+        }
+
+        const walker = document.createTreeWalker(element, NodeFilter.SHOW_ELEMENT, node => {
+            const element = node as HTMLElement
+            return element.getAttribute('role') === 'treeitem' ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP
+        })
+        let result: HTMLElement | null = null
+        let possibleResult: HTMLElement | null = null
+
+        while ((possibleResult = walker.lastChild() as HTMLElement | null)) {
+            result = possibleResult
+        }
+
+        return result
     }
 
     function getNextFocusableNode(element: HTMLElement | null | undefined): HTMLElement | null {
@@ -85,17 +99,17 @@
         }
         if (!next) {
             // Find next sibling
-            next = findSiblingNode(element, 'next')
+            next = findSiblingTreeItem(element, 'next')
         }
         if (!next) {
-            // Go up
+            // Go up till we find an anecstor with a next sibling
             let nextPossible: HTMLElement | null | undefined = element
             do {
                 nextPossible = nextPossible.parentElement?.closest('[role="treeitem"]')
                 if (!nextPossible) {
                     break
                 }
-                next = findSiblingNode(nextPossible, 'next')
+                next = findSiblingTreeItem(nextPossible, 'next')
             } while (!next)
         }
         return next
@@ -106,18 +120,9 @@
             return null
         }
         // Find previous sibling
-        let previous: HTMLElement | null = findSiblingNode(element, 'previous')
+        let previous: HTMLElement | null = findSiblingTreeItem(element, 'previous')
         if (previous?.getAttribute('aria-expanded') === 'true') {
-            // Find last visible tree item in subtree rooted at the next sibling
-            const walker = document.createTreeWalker(previous, NodeFilter.SHOW_ELEMENT, node =>
-                (node as HTMLElement).getAttribute('role') === 'treeitem'
-                    ? NodeFilter.FILTER_ACCEPT
-                    : NodeFilter.FILTER_SKIP
-            )
-            let possiblePrev: HTMLElement | null
-            while ((possiblePrev = walker.lastChild() as HTMLElement | null)) {
-                previous = possiblePrev
-            }
+            previous = findLastDescendantTreeItem(previous)
         }
         if (!previous) {
             // Go up
@@ -128,6 +133,7 @@
 
     const handledKeys = new Set([Key.ArrowUp, Key.ArrowDown, Key.ArrowLeft, Key.ArrowRight, Key.Enter])
 
+    // See https://www.w3.org/WAI/ARIA/apg/patterns/treeview/ for more details about event handling
     function handleKeydown(event: KeyboardEvent) {
         if (!handledKeys.has(event.key as Key) || event.ctrlKey || event.metaKey || event.altKey) {
             return
@@ -135,20 +141,24 @@
         // Prevent arrow keys from scrolling the tree view
         event.preventDefault()
         switch (event.key as Key) {
+            // Focus the next visible tree item
             case Key.ArrowDown: {
                 focusNode(getNextFocusableNode(getFocusedElement()))
                 break
             }
+            // Focus the preceeding visible tree item
             case Key.ArrowUp: {
                 focusNode(getPrevFocusableNode(getFocusedElement()))
                 break
             }
+            // On closed item: expand, don't move focus
+            // On open item: move focus to first child menu item
             case Key.ArrowRight: {
                 const focusedElement = getFocusedElement()
                 if (focusedElement) {
                     switch (focusedElement.getAttribute('aria-expanded')) {
                         case 'false': {
-                            $treeState = createNewTreeState(focusedElement, { expanded: true })
+                            $treeState = updateTreeState($treeState, getNodeID(focusedElement), TreeStateUpdate.EXPAND)
                             break
                         }
                         case 'true': {
@@ -159,12 +169,18 @@
                 }
                 break
             }
+            // On closed item: move focus to parent (if available)
+            // On open item: close item, don't move focus
             case Key.ArrowLeft: {
                 const focusedElement = getFocusedElement()
                 if (focusedElement) {
                     switch (focusedElement.getAttribute('aria-expanded')) {
                         case 'true': {
-                            $treeState = createNewTreeState(focusedElement, { expanded: false })
+                            $treeState = updateTreeState(
+                                $treeState,
+                                getNodeID(focusedElement),
+                                TreeStateUpdate.COLLAPSE
+                            )
                             break
                         }
                         default: {
@@ -177,24 +193,47 @@
                 }
                 break
             }
+            // Select item
             case Key.Enter: {
                 const element = getFocusedElement()
                 if (element) {
                     dispatch('select', element)
                 }
+                break
+            }
+            // Move focus to first visible menu item
+            case Key.Home: {
+                focusNode(treeRoot.querySelector<HTMLElement>('[role="treeitem"]'))
+                break
+            }
+            // Move focus to first visible menu item
+            case Key.End: {
+                focusNode(findLastDescendantTreeItem(treeRoot))
+                break
             }
         }
     }
 
     function handleClick(event: MouseEvent) {
-        const element = (event.target as HTMLElement).closest('[role="treeitem"]')
-        if (element) {
-            dispatch('select', element as HTMLElement)
+        const target = event.target as HTMLElement
+        // Only handle clicks on the actual label of the tree item (not on e.g. padding around it)
+        if (target.closest('.label')) {
+            const item = target.closest<HTMLElement>('[role="treeitem"]')
+            if (item) {
+                dispatch('select', item)
+            }
         }
+    }
+
+    $: entries = treeProvider.getEntries()
+
+    // Make first tree item focusable if none is selected/focused
+    $: if (!$treeState.focused && entries.length > 0) {
+        $treeState = { ...$treeState, focused: treeProvider.getNodeID(entries[0]) }
     }
 </script>
 
-<ul bind:this={element} role="tree" on:keydown={handleKeydown} on:click={handleClick}>
+<ul bind:this={treeRoot} role="tree" on:keydown={handleKeydown} on:click={handleClick}>
     {#each entries as entry (treeProvider.getNodeID(entry))}
         <TreeNode {entry} {treeProvider}>
             <svelte:fragment let:entry let:toggle let:expanded>
