@@ -80,10 +80,6 @@ func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.
 	}})
 	endObservation.OnCancel(ctx, 1, observation.Args{})
 
-	// fmt.Println("BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH BLAH")
-	// print := fmt.Sprintf("GitBlobLSIFData \nrepoID: %d \n commit: %s \n path: %s \n exactPath: %t \n toolName: %s \n", int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
-	// fmt.Println(print)
-
 	uploads, err := r.svc.GetClosestDumpsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
 	if err != nil || len(uploads) == 0 {
 		return nil, err

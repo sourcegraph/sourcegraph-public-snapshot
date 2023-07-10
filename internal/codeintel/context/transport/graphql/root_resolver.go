@@ -2,7 +2,6 @@ package graphql
 
 import (
 	"context"
-	"fmt"
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 
@@ -20,14 +19,13 @@ func NewRootResolver(observationCtx *observation.Context, svc ContextService) re
 }
 
 func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstubs.GetPreciseContextInput) (resolverstubs.PreciseContextResolver, error) {
-	fmt.Println("GetSCIPSymbolArgs: ", input)
-	p, err := r.svc.GetPreciseContext(ctx, input)
+	context, err := r.svc.GetPreciseContext(ctx, input)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]resolverstubs.PreciseContextDataResolver, 0, len(p))
-	for _, c := range p {
+	resolvers := make([]resolverstubs.PreciseContextDataResolver, 0, len(context))
+	for _, c := range context {
 		resolvers = append(resolvers, &preciseDataResolver{
 			symbol:            c.SymbolName,
 			syntectDescriptor: c.SyntectDescriptor,

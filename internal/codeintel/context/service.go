@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	codenavtypes "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	codenavshared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	scipstore "github.com/sourcegraph/sourcegraph/internal/codeintel/context/internal/scipstore"
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -28,7 +27,6 @@ import (
 
 type Service struct {
 	codenavSvc      CodeNavService
-	scipstore       scipstore.ScipStore
 	repostore       database.RepoStore
 	syntectClient   *gosyntect.Client
 	gitserverClient gitserver.Client
@@ -37,7 +35,6 @@ type Service struct {
 
 func newService(
 	observationCtx *observation.Context,
-	scipstore scipstore.ScipStore,
 	repostore database.RepoStore,
 	codenavSvc CodeNavService,
 	syntectClient *gosyntect.Client,
@@ -45,7 +42,6 @@ func newService(
 ) *Service {
 	return &Service{
 		codenavSvc:      codenavSvc,
-		scipstore:       scipstore,
 		repostore:       repostore,
 		syntectClient:   syntectClient,
 		gitserverClient: gitserverClient,
@@ -60,7 +56,7 @@ const (
 	hunkCacheSize                  = 1000
 )
 
-func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseData, error) {
+func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseContext, error) {
 	// TODO: validate args whether here or at the resolver level
 	filename := args.Input.ActiveFile
 	content := args.Input.ActiveFileContent
@@ -74,6 +70,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	uploads, err := s.codenavSvc.GetClosestDumpsForBlob(ctx, int(repo.ID), commitID, filename, true, "")
 	if err != nil {
 		return nil, err
+	}
+	if len(uploads) == 0 {
+		return nil, nil
 	}
 
 	requestArgs := codenavtypes.RequestArgs{
@@ -106,9 +105,13 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		return nil, err
 	}
 
-	symbolNames := make([]string, 0, len(syntectDocument.Occurrences))
+	symbolNameMap := map[string]struct{}{}
 	for _, occurrence := range syntectDocument.Occurrences {
-		symbolNames = append(symbolNames, occurrence.Symbol)
+		symbolNameMap[occurrence.Symbol] = struct{}{}
+	}
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
 	}
 	sort.Strings(symbolNames)
 
@@ -126,7 +129,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// mapping instead. This block should become a single function call after that
 	// transformation.
 
-	scipNamesBySyntectName, err := func() (map[string][]*types.SCIPNames, error) {
+	scipNamesBySyntectName, err := func() (map[string][]*symbols.ExplodedSymbol, error) {
 		// TODO: Either pass a slice of uploads or loop thru uploads and pass the ids to fix this hardcoding of the first
 		scipNames, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, []int{uploads[0].ID}, symbolNames)
 		if err != nil {
@@ -137,16 +140,21 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			parts := strings.Split(s, "/")
 			return parts[len(parts)-1]
 		}
-		scipNamesBySyntectName := map[string][]*types.SCIPNames{}
+		scipNamesBySyntectName := map[string][]*symbols.ExplodedSymbol{}
 		for _, syntectName := range symbolNames {
 			ex, _ := symbols.NewExplodedSymbol(syntectName)
-			var symbolNames []*types.SCIPNames
+			var symbolNames []*symbols.ExplodedSymbol
 			for _, scipName := range scipNames {
 				// We do a `descriptor ILIKE %syntectName%` in Postgres today, so this
 				// is a bit of a less lenient (we do suffix here instead of contains).
 				if strippedDescriptor := strip(ex.Descriptor); strippedDescriptor != "" && strip(scipName.Descriptor) == strippedDescriptor {
 					symbolNames = append(symbolNames, scipName)
 				}
+			}
+
+			if len(symbolNames) > 20 {
+				fmt.Printf("TOO MANY RESULTS FOR %q\n", syntectName)
+				symbolNames = nil
 			}
 
 			if len(symbolNames) > 0 {
@@ -160,6 +168,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		return nil, err
 	}
 
+	syntectNameSetBySymbol := map[string]map[string]struct{}{}
+	for syntectName, explodedSymbols := range scipNamesBySyntectName {
+		for _, explodedSymbol := range explodedSymbols {
+			symbol := explodedSymbol.Symbol()
+			if _, ok := syntectNameSetBySymbol[symbol]; !ok {
+				syntectNameSetBySymbol[symbol] = map[string]struct{}{}
+			}
+
+			syntectNameSetBySymbol[symbol][syntectName] = struct{}{}
+		}
+	}
+
 	fmt.Printf("PHASE 3\n")
 	// PHASE 3: Gather definitions for each relevant SCIP symbol
 
@@ -170,29 +190,24 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}
 	preciseDataList := []*preciseData{}
 
-	for syntectName, names := range scipNamesBySyntectName {
-		for _, name := range names {
-			ident := name.GetIdentifier()
+	for ident, syntectNames := range syntectNameSetBySymbol {
+		// TODO - these are duplicated and should also be batched
+		fmt.Printf("> Fetching definitions of %q\n", ident)
 
-			// TODO - these are duplicated and should also be batched
-			fmt.Printf("> Fetching definitions of %q\n", ident)
+		// for _, upload := range uploads {
+		ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{ident})
+		if err != nil {
+			return nil, err
+		}
 
-			for _, upload := range uploads {
-				loc, err := s.codenavSvc.GetLocationByExplodedSymbol(ctx, ident, upload.ID, "definition_ranges")
-				if err != nil {
-					return nil, err
-				}
-				ul, err := s.codenavSvc.GetUploadLocations(ctx, requestArgs, reqState, loc, true)
-				if err != nil {
-					return nil, err
-				}
-
-				preciseDataList = append(preciseDataList, &preciseData{
-					syntectName: syntectName,
-					symbolName:  ident,
-					location:    ul,
-				})
-			}
+		// TODO - should this ever be non-singleton?
+		for syntectName := range syntectNames {
+			preciseDataList = append(preciseDataList, &preciseData{
+				syntectName: syntectName,
+				symbolName:  ident,
+				location:    ul,
+			})
+			// }
 		}
 	}
 
@@ -247,7 +262,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// they were both generated by the same treesitter process. See the
 	// inline note below.
 
-	preciseResponse := []*types.PreciseData{}
+	preciseResponse := []*types.PreciseContext{}
 	for _, pd := range preciseDataList {
 		for _, l := range pd.location {
 			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
@@ -267,7 +282,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					c := strings.Split(string(documentAndText.Content), "\n")
 					snippet := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
 
-					preciseResponse = append(preciseResponse, &types.PreciseData{
+					preciseResponse = append(preciseResponse, &types.PreciseContext{
 						SymbolName:        pd.symbolName,
 						SyntectDescriptor: pd.syntectName,
 						Repository:        l.Dump.RepositoryName,

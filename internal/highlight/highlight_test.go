@@ -37,6 +37,7 @@ func TestDeserialize(t *testing.T) {
 
 	roundtrip := new(scip.Document)
 	err := proto.Unmarshal(data, roundtrip)
+
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -109,8 +110,7 @@ func TestSplitHighlightedLines(t *testing.T) {
 </span></div>`,
 		`<div><span style="color:#323232;">
 </span></div>`,
-		`<div></div>`,
-	}
+		`<div></div>`}
 
 	response := &HighlightedCode{html: template.HTML(input)}
 	have, err := response.SplitHighlightedLines(false)
