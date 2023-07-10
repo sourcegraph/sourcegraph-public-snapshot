@@ -200,6 +200,7 @@ go_test(
         "conf_test.go",
         "database_test.go",
         "dbstore_db_test.go",
+        "embedding_plugin_files_test.go",
         "encryption_test.go",
         "err_test.go",
         "event_logs_test.go",
