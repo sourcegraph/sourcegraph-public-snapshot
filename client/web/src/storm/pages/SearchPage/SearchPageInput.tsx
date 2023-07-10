@@ -27,9 +27,10 @@ import { useRecentSearches } from '../../../search/input/useRecentSearches'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
 
+import { CodeSearchSimpleSearch } from './CodeSearchSimpleSearch'
+import { SimpleSearch } from './SimpleSearch'
+
 import styles from './SearchPageInput.module.scss'
-import {CodeSearchSimpleSearch} from "./CodeSearchSimpleSearch";
-import {SimpleSearch} from "./SimpleSearch";
 
 // We want to prevent autofocus by default on devices with touch as their only input method.
 // Touch only devices result in the onscreen keyboard not showing until the input loses focus and
@@ -191,25 +192,28 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
     )
     return (
         <div>
-
-        <div className="d-flex flex-row flex-shrink-past-contents">
-            <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
-                <div data-search-page-input-container={true} className={styles.inputContainer}>
-                    <TraceSpanProvider name="SearchBox">
-                        <div className="d-flex flex-grow-1 w-100">{input}</div>
-                    </TraceSpanProvider>
-                </div>
-                <Notices className="my-3 text-center" location="home" />
-            </Form>
-        </div>
-            {simpleSearch &&
+            <div className="d-flex flex-row flex-shrink-past-contents">
+                <Form className="flex-grow-1 flex-shrink-past-contents" onSubmit={onSubmit}>
+                    <div data-search-page-input-container={true} className={styles.inputContainer}>
+                        <TraceSpanProvider name="SearchBox">
+                            <div className="d-flex flex-grow-1 w-100">{input}</div>
+                        </TraceSpanProvider>
+                    </div>
+                    <Notices className="my-3 text-center" location="home" />
+                </Form>
+            </div>
+            {simpleSearch && (
                 <div>
-                    <hr className='mt-4 mb-4'/>
-                    <SimpleSearch searchContext={selectedSearchContextSpec} onSubmit={onSubmit}
-                                  onSimpleSearchUpdate={val => {
-                                      setQueryState({query: val})
-                                  }} />
-                </div>}
+                    <hr className="mt-4 mb-4" />
+                    <SimpleSearch
+                        searchContext={selectedSearchContextSpec}
+                        onSubmit={onSubmit}
+                        onSimpleSearchUpdate={val => {
+                            setQueryState({ query: val })
+                        }}
+                    />
+                </div>
+            )}
         </div>
     )
 }

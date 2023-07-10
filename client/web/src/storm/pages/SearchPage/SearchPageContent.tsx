@@ -2,6 +2,7 @@ import React, { FC, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/QueryExamples'
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -10,6 +11,7 @@ import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Tooltip } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
+import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
 import { useLegacyContext_onlyInStormRoutes } from '../../../LegacyRouteContext'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 
@@ -20,8 +22,6 @@ import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
-import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import {useFeatureFlag} from '../../../featureFlags/useFeatureFlag';
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
@@ -61,7 +61,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     }, [experimentalQueryInput, selectedSearchContextSpec])
 
     const [simpleSearch, setSimpleSearch] = useState<boolean>(true)
-    const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false);
+    const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -73,12 +73,12 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
             )}
 
             <div className={styles.searchContainer}>
-
-                { simpleSearchEnabled &&
-                <div className='mb-2'>
-                    <label className='mr-2'>Simple search</label>
-                    <Toggle value={simpleSearch} onToggle={setSimpleSearch} />
-                </div>}
+                {simpleSearchEnabled && (
+                    <div className="mb-2">
+                        <label className="mr-2">Simple search</label>
+                        <Toggle value={simpleSearch} onToggle={setSimpleSearch} />
+                    </div>
+                )}
 
                 {shouldShowAddCodeHostWidget ? (
                     <>
@@ -94,7 +94,11 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     </>
                 ) : (
                     <>
-                        <SearchPageInput simpleSearch={simpleSearch && simpleSearchEnabled} queryState={queryState} setQueryState={setQueryState} />
+                        <SearchPageInput
+                            simpleSearch={simpleSearch && simpleSearchEnabled}
+                            queryState={queryState}
+                            setQueryState={setQueryState}
+                        />
                         {authenticatedUser ? (
                             <TryCodyCtaSection
                                 className="mx-auto my-5"
@@ -107,17 +111,19 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     </>
                 )}
             </div>
-            {! simpleSearch && <div className={classNames(styles.panelsContainer)}>
-                {(!!authenticatedUser || isSourcegraphDotCom) && (
-                    <QueryExamples
-                        selectedSearchContextSpec={selectedSearchContextSpec}
-                        telemetryService={telemetryService}
-                        queryState={queryState}
-                        setQueryState={setQueryState}
-                        isSourcegraphDotCom={isSourcegraphDotCom}
-                    />
-                )}
-            </div>}
+            {!simpleSearch && (
+                <div className={classNames(styles.panelsContainer)}>
+                    {(!!authenticatedUser || isSourcegraphDotCom) && (
+                        <QueryExamples
+                            selectedSearchContextSpec={selectedSearchContextSpec}
+                            telemetryService={telemetryService}
+                            queryState={queryState}
+                            setQueryState={setQueryState}
+                            isSourcegraphDotCom={isSourcegraphDotCom}
+                        />
+                    )}
+                </div>
+            )}
 
             <SearchPageFooter />
         </div>
