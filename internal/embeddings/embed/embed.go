@@ -22,7 +22,7 @@ import (
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
 	switch config.Provider {
 	case "sourcegraph":
-		return sourcegraph.NewClient(config), nil
+		return sourcegraph.NewClient(httpcli.ExternalClient, config), nil
 	case "openai":
 		return openai.NewClient(httpcli.ExternalClient, config), nil
 	default:
@@ -149,7 +149,7 @@ type FileFilters struct {
 func embedFiles(
 	ctx context.Context,
 	files []FileEntry,
-	client client.EmbeddingsClient,
+	embeddingsClient client.EmbeddingsClient,
 	contextService ContextService,
 	fileFilters FileFilters,
 	splitOptions codeintelContext.SplitOptions,
@@ -158,7 +158,7 @@ func embedFiles(
 	repoPathRanks types.RepoPathRanks,
 	reportProgress func(bgrepo.EmbedFilesStats),
 ) (embeddings.EmbeddingIndex, bgrepo.EmbedFilesStats, error) {
-	dimensions, err := client.GetDimensions()
+	dimensions, err := embeddingsClient.GetDimensions()
 	if err != nil {
 		return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
 	}
@@ -190,8 +190,11 @@ func embedFiles(
 			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 		}
 
-		batchEmbeddings, err := client.GetEmbeddings(ctx, batchChunks)
+		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
 		if err != nil {
+			if partErr := (client.PartialError{}); errors.As(err, &partErr) {
+				return errors.Wrapf(partErr.Err, "batch failed on file %q", batch[partErr.Index].FileName)
+			}
 			return errors.Wrap(err, "error while getting embeddings")
 		}
 		if expected := len(batchChunks) * dimensions; len(batchEmbeddings) != expected {
