@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -105,7 +104,7 @@ func NewPermissionSyncJobScheduler() job.Job {
 
 func scheduleJobs(ctx context.Context, db database.DB, logger log.Logger, backoff auth.Backoff) (int, error) {
 	store := db.PermissionSyncJobs()
-	permsStore := edb.Perms(logger, db, timeutil.Now)
+	permsStore := database.Perms(logger, db, timeutil.Now)
 	schedule, err := getSchedule(ctx, permsStore, backoff)
 	if err != nil {
 		return 0, err
@@ -159,7 +158,7 @@ type scheduledRepo struct {
 //  2. Private repositories with no permissions, because those can't be viewed by anyone except site admins.
 //  3. Rolling updating user permissions over time from the oldest ones.
 //  4. Rolling updating repository permissions over time from the oldest ones.
-func getSchedule(ctx context.Context, store edb.PermsStore, b auth.Backoff) (*schedule, error) {
+func getSchedule(ctx context.Context, store database.PermsStore, b auth.Backoff) (*schedule, error) {
 	schedule := new(schedule)
 
 	usersWithNoPerms, err := scheduleUsersWithNoPerms(ctx, store)
@@ -197,7 +196,7 @@ func getSchedule(ctx context.Context, store edb.PermsStore, b auth.Backoff) (*sc
 
 // scheduleUsersWithNoPerms returns computed schedules for users who have no
 // permissions found in database.
-func scheduleUsersWithNoPerms(ctx context.Context, store edb.PermsStore) ([]scheduledUser, error) {
+func scheduleUsersWithNoPerms(ctx context.Context, store database.PermsStore) ([]scheduledUser, error) {
 	ids, err := store.UserIDsWithNoPerms(ctx)
 	if err != nil {
 		return nil, err
@@ -217,7 +216,7 @@ func scheduleUsersWithNoPerms(ctx context.Context, store edb.PermsStore) ([]sche
 
 // scheduleReposWithNoPerms returns computed schedules for private repositories that
 // have no permissions found in database.
-func scheduleReposWithNoPerms(ctx context.Context, store edb.PermsStore) ([]scheduledRepo, error) {
+func scheduleReposWithNoPerms(ctx context.Context, store database.PermsStore) ([]scheduledRepo, error) {
 	ids, err := store.RepoIDsWithNoPerms(ctx)
 	if err != nil {
 		return nil, err
@@ -237,7 +236,7 @@ func scheduleReposWithNoPerms(ctx context.Context, store edb.PermsStore) ([]sche
 
 // scheduleUsersWithOldestPerms returns computed schedules for users who have the
 // oldest permissions in database and capped results by the limit.
-func scheduleUsersWithOldestPerms(ctx context.Context, store edb.PermsStore, limit int, age time.Duration) ([]scheduledUser, error) {
+func scheduleUsersWithOldestPerms(ctx context.Context, store database.PermsStore, limit int, age time.Duration) ([]scheduledUser, error) {
 	results, err := store.UserIDsWithOldestPerms(ctx, limit, age)
 	if err != nil {
 		return nil, err
@@ -256,7 +255,7 @@ func scheduleUsersWithOldestPerms(ctx context.Context, store edb.PermsStore, lim
 
 // scheduleReposWithOldestPerms returns computed schedules for private repositories that
 // have oldest permissions in database.
-func scheduleReposWithOldestPerms(ctx context.Context, store edb.PermsStore, limit int, age time.Duration) ([]scheduledRepo, error) {
+func scheduleReposWithOldestPerms(ctx context.Context, store database.PermsStore, limit int, age time.Duration) ([]scheduledRepo, error) {
 	results, err := store.ReposIDsWithOldestPerms(ctx, limit, age)
 	if err != nil {
 		return nil, err

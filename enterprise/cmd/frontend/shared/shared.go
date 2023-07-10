@@ -140,6 +140,7 @@ func SwitchableSiteConfig() conftypes.WatchableSiteConfig {
 
 	go func() {
 		<-shared.AutoUpgradeDone
+		conf.EnsureHTTPClientIsConfigured()
 		switchable.WatchableSiteConfig = confClient
 		for _, watcher := range switchable.watchers {
 			confClient.Watch(watcher)

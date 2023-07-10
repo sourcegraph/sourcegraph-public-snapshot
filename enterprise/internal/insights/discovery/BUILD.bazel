@@ -41,7 +41,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/globals",
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/query/querybuilder",
         "//internal/actor",
         "//internal/api",

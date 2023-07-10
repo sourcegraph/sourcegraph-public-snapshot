@@ -12,7 +12,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Manually translated logic from <code>client/cody/src/completions/index.ts</code> in the VS Code
+ * Manually translated logic from <code>cody/vscode/src/completions/index.ts</code> in the VS Code
  * extension. Some code in this class is not used since we haven't translated all the logic yet.
  * Let's keep the unused code to make it easier to see the similarity between the two versions.
  */
@@ -200,7 +200,6 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
                 completions ->
                     completions.stream()
                         .flatMap(Collection::stream)
-                        .map(c -> PostProcess.postProcess(prefix, suffix, c))
                         .map(InlineAutoCompleteItem::fromCompletion)
                         .collect(Collectors.toList()));
 
@@ -283,7 +282,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
     Function<Optional<String>, AutoCompleteProvider> fallbackDefaultProvider =
         (maybeErrorToLog) -> {
           maybeErrorToLog.ifPresent(logger::error);
-          return new EndOfLineAutoCompleteProvider(
+          return new AnthropicAutoCompleteProvider(
               completionsClient,
               promptChars,
               responseTokens,

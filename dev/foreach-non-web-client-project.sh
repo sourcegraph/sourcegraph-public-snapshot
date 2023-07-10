@@ -17,12 +17,7 @@ DIRS=(
   client/build-config
   client/client-api
   client/codeintellify
-  client/cody
-  client/cody/test/integration
-  client/cody-shared
-  client/cody-ui
-  client/cody-web
-  client/common
+    client/common
   client/extension-api
   client/extension-api-types
   client/http-client

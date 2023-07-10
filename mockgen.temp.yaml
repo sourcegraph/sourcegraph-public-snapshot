@@ -6,14 +6,6 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: enterprise/internal/database/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/database
-  interfaces:
-    - CodeMonitorStore
-    - EnterpriseDB
-    - PermsStore
-    - SubRepoPermsStore
-    - CodeownersStore
 - filename: enterprise/internal/insights/discovery/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
   interfaces:
@@ -42,9 +34,14 @@
     - AssignedTeamsStore
     - AuthzStore
     - BitbucketProjectPermissionsStore
+    - CodeMonitorStore
+    - CodeownersStore
     - ConfStore
     - DB
     - EventLogStore
+    - ExecutorSecretAccessLogStore
+    - ExecutorSecretStore
+    - ExecutorStore
     - ExternalServiceStore
     - FeatureFlagStore
     - GitserverLocalCloneStore
@@ -54,39 +51,38 @@
     - OrgInvitationStore
     - OrgMemberStore
     - OrgStore
-    - OutboundWebhookStore
     - OutboundWebhookJobStore
     - OutboundWebhookLogStore
+    - OutboundWebhookStore
     - OwnershipStatsStore
+    - PermissionStore
+    - PermissionSyncJobStore
+    - PermsStore
     - PhabricatorStore
+    - RecentContributionSignalStore
+    - RecentViewSignalStore
     - RepoCommitsChangelistsStore
     - RepoPathStore
+    - RepoStatisticsStore
     - RepoStore
+    - RolePermissionStore
+    - RoleStore
     - SavedSearchStore
     - SearchContextsStore
     - SecurityEventLogsStore
     - SettingsStore
+    - SignalConfigurationStore
+    - SubRepoPermsStore
+    - TeamStore
     - TemporarySettingsStore
     - UserCredentialsStore
     - UserEmailsStore
     - UserExternalAccountsStore
-    - UserStore
-    - WebhookStore
-    - WebhookLogStore
-    - ExecutorStore
-    - ExecutorSecretStore
-    - ExecutorSecretAccessLogStore
-    - ZoektReposStore
-    - PermissionSyncJobStore
-    - TeamStore
-    - RoleStore
     - UserRoleStore
-    - PermissionStore
-    - RolePermissionStore
-    - RepoStatisticsStore
-    - RecentContributionSignalStore
-    - RecentViewSignalStore
-    - SignalConfigurationStore
+    - UserStore
+    - WebhookLogStore
+    - WebhookStore
+    - ZoektReposStore
 - filename: internal/gitserver/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/gitserver
   interfaces:
@@ -125,8 +121,8 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
   interfaces:
     - JobTokenStore
-- filename: enterprise/internal/github_apps/store/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store
+- filename: internal/github_apps/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/github_apps/store
   interfaces:
     - GitHubAppsStore
 - filename: internal/embeddings/mocks_temp.go

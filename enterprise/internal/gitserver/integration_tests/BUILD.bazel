@@ -12,11 +12,11 @@ go_test(
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
         "//enterprise/internal/authz/subrepoperms",
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
         "//internal/conf",
+        "//internal/database",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/gitserver/integration_tests",

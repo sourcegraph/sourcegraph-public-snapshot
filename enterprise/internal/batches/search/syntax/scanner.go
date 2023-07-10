@@ -9,8 +9,7 @@ import (
 // TokenType is the set of lexical tokens in the query syntax.
 type TokenType int
 
-//go:generate env GOBIN=$PWD/.bin GO111MODULE=on go install golang.org/x/tools/cmd/stringer
-//go:generate env $PWD/.bin/stringer -type=TokenType
+// bazel run //enterprise/internal/batches/search/syntax:write_token_type (or bazel run //dev:write_all_generated)
 
 // All TokenType values.
 const (
