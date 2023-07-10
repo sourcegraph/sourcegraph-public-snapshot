@@ -20,9 +20,8 @@ import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
-import {CodeSearchSimpleSearch} from "./CodeSearchSimpleSearch";
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-
+import {useFeatureFlag} from '../../../featureFlags/useFeatureFlag';
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
@@ -62,6 +61,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     }, [experimentalQueryInput, selectedSearchContextSpec])
 
     const [simpleSearch, setSimpleSearch] = useState<boolean>(true)
+    const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false);
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -73,10 +73,12 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
             )}
 
             <div className={styles.searchContainer}>
+
+                { simpleSearchEnabled &&
                 <div className='mb-2'>
                     <label className='mr-2'>Simple search</label>
-                    <Toggle value={simpleSearch} onToggle={setSimpleSearch}></Toggle>
-                </div>
+                    <Toggle value={simpleSearch} onToggle={setSimpleSearch} />
+                </div>}
 
                 {shouldShowAddCodeHostWidget ? (
                     <>
@@ -92,7 +94,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     </>
                 ) : (
                     <>
-                        <SearchPageInput simpleSearch={simpleSearch} queryState={queryState} setQueryState={setQueryState} />
+                        <SearchPageInput simpleSearch={simpleSearch && simpleSearchEnabled} queryState={queryState} setQueryState={setQueryState} />
                         {authenticatedUser ? (
                             <TryCodyCtaSection
                                 className="mx-auto my-5"
