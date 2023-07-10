@@ -78,21 +78,3 @@ export function updateTreeState<T extends TreeState>(state: T, nodeID: string, u
 
     return state
 }
-
-export class DummyTreeProvider implements TreeProvider<any> {
-    isExpandable(_entry: any): boolean {
-        return false
-    }
-    isSelectable(_entry: any): boolean {
-        return false
-    }
-    getEntries(): any[] {
-        return []
-    }
-    fetchChildren(_entry: any): Promise<TreeProvider<any>> {
-        return Promise.resolve(new DummyTreeProvider())
-    }
-    getNodeID(_entry: any): string {
-        return ''
-    }
-}
