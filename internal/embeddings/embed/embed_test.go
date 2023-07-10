@@ -29,7 +29,7 @@ func TestEmbedRepo(t *testing.T) {
 	ctx := context.Background()
 	repoName := api.RepoName("repo/name")
 	revision := api.CommitID("deadbeef")
-	client := NewMockEmbeddingsClient()
+	embeddingsClient := NewMockEmbeddingsClient()
 	contextService := NewMockContextService()
 	contextService.SplitIntoEmbeddableChunksFunc.SetDefaultHook(defaultSplitter)
 	splitOptions := codeintelContext.SplitOptions{ChunkTokensThreshold: 8}
@@ -137,7 +137,7 @@ func TestEmbedRepo(t *testing.T) {
 	noopReport := func(*bgrepo.EmbedRepoStats) {}
 
 	t.Run("no files", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister(), mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, newReadLister(), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
@@ -154,7 +154,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("code files only", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister("a.go"), mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, newReadLister("a.go"), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 		require.Len(t, index.CodeIndex.Embeddings, 6)
@@ -178,7 +178,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("text files only", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, newReadLister("b.md"), mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, newReadLister("b.md"), mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 6)
@@ -203,7 +203,7 @@ func TestEmbedRepo(t *testing.T) {
 
 	t.Run("mixed code and text files", func(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
@@ -239,7 +239,7 @@ func TestEmbedRepo(t *testing.T) {
 
 	t.Run("not included files", func(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin", "not_included.jl")
-		index, _, stats, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
@@ -282,7 +282,7 @@ func TestEmbedRepo(t *testing.T) {
 		countingReporter := func(*bgrepo.EmbedRepoStats) {
 			statReports++
 		}
-		_, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, opts, logger, countingReporter)
+		_, _, _, err := EmbedRepo(ctx, embeddingsClient, contextService, rl, mockRepoPathRanks, opts, logger, countingReporter)
 		require.NoError(t, err)
 		require.Equal(t, 2, statReports, `
 			Expected one update for flush. This is subject to change if the
@@ -297,7 +297,7 @@ func TestEmbedRepo(t *testing.T) {
 		optsCopy.MaxTextEmbeddings = 1
 
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
-		index, _, _, err := EmbedRepo(ctx, client, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		index, _, _, err := EmbedRepo(ctx, embeddingsClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.NoError(t, err)
 
 		// a.md has 2 chunks, c.java has 3 chunks
@@ -316,18 +316,36 @@ func TestEmbedRepo(t *testing.T) {
 		optsCopy.MaxTextEmbeddings = 1
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
 
-		misbehavingClient := &misbehavingEmbeddingsClient{client, 32} // too many dimensions
+		misbehavingClient := &misbehavingEmbeddingsClient{embeddingsClient, 32} // too many dimensions
 		_, _, _, err := EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
-		misbehavingClient = &misbehavingEmbeddingsClient{client, 32} // too few dimensions
+		misbehavingClient = &misbehavingEmbeddingsClient{embeddingsClient, 32} // too few dimensions
 		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
-		misbehavingClient = &misbehavingEmbeddingsClient{client, 0} // empty return
+		misbehavingClient = &misbehavingEmbeddingsClient{embeddingsClient, 0} // empty return
 		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
+
+		erroringClient := &erroringEmbeddingsClient{embeddingsClient, errors.New("whoops")} // normal error
+		_, _, _, err = EmbedRepo(ctx, erroringClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		require.ErrorContains(t, err, "whoops")
+
+		erroringClient = &erroringEmbeddingsClient{embeddingsClient, client.PartialError{errors.New("oopsie"), 3}} // partial error
+		_, _, _, err = EmbedRepo(ctx, erroringClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		require.ErrorContains(t, err, "oopsie")
+		require.ErrorContains(t, err, "c.java", "for a partial error, the error message should contain the file name")
 	})
+}
+
+type erroringEmbeddingsClient struct {
+	client.EmbeddingsClient
+	err error
+}
+
+func (c *erroringEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) ([]float32, error) {
+	return nil, c.err
 }
 
 type misbehavingEmbeddingsClient struct {
