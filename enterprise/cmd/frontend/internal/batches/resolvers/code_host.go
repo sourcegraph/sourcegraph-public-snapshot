@@ -9,15 +9,15 @@ import (
 	githubapp "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/githubappauth"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	ghstore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	itypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 type batchChangesCodeHostResolver struct {
-	db         edb.EnterpriseDB
+	db         database.DB
 	store      *store.Store
 	codeHost   *btypes.CodeHost
 	credential graphqlbackend.BatchChangesCredentialResolver
@@ -85,7 +85,7 @@ var _ graphqlbackend.CommitSigningConfigResolver = &commitSigningConfigResolver{
 
 type commitSigningConfigResolver struct {
 	logger    log.Logger
-	db        edb.EnterpriseDB
+	db        database.DB
 	githubApp *ghtypes.GitHubApp
 }
 

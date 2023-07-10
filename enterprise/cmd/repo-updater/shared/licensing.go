@@ -3,8 +3,8 @@ package shared
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
-	ossDB "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,7 +23,7 @@ func enterpriseCreateRepoHook(ctx context.Context, s repos.Store, repo *types.Re
 			return nil
 		}
 
-		numPrivateRepos, err := s.RepoStore().Count(ctx, ossDB.ReposListOptions{OnlyPrivate: true})
+		numPrivateRepos, err := s.RepoStore().Count(ctx, database.ReposListOptions{OnlyPrivate: true})
 		if err != nil {
 			return err
 		}
@@ -52,7 +52,7 @@ func enterpriseUpdateRepoHook(ctx context.Context, s repos.Store, existingRepo *
 			return nil
 		}
 
-		numPrivateRepos, err := s.RepoStore().Count(ctx, ossDB.ReposListOptions{OnlyPrivate: true})
+		numPrivateRepos, err := s.RepoStore().Count(ctx, database.ReposListOptions{OnlyPrivate: true})
 		if err != nil {
 			return err
 		}

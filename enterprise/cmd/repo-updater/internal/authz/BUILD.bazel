@@ -13,7 +13,6 @@ go_library(
     visibility = ["//enterprise/cmd/repo-updater:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//enterprise/internal/database",
         "//internal/api",
         "//internal/authz",
         "//internal/collections",
@@ -56,7 +55,6 @@ go_test(
     ],
     deps = [
         "//enterprise/internal/authz/github",
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

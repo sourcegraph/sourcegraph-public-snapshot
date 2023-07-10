@@ -20,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/iterator"
 )
 
 type s3Store struct {
@@ -83,6 +84,33 @@ const maxZeroReads = 3
 // errNoDownloadProgress is returned from Get after multiple connection reset errors occur
 // in a row.
 var errNoDownloadProgress = errors.New("no download progress")
+
+func (s *s3Store) List(ctx context.Context) (*iterator.Iterator[string], error) {
+	// We wrap the client's paginator and just return the keys.
+	paginator := s.client.NewListObjectsV2Paginator(&s3.ListObjectsV2Input{Bucket: &s.bucket})
+
+	next := func() ([]string, error) {
+		if !paginator.HasMorePages() {
+			return nil, nil
+		}
+
+		nextPage, err := paginator.NextPage(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		keys := make([]string, 0, len(nextPage.Contents))
+		for _, c := range nextPage.Contents {
+			if c.Key != nil {
+				keys = append(keys, *c.Key)
+			}
+		}
+
+		return keys, nil
+	}
+
+	return iterator.New[string](next), nil
+}
 
 func (s *s3Store) Get(ctx context.Context, key string) (_ io.ReadCloser, err error) {
 	ctx, _, endObservation := s.operations.Get.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{

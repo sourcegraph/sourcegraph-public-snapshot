@@ -19,13 +19,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -40,6 +40,7 @@ type appResolver struct {
 	logger    log.Logger
 	db        database.DB
 	gitClient gitserver.Client
+	doer      httpcli.Doer
 }
 
 var _ graphqlbackend.AppResolver = &appResolver{}
@@ -49,6 +50,7 @@ func NewAppResolver(logger log.Logger, db database.DB, gitClient gitserver.Clien
 		logger:    logger,
 		db:        db,
 		gitClient: gitClient,
+		doer:      httpcli.InternalDoer,
 	}
 }
 

@@ -10,10 +10,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/compute",
-        "//enterprise/internal/compute/client",
         "//internal/api",
         "//internal/api/internalapi",
+        "//internal/compute",
+        "//internal/compute/client",
         "//internal/database",
         "//internal/httpcli",
         "//internal/search",

@@ -49,6 +49,11 @@ func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProduc
 	return v.ProductSubscriptionState.Uuid
 }
 
+// GetAccount returns CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription.Account, and is useful for accessing the field via an interface.
+func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.ProductSubscriptionState.Account
+}
+
 // GetIsArchived returns CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription.IsArchived, and is useful for accessing the field via an interface.
 func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription) GetIsArchived() bool {
 	return v.ProductSubscriptionState.IsArchived
@@ -94,6 +99,8 @@ type __premarshalCheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTok
 
 	Uuid string `json:"uuid"`
 
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
+
 	IsArchived bool `json:"isArchived"`
 
 	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
@@ -114,6 +121,7 @@ func (v *CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProduc
 
 	retval.Id = v.ProductSubscriptionState.Id
 	retval.Uuid = v.ProductSubscriptionState.Uuid
+	retval.Account = v.ProductSubscriptionState.Account
 	retval.IsArchived = v.ProductSubscriptionState.IsArchived
 	retval.CodyGatewayAccess = v.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
@@ -163,6 +171,11 @@ func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByToken
 	return v.DotcomUserState.Id
 }
 
+// GetUsername returns CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser.Username, and is useful for accessing the field via an interface.
+func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) GetUsername() string {
+	return v.DotcomUserState.Username
+}
+
 // GetCodyGatewayAccess returns CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser.CodyGatewayAccess, and is useful for accessing the field via an interface.
 func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser) GetCodyGatewayAccess() DotcomUserStateCodyGatewayAccess {
 	return v.DotcomUserState.CodyGatewayAccess
@@ -196,6 +209,8 @@ func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByToken
 type __premarshalCheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser struct {
 	Id string `json:"id"`
 
+	Username string `json:"username"`
+
 	CodyGatewayAccess DotcomUserStateCodyGatewayAccess `json:"codyGatewayAccess"`
 }
 
@@ -211,6 +226,7 @@ func (v *CheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByToken
 	var retval __premarshalCheckDotcomUserAccessTokenDotcomDotcomQueryCodyGatewayDotcomUserByTokenCodyGatewayDotcomUser
 
 	retval.Id = v.DotcomUserState.Id
+	retval.Username = v.DotcomUserState.Username
 	retval.CodyGatewayAccess = v.DotcomUserState.CodyGatewayAccess
 	return &retval, nil
 }
@@ -527,12 +543,17 @@ const (
 type DotcomUserState struct {
 	// The id of the user
 	Id string `json:"id"`
+	// The user name of the user
+	Username string `json:"username"`
 	// Cody Gateway access granted to this user. Properties may be inferred from dotcom site config, or be defined in overrides on the user.
 	CodyGatewayAccess DotcomUserStateCodyGatewayAccess `json:"codyGatewayAccess"`
 }
 
 // GetId returns DotcomUserState.Id, and is useful for accessing the field via an interface.
 func (v *DotcomUserState) GetId() string { return v.Id }
+
+// GetUsername returns DotcomUserState.Username, and is useful for accessing the field via an interface.
+func (v *DotcomUserState) GetUsername() string { return v.Username }
 
 // GetCodyGatewayAccess returns DotcomUserState.CodyGatewayAccess, and is useful for accessing the field via an interface.
 func (v *DotcomUserState) GetCodyGatewayAccess() DotcomUserStateCodyGatewayAccess {
@@ -644,6 +665,11 @@ func (v *ListProductSubscriptionFields) GetId() string { return v.ProductSubscri
 // GetUuid returns ListProductSubscriptionFields.Uuid, and is useful for accessing the field via an interface.
 func (v *ListProductSubscriptionFields) GetUuid() string { return v.ProductSubscriptionState.Uuid }
 
+// GetAccount returns ListProductSubscriptionFields.Account, and is useful for accessing the field via an interface.
+func (v *ListProductSubscriptionFields) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.ProductSubscriptionState.Account
+}
+
 // GetIsArchived returns ListProductSubscriptionFields.IsArchived, and is useful for accessing the field via an interface.
 func (v *ListProductSubscriptionFields) GetIsArchived() bool {
 	return v.ProductSubscriptionState.IsArchived
@@ -691,6 +717,8 @@ type __premarshalListProductSubscriptionFields struct {
 
 	Uuid string `json:"uuid"`
 
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
+
 	IsArchived bool `json:"isArchived"`
 
 	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
@@ -712,6 +740,7 @@ func (v *ListProductSubscriptionFields) __premarshalJSON() (*__premarshalListPro
 	retval.SourcegraphAccessTokens = v.SourcegraphAccessTokens
 	retval.Id = v.ProductSubscriptionState.Id
 	retval.Uuid = v.ProductSubscriptionState.Uuid
+	retval.Account = v.ProductSubscriptionState.Account
 	retval.IsArchived = v.ProductSubscriptionState.IsArchived
 	retval.CodyGatewayAccess = v.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ProductSubscriptionState.ActiveLicense
@@ -788,6 +817,11 @@ func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSub
 	return v.ListProductSubscriptionFields.ProductSubscriptionState.Uuid
 }
 
+// GetAccount returns ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription.Account, and is useful for accessing the field via an interface.
+func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.ListProductSubscriptionFields.ProductSubscriptionState.Account
+}
+
 // GetIsArchived returns ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription.IsArchived, and is useful for accessing the field via an interface.
 func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSubscriptionConnectionNodesProductSubscription) GetIsArchived() bool {
 	return v.ListProductSubscriptionFields.ProductSubscriptionState.IsArchived
@@ -835,6 +869,8 @@ type __premarshalListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsPr
 
 	Uuid string `json:"uuid"`
 
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
+
 	IsArchived bool `json:"isArchived"`
 
 	CodyGatewayAccess ProductSubscriptionStateCodyGatewayAccess `json:"codyGatewayAccess"`
@@ -856,6 +892,7 @@ func (v *ListProductSubscriptionsDotcomDotcomQueryProductSubscriptionsProductSub
 	retval.SourcegraphAccessTokens = v.ListProductSubscriptionFields.SourcegraphAccessTokens
 	retval.Id = v.ListProductSubscriptionFields.ProductSubscriptionState.Id
 	retval.Uuid = v.ListProductSubscriptionFields.ProductSubscriptionState.Uuid
+	retval.Account = v.ListProductSubscriptionFields.ProductSubscriptionState.Account
 	retval.IsArchived = v.ListProductSubscriptionFields.ProductSubscriptionState.IsArchived
 	retval.CodyGatewayAccess = v.ListProductSubscriptionFields.ProductSubscriptionState.CodyGatewayAccess
 	retval.ActiveLicense = v.ListProductSubscriptionFields.ProductSubscriptionState.ActiveLicense
@@ -907,6 +944,8 @@ type ProductSubscriptionState struct {
 	// The unique UUID of this product subscription. Unlike ProductSubscription.id, this does not
 	// encode the type and is not a GraphQL node ID.
 	Uuid string `json:"uuid"`
+	// The user (i.e., customer) to whom this subscription is granted, or null if the account has been deleted.
+	Account *ProductSubscriptionStateAccountUser `json:"account"`
 	// Whether this product subscription was archived.
 	IsArchived bool `json:"isArchived"`
 	// Cody Gateway access granted to this subscription. Properties may be inferred from the active license, or be defined in overrides.
@@ -921,6 +960,11 @@ func (v *ProductSubscriptionState) GetId() string { return v.Id }
 // GetUuid returns ProductSubscriptionState.Uuid, and is useful for accessing the field via an interface.
 func (v *ProductSubscriptionState) GetUuid() string { return v.Uuid }
 
+// GetAccount returns ProductSubscriptionState.Account, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionState) GetAccount() *ProductSubscriptionStateAccountUser {
+	return v.Account
+}
+
 // GetIsArchived returns ProductSubscriptionState.IsArchived, and is useful for accessing the field via an interface.
 func (v *ProductSubscriptionState) GetIsArchived() bool { return v.IsArchived }
 
@@ -933,6 +977,18 @@ func (v *ProductSubscriptionState) GetCodyGatewayAccess() ProductSubscriptionSta
 func (v *ProductSubscriptionState) GetActiveLicense() *ProductSubscriptionStateActiveLicenseProductLicense {
 	return v.ActiveLicense
 }
+
+// ProductSubscriptionStateAccountUser includes the requested fields of the GraphQL type User.
+// The GraphQL type's documentation follows.
+//
+// A user.
+type ProductSubscriptionStateAccountUser struct {
+	// The user's username.
+	Username string `json:"username"`
+}
+
+// GetUsername returns ProductSubscriptionStateAccountUser.Username, and is useful for accessing the field via an interface.
+func (v *ProductSubscriptionStateAccountUser) GetUsername() string { return v.Username }
 
 // ProductSubscriptionStateActiveLicenseProductLicense includes the requested fields of the GraphQL type ProductLicense.
 // The GraphQL type's documentation follows.
@@ -1119,6 +1175,9 @@ query CheckAccessToken ($token: String!) {
 fragment ProductSubscriptionState on ProductSubscription {
 	id
 	uuid
+	account {
+		username
+	}
 	isArchived
 	codyGatewayAccess {
 		... CodyGatewayAccessFields
@@ -1185,6 +1244,7 @@ query CheckDotcomUserAccessToken ($token: String!) {
 }
 fragment DotcomUserState on CodyGatewayDotcomUser {
 	id
+	username
 	codyGatewayAccess {
 		... CodyGatewayAccessFields
 	}
@@ -1254,6 +1314,9 @@ fragment ListProductSubscriptionFields on ProductSubscription {
 fragment ProductSubscriptionState on ProductSubscription {
 	id
 	uuid
+	account {
+		username
+	}
 	isArchived
 	codyGatewayAccess {
 		... CodyGatewayAccessFields

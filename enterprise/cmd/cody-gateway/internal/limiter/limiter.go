@@ -67,16 +67,16 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	}
 	intervalSeconds := l.Interval.Seconds()
 	var currentUsage int
-
-	// TODO: ctx is unused after this, but if a usage is added, we need
-	// to update this assignment - removed for now because of ineffassign
-	_, span := tracer.Start(ctx, l.LimiterName+".TryAcquire",
+	var span trace.Span
+	ctx, span = tracer.Start(ctx, l.LimiterName+".TryAcquire",
 		trace.WithAttributes(
 			attribute.Int64("limit", l.Limit),
-			attribute.Float64("intervalSeconds", intervalSeconds),
-			attribute.Int("currentUsage", currentUsage)))
+			attribute.Float64("intervalSeconds", intervalSeconds)))
 	defer func() {
-		span.RecordError(err)
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
+		span.SetAttributes(attribute.Int("currentUsage", currentUsage))
 		span.End()
 	}()
 
@@ -130,6 +130,9 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
 	// same time block since the TTL would have been set.
 	return func(ctx context.Context, usage int) (err error) {
+		// NOTE: This is to make sure we still commit usage even if the context was canceled.
+		ctx = backgroundContextWithSpan(ctx)
+
 		var incrementedTo, ttlSeconds int
 		// We need to start a new span because the previous one has ended
 		// TODO: ctx is unused after this, but if a usage is added, we need
@@ -172,7 +175,7 @@ func (l StaticLimiter) TryAcquire(ctx context.Context) (_ func(context.Context, 
 		}
 
 		if l.RateLimitAlerter != nil {
-			go l.RateLimitAlerter(backgroundContextWithSpan(ctx), float32(currentUsage+usage)/float32(l.Limit), alertTTL)
+			go l.RateLimitAlerter(ctx, float32(currentUsage+usage)/float32(l.Limit), alertTTL)
 		}
 
 		return nil

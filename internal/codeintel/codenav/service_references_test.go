@@ -67,13 +67,15 @@ func TestReferences(t *testing.T) {
 	mockLsifStore.GetReferenceLocationsFunc.PushReturn(locations[4:], 1, nil)
 
 	mockCursor := ReferencesCursor{Phase: "local"}
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, _, err := svc.GetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 	if err != nil {
@@ -144,13 +146,15 @@ func TestReferencesWithSubRepoPermissions(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockCursor := ReferencesCursor{Phase: "local"}
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 
 	adjustedLocations, _, err := svc.GetReferences(ctx, mockRequest, mockRequestState, mockCursor)
@@ -267,13 +271,15 @@ func TestReferencesRemote(t *testing.T) {
 	// resolver.SetUploadsDataLoader(uploads)
 
 	mockCursor := ReferencesCursor{Phase: "local"}
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, _, err := svc.GetReferences(context.Background(), mockRequest, mockRequestState, mockCursor)
 	if err != nil {
@@ -448,13 +454,15 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockCursor := ReferencesCursor{Phase: "local"}
-	mockRequest := RequestArgs{
-		RepositoryID: 42,
-		Commit:       mockCommit,
-		Path:         mockPath,
-		Line:         10,
-		Character:    20,
-		Limit:        50,
+	mockRequest := PositionalRequestArgs{
+		RequestArgs: RequestArgs{
+			RepositoryID: 42,
+			Commit:       mockCommit,
+			Limit:        50,
+		},
+		Path:      mockPath,
+		Line:      10,
+		Character: 20,
 	}
 	adjustedLocations, _, err := svc.GetReferences(ctx, mockRequest, mockRequestState, mockCursor)
 	if err != nil {

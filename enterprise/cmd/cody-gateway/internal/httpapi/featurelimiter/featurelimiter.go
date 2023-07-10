@@ -205,6 +205,6 @@ type listLimitElement struct {
 	Expiry   *time.Time `json:"expiry,omitempty"`
 }
 
-func noopRateLimitNotifier(ctx context.Context, actorID string, actorSource codygateway.ActorSource, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
+func noopRateLimitNotifier(ctx context.Context, actor codygateway.Actor, feature codygateway.Feature, usageRatio float32, ttl time.Duration) {
 	// nothing
 }

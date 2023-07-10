@@ -75,7 +75,9 @@ func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
 	var span trace.Span
 	ctx, span = tracer.Start(ctx, "Sources.Get")
 	defer func() {
-		span.RecordError(err) // don't set status, not necessarily a hard failure
+		if err != nil {
+			span.SetStatus(codes.Error, err.Error())
+		}
 		span.End()
 	}()
 

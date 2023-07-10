@@ -26,7 +26,6 @@ var legacyDockerImages = []string{
 	"codeinsights-db",
 	"codeintel-db",
 	"postgres-12-alpine",
-	"prometheus-gcp",
 }
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
@@ -189,22 +188,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			addVsceTests,
 			wait,
 			addVsceReleaseSteps)
-
-	case runtype.CodyReleaseBranch:
-		// If this is the Cody VS Code extension release branch, run the Cody tests and release
-		ops = operations.NewSet(
-			addCodyUnitIntegrationTests,
-			addCodyE2ETests,
-			wait,
-			addCodyReleaseSteps("stable"))
-
-	case runtype.CodyNightly:
-		// If this is a Cody VS Code extension nightly build, run the Cody tests and release
-		ops = operations.NewSet(
-			addCodyUnitIntegrationTests,
-			addCodyE2ETests,
-			wait,
-			addCodyReleaseSteps("nightly"))
 
 	case runtype.BextNightly:
 		// If this is a browser extension nightly build, run the browser-extension tests and

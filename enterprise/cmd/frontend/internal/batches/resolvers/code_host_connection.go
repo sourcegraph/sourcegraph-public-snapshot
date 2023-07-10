@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -21,7 +20,7 @@ type batchChangesCodeHostConnectionResolver struct {
 	opts                  store.ListCodeHostsOpts
 	limitOffset           database.LimitOffset
 	store                 *store.Store
-	db                    edb.EnterpriseDB
+	db                    database.DB
 	logger                log.Logger
 
 	once          sync.Once

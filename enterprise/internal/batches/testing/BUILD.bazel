@@ -26,7 +26,6 @@ go_library(
     deps = [
         "//enterprise/internal/batches/types",
         "//enterprise/internal/batches/types/scheduler/config",
-        "//enterprise/internal/database",
         "//internal/api",
         "//internal/authz",
         "//internal/conf",

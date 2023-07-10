@@ -108,13 +108,15 @@ func NewHandler(
 			usedTokens = ut
 			upstreamFinished = time.Since(upstreamStarted)
 			if err != nil {
-				logger.Error("error from upstream", log.Error(err))
+				// If a status error is returned, pass through the code and error
 				var statusCodeErr response.HTTPStatusCodeError
 				if errors.As(err, &statusCodeErr) {
 					resolvedStatusCode = statusCodeErr.HTTPStatusCode()
 					response.JSONError(logger, w, statusCodeErr.HTTPStatusCode(), statusCodeErr)
 					return
 				}
+
+				// Return generic error for other unexpected errors.
 				resolvedStatusCode = http.StatusInternalServerError
 				response.JSONError(logger, w, http.StatusInternalServerError, err)
 				return
