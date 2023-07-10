@@ -176,7 +176,7 @@ class CodyToolWindowContent implements UpdatableChat {
     controlsPanel.setBorder(new EmptyBorder(JBUI.insets(14)));
     JPanel messagePanel = new JPanel(new BorderLayout());
     sendButton = createSendButton(this.project);
-    AutoGrowingTextArea autoGrowingTextArea = new AutoGrowingTextArea(2, 9, messagePanel);
+    AutoGrowingTextArea autoGrowingTextArea = new AutoGrowingTextArea(3, 9, messagePanel);
     promptInput = autoGrowingTextArea.getTextArea();
     /* Submit on enter */
     KeyboardShortcut JUST_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, 0), null);
