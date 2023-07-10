@@ -717,7 +717,7 @@
         },
         {
           "Name": "descriptor_id",
-          "Index": 14,
+          "Index": 10,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -730,7 +730,7 @@
         },
         {
           "Name": "descriptor_no_suffix_id",
-          "Index": 15,
+          "Index": 11,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -768,45 +768,6 @@
           "Comment": "An encoded set of ranges within the associated document that have a **implementation** relationship to the associated symbol."
         },
         {
-          "Name": "package_manager_id",
-          "Index": 11,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "package_name_id",
-          "Index": 12,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "package_version_id",
-          "Index": 13,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "reference_ranges",
           "Index": 6,
           "TypeName": "bytea",
@@ -831,19 +792,6 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": "The schema version of this row - used to determine presence and encoding of denormalized data."
-        },
-        {
-          "Name": "scheme_id",
-          "Index": 10,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
         },
         {
           "Name": "symbol_id",
@@ -922,7 +870,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_precise_selector ON codeintel_scip_symbols USING btree (scheme_id, package_manager_id, package_name_id, package_version_id, descriptor_id)",
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_precise_selector ON codeintel_scip_symbols USING btree (upload_id, descriptor_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -949,8 +897,8 @@
       "Columns": [
         {
           "Name": "id",
-          "Index": 1,
-          "TypeName": "bigint",
+          "Index": 4,
+          "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -974,8 +922,21 @@
           "Comment": ""
         },
         {
+          "Name": "parent_id",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "scip_name_type",
-          "Index": 4,
+          "Index": 2,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -988,7 +949,7 @@
         },
         {
           "Name": "upload_id",
-          "Index": 2,
+          "Index": 1,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
@@ -1020,6 +981,52 @@
           "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_scip_symbols_migration_progress",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "symbol_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "upload_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_symbols_migration_progress_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_migration_progress_pkey ON codeintel_scip_symbols_migration_progress USING btree (upload_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (upload_id)"
         }
       ],
       "Constraints": null,
