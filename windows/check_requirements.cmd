@@ -33,7 +33,7 @@ GOTO PYTHON
 
 :--------------------------------------
 :PYTHON
-python -v 1>nul 2>nul
+python --version 1>nul 2>nul
 IF ERRORLEVEL 1 GOTO MISSING_PYTHON
 echo python  OK
 GOTO NPM
