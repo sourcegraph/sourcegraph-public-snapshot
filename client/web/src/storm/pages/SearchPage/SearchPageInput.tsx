@@ -202,10 +202,14 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 <Notices className="my-3 text-center" location="home" />
             </Form>
         </div>
-            <hr className='mt-4 mb-4'/>
-            {simpleSearch && <SimpleSearch searchContext={selectedSearchContextSpec} onSubmit={onSubmit} onSimpleSearchUpdate={val => {
-                setQueryState({query: val})
-            }}></SimpleSearch>}
+            {simpleSearch &&
+                <div>
+                    <hr className='mt-4 mb-4'/>
+                    <SimpleSearch searchContext={selectedSearchContextSpec} onSubmit={onSubmit}
+                                  onSimpleSearchUpdate={val => {
+                                      setQueryState({query: val})
+                                  }} />
+                </div>}
         </div>
     )
 }

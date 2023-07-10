@@ -3,6 +3,7 @@ import {CodeSearchSimpleSearch, SimpleSearchProps} from './CodeSearchSimpleSearc
 import {Icon, Select, Tooltip, Input, Button, Text} from '@sourcegraph/wildcard';
 import {mdiArrowLeft, mdiHelpCircleOutline} from "@mdi/js";
 import {RepoSearchSimpleSearch} from "./RepoSearchSimpleSearch";
+import {FindChangesSimpleSearch} from "./FindChangesSimpleSearch";
 
 export const SimpleSearch: FC<SimpleSearchProps> = props => {
     const [showState, setShowState] = useState<string>('default')
@@ -15,6 +16,8 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
                 return <CodeSearchSimpleSearch {...props} />
             case 'repo':
                 return <RepoSearchSimpleSearch {...props} />
+            case 'changes':
+                return <FindChangesSimpleSearch {...props} />
         }
     }
 
@@ -72,8 +75,8 @@ const SearchPicker: FC<SearchPickerProps> = ({setShowState}) => (
                 </Button>
             </Tooltip>
 
-            <Tooltip content="This is useful if you are looking for something specific, or examples of code. Error messages, class names, variable names, etc.">
-                <Button onClick={() => setShowState('change')} style={buttonStyle} variant='secondary' outline={true}>
+            <Tooltip content="This is useful if you are looking for changes over time, either in commit messages, by author, or code that has changed.">
+                <Button onClick={() => setShowState('changes')} style={buttonStyle} variant='secondary' outline={true}>
                     <h3>Look for changes</h3>
                     <Text className='mt-2'>Look for changes in commit messages or search over diffs in the code</Text>
                     <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
