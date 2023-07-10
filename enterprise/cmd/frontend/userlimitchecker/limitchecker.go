@@ -51,7 +51,16 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 }
 
 func approachingOrOverUserLimit(userCount, userLimit int) bool {
-	return userCount >= userLimit-5
+	if userCount == 0 {
+		return true
+	}
+
+	// RESEARCH: will this ever be the case?
+	if userCount > userLimit {
+		return true
+	}
+
+	return (userCount*100)/userLimit >= 95
 }
 
 func getUserCount(ctx context.Context, db database.DB) (int, error) {

@@ -69,13 +69,14 @@ func TestApproachingOrOverUserLimit(t *testing.T) {
 		userLimit int
 	}{
 		{want: false, userCount: 0, userLimit: 100},
-		{want: false, userCount: 50, userLimit: 100},
-		{want: false, userCount: 90, userLimit: 100},
-		{want: false, userCount: 94, userLimit: 100},
+		{want: false, userCount: 211, userLimit: 250},
+		{want: false, userCount: 348, userLimit: 567},
+		{want: false, userCount: 583, userLimit: 1264},
+		{want: true, userCount: 10, userLimit: 0},
+		{want: true, userCount: 5, userLimit: 7},
+		{want: true, userCount: 87, userLimit: 90},
 		{want: true, userCount: 95, userLimit: 100},
-		{want: true, userCount: 97, userLimit: 100},
-		{want: true, userCount: 100, userLimit: 100},
-		{want: true, userCount: 105, userLimit: 100},
+		{want: true, userCount: 3485, userLimit: 3500},
 	}
 
 	for _, tc := range cases {
