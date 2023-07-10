@@ -8,15 +8,39 @@ echo Checking system requirements...
 echo.
 
 :--------------------------------------
+:BASH
+bash --version 1>nul 2>nul
+IF ERRORLEVEL 1 GOTO MISSING_BASH
+echo bash    OK
+GOTO GIT
+
+:MISSING_BASH
+set missing_req=1
+echo bash    MISSING
+GOTO GIT
+
+:--------------------------------------
 :GIT
 git -v 1>nul 2>nul
 IF ERRORLEVEL 1 GOTO MISSING_GIT
 echo git     OK
-GOTO NPM
+GOTO PYTHON
 
 :MISSING_GIT
 set missing_req=1
 echo git     MISSING
+GOTO PYTHON
+
+:--------------------------------------
+:PYTHON
+python -v 1>nul 2>nul
+IF ERRORLEVEL 1 GOTO MISSING_PYTHON
+echo python  OK
+GOTO NPM
+
+:MISSING_PYTHON
+set missing_req=1
+echo python     MISSING
 GOTO NPM
 
 :--------------------------------------
