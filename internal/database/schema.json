@@ -13446,6 +13446,19 @@
           "Comment": ""
         },
         {
+          "Name": "pool_repo_id",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "This is used to refer to the pool repository for deduplicated repos"
+        },
+        {
           "Name": "repo_id",
           "Index": 1,
           "TypeName": "integer",
@@ -13576,6 +13589,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING btree (repo_id) WHERE clone_status \u003c\u003e 'cloned'::text",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "gitserver_repos_pool_repo_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX gitserver_repos_pool_repo_id ON gitserver_repos USING btree (pool_repo_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

@@ -2693,12 +2693,15 @@ CREATE TABLE gitserver_repos (
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
     corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
-    cloning_progress text DEFAULT ''::text
+    cloning_progress text DEFAULT ''::text,
+    pool_repo_id integer
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
 
 COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
+
+COMMENT ON COLUMN gitserver_repos.pool_repo_id IS 'This is used to refer to the pool repository for deduplicated repos';
 
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,
@@ -5898,6 +5901,8 @@ CREATE INDEX gitserver_repos_last_error_idx ON gitserver_repos USING btree (repo
 CREATE INDEX gitserver_repos_not_cloned_status_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status = 'not_cloned'::text);
 
 CREATE INDEX gitserver_repos_not_explicitly_cloned_idx ON gitserver_repos USING btree (repo_id) WHERE (clone_status <> 'cloned'::text);
+
+CREATE INDEX gitserver_repos_pool_repo_id ON gitserver_repos USING btree (pool_repo_id);
 
 CREATE INDEX gitserver_repos_shard_id ON gitserver_repos USING btree (shard_id, repo_id);
 

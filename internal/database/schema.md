@@ -1831,6 +1831,7 @@ Indexes:
  corrupted_at     | timestamp with time zone |           |          | 
  corruption_logs  | jsonb                    |           | not null | '[]'::jsonb
  cloning_progress | text                     |           |          | ''::text
+ pool_repo_id     | integer                  |           |          | 
 Indexes:
     "gitserver_repos_pkey" PRIMARY KEY, btree (repo_id)
     "gitserver_repo_size_bytes" btree (repo_size_bytes)
@@ -1840,6 +1841,7 @@ Indexes:
     "gitserver_repos_last_error_idx" btree (repo_id) WHERE last_error IS NOT NULL
     "gitserver_repos_not_cloned_status_idx" btree (repo_id) WHERE clone_status = 'not_cloned'::text
     "gitserver_repos_not_explicitly_cloned_idx" btree (repo_id) WHERE clone_status <> 'cloned'::text
+    "gitserver_repos_pool_repo_id" btree (pool_repo_id)
     "gitserver_repos_shard_id" btree (shard_id, repo_id)
 Foreign-key constraints:
     "gitserver_repos_repo_id_fkey" FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE
@@ -1853,6 +1855,8 @@ Triggers:
 **corrupted_at**: Timestamp of when repo corruption was detected
 
 **corruption_logs**: Log output of repo corruptions that have been detected - encoded as json
+
+**pool_repo_id**: This is used to refer to the pool repository for deduplicated repos
 
 # Table "public.gitserver_repos_statistics"
 ```
