@@ -83,6 +83,7 @@ const authUser: AuthenticatedUser = {
     },
     viewerCanAdminister: true,
     hasVerifiedEmail: true,
+    completedPostSignup: true,
     databaseID: 0,
     tosAccepted: true,
     searchable: true,
