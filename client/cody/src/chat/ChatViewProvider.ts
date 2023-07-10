@@ -32,7 +32,7 @@ import { debug } from '../log'
 import { getRerankWithLog } from '../logged-rerank'
 import { FixupTask } from '../non-stop/FixupTask'
 import { IdleRecipeRunner } from '../non-stop/roles'
-import { getPluginContextData } from '../plugins'
+import * as plugins from '../plugins/api'
 import { AuthProvider } from '../services/AuthProvider'
 import { LocalStorage } from '../services/LocalStorageProvider'
 import { SecretStorage } from '../services/SecretStorageProvider'
@@ -518,15 +518,27 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.onCompletionEnd()
                 break
             default: {
-                this.transcript.addAssistantResponse('', 'Querying data source plugins for additional context...\n')
+                this.transcript.addAssistantResponse('', 'Choosing plugins for additional context...\n')
                 this.sendTranscript()
 
-                // todo: choose which plugins should be run based on the recipe and message
-                // aka indent detection goes on
-                // todo: run plugins' search functions in parallel
-                const pluginContextMessages = getPluginContextData('todo: supply query here')
+                let pluginContextMessages: Message[] = []
+                try {
+                    // choose which plugins should be run based on the recipe and message
+                    const dataSources = await plugins.chooseDataSources(humanChatInput, this.chat)
+                    this.transcript.addAssistantResponse(
+                        '',
+                        `Querying ${dataSources
+                            .map(([dataSource]) => dataSource.name)
+                            .join(', ')} for additional context...\n`
+                    )
 
-                // todo: add plugins' results to Cody context
+                    // run data source functions in parallel
+                    pluginContextMessages = await plugins.getContext(dataSources)
+                } catch {
+                    // todo: log error
+                }
+
+                // add data source context to Cody context
                 const { prompt, contextFiles } = await this.transcript.getPromptForLastInteraction(
                     [...getPreamble(this.codebaseContext.getCodebase()), ...pluginContextMessages],
                     this.maxPromptTokens
