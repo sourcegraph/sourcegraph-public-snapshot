@@ -26,7 +26,6 @@ var legacyDockerImages = []string{
 	"codeinsights-db",
 	"codeintel-db",
 	"postgres-12-alpine",
-	"prometheus-gcp",
 }
 
 // GeneratePipeline is the main pipeline generation function. It defines the build pipeline for each of the
