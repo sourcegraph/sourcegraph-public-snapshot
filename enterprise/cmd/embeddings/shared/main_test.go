@@ -62,7 +62,7 @@ func TestEmbeddingsSearch(t *testing.T) {
 		"repo4": makeIndex("repo4", 4),
 	}
 
-	getRepoEmbeddingIndex := func(_ context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+	getRepoEmbeddingIndex := func(_ context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
 		return indexes[repoName], nil
 	}
 	getMockQueryEmbedding := func(_ context.Context, query string) ([]float32, string, error) {
@@ -277,7 +277,7 @@ func TestEmbeddingModelMismatch(t *testing.T) {
 		"repo3": makeIndex("repo3", ""),
 	}
 
-	getRepoEmbeddingIndex := func(_ context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+	getRepoEmbeddingIndex := func(_ context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
 		return indexes[repoName], nil
 	}
 

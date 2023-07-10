@@ -52,8 +52,8 @@ func TestRecall(t *testing.T) {
 
 		return io.NopCloser(bytes.NewReader(b)), nil
 	})
-	getRepoEmbeddingIndex := func(ctx context.Context, repo api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-		key := embeddings.GetRepoEmbeddingIndexName(repo)
+	getRepoEmbeddingIndex := func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+		key := embeddings.GetRepoEmbeddingIndexName(repoID)
 		return embeddings.DownloadRepoEmbeddingIndex(context.Background(), mockStore, string(key))
 	}
 
