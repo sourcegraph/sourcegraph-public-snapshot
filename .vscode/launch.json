@@ -34,6 +34,14 @@
       "args": ["rfc", "list"]
     },
     {
+      "name": "Launch sg rfc create",
+      "type": "go",
+      "request": "launch",
+      "mode": "auto",
+      "program": "${workspaceFolder}/dev/sg",
+      "args": ["rfc", "--private", "create", "--type", "solution", "test rfc (ignore)"]
+    },
+    {
       "name": "Launch VS Code Extension",
       "type": "extensionHost",
       "request": "launch",

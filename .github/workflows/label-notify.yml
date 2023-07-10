@@ -26,3 +26,4 @@ jobs:
                   team/repo-management=@sourcegraph/source
                   team/iam=@sourcegraph/source
                   team/source=@sourcegraph/source
+                  cody-gateway=@unknwon @eseliger @bobheadxi
