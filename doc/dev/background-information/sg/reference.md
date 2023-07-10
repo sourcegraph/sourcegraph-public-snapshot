@@ -1370,6 +1370,12 @@ $ sg rfc open 420
 
 # Open a specific private RFC
 $ sg rfc --private open 420
+
+# Create a new public RFC
+$ sg rfc create "title"
+
+# Create a new private RFC. Possible types: [solution]
+$ sg rfc --private create --type <type> "title"
 ```
 
 Flags:
@@ -1404,6 +1410,17 @@ Arguments: `[number]`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg rfc create
+
+Create Sourcegraph RFCs.
+
+Arguments: `--type <type> <title...>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--type="<value>"`: the type of the RFC to create (valid: solution)
 
 ## sg adr
 
