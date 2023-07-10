@@ -21,7 +21,6 @@ const (
 	ReleaseNightly // release branch nightly healthcheck builds
 	BextNightly    // browser extension nightly build
 	VsceNightly    // vs code extension nightly build
-	CodyNightly    // cody vs code extension nightly build
 	AppRelease     // app release build
 	AppInsiders    // app insiders build
 
@@ -31,7 +30,6 @@ const (
 	ReleaseBranch     // release branch build
 	BextReleaseBranch // browser extension release build
 	VsceReleaseBranch // vs code extension release build
-	CodyReleaseBranch // cody extension release build
 
 	// Main branches
 
@@ -98,12 +96,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 				"BEXT_NIGHTLY": "true",
 			},
 		}
-	case CodyNightly:
-		return &RunTypeMatcher{
-			EnvIncludes: map[string]string{
-				"CODY_NIGHTLY": "true",
-			},
-		}
 	case VsceNightly:
 		return &RunTypeMatcher{
 			EnvIncludes: map[string]string{
@@ -113,11 +105,6 @@ func (t RunType) Matcher() *RunTypeMatcher {
 	case VsceReleaseBranch:
 		return &RunTypeMatcher{
 			Branch:      "vsce/release",
-			BranchExact: true,
-		}
-	case CodyReleaseBranch:
-		return &RunTypeMatcher{
-			Branch:      "cody/release",
 			BranchExact: true,
 		}
 
@@ -198,8 +185,6 @@ func (t RunType) String() string {
 		return "Release branch nightly healthcheck build"
 	case BextNightly:
 		return "Browser extension nightly release build"
-	case CodyNightly:
-		return "Cody VS Code extension nightly release build"
 	case VsceNightly:
 		return "VS Code extension nightly release build"
 	case AppRelease:
@@ -214,8 +199,6 @@ func (t RunType) String() string {
 		return "Browser extension release build"
 	case VsceReleaseBranch:
 		return "VS Code extension release build"
-	case CodyReleaseBranch:
-		return "Cody VS Code extension release build"
 
 	case MainBranch:
 		return "Main branch"
