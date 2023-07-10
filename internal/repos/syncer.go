@@ -49,6 +49,8 @@ type Syncer struct {
 	// Hooks for enterprise specific functionality. Ignored in OSS
 	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
 	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
+
+	DeduplicatedForksIndex *types.ThreadsafeRepoNameCache
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -876,27 +878,7 @@ func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, svc *types.Ex
 	// and find a better way.
 	parentRepoName := reposource.GitHubRepoName("", "github.com", parentRepo.NameWithOwner)
 
-	// HACK: This loop is not very great. For PoC **only**. Maybe build a map inside Syncer.Run with
-	// conf.Watch and sync.Mutex?
-	prepare := false
-	repoConf := conf.Get().Repositories
-
-	if repoConf == nil {
-		logger.Warn("no repositories in config")
-		return nil
-	}
-
-	logger.Warn("config", log.String("value", fmt.Sprintf("%#v", repoConf)))
-	for _, name := range repoConf.DeduplicateForks {
-		if string(parentRepoName) == name {
-			prepare = true
-			logger.Warn("found in conf")
-			break
-		}
-	}
-
-	if !prepare {
-		logger.Warn("won't prepare")
+	if !s.DeduplicatedForksIndex.Contains(parentRepoName) {
 		return nil
 	}
 

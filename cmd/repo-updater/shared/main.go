@@ -153,10 +153,15 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		Store:   store,
 		// We always want to listen on the Synced channel since external service syncing
 		// happens on both Cloud and non Cloud instances.
-		Synced:  make(chan repos.Diff),
-		Now:     clock,
-		ObsvCtx: observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
+		Synced:                 make(chan repos.Diff),
+		Now:                    clock,
+		ObsvCtx:                observation.ContextWithLogger(logger.Scoped("syncer", "repo syncer"), observationCtx),
+		DeduplicatedForksIndex: types.NewThreadsafeRepoNameCache(conf.GetDeduplicatedForksIndex()),
 	}
+
+	conf.Watch(func() {
+		syncer.DeduplicatedForksIndex.Overwrite(conf.GetDeduplicatedForksIndex())
+	})
 
 	server.Syncer = syncer
 
