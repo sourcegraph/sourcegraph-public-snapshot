@@ -190,7 +190,9 @@ func SortedProviders() []Provider {
 // p (Provider): The authentication provider to extract common fields from.
 // Returns schema.AuthProviderCommon: The common fields from the provider's config struct.
 func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
-	common := schema.AuthProviderCommon{}
+	common := schema.AuthProviderCommon{
+		DisplayName: p.CachedInfo().DisplayName,
+	}
 
 	v := reflect.ValueOf(p.Config())
 	for _, f := range reflect.VisibleFields(v.Type()) {
@@ -208,7 +210,7 @@ func GetAuthProviderCommon(p Provider) schema.AuthProviderCommon {
 				common.Order = order.Interface().(int)
 			}
 			dN := e.FieldByName("DisplayName")
-			if dN.IsValid() {
+			if dN.IsValid() && !dN.IsZero() {
 				common.DisplayName = dN.Interface().(string)
 			}
 			dP := e.FieldByName("DisplayPrefix")
