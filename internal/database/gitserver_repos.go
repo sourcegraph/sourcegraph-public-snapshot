@@ -70,6 +70,7 @@ type GitserverRepoStore interface {
 	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (int, error)
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
 	SetCloningProgress(context.Context, api.RepoName, string) error
+	GetForkedAndParentRepo(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -115,6 +116,56 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 	err := s.Exec(ctx, sqlf.Sprintf(updateGitserverReposQueryFmtstr, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "updating GitserverRepo")
+}
+
+const getForkedAndParentRepoQueryFmtStr = `
+-- retrieve the forked repo that matches the given name
+WITH forked_repo AS (
+	SELECT
+		pool_repo_id
+	FROM
+		repo
+		JOIN gitserver_repos AS gs ON id = gs.repo_id
+	WHERE
+		NAME = %s
+),
+-- now retrieve the parent repo that matches the pool_repo_id stored in the forked repo
+parent_repo AS (
+	SELECT
+		name
+	FROM
+		repo
+		JOIN gitserver_repos AS gs ON id = gs.repo_id
+	WHERE
+		gs.repo_id = (
+			SELECT
+				pool_repo_id
+			FROM
+				forked_repo))
+-- now return them both
+SELECT
+	forked_repo.pool_repo_id AS forked_repo_pool_id,
+	parent_repo.name AS parent_repo_name
+FROM
+	forked_repo,
+	parent_repo
+`
+
+func (s *gitserverRepoStore) GetForkedAndParentRepo(ctx context.Context, forkedRepoName api.RepoName) (*api.RepoID, *api.RepoName, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(getForkedAndParentRepoQueryFmtStr, string(forkedRepoName)))
+
+	var forkedRepoPoolID api.RepoID
+	var parentRepoName api.RepoName
+
+	err := row.Scan(&forkedRepoPoolID, &parentRepoName)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil
+		}
+		return nil, nil, errors.Wrap(err, "failed to scan")
+	}
+
+	return &forkedRepoPoolID, &parentRepoName, errors.Wrap(err, "failed to scan")
 }
 
 const updateGitserverReposQueryFmtstr = `
@@ -316,7 +367,8 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
-	go.last_output
+	gr.pool_repo_id,
+	go.last_output,
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
@@ -351,6 +403,7 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
+	gr.pool_repo_id,
 	go.last_output
 FROM gitserver_repos gr
 LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
@@ -383,6 +436,7 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
+	gr.pool_repo_id,
 	go.last_output
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
@@ -409,6 +463,7 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
+	gr.pool_repo_id,
 	go.last_output
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
@@ -441,9 +496,11 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 	var rawLogs []byte
 	var cloneStatus string
 	var repoName api.RepoName
+	var poolRepoID int32
 	err := scanner.Scan(
 		&gr.RepoID,
 		&repoName,
+		// &gr.Fork,
 		&cloneStatus,
 		&gr.CloningProgress,
 		&gr.ShardID,
@@ -454,12 +511,18 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&gr.UpdatedAt,
 		&dbutil.NullTime{Time: &gr.CorruptedAt},
 		&rawLogs,
+		&dbutil.NullInt32{N: &poolRepoID},
 		&dbutil.NullString{S: &gr.LastSyncOutput},
 	)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "scanning GitserverRepo")
 	}
+
 	gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
+
+	if poolRepoID != 0 {
+		gr.PoolRepoID = pointers.Ptr(api.RepoID(poolRepoID))
+	}
 
 	err = json.Unmarshal(rawLogs, &gr.CorruptionLogs)
 	if err != nil {

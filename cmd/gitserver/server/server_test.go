@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
@@ -484,6 +485,74 @@ func TestServer_handleP4Exec(t *testing.T) {
 			})
 		}
 	})
+}
+
+func TestServer_addrForRepo(t *testing.T) {
+	// makeTestServer(context, t *testing.T, repoDir string, remote string, db database.DB)
+	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	defer cancel()
+
+	reposDir := t.TempDir()
+	remote := t.TempDir()
+	db := database.NewMockDB()
+
+	gs := database.NewMockGitserverRepoStore()
+	gs.GetForkedAndParentRepoFunc.SetDefaultReturn(nil, nil, nil)
+
+	db.GitserverReposFunc.SetDefaultReturn(gs)
+
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	shard1 := "127.0.0.1:8080"
+	shard2 := "127.0.0.1:9090"
+
+	testAddrs := gitserver.GitserverAddresses{
+		Addresses: []string{
+			shard1,
+			shard2,
+		},
+	}
+
+	repo1 := api.RepoName("github.com/sourcegraph/sourcegraph") // Returns address shard1 by default.
+	repo2 := api.RepoName("gitlab.com/sgtest/example")          // Returns address shard2 by default.
+
+	testCases := []struct {
+		name               string
+		forkedRepoPoolID   *api.RepoID
+		parentRepoName     *api.RepoName
+		error              error
+		expectedShardRepo1 string
+		expectedShardRepo2 string
+	}{
+		{
+			name:               "default case with no forked and parent repo relationship",
+			expectedShardRepo1: shard1,
+			expectedShardRepo2: shard2,
+		},
+		{
+			name:               "a forked and parent repo relationship exists",
+			forkedRepoPoolID:   pointers.Ptr(api.RepoID(2)),
+			parentRepoName:     &repo1,
+			expectedShardRepo1: shard1,
+			expectedShardRepo2: shard1,
+		},
+		{
+			name:               "GetForkedAndParentRepo returns an error",
+			error:              errors.New("mocked error"),
+			expectedShardRepo1: shard1,
+			expectedShardRepo2: shard2,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			gs.GetForkedAndParentRepoFunc.SetDefaultReturn(tc.forkedRepoPoolID, tc.parentRepoName, tc.error)
+
+			require.Equal(t, s.addrForRepo(api.RepoName(repo1), testAddrs), tc.expectedShardRepo1)
+			require.Equal(t, s.addrForRepo(api.RepoName(repo2), testAddrs), tc.expectedShardRepo2)
+		})
+
+	}
 }
 
 func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {

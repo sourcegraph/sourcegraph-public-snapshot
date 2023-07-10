@@ -549,7 +549,38 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 }
 
 func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
-	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
+	// TODO: Ideally context is passed down the call stack. FIXME.
+
+	logger := s.ObservationCtx.Logger.Scoped("addrForRepo", "").With(log.String("repo", string(repoName)))
+
+	// FIXME: Implement a cache.
+	//
+	// HACK: If repoName is the name of the fork, we don't have any other way to determine if this
+	// needs to be deduplicated without reading from the DB. Acceptable for now in the PoC but needs
+	// to be fixed. One way is to update the address cache during code host sync because we know if
+	// a repo is a fork and needs deduplicated storage at that point. But it also means we have to
+	// maintain a cache for every other repo as well.
+	//
+	// FIXME: Being stateless, so far the method was able to work without the assumption that a row
+	// does not need to be present in the gitserver_repos table to return a name. We maintain this
+	// assumption and don't log errors for sql.ErrNoRows.
+
+	forkedRepoPoolID, parentRepoName, err := s.DB.GitserverRepos().GetForkedAndParentRepo(context.Background(), repoName)
+	if err != nil {
+		logger.Error("failed to find a relationship between the forked repo and its parent from DB, this does not cause an application error and will use repoName to determine the gitserver address but this error does indicate a bug", log.Error(err))
+	}
+
+	whichRepo := repoName
+
+	// For a forked repo which has a pool_repo_id in the gitserver_repos table, return the shard ID
+	// of its parent repo. This ensures if deduplication is enabled on a specific repo, all forks of
+	// that repo will reside on the same shard. This is a pre-requisite to support deduplication on
+	// all forks of the repo.
+	if forkedRepoPoolID != nil && parentRepoName != nil {
+		whichRepo = *parentRepoName
+	}
+
+	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), whichRepo)
 }
 
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
