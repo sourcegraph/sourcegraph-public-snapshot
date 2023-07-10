@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 
 import { mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { Navigate } from 'react-router-dom'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
@@ -40,7 +40,8 @@ const SET_COMPLETED_POST_SIGNUP = gql`
     }
 `
 
-const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProps> = ({
+const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void; userId: string } & TelemetryProps> = ({
+    userId,
     onSubmitEnd,
     telemetryService,
 }) => {
@@ -54,25 +55,34 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProp
         setIsCodyForPersonalStuff(event.target.checked)
     }, [])
 
-    const [submitCodySurvey, { loading }] = useMutation<SubmitCodySurveyResult, SubmitCodySurveyVariables>(
-        SUBMIT_CODY_SURVEY,
-        {
-            variables: {
-                isForWork: isCodyForWork,
-                isForPersonal: isCodyForPersonalStuff,
-            },
-        }
-    )
+    const [submitCodySurvey] = useMutation<SubmitCodySurveyResult, SubmitCodySurveyVariables>(SUBMIT_CODY_SURVEY, {
+        variables: {
+            isForWork: isCodyForWork,
+            isForPersonal: isCodyForPersonalStuff,
+        },
+    })
+
+    const [updatePostSignupCompletion, { loading }] = useMutation<
+        setCompletedPostSignupResult,
+        setCompletedPostSignupVariables
+    >(SET_COMPLETED_POST_SIGNUP, {
+        variables: {
+            userID: userId,
+        },
+    })
 
     const handleSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>) => {
             const eventParams = { isCodyForPersonalStuff, isCodyForWork }
             telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
+
             // eslint-disable-next-line no-console
-            submitCodySurvey().catch(console.error).finally(onSubmitEnd)
+            submitCodySurvey().catch(console.error)
+            // eslint-disable-next-line no-console
+            updatePostSignupCompletion().catch(console.error).then(onSubmitEnd)
         },
-        [isCodyForPersonalStuff, isCodyForWork, onSubmitEnd, submitCodySurvey, telemetryService]
+        [isCodyForPersonalStuff, isCodyForWork, submitCodySurvey, telemetryService]
     )
 
     useEffect(() => {
@@ -194,21 +204,10 @@ export const CodySurveyToast: React.FC<
         authenticatedUser: AuthenticatedUser
     } & TelemetryProps
 > = ({ authenticatedUser, telemetryService }) => {
-    const navigate = useNavigate()
     const [showVerifyEmail, setShowVerifyEmail] = useState(isEmailVerificationNeededForCody())
-    const [updatePostSignupCompletion] = useMutation<setCompletedPostSignupResult, setCompletedPostSignupVariables>(
-        SET_COMPLETED_POST_SIGNUP,
-        {
-            variables: {
-                userID: authenticatedUser.id,
-            },
-        }
-    )
 
     const handleSubmitEnd = (): void => {
-        // eslint-disable-next-line no-console
-        updatePostSignupCompletion().catch(console.error)
-        navigate(PageRoutes.GetCody)
+        window.location.replace(PageRoutes.GetCody)
     }
 
     const dismissVerifyEmail = useCallback(() => {
@@ -231,5 +230,11 @@ export const CodySurveyToast: React.FC<
         )
     }
 
-    return <CodySurveyToastInner onSubmitEnd={handleSubmitEnd} telemetryService={telemetryService} />
+    return (
+        <CodySurveyToastInner
+            telemetryService={telemetryService}
+            onSubmitEnd={handleSubmitEnd}
+            userId={authenticatedUser.id}
+        />
+    )
 }
