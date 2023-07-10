@@ -38,7 +38,6 @@
 <style lang="scss">
     .content {
         padding: 1rem;
-        overflow: auto;
     }
 
     ul {

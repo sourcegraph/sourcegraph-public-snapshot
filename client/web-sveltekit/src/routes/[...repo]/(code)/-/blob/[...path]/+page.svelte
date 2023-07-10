@@ -55,8 +55,8 @@
 
 <style lang="scss">
     .content {
-        overflow: hidden;
         display: flex;
+        overflow-x: auto;
     }
     .loading {
         filter: blur(1px);

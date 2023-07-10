@@ -45,6 +45,10 @@
         align-items: center;
         padding: 0.5rem;
         border-bottom: 1px solid var(--border-color);
+        position: sticky;
+        top: 0px;
+        background-color: var(--color-bg-1);
+        z-index: 1;
     }
 
     .toggle-wrapper {

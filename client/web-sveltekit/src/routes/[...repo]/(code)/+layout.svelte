@@ -1,9 +1,13 @@
 <script lang="ts">
+    import { onMount } from 'svelte'
+
+    import { afterNavigate, disableScrollHandling } from '$app/navigation'
     import { page } from '$app/stores'
     import FileTree from '$lib/repo/FileTree.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
+    import { scrollAll } from '$lib/stores'
     import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
@@ -18,6 +22,17 @@
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
+
+    onMount(() => {
+        // We want the whole page to be scrollable and hide page and repo navigation
+        scrollAll.set(true)
+        return () => scrollAll.set(false)
+    })
+
+    afterNavigate(() => {
+        // Prevents SvelteKit from resetting the scroll position to the top
+        disableScrollHandling()
+    })
 </script>
 
 <section>
@@ -44,9 +59,10 @@
 <style lang="scss">
     section {
         display: flex;
-        overflow: hidden;
         flex: 1;
+        flex-shrink: 0;
         background-color: var(--code-bg);
+        min-height: 100vh;
     }
 
     .sidebar {
@@ -59,13 +75,16 @@
         background-color: var(--body-bg);
         padding: 0.5rem;
         padding-bottom: 0;
+        position: sticky;
+        top: 0px;
+        max-height: 100vh;
     }
 
     .content {
         flex: 1;
-        overflow: hidden;
         display: flex;
         flex-direction: column;
+        min-width: 0;
     }
 
     h3 {
