@@ -40,7 +40,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_cadvisor_base",
-        digest = "sha256:146983a8deecf9c81172b82f60064707796d86123e6be261d17e771374abfb70",
+        digest = "sha256:ef61fa124c29002aa6edf8cd5bac3526887aecc99286c469c0b1ed54f7af6889",
         image = "index.docker.io/sourcegraph/wolfi-cadvisor-base",
     )
 
