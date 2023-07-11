@@ -67,4 +67,5 @@ pipeline:
       mkdir -p ${{targets.destdir}}/usr/local/lib/
       cp /home/build/cadvisor-v0.47.2-linux-amd64 ${{targets.destdir}}/usr/bin/cadvisor
       cp /usr/local/lib/libpfm.so* ${{targets.destdir}}/usr/local/lib/
+      chmod +x ${{targets.destdir}}/usr/bin/cadvisor
 
