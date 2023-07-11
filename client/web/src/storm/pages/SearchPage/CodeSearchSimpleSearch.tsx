@@ -12,10 +12,47 @@ export interface SimpleSearchProps {
 
 const languages = ['JavaScript', 'TypeScript', 'Java', 'C++', 'Python', 'Go', 'C#', 'Ruby']
 
+const getQuery = ({repoPattern, repoNames, filePaths, useForks, literalContent, regexpContent, languageFilter, useArchive, searchContext}): string => {
+    // build query
+    const terms: string[] = []
+
+    if (searchContext?.length > 0) {
+        terms.push(`context:${searchContext}`)
+    }
+
+    if (repoPattern?.length > 0) {
+        terms.push(`repo:${repoPattern}`)
+    }
+    if (repoNames?.length > 0) {
+        terms.push(`repo:${repoNames}$`)
+    }
+    if (filePaths?.length > 0) {
+        terms.push(`file:${filePaths}`)
+    }
+    if (useForks === 'yes' || useForks === 'only') {
+        terms.push(`fork:${useForks}`)
+    }
+    if (useArchive === 'yes' || useArchive === 'only') {
+        terms.push(`archived:${useArchive}`)
+    }
+    if (languageFilter?.length > 0 && languageFilter !== 'Choose') {
+        terms.push(`lang:${languageFilter}`)
+    }
+
+    // do these last
+
+    if (literalContent?.length > 0) {
+        terms.push(literalContent)
+    } else if (regexpContent?.length > 0) {
+        terms.push(`/${regexpContent}/`)
+    }
+
+    return terms.join(' ')
+}
+
 export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({
     onSimpleSearchUpdate,
     onSubmit,
-    defaultSearchContext,
 }) => {
     const [repoPattern, setRepoPattern] = useState<string>('')
     const [repoNames, setRepoNames] = useState<string>('')
@@ -30,47 +67,9 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({
 
     useEffect(() => {
         // Update the query whenever any of the other fields change
-        const updatedQuery = getQuery()
+        const updatedQuery = getQuery({repoPattern, repoNames, filePaths, useForks, literalContent, regexpContent, languageFilter, useArchive, searchContext})
         onSimpleSearchUpdate(updatedQuery)
-    }, [repoPattern, repoNames, filePaths, useForks, literalContent, regexpContent, languageFilter, useArchive])
-
-    const getQuery = (): string => {
-        // build query
-        const terms: string[] = []
-
-        if (searchContext?.length > 0) {
-            terms.push(`context:${searchContext}`)
-        }
-
-        if (repoPattern?.length > 0) {
-            terms.push(`repo:${repoPattern}`)
-        }
-        if (repoNames?.length > 0) {
-            terms.push(`repo:${repoNames}$`)
-        }
-        if (filePaths?.length > 0) {
-            terms.push(`file:${filePaths}`)
-        }
-        if (useForks === 'yes' || useForks === 'only') {
-            terms.push(`fork:${useForks}`)
-        }
-        if (useArchive === 'yes' || useArchive === 'only') {
-            terms.push(`archived:${useArchive}`)
-        }
-        if (languageFilter?.length > 0 && languageFilter !== 'Choose') {
-            terms.push(`lang:${languageFilter}`)
-        }
-
-        // do these last
-
-        if (literalContent?.length > 0) {
-            terms.push(literalContent)
-        } else if (regexpContent?.length > 0) {
-            terms.push(`/${regexpContent}/`)
-        }
-
-        return terms.join(' ')
-    }
+    }, [repoPattern, repoNames, filePaths, useForks, literalContent, regexpContent, languageFilter, useArchive, searchContext, onSimpleSearchUpdate])
 
     return (
         <div>

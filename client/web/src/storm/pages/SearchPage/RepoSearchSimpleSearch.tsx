@@ -2,7 +2,7 @@ import React, { FC, useEffect, useState } from 'react'
 
 import { mdiHelpCircleOutline } from '@mdi/js'
 
-import { Icon, Select, Tooltip, Input, Button, Form, Label } from '@sourcegraph/wildcard'
+import { Icon, Select, Tooltip, Input, Button, Form, Label, H3 } from '@sourcegraph/wildcard'
 
 import { SimpleSearchProps } from './CodeSearchSimpleSearch'
 
@@ -14,62 +14,59 @@ const predicates = {
     topic: '',
 }
 
+const getQuery = ({repoPattern, repoNames, useForks, useArchive, predicateState, searchContext}): string => {
+    // build query
+    const terms: string[] = []
+
+    if (searchContext?.length > 0) {
+        terms.push(`context:${searchContext}`)
+    }
+
+    // default to select:repo so that we always get the right result
+    terms.push('select:repo')
+    if (repoPattern?.length > 0) {
+        terms.push(`repo:${repoPattern}`)
+    }
+    if (repoNames?.length > 0) {
+        terms.push(`repo:${repoNames}$`)
+    }
+
+    for (const predicateStateKey in predicateState) {
+        const val = predicateState[predicateStateKey]
+        if (val?.length === 0) {
+            continue
+        }
+        terms.push(`repo:has.${predicateStateKey}(${val})`)
+    }
+
+    // do these last
+    if (useForks === 'yes' || useForks === 'only') {
+        terms.push(`fork:${useForks}`)
+    }
+    if (useArchive === 'yes' || useArchive === 'only') {
+        terms.push(`archived:${useArchive}`)
+    }
+
+    return terms.join(' ')
+}
+
 export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({
     onSimpleSearchUpdate,
     onSubmit,
-    defaultSearchContext,
 }) => {
     const [repoPattern, setRepoPattern] = useState<string>('')
     const [repoNames, setRepoNames] = useState<string>('')
-    const [filePaths, setFilePaths] = useState<string>('')
     const [useForks, setUseForks] = useState<string>('')
     const [useArchive, setUseArchive] = useState<string>('')
-    const [languageFilter, setLanguageFilter] = useState<string>('')
     const [searchContext, setSearchContext] = useState<string>('global')
 
     const [predicateState, setPredicateState] = useState<{}>(predicates)
 
     useEffect(() => {
         // Update the query whenever any of the other fields change
-        const updatedQuery = getQuery()
+        const updatedQuery = getQuery({repoPattern, repoNames, useForks, useArchive, predicateState, searchContext})
         onSimpleSearchUpdate(updatedQuery)
-    }, [repoPattern, repoNames, filePaths, useForks, languageFilter, useArchive, predicateState])
-
-    const getQuery = (): string => {
-        // build query
-        const terms: string[] = []
-
-        if (searchContext?.length > 0) {
-            terms.push(`context:${searchContext}`)
-        }
-
-        // default to select:repo so that we always get the right result
-        terms.push('select:repo')
-        if (repoPattern?.length > 0) {
-            terms.push(`repo:${repoPattern}`)
-        }
-        if (repoNames?.length > 0) {
-            terms.push(`repo:${repoNames}$`)
-        }
-
-        for (const predicateStateKey in predicateState) {
-            const val = predicateState[predicateStateKey]
-            if (val?.length === 0) {
-                continue
-            }
-            terms.push(`repo:has.${predicateStateKey}(${val})`)
-        }
-
-        // do these last
-        if (useForks === 'yes' || useForks === 'only') {
-            terms.push(`fork:${useForks}`)
-        }
-        if (useArchive === 'yes' || useArchive === 'only') {
-            terms.push(`archived:${useArchive}`)
-        }
-
-        return terms.join(' ')
-    }
+    }, [repoPattern, repoNames, useForks, useArchive, predicateState, searchContext, onSimpleSearchUpdate])
 
     const updatePreds = (key, value): void => {
         setPredicateState({ ...predicateState, [key]: value })
@@ -158,7 +155,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({
                 </div>
 
                 <hr className="mt-4 mb-4" />
-                <h3 className="mb-4">Select repositories that have contents</h3>
+                <H3 className="mb-4">Select repositories that have contents</H3>
                 <div className="form-group row">
                     <Label htmlFor="text" className="col-4 col-form-label">
                         Contains file path

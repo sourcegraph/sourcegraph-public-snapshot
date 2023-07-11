@@ -1,10 +1,10 @@
-import React, { FC, useEffect, useState } from 'react'
+import React, {FC, useEffect, useState} from 'react'
 
-import { mdiHelpCircleOutline } from '@mdi/js'
+import {mdiHelpCircleOutline} from '@mdi/js'
 
-import { Icon, Select, Tooltip, Input, Button, Form } from '@sourcegraph/wildcard'
+import {Icon, Select, Tooltip, Input, Button, Form, Label} from '@sourcegraph/wildcard'
 
-import { SimpleSearchProps } from './CodeSearchSimpleSearch'
+import {SimpleSearchProps} from './CodeSearchSimpleSearch'
 
 const predicates = {
     path: '',
@@ -14,11 +14,63 @@ const predicates = {
     topic: '',
 }
 
+const getQuery = ({
+                      repoPattern,
+                      repoNames,
+                      filePaths,
+                      useForks,
+                      languageFilter,
+                      useArchive,
+                      predicateState,
+                      messagePattern,
+                      authorPattern,
+                      diffCodePattern,
+                      searchContext
+                  }): string => {
+    // build query
+    const terms: string[] = []
+
+    if (searchContext?.length > 0) {
+        terms.push(`context:${searchContext}`)
+    }
+
+    if (repoPattern?.length > 0) {
+        terms.push(`repo:${repoPattern}`)
+    }
+    if (repoNames?.length > 0) {
+        terms.push(`repo:${repoNames}$`)
+    }
+
+    // here we are going to default to commit search, and only override if there is code present. This is because diff search is a subset of commit search, so there is always
+    // a valid search available
+    if (diffCodePattern?.length > 0) {
+        terms.push('type:diff')
+        terms.push(`${diffCodePattern}`)
+    } else {
+        terms.push('type:commit')
+    }
+    if (messagePattern?.length > 0) {
+        terms.push(`message:${messagePattern} `)
+    }
+    if (authorPattern?.length > 0) {
+        terms.push(`author:${authorPattern}`)
+    }
+
+    // do these last
+    if (useForks === 'yes' || useForks === 'only') {
+        terms.push(`fork:${useForks}`)
+    }
+    if (useArchive === 'yes' || useArchive === 'only') {
+        terms.push(`archived:${useArchive}`)
+    }
+
+    return terms.join(' ')
+}
+
 export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
-    onSimpleSearchUpdate,
-    onSubmit,
-    defaultSearchContext,
-}) => {
+                                                                   onSimpleSearchUpdate,
+                                                                   onSubmit,
+                                                               }) => {
     const [repoPattern, setRepoPattern] = useState<string>('')
     const [repoNames, setRepoNames] = useState<string>('')
     const [filePaths, setFilePaths] = useState<string>('')
@@ -35,7 +87,17 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
 
     useEffect(() => {
         // Update the query whenever any of the other fields change
-        const updatedQuery = getQuery()
+        const updatedQuery = getQuery({repoPattern,
+            repoNames,
+            filePaths,
+            useForks,
+            languageFilter,
+            useArchive,
+            predicateState,
+            messagePattern,
+            authorPattern,
+            diffCodePattern,
+            searchContext})
         onSimpleSearchUpdate(updatedQuery)
     }, [
         repoPattern,
@@ -48,64 +110,22 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
         messagePattern,
         authorPattern,
         diffCodePattern,
+        searchContext,
+        onSimpleSearchUpdate
     ])
-
-    const getQuery = (): string => {
-        // build query
-        const terms: string[] = []
-
-        if (searchContext?.length > 0) {
-            terms.push(`context:${searchContext}`)
-        }
-
-        if (repoPattern?.length > 0) {
-            terms.push(`repo:${repoPattern}`)
-        }
-        if (repoNames?.length > 0) {
-            terms.push(`repo:${repoNames}$`)
-        }
-
-        // here we are going to default to commit search, and only override if there is code present. This is because diff search is a subset of commit search, so there is always
-        // a valid search available
-        if (diffCodePattern?.length > 0) {
-            terms.push(`type:diff`)
-            terms.push(`${diffCodePattern}`)
-        } else {
-            terms.push(`type:commit`)
-        }
-        if (messagePattern?.length > 0) {
-            terms.push(`message:${messagePattern} `)
-        }
-        if (authorPattern?.length > 0) {
-            terms.push(`author:${authorPattern}`)
-        }
-
-        // do these last
-        if (useForks === 'yes' || useForks === 'only') {
-            terms.push(`fork:${useForks}`)
-        }
-        if (useArchive === 'yes' || useArchive === 'only') {
-            terms.push(`archived:${useArchive}`)
-        }
-
-        return terms.join(' ')
-    }
-
-    const updatePreds = (key, value) => {
-        setPredicateState({ ...predicateState, [key]: value })
-    }
 
     return (
         <div>
             <Form className="mt-4" onSubmit={onSubmit}>
                 <div id="contentFilterSection">
                     <div className="form-group row">
-                        <label htmlFor="repoName" className="col-4 col-form-label">
+                        <Label htmlFor="repoName" className="col-4 col-form-label">
                             Commit message contains pattern
-                            <Tooltip content="Search for changes with a commit message that matches a regular expression pattern.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Tooltip
+                                content="Search for changes with a commit message that matches a regular expression pattern.">
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
                             </Tooltip>
-                        </label>
+                        </Label>
 
                         <div className="col-8">
                             <div className="input-group">
@@ -121,12 +141,12 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                     </div>
 
                     <div className="form-group row">
-                        <label htmlFor="repoName" className="col-4 col-form-label">
+                        <Label htmlFor="repoName" className="col-4 col-form-label">
                             Author matches pattern
                             <Tooltip content="Search for the commit author name or email using a regular expression.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
                             </Tooltip>
-                        </label>
+                        </Label>
 
                         <div className="col-8">
                             <div className="input-group">
@@ -142,12 +162,12 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                     </div>
 
                     <div className="form-group row">
-                        <label htmlFor="repoName" className="col-4 col-form-label">
+                        <Label htmlFor="repoName" className="col-4 col-form-label">
                             Diff contains code matching pattern
                             <Tooltip content="Search for matching diff file content using a regular expression.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
                             </Tooltip>
-                        </label>
+                        </Label>
 
                         <div className="col-8">
                             <div className="input-group">
@@ -162,16 +182,16 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                         </div>
                     </div>
                 </div>
-                <hr className="mt-4 mb-4" />
+                <hr className="mt-4 mb-4"/>
 
                 <div id="repoFilterSection">
                     <div className="form-group row">
-                        <label htmlFor="repoName" className="col-4 col-form-label">
+                        <Label htmlFor="repoName" className="col-4 col-form-label">
                             In these repos
                             <Tooltip content="Match repository names exactly.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
                             </Tooltip>
-                        </label>
+                        </Label>
 
                         <div className="col-8">
                             <div className="input-group">
@@ -187,12 +207,12 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                     </div>
 
                     <div className="form-group row">
-                        <label htmlFor="repoNamePatterns" className="col-4 col-form-label">
+                        <Label htmlFor="repoNamePatterns" className="col-4 col-form-label">
                             In matching repos
                             <Tooltip content="Use a regular expression pattern to match against repository names.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
                             </Tooltip>
-                        </label>
+                        </Label>
                         <div className="col-8">
                             <Input
                                 id="repoNamePatterns"
@@ -205,12 +225,13 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                     </div>
 
                     <div className="form-group row">
-                        <label htmlFor="searchForks" className="col-4 col-form-label">
+                        <Label htmlFor="searchForks" className="col-4 col-form-label">
                             Search over repository forks?
-                            <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Tooltip
+                                content="Choose an option to include or exclude forks from the search, or search only over forks.">
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
                             </Tooltip>
-                        </label>
+                        </Label>
                         <div className="col-2">
                             <Select
                                 id="searchForks"
@@ -223,12 +244,13 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                             </Select>
                         </div>
 
-                        <label htmlFor="searchArchive" className="col-4 col-form-label">
+                        <Label htmlFor="searchArchive" className="col-4 col-form-label">
                             Search over archived repositories?
-                            <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Tooltip
+                                content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
                             </Tooltip>
-                        </label>
+                        </Label>
                         <div className="col-2">
                             <Select
                                 id="searchArchive"
@@ -243,14 +265,15 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                     </div>
                 </div>
 
-                <hr className="mt-4 mb-4" />
+                <hr className="mt-4 mb-4"/>
                 <div className="form-group row">
-                    <label htmlFor="searchContext" className="col-4 col-form-label">
+                    <Label htmlFor="searchContext" className="col-4 col-form-label">
                         Search context
-                        <Tooltip content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. The global context  will search over all code on Sourcegraph.">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                        <Tooltip
+                            content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. The global context  will search over all code on Sourcegraph.">
+                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
                         </Tooltip>
-                    </label>
+                    </Label>
                     <div className="col-8">
                         <Input
                             value={searchContext}
