@@ -4,7 +4,7 @@ set -eux
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
-if ! "./enterprise/dev/app/windows/check_requirements.cmd"; then
+if ! "./windows/check_requirements.cmd"; then
   echo "STOP! Requirements missing. Please fix before proceeding."
   exit 1
 fi
