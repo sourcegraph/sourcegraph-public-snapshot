@@ -15,17 +15,15 @@ const predicates = {
 }
 
 const getQuery = ({
-    repoPattern,
-    repoNames,
-    filePaths,
-    useForks,
-    languageFilter,
-    useArchive,
-    predicateState,
-    messagePattern,
-    authorPattern,
-    diffCodePattern,
-    searchContext,
+                      repoPattern,
+                      repoNames,
+                      filePaths,
+                      useForks,
+                      useArchive,
+                      messagePattern,
+                      authorPattern,
+                      diffCodePattern,
+                      searchContext,
 }): string => {
     // build query
     const terms: string[] = []
@@ -41,14 +39,25 @@ const getQuery = ({
         terms.push(`repo:${repoNames}$`)
     }
 
+    let type = 'commit'
+    let ptn = ''
+
     // here we are going to default to commit search, and only override if there is code present. This is because diff search is a subset of commit search, so there is always
     // a valid search available
     if (diffCodePattern?.length > 0) {
-        terms.push('type:diff')
-        terms.push(`${diffCodePattern}`)
-    } else {
-        terms.push('type:commit')
+        // terms.push('type:diff')
+        type = 'diff'
+        // terms.push(`${diffCodePattern}`)
+        ptn = diffCodePattern
     }
+    if (filePaths?.length > 0) {
+        type = 'diff'
+        terms.push(`file:${filePaths}`)
+    }
+
+    terms.push(`type:${type}`)
+    terms.push(`${ptn}`)
+
     if (messagePattern?.length > 0) {
         terms.push(`message:${messagePattern} `)
     }
@@ -73,14 +82,12 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
     const [filePaths, setFilePaths] = useState<string>('')
     const [useForks, setUseForks] = useState<string>('')
     const [useArchive, setUseArchive] = useState<string>('')
-    const [languageFilter, setLanguageFilter] = useState<string>('')
     const [searchContext, setSearchContext] = useState<string>('global')
 
     const [messagePattern, setMessagePattern] = useState<string>('')
     const [authorPattern, setAuthorPattern] = useState<string>('')
     const [diffCodePattern, setDiffCodePattern] = useState<string>('')
 
-    const [predicateState, setPredicateState] = useState<{}>(predicates)
 
     useEffect(() => {
         // Update the query whenever any of the other fields change
@@ -89,9 +96,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
             repoNames,
             filePaths,
             useForks,
-            languageFilter,
             useArchive,
-            predicateState,
             messagePattern,
             authorPattern,
             diffCodePattern,
@@ -103,14 +108,11 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
         repoNames,
         filePaths,
         useForks,
-        languageFilter,
         useArchive,
-        predicateState,
         messagePattern,
         authorPattern,
         diffCodePattern,
         searchContext,
-        onSimpleSearchUpdate,
     ])
 
     return (
@@ -175,6 +177,27 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                                     placeholder="class \w*Manager"
                                     type="text"
                                     onChange={event => setDiffCodePattern(event.target.value)}
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="form-group row">
+                        <Label htmlFor="repoName" className="col-4 col-form-label">
+                            Diff contains file path
+                            <Tooltip content="Search for matching diff containing a matching file path regular expression">
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            </Tooltip>
+                        </Label>
+
+                        <div className="col-8">
+                            <div className="input-group">
+                                <Input
+                                    id="repoName"
+                                    name="repoName"
+                                    placeholder="README|LICENSE"
+                                    type="text"
+                                    onChange={event => setFilePaths(event.target.value)}
                                 />
                             </div>
                         </div>
