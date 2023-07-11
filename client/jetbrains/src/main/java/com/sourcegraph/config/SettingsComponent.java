@@ -46,6 +46,7 @@ public class SettingsComponent {
   private JBTextField defaultBranchNameTextField;
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
+  private JBCheckBox isCodyEnabledCheckBox;
   private JBCheckBox isCodyAutoCompleteEnabledCheckBox;
 
   private JButton testCodyAppConnectionButton;
@@ -402,6 +403,14 @@ public class SettingsComponent {
     isUrlNotificationDismissedCheckBox.setSelected(value);
   }
 
+  public boolean isCodyEnabled() {
+    return isCodyEnabledCheckBox.isSelected();
+  }
+
+  public void setCodyEnabled(boolean value) {
+    isCodyEnabledCheckBox.setSelected(value);
+  }
+
   public boolean isCodyAutoCompleteEnabled() {
     return isCodyAutoCompleteEnabledCheckBox.isSelected();
   }
@@ -534,10 +543,13 @@ public class SettingsComponent {
 
   @NotNull
   private JPanel createCodySettingsPanel() {
+    //noinspection DialogTitleCapitalization
+    isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
     isCodyAutoCompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
     JPanel codySettingsPanel =
         FormBuilder.createFormBuilder()
-            .addComponent(isCodyAutoCompleteEnabledCheckBox, 10)
+            .addComponent(isCodyEnabledCheckBox, 10)
+            .addComponent(isCodyAutoCompleteEnabledCheckBox, 5)
             .getPanel();
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
