@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -602,9 +602,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-v1",
-			FastChatModel:   "anthropic/claude-instant-v1",
-			CompletionModel: "anthropic/claude-instant-v1",
+			ChatModel:       "anthropic/claude-2",
+			FastChatModel:   "anthropic/claude-instant-1",
+			CompletionModel: "anthropic/claude-instant-1",
 		}
 	}
 
@@ -642,17 +642,17 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-v1"
+			completionsConfig.ChatModel = "anthropic/claude-2"
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic/claude-instant-v1"
+			completionsConfig.FastChatModel = "anthropic/claude-instant-1"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
+			completionsConfig.CompletionModel = "anthropic/claude-instant-1"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
@@ -692,17 +692,17 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-v1"
+			completionsConfig.ChatModel = "claude-2"
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "claude-instant-v1"
+			completionsConfig.FastChatModel = "claude-instant-1"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-v1"
+			completionsConfig.CompletionModel = "claude-instant-1"
 		}
 	}
 
@@ -971,6 +971,11 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 	if strings.HasSuffix(model, "-100k") {
 		return 100_000
 
+	}
+	if model == "claude-2" {
+		// TODO: Technically, v2 also uses a 100k window, but we should validate
+		// that returning 100k here is the right thing to do.
+		return 12_000
 	}
 	// For now, all other claude models have a 9k token window.
 	return 9_000

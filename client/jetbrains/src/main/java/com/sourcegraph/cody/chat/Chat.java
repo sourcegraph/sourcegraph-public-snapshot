@@ -32,24 +32,27 @@ public class Chat {
   }
 
   public void sendMessageWithoutAgent(
-      @NotNull List<Message> prompt, @Nullable String prefix, @NotNull UpdatableChat chat) {
+      @NotNull List<Message> prompt,
+      @Nullable String prefix,
+      @NotNull UpdatableChat chat,
+      @NotNull CancellationToken cancellationToken) {
     completionsService.streamCompletion(
         new CompletionsInput(prompt, 0.5f, null, 1000, -1, -1),
-        new ChatUpdaterCallbacks(chat, prefix),
-        CompletionsService.Endpoint.Stream,
-        new CancellationToken());
+        new ChatUpdaterCallbacks(chat, cancellationToken, prefix),
+        CompletionsService.Endpoint.Stream);
   }
 
   public void sendMessageViaAgent(
       @NotNull CodyAgentClient client,
       @NotNull CompletableFuture<CodyAgentServer> codyAgentServer,
       @NotNull ChatMessage humanMessage,
-      @NotNull UpdatableChat chat)
+      @NotNull UpdatableChat chat,
+      @NotNull CancellationToken cancellationToken)
       throws ExecutionException, InterruptedException {
     final AtomicBoolean isFirstMessage = new AtomicBoolean(false);
     client.onChatUpdateMessageInProgress =
         (agentChatMessage) -> {
-          if (agentChatMessage.text == null) {
+          if (agentChatMessage.text == null || cancellationToken.isCancelled()) {
             return;
           }
 
@@ -85,6 +88,9 @@ public class Chat {
                         .setHumanChatInput(humanMessage.getText())),
             CodyAgent.executorService)
         .get();
+    // TODO we need to move this finishMessageProcessing to be executed when the whole message
+    // processing is finished to make "stop generating" works. Ideally we need a signal from agent
+    // that it finished processing the message so we can call this method.
     chat.finishMessageProcessing();
   }
 }
