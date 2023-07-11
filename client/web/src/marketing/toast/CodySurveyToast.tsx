@@ -11,7 +11,6 @@ import { Checkbox, Form, H3, Modal, Text, Button, Icon } from '@sourcegraph/wild
 
 import { AuthenticatedUser } from '../../auth'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
-import { isEmailVerificationNeededForCody } from '../../cody/isCodyEnabled'
 import { LoaderButton } from '../../components/LoaderButton'
 import {
     SubmitCodySurveyResult,
@@ -40,11 +39,9 @@ const SET_COMPLETED_POST_SIGNUP = gql`
     }
 `
 
-const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void; userId: string } & TelemetryProps> = ({
-    userId,
-    onSubmitEnd,
-    telemetryService,
-}) => {
+const CodySurveyToastInner: React.FC<
+    { onSubmitEnd: () => void; userId: string; hasVerifiedEmail: boolean } & TelemetryProps
+> = ({ userId, onSubmitEnd, telemetryService, hasVerifiedEmail }) => {
     const [isCodyForWork, setIsCodyForWork] = useState(false)
     const [isCodyForPersonalStuff, setIsCodyForPersonalStuff] = useState(false)
 
@@ -77,12 +74,19 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void; userId: string }
             telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
 
+            if (hasVerifiedEmail) {
+                // eslint-disable-next-line no-console
+                submitCodySurvey().catch(console.error)
+                // eslint-disable-next-line no-console
+                updatePostSignupCompletion().then(onSubmitEnd).catch(console.error)
+                return
+            }
+
             // eslint-disable-next-line no-console
-            submitCodySurvey().catch(console.error)
-            // eslint-disable-next-line no-console
-            updatePostSignupCompletion().then(onSubmitEnd).catch(console.error)
+            submitCodySurvey().catch(console.error).finally(onSubmitEnd)
         },
         [
+            hasVerifiedEmail,
             isCodyForPersonalStuff,
             isCodyForWork,
             onSubmitEnd,
@@ -136,9 +140,11 @@ const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void; userId: string }
     )
 }
 
-const CodyVerifyEmailToast: React.FC<
-    { onNext: () => void; authenticatedUser: AuthenticatedUser; hasVerifiedEmail: boolean } & TelemetryProps
-> = ({ onNext, authenticatedUser, telemetryService, hasVerifiedEmail }) => {
+const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: AuthenticatedUser } & TelemetryProps> = ({
+    onNext,
+    authenticatedUser,
+    telemetryService,
+}) => {
     const [sending, setSending] = useState(false)
     const [resentEmailTo, setResentEmailTo] = useState<string | null>(null)
     const [resendEmailError, setResendEmailError] = useState<ErrorLike | null>(null)
@@ -193,12 +199,7 @@ const CodyVerifyEmailToast: React.FC<
             )}
             {resendEmailError && <Text>{resendEmailError.message}.</Text>}
             <div className="d-flex justify-content-end mt-4">
-                <Button
-                    className={styles.codySurveyToastModalButton}
-                    variant="primary"
-                    onClick={onNext}
-                    disabled={!hasVerifiedEmail}
-                >
+                <Button className={styles.codySurveyToastModalButton} variant="primary" onClick={onNext}>
                     Next
                 </Button>
             </div>
@@ -211,7 +212,7 @@ export const CodySurveyToast: React.FC<
         authenticatedUser: AuthenticatedUser
     } & TelemetryProps
 > = ({ authenticatedUser, telemetryService }) => {
-    const [showVerifyEmail, setShowVerifyEmail] = useState(isEmailVerificationNeededForCody())
+    const [showVerifyEmail, setShowVerifyEmail] = useState(authenticatedUser.hasVerifiedEmail)
 
     const handleSubmitEnd = (): void => {
         window.location.replace(PageRoutes.GetCody)
@@ -226,13 +227,12 @@ export const CodySurveyToast: React.FC<
         return <Navigate to={PageRoutes.GetCody} replace={true} />
     }
 
-    if (showVerifyEmail) {
+    if (!showVerifyEmail) {
         return (
             <CodyVerifyEmailToast
                 onNext={dismissVerifyEmail}
                 authenticatedUser={authenticatedUser}
                 telemetryService={telemetryService}
-                hasVerifiedEmail={authenticatedUser.hasVerifiedEmail}
             />
         )
     }
@@ -242,6 +242,7 @@ export const CodySurveyToast: React.FC<
             telemetryService={telemetryService}
             onSubmitEnd={handleSubmitEnd}
             userId={authenticatedUser.id}
+            hasVerifiedEmail={authenticatedUser.hasVerifiedEmail}
         />
     )
 }
