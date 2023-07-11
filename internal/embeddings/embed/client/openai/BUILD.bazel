@@ -8,6 +8,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/conf/conftypes",
+        "//internal/embeddings/embed/client",
         "//lib/errors",
     ],
 )
