@@ -91,7 +91,10 @@ public class CodeEditorFactory {
     editorComponent.setOpaque(false);
     // place the editor in the layered pane
     editorComponent.setBounds(
-        rightMargin, 0, parentPanel.getSize().width - rightMargin, editorPreferredSize.height + halfOfButtonHeight);
+        rightMargin,
+        0,
+        parentPanel.getSize().width - rightMargin,
+        editorPreferredSize.height + halfOfButtonHeight);
     layeredEditorPane.add(editorComponent, JLayeredPane.DEFAULT_LAYER);
     // place the button in the layered pane on top border of the editor
     copyButton.setBounds(
