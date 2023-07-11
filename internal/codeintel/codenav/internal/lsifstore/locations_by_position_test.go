@@ -322,6 +322,7 @@ func populateTestStore(t testing.TB) LsifStore {
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
 	store := New(&observation.TestContext, codeIntelDB)
 
+	loadTestFile(t, codeIntelDB, "./testdata/go-mockgen@d061eb0.sql")
 	loadTestFile(t, codeIntelDB, "./testdata/code-intel-extensions@7802976b.sql")
 	return store
 }
