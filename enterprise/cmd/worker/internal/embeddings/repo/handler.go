@@ -194,7 +194,7 @@ func (h *handler) getPreviousEmbeddingIndex(ctx context.Context, logger log.Logg
 	index, err := embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, indexName)
 	if err != nil {
 		// TODO (stefan): Remove support for downloading indexes based on repo name after 5.3
-		logger.Error("Error downloading previous embeddings index based on ID. Trying to download based on \"name\"")
+		logger.Info("Failed to download previous embeddings index based on ID. Trying to download based on \"name\"")
 		indexName = string(embeddings.GetRepoEmbeddingIndexNameDeprecated(repo.Name))
 		index, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, indexName)
 		if err != nil {
