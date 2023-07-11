@@ -29,9 +29,6 @@ const APP_SETUP_STEPS: StepConfiguration[] = [
         name: 'Add local repositories',
         path: 'local-repositories',
         component: AddLocalRepositoriesSetupPage,
-        onView: () => {
-            localStorage.setItem('app.setup.finished', 'false')
-        },
     },
     {
         id: 'install-extensions',
