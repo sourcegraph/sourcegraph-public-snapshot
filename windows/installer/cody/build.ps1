@@ -34,13 +34,17 @@ function Write-Banner {
     param(
         [string] $Msg
     )
-    Write-Host
-    Write-Host "--------------------------------------------"
-    Write-Host "${Msg}"
-    Write-Host
+    if ($env:BUILDKITE -eq "true") {
+        Write-Host "--- ${Msg}"
+    } else {
+        Write-Host
+        Write-Host "--------------------------------------------"
+        Write-Host "${Msg}"
+        Write-Host
+    }
 }
 
-Write-Host "Building version: ${VERSION}"
+Write-Host "--- Building version: ${VERSION}"
 
 Write-Banner -Msg "Cleaning up artifacts"
 
