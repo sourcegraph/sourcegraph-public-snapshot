@@ -88,8 +88,10 @@ $MSI_PATH = "${INSTALLER_OUTPUT}\cody-${VERSION}-${ARCH}.msi"
 if ($env:CI -eq "true" ) {
     Write-Banner -Msg "Uploading ${MSI_PATH}"
 
+    New-Item -Path "${DIST_DIR}" -ItemType Directory -Force
     Write-Host "Moving ${MSI_PATH} to ${DIST_DIR}"
-    Copy-Item -Path ${MSI_PATH} -Destination ${DIST_DIR}
+    Copy-Item -Path "${MSI_PATH}" -Destination ${DIST_DIR}
+    Start-Sleep -Seconds 1 # BUG: Powershell is leaving files open after copy and fails signing.
     Write-Host "Uploading artifacts from ${DIST_DIR}"
     buildkite-agent artifact upload "${DIST_DIR}/*"
 }
