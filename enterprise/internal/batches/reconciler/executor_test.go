@@ -139,6 +139,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		wantNonRetryableErr bool
 
 		wantWebhookType string
+
+		wantErr error
 	}
 
 	tests := map[string]testCase{
@@ -270,6 +272,28 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			wantChangeset: bt.ChangesetAssertions{
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
+		},
+		"general push error": {
+			hasCurrentSpec: true,
+			changeset: bt.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublish,
+				},
+			},
+			gitClientErr:   errors.New("failed to push"),
+			isRepoArchived: true,
+			sourcerErr:     repoArchivedErr,
+
+			wantGitserverCommit: true,
+
+			wantChangeset: bt.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			wantErr: errors.New("pushing commit: failed to push"),
 		},
 		"push and publish to archived repo, detected at publish": {
 			hasCurrentSpec: true,
@@ -704,7 +728,9 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				tc.plan,
 			)
 			if err != nil {
-				if tc.wantNonRetryableErr && errcode.IsNonRetryable(err) {
+				if tc.wantErr != nil {
+					assert.EqualError(t, err, tc.wantErr.Error())
+				} else if tc.wantNonRetryableErr && errcode.IsNonRetryable(err) {
 					// all good
 				} else {
 					t.Fatalf("ExecutePlan failed: %s", err)

@@ -64,12 +64,6 @@ func settingsCreateIfUpToDate(ctx context.Context, db database.DB, subject *sett
 		return nil, errors.New("Updating global settings not allowed when using GLOBAL_SETTINGS_FILE")
 	}
 
-	// Read current saved queries.
-	var oldSavedQueries api.PartialConfigSavedQueries
-	if err := subject.readSettings(ctx, &oldSavedQueries); err != nil {
-		return nil, err
-	}
-
 	// Update settings.
 	latestSettings, err := db.Settings().CreateIfUpToDate(ctx, subject.toSubject(), lastID, &authorUserID, contents)
 	if err != nil {
