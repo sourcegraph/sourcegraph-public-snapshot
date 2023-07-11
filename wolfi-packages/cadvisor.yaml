@@ -3,7 +3,7 @@
 package:
   name: cadvisor
    # libpfm version may also need updating - check cadvisor Dockerfile
-  version: 0.47.1
+  version: 0.47.2
   epoch: 1
   description: "Analyzes resource usage and performance characteristics of running containers"
   target-architecture:
@@ -53,22 +53,18 @@ pipeline:
       make -e -C libpfm-4.11.0
       make install -C libpfm-4.11.0
 
-# Check out cadvisor
-  - uses: git-checkout
+# Fetch cadvisor
+  - uses: fetch
     with:
-      repository: https://github.com/google/cadvisor
-      tag: v${{package.version}}
-      expected-commit: c7714a77f72d77936446cb45296a1ef305a06c11
-      destination: /cadvisor
-# Build cadvisor
-  - runs: |
-      cd /cadvisor
-      GO_FLAGS="-tags=libfpm,netgo" ./build/build.sh
+      uri: https://github.com/google/cadvisor/releases/download/v0.47.2/cadvisor-v0.47.2-linux-amd64
+      extract: false
+      expected-sha256: 30602f675e9bcd39b0d4cd4bd9e83c0849dd4bb3a60a0544b9f2a6451a3facfe
+      strip-components: 0
 
   # Package libpfm and cadvisor
   - runs: |
       mkdir -p ${{targets.destdir}}/usr/bin/
       mkdir -p ${{targets.destdir}}/usr/local/lib/
-      cp /cadvisor/_output/cadvisor ${{targets.destdir}}/usr/bin/cadvisor
+      cp /home/build/cadvisor-v0.47.2-linux-amd64 ${{targets.destdir}}/usr/bin/cadvisor
       cp /usr/local/lib/libpfm.so* ${{targets.destdir}}/usr/local/lib/
 
