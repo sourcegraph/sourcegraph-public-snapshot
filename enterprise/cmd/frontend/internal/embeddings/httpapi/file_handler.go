@@ -62,11 +62,12 @@ type uploadResponse struct {
 
 func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode int, err error) {
 	ctx := r.Context()
-	// if ok := isSiteAdmin(ctx, h.logger, h.db); !ok {
-	// 	statusCode = http.StatusForbidden
-	// 	err = errors.New("must be site admin")
-	// 	return
-	// }
+
+	if ok := isSiteAdmin(ctx, h.logger, h.db); !ok {
+		statusCode = http.StatusForbidden
+		err = errors.New("must be site admin")
+		return
+	}
 
 	// ParseMultipartForm parses the whole request body and stores the max size into memory. The rest of the body is
 	// stored in temporary files on disk. The reason for parsing the whole request in one go is because data cannot be

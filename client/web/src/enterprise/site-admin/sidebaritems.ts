@@ -157,6 +157,11 @@ export const codyGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/embeddings/configuration',
             condition: () => window.context?.embeddingsEnabled,
         },
+        {
+            label: 'Embeddings Data Upload',
+            to: '/site-admin/embeddings/upload',
+            condition: () => window.context?.embeddingsEnabled,
+        },
     ],
     condition: () => window.context?.codyEnabled,
 }
