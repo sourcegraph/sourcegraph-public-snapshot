@@ -31,6 +31,7 @@ type DB interface {
 	Conf() ConfStore
 	EventLogs() EventLogStore
 	SecurityEventLogs() SecurityEventLogsStore
+	EmbeddingPluginFiles() EmbeddingPluginFileStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
 	GitHubApps() gha.GitHubAppsStore
@@ -161,6 +162,10 @@ func (d *db) Conf() ConfStore {
 		Store:  basestore.NewWithHandle(d.Handle()),
 		logger: log.Scoped("confStore", "database confStore"),
 	}
+}
+
+func (d *db) EmbeddingPluginFiles() EmbeddingPluginFileStore {
+	return EmbeddingPluginFilesWith(d.Store)
 }
 
 func (d *db) EventLogs() EventLogStore {
