@@ -63,7 +63,6 @@ ts_project(
         "src/extension.ts",
         "src/extension-api.ts",
         "src/external-services.ts",
-        "src/graph-context/graph-context-fetcher.ts",
         "src/local-context/filename-context-fetcher.ts",
         "src/local-context/local-keyword-context-fetcher.ts",
         "src/log.ts",
