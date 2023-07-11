@@ -56,7 +56,9 @@ const getQuery = ({
     }
 
     terms.push(`type:${type}`)
-    terms.push(`${ptn}`)
+    if (ptn.length > 0) {
+        terms.push(`${ptn}`)
+    }
 
     if (messagePattern?.length > 0) {
         terms.push(`message:${messagePattern} `)
@@ -113,6 +115,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
         authorPattern,
         diffCodePattern,
         searchContext,
+        onSimpleSearchUpdate
     ])
 
     return (

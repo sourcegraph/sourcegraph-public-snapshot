@@ -96,6 +96,7 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
         languageFilter,
         useArchive,
         searchContext,
+        onSimpleSearchUpdate
     ])
 
     return (

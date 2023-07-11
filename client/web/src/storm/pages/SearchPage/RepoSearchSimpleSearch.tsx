@@ -63,7 +63,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
         // Update the query whenever any of the other fields change
         const updatedQuery = getQuery({ repoPattern, repoNames, useForks, useArchive, predicateState, searchContext })
         onSimpleSearchUpdate(updatedQuery)
-    }, [repoPattern, repoNames, useForks, useArchive, predicateState, searchContext])
+    }, [repoPattern, repoNames, useForks, useArchive, predicateState, searchContext, onSimpleSearchUpdate])
 
     const updatePreds = (key, value): void => {
         setPredicateState({ ...predicateState, [key]: value })

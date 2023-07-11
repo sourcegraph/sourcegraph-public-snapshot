@@ -27,7 +27,6 @@ import { useRecentSearches } from '../../../search/input/useRecentSearches'
 import { useExperimentalQueryInput } from '../../../search/useExperimentalSearchInput'
 import { useNavbarQueryState, setSearchCaseSensitivity, setSearchPatternType, setSearchMode } from '../../../stores'
 
-import { CodeSearchSimpleSearch } from './CodeSearchSimpleSearch'
 import { SimpleSearch } from './SimpleSearch'
 
 import styles from './SearchPageInput.module.scss'
@@ -126,6 +125,12 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         [submitSearchOnChangeRef]
     )
 
+    const onSimpleSearchUpdate = useCallback(
+        val => {
+            setQueryState({ query: val })
+        }, []
+    )
+
     // TODO (#48103): Remove/simplify when new search input is released
     const input = experimentalQueryInput ? (
         <LazyExperimentalSearchInput
@@ -208,9 +213,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                     <SimpleSearch
                         searchContext={selectedSearchContextSpec}
                         onSubmit={onSubmit}
-                        onSimpleSearchUpdate={val => {
-                            setQueryState({ query: val })
-                        }}
+                        onSimpleSearchUpdate={onSimpleSearchUpdate}
                     />
                 </div>
             )}
