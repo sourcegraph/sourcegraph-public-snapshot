@@ -8,23 +8,21 @@ package shared
 import (
 	"github.com/sourcegraph/log"
 	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	ghaauth "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
+	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 )
 
 func enterpriseInit(db database.DB, keyring keyring.Ring) {
-	enterpriseDB := edb.NewEnterpriseDB(db)
 	logger := log.Scoped("enterprise", "gitserver enterprise edition")
 	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(enterpriseDB.SubRepoPerms())
+	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
 
-	ghAppsStore := enterpriseDB.GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
+	ghAppsStore := db.GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
 	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, keyring.GitHubAppKey)
 }

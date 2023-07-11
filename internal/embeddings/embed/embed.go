@@ -22,7 +22,7 @@ import (
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
 	switch config.Provider {
 	case "sourcegraph":
-		return sourcegraph.NewClient(config), nil
+		return sourcegraph.NewClient(httpcli.ExternalClient, config), nil
 	case "openai":
 		return openai.NewClient(httpcli.ExternalClient, config), nil
 	default:
@@ -33,7 +33,6 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 const (
 	getEmbeddingsMaxRetries = 5
 	embeddingsBatchSize     = 512
-	maxFileSize             = 1_000_000 // 1MB
 )
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -97,7 +96,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -108,7 +107,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.ExcludePatterns, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
+	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -129,7 +128,7 @@ func EmbedRepo(
 type EmbedRepoOpts struct {
 	RepoName          api.RepoName
 	Revision          api.CommitID
-	ExcludePatterns   []*paths.GlobPattern
+	FileFilters       FileFilters
 	SplitOptions      codeintelContext.SplitOptions
 	MaxCodeEmbeddings int
 	MaxTextEmbeddings int
@@ -138,22 +137,28 @@ type EmbedRepoOpts struct {
 	IndexedRevision api.CommitID
 }
 
+type FileFilters struct {
+	ExcludePatterns  []*paths.GlobPattern
+	IncludePatterns  []*paths.GlobPattern
+	MaxFileSizeBytes int
+}
+
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
 	files []FileEntry,
-	client client.EmbeddingsClient,
+	embeddingsClient client.EmbeddingsClient,
 	contextService ContextService,
-	excludePatterns []*paths.GlobPattern,
+	fileFilters FileFilters,
 	splitOptions codeintelContext.SplitOptions,
 	reader FileReader,
 	maxEmbeddingVectors int,
 	repoPathRanks types.RepoPathRanks,
 	reportProgress func(bgrepo.EmbedFilesStats),
 ) (embeddings.EmbeddingIndex, bgrepo.EmbedFilesStats, error) {
-	dimensions, err := client.GetDimensions()
+	dimensions, err := embeddingsClient.GetDimensions()
 	if err != nil {
 		return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
 	}
@@ -185,8 +190,11 @@ func embedFiles(
 			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
 		}
 
-		batchEmbeddings, err := client.GetEmbeddings(ctx, batchChunks)
+		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
 		if err != nil {
+			if partErr := (client.PartialError{}); errors.As(err, &partErr) {
+				return errors.Wrapf(partErr.Err, "batch failed on file %q", batch[partErr.Index].FileName)
+			}
 			return errors.Wrap(err, "error while getting embeddings")
 		}
 		if expected := len(batchChunks) * dimensions; len(batchEmbeddings) != expected {
@@ -219,13 +227,18 @@ func embedFiles(
 			continue
 		}
 
-		if file.Size > maxFileSize {
+		if file.Size > int64(fileFilters.MaxFileSizeBytes) {
 			stats.Skip(SkipReasonLarge, int(file.Size))
 			continue
 		}
 
-		if isExcludedFilePath(file.Name, excludePatterns) {
+		if isExcludedFilePathMatch(file.Name, fileFilters.ExcludePatterns) {
 			stats.Skip(SkipReasonExcluded, int(file.Size))
+			continue
+		}
+
+		if !isIncludedFilePathMatch(file.Name, fileFilters.IncludePatterns) {
+			stats.Skip(SkipReasonNotIncluded, int(file.Size))
 			continue
 		}
 

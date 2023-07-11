@@ -16,7 +16,6 @@ go_library(
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//enterprise/internal/authz",
-        "//enterprise/internal/database",
         "//internal/actor",
         "//internal/api",
         "//internal/auth",
@@ -62,7 +61,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
         "//internal/api",
         "//internal/auth",
         "//internal/authz",

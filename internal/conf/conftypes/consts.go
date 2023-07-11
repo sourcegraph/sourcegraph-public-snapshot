@@ -35,7 +35,7 @@ type EmbeddingsConfig struct {
 	Dimensions                 int
 	Incremental                bool
 	MinimumInterval            time.Duration
-	ExcludedFilePathPatterns   []string
+	FileFilters                EmbeddingsFileFilters
 	MaxCodeEmbeddingsPerRepo   int
 	MaxTextEmbeddingsPerRepo   int
 	PolicyRepositoryMatchLimit *int
@@ -47,3 +47,9 @@ const (
 	EmbeddingsProviderNameOpenAI      EmbeddingsProviderName = "openai"
 	EmbeddingsProviderNameSourcegraph EmbeddingsProviderName = "sourcegraph"
 )
+
+type EmbeddingsFileFilters struct {
+	IncludedFilePathPatterns []string
+	ExcludedFilePathPatterns []string
+	MaxFileSizeBytes         int
+}

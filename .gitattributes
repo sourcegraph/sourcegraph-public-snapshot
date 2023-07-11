@@ -7,4 +7,3 @@ cmd/repo-updater/repos/testdata/** linguist-generated=true
 **/*.pb.go linguist-generated=true
 CHANGELOG.md merge=union
 **/mocks*_*test.go linguist-generated=true
-**/BUILD.bazel linguist-generated=true

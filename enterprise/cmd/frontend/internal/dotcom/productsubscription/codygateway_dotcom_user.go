@@ -9,12 +9,12 @@ import (
 	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -210,9 +210,9 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 func allowedModels(scope types.CompletionsFeature) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
-		return []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"}
+		return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1"}
+		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	default:
 		return []string{}
 	}

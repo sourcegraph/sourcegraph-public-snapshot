@@ -6,8 +6,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	ghastore "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
 type SyncStore interface {

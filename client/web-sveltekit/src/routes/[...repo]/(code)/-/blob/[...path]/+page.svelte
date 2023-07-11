@@ -3,6 +3,7 @@
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import type { BlobFileFields } from '$lib/graphql-operations'
     import HeaderAction from '$lib/repo/HeaderAction.svelte'
+    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
     import FormatAction from './FormatAction.svelte'
@@ -10,8 +11,8 @@
 
     export let data: PageData
 
-    $: blob = data.blob
-    $: highlights = data.highlights
+    $: blob = asStore(data.blob.deferred)
+    $: highlights = asStore(data.highlights.deferred)
     $: loading = $blob.loading
     let blobData: BlobFileFields
     $: if (!$blob.loading && $blob.data) {

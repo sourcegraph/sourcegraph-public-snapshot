@@ -1,16 +1,12 @@
 package com.sourcegraph.cody;
 
 import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
-import static java.awt.event.InputEvent.ALT_DOWN_MASK;
-import static java.awt.event.InputEvent.CTRL_DOWN_MASK;
-import static java.awt.event.InputEvent.META_DOWN_MASK;
-import static java.awt.event.InputEvent.SHIFT_DOWN_MASK;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
-import com.intellij.ide.ui.laf.darcula.ui.DarculaTextAreaUI;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.CustomShortcutSet;
@@ -26,6 +22,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
+import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
@@ -58,8 +55,9 @@ import com.sourcegraph.cody.recipes.ImproveVariableNamesAction;
 import com.sourcegraph.cody.recipes.RecipeRunner;
 import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
 import com.sourcegraph.cody.recipes.TranslateToLanguageAction;
+import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.ui.HtmlViewer;
-import com.sourcegraph.cody.ui.RoundedJBTextArea;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.config.SettingsComponent.InstanceType;
@@ -81,11 +79,11 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
+import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
-import javax.swing.plaf.basic.BasicTextAreaUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -100,6 +98,8 @@ class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
   private final @NotNull Project project;
+  private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
+  private final JPanel stopGeneratingButtonPanel;
   private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
@@ -165,6 +165,7 @@ class CodyToolWindowContent implements UpdatableChat {
             messagesPanel,
             JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
             JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    chatPanel.setBorder(BorderFactory.createEmptyBorder());
 
     // Scroll all the way down after each message
     AdjustmentListener scrollAdjustmentListener =
@@ -180,17 +181,23 @@ class CodyToolWindowContent implements UpdatableChat {
     JPanel controlsPanel = new JPanel();
     controlsPanel.setLayout(new BorderLayout());
     controlsPanel.setBorder(new EmptyBorder(JBUI.insets(14)));
-    sendButton = createSendButton(this.project);
-    promptInput = createPromptInput(this.project);
-
     JPanel messagePanel = new JPanel(new BorderLayout());
+    sendButton = createSendButton(this.project);
+    AutoGrowingTextArea autoGrowingTextArea = new AutoGrowingTextArea(3, 9, messagePanel);
+    promptInput = autoGrowingTextArea.getTextArea();
+    /* Submit on enter */
+    KeyboardShortcut JUST_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, 0), null);
+    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT = new CustomShortcutSet(JUST_ENTER);
+    AnAction sendMessageAction =
+        new DumbAwareAction() {
+          @Override
+          public void actionPerformed(@NotNull AnActionEvent e) {
+            sendMessage(project);
+          }
+        };
+    sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
 
-    JBScrollPane promptInputWithScroll =
-        new JBScrollPane(
-            promptInput,
-            JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-            JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-    messagePanel.add(promptInputWithScroll, BorderLayout.CENTER);
+    messagePanel.add(autoGrowingTextArea.getScrollPane(), BorderLayout.CENTER);
     messagePanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
     controlsPanel.add(messagePanel, BorderLayout.NORTH);
     controlsPanel.add(sendButton, BorderLayout.EAST);
@@ -204,8 +211,26 @@ class CodyToolWindowContent implements UpdatableChat {
     // Main content panel
     contentPanel.setLayout(new BorderLayout(0, 0));
     contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-    contentPanel.add(chatPanel, BorderLayout.CENTER);
+
+    JLayeredPane layeredPane = new JLayeredPane();
+    layeredPane.setLayout(new BorderLayout());
+    JButton button = new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
+    stopGeneratingButtonPanel = new JPanel();
+    button.addActionListener(
+        e -> {
+          cancellationToken.abort();
+          stopGeneratingButtonPanel.setVisible(false);
+          sendButton.setEnabled(true);
+        });
+    stopGeneratingButtonPanel.add(button);
+    stopGeneratingButtonPanel.setOpaque(false);
+    stopGeneratingButtonPanel.setVisible(false);
+    layeredPane.add(chatPanel, BorderLayout.CENTER);
+    layeredPane.add(stopGeneratingButtonPanel, BorderLayout.SOUTH, JLayeredPane.POPUP_LAYER);
+
+    contentPanel.add(layeredPane, BorderLayout.CENTER);
     contentPanel.add(lowerPanel, BorderLayout.SOUTH);
+
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
     JPanel appNotInstalledPanel = createAppNotInstalledPanel();
@@ -369,51 +394,6 @@ class CodyToolWindowContent implements UpdatableChat {
     return sendButton;
   }
 
-  @NotNull
-  private JBTextArea createPromptInput(@NotNull Project project) {
-    JBTextArea promptInput = new RoundedJBTextArea(4, 0, 10);
-    BasicTextAreaUI textUI = (BasicTextAreaUI) DarculaTextAreaUI.createUI(promptInput);
-    promptInput.setUI(textUI);
-    promptInput.setFont(UIUtil.getLabelFont());
-    promptInput.setLineWrap(true);
-    promptInput.setWrapStyleWord(true);
-    promptInput.requestFocusInWindow();
-
-    /* Insert Enter on Shift+Enter, Ctrl+Enter, Alt/Option+Enter, and Meta+Enter */
-    KeyboardShortcut SHIFT_ENTER =
-        new KeyboardShortcut(getKeyStroke(VK_ENTER, SHIFT_DOWN_MASK), null);
-    KeyboardShortcut CTRL_ENTER =
-        new KeyboardShortcut(getKeyStroke(VK_ENTER, CTRL_DOWN_MASK), null);
-    KeyboardShortcut ALT_OR_OPTION_ENTER =
-        new KeyboardShortcut(getKeyStroke(VK_ENTER, ALT_DOWN_MASK), null);
-    KeyboardShortcut META_ENTER =
-        new KeyboardShortcut(getKeyStroke(VK_ENTER, META_DOWN_MASK), null);
-    ShortcutSet INSERT_ENTER_SHORTCUT =
-        new CustomShortcutSet(CTRL_ENTER, SHIFT_ENTER, META_ENTER, ALT_OR_OPTION_ENTER);
-    AnAction insertEnterAction =
-        new DumbAwareAction() {
-          @Override
-          public void actionPerformed(@NotNull AnActionEvent e) {
-            promptInput.insert("\n", promptInput.getCaretPosition());
-          }
-        };
-    insertEnterAction.registerCustomShortcutSet(INSERT_ENTER_SHORTCUT, promptInput);
-
-    /* Submit on enter */
-    KeyboardShortcut JUST_ENTER = new KeyboardShortcut(getKeyStroke(VK_ENTER, 0), null);
-    ShortcutSet DEFAULT_SUBMIT_ACTION_SHORTCUT = new CustomShortcutSet(JUST_ENTER);
-    AnAction sendMessageAction =
-        new DumbAwareAction() {
-          @Override
-          public void actionPerformed(@NotNull AnActionEvent e) {
-            sendMessage(project);
-          }
-        };
-    sendMessageAction.registerCustomShortcutSet(DEFAULT_SUBMIT_ACTION_SHORTCUT, promptInput);
-
-    return promptInput;
-  }
-
   public synchronized void addMessageToChat(@NotNull ChatMessage message) {
     ApplicationManager.getApplication()
         .invokeLater(
@@ -488,21 +468,36 @@ class CodyToolWindowContent implements UpdatableChat {
               if (messagesPanel.getComponentCount() > 0) {
                 JPanel lastBubblePanel =
                     (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
-                ChatBubble lastBubble = (ChatBubble) lastBubblePanel.getComponent(0);
-                lastBubble.updateText(message);
-                messagesPanel.revalidate();
-                messagesPanel.repaint();
+                Component component = lastBubblePanel.getComponent(0);
+                if (component instanceof ChatBubble) {
+                  ChatBubble lastBubble = (ChatBubble) component;
+                  lastBubble.updateText(message);
+                  messagesPanel.revalidate();
+                  messagesPanel.repaint();
+                }
               }
             });
   }
 
   private void startMessageProcessing() {
-    ApplicationManager.getApplication().invokeLater(() -> sendButton.setEnabled(false));
+    cancellationToken.abort();
+    cancellationToken = new CancellationToken();
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              stopGeneratingButtonPanel.setVisible(true);
+              sendButton.setEnabled(false);
+            });
   }
 
   @Override
   public void finishMessageProcessing() {
-    ApplicationManager.getApplication().invokeLater(() -> sendButton.setEnabled(true));
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              stopGeneratingButtonPanel.setVisible(false);
+              sendButton.setEnabled(true);
+            });
   }
 
   @Override
@@ -511,6 +506,8 @@ class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
+              cancellationToken.abort();
+              stopGeneratingButtonPanel.setVisible(false);
               sendButton.setEnabled(true);
               messagesPanel.removeAll();
               addWelcomeMessage();
@@ -569,7 +566,8 @@ class CodyToolWindowContent implements UpdatableChat {
                       CodyAgent.getClient(project),
                       CodyAgent.getInitializedServer(project),
                       humanMessage,
-                      this);
+                      this,
+                      cancellationToken);
                 } catch (Exception e) {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }
@@ -593,7 +591,7 @@ class CodyToolWindowContent implements UpdatableChat {
                         TruncationUtils.MAX_AVAILABLE_PROMPT_LENGTH);
 
                 try {
-                  chat.sendMessageWithoutAgent(prompt, responsePrefix, this);
+                  chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
                 } catch (Exception e) {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }

@@ -1,6 +1,5 @@
 import { isErrorLike } from '$lib/common'
 import { fetchRepoCommit, queryRepositoryComparisonFileDiffs } from '$lib/loader/commits'
-import { asStore } from '$lib/utils'
 
 import type { PageLoad } from './$types'
 
@@ -20,9 +19,11 @@ export const load: PageLoad = ({ parent, params }) => {
     })
 
     return {
-        commit: asStore(commit.then(result => result?.commit ?? null)),
-        diff: asStore(
-            commit.then(result => {
+        commit: {
+            deferred: commit.then(result => result?.commit ?? null),
+        },
+        diff: {
+            deferred: commit.then(result => {
                 if (!result?.commit?.oid || !result?.commit.parents[0]?.oid) {
                     return null
                 }
@@ -34,7 +35,7 @@ export const load: PageLoad = ({ parent, params }) => {
                     first: null,
                     after: null,
                 }).toPromise()
-            })
-        ),
+            }),
+        },
     }
 }

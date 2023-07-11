@@ -5,14 +5,14 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
 )
 
 // computeCodeowners evaluates the codeowners file (if any) against given file (blob)
@@ -61,7 +61,7 @@ func (r *ownResolver) computeCodeowners(ctx context.Context, blob *graphqlbacken
 }
 
 type codeownersFileEntryResolver struct {
-	db              edb.EnterpriseDB
+	db              database.DB
 	source          codeowners.RulesetSource
 	matchLineNumber int32
 	repo            *graphqlbackend.RepositoryResolver

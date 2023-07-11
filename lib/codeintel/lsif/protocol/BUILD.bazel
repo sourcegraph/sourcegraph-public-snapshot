@@ -1,6 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("//dev:go_stringer.bzl", "go_stringer")
-load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 
 go_library(
     name = "protocol",

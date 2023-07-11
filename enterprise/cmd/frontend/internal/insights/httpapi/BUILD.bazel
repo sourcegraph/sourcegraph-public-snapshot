@@ -8,9 +8,9 @@ go_library(
     deps = [
         "//enterprise/internal/database",
         "//enterprise/internal/insights/store",
-        "//enterprise/internal/licensing",
         "//internal/actor",
         "//internal/database",
+        "//internal/licensing",
         "//lib/errors",
         "@com_github_gorilla_mux//:mux",
         "@com_github_grafana_regexp//:regexp",

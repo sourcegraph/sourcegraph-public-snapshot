@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute/client"
+	"github.com/sourcegraph/sourcegraph/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/compute/client"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"

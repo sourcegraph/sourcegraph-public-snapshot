@@ -46,9 +46,9 @@
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
 
 
-        <!-- Code completions -->
-        <applicationService serviceImplementation="com.sourcegraph.cody.completions.CodyCompletionsManager"/>
-        <editorFactoryListener implementation="com.sourcegraph.cody.completions.CodyEditorFactoryListener"/>
+        <!-- autocomplete -->
+        <applicationService serviceImplementation="com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager"/>
+        <editorFactoryListener implementation="com.sourcegraph.cody.autocomplete.CodyEditorFactoryListener"/>
 
         <projectService serviceImplementation="com.sourcegraph.cody.UpdatableChatHolderService"/>
 
@@ -120,10 +120,10 @@
             icon="/icons/sourcegraphLogo.svg">
         </action>
 
-        <!-- Code completions -->
-        <action id="cody.acceptCompletion" class="com.sourcegraph.cody.completions.AcceptCodyCompletionAction">
+        <!-- autocomplete -->
+        <action id="cody.acceptAutoCompleteAction" class="com.sourcegraph.cody.autocomplete.AcceptCodyAutoCompleteAction">
             <keyboard-shortcut first-keystroke="TAB" keymap="$default"/>
-            <override-text place="MainMenu" text="Accept Completion"/>
+            <override-text place="MainMenu" text="Accept Autocomplete Suggestion"/>
         </action>
 
         <action id="cody.resetCurrentConversation" icon="AllIcons.Actions.Refresh"

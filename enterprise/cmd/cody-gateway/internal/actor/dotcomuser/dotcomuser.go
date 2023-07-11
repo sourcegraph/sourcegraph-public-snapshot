@@ -24,7 +24,7 @@ import (
 
 // SourceVersion should be bumped whenever the format of any cached data in this
 // actor source implementation is changed. This effectively expires all entries.
-const SourceVersion = "v1"
+const SourceVersion = "v2"
 
 // dotcom user gateway tokens are always a prefix of 4 characters (sgd_)
 // followed by a 64-character hex-encoded SHA256 hash
@@ -144,6 +144,7 @@ func newActor(source *Source, cacheKey string, user dotcom.DotcomUserState, conc
 	a := &actor.Actor{
 		Key:           cacheKey,
 		ID:            userID,
+		Name:          user.Username,
 		AccessEnabled: userID != "" && user.GetCodyGatewayAccess().Enabled,
 		RateLimits:    zeroRequestsAllowed(),
 		LastUpdated:   &now,
