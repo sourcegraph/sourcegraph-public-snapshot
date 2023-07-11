@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 
-set -eux
-
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
-
-if ! "./enterprise/dev/app/windows/check_requirements.cmd"; then
+declare -r mydir=$(dirname "$0")
+ 
+if ! "${mydir}/../../../windows/check_requirements.cmd"; then
   echo "STOP! Requirements missing. Please fix before proceeding."
   exit 1
 fi
