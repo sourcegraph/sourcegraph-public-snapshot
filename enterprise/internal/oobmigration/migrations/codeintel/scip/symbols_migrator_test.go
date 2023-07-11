@@ -2,6 +2,7 @@ package scip
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -19,13 +20,13 @@ func TestSymbolsMigratorUp(t *testing.T) {
 	migrator := NewSCIPSymbolsMigrator(codeIntelStore)
 	ctx := context.Background()
 
-	// contents, err := os.ReadFile("./testdata/lsif.sql")
-	// if err != nil {
-	// 	t.Fatalf("unexpected error reading file: %s", err)
-	// }
-	// if _, err := codeIntelDB.ExecContext(ctx, string(contents)); err != nil {
-	// 	t.Fatalf("unexpected error executing test file: %s", err)
-	// }
+	contents, err := os.ReadFile("./testdata/trie.sql")
+	if err != nil {
+		t.Fatalf("unexpected error reading file: %s", err)
+	}
+	if _, err := codeIntelDB.ExecContext(ctx, string(contents)); err != nil {
+		t.Fatalf("unexpected error executing test file: %s", err)
+	}
 
 	assertProgress := func(expectedProgress float64, applyReverse bool) {
 		if progress, err := migrator.Progress(ctx, applyReverse); err != nil {
