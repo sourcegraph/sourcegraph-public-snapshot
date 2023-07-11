@@ -21,11 +21,11 @@ import { UpdateInfo, useUpdater } from './updater'
 
 import styles from './UpdateGlobalNav.module.scss'
 
-interface UpdateGlobalNavFrameProps {
+export interface UpdateGlobalNavFrameProps {
     details: UpdateInfo
 }
 
-const UpdateGlobalNavFrame: FC<UpdateGlobalNavFrameProps> = ({ details }) => {
+export const UpdateGlobalNavFrame: FC<UpdateGlobalNavFrameProps> = ({ details }) => {
     const [showChangelog, setShowChangelog] = useState<boolean>(false)
     const [install, setInstall] = useState<boolean>(false)
 

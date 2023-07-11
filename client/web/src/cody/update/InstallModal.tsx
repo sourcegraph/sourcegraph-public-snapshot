@@ -6,7 +6,7 @@ import { Alert, Button, H2, LoadingSpinner, Modal, Text } from '@sourcegraph/wil
 
 import { UpdateInfo } from './updater'
 
-interface InstallModalProps {
+export interface InstallModalProps {
     details: UpdateInfo
     onClose: () => void
 }

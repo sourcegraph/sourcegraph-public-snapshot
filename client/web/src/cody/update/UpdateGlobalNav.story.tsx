@@ -8,19 +8,17 @@ import 'storybook-addon-designs'
 
 import { Container } from '@sourcegraph/wildcard'
 
-import { SiteAdminUpdatePanelFrame, SiteAdminUpdatePanelProps } from './SiteAdminUpdatePanel'
+import { UpdateGlobalNav, UpdateGlobalNavFrame, UpdateGlobalNavFrameProps } from './UpdateGlobalNav'
 
-const meta: Meta<SiteAdminUpdatePanelProps> = {
-    title: 'cody-ui/Updater/Admin Page',
+const meta: Meta<UpdateGlobalNavFrameProps> = {
+    title: 'cody-ui/Updater/Global Nav',
     decorators: [
         Story => (
             <div>
                 We just render the update info component in a container. All states defined in the Content storybook
                 will show here accordingly.
                 <Container className="mt-3 pb-4" style={{ border: '1px dashed gray' }}>
-                    <Container className="container mt-0 pb-4">
-                        <Story />
-                    </Container>
+                    <Story />
                 </Container>
             </div>
         ),
@@ -35,18 +33,27 @@ const meta: Meta<SiteAdminUpdatePanelProps> = {
         ),
     ],
     args: {
-        update: {
+        details: {
             stage: 'IDLE',
             hasNewVersion: true,
+            newVersion: '1.2.3',
             description: 'The quick brown fox jumped over the lazy dog.',
             startInstall: () => {},
         },
     },
-    component: SiteAdminUpdatePanelFrame,
+    component: UpdateGlobalNavFrame,
 }
 
 export default meta
 
-type Story = StoryObj<SiteAdminUpdatePanelProps>
+type Story = StoryObj<typeof UpdateGlobalNav>
 
-export const Frame: Story = {}
+export const NoNewVersion: Story = {
+    args: {
+        details: {
+            hasNewVersion: false,
+        },
+    },
+}
+
+export const HasNewVersion: Story = {}
