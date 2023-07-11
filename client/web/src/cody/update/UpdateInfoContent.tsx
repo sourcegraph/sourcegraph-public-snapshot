@@ -1,90 +1,77 @@
 import { useState } from 'react'
 
-import { Alert, Button, Container, H3, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+import { mdiCheckCircle } from '@mdi/js'
+import classNames from 'classnames'
 
+import { Button, Icon, LoadingSpinner, Text } from '@sourcegraph/wildcard'
+
+import { ChangelogModal } from './ReviewAndInstallModal'
 import { UpdateInfo } from './updater'
+
+import styles from './UpdateInfoContent.module.scss'
 
 interface UpdateInfoContentProps {
     details: UpdateInfo
+    fromSettingsPage: boolean
 }
 
-function UpdateDetails({ details }: UpdateInfoContentProps): JSX.Element {
-    const [showDetails, setShowDetails] = useState<boolean>(false)
+function UpdateDetails({ details, fromSettingsPage }: UpdateInfoContentProps): JSX.Element {
+    const [reviewAndInstall, setReviewAndInstall] = useState<boolean>(false)
 
     return (
-        <div>
-            <Text className="mb-0">
-                Cody version upgrade from {details.version} to <b>{details.newVersion}</b> update available.
-            </Text>
-            <Button
-                variant="link"
-                onClick={() => setShowDetails(true)}
-                disabled={showDetails || details.description === undefined}
-            >
-                Details
-            </Button>
-            |
-            <Button
-                variant="link"
-                onClick={details.startInstall}
-                disabled={details.stage !== 'IDLE' || details.startInstall === undefined}
-            >
-                Install Now
-            </Button>
-            {['INSTALLING', 'PENDING'].includes(details.stage) && (
-                <Container className="d-flex p-2 mt-2">
-                    <LoadingSpinner />
-                    <Text className="ml-2 mb-1">Installing... Please wait...</Text>
-                </Container>
+        <>
+            <div className="d-flex align-items-center m-0">
+                <Text className="m-0">
+                    Cody version upgrade from {details.version} to <b>{details.newVersion}</b> update available.
+                </Text>
+                <Button
+                    variant="link"
+                    onClick={() => setReviewAndInstall(true)}
+                    disabled={details.startInstall === undefined}
+                >
+                    Review and Install
+                </Button>
+            </div>
+
+            {reviewAndInstall && (
+                <ChangelogModal
+                    details={details}
+                    fromSettingsPage={fromSettingsPage}
+                    onClose={() => {
+                        setReviewAndInstall(false)
+                        details.checkNow?.(true)
+                    }}
+                />
             )}
-            {details.stage === 'ERROR' && (
-                <div className="mt-2">
-                    <Alert variant="danger">
-                        {details.error}
-                        {details.checkNow !== undefined && (
-                            <Button
-                                variant="link"
-                                onClick={() => {
-                                    details.checkNow?.(true)
-                                }}
-                            >
-                                Try Again
-                            </Button>
-                        )}
-                    </Alert>
-                </div>
-            )}
-            {showDetails && (
-                <Container className="p-2 mt-2">
-                    <H3>Version {details.newVersion} Details</H3>
-                    <Text className="m-0">{details.description}</Text>
-                </Container>
-            )}
-        </div>
+        </>
     )
 }
 
-export function UpdateInfoContent({ details: update }: UpdateInfoContentProps): JSX.Element {
+export function UpdateInfoContent({ details: update, fromSettingsPage }: UpdateInfoContentProps): JSX.Element {
     return update.stage === 'CHECKING' ? (
-        <div className="d-flex">
+        <div className="d-flex align-items-center mt-2">
             <LoadingSpinner inline={true} />
-            <Text className="ml-2 mb-1">Please wait... Checking for updates...</Text>
+            <Text className="ml-2 mb-0">Please wait... Checking for updates...</Text>
         </div>
     ) : update.hasNewVersion ? (
-        <UpdateDetails details={update} />
+        <UpdateDetails details={update} fromSettingsPage={fromSettingsPage} />
     ) : (
-        <Text className="mb-1">
-            No updates needed. Application already up to date at {update.version}.
+        <div className="d-flex align-items-center">
             {update.checkNow !== undefined && (
                 <Button
+                    className="mr-2 p-0"
                     variant="link"
                     onClick={() => {
                         update.checkNow?.(true)
                     }}
                 >
-                    Check Now
+                    Check for updates
                 </Button>
             )}
-        </Text>
+            <div className={classNames('d-flex align-items-center', styles.upToDate)}>
+                <Icon inline={true} svgPath={mdiCheckCircle} aria-hidden={true} />
+                <Text className="ml-2 mb-0">You are running the latest version.</Text>
+            </div>
+        </div>
     )
 }

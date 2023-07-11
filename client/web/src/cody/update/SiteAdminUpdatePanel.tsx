@@ -6,7 +6,7 @@ export interface SiteAdminUpdatePanelProps {
 }
 
 export const SiteAdminUpdatePanelFrame: React.FC<SiteAdminUpdatePanelProps> = ({ update }) => (
-    <UpdateInfoContent details={update} />
+    <UpdateInfoContent details={update} fromSettingsPage={true} />
 )
 
 export function SiteAdminUpdatePanel(): JSX.Element {

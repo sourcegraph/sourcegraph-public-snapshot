@@ -57,12 +57,13 @@
 .menu-button {
     --link-color: var(--violet-04);
     padding: 0.25rem 0.4rem;
-    border-color: var(--violet-04);
+    color: var(--violet-04);
+    // border-color: var(--violet-04);
     background-color: var(--violet-01);
 
     &:hover {
-        --link-hover-color: var(--violet-06);
-        border-color: var(--violet-06);
+        --link-hover-color: var(--violet-04);
+        color: var(--violet-04);
         background-color: var(--violet-02);
     }
 

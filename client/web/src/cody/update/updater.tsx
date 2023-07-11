@@ -86,6 +86,7 @@ export function useUpdater(): UpdateInfo {
                     ...check,
                     stage: 'IDLE',
                     hasNewVersion: new SemVer(payload.version).compare(check.version || '0.0.0') === 1,
+                    newVersion: payload.version,
                     description: payload.body,
                 })
             )
@@ -111,5 +112,6 @@ export function useUpdater(): UpdateInfo {
             .catch(() => {})
     }, [])
 
+    console.log('Returning hook', lastCheck)
     return lastCheck
 }
