@@ -65,7 +65,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
         onSimpleSearchUpdate(updatedQuery)
     }, [repoPattern, repoNames, useForks, useArchive, predicateState, searchContext, onSimpleSearchUpdate])
 
-    const updatePreds = (key, value): void => {
+    const updatePreds = (key: string, value: string): void => {
         setPredicateState({ ...predicateState, [key]: value })
     }
 
@@ -77,7 +77,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             Exact repository name
                             <Tooltip content="Match repository names exactly.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -98,7 +98,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         <Label htmlFor="repoNamePatterns" className="col-4 col-form-label">
                             Match against a name pattern
                             <Tooltip content="Use a regular expression pattern to match against repository names.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-8">
@@ -116,7 +116,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         <Label htmlFor="searchForks" className="col-4 col-form-label">
                             Search over repository forks?
                             <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-2">
@@ -134,7 +134,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         <Label htmlFor="searchArchive" className="col-4 col-form-label">
                             Search over archived repositories?
                             <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-2">
@@ -157,7 +157,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     <Label htmlFor="filePathsPattern" className="col-4 col-form-label">
                         Contains file path
                         <Tooltip content="Use a regular expression pattern to match against file paths, for example sourcegraph/.*/internal">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
                     <div className="col-8">
@@ -175,7 +175,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     <Label htmlFor="fileContentPattern" className="col-4 col-form-label">
                         Contains file content
                         <Tooltip content="Use a regular expression pattern to match against file content, for example \w*Manager">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
                     <div className="col-8">
@@ -193,7 +193,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     <Label htmlFor="repoDescriptionPattern" className="col-4 col-form-label">
                         Repository description
                         <Tooltip content="Use a regular expression pattern to match against repository description, for example 'react library'">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
                     <div className="col-8">
@@ -211,7 +211,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     <Label htmlFor="repoMetadata" className="col-4 col-form-label">
                         Repository metadata
                         <Tooltip content="Match repositories that have a metadata key / value pair {key:value}. Metadata is a Sourcegraph entity that provides key:value mappings to repositories.">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
                     <div className="col-8">
@@ -230,7 +230,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     <Label htmlFor="searchContext" className="col-4 col-form-label">
                         Search context
                         <Tooltip content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. The global context  will search over all code on Sourcegraph.">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
                     <div className="col-8">

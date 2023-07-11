@@ -125,9 +125,9 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         [submitSearchOnChangeRef]
     )
 
-    const onSimpleSearchUpdate = useCallback(val => {
+    const onSimpleSearchUpdate = useCallback((val:string) => {
         setQueryState({ query: val })
-    }, [])
+    }, [setQueryState])
 
     // TODO (#48103): Remove/simplify when new search input is released
     const input = experimentalQueryInput ? (

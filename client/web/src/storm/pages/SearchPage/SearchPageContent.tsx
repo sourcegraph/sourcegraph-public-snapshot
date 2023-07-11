@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 
 import classNames from 'classnames'
 
@@ -87,7 +87,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             placement="top"
                         >
                             <div className={styles.translucent}>
-                                <SearchPageInput queryState={queryState} setQueryState={setQueryState} />
+                                <SearchPageInput simpleSearch={false} queryState={queryState} setQueryState={setQueryState} />
                             </div>
                         </Tooltip>
                         <AddCodeHostWidget className="mb-4" />

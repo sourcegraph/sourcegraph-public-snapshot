@@ -125,7 +125,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <Label htmlFor="commitMessagePattern" className="col-4 col-form-label">
                             Commit message contains pattern
                             <Tooltip content="Search for changes with a commit message that matches a regular expression pattern.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -146,7 +146,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <Label htmlFor="repoNamePattern" className="col-4 col-form-label">
                             Author matches pattern
                             <Tooltip content="Search for the commit author name or email using a regular expression.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -167,7 +167,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <Label htmlFor="fileContentPattern" className="col-4 col-form-label">
                             Diff contains code matching pattern
                             <Tooltip content="Search for matching diff file content using a regular expression.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -188,7 +188,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <Label htmlFor="diffPathPattern" className="col-4 col-form-label">
                             Diff contains file path
                             <Tooltip content="Search for matching diff containing a matching file path regular expression">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -212,7 +212,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             In these repos
                             <Tooltip content="Match repository names exactly.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -233,7 +233,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <Label htmlFor="repoNamePatterns" className="col-4 col-form-label">
                             In matching repos
                             <Tooltip content="Use a regular expression pattern to match against repository names.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-8">
@@ -251,7 +251,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <Label htmlFor="searchForks" className="col-4 col-form-label">
                             Search over repository forks?
                             <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-2">
@@ -269,7 +269,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <Label htmlFor="searchArchive" className="col-4 col-form-label">
                             Search over archived repositories?
                             <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-2">
@@ -291,7 +291,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                     <Label htmlFor="searchContext" className="col-4 col-form-label">
                         Search context
                         <Tooltip content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. The global context  will search over all code on Sourcegraph.">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
                     <div className="col-8">

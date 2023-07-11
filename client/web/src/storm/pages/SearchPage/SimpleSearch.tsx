@@ -1,4 +1,4 @@
-import React, { FC, useState } from 'react'
+import { FC, useState } from 'react'
 
 import { mdiArrowLeft, mdiHelpCircleOutline } from '@mdi/js'
 
@@ -23,6 +23,8 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
                 return <RepoSearchSimpleSearch {...props} />
             case 'changes':
                 return <FindChangesSimpleSearch {...props} />
+            default:
+                return <SearchPicker setShowState={setShowState} />
         }
     }
 
@@ -31,7 +33,7 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
             {showState !== 'default' && (
                 <div>
                     <Button className="mb-2" onClick={() => setShowState('default')}>
-                        <Icon svgPath={mdiArrowLeft} />
+                        <Icon aria-label='hover icon for help tooltip' svgPath={mdiArrowLeft} />
                         Back
                     </Button>
                     <Text>
@@ -46,7 +48,7 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
 }
 
 interface SearchPickerProps {
-    setShowState
+    setShowState: (state: string) => void
 }
 
 const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
@@ -61,7 +63,7 @@ const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
                 <div>
                     <H3>Find code</H3>
                     <Text className="mt-2">Look for examples of code, specifically or with a pattern</Text>
-                    <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                    <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                 </div>
             </Button>
         </Tooltip>
@@ -75,7 +77,7 @@ const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
             >
                 <H3>Find repositories</H3>
                 <Text className="mt-2">Look for repositories by name, file contents, metadata, or owners</Text>
-                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
             </Button>
         </Tooltip>
 
@@ -88,7 +90,7 @@ const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
             >
                 <H3>Look for changes</H3>
                 <Text className="mt-2">Look for changes in commit messages or search over diffs in the code</Text>
-                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
+                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
             </Button>
         </Tooltip>
     </div>
