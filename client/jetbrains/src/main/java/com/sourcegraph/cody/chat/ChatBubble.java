@@ -20,17 +20,25 @@ public class ChatBubble extends JPanel {
 
   @NotNull
   private JPanel buildMessagePanel(@NotNull ChatMessage message) {
+    /* Create panel */
     MessagePanel messagePanel =
         new MessagePanel(message.getSpeaker(), ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+
+    /* Convert markdown-formatted chat message to Swing components */
     Parser parser = Parser.builder().extensions(List.of(TablesExtension.create())).build();
     Node document = parser.parse(message.getDisplayText());
     MessageContentCreatorFromMarkdownNodes messageContentCreator =
         new MessageContentCreatorFromMarkdownNodes(
             messagePanel, message.getSpeaker(), ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
     document.accept(messageContentCreator);
+
     return messagePanel;
   }
 
+  /**
+   * This is useful when receiving the streamed response. In the background, it removes the last
+   * message and adds the updated one.
+   */
   public void updateText(@NotNull ChatMessage message) {
     JPanel newMessage = buildMessagePanel(message);
     this.remove(0);

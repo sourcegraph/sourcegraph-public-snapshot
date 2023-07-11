@@ -35,7 +35,9 @@ func (m MockAuthProvider) Config() schema.AuthProviders {
 }
 
 func (m MockAuthProvider) CachedInfo() *Info {
-	panic("should not be called")
+	return &Info{
+		DisplayName: m.MockConfigID.Type,
+	}
 }
 
 func (m MockAuthProvider) Refresh(_ context.Context) error {

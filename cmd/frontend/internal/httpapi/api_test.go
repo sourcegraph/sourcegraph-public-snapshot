@@ -24,7 +24,7 @@ func init() {
 func newTest(t *testing.T) *httptestutil.Client {
 	logger := logtest.Scoped(t)
 	enterpriseServices := enterprise.DefaultServices()
-	rateLimitStore, _ := memstore.New(1024)
+	rateLimitStore, _ := memstore.NewCtx(1024)
 	rateLimiter := graphqlbackend.NewBasicLimitWatcher(logger, rateLimitStore)
 
 	db := database.NewMockDB()

@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
 import com.sourcegraph.api.GraphQlClient;
-import com.sourcegraph.cody.vscode.CancellationToken;
 import java.io.IOException;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,8 +54,7 @@ public class CompletionsService {
   public void streamCompletion(
       @NotNull CompletionsInput input,
       @NotNull CompletionsCallbacks cb,
-      @NotNull Endpoint endpoint,
-      CancellationToken token) {
+      @NotNull Endpoint endpoint) {
     Gson gson =
         new GsonBuilder()
             .registerTypeAdapter(Speaker.class, new SpeakerLowercaseSerializer())
@@ -65,7 +63,7 @@ public class CompletionsService {
     String body = gson.toJsonTree(input).getAsJsonObject().toString();
 
     SSEClient sseClient =
-        new SSEClient(instanceUrl + endpoint.urlPath, accessToken, body, cb, endpoint, token);
+        new SSEClient(instanceUrl + endpoint.urlPath, accessToken, body, cb, endpoint);
     sseClient.start();
   }
 }

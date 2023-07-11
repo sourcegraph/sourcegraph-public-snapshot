@@ -7,7 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -317,11 +317,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
 	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
-		ChatModel:                "anthropic/claude-v1",
-		ChatModelMaxTokens:       9000,
-		FastChatModel:            "anthropic/claude-instant-v1",
+		ChatModel:                "anthropic/claude-2",
+		ChatModelMaxTokens:       12000,
+		FastChatModel:            "anthropic/claude-instant-1",
 		FastChatModelMaxTokens:   9000,
-		CompletionModel:          "anthropic/claude-instant-v1",
+		CompletionModel:          "anthropic/claude-instant-1",
 		CompletionModelMaxTokens: 9000,
 		AccessToken:              licenseAccessToken,
 		Provider:                 "sourcegraph",
@@ -406,11 +406,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "claude-v1",
-				ChatModelMaxTokens:       9000,
-				FastChatModel:            "claude-instant-v1",
+				ChatModel:                "claude-2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "claude-instant-1",
 				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-v1",
+				CompletionModel:          "claude-instant-1",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              "asdf",
 				Provider:                 "anthropic",
@@ -427,15 +427,15 @@ func TestGetCompletionsConfig(t *testing.T) {
 					Provider:        "anthropic",
 					AccessToken:     "asdf",
 					ChatModel:       "claude-v1",
-					CompletionModel: "claude-instant-v1",
+					CompletionModel: "claude-instant-1",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "claude-v1",
 				ChatModelMaxTokens:       9000,
-				FastChatModel:            "claude-instant-v1",
+				FastChatModel:            "claude-instant-1",
 				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-v1",
+				CompletionModel:          "claude-instant-1",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              "asdf",
 				Provider:                 "anthropic",
@@ -498,16 +498,16 @@ func TestGetCompletionsConfig(t *testing.T) {
 				LicenseKey:  licenseKey,
 				Completions: &schema.Completions{
 					ChatModel:       "anthropic/claude-v1.3",
-					FastChatModel:   "anthropic/claude-instant-v1.3",
-					CompletionModel: "anthropic/claude-instant-v1.3",
+					FastChatModel:   "anthropic/claude-instant-1.3",
+					CompletionModel: "anthropic/claude-instant-1.3",
 				},
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				ChatModel:                "anthropic/claude-v1.3",
 				ChatModelMaxTokens:       9000,
-				FastChatModel:            "anthropic/claude-instant-v1.3",
+				FastChatModel:            "anthropic/claude-instant-1.3",
 				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "anthropic/claude-instant-v1.3",
+				CompletionModel:          "anthropic/claude-instant-1.3",
 				CompletionModelMaxTokens: 9000,
 				AccessToken:              licenseAccessToken,
 				Provider:                 "sourcegraph",
@@ -546,11 +546,11 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 			wantConfig: &conftypes.CompletionsConfig{
 				AccessToken:              "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
-				ChatModel:                "anthropic/claude-v1",
-				ChatModelMaxTokens:       9000,
-				FastChatModel:            "anthropic/claude-instant-v1",
+				ChatModel:                "anthropic/claude-2",
+				ChatModelMaxTokens:       12000,
+				FastChatModel:            "anthropic/claude-instant-1",
 				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "anthropic/claude-instant-v1",
+				CompletionModel:          "anthropic/claude-instant-1",
 				CompletionModelMaxTokens: 9000,
 				Endpoint:                 "https://cody-gateway.sourcegraph.com",
 				Provider:                 "sourcegraph",
@@ -565,8 +565,8 @@ func TestGetCompletionsConfig(t *testing.T) {
 					AccessToken:     "CUSTOM_TOKEN",
 					Provider:        "anthropic",
 					ChatModel:       "claude-v1",
-					FastChatModel:   "claude-instant-v1",
-					CompletionModel: "claude-instant-v1",
+					FastChatModel:   "claude-instant-1",
+					CompletionModel: "claude-instant-1",
 				},
 				App: &schema.App{
 					DotcomAuthToken: "TOKEN",
@@ -576,9 +576,9 @@ func TestGetCompletionsConfig(t *testing.T) {
 				AccessToken:              "CUSTOM_TOKEN",
 				ChatModel:                "claude-v1",
 				ChatModelMaxTokens:       9000,
-				CompletionModel:          "claude-instant-v1",
+				CompletionModel:          "claude-instant-1",
 				FastChatModelMaxTokens:   9000,
-				FastChatModel:            "claude-instant-v1",
+				FastChatModel:            "claude-instant-1",
 				CompletionModelMaxTokens: 9000,
 				Provider:                 "anthropic",
 				Endpoint:                 "https://api.anthropic.com/v1/complete",
