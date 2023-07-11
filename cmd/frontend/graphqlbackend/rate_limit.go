@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"context"
 	"strconv"
 	"sync/atomic"
 
@@ -369,7 +370,7 @@ type LimiterArgs struct {
 }
 
 type Limiter interface {
-	RateLimit(key string, quantity int, args LimiterArgs) (bool, throttled.RateLimitResult, error)
+	RateLimit(ctx context.Context, key string, quantity int, args LimiterArgs) (bool, throttled.RateLimitResult, error)
 }
 
 type LimitWatcher interface {
@@ -434,40 +435,9 @@ type BasicLimiter struct {
 
 // RateLimit limits unauthenticated requests to the GraphQL API with an equal
 // quantity of 1.
-func (bl *BasicLimiter) RateLimit(_ string, _ int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
+func (bl *BasicLimiter) RateLimit(ctx context.Context, _ string, _ int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
 	if args.Anonymous && args.RequestName == "unknown" && args.RequestSource == trace.SourceOther && bl.GCRARateLimiterCtx != nil {
-		return bl.GCRARateLimiterCtx.RateLimit("basic", 1)
+		return bl.GCRARateLimiterCtx.RateLimitCtx(ctx, "basic", 1)
 	}
 	return false, throttled.RateLimitResult{}, nil
-}
-
-type RateLimiter struct {
-	enabled     bool
-	ipLimiter   *throttled.GCRARateLimiterCtx
-	userLimiter *throttled.GCRARateLimiterCtx
-	overrides   map[string]limiter
-}
-
-func (rl *RateLimiter) RateLimit(uid string, cost int, args LimiterArgs) (bool, throttled.RateLimitResult, error) {
-	if r, ok := rl.overrides[uid]; ok {
-		return r.RateLimit(uid, cost)
-	}
-	if args.IsIP {
-		return rl.ipLimiter.RateLimit(uid, cost)
-	}
-	return rl.userLimiter.RateLimit(uid, cost)
-}
-
-type limiter interface {
-	RateLimit(string, int) (bool, throttled.RateLimitResult, error)
-}
-
-// fixedLimiter is a rate limiter that always returns the same result
-type fixedLimiter struct {
-	limited bool
-	result  throttled.RateLimitResult
-}
-
-func (f *fixedLimiter) RateLimit(string, int) (bool, throttled.RateLimitResult, error) {
-	return f.limited, f.result, nil
 }
