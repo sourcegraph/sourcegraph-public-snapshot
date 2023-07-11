@@ -38,7 +38,7 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 	var span trace.Span
 	ctx, span = tracer.Start(ctx, "openai.GenerateEmbeddings",
 		trace.WithAttributes(
-			attribute.Int("input.model", len(input.Model)),
+			attribute.String("input.model", input.Model),
 			attribute.Int("input.length", len(input.Input))))
 	defer func() {
 		if err != nil {
