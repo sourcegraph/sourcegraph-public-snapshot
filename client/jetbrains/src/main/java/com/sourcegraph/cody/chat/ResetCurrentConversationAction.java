@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.chat;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.UpdatableChat;
