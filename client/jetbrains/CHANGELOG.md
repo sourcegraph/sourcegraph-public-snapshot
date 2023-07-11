@@ -24,6 +24,8 @@
 
 ### Fixed
 
+- Now avoiding NullPointerException in an edge case when the chat doesn't exist [#54785](https://github.com/sourcegraph/sourcegraph/pull/54785)
+
 ### Security
 
 ## [3.0.3]
