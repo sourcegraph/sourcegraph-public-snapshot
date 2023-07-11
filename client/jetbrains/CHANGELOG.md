@@ -16,12 +16,15 @@
 - rename `completion` to `autocomplete` in both the UI and code [#54606](https://github.com/sourcegraph/sourcegraph/pull/54606)
 - Increased minimum rows of prompt input form 2 to 3 [#54733](https://github.com/sourcegraph/sourcegraph/pull/54733)
 - improved completion prompt with changes from the VS Code plugin [#54668](https://github.com/sourcegraph/sourcegraph/pull/54668)
+- Display more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
 
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+- Now avoiding NullPointerException in an edge case when the chat doesn't exist [#54785](https://github.com/sourcegraph/sourcegraph/pull/54785)
 
 ### Security
 
@@ -37,7 +40,6 @@
 
 - Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
 - Sourcegraph link sharing and opening file in browser actions are disabled when working with Cody app [#54473](https://github.com/sourcegraph/sourcegraph/pull/54473)
-- Display more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
 
 ### Deprecated
 

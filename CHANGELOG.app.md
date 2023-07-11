@@ -15,6 +15,9 @@ All notable changes to the Cody app are documented in this file.
 
 ## Unreleased
 
+## v2023.7.11
+
+- Added support for Claude 2. This model improves Cody’s reasoning ability and often increases accuracy.
 - Added a new settings screen to view Cody rate limits and usage
 - Fixes conflicts on port 6060
 

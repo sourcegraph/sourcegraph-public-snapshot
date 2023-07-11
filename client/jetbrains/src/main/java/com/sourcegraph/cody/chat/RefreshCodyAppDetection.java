@@ -18,7 +18,9 @@ public class RefreshCodyAppDetection extends DumbAwareAction {
     UpdatableChatHolderService updatableChatHolderService =
         project.getService(UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    updatableChat.refreshPanelsVisibility();
+    if (updatableChat != null) {
+      updatableChat.refreshPanelsVisibility();
+    }
   }
 
   /**
@@ -33,7 +35,9 @@ public class RefreshCodyAppDetection extends DumbAwareAction {
       UpdatableChatHolderService updatableChatHolderService =
           project.getService(UpdatableChatHolderService.class);
       UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-      updatableChat.refreshPanelsVisibility();
+      if (updatableChat != null) {
+        updatableChat.refreshPanelsVisibility();
+      }
     }
   }
 }

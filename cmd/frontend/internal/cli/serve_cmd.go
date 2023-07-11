@@ -379,14 +379,14 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 }
 
 func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
-	var store throttled.GCRAStore
+	var store throttled.GCRAStoreCtx
 	var err error
 	if pool, ok := redispool.Cache.Pool(); ok {
-		store, err = redigostore.New(pool, "gql:rl:", 0)
+		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	} else {
 		// If redis is disabled we are in Sourcegraph App and can rely on an
 		// in-memory store.
-		store, err = memstore.New(0)
+		store, err = memstore.NewCtx(0)
 	}
 	if err != nil {
 		return nil, err

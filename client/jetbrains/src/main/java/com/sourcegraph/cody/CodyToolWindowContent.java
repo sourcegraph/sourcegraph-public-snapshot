@@ -140,12 +140,6 @@ class CodyToolWindowContent implements UpdatableChat {
     JButton findCodeSmellsButton = createRecipeButton("Smell code");
     findCodeSmellsButton.addActionListener(
         e -> new FindCodeSmellsAction().executeRecipeWithPromptProvider(this, project));
-    // JButton fixupButton = createWideButton("Fixup code from inline instructions");
-    // fixupButton.addActionListener(e -> recipeRunner.runFixup());
-    // JButton contextSearchButton = createWideButton("Codebase context search");
-    // contextSearchButton.addActionListener(e -> recipeRunner.runContextSearch());
-    // JButton releaseNotesButton = createWideButton("Generate release notes");
-    // releaseNotesButton.addActionListener(e -> recipeRunner.runReleaseNotes());
     recipesPanel.add(explainCodeDetailedButton);
     recipesPanel.add(explainCodeHighLevelButton);
     recipesPanel.add(generateUnitTestButton);
@@ -154,9 +148,6 @@ class CodyToolWindowContent implements UpdatableChat {
     recipesPanel.add(translateToLanguageButton);
     recipesPanel.add(gitHistoryButton);
     recipesPanel.add(findCodeSmellsButton);
-    //    recipesPanel.add(fixupButton);
-    //    recipesPanel.add(contextSearchButton);
-    //    recipesPanel.add(releaseNotesButton);
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
@@ -404,7 +395,7 @@ class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
-  private void addComponentToChat(JPanel message) {
+  private void addComponentToChat(@NotNull JPanel message) {
 
     var bubblePanel = new JPanel();
     bubblePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
@@ -533,7 +524,8 @@ class CodyToolWindowContent implements UpdatableChat {
     sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
   }
 
-  private void sendMessage(@NotNull Project project, ChatMessage message, String responsePrefix) {
+  private void sendMessage(
+      @NotNull Project project, @NotNull ChatMessage message, @NotNull String responsePrefix) {
     if (!sendButton.isEnabled()) {
       return;
     }
