@@ -15,15 +15,15 @@ const predicates = {
 }
 
 const getQuery = ({
-                      repoPattern,
-                      repoNames,
-                      filePaths,
-                      useForks,
-                      useArchive,
-                      messagePattern,
-                      authorPattern,
-                      diffCodePattern,
-                      searchContext,
+    repoPattern,
+    repoNames,
+    filePaths,
+    useForks,
+    useArchive,
+    messagePattern,
+    authorPattern,
+    diffCodePattern,
+    searchContext,
 }): string => {
     // build query
     const terms: string[] = []
@@ -90,7 +90,6 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
     const [authorPattern, setAuthorPattern] = useState<string>('')
     const [diffCodePattern, setDiffCodePattern] = useState<string>('')
 
-
     useEffect(() => {
         // Update the query whenever any of the other fields change
         const updatedQuery = getQuery({
@@ -115,7 +114,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
         authorPattern,
         diffCodePattern,
         searchContext,
-        onSimpleSearchUpdate
+        onSimpleSearchUpdate,
     ])
 
     return (
@@ -123,7 +122,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
             <Form className="mt-4" onSubmit={onSubmit}>
                 <div id="contentFilterSection">
                     <div className="form-group row">
-                        <Label htmlFor="repoName" className="col-4 col-form-label">
+                        <Label htmlFor="commitMessagePattern" className="col-4 col-form-label">
                             Commit message contains pattern
                             <Tooltip content="Search for changes with a commit message that matches a regular expression pattern.">
                                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
@@ -133,8 +132,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <div className="col-8">
                             <div className="input-group">
                                 <Input
-                                    id="repoName"
-                                    name="repoName"
+                                    id="commitMessagePattern"
+                                    name="commitMessagePattern"
                                     placeholder="class CustomerManager"
                                     type="text"
                                     onChange={event => setMessagePattern(event.target.value)}
@@ -144,7 +143,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                     </div>
 
                     <div className="form-group row">
-                        <Label htmlFor="repoName" className="col-4 col-form-label">
+                        <Label htmlFor="repoNamePattern" className="col-4 col-form-label">
                             Author matches pattern
                             <Tooltip content="Search for the commit author name or email using a regular expression.">
                                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
@@ -154,8 +153,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <div className="col-8">
                             <div className="input-group">
                                 <Input
-                                    id="repoName"
-                                    name="repoName"
+                                    id="repoNamePattern"
+                                    name="repoNamePattern"
                                     placeholder="@sourcegraph.com"
                                     type="text"
                                     onChange={event => setAuthorPattern(event.target.value)}
@@ -165,7 +164,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                     </div>
 
                     <div className="form-group row">
-                        <Label htmlFor="repoName" className="col-4 col-form-label">
+                        <Label htmlFor="fileContentPattern" className="col-4 col-form-label">
                             Diff contains code matching pattern
                             <Tooltip content="Search for matching diff file content using a regular expression.">
                                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
@@ -175,8 +174,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <div className="col-8">
                             <div className="input-group">
                                 <Input
-                                    id="repoName"
-                                    name="repoName"
+                                    id="fileContentPattern"
+                                    name="fileContentPattern"
                                     placeholder="class \w*Manager"
                                     type="text"
                                     onChange={event => setDiffCodePattern(event.target.value)}
@@ -186,7 +185,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                     </div>
 
                     <div className="form-group row">
-                        <Label htmlFor="repoName" className="col-4 col-form-label">
+                        <Label htmlFor="diffPathPattern" className="col-4 col-form-label">
                             Diff contains file path
                             <Tooltip content="Search for matching diff containing a matching file path regular expression">
                                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
@@ -196,8 +195,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                         <div className="col-8">
                             <div className="input-group">
                                 <Input
-                                    id="repoName"
-                                    name="repoName"
+                                    id="diffPathPattern"
+                                    name="diffPathPattern"
                                     placeholder="README|LICENSE"
                                     type="text"
                                     onChange={event => setFilePaths(event.target.value)}
@@ -298,8 +297,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                     <div className="col-8">
                         <Input
                             value={searchContext}
-                            id="text"
-                            name="text"
+                            id="searchContext"
+                            name="searchContext"
                             type="text"
                             onChange={event => setSearchContext(event.target.value)}
                         />

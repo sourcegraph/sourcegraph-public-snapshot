@@ -96,7 +96,7 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
         languageFilter,
         useArchive,
         searchContext,
-        onSimpleSearchUpdate
+        onSimpleSearchUpdate,
     ])
 
     return (
@@ -116,7 +116,6 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                                 <Input
                                     disabled={regexpContent?.length > 0}
                                     id="repoName"
-                                    name="repoName"
                                     placeholder="class CustomerManager"
                                     type="text"
                                     onChange={event => setLiteralContent(event.target.value)}
@@ -138,7 +137,6 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                                 <Input
                                     disabled={literalContent?.length > 0}
                                     id="repoName"
-                                    name="repoName"
                                     placeholder="class \w*Manager"
                                     type="text"
                                     onChange={event => setRegexpContent(event.target.value)}
@@ -163,7 +161,6 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                             <div className="input-group">
                                 <Input
                                     id="repoName"
-                                    name="repoName"
                                     placeholder="sourcegraph/sourcegraph"
                                     type="text"
                                     onChange={event => setRepoNames(event.target.value)}
@@ -232,7 +229,7 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                 <hr className="mt-4 mb-4" />
 
                 <div className="form-group row">
-                    <Label htmlFor="text" className="col-4 col-form-label">
+                    <Label htmlFor="filePathPattern" className="col-4 col-form-label">
                         In matching file paths
                         <Tooltip content="Use a regular expression pattern to match against file paths, for example sourcegraph/.*/internal">
                             <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
@@ -240,8 +237,8 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     </Label>
                     <div className="col-8">
                         <Input
-                            id="text"
-                            name="text"
+                            id="filePathPattern"
+                            name="filePathPattern"
                             type="text"
                             placeholder="enterprise/.*"
                             onChange={event => setFilePaths(event.target.value)}
@@ -262,9 +259,9 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                             name="searchLang"
                             onChange={event => setLanguageFilter(event.target.value)}
                         >
-                            <option hidden>Any</option>
-                            {languages.map(lang => (
-                                <option value={lang}>{lang}</option>
+                            <option hidden={true}>Any</option>
+                            {languages.map((lang, i) => (
+                                <option key={i} value={lang}>{lang}</option>
                             ))}
                         </Select>
                     </div>
