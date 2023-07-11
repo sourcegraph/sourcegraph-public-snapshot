@@ -9,8 +9,8 @@ import { UpdateInfo } from './updater'
 
 import styles from './ReviewAndInstallModal.module.scss'
 
-interface ChangelogModalProps {
-    fromSettingsPage: boolean
+export interface ChangelogModalProps {
+    fromSettingsPage?: boolean
     details: UpdateInfo
     onClose: () => void
 }

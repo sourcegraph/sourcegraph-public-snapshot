@@ -13,6 +13,12 @@ export interface InstallModalProps {
 
 const labelId = 'newVersionInfo'
 
+/**
+ * InstallModal component displays the update/installation progress and result.
+ *
+ * @param details UpdateInfo object containing details of the update/installation.
+ * @param onClose Callback function to close the modal.
+ */
 export const InstallModal: React.FC<InstallModalProps> = ({ details, onClose }) => (
     <Modal className={classNames('d-flex flex-column')} aria-labelledby={labelId} style={{ maxHeight: '60%' }}>
         <H2 className="mb-4">Installing Version {details.newVersion}</H2>

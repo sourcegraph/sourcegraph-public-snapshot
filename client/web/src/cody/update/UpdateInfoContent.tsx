@@ -12,7 +12,7 @@ import styles from './UpdateInfoContent.module.scss'
 
 interface UpdateInfoContentProps {
     details: UpdateInfo
-    fromSettingsPage: boolean
+    fromSettingsPage?: boolean
 }
 
 function UpdateDetails({ details, fromSettingsPage }: UpdateInfoContentProps): JSX.Element {
@@ -47,6 +47,13 @@ function UpdateDetails({ details, fromSettingsPage }: UpdateInfoContentProps): J
     )
 }
 
+/**
+ * UpdateInfoContent component renders update information and actions.
+ *
+ * @param details - Update information object.
+ * @param fromSettingsPage - Whether the component is rendered on settings page.
+ * @returns - Rendered component.
+ */
 export function UpdateInfoContent({ details: update, fromSettingsPage }: UpdateInfoContentProps): JSX.Element {
     return update.stage === 'CHECKING' ? (
         <div className="d-flex align-items-center mt-2">

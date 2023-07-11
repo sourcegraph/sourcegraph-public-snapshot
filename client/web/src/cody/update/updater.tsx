@@ -22,6 +22,19 @@ export interface UpdateInfo {
     error?: string
 }
 
+/**
+ * A React hook to check for app updates.
+ *
+ * @returns An object with:
+ * - `stage`: The current stage of the update check ('IDLE' | 'CHECKING' | 'INSTALLING' | UpdateStatus)
+ * - `hasNewVersion`: Whether there is an available update
+ * - `version`: The current app version
+ * - `newVersion`: The available update version
+ * - `description`: The update description (supports markdown)
+ * - `startInstall()`: A function to start installing the available update
+ * - `checkNow(force)`: A function to manually check for updates. Pass `true` to force a check even if an update was recently found.
+ * - `error`: Any error that occurred during update checking
+ */
 export function useUpdater(): UpdateInfo {
     const [lastCheck, setLastCheck] = useState<UpdateInfo>({
         stage: 'CHECKING',
