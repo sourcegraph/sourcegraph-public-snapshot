@@ -521,22 +521,30 @@ export class ChatViewProvider implements vscode.WebviewViewProvider, vscode.Disp
                 this.transcript.addAssistantResponse('', 'Choosing plugins for additional context...\n')
                 this.sendTranscript()
 
+                // add data source context to Cody context
+                const { prompt: history } = await this.transcript.getPromptForLastInteraction(
+                    getPreamble(this.codebaseContext.getCodebase()),
+                    this.maxPromptTokens
+                )
+
                 let pluginContextMessages: Message[] = []
                 try {
                     // todo: get query together with previous context
                     // choose which plugins should be run based on the recipe and message
-                    const chosenPlugins = await plugins.chooseDataSources(humanChatInput, this.chat)
-                    this.transcript.addAssistantResponse(
-                        '',
-                        `Querying ${chosenPlugins
-                            .map(([pluginName]) => pluginName)
-                            .join(', ')} for additional context...\n`
-                    )
-                    this.sendTranscript()
-                    const dataSources = chosenPlugins.map(([, dataSource]) => dataSource)
+                    const chosenPlugins = await plugins.chooseDataSources(humanChatInput, this.chat, history)
+                    if (chosenPlugins.length !== 0) {
+                        this.transcript.addAssistantResponse(
+                            '',
+                            `Querying ${chosenPlugins
+                                .map(([pluginName]) => pluginName)
+                                .join(', ')} for additional context...\n`
+                        )
+                        this.sendTranscript()
+                        const dataSources = chosenPlugins.map(([, dataSource]) => dataSource)
 
-                    // run data source functions in parallel
-                    pluginContextMessages = await plugins.getContext(dataSources)
+                        // run data source functions in parallel
+                        pluginContextMessages = await plugins.getContext(dataSources)
+                    }
                 } catch (error) {
                     console.error('Error getting plugin context', error)
                 }

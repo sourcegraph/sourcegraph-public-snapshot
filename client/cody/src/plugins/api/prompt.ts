@@ -2,7 +2,12 @@ import { Message } from '@sourcegraph/cody-shared/src/sourcegraph-api'
 
 import { IPluginFunctionChosenDescriptor, IPluginFunctionDescriptor } from './types'
 
-export const makePrompt = (question: string, funcs: IPluginFunctionDescriptor[]): Message[] => [
+export const makePrompt = (
+    humanChatInput: string,
+    funcs: IPluginFunctionDescriptor[],
+    history: Message[] = []
+): Message[] => [
+    ...history,
     {
         speaker: 'human',
         text: `Some facts you should know are:
@@ -13,7 +18,7 @@ Also, I have following functions to call:
 ${JSON.stringify(funcs, null, 2)}
 \`\`\`
 
-Choose up to 3 functions that you want to call to properly answer my question. Respond in a only json format like this, example:
+Choose up to 3 functions that you want to call to properly reply to me. Respond in a only json format like this, example:
 \`\`\`json
 ${JSON.stringify(
     [
@@ -36,9 +41,9 @@ If no additional function call is needed respond with empty JSON array, like thi
 
 Order array elements by priority, the first element is the most important one.
 
-My question is:
+My reply starts\n\n:
 
-${JSON.stringify(question)}
+${JSON.stringify(humanChatInput)}
 `,
     },
     {
