@@ -76,75 +76,23 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 		}
 	}()
 
-	// NOTE(scip-migration): This behavior in the following function has been copied from the upload
-	// processing procedure to match the logic for newly uploaded index files. See the original code
-	// in the uploads service for more detail (.../lsifstore/insert.go).
+	// Convert symbol names into a tree structure we'll insert into the database
+	// All identifiers here are created ahead of the insertion so we do not need
+	// to do multiple round-trips to get new insertion identifiers for pending
+	// data - everything is known up-front.
 
-	// Create helpers to create new tree nodes with (upload-)unique identifiers
 	id := func() int { id := nextSymbolLookupID; nextSymbolLookupID++; return id }
-	createSchemeNode := func() SchemeNode { return SchemeNode(newNodeWithID[PackageManagerNode](id())) }
-	createPackageManagerNode := func() PackageManagerNode { return PackageManagerNode(newNodeWithID[PackageNameNode](id())) }
-	createPackageNameNode := func() PackageNameNode { return PackageNameNode(newNodeWithID[PackageVersionNode](id())) }
-	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[DescriptorNode](id())) }
-	createDescriptor := func() DescriptorNode { return DescriptorNode(newNodeWithID[descriptor](id())) }
-
-	type explodedIDs struct {
-		descriptorID         int
-		descriptorNoSuffixID int
+	cache, traverser, err := constructSymbolLookupTable(symbolNames, id)
+	if err != nil {
+		return nil, err
 	}
-	cache := map[string]explodedIDs{}              // Tracks symbol name -> identifiers in the scheme tree
-	schemeTree := map[string]SchemeNode{}          // Tracks scheme -> manager -> name -> version -> descriptor
-	descriptorsNoSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
 
+	// Bulk insert the content of the tree / descriptor-no-suffix map
 	symbolNameBatchMigrator := func(ctx context.Context, symbolLookupInserter *batch.Inserter) error {
-		for _, symbolName := range symbolNames {
-			symbol, err := symbols.NewExplodedSymbol(symbolName)
-			if err != nil {
-				return err
-			}
-
-			// Assign the parts of the exploded symbol into the scheme tree. If a prefix of
-			// the exploded symbol is already in the tree then existing nodes will be re-used.
-			// Laying out the exploded in a tree structure will allow us to trace parentage
-			// (required for fast lookups) when we insert these into the database.
-
-			schemeNode := getOrCreate(schemeTree, symbol.Scheme, createSchemeNode)
-			packageManagerNode := getOrCreate(schemeNode.children, symbol.PackageManager, createPackageManagerNode)
-			packageNameNode := getOrCreate(packageManagerNode.children, symbol.PackageName, createPackageNameNode)
-			packageVersionNode := getOrCreate(packageNameNode.children, symbol.PackageVersion, createPackageVersionNode)
-			descriptor := getOrCreate(packageVersionNode.children, symbol.Descriptor, createDescriptor)
-			descriptorsNoSuffixID := getOrCreate(descriptorsNoSuffixMap, symbol.DescriptorNoSuffix, id)
-
-			cache[symbolName] = explodedIDs{
-				descriptorID:         descriptor.id,
-				descriptorNoSuffixID: descriptorsNoSuffixID,
-			}
+		visit := func(scipNameType, name string, id int, parentID *int) error {
+			return symbolLookupInserter.Insert(ctx, scipNameType, name, id, parentID)
 		}
-
-		scipNameTypeByDepth := []string{
-			"SCHEME",          // depth 0
-			"PACKAGE_MANAGER", // depth 1
-			"PACKAGE_NAME",    // depth 2
-			"PACKAGE_VERSION", // depth 3
-			"DESCRIPTOR",      // depth 4
-			/*              */ // depth PANIC
-		}
-
-		// Bulk insert the content of the tree
-		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
-			return symbolLookupInserter.Insert(ctx, scipNameTypeByDepth[depth], name, id, parentID)
-		}); err != nil {
-			return err
-		}
-
-		// Bulk insert fuzzy descriptors
-		for name, id := range descriptorsNoSuffixMap {
-			if err := symbolLookupInserter.Insert(ctx, "DESCRIPTOR_NO_SUFFIX", name, id, nil); err != nil {
-				return err
-			}
-		}
-
-		return nil
+		return traverser(visit)
 	}
 
 	// Batch-insert new symbol-lookup rows before batch updating the symbols table (below)
@@ -346,4 +294,81 @@ func flattenValues[K comparable, V int | string](m map[K]V) []V {
 	sort.Slice(ss, func(i, j int) bool { return ss[i] < ss[j] })
 
 	return ss
+}
+
+// NOTE(scip-migration): This behavior in the following function has been copied from the upload
+// processing procedure to match the logic for newly uploaded index files. See the original code
+// in the uploads service for more detail (.../lsifstore/insert.go).
+
+type explodedIDs struct {
+	descriptorID         int
+	descriptorNoSuffixID int
+}
+
+type visitFunc func(scipNameType, name string, id int, parentID *int) error
+
+func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error, error) {
+	// Create helpers to create new tree nodes with (upload-)unique identifiers
+	createSchemeNode := func() SchemeNode { return SchemeNode(newNodeWithID[PackageManagerNode](id())) }
+	createPackageManagerNode := func() PackageManagerNode { return PackageManagerNode(newNodeWithID[PackageNameNode](id())) }
+	createPackageNameNode := func() PackageNameNode { return PackageNameNode(newNodeWithID[PackageVersionNode](id())) }
+	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[DescriptorNode](id())) }
+	createDescriptor := func() DescriptorNode { return DescriptorNode(newNodeWithID[descriptor](id())) }
+
+	cache := map[string]explodedIDs{}              // Tracks symbol name -> identifiers in the scheme tree
+	schemeTree := map[string]SchemeNode{}          // Tracks scheme -> manager -> name -> version -> descriptor
+	descriptorsNoSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
+
+	for _, symbolName := range symbolNames {
+		symbol, err := symbols.NewExplodedSymbol(symbolName)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		// Assign the parts of the exploded symbol into the scheme tree. If a prefix of
+		// the exploded symbol is already in the tree then existing nodes will be re-used.
+		// Laying out the exploded in a tree structure will allow us to trace parentage
+		// (required for fast lookups) when we insert these into the database.
+
+		schemeNode := getOrCreate(schemeTree, symbol.Scheme, createSchemeNode)                                       // depth 0
+		packageManagerNode := getOrCreate(schemeNode.children, symbol.PackageManager, createPackageManagerNode)      // depth 1
+		packageNameNode := getOrCreate(packageManagerNode.children, symbol.PackageName, createPackageNameNode)       // depth 2
+		packageVersionNode := getOrCreate(packageNameNode.children, symbol.PackageVersion, createPackageVersionNode) // depth 3
+		descriptor := getOrCreate(packageVersionNode.children, symbol.Descriptor, createDescriptor)                  // depth 4
+		descriptorsNoSuffixID := getOrCreate(descriptorsNoSuffixMap, symbol.DescriptorNoSuffix, id)                  // map insertion
+
+		cache[symbolName] = explodedIDs{
+			descriptorID:         descriptor.id,
+			descriptorNoSuffixID: descriptorsNoSuffixID,
+		}
+	}
+
+	scipNameTypeByDepth := []string{
+		"SCHEME",          // depth 0
+		"PACKAGE_MANAGER", // depth 1
+		"PACKAGE_NAME",    // depth 2
+		"PACKAGE_VERSION", // depth 3
+		"DESCRIPTOR",      // depth 4
+		/*              */ // depth PANIC
+	}
+
+	traverser := func(visit visitFunc) error {
+		// Call visit on each node of the tree
+		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
+			return visit(scipNameTypeByDepth[depth], name, id, parentID)
+		}); err != nil {
+			return err
+		}
+
+		// Call visit on each element in the descriptor-no-suffix map
+		for name, id := range descriptorsNoSuffixMap {
+			if err := visit("DESCRIPTOR_NO_SUFFIX", name, id, nil); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	return cache, traverser, nil
 }
