@@ -91,5 +91,5 @@ if ($env:CI -eq "true" ) {
     Write-Host "Moving ${MSI_PATH} to ${DIST_DIR}"
     Copy-Item -Path ${MSI_PATH} -Destination ${DIST_DIR}
     Write-Host "Uploading artifacts from ${DIST_DIR}"
-    buildkite-agent artifact upload upload "${DIST_DIR}/*"
+    buildkite-agent artifact upload "${DIST_DIR}/*"
 }
