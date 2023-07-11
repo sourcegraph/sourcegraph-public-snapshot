@@ -74,8 +74,8 @@ pnpm-debug.log
 /ui/.tmp
 /ui/assets/scripts/
 /ui/assets/styles/
-/ui/assets/*.br
-/ui/assets/*.gz
+/ui/assets/**/*.br
+/ui/assets/**/*.gz
 /ui/assets/stats-*
 
 *.json.actual
@@ -197,6 +197,7 @@ index.scip
 
 # Generated on CI only
 .aspect/bazelrc/ci.sourcegraph.bazelrc
+.aspect/bazelrc/ci.generated.bazelrc
 
 # nix
 result
