@@ -71,7 +71,7 @@ const AppSettingsLayout: FC = () => {
                     <Button
                         as={Link}
                         to="../about"
-                        variant={location.pathname.includes('../about') ? 'primary' : undefined}
+                        variant={location.pathname.includes('settings/about') ? 'primary' : undefined}
                         className={styles.navigationItemLink}
                     >
                         <AboutOutlineIcon size={16} /> About Cody
