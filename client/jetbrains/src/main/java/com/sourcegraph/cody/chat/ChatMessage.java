@@ -21,6 +21,7 @@ public class ChatMessage extends Message {
     return new ChatMessage(Speaker.HUMAN, prompt, displayText);
   }
 
+  /* This is considered a markdown formatted string */
   @NotNull
   public String getDisplayText() {
     return displayText;

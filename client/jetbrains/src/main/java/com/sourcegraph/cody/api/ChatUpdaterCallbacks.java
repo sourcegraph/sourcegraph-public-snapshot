@@ -11,15 +11,15 @@ import org.jetbrains.annotations.Nullable;
 
 public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   private static final Logger logger = Logger.getInstance(ChatUpdaterCallbacks.class);
-  private final UpdatableChat chat;
-  private final CancellationToken cancellationToken;
-  private final String prefix;
+  @NotNull private final UpdatableChat chat;
+  @NotNull private final CancellationToken cancellationToken;
+  @NotNull private final String prefix;
   private boolean gotFirstMessage = false;
 
   public ChatUpdaterCallbacks(
       @NotNull UpdatableChat chat,
       @NotNull CancellationToken cancellationToken,
-      @Nullable String prefix) {
+      @NotNull String prefix) {
     this.chat = chat;
     this.cancellationToken = cancellationToken;
     this.prefix = prefix;
@@ -74,11 +74,11 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
     chat.finishMessageProcessing();
   }
 
-  private static @NotNull String reformatBotMessage(@NotNull String text, @Nullable String prefix) {
+  private static @NotNull String reformatBotMessage(@NotNull String text, @NotNull String prefix) {
     String STOP_SEQUENCE_REGEXP = "(H|Hu|Hum|Huma|Human|Human:)$";
     Pattern stopSequencePattern = Pattern.compile(STOP_SEQUENCE_REGEXP);
 
-    String reformattedMessage = (prefix != null ? prefix : "") + text.stripTrailing();
+    String reformattedMessage = prefix + text.stripTrailing();
 
     Matcher stopSequenceMatcher = stopSequencePattern.matcher(reformattedMessage);
 

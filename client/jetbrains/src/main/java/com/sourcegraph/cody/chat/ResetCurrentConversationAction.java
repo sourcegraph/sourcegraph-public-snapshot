@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.chat;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.components.ServiceManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.cody.UpdatableChat;
@@ -19,9 +18,11 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
       return;
     }
     UpdatableChatHolderService updatableChatHolderService =
-        ServiceManager.getService(project, UpdatableChatHolderService.class);
+        project.getService(UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    updatableChat.resetConversation();
+    if (updatableChat != null) {
+      updatableChat.resetConversation();
+    }
   }
 
   @Override
@@ -31,7 +32,9 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
       UpdatableChatHolderService updatableChatHolderService =
           project.getService(UpdatableChatHolderService.class);
       UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-      e.getPresentation().setVisible(updatableChat.isChatVisible());
+      if (updatableChat != null) {
+        e.getPresentation().setVisible(updatableChat.isChatVisible());
+      }
     }
   }
 
