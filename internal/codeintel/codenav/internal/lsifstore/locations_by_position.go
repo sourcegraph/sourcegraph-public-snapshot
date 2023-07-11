@@ -57,13 +57,11 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 	explodedSymbols := []string{}
 	symbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
-		explodedSymbol, err := explodeSymbol(arg.Identifier)
-		if err != nil {
-			return nil, 0, err
+		if explodedSymbol, err := explodeSymbol(arg.Identifier); err == nil {
+			explodedSymbols = append(explodedSymbols, explodedSymbol)
 		}
 
 		symbolNames = append(symbolNames, arg.Identifier)
-		explodedSymbols = append(explodedSymbols, explodedSymbol)
 	}
 
 	query := sqlf.Sprintf(
@@ -118,7 +116,7 @@ outer:
 	return locations, totalCount, nil
 }
 
-const bulkMonikerResultsQuery = `
+var bulkMonikerResultsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
@@ -172,7 +170,7 @@ func (s *store) getLocations(
 		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
 			explodedSymbol, err := explodeSymbol(occurrence.Symbol)
 			if err != nil {
-				return nil, 0, err
+				continue
 			}
 
 			monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
@@ -233,7 +231,7 @@ WHERE
 LIMIT 1
 `
 
-const locationsSymbolSearchQuery = `
+var locationsSymbolSearchQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
@@ -525,13 +523,11 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 	symbolNames := make([]string, 0, len(monikers))
 	explodedSymbolNames := make([]string, 0, len(monikers))
 	for _, arg := range monikers {
-		explodedSymbol, err := explodeSymbol(arg.Identifier)
-		if err != nil {
-			return nil, 0, err
-		}
-
 		symbolNames = append(symbolNames, arg.Identifier)
-		explodedSymbolNames = append(explodedSymbolNames, explodedSymbol)
+
+		if explodedSymbol, err := explodeSymbol(arg.Identifier); err == nil {
+			explodedSymbolNames = append(explodedSymbolNames, explodedSymbol)
+		}
 	}
 
 	var skipConds []*sqlf.Query
@@ -599,7 +595,7 @@ outer:
 	return locations, totalCount, nil
 }
 
-const minimalBulkMonikerResultsQuery = `
+var minimalBulkMonikerResultsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT

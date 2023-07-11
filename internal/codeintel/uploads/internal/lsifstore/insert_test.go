@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"strings"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -125,34 +126,34 @@ func TestInsertDocumentWithSymbols(t *testing.T) {
 			"internal/util.go",
 			&scip.Document{
 				Symbols: []*scip.SymbolInformation{
-					{Symbol: "foo.bar.ident"},
-					{Symbol: "bar.baz.longerName"},
-					{Symbol: "baz.bonk.quux"},
+					{Symbol: "node pnpm pkg1 0.1.0 foo.bar.ident#"},
+					{Symbol: "node pnpm pkg1 0.1.1 bar.baz.longerName#"},
+					{Symbol: "node pnpm pkg2 0.1.2 baz.bonk.quux#"},
 				},
 				Occurrences: []*scip.Occurrence{
 					{
 						Range:       []int32{3, 25, 3, 30},
-						Symbol:      "foo.bar.ident",
+						Symbol:      "node pnpm pkg1 0.1.0 foo.bar.ident#",
 						SymbolRoles: int32(scip.SymbolRole_Definition),
 					},
 					{
 						Range:       []int32{251, 24, 251, 30},
-						Symbol:      "baz.bonk.quux",
+						Symbol:      "node pnpm pkg2 0.1.2 baz.bonk.quux#",
 						SymbolRoles: int32(scip.SymbolRole_Definition),
 					},
 					{
 						Range:       []int32{4, 25, 4, 30},
-						Symbol:      "foo.bar.ident",
+						Symbol:      "node pnpm pkg1 0.1.0 foo.bar.ident#",
 						SymbolRoles: 0,
 					},
 					{
 						Range:       []int32{100, 10, 100, 20},
-						Symbol:      "bar.baz.longerName",
+						Symbol:      "node pnpm pkg1 0.1.1 bar.baz.longerName#",
 						SymbolRoles: 0,
 					},
 					{
 						Range:       []int32{151, 14, 151, 20},
-						Symbol:      "baz.bonk.quux",
+						Symbol:      "node pnpm pkg2 0.1.2 baz.bonk.quux#",
 						SymbolRoles: 0,
 					},
 				},
@@ -173,5 +174,62 @@ func TestInsertDocumentWithSymbols(t *testing.T) {
 
 	if expected := uint32(3); n != expected {
 		t.Fatalf("unexpected number of symbols inserted. want=%d have=%d", expected, n)
+	}
+}
+
+func TestConstructSymbolLookupTable(t *testing.T) {
+	id := 0
+	symbolNames := []string{
+		"node pnpm pkg1 0.1.0 foo.bar.ident#",
+		"node pnpm pkg1 0.1.1 bar.baz.longerName#",
+		"node pnpm pkg2 0.1.2 baz.bonk.quux#",
+	}
+
+	cache, traverser, err := constructSymbolLookupTable(symbolNames, func() int { v := id; id++; return v })
+	if err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	type rowType struct {
+		scipNameType string
+		name         string
+		id           int
+		parentID     *int
+	}
+	rows := map[int]rowType{}
+
+	// Traverse the tree and build a map of rows by identifier for quick lookup
+	if err := traverser(func(scipNameType, name string, id int, parentID *int) error {
+		rows[id] = rowType{scipNameType, name, id, parentID}
+		return nil
+	}); err != nil {
+		t.Fatalf("unexpected error: %s", err)
+	}
+
+	// Convert symbol name into a descriptor id (from cache), then reconstruct
+	// the symbol name from that identifier. We'll check to see if the input and
+	// output match for everything we've inserted. If so we'll consider the tree
+	// to be "well-formed".
+
+	find := func(symbolName string) string {
+		var parts []string
+		row := rows[cache[symbolName].descriptorID]
+		for {
+			// prepend to construct symbol in correct order
+			parts = append([]string{row.name}, parts...)
+
+			if row.parentID == nil {
+				break
+			}
+			row = rows[*row.parentID]
+		}
+
+		return strings.Join(parts, " ")
+	}
+
+	for _, symbolName := range symbolNames {
+		if got := find(symbolName); got != symbolName {
+			t.Errorf("failed to retrieve %q (got %q)", symbolName, got)
+		}
 	}
 }
