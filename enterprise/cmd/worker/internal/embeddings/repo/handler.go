@@ -67,8 +67,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		gitserver: h.gitserverClient,
 	}
 
-	fetcher.
-		err = (ctx)
+	err = fetcher.validateRevision(ctx)
 	if err != nil {
 		return err
 	}
