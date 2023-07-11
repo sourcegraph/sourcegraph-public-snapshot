@@ -468,8 +468,6 @@ type explodedIDs struct {
 
 type visitFunc func(scipNameType, name string, id int, parentID *int) error
 
-// TODO - reflect changes in migrator as well
-// TODO - test
 func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error, error) {
 	// Create helpers to create new tree nodes with (upload-)unique identifiers
 	createSchemeNode := func() SchemeNode { return SchemeNode(newNodeWithID[PackageManagerNode](id())) }
