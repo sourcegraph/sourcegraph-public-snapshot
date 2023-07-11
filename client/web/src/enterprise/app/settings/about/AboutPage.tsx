@@ -3,7 +3,7 @@ import classNames from 'classnames'
 
 import { Container, H1, H3, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
-import logo from '../../../../../../../src-tauri/icons/icon.png'
+import { CodyLogoFilled } from '../../../../cody/components/CodyLogo'
 
 import styles from './AboutPage.module.scss'
 
@@ -16,7 +16,7 @@ export const AboutTab: React.FC<AboutTabProps> = ({ version = window.context.ver
         <PageHeader headingElement="h2" path={[{ text: 'About Cody' }]} actions={[]} className="mb-3" />
         <Container className="mb-3 p-0">
             <div className={classNames('d-flex align-items-center', styles.panel)}>
-                <img className={classNames('m-0', styles.icon)} src={logo as string} alt="app logo" />
+                <CodyLogoFilled className={classNames('m-0', styles.icon)} />
                 <H1 className="m-0">Cody</H1>
             </div>
             <div className={classNames(styles.panel)}>
