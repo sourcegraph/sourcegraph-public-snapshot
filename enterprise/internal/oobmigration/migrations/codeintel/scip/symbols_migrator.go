@@ -3,7 +3,9 @@ package scip
 import (
 	"context"
 	"database/sql"
+	"os"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -13,6 +15,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+)
+
+func getEnv(name string, defaultValue int) int {
+	if value, _ := strconv.Atoi(os.Getenv(name)); value != 0 {
+		return value
+	}
+
+	return defaultValue
+}
+
+var (
+	// NOTE: modified in tests
+	symbolsMigratorConcurrencyLevel      = getEnv("SYMBOLS_MIGRATOR_CONCURRENCY_LEVEL", 1)
+	symbolsMigratorSymbolRecordBatchSize = getEnv("SYMBOLS_MIGRATOR_UPLOAD_BATCH_SIZE", 10000)
 )
 
 type scipSymbolsMigrator struct {
@@ -27,7 +43,7 @@ func NewSCIPSymbolsMigrator(codeintelStore *basestore.Store) *migrator {
 	return newMigrator(codeintelStore, driver, migratorOptions{
 		tableName:     "codeintel_scip_symbols",
 		targetVersion: 2,
-		batchSize:     10000,
+		batchSize:     symbolsMigratorSymbolRecordBatchSize,
 		numRoutines:   1,
 		fields: []fieldSpec{
 			{name: "symbol_id", postgresType: "integer not null", primaryKey: true},
@@ -172,7 +188,7 @@ func readSymbolNamesBySymbolIDs(ctx context.Context, tx *basestore.Store, upload
 					ssn.id,
 					ssn.upload_id,
 					ssn.name_segment AS suffix,
-					ssn.prefix_id AS prefix_id
+					ssn.prefix_id
 				FROM codeintel_scip_symbol_names ssn
 				WHERE
 					ssn.id = ANY(%s) AND
@@ -182,7 +198,7 @@ func readSymbolNamesBySymbolIDs(ctx context.Context, tx *basestore.Store, upload
 					s.id,
 					s.upload_id,
 					ssn.name_segment || s.suffix AS suffix,
-					ssn.prefix_id AS prefix_id
+					ssn.prefix_id
 				FROM symbols s
 				JOIN codeintel_scip_symbol_names ssn ON
 					ssn.upload_id = s.upload_id AND

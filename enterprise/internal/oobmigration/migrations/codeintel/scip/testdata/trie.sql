@@ -149,13 +149,6 @@ INSERT INTO public.codeintel_scip_document_lookup VALUES (1326502, 2429675, 'mai
 
 
 --
--- Data for Name: codeintel_scip_document_lookup_schema_versions; Type: TABLE DATA; Schema: public; Owner: sourcegraph
---
-
-INSERT INTO public.codeintel_scip_document_lookup_schema_versions VALUES (2429675, 1, 1);
-
-
---
 -- Data for Name: codeintel_scip_documents_dereference_logs; Type: TABLE DATA; Schema: public; Owner: sourcegraph
 --
 
@@ -25518,14 +25511,6 @@ INSERT INTO public.codeintel_scip_symbols VALUES (2429675, 1326502, 1, '\x120a00
 --
 -- Data for Name: codeintel_scip_symbols_migration_progress; Type: TABLE DATA; Schema: public; Owner: sourcegraph
 --
-
-
-
---
--- Data for Name: codeintel_scip_symbols_schema_versions; Type: TABLE DATA; Schema: public; Owner: sourcegraph
---
-
-INSERT INTO public.codeintel_scip_symbols_schema_versions VALUES (2429675, 1, 1);
 
 
 --
