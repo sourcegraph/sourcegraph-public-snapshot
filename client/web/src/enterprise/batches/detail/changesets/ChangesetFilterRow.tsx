@@ -4,8 +4,9 @@ import { reject } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { Input, Form } from '@sourcegraph/wildcard'
-
-import { ChangesetReviewState, ChangesetCheckState, ChangesetState } from '../../../../graphql-operations'
+import { mdiDownload } from '@mdi/js'
+import { Button, Icon } from '@sourcegraph/wildcard'
+import { ChangesetReviewState, ChangesetCheckState, ChangesetState, RepoBatchChange } from '../../../../graphql-operations'
 import { ChangesetFilter } from '../../ChangesetFilter'
 import { isValidChangesetState, isValidChangesetReviewState, isValidChangesetCheckState } from '../../utils'
 
@@ -18,11 +19,16 @@ export interface ChangesetFilters {
 
 export interface ChangesetFilterRowProps {
     onFiltersChange: (newFilters: ChangesetFilters) => void
+    batchChange: RepoBatchChange;
+    connectionNode: any[]
 }
 
 export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren<ChangesetFilterRowProps>> = ({
     onFiltersChange,
+    batchChange,
+    connectionNode,
 }) => {
+    
     const location = useLocation()
     const navigate = useNavigate()
     const searchElement = useRef<HTMLInputElement | null>(null)
@@ -84,6 +90,45 @@ export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren
         [setSearch, searchElement]
     )
 
+    const onExportClick = useCallback(() => {
+        if (connectionNode) {
+          const csvData = [
+            ['Title', 'State', 'CheckState', 'ReviewState', 'External URL', 'Repo Name'],
+          ];
+          
+          connectionNode.forEach(node => {
+            csvData.push([
+              node.title,
+              node.state,
+              node.checkState,
+              node.reviewState,
+              node.externalURL?.url || '',
+              node.repository.name,
+            ]);
+          })
+      
+          const csvString = csvData.map((row) => row.join(',')).join('\n');
+          const blob = new Blob([csvString], { type: 'text/csv' });
+          const url = URL.createObjectURL(blob);
+  
+          const body = connectionNode[0].body; // Assuming connectionNode exists
+          const startIndex = body.indexOf("batch-changes/") + 14; // Add the length of "batch-changes/"
+          const endIndex = body.indexOf(")", startIndex);
+          const batchChangeName = body.substring(startIndex, endIndex);
+      
+          console.log(batchChangeName);
+  
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${batchChangeName}-changesets.csv`; 
+          a.click();
+    
+          URL.revokeObjectURL(url);
+          a.remove();
+        }
+ 
+    },[connectionNode, batchChange]);
+
     return (
         <>
             <div className="row no-gutters">
@@ -121,6 +166,7 @@ export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren
                                 className="w-100"
                             />
                         </div>
+
                         <div className="w-100 d-block d-sm-none" />
                         <div className="col mb-2 ml-0 ml-sm-2">
                             <ChangesetFilter<ChangesetReviewState>
@@ -136,6 +182,11 @@ export const ChangesetFilterRow: React.FunctionComponent<React.PropsWithChildren
                                 className="w-100"
                             />
                         </div>
+                        <div className="col mb-2 ml-2">
+                <Button variant="primary" onClick={onExportClick} >
+                    <Icon aria-hidden={true} svgPath={mdiDownload} /> Export 
+                </Button> 
+            </div>
                         <div className="col d-block d-sm-none ml-2" />
                     </div>
                 </div>

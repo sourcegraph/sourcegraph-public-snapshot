@@ -48,7 +48,7 @@ export interface ActionsMenuProps {
 
 export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<ActionsMenuProps>> = ({ defaultMode }) => {
     const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
-
+    
     return (
         <MemoizedActionsMenu
             batchChange={batchChange}

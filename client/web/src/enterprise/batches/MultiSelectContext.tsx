@@ -149,7 +149,7 @@ export const MultiSelectContextProvider: React.FunctionComponent<
             selectVisible()
         }
     }, [areAllVisibleSelected, deselectVisible, selectVisible])
-
+    
     const selectSingle = useCallback(
         (id: string) => {
             if (selected === 'all') {
@@ -215,7 +215,7 @@ export const MultiSelectContextProvider: React.FunctionComponent<
                 toggleAll,
                 toggleSingle,
                 toggleVisible,
-                visible,
+                visible,                
             }}
         >
             {children}

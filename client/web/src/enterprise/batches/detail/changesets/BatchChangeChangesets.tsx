@@ -40,6 +40,9 @@ import { EmptyChangesetSearchElement } from './EmptyChangesetSearchElement'
 import { EmptyDraftChangesetListElement } from './EmptyDraftChangesetListElement'
 
 import styles from './BatchChangeChangesets.module.scss'
+import { node } from 'src/site-admin/SiteAdminPackagesPage.module.scss'
+
+// const [selectedChangesets, setSelectedChangesets] = useState();
 
 interface Props {
     batchChangeID: Scalars['ID']
@@ -68,6 +71,10 @@ export const BatchChangeChangesets: React.FunctionComponent<React.PropsWithChild
     </MultiSelectContextProvider>
 )
 
+
+
+
+
 const BATCH_COUNT = 15
 
 const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -89,7 +96,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     // ugly destructured set of variables here.
     const { selected, deselectAll, areAllVisibleSelected, isSelected, toggleSingle, toggleVisible, setVisible } =
         useContext(MultiSelectContext)
-
+    const [selectedChangesets, setSelectedChangesets] = useState();
     const [changesetFilters, setChangesetFilters] = useState<ChangesetFilters>({
         checkState: null,
         state: null,
@@ -151,7 +158,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
             if (data.node.__typename !== 'BatchChange') {
                 throw new Error(`The given ID is a ${data.node.__typename as string}, not a BatchChange`)
             }
-            return data.node.changesets
+            return data.node.changesets      
         },
     })
 
@@ -164,7 +171,7 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
             )
         }
     }, [connection?.nodes, setVisible])
-
+    
     const containerElements = useMemo(() => new Subject<HTMLElement | null>(), [])
     const nextContainerElement = useMemo(() => containerElements.next.bind(containerElements), [containerElements])
 
@@ -186,13 +193,26 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
         return <EmptyChangesetListElement />
     }, [changesetFilters, onlyArchived, batchChangeState, isExecutionEnabled])
 
+
+    useEffect(() => {
+        const result = connection?.nodes.filter(items => {
+            const values = [];
+            selected.forEach(item => values.push(item));
+            // return items.id === selected})
+            return values.includes(items.id)
+        })
+        setSelectedChangesets(result)
+      }, [selected])
+
     return (
         <Container>
-            {!hideFilters && !showSelectRow && (
-                <ChangesetFilterRow onFiltersChange={setChangesetFiltersAndDeselectAll} />
+            
+            {!hideFilters && !showSelectRow && connection?.nodes && (
+                <ChangesetFilterRow onFiltersChange={setChangesetFiltersAndDeselectAll} connectionNode={connection.nodes } />
             )}
             {showSelectRow && queryArguments && (
                 <ChangesetSelectRow
+                    selectedChangesets={selectedChangesets}
                     batchChangeID={batchChangeID}
                     onSubmit={onSubmitBulkAction}
                     queryAllChangesetIDs={queryAllChangesetIDs}

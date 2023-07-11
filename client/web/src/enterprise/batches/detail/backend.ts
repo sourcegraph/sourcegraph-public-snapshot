@@ -46,7 +46,7 @@ import {
     PublishChangesetsVariables,
     AvailableBulkOperationsVariables,
     AvailableBulkOperationsResult,
-    BulkOperationType,
+    BulkOperationType,   
 } from '../../../graphql-operations'
 import { VIEWER_BATCH_CHANGES_CODE_HOST_FRAGMENT } from '../MissingCredentialsAlert'
 

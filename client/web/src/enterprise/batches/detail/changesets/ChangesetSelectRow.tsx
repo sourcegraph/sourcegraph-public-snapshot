@@ -1,4 +1,4 @@
-import React, { useMemo, useContext } from 'react'
+import React, { useMemo, useContext, useState, useEffect } from 'react'
 
 import { mdiInformationOutline } from '@mdi/js'
 import { of } from 'rxjs'
@@ -152,6 +152,7 @@ const AVAILABLE_ACTIONS: Record<BulkOperationType, ChangesetListAction> = {
 }
 
 export interface ChangesetSelectRowProps {
+    selectedChangesets: any[]
     batchChangeID: Scalars['ID']
     onSubmit: () => void
     queryArguments: Omit<AllChangesetIDsVariables, 'after'>
@@ -171,9 +172,9 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
     queryArguments,
     queryAllChangesetIDs = _queryAllChangesetIDs,
     queryAvailableBulkOperations = _queryAvailableBulkOperations,
+    selectedChangesets
 }) => {
     const { areAllVisibleSelected, selected, selectAll } = useContext(MultiSelectContext)
-
     const allChangesetIDs: string[] | undefined = useObservable(
         useMemo(() => queryAllChangesetIDs(queryArguments), [queryArguments, queryAllChangesetIDs])
     )
@@ -246,7 +247,7 @@ export const ChangesetSelectRow: React.FunctionComponent<React.PropsWithChildren
                 <div className="m-0 col col-md-auto">
                     <div className="row no-gutters">
                         <div className="col ml-0 ml-sm-2">
-                            <DropdownButton actions={actions} placeholder="Select action" />
+                            <DropdownButton actions={actions} placeholder="Select action" selectedChangesets={selectedChangesets} />
                         </div>
                     </div>
                 </div>
