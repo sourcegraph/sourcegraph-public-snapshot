@@ -14,7 +14,7 @@ const predicates = {
     topic: '',
 }
 
-const getQuery = ({repoPattern, repoNames, useForks, useArchive, predicateState, searchContext}): string => {
+const getQuery = ({ repoPattern, repoNames, useForks, useArchive, predicateState, searchContext }): string => {
     // build query
     const terms: string[] = []
 
@@ -50,10 +50,7 @@ const getQuery = ({repoPattern, repoNames, useForks, useArchive, predicateState,
     return terms.join(' ')
 }
 
-export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({
-    onSimpleSearchUpdate,
-    onSubmit,
-}) => {
+export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUpdate, onSubmit }) => {
     const [repoPattern, setRepoPattern] = useState<string>('')
     const [repoNames, setRepoNames] = useState<string>('')
     const [useForks, setUseForks] = useState<string>('')
@@ -64,7 +61,7 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({
 
     useEffect(() => {
         // Update the query whenever any of the other fields change
-        const updatedQuery = getQuery({repoPattern, repoNames, useForks, useArchive, predicateState, searchContext})
+        const updatedQuery = getQuery({ repoPattern, repoNames, useForks, useArchive, predicateState, searchContext })
         onSimpleSearchUpdate(updatedQuery)
     }, [repoPattern, repoNames, useForks, useArchive, predicateState, searchContext, onSimpleSearchUpdate])
 

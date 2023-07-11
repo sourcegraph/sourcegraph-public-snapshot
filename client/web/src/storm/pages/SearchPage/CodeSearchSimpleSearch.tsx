@@ -12,7 +12,17 @@ export interface SimpleSearchProps {
 
 const languages = ['JavaScript', 'TypeScript', 'Java', 'C++', 'Python', 'Go', 'C#', 'Ruby']
 
-const getQuery = ({repoPattern, repoNames, filePaths, useForks, literalContent, regexpContent, languageFilter, useArchive, searchContext}): string => {
+const getQuery = ({
+    repoPattern,
+    repoNames,
+    filePaths,
+    useForks,
+    literalContent,
+    regexpContent,
+    languageFilter,
+    useArchive,
+    searchContext,
+}): string => {
     // build query
     const terms: string[] = []
 
@@ -50,10 +60,7 @@ const getQuery = ({repoPattern, repoNames, filePaths, useForks, literalContent, 
     return terms.join(' ')
 }
 
-export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({
-    onSimpleSearchUpdate,
-    onSubmit,
-}) => {
+export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUpdate, onSubmit }) => {
     const [repoPattern, setRepoPattern] = useState<string>('')
     const [repoNames, setRepoNames] = useState<string>('')
     const [filePaths, setFilePaths] = useState<string>('')
@@ -67,9 +74,30 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({
 
     useEffect(() => {
         // Update the query whenever any of the other fields change
-        const updatedQuery = getQuery({repoPattern, repoNames, filePaths, useForks, literalContent, regexpContent, languageFilter, useArchive, searchContext})
+        const updatedQuery = getQuery({
+            repoPattern,
+            repoNames,
+            filePaths,
+            useForks,
+            literalContent,
+            regexpContent,
+            languageFilter,
+            useArchive,
+            searchContext,
+        })
         onSimpleSearchUpdate(updatedQuery)
-    }, [repoPattern, repoNames, filePaths, useForks, literalContent, regexpContent, languageFilter, useArchive, searchContext, onSimpleSearchUpdate])
+    }, [
+        repoPattern,
+        repoNames,
+        filePaths,
+        useForks,
+        literalContent,
+        regexpContent,
+        languageFilter,
+        useArchive,
+        searchContext,
+        onSimpleSearchUpdate,
+    ])
 
     return (
         <div>

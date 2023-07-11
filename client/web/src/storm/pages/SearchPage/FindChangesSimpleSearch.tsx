@@ -1,10 +1,10 @@
-import React, {FC, useEffect, useState} from 'react'
+import React, { FC, useEffect, useState } from 'react'
 
-import {mdiHelpCircleOutline} from '@mdi/js'
+import { mdiHelpCircleOutline } from '@mdi/js'
 
-import {Icon, Select, Tooltip, Input, Button, Form, Label} from '@sourcegraph/wildcard'
+import { Icon, Select, Tooltip, Input, Button, Form, Label } from '@sourcegraph/wildcard'
 
-import {SimpleSearchProps} from './CodeSearchSimpleSearch'
+import { SimpleSearchProps } from './CodeSearchSimpleSearch'
 
 const predicates = {
     path: '',
@@ -15,18 +15,18 @@ const predicates = {
 }
 
 const getQuery = ({
-                      repoPattern,
-                      repoNames,
-                      filePaths,
-                      useForks,
-                      languageFilter,
-                      useArchive,
-                      predicateState,
-                      messagePattern,
-                      authorPattern,
-                      diffCodePattern,
-                      searchContext
-                  }): string => {
+    repoPattern,
+    repoNames,
+    filePaths,
+    useForks,
+    languageFilter,
+    useArchive,
+    predicateState,
+    messagePattern,
+    authorPattern,
+    diffCodePattern,
+    searchContext,
+}): string => {
     // build query
     const terms: string[] = []
 
@@ -67,10 +67,7 @@ const getQuery = ({
     return terms.join(' ')
 }
 
-export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
-                                                                   onSimpleSearchUpdate,
-                                                                   onSubmit,
-                                                               }) => {
+export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUpdate, onSubmit }) => {
     const [repoPattern, setRepoPattern] = useState<string>('')
     const [repoNames, setRepoNames] = useState<string>('')
     const [filePaths, setFilePaths] = useState<string>('')
@@ -87,7 +84,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
 
     useEffect(() => {
         // Update the query whenever any of the other fields change
-        const updatedQuery = getQuery({repoPattern,
+        const updatedQuery = getQuery({
+            repoPattern,
             repoNames,
             filePaths,
             useForks,
@@ -97,7 +95,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
             messagePattern,
             authorPattern,
             diffCodePattern,
-            searchContext})
+            searchContext,
+        })
         onSimpleSearchUpdate(updatedQuery)
     }, [
         repoPattern,
@@ -111,7 +110,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
         authorPattern,
         diffCodePattern,
         searchContext,
-        onSimpleSearchUpdate
+        onSimpleSearchUpdate,
     ])
 
     return (
@@ -121,9 +120,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                     <div className="form-group row">
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             Commit message contains pattern
-                            <Tooltip
-                                content="Search for changes with a commit message that matches a regular expression pattern.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
+                            <Tooltip content="Search for changes with a commit message that matches a regular expression pattern.">
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -144,7 +142,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             Author matches pattern
                             <Tooltip content="Search for the commit author name or email using a regular expression.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -165,7 +163,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             Diff contains code matching pattern
                             <Tooltip content="Search for matching diff file content using a regular expression.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -182,14 +180,14 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                         </div>
                     </div>
                 </div>
-                <hr className="mt-4 mb-4"/>
+                <hr className="mt-4 mb-4" />
 
                 <div id="repoFilterSection">
                     <div className="form-group row">
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             In these repos
                             <Tooltip content="Match repository names exactly.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
 
@@ -210,7 +208,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                         <Label htmlFor="repoNamePatterns" className="col-4 col-form-label">
                             In matching repos
                             <Tooltip content="Use a regular expression pattern to match against repository names.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-8">
@@ -227,9 +225,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                     <div className="form-group row">
                         <Label htmlFor="searchForks" className="col-4 col-form-label">
                             Search over repository forks?
-                            <Tooltip
-                                content="Choose an option to include or exclude forks from the search, or search only over forks.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
+                            <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-2">
@@ -246,9 +243,8 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
 
                         <Label htmlFor="searchArchive" className="col-4 col-form-label">
                             Search over archived repositories?
-                            <Tooltip
-                                content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
-                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
+                            <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
+                                <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                             </Tooltip>
                         </Label>
                         <div className="col-2">
@@ -265,13 +261,12 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({
                     </div>
                 </div>
 
-                <hr className="mt-4 mb-4"/>
+                <hr className="mt-4 mb-4" />
                 <div className="form-group row">
                     <Label htmlFor="searchContext" className="col-4 col-form-label">
                         Search context
-                        <Tooltip
-                            content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. The global context  will search over all code on Sourcegraph.">
-                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline}/>
+                        <Tooltip content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. The global context  will search over all code on Sourcegraph.">
+                            <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
                     <div className="col-8">
