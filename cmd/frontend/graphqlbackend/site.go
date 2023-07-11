@@ -41,6 +41,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 )
@@ -91,13 +92,29 @@ func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 
 func (r *siteResolver) SiteID() string { return siteid.Get() }
 
-func (r *siteResolver) Configuration(ctx context.Context) (*siteConfigurationResolver, error) {
+type SiteConfigurationArgs struct {
+	ReturnSafeConfigsOnly *bool
+}
+
+func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfigurationArgs) (*siteConfigurationResolver, error) {
+	var returnSafeConfigsOnly = pointers.Deref(args.ReturnSafeConfigsOnly, false)
+
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		// returnSafeConfigsOnly determines whether to return a redacted version of the
+		// site configuration that removes sensitive information. If true, returns a
+		// siteConfigurationResolver that will return the redacted configuration. If
+		// false, returns an error.
+		//
+		// The only way a non-admin can access this field is when `returnSafeConfigsOnly`
+		// is set to true.
+		if returnSafeConfigsOnly {
+			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
+		}
 		return nil, err
 	}
-	return &siteConfigurationResolver{db: r.db}, nil
+	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
@@ -219,7 +236,8 @@ func (r *siteResolver) AppHasConnectedDotComAccount() bool {
 }
 
 type siteConfigurationResolver struct {
-	db database.DB
+	db                    database.DB
+	returnSafeConfigsOnly bool
 }
 
 func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
@@ -236,6 +254,14 @@ func (r *siteConfigurationResolver) ID(ctx context.Context) (int32, error) {
 }
 
 func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSONCString, error) {
+	// returnSafeConfigsOnly determines whether to return a redacted version of the
+	// site configuration that removes sensitive information. If true, uses
+	// conf.ReturnSafeConfigs to return a redacted configuration. If false, checks if the
+	// current user is a site admin and returns the full unredacted configuration.
+	if r.returnSafeConfigsOnly {
+		safeConfig, err := conf.ReturnSafeConfigs(conf.Raw())
+		return JSONCString(safeConfig.Site), err
+	}
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
@@ -246,6 +272,11 @@ func (r *siteConfigurationResolver) EffectiveContents(ctx context.Context) (JSON
 }
 
 func (r *siteConfigurationResolver) ValidationMessages(ctx context.Context) ([]string, error) {
+	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
+	// so only admins may view it.
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
 	contents, err := r.EffectiveContents(ctx)
 	if err != nil {
 		return nil, err
