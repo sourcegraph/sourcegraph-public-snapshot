@@ -21,7 +21,9 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
     UpdatableChatHolderService updatableChatHolderService =
         ServiceManager.getService(project, UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    updatableChat.resetConversation();
+    if (updatableChat != null) {
+      updatableChat.resetConversation();
+    }
   }
 
   @Override
@@ -31,7 +33,9 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
       UpdatableChatHolderService updatableChatHolderService =
           project.getService(UpdatableChatHolderService.class);
       UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-      e.getPresentation().setVisible(updatableChat.isChatVisible());
+      if (updatableChat != null) {
+        e.getPresentation().setVisible(updatableChat.isChatVisible());
+      }
     }
   }
 

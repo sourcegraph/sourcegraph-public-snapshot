@@ -404,7 +404,7 @@ class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
-  private void addComponentToChat(JPanel message) {
+  private void addComponentToChat(@NotNull JPanel message) {
 
     var bubblePanel = new JPanel();
     bubblePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
@@ -533,7 +533,8 @@ class CodyToolWindowContent implements UpdatableChat {
     sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
   }
 
-  private void sendMessage(@NotNull Project project, ChatMessage message, String responsePrefix) {
+  private void sendMessage(
+      @NotNull Project project, @NotNull ChatMessage message, @NotNull String responsePrefix) {
     if (!sendButton.isEnabled()) {
       return;
     }

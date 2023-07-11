@@ -19,7 +19,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class Chat {
   private final @NotNull CompletionsService completionsService;
@@ -33,7 +32,7 @@ public class Chat {
 
   public void sendMessageWithoutAgent(
       @NotNull List<Message> prompt,
-      @Nullable String prefix,
+      @NotNull String prefix,
       @NotNull UpdatableChat chat,
       @NotNull CancellationToken cancellationToken) {
     completionsService.streamCompletion(
