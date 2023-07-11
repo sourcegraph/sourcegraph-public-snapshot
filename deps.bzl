@@ -6280,8 +6280,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_log",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/log",
-        sum = "h1:xz1lIhx6YvYYhiLio9INCIWHCZFH9MoRVuFye/lz07c=",
-        version = "v0.0.0-20230523201558-ad2d71b4d2ee",
+        sum = "h1:VwYrG1+YNyOD3nSb0M84ISMQiOOS/5Js05HqU1iNFSU=",
+        version = "v0.0.0-20230711093019-40c57b632cca",
     )
     go_repository(
         name = "com_github_sourcegraph_mountinfo",
