@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
@@ -96,7 +97,7 @@ func (s *searchClient) Plan(
 	searchMode search.Mode,
 	protocol search.Protocol,
 ) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
+	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
 	defer tr.FinishWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
@@ -121,7 +122,7 @@ func (s *searchClient) Plan(
 		if err != nil {
 			return "", err
 		}
-		tr.LazyPrintf("substitute query %s for context %s", sc.Query, context)
+		tr.AddEvent("substituted context filter with query", attribute.String("query", sc.Query), attribute.String("context", context))
 		return sc.Query, nil
 	})
 
@@ -133,7 +134,7 @@ func (s *searchClient) Plan(
 	if err != nil {
 		return nil, &QueryError{Query: searchQuery, Err: err}
 	}
-	tr.LazyPrintf("parsing done")
+	tr.AddEvent("parsing done")
 
 	inputs := &search.Inputs{
 		Plan:                   plan,
@@ -148,7 +149,7 @@ func (s *searchClient) Plan(
 		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.db, s.logger), // Experimental: check site config to see if search sanitization is enabled
 	}
 
-	tr.LazyPrintf("Parsed query: %s", inputs.Query)
+	tr.AddEvent("parsed query", attribute.Stringer("query", inputs.Query))
 
 	return inputs, nil
 }
@@ -158,7 +159,7 @@ func (s *searchClient) Execute(
 	stream streaming.Sender,
 	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "Execute", "")
+	tr, ctx := trace.New(ctx, "Execute")
 	defer tr.FinishWithErr(&err)
 
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)

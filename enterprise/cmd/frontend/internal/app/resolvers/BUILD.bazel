@@ -8,11 +8,11 @@ go_library(
     deps = [
         "//cmd/frontend/backend",
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/embeddings",
-        "//enterprise/internal/embeddings/background/repo",
         "//internal/api",
         "//internal/auth",
         "//internal/database",
+        "//internal/embeddings",
+        "//internal/embeddings/background/repo",
         "//internal/gitserver",
         "//internal/jsonc",
         "//internal/service/servegit",

@@ -10,7 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/compute/streaming",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
-        "//enterprise/internal/compute",
+        "//internal/compute",
         "//internal/conf",
         "//internal/database",
         "//internal/search",

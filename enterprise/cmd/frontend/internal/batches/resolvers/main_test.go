@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -125,7 +124,7 @@ func parseJSONTime(t testing.TB, ts string) time.Time {
 }
 
 func newSchema(db database.DB, bcr graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	ghar := githubapp.NewResolver(log.NoOp(), edb.NewEnterpriseDB(db))
+	ghar := githubapp.NewResolver(log.NoOp(), db)
 	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, bcr, ghar)
 }
 

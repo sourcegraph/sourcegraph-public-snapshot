@@ -38,7 +38,7 @@ func (l *LimitJob) Run(ctx context.Context, clients job.RuntimeClients, s stream
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	s = newLimitStream(l.limit, s, func() {
-		tr.LazyPrintf("limit hit, canceling child context")
+		tr.AddEvent("limit hit, canceling child context")
 		cancel()
 	})
 

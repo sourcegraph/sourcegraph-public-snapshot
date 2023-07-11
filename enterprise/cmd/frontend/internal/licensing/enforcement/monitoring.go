@@ -1,6 +1,6 @@
 package enforcement
 
-import "github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
+import "github.com/sourcegraph/sourcegraph/internal/licensing"
 
 // NewPreMountGrafanaHook enforces any per-tier validations prior to mounting
 // the Grafana endpoints in the debug router.

@@ -9,13 +9,13 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -785,6 +785,18 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		return nil
 	}
 
+	if completionsConfig.ChatModelMaxTokens == 0 {
+		completionsConfig.ChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.ChatModel)
+	}
+
+	if completionsConfig.FastChatModelMaxTokens == 0 {
+		completionsConfig.FastChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.FastChatModel)
+	}
+
+	if completionsConfig.CompletionModelMaxTokens == 0 {
+		completionsConfig.CompletionModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.CompletionModel)
+	}
+
 	computedConfig := &conftypes.CompletionsConfig{
 		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
 		AccessToken:                      completionsConfig.AccessToken,
@@ -801,6 +813,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 	return computedConfig
 }
+
+const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
@@ -927,6 +941,23 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		return nil
 	}
 
+	// While its not removed, use both options
+	var includedFilePathPatterns []string
+	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
+	maxFileSizeLimit := embeddingsMaxFileSizeBytes
+	if embeddingsConfig.FileFilters != nil {
+		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
+		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
+		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
+			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
+		}
+	}
+	fileFilters := conftypes.EmbeddingsFileFilters{
+		IncludedFilePathPatterns: includedFilePathPatterns,
+		ExcludedFilePathPatterns: excludedFilePathPatterns,
+		MaxFileSizeBytes:         maxFileSizeLimit,
+	}
+
 	computedConfig := &conftypes.EmbeddingsConfig{
 		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
 		AccessToken: embeddingsConfig.AccessToken,
@@ -935,7 +966,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
 		Incremental:                *embeddingsConfig.Incremental,
-		ExcludedFilePathPatterns:   embeddingsConfig.ExcludedFilePathPatterns,
+		FileFilters:                fileFilters,
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
@@ -981,4 +1012,49 @@ func defaultTo(val, def int) int {
 		return def
 	}
 	return val
+}
+
+func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model string) int {
+	switch provider {
+	case conftypes.CompletionsProviderNameSourcegraph:
+		if strings.HasPrefix(model, "openai/") {
+			return openaiDefaultMaxPromptTokens(strings.TrimPrefix(model, "openai/"))
+		}
+		if strings.HasPrefix(model, "anthropic/") {
+			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic/"))
+		}
+		// Fallback for weird values.
+		return 9_000
+	case conftypes.CompletionsProviderNameAnthropic:
+		return anthropicDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameOpenAI:
+		return openaiDefaultMaxPromptTokens(model)
+	}
+
+	// Should be unreachable.
+	return 9_000
+}
+
+func anthropicDefaultMaxPromptTokens(model string) int {
+	if strings.HasSuffix(model, "-100k") {
+		return 100_000
+
+	}
+	// For now, all other claude models have a 9k token window.
+	return 9_000
+}
+
+func openaiDefaultMaxPromptTokens(model string) int {
+	switch model {
+	case "gpt-4":
+		return 8_000
+	case "gpt-4-32k":
+		return 32_000
+	case "gpt-3.5-turbo":
+		return 4_000
+	case "gpt-3.5-turbo-16k":
+		return 16_000
+	default:
+		return 4_000
+	}
 }

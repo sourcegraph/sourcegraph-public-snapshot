@@ -10,7 +10,7 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/notebooks",
+        "//internal/notebooks",
         "@com_github_graph_gophers_graphql_go//:graphql-go",
     ],
 )
