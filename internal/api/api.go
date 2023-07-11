@@ -2,8 +2,6 @@
 package api
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -57,10 +55,6 @@ func (c CommitID) Short() string {
 	}
 	return string(c)
 }
-
-// RevSpec is a revision range specifier suitable for passing to git. See
-// the manpage gitrevisions(7).
-type RevSpec string
 
 // RepoCommit scopes a commit to a repository.
 type RepoCommit struct {
@@ -192,12 +186,6 @@ type ConfigSavedQuery struct {
 	UserID          *int32  `json:"userID"`
 	OrgID           *int32  `json:"orgID"`
 	SlackWebhookURL *string `json:"slackWebhookURL"`
-}
-
-func (sq ConfigSavedQuery) Equals(other ConfigSavedQuery) bool {
-	a, _ := json.Marshal(sq)
-	b, _ := json.Marshal(other)
-	return bytes.Equal(a, b)
 }
 
 // SavedQuerySpecAndConfig represents a saved query configuration its unique ID.
