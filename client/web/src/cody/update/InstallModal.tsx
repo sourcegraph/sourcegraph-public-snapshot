@@ -20,21 +20,30 @@ export const InstallModal: React.FC<InstallModalProps> = ({ details, onClose }) 
             <>
                 <div className="d-flex p-2 mt-2 flex-grow-1">
                     <LoadingSpinner />
-                    <Text className="ml-2 mb-1">Installing... Please wait...</Text>
+                    <Text className="ml-2 mb-1">Please wait. The app will restart after upgrade.</Text>
                 </div>
             </>
         )}
         {details.stage === 'ERROR' && (
-            <>
-                <div className="mt-4">
-                    <Alert variant="danger">{details.error}</Alert>
-                </div>
-                <div className="d-flex justify-content-end mt-4">
-                    <Button variant="primary" onClick={onClose}>
+            <div className="mt-4">
+                <Alert variant="danger">{details.error}</Alert>
+            </div>
+        )}
+        <div className="d-flex justify-content-end">
+            {details.stage === 'ERROR' ? (
+                <>
+                    <Button variant="primary" className="m-1" onClick={details.startInstall}>
+                        Retry
+                    </Button>
+                    <Button variant="secondary" className="m-1" onClick={onClose}>
                         Close
                     </Button>
-                </div>
-            </>
-        )}
+                </>
+            ) : (
+                <Button variant="secondary" className="m-1" onClick={onClose}>
+                    Cancel
+                </Button>
+            )}
+        </div>
     </Modal>
 )

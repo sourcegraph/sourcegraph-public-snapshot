@@ -74,9 +74,9 @@
     "updater": {
       "active": true,
       "endpoints": [
-        "http://localhost:8000/update.json?target={{target}}&current_version={{current_version}}&arch={{arch}}"
+        "https://sourcegraph.com/.api/app/check/update?target={{target}}&current_version={{current_version}}&arch={{arch}}"
       ],
-      "dialog": false,
+      "dialog": true,
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDhGNTY0NDBFMkYwN0NGMzUKUldRMXp3Y3ZEa1JXanllL3ozNVBFaGIyd1NQcEg1T3BucHRrWGJSYmFFZ1hYRWkwT24yM3NrWUcK"
     },
     "windows": [
