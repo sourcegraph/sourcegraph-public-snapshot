@@ -255,6 +255,9 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 	return
 }
 
+// validateRevision returns an error if the revision provided to this job is empty.
+// This can happen when GetDefaultBranch's response is error or empty at the time this job was scheduled.
+// Only the handler should provide the error to mark a failed/errored job, therefore handler requires a revision check.
 func (r *revisionFetcher) validateRevision(ctx context.Context) error {
 	// if the revision is empty then fetch from gitserver to determine this job's failure message
 	if r.revision == "" {
