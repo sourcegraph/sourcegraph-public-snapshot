@@ -82,8 +82,8 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
 
-            // Redirects to the /post-sign-up after successful signup.
-            window.location.replace(PageRoutes.PostSignUp)
+            // Redirects to the /post-sign-up after successful signup on sourcegraphDotCom.
+            window.location.replace(context.sourcegraphDotComMode ? PageRoutes.PostSignUp : returnTo)
 
             return Promise.resolve()
         })

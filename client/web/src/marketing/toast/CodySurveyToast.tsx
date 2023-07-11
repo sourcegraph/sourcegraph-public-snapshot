@@ -32,7 +32,7 @@ const SUBMIT_CODY_SURVEY = gql`
 `
 
 const SET_COMPLETED_POST_SIGNUP = gql`
-    mutation setCompletedPostSignup($userID: ID!) {
+    mutation SetCompletedPostSignup($userID: ID!) {
         setCompletedPostSignup(userID: $userID) {
             alwaysNil
         }
@@ -42,6 +42,7 @@ const SET_COMPLETED_POST_SIGNUP = gql`
 const CodySurveyToastInner: React.FC<
     { onSubmitEnd: () => void; userId: string; hasVerifiedEmail: boolean } & TelemetryProps
 > = ({ userId, onSubmitEnd, telemetryService, hasVerifiedEmail }) => {
+    const [loading, setLoading] = useState(false)
     const [isCodyForWork, setIsCodyForWork] = useState(false)
     const [isCodyForPersonalStuff, setIsCodyForPersonalStuff] = useState(false)
 
@@ -59,31 +60,36 @@ const CodySurveyToastInner: React.FC<
         },
     })
 
-    const [updatePostSignupCompletion, { loading }] = useMutation<
-        setCompletedPostSignupResult,
-        setCompletedPostSignupVariables
-    >(SET_COMPLETED_POST_SIGNUP, {
-        variables: {
-            userID: userId,
-        },
-    })
+    const [updatePostSignupCompletion] = useMutation<setCompletedPostSignupResult, setCompletedPostSignupVariables>(
+        SET_COMPLETED_POST_SIGNUP,
+        {
+            variables: {
+                userID: userId,
+            },
+        }
+    )
 
     const handleSubmit = useCallback(
-        (event: React.FormEvent<HTMLFormElement>) => {
+        async (event: React.FormEvent<HTMLFormElement>) => {
+            setLoading(true)
             const eventParams = { isCodyForPersonalStuff, isCodyForWork }
             telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
 
-            if (hasVerifiedEmail) {
-                // eslint-disable-next-line no-console
-                submitCodySurvey().catch(console.error)
-                // eslint-disable-next-line no-console
-                updatePostSignupCompletion().then(onSubmitEnd).catch(console.error)
-                return
-            }
+            try {
+                await submitCodySurvey()
 
-            // eslint-disable-next-line no-console
-            submitCodySurvey().catch(console.error).finally(onSubmitEnd)
+                if (hasVerifiedEmail) {
+                    await updatePostSignupCompletion()
+                }
+
+                setLoading(false)
+                onSubmitEnd()
+            } catch (error) {
+                /* eslint-disable no-console */
+                console.error(error)
+                setLoading(false)
+            }
         },
         [
             hasVerifiedEmail,

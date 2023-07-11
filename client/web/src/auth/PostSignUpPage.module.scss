@@ -3,11 +3,9 @@
         var(--black);
     height: 100%;
     width: 100%;
-    padding: 2.5rem 5rem !important;
 
     .page {
-        max-width: 1360px;
-        margin: auto;
+        max-width: var(--viewport-xl);
     }
 
     .logo {

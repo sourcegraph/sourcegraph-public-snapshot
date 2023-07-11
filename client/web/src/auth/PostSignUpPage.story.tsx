@@ -20,8 +20,6 @@ const mockUser = {
     completedPostSignup: false,
 } as AuthenticatedUser
 
-window.context.codyRequiresVerifiedEmail = true
-
 export const UnverifiedEmail: Story = () => <WebStory>{() => <PostSignUpPage authenticatedUser={mockUser} />}</WebStory>
 
 export const VerifiedEmail: Story = () => (
