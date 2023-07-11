@@ -10,6 +10,7 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -85,7 +86,7 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 			// response. Try it again a few times and hope for the best.
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, texts[embedding.Index], 3)
 			if err != nil {
-				return nil, err
+				return nil, client.PartialError{Err: err, Index: embedding.Index}
 			}
 			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}

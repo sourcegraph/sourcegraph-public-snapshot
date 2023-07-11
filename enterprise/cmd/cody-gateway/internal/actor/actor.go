@@ -22,11 +22,14 @@ type Actor struct {
 	Key string `json:"key"`
 	// ID is the identifier for this actor's rate-limiting pool. It is not a sensitive
 	// value. It must be set for all valid actors - if empty, the actor must be invalid
-	// and must not not have any feature access.
+	// and must not have any feature access.
 	//
 	// For example, for product subscriptions this is the subscription UUID. For
 	// Sourcegraph.com users, this is the string representation of the user ID.
 	ID string `json:"id"`
+	// Name is the human-readable name for this actor, e.g. username, account name.
+	// Optional for implementations - if unset, ID will be returned from GetName().
+	Name string `json:"name"`
 	// AccessEnabled is an evaluated field that summarizes whether or not Cody Gateway access
 	// is enabled.
 	//
@@ -39,6 +42,24 @@ type Actor struct {
 	LastUpdated *time.Time `json:"lastUpdated"`
 	// Source is a reference to the source of this actor's state.
 	Source Source `json:"-"`
+}
+
+func (a *Actor) GetID() string {
+	return a.ID
+}
+
+func (a *Actor) GetName() string {
+	if a.Name == "" {
+		return a.ID
+	}
+	return a.Name
+}
+
+func (a *Actor) GetSource() codygateway.ActorSource {
+	if a.Source == nil {
+		return "unknown"
+	}
+	return codygateway.ActorSource(a.Source.Name())
 }
 
 type contextKey int
@@ -158,7 +179,7 @@ func (a *Actor) Limiter(
 		UpdateRateLimitTTL: a.LastUpdated != nil && time.Since(*a.LastUpdated) < 5*time.Minute,
 		NowFunc:            time.Now,
 		RateLimitAlerter: func(ctx context.Context, usageRatio float32, ttl time.Duration) {
-			rateLimitNotifier(ctx, a.ID, codygateway.ActorSource(a.Source.Name()), feature, usageRatio, ttl)
+			rateLimitNotifier(ctx, a, feature, usageRatio, ttl)
 		},
 	}
 

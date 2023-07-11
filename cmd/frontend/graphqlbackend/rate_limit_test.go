@@ -1,6 +1,7 @@
 package graphqlbackend
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -415,7 +416,7 @@ func TestBasicLimiterEnabled(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(fmt.Sprintf("limit:%d", tt.limit), func(t *testing.T) {
-			store, err := memstore.New(1)
+			store, err := memstore.NewCtx(1)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -435,7 +436,7 @@ func TestBasicLimiterEnabled(t *testing.T) {
 }
 
 func TestBasicLimiter(t *testing.T) {
-	store, err := memstore.New(1)
+	store, err := memstore.NewCtx(1)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -458,7 +459,7 @@ func TestBasicLimiter(t *testing.T) {
 	}
 
 	// 1st call should not be limited.
-	limited, _, err := limiter.RateLimit("", 1, limiterArgs)
+	limited, _, err := limiter.RateLimit(context.Background(), "", 1, limiterArgs)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -467,7 +468,7 @@ func TestBasicLimiter(t *testing.T) {
 	}
 
 	// 2nd call should be limited.
-	limited, _, err = limiter.RateLimit("", 1, limiterArgs)
+	limited, _, err = limiter.RateLimit(context.Background(), "", 1, limiterArgs)
 	if err != nil {
 		t.Fatal(err)
 	}

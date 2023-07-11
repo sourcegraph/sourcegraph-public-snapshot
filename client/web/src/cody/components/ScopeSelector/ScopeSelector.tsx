@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useCallback } from 'react'
 
 import classNames from 'classnames'
 
-import { CodyClientScope } from '@sourcegraph/cody-shared/src/chat/useClient'
+import { CodyClientScope } from '@sourcegraph/cody-shared/dist/chat/useClient'
 import { useLazyQuery } from '@sourcegraph/http-client'
 
 import { ReposStatusResult, ReposStatusVariables } from '../../../graphql-operations'

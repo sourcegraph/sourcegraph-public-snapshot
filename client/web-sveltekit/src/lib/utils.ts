@@ -8,9 +8,14 @@ export type LoadingData<D, E> =
     | { loading: false; data: null; error: E }
 
 /**
- * Converts a promise to a readable store which emits loading and error data.
- * This is useful in loader functions to prevent SvelteKit from waiting for the
- * promise to resolve before rendering the page.
+ * Converts a promise to a readable store which emits data, loading and error states.
+ * Sometimes load functions return deferred promises and the data needs to be
+ * "post processed" in code (i.e. not using {#await}).
+ * Usually when working with async data one has to be careful with outdated data.
+ * If the load function has been called again we don't want to process the
+ * previous data anymore.
+ * Using a (reactive) store makes that simpler since Svelte will automatically unsubscribe
+ * when the store changes.
  */
 export function asStore<T, E = Error>(promise: Promise<T>): Readable<LoadingData<T, E>> {
     const { subscribe, set } = writable<LoadingData<T, E>>({ loading: true })

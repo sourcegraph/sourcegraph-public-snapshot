@@ -1,13 +1,12 @@
 import { isErrorLike } from '$lib/common'
 import { GitRefType } from '$lib/graphql-operations'
 import { queryGitReferences } from '$lib/loader/repo'
-import { asStore } from '$lib/utils'
 
 import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ parent }) => ({
-    branches: asStore(
-        parent().then(({ resolvedRevision }) =>
+    branches: {
+        deferred: parent().then(({ resolvedRevision }) =>
             isErrorLike(resolvedRevision)
                 ? null
                 : queryGitReferences({
@@ -15,6 +14,6 @@ export const load: PageLoad = ({ parent }) => ({
                       type: GitRefType.GIT_BRANCH,
                       first: 20,
                   }).toPromise()
-        )
-    ),
+        ),
+    },
 })

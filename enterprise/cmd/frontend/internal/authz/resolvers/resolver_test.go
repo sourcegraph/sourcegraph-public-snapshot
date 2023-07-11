@@ -22,7 +22,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -65,7 +64,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -186,7 +185,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				return &types.Repo{ID: id}, nil
 			})
 
-			perms := edb.NewStrictMockPermsStore()
+			perms := database.NewStrictMockPermsStore()
 			perms.TransactFunc.SetDefaultReturn(perms, nil)
 			perms.DoneFunc.SetDefaultReturn(nil)
 			perms.SetRepoPermsFunc.SetDefaultHook(func(_ context.Context, repoID int32, ids []authz.UserIDWithExternalAccountID, source authz.PermsSource) (*database.SetPermissionsResult, error) {
@@ -229,7 +228,7 @@ func TestResolver_SetRepositoryPermissionsForUsers(t *testing.T) {
 				return m, nil
 			})
 
-			db := edb.NewStrictMockEnterpriseDB()
+			db := database.NewStrictMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 			db.ReposFunc.SetDefaultReturn(repos)
@@ -247,7 +246,7 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -263,7 +262,7 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 	var haveIDs []int32
 	var haveUnrestricted bool
 
-	perms := edb.NewMockPermsStore()
+	perms := database.NewMockPermsStore()
 	perms.SetRepoPermissionsUnrestrictedFunc.SetDefaultHook(func(ctx context.Context, ids []int32, unrestricted bool) error {
 		haveIDs = ids
 		haveUnrestricted = unrestricted
@@ -272,7 +271,7 @@ func TestResolver_SetRepositoryPermissionsUnrestricted(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.PermsFunc.SetDefaultReturn(perms)
 	db.UsersFunc.SetDefaultReturn(users)
 
@@ -311,7 +310,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		result, err := (&Resolver{db: db}).ScheduleRepositoryPermissionsSync(ctx, &graphqlbackend.RepositoryIDArgs{})
@@ -326,7 +325,7 @@ func TestResolver_ScheduleRepositoryPermissionsSync(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	r := &Resolver{db: db}
@@ -365,7 +364,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 123}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		result, err := (&Resolver{db: db}).ScheduleUserPermissionsSync(ctx, &graphqlbackend.UserPermissionsSyncArgs{User: graphqlbackend.MarshalUserID(1)})
@@ -380,7 +379,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 123, SiteAdmin: true}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	const userID = int32(1)
@@ -416,7 +415,7 @@ func TestResolver_ScheduleUserPermissionsSync(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		r := &Resolver{db: db}
 
@@ -484,7 +483,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -508,7 +507,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -529,7 +528,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -556,7 +555,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		extSvc := database.NewMockExternalServiceStore()
@@ -595,7 +594,7 @@ func TestResolver_SetRepositoryPermissionsForBitbucketProject(t *testing.T) {
 		bb := database.NewMockBitbucketProjectPermissionsStore()
 		bb.EnqueueFunc.SetDefaultReturn(1, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.BitbucketProjectPermissionsFunc.SetDefaultReturn(bb)
 
@@ -671,7 +670,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -687,7 +686,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db, logger: logger}
@@ -710,7 +709,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
 		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(database.MockPermissionsSyncJobNotFoundErr)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
@@ -736,7 +735,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		const errorText = "oops"
 		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(errors.New(errorText))
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
@@ -761,7 +760,7 @@ func TestResolver_CancelPermissionsSyncJob(t *testing.T) {
 		permissionSyncJobStore := database.NewMockPermissionSyncJobStore()
 		permissionSyncJobStore.CancelQueuedJobFunc.SetDefaultReturn(nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
@@ -794,7 +793,7 @@ func TestResolver_CancelPermissionsSyncJob_GraphQLQuery(t *testing.T) {
 		return database.MockPermissionsSyncJobNotFoundErr
 	})
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 
@@ -842,7 +841,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -879,7 +878,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		return repos, nil
 	})
 
-	perms := edb.NewStrictMockPermsStore()
+	perms := database.NewStrictMockPermsStore()
 	perms.LoadUserPermissionsFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]authz.Permission, error) {
 		return []authz.Permission{{
 			UserID: userID,
@@ -891,7 +890,7 @@ func TestResolver_AuthorizedUserRepositories(t *testing.T) {
 		return nil
 	})
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.PermsFunc.SetDefaultReturn(perms)
@@ -1111,7 +1110,7 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1127,10 +1126,10 @@ func TestResolver_UsersWithPendingPermissions(t *testing.T) {
 	users := database.NewStrictMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	perms := edb.NewStrictMockPermsStore()
+	perms := database.NewStrictMockPermsStore()
 	perms.ListPendingUsersFunc.SetDefaultReturn([]string{"alice", "bob"}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermsFunc.SetDefaultReturn(perms)
 
@@ -1172,7 +1171,7 @@ func TestResolver_AuthzProviderTypes(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1191,7 +1190,7 @@ func TestResolver_AuthzProviderTypes(t *testing.T) {
 			SiteAdmin: true,
 		}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1217,7 +1216,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1248,7 +1247,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		return &types.Repo{ID: id}, nil
 	})
 
-	perms := edb.NewStrictMockPermsStore()
+	perms := database.NewStrictMockPermsStore()
 	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
 		permissions := make([]authz.Permission, 5)
 		for i, userID := range []int32{1, 2, 3, 4, 5} {
@@ -1261,7 +1260,7 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		return permissions, nil
 	})
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.PermsFunc.SetDefaultReturn(perms)
@@ -1407,7 +1406,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1431,7 +1430,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 		return &types.Repo{ID: id}, nil
 	})
 
-	perms := edb.NewStrictMockPermsStore()
+	perms := database.NewStrictMockPermsStore()
 	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
 		return []authz.Permission{{RepoID: repoID, UserID: 42, UpdatedAt: clock()}}, nil
 	})
@@ -1442,7 +1441,7 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	syncJobs := database.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.PermsFunc.SetDefaultReturn(perms)
@@ -1500,7 +1499,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
@@ -1520,13 +1519,13 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
-		perms := edb.NewStrictMockPermsStore()
+		perms := database.NewStrictMockPermsStore()
 		perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{}, nil)
 
 		syncJobs := database.NewStrictMockPermissionSyncJobStore()
 		syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(nil, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermsFunc.SetDefaultReturn(perms)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(syncJobs)
@@ -1548,7 +1547,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		return &types.User{ID: id}, nil
 	})
 
-	perms := edb.NewStrictMockPermsStore()
+	perms := database.NewStrictMockPermsStore()
 	perms.LoadUserPermissionsFunc.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
 		return []authz.Permission{{UpdatedAt: clock()}}, nil
 	})
@@ -1561,7 +1560,7 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 		return &types.Repo{Name: name}, nil
 	})
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.PermsFunc.SetDefaultReturn(perms)
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -1617,12 +1616,12 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		subrepos := edb.NewStrictMockSubRepoPermsStore()
+		subrepos := database.NewStrictMockSubRepoPermsStore()
 		subrepos.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
 			return nil
 		})
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.SubRepoPermsFunc.SetDefaultReturn(subrepos)
 
@@ -1655,7 +1654,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 			}, nil
 		})
 
-		subReposStore := edb.NewStrictMockSubRepoPermsStore()
+		subReposStore := database.NewStrictMockSubRepoPermsStore()
 		subReposStore.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
 			return nil
 		})
@@ -1668,7 +1667,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 			}, nil
 		})
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 			return f(db)
 		})
@@ -1676,7 +1675,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		db.SubRepoPermsFunc.SetDefaultReturn(subReposStore)
 		db.ReposFunc.SetDefaultReturn(reposStore)
 
-		perms := edb.NewStrictMockPermsStore()
+		perms := database.NewStrictMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.DoneFunc.SetDefaultReturn(nil)
 		perms.MapUsersFunc.SetDefaultHook(func(ctx context.Context, s []string, pum *schema.PermissionsUserMapping) (map[string]int32, error) {
@@ -1792,7 +1791,7 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -1811,7 +1810,7 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -1827,7 +1826,7 @@ func TestResolver_BitbucketProjectPermissionJobs(t *testing.T) {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -1867,7 +1866,7 @@ query {
 		users := database.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		bbProjects := database.NewMockBitbucketProjectPermissionsStore()
@@ -1966,7 +1965,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		users.GetByIDFunc.SetDefaultReturn(&types.User{}, nil)
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -1983,7 +1982,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -2000,7 +1999,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -2017,7 +2016,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		r := &Resolver{db: db}
@@ -2035,7 +2034,7 @@ func TestResolverPermissionsSyncJobs(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
 	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Mocking permission jobs database queries.
@@ -2269,7 +2268,7 @@ func TestResolverPermissionsSyncJobsFiltering(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
 	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Mocking permission jobs database queries.
@@ -2457,7 +2456,7 @@ func TestResolverPermissionsSyncJobsSearching(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(returnedUser, nil)
 	users.GetByIDFunc.SetDefaultReturn(returnedUser, nil)
 
-	db := edb.NewStrictMockEnterpriseDB()
+	db := database.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Mocking permission jobs database queries.
@@ -2607,7 +2606,7 @@ func TestResolver_PermissionsSyncingStats(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
 		users.GetByIDFunc.SetDefaultReturn(user, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: user.ID})
@@ -2629,13 +2628,13 @@ func TestResolver_PermissionsSyncingStats(t *testing.T) {
 		permissionSyncJobStore.CountUsersWithFailingSyncJobFunc.SetDefaultReturn(3, nil)
 		permissionSyncJobStore.CountReposWithFailingSyncJobFunc.SetDefaultReturn(4, nil)
 
-		perms := edb.NewStrictMockPermsStore()
+		perms := database.NewStrictMockPermsStore()
 		perms.CountUsersWithNoPermsFunc.SetDefaultReturn(5, nil)
 		perms.CountReposWithNoPermsFunc.SetDefaultReturn(6, nil)
 		perms.CountUsersWithStalePermsFunc.SetDefaultReturn(7, nil)
 		perms.CountReposWithStalePermsFunc.SetDefaultReturn(8, nil)
 
-		db := edb.NewStrictMockEnterpriseDB()
+		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.PermissionSyncJobsFunc.SetDefaultReturn(permissionSyncJobStore)
 		db.PermsFunc.SetDefaultReturn(perms)

@@ -29,7 +29,7 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Orchestrator for the Cody agent, which is a Node.js program that implements the prompt logic for
  * Cody. The agent communicates via a JSON-RPC protocol that is documented in the file
- * "client/cody-agent/src/protocol.ts".
+ * "cody/agent/src/protocol.ts".
  *
  * <p>The class {{{@link com.sourcegraph.cody.CodyAgentProjectListener}}} is responsible for
  * initializing and shutting down the agent.
