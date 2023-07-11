@@ -112,7 +112,6 @@ export function newRecipeContext(args?: Partial<RecipeContext>): RecipeContext {
                 'dummy-codebase',
                 defaultEmbeddingsClient,
                 defaultKeywordContextFetcher,
-                null,
                 null
             ),
         responseMultiplexer: args.responseMultiplexer || new BotResponseMultiplexer(),

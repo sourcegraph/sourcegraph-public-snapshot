@@ -1,6 +1,5 @@
 import { Configuration } from '../configuration'
 import { EmbeddingsSearch } from '../embeddings'
-import { GraphContextFetcher } from '../graph-context'
 import { FilenameContextFetcher, KeywordContextFetcher, ContextResult } from '../local-context'
 import { isMarkdownFile, populateCodeContextTemplate, populateMarkdownContextTemplate } from '../prompt/templates'
 import { Message } from '../sourcegraph-api'
@@ -23,7 +22,6 @@ export class CodebaseContext {
         private embeddings: EmbeddingsSearch | null,
         private keywords: KeywordContextFetcher | null,
         private filenames: FilenameContextFetcher | null,
-        private graph: GraphContextFetcher | null,
         private unifiedContextFetcher?: UnifiedContextFetcher | null,
         private rerank?: (query: string, results: ContextResult[]) => Promise<ContextResult[]>
     ) {}
@@ -209,64 +207,6 @@ export class CodebaseContext {
         }
         const results = await this.filenames.getContext(query, options.numCodeResults + options.numTextResults)
         return results
-    }
-
-    public async getGraphContextMessages(): Promise<ContextMessage[]> {
-        // NOTE(auguste): I recommend checking out populateCodeContextTemplate and using
-        // that in the long-term, but this will do for now :)
-
-        if (!this.graph) {
-            return []
-        }
-
-        const contextMessages: ContextMessage[] = []
-        const preciseContext = await this.graph.getContext()
-
-        for (const context of preciseContext) {
-            contextMessages.push({
-                speaker: 'human',
-                file: {
-                    fileName: context.filepath,
-                    repoName: context.repository,
-                },
-                text: `
-                As my coding assistant, use this context to help me answer the question asked:
-
-                Here is the precise snippet of code that is relevant to the current active file: ${context.text}
-
-                ## Instruction
-                - Do not enclose your answer with tags.
-                - Do not remove code that might be being used by the other part of the code that was not shared.
-                - Your answers and suggestions should based on the provided context only.
-                - Make references to other part of the shared code.
-                - Do not suggest code that are not related to any of the shared context.
-                - Do not suggest anything that would break the working code.
-                `,
-            })
-            contextMessages.push({ speaker: 'assistant', text: 'okay' })
-        }
-
-        return contextMessages
-
-        // contextMessages.push({
-        //     speaker: 'human',
-        //     file: {
-        //         fileName: 'filename',
-        //         repoName: 'repoName',
-        //         revision: 'revision',
-        //     },
-        //     text: `
-        //         Here is the path to the file ${test.data.search.results.results[0].file.path}.
-        //         The kind of the symbol is a ${test.data.search.results.results[0].symbols.kind}.
-        //         The name of the symbol is a ${test.data.search.results.results[0].symbols.name}.
-        //         It is located in ${test.data.search.results.results[0].symbols.url}
-        //         This is the content of the file ${test.data.search.results.results[0].file.content}.
-        //     `,
-        // })
-        // contextMessages.push({
-        //     speaker: 'assistant',
-        //     text: 'okay',
-        // })
     }
 }
 

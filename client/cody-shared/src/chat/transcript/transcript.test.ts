@@ -79,7 +79,6 @@ describe('Transcript', () => {
                     'dummy-codebase',
                     embeddings,
                     defaultKeywordContextFetcher,
-                    null,
                     null
                 ),
             })
@@ -117,7 +116,6 @@ describe('Transcript', () => {
                     'dummy-codebase',
                     embeddings,
                     defaultKeywordContextFetcher,
-                    null,
                     null
                 ),
                 firstInteraction: true,
@@ -153,7 +151,6 @@ describe('Transcript', () => {
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,
-            null,
             null
         )
 
@@ -240,7 +237,6 @@ describe('Transcript', () => {
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,
-            null,
             null
         )
 

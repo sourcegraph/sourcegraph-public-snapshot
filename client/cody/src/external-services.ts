@@ -12,7 +12,6 @@ import { SourcegraphNodeCompletionsClient } from '@sourcegraph/cody-shared/src/s
 import { SourcegraphGraphQLAPIClient } from '@sourcegraph/cody-shared/src/sourcegraph-api/graphql'
 import { isError } from '@sourcegraph/cody-shared/src/utils'
 
-import { VSCodeGraphContextFetcher } from './graph-context/graph-context-fetcher'
 import { FilenameContextFetcher } from './local-context/filename-context-fetcher'
 import { LocalKeywordContextFetcher } from './local-context/local-keyword-context-fetcher'
 import { logger } from './log'
@@ -58,7 +57,6 @@ export async function configureExternalServices(
         embeddingsSearch,
         new LocalKeywordContextFetcher(rgPath, editor, chatClient),
         new FilenameContextFetcher(rgPath, editor, chatClient),
-        new VSCodeGraphContextFetcher(client, editor),
         undefined,
         getRerankWithLog(chatClient)
     )
