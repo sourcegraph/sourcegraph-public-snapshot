@@ -15,8 +15,8 @@ import { LoaderButton } from '../../components/LoaderButton'
 import {
     SubmitCodySurveyResult,
     SubmitCodySurveyVariables,
-    setCompletedPostSignupVariables,
-    setCompletedPostSignupResult,
+    SetCompletedPostSignupVariables,
+    SetCompletedPostSignupResult,
 } from '../../graphql-operations'
 import { PageRoutes } from '../../routes.constants'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
@@ -60,7 +60,7 @@ const CodySurveyToastInner: React.FC<
         },
     })
 
-    const [updatePostSignupCompletion] = useMutation<setCompletedPostSignupResult, setCompletedPostSignupVariables>(
+    const [updatePostSignupCompletion] = useMutation<SetCompletedPostSignupResult, SetCompletedPostSignupVariables>(
         SET_COMPLETED_POST_SIGNUP,
         {
             variables: {
