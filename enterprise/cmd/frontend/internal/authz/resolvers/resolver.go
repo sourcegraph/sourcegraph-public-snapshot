@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -36,8 +35,7 @@ var errDisabledSourcegraphDotCom = errors.New("not enabled on sourcegraph.com")
 
 type Resolver struct {
 	logger log.Logger
-	db     edb.EnterpriseDB
-	ossDB  database.DB
+	db     database.DB
 }
 
 // checkLicense returns a user-facing error if the provided feature is not purchased
@@ -58,8 +56,7 @@ func (r *Resolver) checkLicense(feature licensing.Feature) error {
 func NewResolver(observationCtx *observation.Context, db database.DB) graphqlbackend.AuthzResolver {
 	return &Resolver{
 		logger: observationCtx.Logger.Scoped("authz.Resolver", ""),
-		db:     edb.NewEnterpriseDB(db),
-		ossDB:  db,
+		db:     db,
 	}
 }
 
@@ -234,10 +231,8 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 	}
 
 	err = r.db.WithTransact(ctx, func(tx database.DB) error {
-		db := edb.NewEnterpriseDB(tx)
-
 		// Make sure the repo ID is valid.
-		if _, err = db.Repos().Get(ctx, repoID); err != nil {
+		if _, err = tx.Repos().Get(ctx, repoID); err != nil {
 			return err
 		}
 
@@ -294,7 +289,7 @@ func (r *Resolver) SetSubRepositoryPermissionsForUsers(ctx context.Context, args
 				}
 			}
 
-			if err := db.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
+			if err := tx.SubRepoPerms().Upsert(ctx, userID, repoID, authz.SubRepoPermissions{
 				Paths: paths,
 			}); err != nil {
 				return errors.Wrap(err, "upserting sub-repo permissions")
@@ -605,7 +600,6 @@ func (r *Resolver) RepositoryPermissionsInfo(ctx context.Context, id graphql.ID)
 
 	return &permissionsInfoResolver{
 		db:           r.db,
-		ossDB:        r.ossDB,
 		repoID:       repoID,
 		perms:        authz.Read,
 		syncedAt:     syncedAt,
@@ -658,7 +652,6 @@ func (r *Resolver) UserPermissionsInfo(ctx context.Context, id graphql.ID) (grap
 
 	return &permissionsInfoResolver{
 		db:        r.db,
-		ossDB:     r.ossDB,
 		userID:    userID,
 		perms:     authz.Read,
 		syncedAt:  syncedAt,
@@ -686,8 +679,7 @@ func (r *Resolver) PermissionsSyncJobs(ctx context.Context, args graphqlbackend.
 
 func (r *Resolver) PermissionsSyncingStats(ctx context.Context) (graphqlbackend.PermissionsSyncingStatsResolver, error) {
 	stats := permissionsSyncingStats{
-		db:    r.db,
-		ossDB: r.ossDB,
+		db: r.db,
 	}
 
 	// 🚨 SECURITY: Only site admins can query permissions syncing stats.
@@ -699,21 +691,20 @@ func (r *Resolver) PermissionsSyncingStats(ctx context.Context) (graphqlbackend.
 }
 
 type permissionsSyncingStats struct {
-	db    edb.EnterpriseDB
-	ossDB database.DB
+	db database.DB
 }
 
 func (s permissionsSyncingStats) QueueSize(ctx context.Context) (int32, error) {
-	count, err := s.ossDB.PermissionSyncJobs().Count(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionsSyncJobStateQueued})
+	count, err := s.db.PermissionSyncJobs().Count(ctx, database.ListPermissionSyncJobOpts{State: database.PermissionsSyncJobStateQueued})
 	return int32(count), err
 }
 
 func (s permissionsSyncingStats) UsersWithLatestJobFailing(ctx context.Context) (int32, error) {
-	return s.ossDB.PermissionSyncJobs().CountUsersWithFailingSyncJob(ctx)
+	return s.db.PermissionSyncJobs().CountUsersWithFailingSyncJob(ctx)
 }
 
 func (s permissionsSyncingStats) ReposWithLatestJobFailing(ctx context.Context) (int32, error) {
-	return s.ossDB.PermissionSyncJobs().CountReposWithFailingSyncJob(ctx)
+	return s.db.PermissionSyncJobs().CountReposWithFailingSyncJob(ctx)
 }
 
 func (s permissionsSyncingStats) UsersWithNoPermissions(ctx context.Context) (int32, error) {

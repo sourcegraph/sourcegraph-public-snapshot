@@ -7,8 +7,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
@@ -58,7 +58,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			workCtx,
 			observationCtx,
 			repoembeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle()),
-			edb.NewEnterpriseDB(db),
+			db,
 			uploadStore,
 			gitserver.NewClient(),
 			services.ContextService,
@@ -71,7 +71,7 @@ func newRepoEmbeddingJobWorker(
 	ctx context.Context,
 	observationCtx *observation.Context,
 	workerStore dbworkerstore.Store[*repoembeddingsbg.RepoEmbeddingJob],
-	db edb.EnterpriseDB,
+	db database.DB,
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
 	contextService embed.ContextService,

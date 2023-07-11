@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types/scheduler/window"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -47,7 +46,7 @@ func Init(
 	// Register enterprise services.
 	gitserverClient := gitserver.NewClient()
 	logger := sglog.Scoped("Batches", "batch changes webhooks")
-	enterpriseServices.BatchChangesResolver = resolvers.New(edb.NewEnterpriseDB(db), bstore, gitserverClient, logger)
+	enterpriseServices.BatchChangesResolver = resolvers.New(db, bstore, gitserverClient, logger)
 	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesBitbucketServerWebhook = webhooks.NewBitbucketServerWebhook(bstore, gitserverClient, logger)
 	enterpriseServices.BatchesBitbucketCloudWebhook = webhooks.NewBitbucketCloudWebhook(bstore, gitserverClient, logger)

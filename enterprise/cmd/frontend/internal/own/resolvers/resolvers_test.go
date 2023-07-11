@@ -18,26 +18,23 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	owntypes "github.com/sourcegraph/sourcegraph/enterprise/internal/own/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/own/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/own"
+	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
+	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	owntypes "github.com/sourcegraph/sourcegraph/internal/own/types"
+	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	enterprisedb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	codeownerspb "github.com/sourcegraph/sourcegraph/enterprise/internal/own/codeowners/v1"
 )
 
 const (
@@ -375,10 +372,10 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 		},
 	}
 	fakeDB := fakedb.New()
-	db := enterprisedb.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
-	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	db.CodeownersFunc.SetDefaultReturn(database.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
@@ -462,10 +459,10 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 		},
 	}
 	fakeDB := fakedb.New()
-	db := enterprisedb.NewMockEnterpriseDB()
+	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
 	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
-	db.CodeownersFunc.SetDefaultReturn(enterprisedb.NewMockCodeownersStore())
+	db.CodeownersFunc.SetDefaultReturn(database.NewMockCodeownersStore())
 	db.RecentContributionSignalsFunc.SetDefaultReturn(database.NewMockRecentContributionSignalStore())
 	db.RecentViewSignalFunc.SetDefaultReturn(database.NewMockRecentViewSignalStore())
 	db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())

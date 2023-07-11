@@ -14,7 +14,7 @@ import {
 import classNames from 'classnames'
 import { useLocation, useNavigate } from 'react-router-dom'
 
-import { CodyLogo } from '@sourcegraph/cody-ui/src/icons/CodyLogo'
+import { CodyLogo } from '@sourcegraph/cody-ui/dist/icons/CodyLogo'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import {

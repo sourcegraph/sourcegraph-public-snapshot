@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -43,12 +42,12 @@ import (
 type Resolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
-	db              edb.EnterpriseDB
+	db              database.DB
 	logger          log.Logger
 }
 
 // New returns a new Resolver whose store uses the given database
-func New(db edb.EnterpriseDB, store *store.Store, gitserverClient gitserver.Client, logger log.Logger) graphqlbackend.BatchChangesResolver {
+func New(db database.DB, store *store.Store, gitserverClient gitserver.Client, logger log.Logger) graphqlbackend.BatchChangesResolver {
 	return &Resolver{store: store, gitserverClient: gitserverClient, db: db, logger: logger}
 }
 

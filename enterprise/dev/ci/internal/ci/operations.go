@@ -59,8 +59,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addWebAppEnterpriseBuild(opts),
 			addJetBrainsUnitTests, // ~2.5m
 			addVsceTests,          // ~3.0m
-			addCodyUnitIntegrationTests,
-			addCodyE2ETests,
 			addStylelint,
 		)
 		ops.Merge(clientChecks)
@@ -85,7 +83,6 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
-			"CODY_NIGHTLY":    os.Getenv("CODY_NIGHTLY"),
 		})
 	)
 
@@ -198,31 +195,6 @@ func addVsceTests(pipeline *bk.Pipeline) {
 		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
 		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
 		// bk.AutomaticRetry(1),
-	)
-}
-
-func addCodyUnitIntegrationTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode::robot_face: Unit and integration tests for the Cody VS Code extension",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
-		bk.Cmd("pnpm --filter cody-ai run test:unit"),
-		bk.Cmd("pnpm --filter cody-shared run test"),
-		bk.Cmd("pnpm --filter cody-ai run test:integration"),
-	)
-}
-
-// Cody E2E tests are extracted into a separate step to auto-retry them on flaky failures.
-func addCodyE2ETests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode::robot_face: E2E tests for the Cody VS Code extension",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.ArtifactPaths("./playwright/**/*"),
-		bk.AutomaticRetry(3),
 	)
 }
 
@@ -493,17 +465,6 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
-}
-
-// Release the Cody extension.
-func addCodyReleaseSteps(releaseType string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":vscode::robot_face: Cody release",
-			withPnpmCache(),
-			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-			bk.Env("CODY_RELEASE_TYPE", releaseType),
-			bk.Cmd("pnpm --filter cody-ai run release"))
-	}
 }
 
 // Release a snapshot of App.

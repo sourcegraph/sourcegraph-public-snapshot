@@ -395,6 +395,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	now := timeutil.Now()
+
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
 
@@ -420,6 +422,8 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		wantCloudDefault   bool
 		wantHasWebhooks    bool
 		wantTokenExpiresAt bool
+		wantLastSyncAt     time.Time
+		wantNextSyncAt     time.Time
 		wantError          bool
 	}{
 		{
@@ -500,6 +504,29 @@ func TestExternalServicesStore_Update(t *testing.T) {
 			},
 			wantError: true,
 		},
+		{
+			name: "update last_sync_at",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #6"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				LastSyncAt:  pointers.Ptr(now),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
+			wantLastSyncAt:     now,
+		},
+		{
+			name: "update next_sync_at",
+			update: &ExternalServiceUpdate{
+				DisplayName: strptr("GITHUB (updated) #7"),
+				Config:      strptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
+				LastSyncAt:  pointers.Ptr(now),
+				NextSyncAt:  pointers.Ptr(now),
+			},
+			wantCloudDefault:   true,
+			wantTokenExpiresAt: true,
+			wantNextSyncAt:     now,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -552,6 +579,14 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 			if test.wantCloudDefault != got.CloudDefault {
 				t.Fatalf("Want cloud_default = %v, but got %v", test.wantCloudDefault, got.CloudDefault)
+			}
+
+			if !test.wantLastSyncAt.IsZero() && !test.wantLastSyncAt.Equal(got.LastSyncAt) {
+				t.Fatalf("Want last_sync_at = %v, but got %v", test.wantLastSyncAt, got.LastSyncAt)
+			}
+
+			if !test.wantNextSyncAt.IsZero() && !test.wantNextSyncAt.Equal(got.NextSyncAt) {
+				t.Fatalf("Want last_sync_at = %v, but got %v", test.wantNextSyncAt, got.NextSyncAt)
 			}
 
 			if got.HasWebhooks == nil {

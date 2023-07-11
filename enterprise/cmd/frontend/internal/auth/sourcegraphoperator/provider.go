@@ -5,16 +5,16 @@ import (
 
 	feAuth "github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/openidconnect"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/cloud"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // provider is an implementation of providers.Provider for the Sourcegraph
 // Operator authentication, also referred to as "SOAP". There can only ever be
 // one provider of this type, and it can only be provisioned through Cloud site
-// configuration (see github.com/sourcegraph/sourcegraph/enterprise/internal/cloud)
+// configuration (see github.com/sourcegraph/sourcegraph/internal/cloud)
 //
 // SOAP is used to provision accounts for Sourcegraph teammates in Sourcegraph
 // Cloud - for more details, refer to

@@ -13,8 +13,8 @@ import (
 
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	types "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	store1 "github.com/sourcegraph/sourcegraph/enterprise/internal/github_apps/store"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
+	store1 "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
 // MockSyncStore is a mock implementation of the SyncStore interface (from

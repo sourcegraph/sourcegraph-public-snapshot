@@ -59,7 +59,7 @@
     "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch",
     "build-cody": "pnpm --filter cody-ai run build",
     "watch-cody": "pnpm --filter cody-ai run watch",
-    "build-cody-windows": "bash ./enterprise/dev/app/build-windows.sh"
+    "watch-vsce": "pnpm --filter @sourcegraph/vscode run watch"
   },
   "nyc": {
     "extends": "@istanbuljs/nyc-config-typescript",
