@@ -212,7 +212,7 @@ export const CodySurveyToast: React.FC<
         authenticatedUser: AuthenticatedUser
     } & TelemetryProps
 > = ({ authenticatedUser, telemetryService }) => {
-    const [showVerifyEmail, setShowVerifyEmail] = useState(authenticatedUser.hasVerifiedEmail)
+    const [showVerifyEmail, setShowVerifyEmail] = useState(!authenticatedUser.hasVerifiedEmail)
 
     const handleSubmitEnd = (): void => {
         window.location.replace(PageRoutes.GetCody)
@@ -227,7 +227,7 @@ export const CodySurveyToast: React.FC<
         return <Navigate to={PageRoutes.GetCody} replace={true} />
     }
 
-    if (!showVerifyEmail) {
+    if (showVerifyEmail) {
         return (
             <CodyVerifyEmailToast
                 onNext={dismissVerifyEmail}
