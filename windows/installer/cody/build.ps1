@@ -73,7 +73,7 @@ Write-Host "--------------------------------------------"
 Write-Host "Building installer for ${ARCH} ${CFG}"
 Write-Host
 
-msbuild /p:Configuration=${CFG} /p:Platform=${ARCH}
+msbuild /restore /p:Configuration=${CFG} /p:Platform=${ARCH}
 
 Write-Host
 Write-Host "--------------------------------------------"
