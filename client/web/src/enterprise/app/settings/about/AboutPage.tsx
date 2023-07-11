@@ -7,9 +7,11 @@ import logo from '../../../../../../../src-tauri/icons/icon.png'
 
 import styles from './AboutPage.module.scss'
 
-interface AboutTabProps {}
+export interface AboutTabProps {
+    version: string
+}
 
-export const AboutTab: React.FC<AboutTabProps> = () => (
+export const AboutTab: React.FC<AboutTabProps> = ({ version = window.context.version }) => (
     <div className={classNames(styles.root)}>
         <PageHeader headingElement="h2" path={[{ text: 'About Cody' }]} actions={[]} className="mb-3" />
         <Container className="mb-3 p-0">
@@ -19,7 +21,7 @@ export const AboutTab: React.FC<AboutTabProps> = () => (
             </div>
             <div className={classNames(styles.panel)}>
                 <H3>Version</H3>
-                {window.context.version}
+                {version}
 
                 {/* TODO(nelsona): Replace with real updates from 
                 https://github.com/sourcegraph/sourcegraph/pull/54507 */}
