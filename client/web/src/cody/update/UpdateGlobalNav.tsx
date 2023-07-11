@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from 'react'
+import { FC, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiRefresh } from '@mdi/js'
 import classNames from 'classnames'
