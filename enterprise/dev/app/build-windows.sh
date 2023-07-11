@@ -2,7 +2,13 @@
 
 set -eux
 
-echo "IN BUILD SCRIPT"
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
+
+if ! "./enterprise/dev/app/windows/check_requirements.cmd"; then
+  echo "STOP! Requirements missing. Please fix before proceeding."
+  exit 1
+fi
+
 #version="$(./enterprise/dev/app/app-version.sh)"
 version="23.7.1"
 echo "Building version: ${version}"
