@@ -213,8 +213,9 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 					return afterDone, errCannotPushToArchivedRepo
 				}
 			}
+		} else {
+			return afterDone, errors.Wrap(err, "pushing commit")
 		}
-		return afterDone, errors.Wrap(err, "pushing commit")
 	}
 
 	// update the changeset's external_id column if a changelist id is returned
