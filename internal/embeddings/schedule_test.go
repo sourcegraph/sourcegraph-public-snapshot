@@ -72,6 +72,7 @@ func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
 
 	repoNames := []api.RepoName{"github.com/repo/notfound", "github.com/sourcegraph/sourcegraph"}
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
@@ -79,6 +80,7 @@ func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
 	pattern := "github.com/sourcegraph/sourcegraph"
 	first := 10
 	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	require.NoError(t, err)
 	require.Equal(t, "queued", jobs[0].State)
 }
 
@@ -102,6 +104,7 @@ func TestScheduleRepositoriesForEmbeddingInvalidDefaultBranch(t *testing.T) {
 
 	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph"}
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
@@ -109,6 +112,7 @@ func TestScheduleRepositoriesForEmbeddingInvalidDefaultBranch(t *testing.T) {
 	pattern := "github.com/sourcegraph/sourcegraph"
 	first := 10
 	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	require.NoError(t, err)
 	require.Equal(t, "queued", jobs[0].State)
 }
 
@@ -137,6 +141,7 @@ func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
 
 	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph", "github.com/sourcegraph/zoekt"}
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.NoError(t, err)
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
@@ -144,12 +149,14 @@ func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
 	pattern := "github.com/sourcegraph/sourcegraph"
 	first := 10
 	jobs, err := store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	require.NoError(t, err)
 	require.Equal(t, "queued", jobs[0].State)
 
 	sgJobID := jobs[0].ID
 
 	pattern = "github.com/sourcegraph/zoekt"
 	jobs, err = store.ListRepoEmbeddingJobs(ctx, repo.ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}, Query: &pattern})
+	require.NoError(t, err)
 	require.Equal(t, "queued", jobs[0].State)
 
 	zoektJobID := jobs[0].ID
@@ -163,6 +170,7 @@ func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
 
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
 	// failed job is rescheduled unless revision is empty
@@ -173,6 +181,7 @@ func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "zoektrevision", nil)
 
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
+	require.NoError(t, err)
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
 	// failed job is rescheduled for sourcegraph once repo is valid
