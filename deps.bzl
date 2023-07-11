@@ -5058,6 +5058,14 @@ def go_dependencies():
         version = "v0.0.0-20190623134757-126b35219450",
     )
     go_repository(
+        name = "com_github_mroth_weightedrand_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/mroth/weightedrand/v2",
+        sum = "h1:zrEVDIaau/E4QLOKu02kpg8T8myweFlMGikIgbIdrRA=",
+        version = "v2.0.1",
+    )
+
+    go_repository(
         name = "com_github_mrunalp_fileutils",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/mrunalp/fileutils",

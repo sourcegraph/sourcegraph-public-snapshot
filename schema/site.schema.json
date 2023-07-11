@@ -1388,6 +1388,52 @@
       "minLength": 20,
       "examples": ["my-super-secret-access-token"]
     },
+    "executors.multiqueue": {
+      "description": "The configuration for multiqueue executors.",
+      "type": "object",
+      "properties": {
+        "dequeueCacheConfig": {
+          "description": "The configuration for the dequeue cache of multiqueue executors. Each queue defines a limit of dequeues in the expiration window as well as a weight, indicating how frequently a queue is picked at random. For example, a weight of 4 for batches and 1 for codeintel means out of 5 dequeues, statistically batches will be picked 4 times and codeintel 1 time (unless one of those queues is at its limit).",
+          "type": "object",
+          "properties": {
+            "batches": {
+              "description": "The configuration for the batches queue.",
+              "type": "object",
+              "required": ["limit", "weight"],
+              "properties": {
+                "limit": {
+                  "description": "The maximum number of dequeues allowed within the expiration window.",
+                  "type": "integer",
+                  "default": 50
+                },
+                "weight": {
+                  "description": "The relative weight of this queue. Higher weights mean a higher chance of being picked at random.",
+                  "type": "integer",
+                  "default": 4
+                }
+              }
+            },
+            "codeintel": {
+              "description": "The configuration for the codeintel queue.",
+              "type": "object",
+              "required": ["limit", "weight"],
+              "properties": {
+                "limit": {
+                  "description": "The maximum number of dequeues allowed within the expiration window.",
+                  "type": "integer",
+                  "default": 250
+                },
+                "weight": {
+                  "description": "The relative weight of this queue. Higher weights mean a higher chance of being picked at random.",
+                  "type": "integer",
+                  "default": 1
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "auth.userOrgMap": {
       "description": "Ensure that matching users are members of the specified orgs (auto-joining users to the orgs if they are not already a member). Provide a JSON object of the form `{\"*\": [\"org1\", \"org2\"]}`, where org1 and org2 are orgs that all users are automatically joined to. Currently the only supported key is `\"*\"`.",
       "type": "object",
