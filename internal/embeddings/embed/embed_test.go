@@ -6,8 +6,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/paths"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/paths"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
@@ -344,7 +345,11 @@ type erroringEmbeddingsClient struct {
 	err error
 }
 
-func (c *erroringEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) ([]float32, error) {
+func (c *erroringEmbeddingsClient) GetQueryEmbedding(_ context.Context, text string) ([]float32, error) {
+	return nil, c.err
+}
+
+func (c *erroringEmbeddingsClient) GetDocumentEmbeddings(_ context.Context, texts []string) ([]float32, error) {
 	return nil, c.err
 }
 
