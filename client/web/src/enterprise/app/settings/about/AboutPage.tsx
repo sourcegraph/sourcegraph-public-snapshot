@@ -22,7 +22,7 @@ export const AboutTab: React.FC<AboutTabProps> = ({ version = window.context.ver
             </div>
             <div className={classNames(styles.panel)}>
                 <H3>Version</H3>
-                <Text className="mb-1">{window.context.version}</Text>
+                <Text className="mb-1">{version}</Text>
                 <AboutPageUpdatePanel />
             </div>
             <div className={classNames(styles.panel)}>
