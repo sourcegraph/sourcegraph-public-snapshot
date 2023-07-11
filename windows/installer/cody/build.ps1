@@ -34,10 +34,14 @@ function Write-Banner {
     param(
         [string] $Msg
     )
-    Write-Host
-    Write-Host "--------------------------------------------"
-    Write-Host "${Msg}"
-    Write-Host
+
+    if ($env:CI -eq "true") {
+        Write-Host "--- ${Msg}"
+    } else {
+        Write-Host
+        Write-Host "--------------------------------------------"
+        Write-Host "${Msg}"
+    }
 }
 
 Write-Host "Building version: ${VERSION}"
@@ -81,7 +85,7 @@ $MSI_PATH = "${INSTALLER_OUTPUT}\cody-${VERSION}-${ARCH}.msi"
 ./sign.ps1 $MSI_PATH
 
 # Only upload if we're in CI
-if (Test-Path "env:CI" -and [Environment]::GetEnvironmentVariable("CI") -eq "true" ) {
+if ($env:CI -eq "true" ) {
     Write-Banner -Msg "Uploading ${MSI_PATH}"
 
     Write-Host "Moving ${MSI_PATH} to ${DIST_DIR}"
