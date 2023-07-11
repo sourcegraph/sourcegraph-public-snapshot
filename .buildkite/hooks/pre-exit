@@ -4,7 +4,7 @@
 # It's a quick hack to circumvent the problem describe in
 # https://github.com/sourcegraph/sourcegraph/issues/27264.
 
-set -xe # Not -u because $SOFT_FAIL_EXIT_CODES may not be bound
+set -e # Not -u because $SOFT_FAIL_EXIT_CODES may not be bound
 
 if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" ]]; then
   exit 0
