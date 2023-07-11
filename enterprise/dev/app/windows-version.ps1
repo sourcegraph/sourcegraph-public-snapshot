@@ -17,6 +17,10 @@ class Version {
     [string] String(){
         return "$($this.major).$($this.minor).$($this.build).$($this.rev)"
     }
+
+    [string] SemVer() {
+        return "$($this.major).$($this.minor).$($this.build)"
+    }
 }
 
 function Create-Version {
@@ -47,13 +51,14 @@ function Update-Tauri-Conf-Version {
     $conf = Get-Content -Raw "$configPath" | ConvertFrom-Json
     $conf.package.version = "$Version"
 
-    $conf | ConvertTo-Json -Depth 20 | Out-File "$configPath"
+    $conf | ConvertTo-Json -Depth 50 | Out-File -Encoding "UTF-8" "$configPath"
 }
 
 $version = Create-Version
 
 if ($env:CI -eq "true") {
-   Update-Tauri-Conf-Version $version.String()
+   # Tauri wants a semver string
+   Update-Tauri-Conf-Version $version.SemVer()
 }
 
 Write-Host $version.String()
