@@ -56,6 +56,7 @@ public class CodeEditorFactory {
     JComponent editorComponent = editor.getComponent();
     Dimension editorPreferredSize = editorComponent.getPreferredSize();
     TransparentButton copyButton = new TransparentButton("Copy");
+    copyButton.setToolTipText("Copy text");
     copyButton.setVisible(false);
     copyButton.setOpaque(false);
     // copy text to clipboard
