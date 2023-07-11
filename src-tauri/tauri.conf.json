@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "Cody",
-    "version": "2023.0.0+dev"
+    "version": "23.0.0+dev"
   },
   "tauri": {
     "allowlist": {
