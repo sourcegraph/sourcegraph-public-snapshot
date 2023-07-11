@@ -22,7 +22,7 @@ import (
 func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string) (*types.Repo, error) {
 	origRepo := routevar.ToRepo(vars)
 
-	repo, err := backend.NewRepos(logger, db, gitserver.NewClient()).GetByName(ctx, origRepo)
+	repo, err := backend.NewRepos(logger, db, gitserver.NewClient(db)).GetByName(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}

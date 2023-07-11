@@ -87,7 +87,7 @@ func (r *changesetSpecResolver) Description(ctx context.Context) (graphqlbackend
 		store: r.store,
 		spec:  r.changesetSpec,
 		// Note: r.repo can never be nil, because Description is a VisibleChangesetSpecResolver-only field.
-		repoResolver: graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient(), r.repo),
+		repoResolver: graphqlbackend.NewRepositoryResolver(db, gitserver.NewClient(db), r.repo),
 		diffStat:     r.changesetSpec.DiffStat(),
 	}
 

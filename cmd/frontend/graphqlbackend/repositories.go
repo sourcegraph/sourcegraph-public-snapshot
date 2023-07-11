@@ -274,7 +274,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
-		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient())
+		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db))
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
 			// that we know whether or not there's an additional page (or more)

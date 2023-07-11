@@ -28,7 +28,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			_, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 
@@ -44,7 +44,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			r, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -97,7 +97,7 @@ func TestSiteConfiguration(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 			if err != nil {
@@ -129,7 +129,7 @@ func TestSiteConfiguration(t *testing.T) {
 		})
 
 		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
