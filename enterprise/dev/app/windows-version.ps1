@@ -41,13 +41,13 @@ function Update-Tauri-Conf-Version {
 
     $configPath = "${ROOT_DIR}/src-tauri/tauri.conf.json"
 
-    if (Test-Path -Path "${configPath}" -eq $false) {
+    if (!(Test-Path -Path "${configPath}")) {
         throw "Cannot update version. Failed to find tauri config file at ${configPath}"
     }
     $conf = Get-Content -Raw "$configPath" | ConvertFrom-Json
     $conf.package.version = "$Version"
 
-    $conf | ConvertTo-Json | Out-File "$configPath"
+    $conf | ConvertTo-Json -Depth 20 | Out-File "$configPath"
 }
 
 $version = Create-Version
