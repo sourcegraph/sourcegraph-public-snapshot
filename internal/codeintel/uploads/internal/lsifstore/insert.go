@@ -516,13 +516,14 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 	}
 
 	traverser := func(visit visitFunc) error {
-		visitNode := func(name string, id, depth int, parentID *int) error {
+		// Call visit on each node of the tree
+		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
 			return visit(scipNameTypeByDepth[depth], name, id, parentID)
-		}
-		if err := traverse(schemeTree, visitNode); err != nil {
+		}); err != nil {
 			return err
 		}
 
+		// Call visit on each element in the descriptor-no-suffix map
 		for name, id := range descriptorsNoSuffixMap {
 			if err := visit("DESCRIPTOR_NO_SUFFIX", name, id, nil); err != nil {
 				return err
