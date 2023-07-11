@@ -55,7 +55,7 @@ export const getContext = async (dataSourcesCallDescriptors: IPluginFunctionCall
                 return
             }
 
-            return `from ${dataSource.name} data source: \`\`\`json${JSON.stringify(response)}\`\`\``
+            return `\n${dataSource.name}: \`\`\`json${JSON.stringify(response)}\`\`\`\n`
         })
     )
 

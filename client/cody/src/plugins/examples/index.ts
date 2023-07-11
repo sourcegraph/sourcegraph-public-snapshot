@@ -1,6 +1,7 @@
 import { IPlugin } from '../api/types'
 
 import { confluencePlugin } from './confluence'
-import { weatherPlugin } from './waether'
+import { githubIssuesPlugin } from './github-issues'
+import { weatherPlugin } from './weather'
 
-export const defaultPlugins: IPlugin[] = [weatherPlugin, confluencePlugin]
+export const defaultPlugins: IPlugin[] = [weatherPlugin, confluencePlugin, githubIssuesPlugin]
