@@ -56,6 +56,7 @@ fi
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
 find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
+find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
 """
 
 def back_compat_defs():
@@ -113,6 +114,15 @@ def back_compat_defs():
         sum = "h1:zFLcZUQ74dCV/oIiQT3+db8kFPstAnvFDm7pd+tjZ+8=",
         version = "v0.0.0-20230620185637-63241cb1b17a",
     )
+
+    go_repository(
+        name = "back_compat_com_github_throttled_throttled_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/throttled/throttled/v2",
+        sum = "h1:DOkCb1el7NYzRoPb1pyeHVghsUoonVWEjmo34vrcp/8=",
+        version = "v2.9.0",
+    )
+
 
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it

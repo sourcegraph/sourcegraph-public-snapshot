@@ -92,7 +92,7 @@ func serveGraphQL(logger sglog.Logger, schema *graphql.Schema, rlw graphqlbacken
 			traceData.cost = cost
 
 			if rl, enabled := rlw.Get(); enabled && cost != nil {
-				limited, result, err := rl.RateLimit(uid, cost.FieldCount, graphqlbackend.LimiterArgs{
+				limited, result, err := rl.RateLimit(r.Context(), uid, cost.FieldCount, graphqlbackend.LimiterArgs{
 					IsIP:          isIP,
 					Anonymous:     anonymous,
 					RequestName:   requestName,

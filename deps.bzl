@@ -899,15 +899,15 @@ def go_dependencies():
         name = "com_github_bsm_ginkgo_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/bsm/ginkgo/v2",
-        sum = "h1:aOAnND1T40wEdAtkGSkvSICWeQ8L3UASX7YVCqQx+eQ=",
-        version = "v2.5.0",
+        sum = "h1:ItPMPH90RbmZJt5GtkcNvIRuGEdwlBItdNVoyzaNQao=",
+        version = "v2.7.0",
     )
     go_repository(
         name = "com_github_bsm_gomega",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/bsm/gomega",
-        sum = "h1:JhAwLmtRzXFTx2AkALSLa8ijZafntmhSoU63Ok18Uq8=",
-        version = "v1.20.0",
+        sum = "h1:LhQm+AFcgV2M0WyKroMASzAzCAJVpAxQXv4SaI9a69Y=",
+        version = "v1.26.0",
     )
 
     go_repository(
@@ -5806,8 +5806,8 @@ def go_dependencies():
         name = "com_github_redis_go_redis_v9",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/redis/go-redis/v9",
-        sum = "h1:BA426Zqe/7r56kCcvxYLWe1mkaz71LKF77GwgFzSxfE=",
-        version = "v9.0.2",
+        sum = "h1:CuQcn5HIEeK7BgElubPP8CGtE0KakrnbBSTLjathl5o=",
+        version = "v9.0.5",
     )
 
     go_repository(
@@ -6280,8 +6280,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_log",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/log",
-        sum = "h1:xz1lIhx6YvYYhiLio9INCIWHCZFH9MoRVuFye/lz07c=",
-        version = "v0.0.0-20230523201558-ad2d71b4d2ee",
+        sum = "h1:VwYrG1+YNyOD3nSb0M84ISMQiOOS/5Js05HqU1iNFSU=",
+        version = "v0.0.0-20230711093019-40c57b632cca",
     )
     go_repository(
         name = "com_github_sourcegraph_mountinfo",
@@ -6510,8 +6510,8 @@ def go_dependencies():
         name = "com_github_throttled_throttled_v2",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/throttled/throttled/v2",
-        sum = "h1:DOkCb1el7NYzRoPb1pyeHVghsUoonVWEjmo34vrcp/8=",
-        version = "v2.9.0",
+        sum = "h1:IezKE1uHlYC/0Al05oZV6Ar+uN/znw3cy9J8banxhEY=",
+        version = "v2.12.0",
     )
     go_repository(
         name = "com_github_tidwall_gjson",

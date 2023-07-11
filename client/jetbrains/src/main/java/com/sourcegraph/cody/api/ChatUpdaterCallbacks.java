@@ -3,6 +3,7 @@ package com.sourcegraph.cody.api;
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
@@ -11,11 +12,16 @@ import org.jetbrains.annotations.Nullable;
 public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   private static final Logger logger = Logger.getInstance(ChatUpdaterCallbacks.class);
   private final UpdatableChat chat;
+  private final CancellationToken cancellationToken;
   private final String prefix;
   private boolean gotFirstMessage = false;
 
-  public ChatUpdaterCallbacks(@NotNull UpdatableChat chat, @Nullable String prefix) {
+  public ChatUpdaterCallbacks(
+      @NotNull UpdatableChat chat,
+      @NotNull CancellationToken cancellationToken,
+      @Nullable String prefix) {
     this.chat = chat;
+    this.cancellationToken = cancellationToken;
     this.prefix = prefix;
   }
 
@@ -26,7 +32,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onData(@Nullable String data) {
-    if (data == null) {
+    if (data == null || cancellationToken.isCancelled()) {
       return;
     }
     // print date/time and msg
@@ -42,6 +48,9 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onError(@NotNull Throwable error) {
+    if (cancellationToken.isCancelled()) {
+      return;
+    }
     String message = error.getMessage();
     chat.respondToErrorFromServer(message != null ? message : "");
     chat.finishMessageProcessing();
@@ -51,11 +60,17 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   @Override
   public void onComplete() {
     logger.info("Streaming completed.");
+    if (cancellationToken.isCancelled()) {
+      return;
+    }
     chat.finishMessageProcessing();
   }
 
   @Override
   public void onCancelled() {
+    if (cancellationToken.isCancelled()) {
+      return;
+    }
     chat.finishMessageProcessing();
   }
 

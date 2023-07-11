@@ -180,3 +180,7 @@ tasks {
 tasks.test {
     useJUnitPlatform()
 }
+
+tasks.getByName("copyAgentBinariesToPluginPath") {
+    enabled = false
+}

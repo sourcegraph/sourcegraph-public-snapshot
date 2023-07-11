@@ -4,6 +4,7 @@ import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
+import com.intellij.icons.AllIcons;
 import com.intellij.ide.BrowserUtil;
 import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.openapi.actionSystem.AnAction;
@@ -21,6 +22,7 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
+import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
@@ -55,6 +57,7 @@ import com.sourcegraph.cody.recipes.SummarizeRecentChangesRecipe;
 import com.sourcegraph.cody.recipes.TranslateToLanguageAction;
 import com.sourcegraph.cody.ui.AutoGrowingTextArea;
 import com.sourcegraph.cody.ui.HtmlViewer;
+import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.config.SettingsComponent.InstanceType;
@@ -76,6 +79,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JEditorPane;
+import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -94,6 +98,8 @@ class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull JBTextArea promptInput;
   private final @NotNull JButton sendButton;
   private final @NotNull Project project;
+  private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
+  private final JPanel stopGeneratingButtonPanel;
   private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
@@ -159,6 +165,7 @@ class CodyToolWindowContent implements UpdatableChat {
             messagesPanel,
             JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
             JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+    chatPanel.setBorder(BorderFactory.createEmptyBorder());
 
     // Scroll all the way down after each message
     AdjustmentListener scrollAdjustmentListener =
@@ -204,8 +211,26 @@ class CodyToolWindowContent implements UpdatableChat {
     // Main content panel
     contentPanel.setLayout(new BorderLayout(0, 0));
     contentPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 10, 0));
-    contentPanel.add(chatPanel, BorderLayout.CENTER);
+
+    JLayeredPane layeredPane = new JLayeredPane();
+    layeredPane.setLayout(new BorderLayout());
+    JButton button = new JButton("Stop generating", IconUtil.desaturate(AllIcons.Actions.Suspend));
+    stopGeneratingButtonPanel = new JPanel();
+    button.addActionListener(
+        e -> {
+          cancellationToken.abort();
+          stopGeneratingButtonPanel.setVisible(false);
+          sendButton.setEnabled(true);
+        });
+    stopGeneratingButtonPanel.add(button);
+    stopGeneratingButtonPanel.setOpaque(false);
+    stopGeneratingButtonPanel.setVisible(false);
+    layeredPane.add(chatPanel, BorderLayout.CENTER);
+    layeredPane.add(stopGeneratingButtonPanel, BorderLayout.SOUTH, JLayeredPane.POPUP_LAYER);
+
+    contentPanel.add(layeredPane, BorderLayout.CENTER);
     contentPanel.add(lowerPanel, BorderLayout.SOUTH);
+
     tabbedPane.addChangeListener(e -> this.focusPromptInput());
 
     JPanel appNotInstalledPanel = createAppNotInstalledPanel();
@@ -443,21 +468,36 @@ class CodyToolWindowContent implements UpdatableChat {
               if (messagesPanel.getComponentCount() > 0) {
                 JPanel lastBubblePanel =
                     (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
-                ChatBubble lastBubble = (ChatBubble) lastBubblePanel.getComponent(0);
-                lastBubble.updateText(message);
-                messagesPanel.revalidate();
-                messagesPanel.repaint();
+                Component component = lastBubblePanel.getComponent(0);
+                if (component instanceof ChatBubble) {
+                  ChatBubble lastBubble = (ChatBubble) component;
+                  lastBubble.updateText(message);
+                  messagesPanel.revalidate();
+                  messagesPanel.repaint();
+                }
               }
             });
   }
 
   private void startMessageProcessing() {
-    ApplicationManager.getApplication().invokeLater(() -> sendButton.setEnabled(false));
+    cancellationToken.abort();
+    cancellationToken = new CancellationToken();
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              stopGeneratingButtonPanel.setVisible(true);
+              sendButton.setEnabled(false);
+            });
   }
 
   @Override
   public void finishMessageProcessing() {
-    ApplicationManager.getApplication().invokeLater(() -> sendButton.setEnabled(true));
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              stopGeneratingButtonPanel.setVisible(false);
+              sendButton.setEnabled(true);
+            });
   }
 
   @Override
@@ -466,6 +506,8 @@ class CodyToolWindowContent implements UpdatableChat {
     ApplicationManager.getApplication()
         .invokeLater(
             () -> {
+              cancellationToken.abort();
+              stopGeneratingButtonPanel.setVisible(false);
               sendButton.setEnabled(true);
               messagesPanel.removeAll();
               addWelcomeMessage();
@@ -524,7 +566,8 @@ class CodyToolWindowContent implements UpdatableChat {
                       CodyAgent.getClient(project),
                       CodyAgent.getInitializedServer(project),
                       humanMessage,
-                      this);
+                      this,
+                      cancellationToken);
                 } catch (Exception e) {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }
@@ -548,7 +591,7 @@ class CodyToolWindowContent implements UpdatableChat {
                         TruncationUtils.MAX_AVAILABLE_PROMPT_LENGTH);
 
                 try {
-                  chat.sendMessageWithoutAgent(prompt, responsePrefix, this);
+                  chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
                 } catch (Exception e) {
                   logger.error("Error sending message '" + humanMessage + "' to chat", e);
                 }
