@@ -40,7 +40,9 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
   -ldflags "$ldflags" \
   ./enterprise/cmd/sourcegraph
 
+set +e
 pnpm tauri build
+set -e
 
 if [[ ! -e ./src-tauri/target/release/Cody.exe ]]; then
   echo "FATAL: Failed to build Cody for Windows"
