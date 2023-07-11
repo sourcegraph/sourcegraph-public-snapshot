@@ -8,6 +8,18 @@ echo Checking system requirements...
 echo.
 
 :--------------------------------------
+:CARGO
+cargo --version 1>nul 2>nul
+IF ERRORLEVEL 1 GOTO MISSING_CARGO
+echo cargo   OK
+GOTO BASH
+
+:MISSING_CARGO
+set missing_req=1
+echo cargo   MISSING
+GOTO BASH
+
+:--------------------------------------
 :BASH
 bash --version 1>nul 2>nul
 IF ERRORLEVEL 1 GOTO MISSING_BASH

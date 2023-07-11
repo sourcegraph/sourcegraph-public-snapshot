@@ -18,7 +18,7 @@ pnpm install
 NODE_ENV=production ENTERPRISE=1 SOURCEGRAPH_APP=1 pnpm run build-web
 
 export PATH=$PATH:/c/msys64/ucrt64/bin
-platform=${PLATFORM:-"not-defined"}
+platform="x86_64-pc-windows-msvc" # This is the name Tauri expects for the Windows executable
 
 export GO111MODULE=on
 
@@ -37,3 +37,11 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
   ./enterprise/cmd/sourcegraph
 
 pnpm tauri build
+
+if [[ ! -e ./src-tauri/target/release/Cody.exe ]]; then
+  echo "FATAL: Failed to build Cody for Windows"
+  exit 1
+fi
+
+echo "INFO: Build successful"
+exit 0

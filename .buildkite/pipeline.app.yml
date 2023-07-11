@@ -9,6 +9,7 @@ steps:
             PLATFORM: x86_64-pc-windows-msvc
           command:
             - bash .\enterprise\dev\app\build-windows.sh
+            - .\windows\installer\cody\build.cmd
 
   #     - label: ':bazel::linux: Build for Linux'
   #       key: 'build-sourcegraph-app-linux'
