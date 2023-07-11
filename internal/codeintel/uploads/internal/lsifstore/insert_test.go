@@ -13,8 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
-// TODO - test
-
 func TestInsertMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
@@ -127,34 +125,34 @@ func TestInsertDocumentWithSymbols(t *testing.T) {
 			"internal/util.go",
 			&scip.Document{
 				Symbols: []*scip.SymbolInformation{
-					{Symbol: "foo.bar.ident"},
-					{Symbol: "bar.baz.longerName"},
-					{Symbol: "baz.bonk.quux"},
+					{Symbol: "node pnpm pkg1 0.1.0 foo.bar.ident#"},
+					{Symbol: "node pnpm pkg1 0.1.1 bar.baz.longerName#"},
+					{Symbol: "node pnpm pkg2 0.1.2 baz.bonk.quux#"},
 				},
 				Occurrences: []*scip.Occurrence{
 					{
 						Range:       []int32{3, 25, 3, 30},
-						Symbol:      "foo.bar.ident",
+						Symbol:      "node pnpm pkg1 0.1.0 foo.bar.ident#",
 						SymbolRoles: int32(scip.SymbolRole_Definition),
 					},
 					{
 						Range:       []int32{251, 24, 251, 30},
-						Symbol:      "baz.bonk.quux",
+						Symbol:      "node pnpm pkg2 0.1.2 baz.bonk.quux#",
 						SymbolRoles: int32(scip.SymbolRole_Definition),
 					},
 					{
 						Range:       []int32{4, 25, 4, 30},
-						Symbol:      "foo.bar.ident",
+						Symbol:      "node pnpm pkg1 0.1.0 foo.bar.ident#",
 						SymbolRoles: 0,
 					},
 					{
 						Range:       []int32{100, 10, 100, 20},
-						Symbol:      "bar.baz.longerName",
+						Symbol:      "node pnpm pkg1 0.1.1 bar.baz.longerName#",
 						SymbolRoles: 0,
 					},
 					{
 						Range:       []int32{151, 14, 151, 20},
-						Symbol:      "baz.bonk.quux",
+						Symbol:      "node pnpm pkg2 0.1.2 baz.bonk.quux#",
 						SymbolRoles: 0,
 					},
 				},
