@@ -51,7 +51,7 @@ function Update-Tauri-Conf-Version {
     $conf = Get-Content -Raw "$configPath" | ConvertFrom-Json
     $conf.package.version = "$Version"
 
-    $conf | ConvertTo-Json -Depth 50 | Out-File -Encoding "UTF-8" "$configPath"
+    $conf | ConvertTo-Json -Depth 50 | Out-File -Encoding "utf8" "$configPath"
 }
 
 $version = Create-Version
