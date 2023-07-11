@@ -40,8 +40,6 @@ func TestDatabaseHover(t *testing.T) {
 			expectedText:  "```ts\nfunction parseGitURI({ hostname, pathname, search, hash }: URL): { repo: string; commit: string; path: string; }\n```\nExtracts the components of a text document URI.",
 			expectedRange: newRange(25, 35, 25, 46),
 		},
-
-		// TODO - add another test case with lookup table
 	}
 
 	store := populateTestStore(t)
