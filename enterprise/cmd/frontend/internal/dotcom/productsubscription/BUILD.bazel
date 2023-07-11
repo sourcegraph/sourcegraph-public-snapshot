@@ -26,7 +26,6 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//enterprise/internal/productsubscription",
         "//internal/accesstoken",
         "//internal/auth",
         "//internal/authz",
@@ -43,6 +42,7 @@ go_library(
         "//internal/hashutil",
         "//internal/license",
         "//internal/licensing",
+        "//internal/productsubscription",
         "//internal/redispool",
         "//internal/slack",
         "//internal/types",
@@ -85,7 +85,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/productsubscription",
         "//internal/accesstoken",
         "//internal/actor",
         "//internal/auth",
@@ -98,6 +97,7 @@ go_test(
         "//internal/hashutil",
         "//internal/license",
         "//internal/licensing",
+        "//internal/productsubscription",
         "//internal/redispool",
         "//internal/slack",
         "//internal/timeutil",
