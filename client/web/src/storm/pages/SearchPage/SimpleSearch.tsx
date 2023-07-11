@@ -52,7 +52,12 @@ interface SearchPickerProps {
 const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
     <div className="offset-1">
         <Tooltip content="This is useful if you are looking for something specific, or examples of code. Error messages, class names, variable names, etc.">
-            <Button onClick={() => setShowState('code')} className={styles.searchButton} variant="secondary" outline={true}>
+            <Button
+                onClick={() => setShowState('code')}
+                className={styles.searchButton}
+                variant="secondary"
+                outline={true}
+            >
                 <div>
                     <H3>Find code</H3>
                     <Text className="mt-2">Look for examples of code, specifically or with a pattern</Text>
@@ -62,7 +67,12 @@ const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
         </Tooltip>
 
         <Tooltip content="This is useful if you are looking for repositories. For example, you are looking for a library you think might exist and search using repository description.">
-            <Button onClick={() => setShowState('repo')} className={styles.searchButton} variant="secondary" outline={true}>
+            <Button
+                onClick={() => setShowState('repo')}
+                className={styles.searchButton}
+                variant="secondary"
+                outline={true}
+            >
                 <H3>Find repositories</H3>
                 <Text className="mt-2">Look for repositories by name, file contents, metadata, or owners</Text>
                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />
@@ -70,7 +80,12 @@ const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
         </Tooltip>
 
         <Tooltip content="This is useful if you are looking for changes over time, either in commit messages, by author, or code that has changed.">
-            <Button onClick={() => setShowState('changes')} className={styles.searchButton} variant="secondary" outline={true}>
+            <Button
+                onClick={() => setShowState('changes')}
+                className={styles.searchButton}
+                variant="secondary"
+                outline={true}
+            >
                 <H3>Look for changes</H3>
                 <Text className="mt-2">Look for changes in commit messages or search over diffs in the code</Text>
                 <Icon className="ml-2" svgPath={mdiHelpCircleOutline} />

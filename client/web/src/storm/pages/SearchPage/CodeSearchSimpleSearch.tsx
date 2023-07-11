@@ -261,7 +261,9 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         >
                             <option hidden={true}>Any</option>
                             {languages.map((lang, i) => (
-                                <option key={i} value={lang}>{lang}</option>
+                                <option key={i} value={lang}>
+                                    {lang}
+                                </option>
                             ))}
                         </Select>
                     </div>
