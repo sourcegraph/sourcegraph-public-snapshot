@@ -314,7 +314,6 @@ describe('Transcript', () => {
             'dummy-codebase',
             embeddings,
             defaultKeywordContextFetcher,
-            null,
             null
         )
 
