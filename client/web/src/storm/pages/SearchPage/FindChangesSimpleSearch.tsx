@@ -6,12 +6,16 @@ import { Icon, Select, Tooltip, Input, Button, Form, Label } from '@sourcegraph/
 
 import { SimpleSearchProps } from './CodeSearchSimpleSearch'
 
-const predicates = {
-    path: '',
-    content: '',
-    description: '',
-    meta: '',
-    topic: '',
+interface QueryOptions {
+    repoPattern?: string;
+    repoNames?: string;
+    filePaths?: string;
+    useForks?: string;
+    useArchive?: string;
+    messagePattern?: string;
+    authorPattern?: string;
+    diffCodePattern?: string;
+    searchContext?: string;
 }
 
 const getQuery = ({
@@ -24,7 +28,7 @@ const getQuery = ({
     authorPattern,
     diffCodePattern,
     searchContext,
-}): string => {
+}: QueryOptions): string => {
     // build query
     const terms: string[] = []
 
@@ -48,7 +52,7 @@ const getQuery = ({
         // terms.push('type:diff')
         type = 'diff'
         // terms.push(`${diffCodePattern}`)
-        ptn = diffCodePattern
+        ptn = `${diffCodePattern}`
     }
     if (filePaths?.length > 0) {
         type = 'diff'

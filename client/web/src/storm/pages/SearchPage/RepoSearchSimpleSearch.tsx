@@ -14,7 +14,16 @@ const predicates = {
     topic: '',
 }
 
-const getQuery = ({ repoPattern, repoNames, useForks, useArchive, predicateState, searchContext }): string => {
+interface QueryOptions {
+    repoPattern?: string;
+    repoNames?: string;
+    useForks?: string;
+    useArchive?: string;
+    predicateState: { [key: string]: string };
+    searchContext?: string;
+}
+
+const getQuery = ({ repoPattern, repoNames, useForks, useArchive, predicateState, searchContext }: QueryOptions): string => {
     // build query
     const terms: string[] = []
 
@@ -31,12 +40,11 @@ const getQuery = ({ repoPattern, repoNames, useForks, useArchive, predicateState
         terms.push(`repo:${repoNames}$`)
     }
 
-    for (const predicateStateKey in predicateState) {
-        const val = predicateState[predicateStateKey]
+    for (const [predicateStateKey, val] of Object.entries(predicateState)) {
         if (val?.length === 0) {
-            continue
+            continue;
         }
-        terms.push(`repo:has.${predicateStateKey}(${val})`)
+        terms.push(`repo:has.${predicateStateKey}(${val})`);
     }
 
     // do these last

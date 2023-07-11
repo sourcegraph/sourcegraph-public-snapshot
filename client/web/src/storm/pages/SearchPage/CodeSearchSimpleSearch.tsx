@@ -11,6 +11,18 @@ export interface SimpleSearchProps {
 
 const languages = ['JavaScript', 'TypeScript', 'Java', 'C++', 'Python', 'Go', 'C#', 'Ruby']
 
+interface QueryOptions {
+    repoPattern?: string;
+    repoNames?: string;
+    filePaths?: string;
+    useForks?: string;
+    literalContent?: string;
+    regexpContent?: string;
+    languageFilter?: string;
+    useArchive?: string;
+    searchContext?: string;
+}
+
 const getQuery = ({
     repoPattern,
     repoNames,
@@ -21,7 +33,7 @@ const getQuery = ({
     languageFilter,
     useArchive,
     searchContext,
-}): string => {
+}: QueryOptions): string => {
     // build query
     const terms: string[] = []
 
