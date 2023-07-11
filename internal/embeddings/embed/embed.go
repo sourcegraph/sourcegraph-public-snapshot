@@ -85,6 +85,19 @@ func EmbedRepo(
 		}
 	}
 
+	dimensions, err := client.GetDimensions()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	newIndex := func(numFiles int) embeddings.EmbeddingIndex {
+		return embeddings.EmbeddingIndex{
+			Embeddings:      make([]int8, 0, numFiles*dimensions/2),
+			RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, numFiles/2),
+			ColumnDimension: dimensions,
+			Ranks:           make([]float32, 0, numFiles/2),
+		}
+	}
+
 	stats := bgrepo.EmbedRepoStats{
 		CodeIndexStats: bgrepo.NewEmbedFilesStats(len(codeFileNames)),
 		TextIndexStats: bgrepo.NewEmbedFilesStats(len(textFileNames)),
@@ -102,7 +115,7 @@ func EmbedRepo(
 		}
 	}
 
-	codeIndex := embeddings.EmbeddingIndex{}
+	codeIndex := newIndex(len(codeFileNames))
 	insertCode := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
 		insertIndex(&codeIndex, md, embeddings)
 		return nil
@@ -119,7 +132,7 @@ func EmbedRepo(
 	}
 	stats.CodeIndexStats = codeIndexStats
 
-	textIndex := embeddings.EmbeddingIndex{}
+	textIndex := newIndex(len(textFileNames))
 	insertText := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
 		insertIndex(&textIndex, md, embeddings)
 		return nil
