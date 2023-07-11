@@ -1,6 +1,6 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
-import { mdiAlertOctagram, mdiCheckCircle, mdiChevronDown, mdiChevronUp, mdiContentCopy, mdiOpenInNew } from '@mdi/js'
+import { mdiOpenInNew, mdiCheckCircle, mdiChevronUp, mdiChevronDown, mdiAlertOctagram, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import formatDistance from 'date-fns/formatDistance'
@@ -14,32 +14,32 @@ import {
 } from 'src/graphql-operations'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useQuery, useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
+    LoadingSpinner,
+    Link,
+    PageHeader,
     Alert,
-    AnchorLink,
-    Button,
+    Icon,
     Code,
+    Container,
+    Text,
+    ErrorAlert,
+    Button,
     Collapse,
     CollapseHeader,
     CollapsePanel,
-    Container,
-    ErrorAlert,
     H3,
     H4,
-    Icon,
     Label,
-    Link,
-    LoadingSpinner,
-    PageHeader,
-    Text,
+    AnchorLink,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../components/LogOutput'
 import { PageTitle } from '../components/PageTitle'
 
-import { SET_AUTO_UPGRADE, SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS } from './backend'
+import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS, SET_AUTO_UPGRADE } from './backend'
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
