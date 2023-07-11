@@ -202,15 +202,19 @@ func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook 
 	}
 	opts := css.BuildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
 	resp, err := e.pushCommit(ctx, opts)
-	var pce pushCommitError
-	if errors.As(err, &pce) {
-		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
-			if acss.IsArchivedPushError(pce.CombinedOutput) {
-				if err := e.handleArchivedRepo(ctx); err != nil {
-					return afterDone, errors.Wrap(err, "handling archived repo")
+	if err != nil {
+		var pce pushCommitError
+		if errors.As(err, &pce) {
+			if acss, ok := css.(sources.ArchivableChangesetSource); ok {
+				if acss.IsArchivedPushError(pce.CombinedOutput) {
+					if err := e.handleArchivedRepo(ctx); err != nil {
+						return afterDone, errors.Wrap(err, "handling archived repo")
+					}
+					return afterDone, errCannotPushToArchivedRepo
 				}
-				return afterDone, errCannotPushToArchivedRepo
 			}
+		} else {
+			return afterDone, errors.Wrap(err, "pushing commit")
 		}
 	}
 
