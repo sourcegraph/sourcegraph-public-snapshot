@@ -7,8 +7,7 @@ if ! "${mydir}/../../../windows/check_requirements.cmd"; then
   exit 1
 fi
 
-echo "IN BUILD SCRIPT"
-set -eux
+echo "VERSION: IN BUILD SCRIPT"
 #version="$(./enterprise/dev/app/app-version.sh)"
 version="23.7.1"
 echo "Building version: ${version}"
