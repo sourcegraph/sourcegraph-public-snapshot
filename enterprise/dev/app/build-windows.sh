@@ -9,7 +9,7 @@ if ! "./windows/check_requirements.cmd"; then
   exit 1
 fi
 
-version=$(powershell -ExecutionPolicy Unrestricted ./enterprise/dev/app/windows-version.ps1)
+version="23.0.0+dev" #$(powershell -ExecutionPolicy Unrestricted ./enterprise/dev/app/windows-version.ps1)
 
 if [[ -z $version ]]; then
   echo "Invalid version '$version'. Please check how the version is created. Something is probably wrong"
