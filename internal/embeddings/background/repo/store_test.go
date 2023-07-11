@@ -240,6 +240,51 @@ func TestGetEmbeddableRepos(t *testing.T) {
 	require.Equal(t, 1, len(repos))
 }
 
+func TestEmbeddingsPolicyWithFailures(t *testing.T) {
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := db.Repos()
+	ctx := context.Background()
+
+	// Create two repositories
+	firstRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
+	err := repoStore.Create(ctx, firstRepo)
+	require.NoError(t, err)
+
+	secondRepo := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
+	err = repoStore.Create(ctx, secondRepo)
+	require.NoError(t, err)
+
+	// Clone the repos
+	gitserverStore := db.GitserverRepos()
+	err = gitserverStore.SetCloneStatus(ctx, firstRepo.Name, types.CloneStatusCloned, "test")
+	require.NoError(t, err)
+
+	err = gitserverStore.SetCloneStatus(ctx, secondRepo.Name, types.CloneStatusCloned, "test")
+	require.NoError(t, err)
+
+	// Create a embeddings policy that applies to all repos
+	store := NewRepoEmbeddingJobsStore(db)
+	err = createGlobalPolicy(ctx, store)
+	require.NoError(t, err)
+
+	// At first, both repos should be embeddable.
+	repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour})
+	require.NoError(t, err)
+	require.Equal(t, 2, len(repos))
+
+	// Create and queue an embedding job for the first repo.
+	_, err = store.CreateRepoEmbeddingJob(ctx, firstRepo.ID, "coffee")
+	require.NoError(t, err)
+
+	// Only the second repo should be embeddable, since the first was recently queued
+	repos, err = store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour})
+	require.NoError(t, err)
+	require.Equal(t, 1, len(repos))
+}
+
 func TestGetEmbeddableReposLimit(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
