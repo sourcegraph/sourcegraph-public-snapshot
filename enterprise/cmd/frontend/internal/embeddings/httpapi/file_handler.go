@@ -2,9 +2,8 @@ package httpapi
 
 import (
 	"archive/zip"
+	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strings"
@@ -37,7 +36,7 @@ const maxUploadSize = 10 << 20 // 10MB
 func (h *FileHandler) Upload() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, maxUploadSize)
-		responseBody, statusCode, err := h.upload(r)
+		statusCode, err := h.upload(r)
 
 		if err != nil {
 			http.Error(w, err.Error(), statusCode)
@@ -45,22 +44,11 @@ func (h *FileHandler) Upload() http.Handler {
 		}
 
 		w.WriteHeader(statusCode)
-
-		if responseBody.ID != "" {
-			w.Header().Set("Content-Type", "application/json")
-
-			if err = json.NewEncoder(w).Encode(responseBody); err != nil {
-				h.logger.Error("failed to write json payload to client", sglog.Error(err))
-			}
-		}
+		w.Write([]byte("Data upload successful"))
 	})
 }
 
-type uploadResponse struct {
-	ID string `json:"id"`
-}
-
-func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode int, err error) {
+func (h *FileHandler) upload(r *http.Request) (statusCode int, err error) {
 	ctx := r.Context()
 
 	if ok := isSiteAdmin(ctx, h.logger, h.db); !ok {
@@ -88,15 +76,13 @@ func (h *FileHandler) upload(r *http.Request) (resp uploadResponse, statusCode i
 		return
 	}
 
-	resp.ID, err = h.uploadEmbeddingPluginFile(ctx, r)
+	err = h.uploadEmbeddingPluginFile(ctx, r)
 	if err != nil {
 		statusCode = http.StatusBadRequest
 		return
 	}
 
-	resp.ID = "workdown"
-
-	return
+	return http.StatusOK, nil
 }
 
 var pathValidationRegex = regex.MustCompile("[.]{2}|[\\\\]")
@@ -106,17 +92,17 @@ const (
 	TarHeader = "ustar"
 )
 
-func (h *FileHandler) uploadEmbeddingPluginFile(ctx context.Context, r *http.Request) (string, error) {
+func (h *FileHandler) uploadEmbeddingPluginFile(ctx context.Context, r *http.Request) error {
 	file, _, err := r.FormFile("archive")
 	if err != nil {
-		return "", err
+		return err
 	}
 	defer file.Close()
 
 	// Convert multipart file into an io.ReaderAt
 	ra, ok := file.(io.ReaderAt)
 	if !ok {
-		return "", errors.New("invalid archive")
+		return errors.New("invalid archive")
 	}
 
 	var size int64
@@ -126,28 +112,50 @@ func (h *FileHandler) uploadEmbeddingPluginFile(ctx context.Context, r *http.Req
 
 	_, err = file.Seek(0, io.SeekStart)
 	if err != nil {
-		return "", errors.New("unable to read archive")
+		return errors.New("unable to read archive")
 	}
 
 	// Read the file using zip.NewReader
 	reader, err := zip.NewReader(ra, size)
 	if err != nil {
-		return "", err
+		return err
 	}
 
-	// Iterate through the files in the archive, just print them out for now
-	for _, f := range reader.File {
-		// When you compress a directory in macOS using its built-in compress (zip) functionality,
-		// it includes extra files that start with "._" (dot underscore), and they are usually stored inside a __MACOSX directory.
-		// These "._" files are part of Apple's way of storing extra information about files.
-		// These files store metadata that the macOS operating system uses for various purposes.
-		if f.FileInfo().IsDir() || strings.HasPrefix(f.Name, "__MACOSX/") || pathValidationRegex.MatchString(f.Name) {
-			continue
+	return h.db.WithTransact(ctx, func(tx database.DB) error {
+		store := tx.EmbeddingPluginFiles()
+
+		// Iterate through the files in the archive, just print them out for now
+		for _, f := range reader.File {
+			// When you compress a directory in macOS using its built-in compress (zip) functionality,
+			// it includes extra files that start with "._" (dot underscore), and they are usually stored inside a __MACOSX directory.
+			// These "._" files are part of Apple's way of storing extra information about files.
+			// These files store metadata that the macOS operating system uses for various purposes.
+			if f.FileInfo().IsDir() || strings.HasPrefix(f.Name, "__MACOSX/") || pathValidationRegex.MatchString(f.Name) {
+				continue
+			}
+
+			rc, err := f.Open()
+			if err != nil {
+				return err
+			}
+
+			defer rc.Close()
+
+			// Read the content into a buffer
+			buf := new(bytes.Buffer)
+			_, err = buf.ReadFrom(rc)
+			if err != nil {
+				return err
+			}
+
+			_, err = store.Create(ctx, f.Name, buf.Bytes(), 1)
+			if err != nil {
+				return errors.Wrap(err, "error saving embedding plugin file to database")
+			}
 		}
-		// save each of this file in the store.
-		fmt.Printf("File: %s\n", f.Name)
-	}
-	return "archiveID", nil
+
+		return nil
+	})
 }
 
 func isSiteAdmin(ctx context.Context, logger sglog.Logger, db database.DB) bool {
