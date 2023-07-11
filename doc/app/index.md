@@ -38,7 +38,7 @@ Download the app:
 - [MacOS (Apple Silicon)](https://sourcegraph.com/.api/app/latest?arch=aarch64&target=darwin)
 - [MacOS (Intel)](https://sourcegraph.com/.api/app/latest?arch=x86_64&target=darwin)
 - [Linux](https://sourcegraph.com/.api/app/latest?arch=x86_64&target=linux)
-- Windows coming soon 
+- Windows coming in October 2023 
 
 ## Setup
 
