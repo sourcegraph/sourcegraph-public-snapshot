@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,6 +24,7 @@ func NewAnthropicHandler(
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
+	httpClient httpcli.Doer,
 	accessToken string,
 	allowedModels []string,
 	maxTokensToSample int,
@@ -32,6 +34,7 @@ func NewAnthropicHandler(
 		eventLogger,
 		rs,
 		rateLimitNotifier,
+		httpClient,
 		string(conftypes.CompletionsProviderNameAnthropic),
 		anthropicAPIURL,
 		allowedModels,

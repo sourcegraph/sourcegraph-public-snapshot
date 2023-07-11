@@ -58,6 +58,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
+	httpClient httpcli.Doer,
 
 	// upstreamName is the name of the upstream provider. It MUST match the
 	// provider names defined clientside, i.e. "anthropic" or "openai".
@@ -206,7 +207,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				}
 			}()
 
-			resp, err := httpcli.ExternalDoer.Do(req)
+			resp, err := httpClient.Do(req)
 			if err != nil {
 				// Ignore reporting errors where client disconnected
 				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {

@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
 const openAIURL = "https://api.openai.com/v1/chat/completions"
@@ -22,6 +23,7 @@ func NewOpenAIHandler(
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 	rateLimitNotifier notify.RateLimitNotifier,
+	httpClient httpcli.Doer,
 	accessToken string,
 	orgID string,
 	allowedModels []string,
@@ -31,6 +33,7 @@ func NewOpenAIHandler(
 		eventLogger,
 		rs,
 		rateLimitNotifier,
+		httpClient,
 		string(conftypes.CompletionsProviderNameOpenAI),
 		openAIURL,
 		allowedModels,
