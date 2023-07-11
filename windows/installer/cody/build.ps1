@@ -81,7 +81,7 @@ $MSI_PATH = "${INSTALLER_OUTPUT}\cody-${VERSION}-${ARCH}.msi"
 ./sign.ps1 $MSI_PATH
 
 # Only upload if we're in CI
-if (Test-Path "env:CI" -and [Environment]::GetEnvironmentVariable("CI") -eq "true" ) {
+if ([Environment]::GetEnvironmentVariable("CI") -eq "true" ) {
     Write-Banner -Msg "Uploading ${MSI_PATH}"
 
     Write-Host "Moving ${MSI_PATH} to ${DIST_DIR}"
