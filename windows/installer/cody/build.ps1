@@ -82,11 +82,11 @@ msbuild /p:Configuration=${CFG} /p:Platform=${ARCH}
 
 Write-Banner -Msg "Signing installer"
 
-$MSI_PATH = "${INSTALLER_OUTPUT}\cody-${VERSION}-${ARCH}.msi"
-./sign.ps1 $MSI_PATH
+./sign.ps1 "${INSTALLER_OUTPUT}\cody-${VERSION}-${ARCH}.msi"
 
 # Only upload if we're in CI
 if ($env:CI -eq "true" ) {
+    $MSI_PATH = "${INSTALLER_OUTPUT}\cody-${VERSION}-${ARCH}.msi"
     Write-Banner -Msg "Uploading ${MSI_PATH}"
 
     Write-Host "Moving ${MSI_PATH} to ${DIST_DIR}"
