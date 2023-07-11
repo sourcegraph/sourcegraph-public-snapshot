@@ -208,54 +208,37 @@ func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.R
 	return api.RepoName(poolRepoName), ok, errors.Wrap(err, "GetPoolRepoName failed")
 }
 
-const getForkedAndParentRepoQueryFmtStr = `
--- retrieve the forked repo that matches the given name
-WITH forked_repo AS (
-	SELECT
-		pool_repo_id
-	FROM
-		repo
-		JOIN gitserver_repos AS gs ON id = gs.repo_id
-	WHERE
-		NAME = %s
-),
--- now retrieve the parent repo that matches the pool_repo_id stored in the forked repo
-parent_repo AS (
-	SELECT
-		name
-	FROM
-		repo
-		JOIN gitserver_repos AS gs ON id = gs.repo_id
-	WHERE
-		gs.repo_id = (
-			SELECT
-				pool_repo_id
-			FROM
-				forked_repo))
--- now return them both
+const getPoolRepoNameQueryFmtStr = `
 SELECT
-	forked_repo.pool_repo_id AS forked_repo_pool_id,
-	parent_repo.name AS parent_repo_name
+	name
 FROM
-	forked_repo,
-	parent_repo
+	repo
+	JOIN gitserver_repos AS gs ON id = gs.repo_id
+WHERE
+	gs.repo_id = (
+		SELECT
+			pool_repo_id
+		FROM
+			repo
+			JOIN gitserver_repos AS gs ON id = gs.repo_id
+		WHERE
+			NAME = %s);
 `
 
-func (s *gitserverRepoStore) GetForkedAndParentRepo(ctx context.Context, forkedRepoName api.RepoName) (*api.RepoID, *api.RepoName, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(getForkedAndParentRepoQueryFmtStr, string(forkedRepoName)))
+func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.RepoName) (*api.RepoName, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoNameQueryFmtStr, string(repoName)))
 
-	var forkedRepoPoolID api.RepoID
 	var parentRepoName api.RepoName
 
-	err := row.Scan(&forkedRepoPoolID, &parentRepoName)
+	err := row.Scan(&parentRepoName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, nil
+			return nil, nil
 		}
-		return nil, nil, errors.Wrap(err, "failed to scan")
+		return nil, errors.Wrap(err, "GetPoolRepoName: failed to scan")
 	}
 
-	return &forkedRepoPoolID, &parentRepoName, errors.Wrap(err, "failed to scan")
+	return &parentRepoName, errors.Wrap(err, "GetPoolRepoName: failed to scan")
 }
 
 const updateGitserverReposQueryFmtstr = `

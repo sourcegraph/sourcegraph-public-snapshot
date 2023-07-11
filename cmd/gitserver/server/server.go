@@ -2019,7 +2019,7 @@ func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoN
 
 	poolRepo := repo
 	if dedupeWhich == dedupeFork {
-		_, parentRepo, err := s.DB.GitserverRepos().GetForkedAndParentRepo(ctx, repo)
+		parentRepo, err := s.DB.GitserverRepos().GetPoolRepoName(ctx, repo)
 		if err != nil {
 			return errors.Wrap(err, "failed to determine relationship between forked and parent repo (this repo will not be configured as a git-alternate and will not benefit from deduplicated storage)")
 		}
@@ -2157,13 +2157,13 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName 
 		return &deduplicatedCloneOptions{which: dedupeSource, poolDir: poolDir}, nil
 	}
 
-	forkedRepoPoolID, parentRepoName, err := s.DB.GitserverRepos().GetForkedAndParentRepo(ctx, repoName)
+	parentRepoName, err := s.DB.GitserverRepos().GetPoolRepoName(ctx, repoName)
 	if err != nil {
 		logger.Warn("failed to get by name from DB (repo will be cloned without deduplicated storage if this was supposed to be deduplicated)", log.Error(err))
 		return nil, nil
 	}
 
-	if forkedRepoPoolID != nil || parentRepoName == nil {
+	if parentRepoName == nil {
 		return nil, nil
 	}
 
