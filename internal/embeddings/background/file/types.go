@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 )
 
@@ -24,8 +23,8 @@ type FileEmbeddingJob struct {
 	WorkerHostname  string
 	Cancel          bool
 
-	RepoID   api.RepoID
-	Revision api.CommitID
+	EmbeddingPluginID int32
+	FileType          string
 }
 
 func (j *FileEmbeddingJob) RecordID() int {

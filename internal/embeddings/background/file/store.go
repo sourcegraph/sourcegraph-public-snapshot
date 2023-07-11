@@ -22,11 +22,11 @@ import (
 )
 
 type FileEmbeddingJobNotFoundErr struct {
-	fileID int32
+	embeddingPluginID int32
 }
 
 func (r *FileEmbeddingJobNotFoundErr) Error() string {
-	return fmt.Sprintf("file embedding job not found: ID=%d", r.fileID)
+	return fmt.Sprintf("file embedding job not found: embeddingPluginID=%d", r.embeddingPluginID)
 }
 
 func (r *FileEmbeddingJobNotFoundErr) NotFound() bool {
@@ -48,8 +48,8 @@ var fileEmbeddingJobsColumns = []*sqlf.Query{
 	sqlf.Sprintf("file_embedding_jobs.worker_hostname"),
 	sqlf.Sprintf("file_embedding_jobs.cancel"),
 
-	sqlf.Sprintf("file_embedding_jobs.repo_id"),
-	sqlf.Sprintf("file_embedding_jobs.revision"),
+	sqlf.Sprintf("file_embedding_jobs.embedding_plugin_id"),
+	sqlf.Sprintf("file_embedding_jobs.file_type"),
 }
 
 func scanFileEmbeddingJob(s dbutil.Scanner) (*FileEmbeddingJob, error) {
@@ -70,8 +70,8 @@ func scanFileEmbeddingJob(s dbutil.Scanner) (*FileEmbeddingJob, error) {
 		pq.Array(&executionLogs),
 		&job.WorkerHostname,
 		&job.Cancel,
-		&job.RepoID,
-		&job.Revision,
+		&job.EmbeddingPluginID,
+		&job.FileType,
 	); err != nil {
 		return nil, err
 	}
@@ -99,7 +99,7 @@ type FileEmbeddingJobsStore interface {
 	Exec(ctx context.Context, query *sqlf.Query) error
 	Done(err error) error
 
-	CreateFileEmbeddingJob(ctx context.Context, repoID int32, revision api.CommitID) (int, error)
+	CreateFileEmbeddingJob(ctx context.Context, embeddingPluginID int32, fileType string) (int, error)
 	GetLastCompletedFileEmbeddingJob(ctx context.Context, repoID int32) (*FileEmbeddingJob, error)
 	GetLastFileEmbeddingJobForRevision(ctx context.Context, repoID int32, revision api.CommitID) (*FileEmbeddingJob, error)
 	ListFileEmbeddingJobs(ctx context.Context, args ListOpts) ([]*FileEmbeddingJob, error)
@@ -129,19 +129,10 @@ var scanEmbeddableFiles = basestore.NewSliceScanner(func(scanner dbutil.Scanner)
 
 const getEmbeddableFilesFmtStr = `
 WITH
-global_policy_descriptor AS MATERIALIZED (
-	SELECT 1
-	FROM codeintel_configuration_policies p
-	WHERE
-		p.embeddings_enabled AND
-		p.repository_id IS NULL AND
-		p.repository_patterns IS NULL
-	LIMIT 1
-),
 last_queued_jobs AS (
-	SELECT DISTINCT ON (repo_id) repo_id, queued_at
-	FROM repo_embedding_jobs
-	ORDER BY repo_id, queued_at DESC
+	SELECT DISTINCT ON (embedding_plugin_id) embedding_plugin_id, queued_at
+	FROM file_embedding_jobs
+	ORDER BY embedding_plugin_id, queued_at DESC
 ),
 repositories_matching_policy AS (
     (
@@ -200,7 +191,7 @@ type ListOpts struct {
 	*database.PaginationArgs
 	Query *string
 	State *string
-	File  *api.RepoID
+	EmbeddingPlugin  *int32
 }
 
 func GetEmbeddableFileOpts() EmbeddableFileOpts {
@@ -245,10 +236,10 @@ func (s *fileEmbeddingJobsStore) Transact(ctx context.Context) (FileEmbeddingJob
 	return &fileEmbeddingJobsStore{Store: tx}, nil
 }
 
-const createFileEmbeddingJobFmtStr = `INSERT INTO repo_embedding_jobs (repo_id, revision) VALUES (%s, %s) RETURNING id`
+const createFileEmbeddingJobFmtStr = `INSERT INTO file_embedding_jobs (embedding_plugin_id, file_type) VALUES (%s, %s) RETURNING id`
 
-func (s *fileEmbeddingJobsStore) CreateFileEmbeddingJob(ctx context.Context, repoID int32, revision api.CommitID) (int, error) {
-	q := sqlf.Sprintf(createFileEmbeddingJobFmtStr, repoID, revision)
+func (s *fileEmbeddingJobsStore) CreateFileEmbeddingJob(ctx context.Context, embeddingPluginID int32, fileType string) (int, error) {
+	q := sqlf.Sprintf(createFileEmbeddingJobFmtStr, embeddingPluginID, fileType)
 	id, _, err := basestore.ScanFirstInt(s.Query(ctx, q))
 	return id, err
 }
@@ -388,7 +379,7 @@ func (s *fileEmbeddingJobsStore) GetLastCompletedFileEmbeddingJob(ctx context.Co
 	q := sqlf.Sprintf(getLastFinishedFileEmbeddingJob, sqlf.Join(fileEmbeddingJobsColumns, ", "), repoID)
 	job, err := scanFileEmbeddingJob(s.QueryRow(ctx, q))
 	if err == sql.ErrNoRows {
-		return nil, &FileEmbeddingJobNotFoundErr{fileID: repoID}
+		return nil, &FileEmbeddingJobNotFoundErr{embeddingPluginID: repoID}
 	}
 	return job, nil
 }
@@ -405,7 +396,7 @@ func (s *fileEmbeddingJobsStore) GetLastFileEmbeddingJobForRevision(ctx context.
 	q := sqlf.Sprintf(getLastFileEmbeddingJobForRevision, sqlf.Join(fileEmbeddingJobsColumns, ", "), repoID, revision)
 	job, err := scanFileEmbeddingJob(s.QueryRow(ctx, q))
 	if err == sql.ErrNoRows {
-		return nil, &FileEmbeddingJobNotFoundErr{fileID: repoID}
+		return nil, &FileEmbeddingJobNotFoundErr{embeddingPluginID: repoID}
 	}
 	return job, nil
 }
@@ -424,18 +415,18 @@ func (s *fileEmbeddingJobsStore) CountFileEmbeddingJobs(ctx context.Context, opt
 
 	var joinClause *sqlf.Query
 	if opts.Query != nil && *opts.Query != "" {
-		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
-		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+		conds = append(conds, sqlf.Sprintf("embedding_plugins.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN embedding_plugins ON embedding_plugins.id = file_embedding_jobs.embedding_plugin_id")
 	} else {
 		joinClause = sqlf.Sprintf("")
 	}
 
 	if opts.State != nil && *opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
+		conds = append(conds, sqlf.Sprintf("file_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
 	}
 
-	if opts.File != nil {
-		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", *opts.File))
+	if opts.EmbeddingPlugin != nil {
+		conds = append(conds, sqlf.Sprintf("file_embedding_jobs.embedding_plugin_id = %d", *opts.EmbeddingPlugin))
 	}
 
 	var whereClause *sqlf.Query
@@ -470,18 +461,18 @@ func (s *fileEmbeddingJobsStore) ListFileEmbeddingJobs(ctx context.Context, opts
 
 	var joinClause *sqlf.Query
 	if opts.Query != nil && *opts.Query != "" {
-		conds = append(conds, sqlf.Sprintf("repo.name LIKE %s", "%"+*opts.Query+"%"))
-		joinClause = sqlf.Sprintf("JOIN repo ON repo.id = repo_embedding_jobs.repo_id")
+		conds = append(conds, sqlf.Sprintf("embedding_plugins.name LIKE %s", "%"+*opts.Query+"%"))
+		joinClause = sqlf.Sprintf("JOIN embedding_plugins ON embedding_plugins.id = file_embedding_jobs.embedding_plugin_id")
 	} else {
 		joinClause = sqlf.Sprintf("")
 	}
 
 	if opts.State != nil && *opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
+		conds = append(conds, sqlf.Sprintf("file_embedding_jobs.state = %s", strings.ToLower(*opts.State)))
 	}
 
-	if opts.File != nil {
-		conds = append(conds, sqlf.Sprintf("repo_embedding_jobs.repo_id = %d", *opts.File))
+	if opts.EmbeddingPlugin != nil {
+		conds = append(conds, sqlf.Sprintf("file_embedding_jobs.embedding_plugin_id = %d", *opts.EmbeddingPlugin))
 	}
 
 	var whereClause *sqlf.Query
