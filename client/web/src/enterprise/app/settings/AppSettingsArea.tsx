@@ -18,6 +18,7 @@ enum AppSettingURL {
     LocalRepositories = 'local-repositories',
     RemoteRepositories = 'remote-repositories',
     RateLimits = 'rate-limits',
+    About = 'about',
 }
 
 export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
@@ -28,7 +29,7 @@ export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
                 path={`${AppSettingURL.RemoteRepositories}/*`}
                 element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
             />
-            <Route path="about" element={<AboutTab />} />
+            <Route path={AppSettingURL.About} element={<AboutTab />} />
             <Route path={AppSettingURL.RateLimits} element={<RateLimitsTab />} />
             <Route path="*" element={<Navigate to={AppSettingURL.LocalRepositories} replace={true} />} />
         </Route>
@@ -71,7 +72,7 @@ const AppSettingsLayout: FC = () => {
                     <Button
                         as={Link}
                         to="../about"
-                        variant={location.pathname.includes('settings/about') ? 'primary' : undefined}
+                        variant={location.pathname.includes(AppSettingURL.About) ? 'primary' : undefined}
                         className={styles.navigationItemLink}
                     >
                         <AboutOutlineIcon size={16} /> About Cody
