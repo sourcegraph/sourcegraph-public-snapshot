@@ -4,7 +4,6 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.intellij.openapi.diagnostic.Logger;
-import com.sourcegraph.cody.vscode.CancellationToken;
 import java.io.*;
 import java.net.ConnectException;
 import java.net.URI;
@@ -34,8 +33,7 @@ public class SSEClient {
       @NotNull String accessToken,
       @NotNull String body,
       @NotNull CompletionsCallbacks cb,
-      @NotNull CompletionsService.Endpoint endpoint,
-      CancellationToken token) {
+      @NotNull CompletionsService.Endpoint endpoint) {
     this.url = url;
     this.body = body;
     this.accessToken = accessToken;
