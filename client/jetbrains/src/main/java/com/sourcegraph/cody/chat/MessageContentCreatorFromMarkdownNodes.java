@@ -31,6 +31,11 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * This class is to be used with a Markdown document like this: Node document =
+ * parser.parse(message.getDisplayText()); document.accept(messageContentCreator); It converts a
+ * single chat message to a JPanel and other Swing components inside it.
+ */
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private final HtmlRenderer htmlRenderer =
       HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
@@ -116,15 +121,22 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private void insertCodeEditor(@NotNull String codeContent, @Nullable String languageName) {
     /* Create document */
     Document codeDocument = EditorFactory.getInstance().createDocument(codeContent);
+
+    /* Create editor */
     EditorEx editor = (EditorEx) EditorFactory.getInstance().createViewer(codeDocument);
     setHighlighting(editor, languageName);
     fillEditorSettings(editor.getSettings());
     editor.setVerticalScrollbarVisible(false);
     editor.getGutterComponentEx().setPaintBackground(false);
+
+    /* Create editor panel and add it to a parent */
+    JPanel editorPanel = new JPanel(new BorderLayout());
     editorPanel.setBorder(new EmptyBorder(JBInsets.create(new Insets(0, gradientWidth, 0, 0))));
     editorPanel.add(editor.getComponent(), BorderLayout.CENTER);
     editorPanel.setOpaque(false);
     messagePanel.add(editorPanel, BorderLayout.CENTER, textPaneIndex++);
+
+    /* Start a new block */
     htmlContent = new StringBuilder();
     createNewEmptyTextPane();
   }
