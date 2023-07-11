@@ -30,7 +30,14 @@ type Config struct {
 	EmbeddingsAllowedModels    []string
 }
 
-func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisStore, authr *auth.Authenticator, config *Config) http.Handler {
+func NewHandler(
+	logger log.Logger,
+	eventLogger events.Logger,
+	rs limiter.RedisStore,
+	httpClient httpcli.Doer,
+	authr *auth.Authenticator,
+	config *Config,
+) http.Handler {
 	// Add a prefix to the store for globally unique keys and simpler pruning.
 	rs = limiter.NewPrefixRedisStore("rate_limit:", rs)
 	r := mux.NewRouter()
@@ -49,6 +56,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 							eventLogger,
 							rs,
 							config.RateLimitNotifier,
+							httpClient,
 							config.AnthropicAccessToken,
 							config.AnthropicAllowedModels,
 							config.AnthropicMaxTokensToSample,
@@ -70,6 +78,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 							eventLogger,
 							rs,
 							config.RateLimitNotifier,
+							httpClient,
 							config.OpenAIAccessToken,
 							config.OpenAIOrgID,
 							config.OpenAIAllowedModels,
@@ -103,7 +112,7 @@ func NewHandler(logger log.Logger, eventLogger events.Logger, rs limiter.RedisSt
 							rs,
 							config.RateLimitNotifier,
 							embeddings.ModelFactoryMap{
-								embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpcli.ExternalClient, config.OpenAIAccessToken),
+								embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAIAccessToken),
 							},
 							config.EmbeddingsAllowedModels,
 						),

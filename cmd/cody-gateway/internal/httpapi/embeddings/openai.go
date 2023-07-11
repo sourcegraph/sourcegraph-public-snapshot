@@ -15,10 +15,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewOpenAIClient(httpClient *http.Client, accessToken string) EmbeddingsClient {
+func NewOpenAIClient(httpClient httpcli.Doer, accessToken string) EmbeddingsClient {
 	return &openaiClient{
 		httpClient:  httpClient,
 		accessToken: accessToken,
@@ -26,7 +27,7 @@ func NewOpenAIClient(httpClient *http.Client, accessToken string) EmbeddingsClie
 }
 
 type openaiClient struct {
-	httpClient  *http.Client
+	httpClient  httpcli.Doer
 	accessToken string
 }
 

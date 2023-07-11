@@ -18,6 +18,7 @@ go_library(
         "//cmd/cody-gateway/internal/notify",
         "//cmd/cody-gateway/internal/response",
         "//internal/codygateway",
+        "//internal/httpcli",
         "//internal/trace",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",

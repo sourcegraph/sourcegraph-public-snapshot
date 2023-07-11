@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
@@ -72,6 +73,14 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 				config.BigQuery.EventBufferSize,
 				config.BigQuery.EventBufferWorkers)
 		}
+	}
+
+	// Create an uncached external doer, we never want to cache any responses.
+	// Not only is the cache hit rate going to be really low and requests large-ish,
+	// but also do we not want to retain any data.
+	httpClient, err := httpcli.UncachedExternalClientFactory.Doer()
+	if err != nil {
+		return errors.Wrap(err, "failed to initialize external http client")
 	}
 
 	// Supported actor/auth sources
@@ -129,7 +138,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
-	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, authr, &httpapi.Config{
+	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr, &httpapi.Config{
 		RateLimitNotifier:          rateLimitNotifier,
 		AnthropicAccessToken:       config.Anthropic.AccessToken,
 		AnthropicAllowedModels:     config.Anthropic.AllowedModels,
