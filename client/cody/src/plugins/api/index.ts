@@ -10,14 +10,14 @@ export const chooseDataSources = (
     query: string,
     client: ChatClient,
     plugins = defaultPlugins
-): Promise<IPluginFunctionCallDescriptor[]> => {
+): Promise<[string, IPluginFunctionCallDescriptor][]> => {
     const allDataSources = plugins.flatMap(plugin => plugin.dataSources)
 
     const messages = makePrompt(
         query,
         allDataSources.map(({ handler, ...rest }) => rest)
     )
-    return new Promise<IPluginFunctionCallDescriptor[]>((resolve, reject) => {
+    return new Promise<[string, IPluginFunctionCallDescriptor][]>((resolve, reject) => {
         let lastResponse = ''
         client.chat(messages, {
             onChange: text => {
@@ -27,13 +27,14 @@ export const chooseDataSources = (
                 try {
                     const descriptors = JSON.parse(lastResponse.trim()) as IPluginFunctionChosenDescriptor[]
                     resolve(
-                        descriptors.map(
-                            item =>
-                                [
-                                    allDataSources.find(dataSource => dataSource.name === item.name),
-                                    item.parameters,
-                                ] as IPluginFunctionCallDescriptor
-                        )
+                        descriptors.map(item => {
+                            const dataSource = allDataSources.find(dataSource => dataSource.name === item.name)
+                            const plugin = plugins.find(plugin => plugin.dataSources.some(ds => ds.name === item.name))
+                            return [plugin?.name, [dataSource, item.parameters]] as [
+                                string,
+                                IPluginFunctionCallDescriptor
+                            ]
+                        })
                     )
                 } catch (error) {
                     reject(new Error(`Error parsing llm intent detection response: ${error}`))
@@ -55,7 +56,7 @@ export const getContext = async (dataSourcesCallDescriptors: IPluginFunctionCall
                 return
             }
 
-            return `\n${dataSource.name}: \`\`\`json${JSON.stringify(response)}\`\`\`\n`
+            return `from ${dataSource.name} data source:\n\`\`\`json\n${JSON.stringify(response)}`
         })
     )
 
@@ -67,11 +68,11 @@ export const getContext = async (dataSourcesCallDescriptors: IPluginFunctionCall
     return [
         {
             speaker: 'human',
-            text: 'I have following results from different data sources:\n' + outputs.join('\n'),
+            text: 'I have following responses from external APIs that I called now:\n' + outputs.join('\n'),
         },
         {
             speaker: 'assistant',
-            text: 'Understood, I have context about the above data and can use it to answer your questions.',
+            text: 'Understood, I have additional knowledge when answering your question.',
         },
     ]
 }

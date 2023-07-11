@@ -153,7 +153,8 @@ export class Transcript {
 
     public async getPromptForLastInteraction(
         preamble: Message[] = [],
-        maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH
+        maxPromptLength: number = MAX_AVAILABLE_PROMPT_LENGTH,
+        pluginPreambles: Message[] = []
     ): Promise<{ prompt: Message[]; contextFiles: ContextFile[] }> {
         if (this.interactions.length === 0) {
             return { prompt: [], contextFiles: [] }
@@ -167,14 +168,18 @@ export class Transcript {
             const assistantMessage = interaction.getAssistantMessage()
             const contextMessages = await interaction.getFullContext()
             if (index === lastInteractionWithContextIndex) {
-                messages.push(...contextMessages, humanMessage, assistantMessage)
+                messages.push(...contextMessages, ...pluginPreambles, humanMessage, assistantMessage)
             } else {
-                messages.push(humanMessage, assistantMessage)
+                messages.push(...pluginPreambles, humanMessage, assistantMessage)
             }
         }
 
         const preambleTokensUsage = preamble.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
-        let truncatedMessages = truncatePrompt(messages, maxPromptLength - preambleTokensUsage)
+        const pluginPreambleTokenUsage = pluginPreambles.reduce((acc, message) => acc + estimateTokensUsage(message), 0)
+        let truncatedMessages = truncatePrompt(
+            messages,
+            maxPromptLength - preambleTokensUsage - pluginPreambleTokenUsage
+        )
 
         // Return what context fits in the window
         const contextFiles: ContextFile[] = []

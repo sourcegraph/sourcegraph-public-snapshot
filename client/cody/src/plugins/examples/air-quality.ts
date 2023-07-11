@@ -2,13 +2,13 @@ import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../ap
 
 import { fetchAPINinjas } from './lib/fetch-api-ninjas'
 
-export const weatherPlugin: IPlugin = {
-    name: 'Weather Cody plugin',
-    description: 'Search weather. Use this to find out what is the weather today in different cities.',
+export const airQualityPlugin: IPlugin = {
+    name: 'Air Quality Cody plugin',
+    description: 'Search air quality. Use this to find out what is the air quality in different cities.',
     dataSources: [
         {
-            name: 'get_current_weather',
-            description: 'Get the current weather in a given city',
+            name: 'get_airquality_in_city',
+            description: 'Get the current air quality for a given city',
             parameters: {
                 type: 'object',
                 properties: {
@@ -23,13 +23,13 @@ export const weatherPlugin: IPlugin = {
                 if (typeof parameters?.city !== 'string') {
                     return Promise.reject(new Error('Invalid parameters'))
                 }
-                const url = 'https://api.api-ninjas.com/v1/weather?city=' + parameters.city
+                const url = 'https://api.api-ninjas.com/v1/airquality?city=' + parameters.city
                 return fetchAPINinjas(url).then(async response => {
                     if (!response.ok) {
                         return [
                             {
                                 url,
-                                error: 'Could not fetch weather data',
+                                error: 'Could not fetch air quality data',
                             },
                         ]
                     }
@@ -38,9 +38,7 @@ export const weatherPlugin: IPlugin = {
                         {
                             url,
                             city: parameters.city,
-                            temperature: json.temp,
-                            feels_like: json.feels_like,
-                            max_temperature: json.temp_max,
+                            ...json,
                         },
                     ]
                 })

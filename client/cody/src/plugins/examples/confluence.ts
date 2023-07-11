@@ -1,8 +1,7 @@
 import { IPlugin, IPluginFunctionOutput, IPluginFunctionParameters } from '../api/types'
 
-// todo: use env variables
-const email = 'EMAIL'
-const apiToken = 'API_TOKEN'
+const email = process.env.CONFLUENCE_EMAIL!
+const apiToken = process.env.CONFLUENCE_API_TOKEN!
 
 const base_url = 'https://sourcegraph-source.atlassian.net'
 
@@ -117,5 +116,5 @@ function getSurroundingText(paragraph: string, blurb: string): string {
 
     const start = Math.max(0, blurbIndex - 300)
     const end = Math.min(paragraph.length, blurbIndex + blurb.length + 300)
-    return paragraph.substring(start, end)
+    return paragraph.slice(start, end)
 }

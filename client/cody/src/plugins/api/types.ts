@@ -18,6 +18,7 @@ export interface IPluginFunction {
 
 export interface IPluginFunctionOutput {
     url: string
+    [key: string]: any
 }
 
 export type IPluginFunctionDescriptor = Omit<IPluginFunction, 'handler'>
