@@ -9,7 +9,7 @@ import { AboutPageUpdatePanel } from '../../../../cody/update/AboutPageUpdate'
 import styles from './AboutPage.module.scss'
 
 export interface AboutTabProps {
-    version: string
+    version?: string
 }
 
 export const AboutTab: React.FC<AboutTabProps> = ({ version = window.context.version }) => (
