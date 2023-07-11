@@ -46,7 +46,6 @@ import { ChatUI } from '../components/ChatUI'
 import { CodyMarketingPage } from '../components/CodyMarketingPage'
 import { HistoryList } from '../components/HistoryList'
 import { isCodyEnabled } from '../isCodyEnabled'
-import { HomePageUpdateNotice } from '../update/HomePageUpdateNotice'
 import { CodyChatStore, useCodyChat } from '../useCodyChat'
 
 import { CodyColorIcon } from './CodyPageIcon'
@@ -163,7 +162,6 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
     return (
         <Page className={classNames('d-flex flex-column', styles.page)}>
             <PageTitle title="Cody AI Chat" />
-            {/* {isSourcegraphApp && <HomePageUpdateNotice />} */}
             {!isSourcegraphDotCom && !isCTADismissed && !isSourcegraphApp && (
                 <MarketingBlock
                     wrapperClassName="mb-5"

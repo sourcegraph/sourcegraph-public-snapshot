@@ -112,6 +112,5 @@ export function useUpdater(): UpdateInfo {
             .catch(() => {})
     }, [])
 
-    console.log('Returning hook', lastCheck)
     return lastCheck
 }
