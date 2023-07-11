@@ -38,11 +38,11 @@ Cody Gateway is hosted at `cody-gateway.sourcegraph.com`. To use Cody Gateway, y
 
 ## Configuring custom models
 
-To configure custom models for various Cody configurations (e.g. `"completions"` and `"embeddings"`), specify the desired model with the upstream provider as a prefix to the name of the model. For example, to use the `claude-v1` model from Anthropic, you would configure:
+To configure custom models for various Cody configurations (e.g. `"completions"` and `"embeddings"`), specify the desired model with the upstream provider as a prefix to the name of the model. For example, to use the `claude-2` model from Anthropic, you would configure:
 
 ```json
 {
-  "completions": { "chatModel": "anthropic/claude-v1" },
+  "completions": { "chatModel": "anthropic/claude-2" },
 }
 ```
 
