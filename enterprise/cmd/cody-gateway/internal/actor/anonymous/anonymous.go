@@ -37,13 +37,13 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 			codygateway.FeatureChatCompletions: actor.NewRateLimitWithPercentageConcurrency(
 				50,
 				24*time.Hour,
-				[]string{"anthropic/claude-v1"},
+				[]string{"anthropic/claude-v1", "anthropic/claude-2"},
 				s.concurrencyConfig,
 			),
 			codygateway.FeatureCodeCompletions: actor.NewRateLimitWithPercentageConcurrency(
 				1000,
 				24*time.Hour,
-				[]string{"anthropic/claude-instant-v1"},
+				[]string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"},
 				s.concurrencyConfig,
 			),
 			codygateway.FeatureEmbeddings: {

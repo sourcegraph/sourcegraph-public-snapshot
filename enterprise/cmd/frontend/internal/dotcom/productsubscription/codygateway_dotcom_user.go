@@ -210,9 +210,9 @@ func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, 
 func allowedModels(scope types.CompletionsFeature) []string {
 	switch scope {
 	case types.CompletionsFeatureChat:
-		return []string{"anthropic/claude-v1", "anthropic/claude-instant-v1"}
+		return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1"}
+		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
 	default:
 		return []string{}
 	}

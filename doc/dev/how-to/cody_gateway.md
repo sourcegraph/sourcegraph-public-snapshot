@@ -25,8 +25,8 @@ Configure Cody features to talk to your local Cody Gateway:
     "enabled": true,
     "provider": "sourcegraph",
     "endpoint": "http://localhost:9992",
-    "chatModel": "anthropic/claude-v1",
-    "completionModel": "anthropic/claude-instant-v1",
+    "chatModel": "anthropic/claude-2",
+    "completionModel": "anthropic/claude-instant-1",
     // Create a subscription and create a license key:
     // https://sourcegraph.test:3443/site-admin/dotcom/product/subscriptions
     // Under "Cody services", ensure access is enabled and get the access token
