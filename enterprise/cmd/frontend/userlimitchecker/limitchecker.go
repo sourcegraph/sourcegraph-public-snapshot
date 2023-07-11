@@ -23,15 +23,16 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 		return errors.Wrap(err, "could not get license user limit")
 	}
 
-	siteAdminEmails, err := getSiteAdminEmails(ctx, db)
-	if err != nil {
-		return errors.Wrap(err, "could not get site admins")
-	}
+	percentOfLimit := getPercentOfLimit(userCount, userLimit)
+	if percentOfLimit > 90 || userCount >= userLimit-5 {
+		siteAdminEmails, err := getSiteAdminEmails(ctx, db)
+		if err != nil {
+			return errors.Wrap(err, "could not get site admins")
+		}
 
-	replyTo := "support@sourcegraph.com"
-	messageId := "approaching_user_limit"
+		messageId := "approaching_user_limit"
+		replyTo := "support@sourcegraph.com"
 
-	if approachingOrOverUserLimit(userCount, userLimit) {
 		if err := txemail.Send(ctx, "approaching_user_limit", txemail.Message{
 			To:        siteAdminEmails,
 			Template:  approachingUserLimitEmailTemplate,
@@ -39,8 +40,10 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 			ReplyTo:   &replyTo,
 			Data: struct {
 				RemainingUsers int
+				Percent        int
 			}{
 				RemainingUsers: userLimit - userCount,
+				Percent:        percentOfLimit,
 			},
 		}); err != nil {
 			return errors.Wrap(err, "could not send email")
@@ -50,17 +53,17 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-func approachingOrOverUserLimit(userCount, userLimit int) bool {
+func getPercentOfLimit(userCount, userLimit int) int {
 	if userCount == 0 {
-		return true
+		return 0
 	}
 
 	// RESEARCH: will this ever be the case?
-	if userCount > userLimit {
-		return true
+	if userLimit == 0 {
+		return userCount + 100
 	}
 
-	return (userCount*100)/userLimit >= 95
+	return (userCount * 100) / userLimit
 }
 
 func getUserCount(ctx context.Context, db database.DB) (int, error) {
@@ -91,14 +94,14 @@ func getSiteAdminEmails(ctx context.Context, db database.DB) ([]string, error) {
 	var siteAdminEmails []string
 	users, err := db.Users().List(ctx, &database.UsersListOptions{})
 	if err != nil {
-		return siteAdminEmails, err
+		return nil, err
 	}
 
 	for _, user := range users {
 		if user.SiteAdmin {
 			email, _, err := getUserEmail(ctx, db, user)
 			if err != nil {
-				return siteAdminEmails, err
+				return nil, err
 			}
 			siteAdminEmails = append(siteAdminEmails, email)
 		}

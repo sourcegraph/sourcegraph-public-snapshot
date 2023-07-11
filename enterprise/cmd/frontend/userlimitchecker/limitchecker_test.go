@@ -62,27 +62,28 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 	})
 }
 
-func TestApproachingOrOverUserLimit(t *testing.T) {
+func TestGetPercentOfLimit(t *testing.T) {
 	cases := []struct {
-		want      bool
+		want      int
 		userCount int
 		userLimit int
 	}{
-		{want: false, userCount: 0, userLimit: 100},
-		{want: false, userCount: 211, userLimit: 250},
-		{want: false, userCount: 348, userLimit: 567},
-		{want: false, userCount: 583, userLimit: 1264},
-		{want: true, userCount: 10, userLimit: 0},
-		{want: true, userCount: 5, userLimit: 7},
-		{want: true, userCount: 87, userLimit: 90},
-		{want: true, userCount: 95, userLimit: 100},
-		{want: true, userCount: 3485, userLimit: 3500},
+		{want: 0, userCount: 0, userLimit: 100},
+		{want: 84, userCount: 211, userLimit: 250},
+		{want: 61, userCount: 348, userLimit: 567},
+		{want: 46, userCount: 583, userLimit: 1264},
+		{want: 110, userCount: 10, userLimit: 0},
+		{want: 112, userCount: 45, userLimit: 40},
+		{want: 95, userCount: 19, userLimit: 20},
+		{want: 96, userCount: 87, userLimit: 90},
+		{want: 95, userCount: 95, userLimit: 100},
+		{want: 95, userCount: 3350, userLimit: 3500},
 	}
 
 	for _, tc := range cases {
-		got := approachingOrOverUserLimit(tc.userCount, tc.userLimit)
-		if got != tc.want {
-			t.Errorf("got %v want %v", got, tc.want)
+		gotPercent := getPercentOfLimit(tc.userCount, tc.userLimit)
+		if gotPercent != tc.want {
+			t.Errorf("got %v want %v", gotPercent, tc.want)
 		}
 	}
 }
