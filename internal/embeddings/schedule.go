@@ -33,25 +33,23 @@ func ScheduleRepositoriesForEmbedding(
 			}
 
 			refName, latestRevision, err := gitserverClient.GetDefaultBranch(ctx, r.Name, false)
+			// enqueue with an empty revision and let handler determine whether job can execute
 			if err != nil || refName == "" {
-				// enqueue a failed job
-				_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision, "failed")
-				if err != nil {
-					return err
-				}
-				return nil
+				latestRevision = ""
 			}
 
 			// Skip creating a repo embedding job for a repo at revision, if there already exists
 			// an identical job that has been completed, or is scheduled to run (processing or queued).
 			if !forceReschedule {
 				job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
-				if job.IsRepoEmbeddingJobScheduledOrCompleted() {
+
+				// if job previously failed then only resubmit if revision is non-empty
+				if job.IsRepoEmbeddingJobScheduledOrCompleted() || job.EmptyRepoEmbeddingJob() {
 					return nil
 				}
 			}
 
-			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision, "queued")
+			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision)
 			return err
 		}()
 		if err != nil {
