@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 
-declare -r mydir=$(dirname "$0")
+set -eux
 
-if ! "${mydir}/../../../windows/check_requirements.cmd"; then
+cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
+
+if ! "./enterprise/dev/app/windows/check_requirements.cmd"; then
   echo "STOP! Requirements missing. Please fix before proceeding."
   exit 1
 fi
 
-echo "VERSION: IN BUILD SCRIPT"
 #version="$(./enterprise/dev/app/app-version.sh)"
 version="23.7.1"
 echo "Building version: ${version}"
