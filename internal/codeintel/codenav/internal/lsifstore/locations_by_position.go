@@ -70,8 +70,8 @@ func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, u
 		bulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		pq.Array(explodedSymbols),
-		pq.Array(uploadIDs),
+		pq.Array(explodedSymbols), // TODO - test
+		pq.Array(uploadIDs),       // TODO - test
 		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
 	)
 
@@ -179,8 +179,8 @@ func (s *store) getLocations(
 				locationsSymbolSearchQuery,
 				pq.Array([]string{occurrence.Symbol}),
 				pq.Array([]int{bundleID}),
-				pq.Array([]string{explodedSymbol}),
-				pq.Array([]int{bundleID}),
+				pq.Array([]string{explodedSymbol}), // TODO - test
+				pq.Array([]int{bundleID}),          // TODO - test
 				sqlf.Sprintf(scipFieldName),
 				bundleID,
 				path,
@@ -549,8 +549,8 @@ func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName st
 		minimalBulkMonikerResultsQuery,
 		pq.Array(symbolNames),
 		pq.Array(uploadIDs),
-		pq.Array(explodedSymbolNames),
-		pq.Array(uploadIDs),
+		pq.Array(explodedSymbolNames), // TODO - test
+		pq.Array(uploadIDs),           // TODO - test
 		sqlf.Sprintf(fieldName),
 		sqlf.Sprintf(fieldName),
 		sqlf.Join(skipConds, ", "),

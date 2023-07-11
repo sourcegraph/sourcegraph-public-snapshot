@@ -13,6 +13,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+// TODO - test
+
 func TestInsertMetadata(t *testing.T) {
 	logger := logtest.Scoped(t)
 	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
