@@ -9,8 +9,12 @@ if ! "./windows/check_requirements.cmd"; then
   exit 1
 fi
 
-#version="$(./enterprise/dev/app/app-version.sh)"
-version="23.7.1"
+version=$(powershell ./enterprise/dev/app/windows-version.ps1)
+
+if [[ -z $version ]]; then
+  echo "Invalid version '$version'. Please check how the version is created. Something is probably wrong"
+  echo 1
+fi
 echo "Building version: ${version}"
 
 echo "--- :chrome: Building web"

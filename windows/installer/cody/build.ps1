@@ -17,6 +17,7 @@ $epoch =  Get-Date -Year 2023 -Month 05 -Day 22 -Hour 08 -Minute 00 -Second 00
 $now = Get-Date
 $rev = [math]::Round(($now - $epoch).TotalHours * 4)
 
+# TODO(burmudar): call ps1 script `enterprise/dev/app/windows-version.ps1`
 $VERSION = "${major}.${minor}.${build}.${rev}"
 
 # Write installer version
