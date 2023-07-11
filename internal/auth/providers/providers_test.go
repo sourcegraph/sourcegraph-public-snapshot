@@ -59,11 +59,14 @@ func TestGetAuthProviderCommon(t *testing.T) {
 					Hidden: false,
 					Order:  2,
 				},
+				MockConfigID: ConfigID{
+					Type: "mocked provider",
+				},
 			},
 			want: schema.AuthProviderCommon{
 				Hidden:        false,
 				Order:         2,
-				DisplayName:   "",
+				DisplayName:   "mocked provider",
 				DisplayPrefix: nil,
 			},
 		},
