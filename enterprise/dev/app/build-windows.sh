@@ -1,20 +1,14 @@
 #!/usr/bin/env bash
 
-set -eux
-
-cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
-
-if ! "./windows/check_requirements.cmd"; then
+declare -r mydir=$(dirname "$0")
+ 
+if ! "${mydir}/../../../windows/check_requirements.cmd"; then
   echo "STOP! Requirements missing. Please fix before proceeding."
   exit 1
 fi
 
-version="23.0.0+dev" #$(powershell -ExecutionPolicy Unrestricted ./enterprise/dev/app/windows-version.ps1)
-
-if [[ -z $version ]]; then
-  echo "Invalid version '$version'. Please check how the version is created. Something is probably wrong"
-  echo 1
-fi
+#version="$(./enterprise/dev/app/app-version.sh)"
+version="23.7.1"
 echo "Building version: ${version}"
 
 echo "--- :chrome: Building web"
@@ -40,9 +34,7 @@ GOOS=windows GOARCH=amd64 CGO_ENABLED=1 \
   -ldflags "$ldflags" \
   ./enterprise/cmd/sourcegraph
 
-set +e
 pnpm tauri build
-set -e
 
 if [[ ! -e ./src-tauri/target/release/Cody.exe ]]; then
   echo "FATAL: Failed to build Cody for Windows"
