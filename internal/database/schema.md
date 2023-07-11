@@ -1337,10 +1337,27 @@ Referenced by:
 ---------------------+---------+-----------+----------+----------------------------------------------------
  id                  | integer |           | not null | nextval('embedding_plugin_files_id_seq'::regclass)
  file_path           | text    |           | not null | 
- contents            | bytea   |           | not null | 
+ contents            | text    |           | not null | 
  embedding_plugin_id | integer |           | not null | 
 Indexes:
     "embedding_plugin_files_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "fk_embedding_plugin" FOREIGN KEY (embedding_plugin_id) REFERENCES embedding_plugins(id)
+
+```
+
+# Table "public.embedding_plugins"
+```
+       Column        |  Type   | Collation | Nullable |                    Default                    
+---------------------+---------+-----------+----------+-----------------------------------------------
+ id                  | integer |           | not null | nextval('embedding_plugins_id_seq'::regclass)
+ name                | text    |           | not null | 
+ original_source_url | text    |           |          | 
+Indexes:
+    "embedding_plugins_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "embedding_plugin_files" CONSTRAINT "fk_embedding_plugin" FOREIGN KEY (embedding_plugin_id) REFERENCES embedding_plugins(id)
+    TABLE "file_embedding_jobs" CONSTRAINT "fk_embedding_plugin" FOREIGN KEY (embedding_plugin_id) REFERENCES embedding_plugins(id)
 
 ```
 
@@ -1768,25 +1785,27 @@ Foreign-key constraints:
 
 # Table "public.file_embedding_jobs"
 ```
-      Column       |           Type           | Collation | Nullable |                     Default                     
--------------------+--------------------------+-----------+----------+-------------------------------------------------
- id                | integer                  |           | not null | nextval('file_embedding_jobs_id_seq'::regclass)
- state             | text                     |           |          | 'queued'::text
- failure_message   | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | now()
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- last_heartbeat_at | timestamp with time zone |           |          | 
- execution_logs    | json[]                   |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- cancel            | boolean                  |           | not null | false
- archive_id        | text                     |           | not null | 
- file_type         | text                     |           | not null | 'html'::text
+       Column        |           Type           | Collation | Nullable |                     Default                     
+---------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                  | integer                  |           | not null | nextval('file_embedding_jobs_id_seq'::regclass)
+ state               | text                     |           |          | 'queued'::text
+ failure_message     | text                     |           |          | 
+ queued_at           | timestamp with time zone |           |          | now()
+ started_at          | timestamp with time zone |           |          | 
+ finished_at         | timestamp with time zone |           |          | 
+ process_after       | timestamp with time zone |           |          | 
+ num_resets          | integer                  |           | not null | 0
+ num_failures        | integer                  |           | not null | 0
+ last_heartbeat_at   | timestamp with time zone |           |          | 
+ execution_logs      | json[]                   |           |          | 
+ worker_hostname     | text                     |           | not null | ''::text
+ cancel              | boolean                  |           | not null | false
+ embedding_plugin_id | integer                  |           | not null | 
+ file_type           | text                     |           | not null | 'html'::text
 Indexes:
     "file_embedding_jobs_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "fk_embedding_plugin" FOREIGN KEY (embedding_plugin_id) REFERENCES embedding_plugins(id)
 Referenced by:
     TABLE "file_embedding_job_stats" CONSTRAINT "file_embedding_job_stats_job_id_fkey" FOREIGN KEY (job_id) REFERENCES file_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE
 

@@ -2204,7 +2204,7 @@ ALTER SEQUENCE discussion_threads_target_repo_id_seq OWNED BY discussion_threads
 CREATE TABLE embedding_plugin_files (
     id integer NOT NULL,
     file_path text NOT NULL,
-    contents bytea NOT NULL,
+    contents text NOT NULL,
     embedding_plugin_id integer NOT NULL
 );
 
@@ -2217,6 +2217,22 @@ CREATE SEQUENCE embedding_plugin_files_id_seq
     CACHE 1;
 
 ALTER SEQUENCE embedding_plugin_files_id_seq OWNED BY embedding_plugin_files.id;
+
+CREATE TABLE embedding_plugins (
+    id integer NOT NULL,
+    name text NOT NULL,
+    original_source_url text
+);
+
+CREATE SEQUENCE embedding_plugins_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE embedding_plugins_id_seq OWNED BY embedding_plugins.id;
 
 CREATE TABLE event_logs (
     id bigint NOT NULL,
@@ -2621,7 +2637,7 @@ CREATE TABLE file_embedding_jobs (
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
-    archive_id text NOT NULL,
+    embedding_plugin_id integer NOT NULL,
     file_type text DEFAULT 'html'::text NOT NULL
 );
 
@@ -5035,6 +5051,8 @@ ALTER TABLE ONLY discussion_threads_target_repo ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY embedding_plugin_files ALTER COLUMN id SET DEFAULT nextval('embedding_plugin_files_id_seq'::regclass);
 
+ALTER TABLE ONLY embedding_plugins ALTER COLUMN id SET DEFAULT nextval('embedding_plugins_id_seq'::regclass);
+
 ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_seq'::regclass);
 
 ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval('event_logs_export_allowlist_id_seq'::regclass);
@@ -5367,6 +5385,9 @@ ALTER TABLE ONLY discussion_threads_target_repo
 
 ALTER TABLE ONLY embedding_plugin_files
     ADD CONSTRAINT embedding_plugin_files_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY embedding_plugins
+    ADD CONSTRAINT embedding_plugins_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY event_logs_export_allowlist
     ADD CONSTRAINT event_logs_export_allowlist_pkey PRIMARY KEY (id);
@@ -6588,6 +6609,12 @@ ALTER TABLE ONLY codeintel_initial_path_ranks_processed
 
 ALTER TABLE ONLY codeintel_ranking_references_processed
     ADD CONSTRAINT fk_codeintel_ranking_reference FOREIGN KEY (codeintel_ranking_reference_id) REFERENCES codeintel_ranking_references(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY embedding_plugin_files
+    ADD CONSTRAINT fk_embedding_plugin FOREIGN KEY (embedding_plugin_id) REFERENCES embedding_plugins(id);
+
+ALTER TABLE ONLY file_embedding_jobs
+    ADD CONSTRAINT fk_embedding_plugin FOREIGN KEY (embedding_plugin_id) REFERENCES embedding_plugins(id);
 
 ALTER TABLE ONLY vulnerability_matches
     ADD CONSTRAINT fk_upload FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;

@@ -637,6 +637,15 @@
       "CycleOption": "NO"
     },
     {
+      "Name": "embedding_plugins_id_seq",
+      "TypeName": "integer",
+      "StartValue": 1,
+      "MinimumValue": 1,
+      "MaximumValue": 2147483647,
+      "Increment": 1,
+      "CycleOption": "NO"
+    },
+    {
       "Name": "event_logs_export_allowlist_id_seq",
       "TypeName": "integer",
       "StartValue": 1,
@@ -10178,7 +10187,7 @@
         {
           "Name": "contents",
           "Index": 3,
-          "TypeName": "bytea",
+          "TypeName": "text",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -10236,6 +10245,73 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE UNIQUE INDEX embedding_plugin_files_pkey ON embedding_plugin_files USING btree (id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "fk_embedding_plugin",
+          "ConstraintType": "f",
+          "RefTableName": "embedding_plugins",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (embedding_plugin_id) REFERENCES embedding_plugins(id)"
+        }
+      ],
+      "Triggers": []
+    },
+    {
+      "Name": "embedding_plugins",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "nextval('embedding_plugins_id_seq'::regclass)",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "name",
+          "Index": 2,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "original_source_url",
+          "Index": 3,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "embedding_plugins_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX embedding_plugins_pkey ON embedding_plugins USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
         }
@@ -12882,11 +12958,11 @@
       "Comment": "",
       "Columns": [
         {
-          "Name": "archive_id",
-          "Index": 14,
-          "TypeName": "text",
+          "Name": "cancel",
+          "Index": 13,
+          "TypeName": "boolean",
           "IsNullable": false,
-          "Default": "",
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -12895,11 +12971,11 @@
           "Comment": ""
         },
         {
-          "Name": "cancel",
-          "Index": 13,
-          "TypeName": "boolean",
+          "Name": "embedding_plugin_id",
+          "Index": 14,
+          "TypeName": "integer",
           "IsNullable": false,
-          "Default": "false",
+          "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -13089,7 +13165,15 @@
           "ConstraintDefinition": "PRIMARY KEY (id)"
         }
       ],
-      "Constraints": null,
+      "Constraints": [
+        {
+          "Name": "fk_embedding_plugin",
+          "ConstraintType": "f",
+          "RefTableName": "embedding_plugins",
+          "IsDeferrable": false,
+          "ConstraintDefinition": "FOREIGN KEY (embedding_plugin_id) REFERENCES embedding_plugins(id)"
+        }
+      ],
       "Triggers": []
     },
     {
