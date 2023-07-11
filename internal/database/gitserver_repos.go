@@ -74,7 +74,7 @@ type GitserverRepoStore interface {
 
 	UpdatePoolRepoID(context.Context, api.RepoName, api.RepoName) error
 
-	GetForkedAndParentRepo(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error)
+	GetPoolRepoName(context.Context, api.RepoName) (*api.RepoName, error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -123,77 +123,63 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 }
 
 const updatePoolRepoIDQueryFmtStr = `
-WITH parent_repo AS (
-	SELECT id, shard_id FROM repo
-	JOIN gitserver_repos ON id = repo_id
-	WHERE NAME = %s::citext
-)
 UPDATE
 	gitserver_repos
 SET
-	pool_repo_id = parent_repo.id
-FROM
-	parent_repo
+	pool_repo_id = (
+		SELECT
+			id
+		FROM
+			repo
+			JOIN gitserver_repos ON id = repo_id
+		WHERE
+			NAME = %s::citext)
 WHERE
-	repo_id = (SELECT id FROM repo WHERE NAME = %s::citext);
+	repo_id = (
+		SELECT
+			id
+		FROM
+			repo
+		WHERE
+			NAME = %s::citext)
 `
 
-func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, parentRepoName, forkedRepoName api.RepoName) error {
-	fmt.Println(">>>> querying for", parentRepoName, forkedRepoName)
-
-	err := s.Exec(ctx, sqlf.Sprintf(updatePoolRepoIDQueryFmtStr, string(parentRepoName), forkedRepoName))
-
-	return errors.Wrap(err, "adding pool_repo_id to gitserver_repos row")
+func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) error {
+	err := s.Exec(ctx, sqlf.Sprintf(updatePoolRepoIDQueryFmtStr, string(poolRepoName), repoName))
+	return errors.Wrap(err, "UpdatePoolRepoID: failed to add pool_repo_id to gitserver_repos row")
 }
 
-const getForkedAndParentRepoQueryFmtStr = `
--- retrieve the forked repo that matches the given name
-WITH forked_repo AS (
-	SELECT
-		pool_repo_id
-	FROM
-		repo
-		JOIN gitserver_repos AS gs ON id = gs.repo_id
-	WHERE
-		NAME = %s
-),
--- now retrieve the parent repo that matches the pool_repo_id stored in the forked repo
-parent_repo AS (
-	SELECT
-		name
-	FROM
-		repo
-		JOIN gitserver_repos AS gs ON id = gs.repo_id
-	WHERE
-		gs.repo_id = (
-			SELECT
-				pool_repo_id
-			FROM
-				forked_repo))
--- now return them both
+const getPoolRepoNameQueryFmtStr = `
 SELECT
-	forked_repo.pool_repo_id AS forked_repo_pool_id,
-	parent_repo.name AS parent_repo_name
+	name
 FROM
-	forked_repo,
-	parent_repo
+	repo
+	JOIN gitserver_repos AS gs ON id = gs.repo_id
+WHERE
+	gs.repo_id = (
+		SELECT
+			pool_repo_id
+		FROM
+			repo
+			JOIN gitserver_repos AS gs ON id = gs.repo_id
+		WHERE
+			NAME = %s);
 `
 
-func (s *gitserverRepoStore) GetForkedAndParentRepo(ctx context.Context, forkedRepoName api.RepoName) (*api.RepoID, *api.RepoName, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(getForkedAndParentRepoQueryFmtStr, string(forkedRepoName)))
+func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.RepoName) (*api.RepoName, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoNameQueryFmtStr, string(repoName)))
 
-	var forkedRepoPoolID api.RepoID
 	var parentRepoName api.RepoName
 
-	err := row.Scan(&forkedRepoPoolID, &parentRepoName)
+	err := row.Scan(&parentRepoName)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil, nil
+			return nil, nil
 		}
-		return nil, nil, errors.Wrap(err, "failed to scan")
+		return nil, errors.Wrap(err, "GetPoolRepoName: failed to scan")
 	}
 
-	return &forkedRepoPoolID, &parentRepoName, errors.Wrap(err, "failed to scan")
+	return &parentRepoName, errors.Wrap(err, "GetPoolRepoName: failed to scan")
 }
 
 const updateGitserverReposQueryFmtstr = `

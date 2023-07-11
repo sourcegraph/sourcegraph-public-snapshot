@@ -570,7 +570,7 @@ func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.Git
 	// does not need to be present in the gitserver_repos table to return a name. We maintain this
 	// assumption and don't log errors for sql.ErrNoRows.
 
-	forkedRepoPoolID, parentRepoName, err := s.DB.GitserverRepos().GetForkedAndParentRepo(context.Background(), repoName)
+	parentRepoName, err := s.DB.GitserverRepos().GetPoolRepoName(context.Background(), repoName)
 	if err != nil {
 		logger.Error("failed to find a relationship between the forked repo and its parent from DB, this does not cause an application error and will use repoName to determine the gitserver address but this error does indicate a bug", log.Error(err))
 	}
@@ -581,7 +581,7 @@ func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.Git
 	// of its parent repo. This ensures if deduplication is enabled on a specific repo, all forks of
 	// that repo will reside on the same shard. This is a pre-requisite to support deduplication on
 	// all forks of the repo.
-	if forkedRepoPoolID != nil && parentRepoName != nil {
+	if parentRepoName != nil {
 		whichRepo = *parentRepoName
 	}
 
@@ -2130,7 +2130,7 @@ func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoN
 
 	poolRepo := repo
 	if dedupeWhich == dedupeFork {
-		_, parentRepo, err := s.DB.GitserverRepos().GetForkedAndParentRepo(ctx, repo)
+		parentRepo, err := s.DB.GitserverRepos().GetPoolRepoName(ctx, repo)
 		if err != nil {
 			return errors.Wrap(err, "failed to determine relationship between forked and parent repo (this repo will not be configured as a git-alternate and will not benefit from deduplicated storage)")
 		}
@@ -2268,13 +2268,13 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repoName 
 		return &deduplicatedCloneOptions{which: dedupeSource, poolDir: poolDir}, nil
 	}
 
-	forkedRepoPoolID, parentRepoName, err := s.DB.GitserverRepos().GetForkedAndParentRepo(ctx, repoName)
+	parentRepoName, err := s.DB.GitserverRepos().GetPoolRepoName(ctx, repoName)
 	if err != nil {
 		logger.Warn("failed to get by name from DB (repo will be cloned without deduplicated storage if this was supposed to be deduplicated)", log.Error(err))
 		return nil, nil
 	}
 
-	if forkedRepoPoolID != nil || parentRepoName == nil {
+	if parentRepoName == nil {
 		return nil, nil
 	}
 

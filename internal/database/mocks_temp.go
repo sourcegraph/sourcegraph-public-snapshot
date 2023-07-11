@@ -35618,9 +35618,9 @@ type MockGitserverRepoStore struct {
 	// GetByNamesFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByNames.
 	GetByNamesFunc *GitserverRepoStoreGetByNamesFunc
-	// GetForkedAndParentRepoFunc is an instance of a mock function object
-	// controlling the behavior of the method GetForkedAndParentRepo.
-	GetForkedAndParentRepoFunc *GitserverRepoStoreGetForkedAndParentRepoFunc
+	// GetPoolRepoNameFunc is an instance of a mock function object
+	// controlling the behavior of the method GetPoolRepoName.
+	GetPoolRepoNameFunc *GitserverRepoStoreGetPoolRepoNameFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *GitserverRepoStoreHandleFunc
@@ -35696,8 +35696,8 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 				return
 			},
 		},
-		GetForkedAndParentRepoFunc: &GitserverRepoStoreGetForkedAndParentRepoFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 *api.RepoID, r1 *api.RepoName, r2 error) {
+		GetPoolRepoNameFunc: &GitserverRepoStoreGetPoolRepoNameFunc{
+			defaultHook: func(context.Context, api.RepoName) (r0 *api.RepoName, r1 error) {
 				return
 			},
 		},
@@ -35809,9 +35809,9 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 				panic("unexpected invocation of MockGitserverRepoStore.GetByNames")
 			},
 		},
-		GetForkedAndParentRepoFunc: &GitserverRepoStoreGetForkedAndParentRepoFunc{
-			defaultHook: func(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error) {
-				panic("unexpected invocation of MockGitserverRepoStore.GetForkedAndParentRepo")
+		GetPoolRepoNameFunc: &GitserverRepoStoreGetPoolRepoNameFunc{
+			defaultHook: func(context.Context, api.RepoName) (*api.RepoName, error) {
+				panic("unexpected invocation of MockGitserverRepoStore.GetPoolRepoName")
 			},
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
@@ -35916,8 +35916,8 @@ func NewMockGitserverRepoStoreFrom(i GitserverRepoStore) *MockGitserverRepoStore
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
 			defaultHook: i.GetByNames,
 		},
-		GetForkedAndParentRepoFunc: &GitserverRepoStoreGetForkedAndParentRepoFunc{
-			defaultHook: i.GetForkedAndParentRepo,
+		GetPoolRepoNameFunc: &GitserverRepoStoreGetPoolRepoNameFunc{
+			defaultHook: i.GetPoolRepoName,
 		},
 		HandleFunc: &GitserverRepoStoreHandleFunc{
 			defaultHook: i.Handle,
@@ -36305,37 +36305,37 @@ func (c GitserverRepoStoreGetByNamesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// GitserverRepoStoreGetForkedAndParentRepoFunc describes the behavior when
-// the GetForkedAndParentRepo method of the parent MockGitserverRepoStore
-// instance is invoked.
-type GitserverRepoStoreGetForkedAndParentRepoFunc struct {
-	defaultHook func(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error)
-	hooks       []func(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error)
-	history     []GitserverRepoStoreGetForkedAndParentRepoFuncCall
+// GitserverRepoStoreGetPoolRepoNameFunc describes the behavior when the
+// GetPoolRepoName method of the parent MockGitserverRepoStore instance is
+// invoked.
+type GitserverRepoStoreGetPoolRepoNameFunc struct {
+	defaultHook func(context.Context, api.RepoName) (*api.RepoName, error)
+	hooks       []func(context.Context, api.RepoName) (*api.RepoName, error)
+	history     []GitserverRepoStoreGetPoolRepoNameFuncCall
 	mutex       sync.Mutex
 }
 
-// GetForkedAndParentRepo delegates to the next hook function in the queue
-// and stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) GetForkedAndParentRepo(v0 context.Context, v1 api.RepoName) (*api.RepoID, *api.RepoName, error) {
-	r0, r1, r2 := m.GetForkedAndParentRepoFunc.nextHook()(v0, v1)
-	m.GetForkedAndParentRepoFunc.appendCall(GitserverRepoStoreGetForkedAndParentRepoFuncCall{v0, v1, r0, r1, r2})
-	return r0, r1, r2
+// GetPoolRepoName delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitserverRepoStore) GetPoolRepoName(v0 context.Context, v1 api.RepoName) (*api.RepoName, error) {
+	r0, r1 := m.GetPoolRepoNameFunc.nextHook()(v0, v1)
+	m.GetPoolRepoNameFunc.appendCall(GitserverRepoStoreGetPoolRepoNameFuncCall{v0, v1, r0, r1})
+	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the
-// GetForkedAndParentRepo method of the parent MockGitserverRepoStore
-// instance is invoked and the hook queue is empty.
-func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error)) {
+// SetDefaultHook sets function that is called when the GetPoolRepoName
+// method of the parent MockGitserverRepoStore instance is invoked and the
+// hook queue is empty.
+func (f *GitserverRepoStoreGetPoolRepoNameFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (*api.RepoName, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetForkedAndParentRepo method of the parent MockGitserverRepoStore
-// instance invokes the hook at the front of the queue and discards it.
-// After the queue is empty, the default hook function is invoked for any
-// future action.
-func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) PushHook(hook func(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error)) {
+// GetPoolRepoName method of the parent MockGitserverRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverRepoStoreGetPoolRepoNameFunc) PushHook(hook func(context.Context, api.RepoName) (*api.RepoName, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -36343,20 +36343,20 @@ func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) PushHook(hook func(contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) SetDefaultReturn(r0 *api.RepoID, r1 *api.RepoName, r2 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error) {
-		return r0, r1, r2
+func (f *GitserverRepoStoreGetPoolRepoNameFunc) SetDefaultReturn(r0 *api.RepoName, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName) (*api.RepoName, error) {
+		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) PushReturn(r0 *api.RepoID, r1 *api.RepoName, r2 error) {
-	f.PushHook(func(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error) {
-		return r0, r1, r2
+func (f *GitserverRepoStoreGetPoolRepoNameFunc) PushReturn(r0 *api.RepoName, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName) (*api.RepoName, error) {
+		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) nextHook() func(context.Context, api.RepoName) (*api.RepoID, *api.RepoName, error) {
+func (f *GitserverRepoStoreGetPoolRepoNameFunc) nextHook() func(context.Context, api.RepoName) (*api.RepoName, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -36369,28 +36369,27 @@ func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) nextHook() func(context.C
 	return hook
 }
 
-func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) appendCall(r0 GitserverRepoStoreGetForkedAndParentRepoFuncCall) {
+func (f *GitserverRepoStoreGetPoolRepoNameFunc) appendCall(r0 GitserverRepoStoreGetPoolRepoNameFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of
-// GitserverRepoStoreGetForkedAndParentRepoFuncCall objects describing the
-// invocations of this function.
-func (f *GitserverRepoStoreGetForkedAndParentRepoFunc) History() []GitserverRepoStoreGetForkedAndParentRepoFuncCall {
+// History returns a sequence of GitserverRepoStoreGetPoolRepoNameFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverRepoStoreGetPoolRepoNameFunc) History() []GitserverRepoStoreGetPoolRepoNameFuncCall {
 	f.mutex.Lock()
-	history := make([]GitserverRepoStoreGetForkedAndParentRepoFuncCall, len(f.history))
+	history := make([]GitserverRepoStoreGetPoolRepoNameFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// GitserverRepoStoreGetForkedAndParentRepoFuncCall is an object that
-// describes an invocation of method GetForkedAndParentRepo on an instance
-// of MockGitserverRepoStore.
-type GitserverRepoStoreGetForkedAndParentRepoFuncCall struct {
+// GitserverRepoStoreGetPoolRepoNameFuncCall is an object that describes an
+// invocation of method GetPoolRepoName on an instance of
+// MockGitserverRepoStore.
+type GitserverRepoStoreGetPoolRepoNameFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -36399,25 +36398,22 @@ type GitserverRepoStoreGetForkedAndParentRepoFuncCall struct {
 	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *api.RepoID
+	Result0 *api.RepoName
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 *api.RepoName
-	// Result2 is the value of the 3rd result returned from this method
-	// invocation.
-	Result2 error
+	Result1 error
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c GitserverRepoStoreGetForkedAndParentRepoFuncCall) Args() []interface{} {
+func (c GitserverRepoStoreGetPoolRepoNameFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c GitserverRepoStoreGetForkedAndParentRepoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1, c.Result2}
+func (c GitserverRepoStoreGetPoolRepoNameFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // GitserverRepoStoreHandleFunc describes the behavior when the Handle

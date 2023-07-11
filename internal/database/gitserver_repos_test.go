@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -1196,6 +1197,45 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 			t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
 		}
 	}
+}
+
+func TestGetPoolRepoName(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create one test poolRepo
+	poolRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/sourcegraph/repo",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
+	})
+
+	// Create one test repo
+	forkedRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "github.com/forked/repo",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
+	})
+
+	// A relationship between pool repo and forked repo has not been established yet.
+	poolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+	require.NoError(t, err)
+	require.Nil(t, poolRepoName)
+
+	err = db.GitserverRepos().UpdatePoolRepoID(ctx, poolRepo.Name, forkedRepo.Name)
+	require.NoError(t, err)
+
+	// A relationship between pool repo and forked repo has now been established.
+	poolRepoName, err = db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+	require.NoError(t, err)
+	require.NotNil(t, poolRepoName)
+
+	require.Equal(t, poolRepo.Name, *poolRepoName)
 }
 
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
