@@ -19,7 +19,7 @@ public class ResetCurrentConversationAction extends DumbAwareAction {
       return;
     }
     UpdatableChatHolderService updatableChatHolderService =
-        ServiceManager.getService(project, UpdatableChatHolderService.class);
+        project.getService(UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
     if (updatableChat != null) {
       updatableChat.resetConversation();
