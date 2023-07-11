@@ -127,6 +127,8 @@ func TestGetMinimalBulkMonikerLocations(t *testing.T) {
 			Scheme:     "scip-typescript",
 			Identifier: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray().",
 		},
+
+		// TODO - add another test case with lookup table
 	}
 
 	store := populateTestStore(t)
@@ -210,6 +212,8 @@ func TestDatabaseDefinitions(t *testing.T) {
 		{testSCIPUploadID, "template/src/lsif/ranges.ts", 385, 20, 1, 1, 0, scipNonLocalDefinitionLocations},
 		{testSCIPUploadID, "template/src/lsif/definition-hover.ts", 18, 20, 1, 1, 0, scipNonLocalDefinitionLocations},
 		{testSCIPUploadID, "template/src/lsif/definition-hover.ts", 123, 52, 1, 1, 0, scipNonLocalDefinitionLocations},
+
+		// TODO - add another test case with lookup table
 	}
 
 	for i, testCase := range testCases {
@@ -695,6 +699,8 @@ func TestGetBulkMonikerLocations(t *testing.T) {
 			Scheme:     "scip-typescript",
 			Identifier: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray().",
 		},
+
+		// TODO - add another test case with lookup table
 	}
 
 	store := populateTestStore(t)

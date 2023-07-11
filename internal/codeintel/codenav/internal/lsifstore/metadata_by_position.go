@@ -80,8 +80,8 @@ func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, c
 		hoverSymbolsQuery,
 		pq.Array(symbolNames),
 		pq.Array([]int{bundleID}),
-		pq.Array(explodedSymbols), // TODO - test
-		pq.Array([]int{bundleID}), // TODO - test
+		pq.Array(explodedSymbols),
+		pq.Array([]int{bundleID}),
 		bundleID,
 	)
 
