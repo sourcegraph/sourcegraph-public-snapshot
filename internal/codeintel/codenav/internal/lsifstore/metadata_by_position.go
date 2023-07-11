@@ -2,6 +2,7 @@ package lsifstore
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/keegancsmith/sqlf"
@@ -124,7 +125,11 @@ WHERE
 LIMIT 1
 `
 
-const symbolIDsCTEs = `
+// set to true to disable trie-based symbol search
+// can be changed in tests
+var disableTrieCTE = false
+
+var symbolIDsCTEs = `
 -- Search for the set of trie paths that match one of the given search terms. We
 -- do a recursive walk starting at the roots of the trie for a given set of uploads,
 -- and only traverse down trie paths that continue to match our search text.
@@ -184,9 +189,7 @@ matching_symbol_names AS (
 	(
 		SELECT mp.upload_id, mp.id, mp.prefix AS symbol_name
 		FROM matching_prefixes mp
-		WHERE mp.search = ''
-		-- DEBUGGING
-		-- AND FALSE
+		WHERE mp.search = '' AND ` + fmt.Sprintf("%v", !disableTrieCTE) + `
 	) UNION (
 		SELECT
 			ss.upload_id,
@@ -210,7 +213,7 @@ matching_symbol_names AS (
 )
 `
 
-const hoverSymbolsQuery = `
+var hoverSymbolsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT

@@ -116,7 +116,7 @@ outer:
 	return locations, totalCount, nil
 }
 
-const bulkMonikerResultsQuery = `
+var bulkMonikerResultsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
@@ -231,7 +231,7 @@ WHERE
 LIMIT 1
 `
 
-const locationsSymbolSearchQuery = `
+var locationsSymbolSearchQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
@@ -595,7 +595,7 @@ outer:
 	return locations, totalCount, nil
 }
 
-const minimalBulkMonikerResultsQuery = `
+var minimalBulkMonikerResultsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
