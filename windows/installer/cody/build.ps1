@@ -1,9 +1,11 @@
 $CFG = "Release"
 $ARCH = "x64"
 
-$BIN_DIR = "..\..\..\src-tauri\target\release"
+$ROOT_DIR = "..\..\.."
+$BIN_DIR = "${ROOT_DIR}\src-tauri\target\release"
 $SIGNED_DIR = "bin\${ARCH}\signed"
 $INSTALLER_OUTPUT = "bin\${ARCH}\${CFG}\en-US"
+$DIST_DIR = "${ROOT_DIR}\dist"
 
 # Core version
 $major = 5
@@ -28,12 +30,19 @@ $ver = [xml]"<Project xmlns='http://schemas.microsoft.com/developer/msbuild/2003
 </Project>"
 $ver.save("cody.version.inc")
 
+function Write-Banner {
+    param(
+        [string] $Msg
+    )
+    Write-Host
+    Write-Host "--------------------------------------------"
+    Write-Host "${Msg}"
+    Write-Host
+}
+
 Write-Host "Building version: ${VERSION}"
 
-Write-Host
-Write-Host "--------------------------------------------"
-Write-Host "Cleaning up artifacts"
-Write-Host
+Write-Banner -Msg "Cleaning up artifacts"
 
 if (Test-Path -Path "${SIGNED_DIR}") {
     Remove-Item -Recurse -Force "${SIGNED_DIR}"
@@ -49,10 +58,7 @@ if (Test-Path -Path "${INSTALLER_OUTPUT}") {
     }
 }
 
-Write-Host
-Write-Host "--------------------------------------------"
-Write-Host "Preparing artifacts for build"
-Write-Host
+Write-Banner -Msg "Preparing artifacts for build"
 
 New-Item -ItemType Directory "${SIGNED_DIR}"
 
@@ -60,24 +66,26 @@ Copy-Item -Path "${BIN_DIR}\Cody.exe" -Destination "${SIGNED_DIR}\Cody.exe"
 Copy-Item -Path "${BIN_DIR}\sourcegraph-backend.exe" -Destination "${SIGNED_DIR}\sourcegraph-backend.exe"
 Start-Sleep -Seconds 1 # BUG: Powershell is leaving files open after copy and fails signing.
 
-Write-Host
-Write-Host "--------------------------------------------"
-Write-Host "Signing artifacts"
-Write-Host
+Write-Banner -Msg "Signing artifacts"
 
 ./sign.ps1 "${SIGNED_DIR}\Cody.exe"
 ./sign.ps1 "${SIGNED_DIR}\sourcegraph-backend.exe"
 
-Write-Host
-Write-Host "--------------------------------------------"
-Write-Host "Building installer for ${ARCH} ${CFG}"
-Write-Host
+Write-Banner -Msg "Building installer for ${ARCH} ${CFG}"
 
 msbuild /p:Configuration=${CFG} /p:Platform=${ARCH}
 
-Write-Host
-Write-Host "--------------------------------------------"
-Write-Host "Signing installer"
-Write-Host
+Write-Banner -Msg "Signing installer"
 
-./sign.ps1 "${INSTALLER_OUTPUT}\cody-${VERSION}-${ARCH}.msi"
+$MSI_PATH = "${INSTALLER_OUTPUT}\cody-${VERSION}-${ARCH}.msi"
+./sign.ps1 $MSI_PATH
+
+# Only upload if we're in CI
+if (Test-Path "env:CI" -and [Environment]::GetEnvironmentVariable("CI") -eq "true" ) {
+    Write-Banner -Msg "Uploading ${MSI_PATH}"
+
+    Write-Host "Moving ${MSI_PATH} to ${DIST_DIR}"
+    Copy-Item -Path ${MSI_PATH} -Destination ${DIST_DIR}
+    Write-Host "Uploading artifacts from ${DIST_DIR}"
+    buildkite-agent artifact upload upload "${DIST_DIR}/*"
+}
