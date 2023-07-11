@@ -8,8 +8,6 @@ $targetPath = (Split-Path -Path $targetPath -Parent)
 
 $ROOT_DIR = $targetPath
 
-Write-Host "${ROOT_DIR}"
-
 class Version {
     [int] $major
     [int] $minor
