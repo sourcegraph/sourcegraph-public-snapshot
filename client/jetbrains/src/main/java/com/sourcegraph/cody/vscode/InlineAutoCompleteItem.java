@@ -2,6 +2,7 @@ package com.sourcegraph.cody.vscode;
 
 import com.sourcegraph.cody.autocomplete.AutoCompleteText;
 import java.util.stream.Collectors;
+import org.jetbrains.annotations.NotNull;
 
 public class InlineAutoCompleteItem {
   public final String insertText;
@@ -61,7 +62,7 @@ public class InlineAutoCompleteItem {
         + '}';
   }
 
-  public AutoCompleteText toAutoCompleteText(String sameLineSuffix) {
+  public @NotNull AutoCompleteText toAutoCompleteText(@NotNull String sameLineSuffix) {
     boolean multiline = this.isMultiline();
     String sameLineRawAutocomplete =
         multiline ? this.insertText.lines().findFirst().orElse("") : this.insertText;

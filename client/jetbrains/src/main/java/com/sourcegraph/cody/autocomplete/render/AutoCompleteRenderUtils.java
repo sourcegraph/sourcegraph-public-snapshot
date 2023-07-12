@@ -5,9 +5,10 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.impl.FontInfo;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import java.awt.*;
+import org.jetbrains.annotations.NotNull;
 
 public class AutoCompleteRenderUtils {
-  public static double fontYOffset(Font font, Editor editor) {
+  public static double fontYOffset(@NotNull Font font, @NotNull Editor editor) {
     FontMetrics metrics =
         FontInfo.getFontMetrics(font, FontInfo.getFontRenderContext(editor.getContentComponent()));
     double fontBaseline =
@@ -18,7 +19,7 @@ public class AutoCompleteRenderUtils {
     return Math.ceil(fontBaseline + linePadding);
   }
 
-  public static TextAttributes getTextAttributesForEditor(Editor editor) {
+  public static TextAttributes getTextAttributesForEditor(@NotNull Editor editor) {
     try {
       //noinspection MissingRecentApi
       return editor

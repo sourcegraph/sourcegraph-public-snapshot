@@ -36,7 +36,7 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
 
     @Override
     protected void doExecute(
-        @NotNull Editor editor, @Nullable Caret maybeCaret, DataContext dataContext) {
+        @NotNull Editor editor, @Nullable Caret maybeCaret, @Nullable DataContext dataContext) {
       Optional.ofNullable(maybeCaret)
           .or(
               () -> {

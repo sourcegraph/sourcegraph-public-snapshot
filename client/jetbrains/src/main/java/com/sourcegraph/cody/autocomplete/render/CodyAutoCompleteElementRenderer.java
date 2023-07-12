@@ -7,11 +7,12 @@ import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.editor.impl.EditorImpl;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import java.awt.*;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class CodyAutoCompleteElementRenderer implements EditorCustomElementRenderer {
-  public final String text;
+  @NotNull public final String text;
   @NotNull protected final TextAttributes themeAttributes;
   @NotNull protected final Editor editor;
   @Nullable protected final AutoCompleteRendererType type;
@@ -30,9 +31,13 @@ public abstract class CodyAutoCompleteElementRenderer implements EditorCustomEle
     return editor.getFontMetrics(Font.PLAIN).stringWidth(text);
   }
 
+  protected @NotNull Font getFont() {
+    Font editorFont = this.editor.getColorsScheme().getFont(EditorFontType.PLAIN);
+    return Optional.ofNullable(editorFont.deriveFont(Font.ITALIC)).orElse(editorFont);
+  }
+
   protected int fontYOffset() {
-    Font font = this.editor.getColorsScheme().getFont(EditorFontType.PLAIN).deriveFont(Font.ITALIC);
-    return (int) AutoCompleteRenderUtils.fontYOffset(font, this.editor);
+    return (int) AutoCompleteRenderUtils.fontYOffset(getFont(), this.editor);
   }
 
   @Override
@@ -40,11 +45,11 @@ public abstract class CodyAutoCompleteElementRenderer implements EditorCustomEle
     return "CodyCompletionElementRenderer{" + "text='" + text + '\'' + '}';
   }
 
-  public String getText() {
+  public @NotNull String getText() {
     return this.text;
   }
 
-  public AutoCompleteRendererType getType() {
+  public @Nullable AutoCompleteRendererType getType() {
     return this.type;
   }
 }

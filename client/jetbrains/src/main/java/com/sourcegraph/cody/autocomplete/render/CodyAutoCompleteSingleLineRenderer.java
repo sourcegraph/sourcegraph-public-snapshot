@@ -2,7 +2,6 @@ package com.sourcegraph.cody.autocomplete.render;
 
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.Inlay;
-import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.openapi.editor.markup.TextAttributes;
 import java.awt.*;
 import org.jetbrains.annotations.NotNull;
@@ -19,8 +18,7 @@ public class CodyAutoCompleteSingleLineRenderer extends CodyAutoCompleteElementR
       @NotNull Graphics g,
       @NotNull Rectangle targetRegion,
       @NotNull TextAttributes textAttributes) {
-    Font font = this.editor.getColorsScheme().getFont(EditorFontType.PLAIN).deriveFont(Font.ITALIC);
-    g.setFont(font);
+    g.setFont(getFont());
     g.setColor(this.themeAttributes.getForegroundColor());
     int x = targetRegion.x;
     int y = targetRegion.y + fontYOffset();

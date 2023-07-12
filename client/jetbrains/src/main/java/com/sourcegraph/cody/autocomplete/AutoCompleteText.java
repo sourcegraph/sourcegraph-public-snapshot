@@ -77,7 +77,7 @@ public class AutoCompleteText {
     else return Optional.empty();
   }
 
-  public Optional<CodyAutoCompleteSingleLineRenderer> getInlineRenderer(Editor editor) {
+  public Optional<CodyAutoCompleteSingleLineRenderer> getInlineRenderer(@NotNull Editor editor) {
     return this.sameLineBeforeSuffixText.isBlank()
         ? Optional.empty()
         : Optional.of(
@@ -85,7 +85,8 @@ public class AutoCompleteText {
                 this.sameLineBeforeSuffixText, editor, AutoCompleteRendererType.INLINE));
   }
 
-  public Optional<CodyAutoCompleteSingleLineRenderer> getAfterLineEndRenderer(Editor editor) {
+  public Optional<CodyAutoCompleteSingleLineRenderer> getAfterLineEndRenderer(
+      @NotNull Editor editor) {
     return this.sameLineAfterSuffixText.isBlank()
         ? Optional.empty()
         : Optional.of(
@@ -93,7 +94,7 @@ public class AutoCompleteText {
                 this.sameLineAfterSuffixText, editor, AutoCompleteRendererType.AFTER_LINE_END));
   }
 
-  public Optional<CodyAutoCompleteBlockElementRenderer> getBlockRenderer(Editor editor) {
+  public Optional<CodyAutoCompleteBlockElementRenderer> getBlockRenderer(@NotNull Editor editor) {
     return this.blockText.isBlank()
         ? Optional.empty()
         : Optional.of(new CodyAutoCompleteBlockElementRenderer(this.blockText, editor));
