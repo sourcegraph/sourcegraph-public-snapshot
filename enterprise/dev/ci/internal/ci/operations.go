@@ -743,7 +743,7 @@ func sonarcloudScan() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(
 			"Sonarcloud Scan",
-			bk.Cmd("echo 'hello buildkite'"),
+			bk.Cmd("dev/ci/sonarcloud-scan.sh"),
 		)
 	}
 
