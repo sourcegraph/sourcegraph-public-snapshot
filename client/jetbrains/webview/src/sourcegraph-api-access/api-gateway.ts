@@ -26,7 +26,6 @@ export const siteVersionAndUserQuery = gql`
             url
             settingsURL
             hasVerifiedEmail
-            completedPostSignup
             organizations {
                 nodes {
                     id
