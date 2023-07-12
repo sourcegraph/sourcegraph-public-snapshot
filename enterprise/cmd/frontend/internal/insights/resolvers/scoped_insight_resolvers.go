@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+	"github.com/sourcegraph/sourcegraph/internal/insights/query"
+	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

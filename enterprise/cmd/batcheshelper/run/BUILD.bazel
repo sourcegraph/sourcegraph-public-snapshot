@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//enterprise/cmd/batcheshelper/log",
         "//enterprise/cmd/batcheshelper/util",
-        "//enterprise/internal/executor/types",
+        "//internal/executor/types",
         "//lib/batches",
         "//lib/batches/execution",
         "//lib/batches/execution/cache",

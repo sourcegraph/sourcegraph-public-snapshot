@@ -54,10 +54,10 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/authz/github",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/authz/providers/github",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/extsvc",

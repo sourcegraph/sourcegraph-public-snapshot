@@ -1,0 +1,52 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "retention",
+    srcs = [
+        "cleaner.go",
+        "job.go",
+        "worker.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/background/retention",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/database/basestore",
+        "//internal/database/dbutil",
+        "//internal/executor",
+        "//internal/goroutine",
+        "//internal/insights/store",
+        "//internal/metrics",
+        "//internal/observation",
+        "//internal/workerutil",
+        "//internal/workerutil/dbworker",
+        "//internal/workerutil/dbworker/store",
+        "//lib/errors",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "retention_test",
+    srcs = ["worker_test.go"],
+    embed = [":retention"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/conf",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/insights/store",
+        "//internal/insights/types",
+        "//internal/observation",
+        "//schema",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

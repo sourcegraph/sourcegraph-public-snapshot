@@ -69,5 +69,5 @@ func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, 
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return newSchemaResolver(r.db, r.gitserverClient, nil).ViewerSettings(ctx)
+	return newSchemaResolver(r.db, r.gitserverClient).ViewerSettings(ctx)
 }

@@ -41,6 +41,7 @@ go_library(
         "gitserver_repos.go",
         "global_state.go",
         "helpers.go",
+        "insights.go",
         "mockerr.go",
         "mocks_temp.go",
         "namespace_permissions.go",

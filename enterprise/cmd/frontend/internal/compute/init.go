@@ -24,9 +24,9 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	logger := log.Scoped("compute", "")
-	enterpriseServices.ComputeResolver = resolvers.NewResolver(logger, db, enterpriseServices.EnterpriseSearchJobs)
+	enterpriseServices.ComputeResolver = resolvers.NewResolver(logger, db)
 	enterpriseServices.NewComputeStreamHandler = func() http.Handler {
-		return streaming.NewComputeStreamHandler(logger, db, enterpriseServices.EnterpriseSearchJobs)
+		return streaming.NewComputeStreamHandler(logger, db)
 	}
 	return nil
 }

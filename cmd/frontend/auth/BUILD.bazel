@@ -58,7 +58,6 @@ go_test(
         "//internal/database",
         "//internal/errcode",
         "//internal/extsvc",
-        "//internal/search/job/jobutil",
         "//internal/types",
         "//lib/errors",
         "//lib/pointers",

@@ -9,11 +9,12 @@ go_library(
         "//cmd/frontend/enterprise",
         "//enterprise/cmd/frontend/internal/insights/httpapi",
         "//enterprise/cmd/frontend/internal/insights/resolvers",
-        "//enterprise/internal/insights",
         "//internal/codeintel",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/database",
+        "//internal/insights",
+        "//internal/insights/database",
         "//internal/observation",
     ],
 )

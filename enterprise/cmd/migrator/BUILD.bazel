@@ -11,9 +11,9 @@ go_library(
     visibility = ["//visibility:private"],
     deps = [
         "//cmd/migrator/shared",
-        "//enterprise/internal/oobmigration/migrations",
         "//internal/env",
         "//internal/oobmigration",
+        "//internal/oobmigration/migrations/register",
         "//internal/sanitycheck",
         "//internal/version",
         "@com_github_sourcegraph_log//:log",

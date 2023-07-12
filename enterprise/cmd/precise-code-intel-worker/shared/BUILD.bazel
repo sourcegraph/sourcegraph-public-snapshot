@@ -10,9 +10,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/shared",
     visibility = ["//visibility:public"],
     deps = [
-        "//enterprise/internal/authz",
-        "//enterprise/internal/authz/subrepoperms",
         "//internal/authz",
+        "//internal/authz/providers",
+        "//internal/authz/subrepoperms",
         "//internal/codeintel",
         "//internal/codeintel/shared",
         "//internal/codeintel/shared/lsifuploadstore",
