@@ -34,6 +34,15 @@ public class AutoCompleteText {
         + textBelow;
   }
 
+  /**
+   * This method checks for auto completions at a given caret and returns an AutoCompleteTextAtCaret
+   * instance if any is found. If any CodyAutoCompleteElementRenderers are present in the inlay
+   * model at the given current offset, their corresponding autocompletion will be returned.
+   *
+   * @param caret the caret at which we look for auto completions
+   * @return AutoCompleteText with its corresponding caret if there is any autocompletion to apply
+   *     at the caret or Optional.empty otherwise
+   */
   public static Optional<AutoCompleteTextAtCaret> atCaret(@NotNull Caret caret) {
     List<CodyAutoCompleteElementRenderer> autoCompleteRenderers =
         InlayModelUtils.getAllInlaysForCaret(caret).stream()
