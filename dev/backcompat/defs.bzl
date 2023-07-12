@@ -59,7 +59,7 @@ PATCH_BUILD_FIXES_CMD = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
-""" + "\n".join("""find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@{0}|@back_compat_{0}|g' {{}} +""".format(target) for target in PATCH_BUILD_TARGETS)
+""" + "\n".join(["""find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@{0}|@back_compat_{0}|g' {{}} +""".format(target) for target in PATCH_BUILD_TARGETS])
 
 def back_compat_defs():
     # github.com/sourcegraph/scip and github.com/sourcegraph/conc both rely on a few
