@@ -92,6 +92,7 @@ if ($env:CI -eq "true" ) {
     Write-Host "Moving ${MSI_PATH} to ${DIST_DIR}"
     Copy-Item -Path "${MSI_PATH}" -Destination ${DIST_DIR}
     Start-Sleep -Seconds 1 # BUG: Powershell is leaving files open after copy and fails signing.
+    Resolve-Path -Path ${ROOT_DIR}
     Push-Location ${ROOT_DIR}
     Write-Host "Uploading artifacts from ${DIST_DIR}"
     buildkite-agent artifact upload "${DIST_DIR}/*"
