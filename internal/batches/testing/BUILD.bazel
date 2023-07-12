@@ -22,7 +22,7 @@ go_library(
         "user.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/testing",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
         "//internal/authz",

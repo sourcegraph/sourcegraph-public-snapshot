@@ -7,7 +7,7 @@ go_library(
         "ids.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/graphql",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
         "//lib/errors",

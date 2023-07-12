@@ -12,7 +12,7 @@ go_library(
         "webhooks.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/batches/webhooks",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api/internalapi",
         "//internal/database/basestore",
