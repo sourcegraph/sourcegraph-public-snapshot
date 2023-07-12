@@ -6,7 +6,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/cmd/worker/shared/init/codeintel",
+        "//cmd/worker/shared/init/codeintel",
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/database/basestore",

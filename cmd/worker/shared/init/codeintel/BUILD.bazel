@@ -6,7 +6,7 @@ go_library(
         "db.go",
         "services.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel",
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/worker/shared/init/db",
