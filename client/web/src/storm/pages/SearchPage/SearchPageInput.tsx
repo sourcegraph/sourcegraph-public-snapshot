@@ -209,7 +209,6 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
                 <div>
                     <hr className="mt-4 mb-4" />
                     <SimpleSearch
-                        searchContext={selectedSearchContextSpec}
                         onSubmit={onSubmit}
                         onSimpleSearchUpdate={onSimpleSearchUpdate}
                     />

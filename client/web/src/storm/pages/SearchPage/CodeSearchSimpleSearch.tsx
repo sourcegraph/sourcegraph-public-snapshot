@@ -207,7 +207,7 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                                         <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                                     </Tooltip>
                                 </div>}
-                                labelClassName='col-4 col-form-label pl-0'
+                                labelClassName='pl-0'
                                 id="searchForks"
                                 name="searchForks"
                                 onChange={event => setUseForks(event.target.value)}
@@ -226,7 +226,7 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                                         <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                                     </Tooltip>
                                 </div>}
-                                labelClassName='col-4 col-form-label pl-0'
+                                labelClassName='pl-0'
                                 id="searchArchive"
                                 name="searchArchive"
                                 onChange={event => setUseArchive(event.target.value)}
@@ -259,29 +259,29 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     </div>
                 </div>
 
-                <Select
-                    id="searchLang"
-                    name="searchLang"
-                    onChange={event => setLanguageFilter(event.target.value)}
-                    labelClassName='col-4 col-form-label'
-                    selectClassName='col-8'
-                    className='form-group row'
-                    labelVariant='inline'
-                    isCustomStyle={true}
-                    label={<div>
+                <div className="form-group row">
+                    <Label id='searchLangLabel' htmlFor="searchLang" className="col-4 col-form-label">
                         Which programming language?
                         <Tooltip content="Only match files for a given programming language.">
                             <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
-                    </div>}
-                >
-                    <option hidden={true}>Any</option>
-                    {languages.map((lang, idx) => (
-                        <option key={idx} value={lang}>
-                            {lang}
-                        </option>
-                    ))}
-                </Select>
+                    </Label>
+                    <div className="col-8">
+                        <Select
+                            aria-labelledby='searchLangLabel'
+                            id="searchLang"
+                            name="searchLang"
+                            onChange={event => setLanguageFilter(event.target.value)}
+                        >
+                            <option hidden={true}>Any</option>
+                            {languages.map((lang, idx) => (
+                                <option key={idx} value={lang}>
+                                    {lang}
+                                </option>
+                            ))}
+                        </Select>
+                    </div>
+                </div>
 
                 <div className="form-group row">
                     <Label htmlFor="searchContext" className="col-4 col-form-label">
