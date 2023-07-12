@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/grafana/regexp"
-	"k8s.io/utils/strings/slices"
 
 	"github.com/sourcegraph/log"
 )
@@ -141,7 +140,7 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 		logger.Warn("command not allowed", log.String("cmd", cmd))
 		return false
 	}
-	for i, arg := range args[1:] {
+	for _, arg := range args[1:] {
 		if strings.HasPrefix(arg, "-") {
 			// Special-case `git log -S` and `git log -G`, which interpret any characters
 			// after their 'S' or 'G' as part of the query. There is no long form of this
@@ -169,8 +168,7 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 		}
 		// Special-case for `git diff` to check if argument before `--` is not a file
 		if cmd == "diff" {
-			dashIndex := slices.Index(args[1:], "--")
-			if (dashIndex < 0 || i < dashIndex) && !isAllowedDiffArg(arg) {
+			if !isAllowedDiffArg(arg) {
 				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("arg", arg))
 				return false
 			}
