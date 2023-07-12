@@ -381,8 +381,8 @@ func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.St
 
 	// These are the slow packages that we do not want to run twice (once with gRPC, once without).
 	slowGoTestPackagesNonGRPC := []string{
-		"github.com/sourcegraph/sourcegraph/internal/database",            // 253s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/database", // 94s
+		"github.com/sourcegraph/sourcegraph/internal/database", // 253s
+		"github.com/sourcegraph/sourcegraph/internal/database", // 94s
 	}
 
 	// These are the slow packages that we _do_ want to run twice (once with gRPC, once without).

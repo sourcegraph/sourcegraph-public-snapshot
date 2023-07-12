@@ -31,7 +31,7 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
+        "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "@com_github_google_go_cmp//cmp",

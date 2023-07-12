@@ -12,7 +12,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/background/queryrunner",
         "//enterprise/internal/insights/discovery",
         "//enterprise/internal/insights/pipeline",
@@ -63,7 +62,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/discovery",
         "//enterprise/internal/insights/pipeline",
         "//enterprise/internal/insights/priority",

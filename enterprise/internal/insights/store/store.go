@@ -11,9 +11,9 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/keegancsmith/sqlf"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/batch"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
@@ -980,7 +980,7 @@ func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts)
 }
 
 const exportCodeInsightsDataSql = `
-select iv.title, ivs.label, i.query, isrt.recording_time, rn.name, coalesce(sp.value, 0) as value, sp.capture 
+select iv.title, ivs.label, i.query, isrt.recording_time, rn.name, coalesce(sp.value, 0) as value, sp.capture
 from %s isrt
     join insight_series i on i.id = isrt.insight_series_id
     join insight_view_series ivs ON i.id = ivs.insight_series_id

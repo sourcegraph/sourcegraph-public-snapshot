@@ -29,9 +29,9 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/timeseries",
         "//enterprise/internal/insights/types",
+        "//internal/database",
         "//internal/database/basestore",
         "//internal/database/dbtest",
         "@com_github_derision_test_glock//:glock",

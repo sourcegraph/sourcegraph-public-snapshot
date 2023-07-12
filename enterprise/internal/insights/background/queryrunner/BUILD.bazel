@@ -60,7 +60,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/compression",
         "//enterprise/internal/insights/priority",
         "//enterprise/internal/insights/query/streaming",

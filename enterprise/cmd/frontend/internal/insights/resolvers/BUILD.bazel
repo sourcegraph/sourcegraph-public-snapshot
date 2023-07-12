@@ -21,7 +21,6 @@ go_library(
     deps = [
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/aggregation",
         "//enterprise/internal/insights/background",
         "//enterprise/internal/insights/background/queryrunner",
@@ -77,7 +76,6 @@ go_test(
     ],
     deps = [
         "//cmd/frontend/graphqlbackend",
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/background/queryrunner",
         "//enterprise/internal/insights/scheduler",
         "//enterprise/internal/insights/store",

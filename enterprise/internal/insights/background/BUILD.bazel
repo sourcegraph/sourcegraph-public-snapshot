@@ -14,7 +14,6 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/background/limiter",
         "//enterprise/internal/insights/background/pings",
         "//enterprise/internal/insights/background/queryrunner",
@@ -62,7 +61,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/background/queryrunner",
         "//enterprise/internal/insights/background/retention",
         "//enterprise/internal/insights/store",

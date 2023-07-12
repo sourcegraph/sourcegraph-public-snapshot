@@ -38,7 +38,6 @@ go_test(
         "requires-network",
     ],
     deps = [
-        "//enterprise/internal/database",
         "//enterprise/internal/insights/store",
         "//enterprise/internal/insights/types",
         "//internal/conf",
