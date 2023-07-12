@@ -22,6 +22,7 @@ import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.JBInsets;
+import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.ui.TransparentButton;
 import java.awt.Dimension;
 import java.awt.Insets;
@@ -68,7 +69,7 @@ public class CodeEditorFactory {
     editor.getGutterComponentEx().setPaintBackground(false);
     JComponent editorComponent = editor.getComponent();
     Dimension editorPreferredSize = editorComponent.getPreferredSize();
-    TransparentButton copyButton = new TransparentButton("Copy");
+    TransparentButton copyButton = new TransparentButton("Copy", UIUtil.getLabelForeground());
     copyButton.setToolTipText("Copy text");
     copyButton.setVisible(false);
     // copy text to clipboard
@@ -84,7 +85,8 @@ public class CodeEditorFactory {
           timer.setRepeats(false);
           timer.start();
         });
-    TransparentButton insertAtCursorButton = new TransparentButton("Insert at Cursor");
+    TransparentButton insertAtCursorButton =
+        new TransparentButton("Insert at Cursor", UIUtil.getLabelForeground());
     insertAtCursorButton.setToolTipText("Insert text at current cursor position");
     insertAtCursorButton.setVisible(false);
     insertAtCursorButton.addActionListener(
