@@ -15,7 +15,7 @@ go_library(
         "path.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/scim/filter",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = [
         "//lib/errors",
         "@com_github_di_wu_xsd_datetime//:xsd-datetime",
