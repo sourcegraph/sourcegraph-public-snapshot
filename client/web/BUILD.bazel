@@ -245,6 +245,7 @@ ts_project(
         "src/cody/update/AboutPageUpdate.tsx",
         "src/cody/update/InstallModal.tsx",
         "src/cody/update/ReviewAndInstallModal.tsx",
+        "src/cody/update/StartupUpdateChecker.tsx",
         "src/cody/update/UpdateGlobalNav.tsx",
         "src/cody/update/UpdateInfoContent.tsx",
         "src/cody/update/updater.tsx",
