@@ -8,8 +8,6 @@ import (
 	"net/http"
 	"sort"
 
-	"go.opentelemetry.io/otel"
-
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
@@ -29,7 +27,7 @@ type openaiClient struct {
 	accessToken string
 }
 
-var tracer = otel.Tracer("cody-gateway/httpapi/embeddings")
+func (c *openaiClient) ProviderName() string { return "OpenAI" }
 
 const apiURL = "https://api.openai.com/v1/embeddings"
 
