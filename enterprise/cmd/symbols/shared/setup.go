@@ -14,7 +14,6 @@ import (
 	symbolsParser "github.com/sourcegraph/sourcegraph/cmd/symbols/parser"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )

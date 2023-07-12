@@ -11,8 +11,8 @@ go_library(
         "server.go",
         "status.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/rockskip",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/rockskip",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/symbols/fetcher",
         "//internal/actor",
