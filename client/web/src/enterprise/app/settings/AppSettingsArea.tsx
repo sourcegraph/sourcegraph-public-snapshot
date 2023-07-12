@@ -29,6 +29,7 @@ export const AppSettingsArea: FC<TelemetryProps> = ({ telemetryService }) => (
                 path={`${AppSettingURL.RemoteRepositories}/*`}
                 element={<RemoteRepositoriesTab telemetryService={telemetryService} />}
             />
+            <Route path={AppSettingURL.About} element={<AboutTab />} />
             <Route path={AppSettingURL.RateLimits} element={<RateLimitsTab />} />
             <Route path={AppSettingURL.About} element={<AboutTab />} />
             <Route path="*" element={<Navigate to={AppSettingURL.LocalRepositories} replace={true} />} />

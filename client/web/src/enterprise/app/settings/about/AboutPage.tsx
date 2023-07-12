@@ -3,6 +3,8 @@ import classNames from 'classnames'
 
 import { Container, H1, H3, Icon, Link, PageHeader, Text } from '@sourcegraph/wildcard'
 
+import { AboutPageUpdatePanel } from '../../../../cody/update/AboutPageUpdate'
+
 import styles from './AboutPage.module.scss'
 
 const assetsRoot = window.context?.assetsRoot || ''
@@ -26,19 +28,8 @@ export const AboutTab: React.FC<AboutTabProps> = ({ version = window.context.ver
             </div>
             <div className={classNames(styles.panel)}>
                 <H3>Version</H3>
-                {version}
-
-                {/* TODO(nelsona): Replace with real updates from 
-                https://github.com/sourcegraph/sourcegraph/pull/54507 */}
-
-                <Text className="mt-4 mb-0">
-                    We're making regular improvements to the Cody app.
-                    <br /> For information on how to upgrade to the latest version, see{' '}
-                    <Link to="/help/app#upgrading" target="_blank" rel="noopener">
-                        our docs
-                    </Link>
-                    .
-                </Text>
+                <Text className="mb-1">{version}</Text>
+                <AboutPageUpdatePanel />
             </div>
             <div className={classNames(styles.panel)}>
                 <H3>Join Our Discord</H3>
