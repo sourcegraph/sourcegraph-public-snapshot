@@ -433,9 +433,9 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 	defer rc.Close()
 
 	indexReader, cleanup, err := func() (_ gzipReadSeeker, cleanup func() error, err error) {
-		// If we have an uncompressed size available on the record and that exceeds what
-		// we want to keep resident in memory during processing, we'll want to write the
-		// file to disk so we can seek it locally for a multi-pass read.
+		// If the uncompressed upload size is available and exceeds what we want
+		// to keep resident in memory during processing, write the upload to
+		// a temporary file, to allow processing in multiple passes.
 		shouldWriteToDisk := uploadStats.UncompressedSize != nil && *uploadStats.UncompressedSize > uncompressedSizeLimitBytes
 
 		if !shouldWriteToDisk {
@@ -448,12 +448,16 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 				return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to read upload file")
 			}
 
-			// Re-check the size of the payload. Once we've read it into memory we may
-			// choose to dump it to disk anyway. The following factor of 5 is based on
-			// ~worst-case gzip compression ratio. See NOTE(scip-index-size-stats).
-			compressedSize := len(buf)
-			uncompressedSizeEstimate := compressedSize * 5
-			shouldWriteToDisk := uncompressedSizeEstimate > uncompressedSizeLimitBytes
+			if uploadStats.UncompressedSize == nil {
+				// Make a best-effort estimate for the uncompressed size, as it may
+				// make sense to write it the upload to disk despite having read
+				// it into memory to avoid OOM during processing.
+				// The factor of 5 is based on ~worst-case gzip compression ratio.
+				// See NOTE(scip-index-size-stats).
+				compressedSize := len(buf)
+				uncompressedSizeEstimate := compressedSize * 5
+				shouldWriteToDisk = uncompressedSizeEstimate > uncompressedSizeLimitBytes
+			}
 
 			if !shouldWriteToDisk {
 				// No temp files created, nothing to cleanup
@@ -484,6 +488,13 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 				_ = cleanup()
 			}
 		}()
+
+		if _, err = io.Copy(tempFile, rc); err != nil {
+			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to copy buffer to temporary file")
+		}
+		if _, err = tempFile.Seek(0, io.SeekStart); err != nil {
+			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to seek to start")
+		}
 
 		// Wrap the file reader
 		indexReader, err := newGzipReadSeeker(tempFile)
