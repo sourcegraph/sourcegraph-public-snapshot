@@ -16,6 +16,6 @@ write_source_files(
         "//enterprise/internal/batches/search/syntax:write_token_type",
         "//doc/cli/references:write_doc_files",
         "//enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
-        "//enterprise/cmd/cody-gateway/internal/dotcom:write_genql_yaml",
+        "//cmd/cody-gateway/internal/dotcom:write_genql_yaml",
     ],
 )
