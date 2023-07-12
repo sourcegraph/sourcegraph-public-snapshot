@@ -18,7 +18,7 @@ go_library(
     deps = [
         "//cmd/frontend/globals",
         "//enterprise/internal/authz",
-        "//enterprise/internal/authz/subrepoperms",
+        "//internal/authz/subrepoperms",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

@@ -1,4 +1,4 @@
-- filename: enterprise/internal/authz/gerrit/mocks_test.go
+- filename: internal/authz/gerrit/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit
       interfaces:
@@ -323,8 +323,8 @@
     - Store
     - WithHooks
     - WithPreDequeue
-- filename: enterprise/internal/authz/github/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github
+- filename: internal/authz/github/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/authz/github
   interfaces:
     - client
 - filename: internal/conf/mocks_test.go

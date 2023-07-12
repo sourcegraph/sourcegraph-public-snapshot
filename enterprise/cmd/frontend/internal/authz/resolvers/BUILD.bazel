@@ -56,7 +56,7 @@ go_test(
         "//cmd/frontend/globals",
         "//cmd/frontend/graphqlbackend",
         "//cmd/frontend/graphqlbackend/graphqlutil",
-        "//enterprise/internal/authz/github",
+        "//internal/authz/github",
         "//internal/actor",
         "//internal/api",
         "//internal/auth",

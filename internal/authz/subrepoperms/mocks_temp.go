@@ -16,7 +16,7 @@ import (
 
 // MockSubRepoPermissionsGetter is a mock implementation of the
 // SubRepoPermissionsGetter interface (from the package
-// github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms)
+// github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms)
 // used for unit testing.
 type MockSubRepoPermissionsGetter struct {
 	// GetByUserFunc is an instance of a mock function object controlling

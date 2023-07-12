@@ -7,8 +7,8 @@ go_library(
         "mocks_temp.go",
         "sub_repo_perms.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
         "//internal/authz",

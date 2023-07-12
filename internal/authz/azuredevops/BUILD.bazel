@@ -4,8 +4,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "azuredevops",
     srcs = ["provider.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/azuredevops",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/azuredevops",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",
         "//internal/authz/types",

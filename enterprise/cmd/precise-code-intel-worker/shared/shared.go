@@ -10,8 +10,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"

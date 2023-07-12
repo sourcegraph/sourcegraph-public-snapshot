@@ -4,6 +4,15 @@ go_library(
     name = "types",
     srcs = ["types.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/authz/types",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = [
+        "//:__subpackages__",
+        "//internal/authz/azuredevops:__pkg__",
+        "//internal/authz/bitbucketcloud:__pkg__",
+        "//internal/authz/bitbucketserver:__pkg__",
+        "//internal/authz/gerrit:__pkg__",
+        "//internal/authz/github:__pkg__",
+        "//internal/authz/gitlab:__pkg__",
+        "//internal/authz/perforce:__pkg__",
+    ],
     deps = ["//internal/authz"],
 )

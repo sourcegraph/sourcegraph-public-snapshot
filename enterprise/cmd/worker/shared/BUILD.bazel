@@ -26,7 +26,7 @@ go_library(
         "//enterprise/cmd/worker/internal/permissions",
         "//enterprise/cmd/worker/internal/telemetry",
         "//enterprise/internal/authz",
-        "//enterprise/internal/authz/subrepoperms",
+        "//internal/authz/subrepoperms",
         "//enterprise/internal/oobmigration/migrations",
         "//internal/auth/userpasswd",
         "//internal/authz",

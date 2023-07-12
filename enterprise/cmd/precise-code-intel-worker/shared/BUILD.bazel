@@ -11,7 +11,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//enterprise/internal/authz",
-        "//enterprise/internal/authz/subrepoperms",
+        "//internal/authz/subrepoperms",
         "//internal/authz",
         "//internal/codeintel",
         "//internal/codeintel/shared",

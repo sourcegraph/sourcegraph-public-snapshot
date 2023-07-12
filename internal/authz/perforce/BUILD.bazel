@@ -8,8 +8,8 @@ go_library(
         "perforce.go",
         "protects.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/perforce",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/perforce",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",
         "//internal/authz/types",
@@ -36,10 +36,10 @@ go_test(
         "perforce_test.go",
         "protects_test.go",
     ],
-    data = ["//enterprise/internal/authz/perforce/testdata:data"],
+    data = ["//internal/authz/perforce/testdata:data"],
     embed = [":perforce"],
     deps = [
-        "//enterprise/internal/authz/subrepoperms",
+        "//internal/authz/subrepoperms",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",

@@ -21,8 +21,8 @@
   path: github.com/sourcegraph/sourcegraph/internal/authz
   interfaces:
     - SubRepoPermissionChecker
-- filename: enterprise/internal/authz/subrepoperms/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms
+- filename: internal/authz/subrepoperms/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms
   interfaces:
     - SubRepoPermissionsGetter
 - filename: internal/database/mocks_temp.go
