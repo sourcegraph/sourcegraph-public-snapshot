@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
@@ -17,7 +16,7 @@ func TestSiteConfigurationDiff(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClientDeprecatedNeedsDB(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClientDeprecatedNeedsDB()).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}

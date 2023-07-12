@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
@@ -39,12 +38,12 @@ import (
 )
 
 // StreamHandler is an http handler which streams back search results.
-func StreamHandler(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) http.Handler {
+func StreamHandler(db database.DB) http.Handler {
 	logger := log.Scoped("searchStreamHandler", "")
 	return &streamHandler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.New(logger, db, enterpriseJobs),
+		searchClient:        client.New(logger, db),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}

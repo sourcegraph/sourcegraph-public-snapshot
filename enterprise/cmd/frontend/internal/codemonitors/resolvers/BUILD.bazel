@@ -16,7 +16,6 @@ go_library(
         "//internal/featureflag",
         "//internal/gqlutil",
         "//internal/httpcli",
-        "//internal/search/job/jobutil",
         "//lib/errors",
         "//lib/pointers",
         "@com_github_graph_gophers_graphql_go//:graphql-go",

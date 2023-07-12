@@ -42,7 +42,6 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "//internal/search/client",
-        "//internal/search/job/jobutil",
         "//internal/search/limits",
         "//internal/search/query",
         "//internal/settings",

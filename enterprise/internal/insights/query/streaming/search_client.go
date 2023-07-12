@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -16,11 +15,11 @@ type SearchClient interface {
 	Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error)
 }
 
-func NewInsightsSearchClient(db database.DB, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
+func NewInsightsSearchClient(db database.DB) SearchClient {
 	logger := log.Scoped("insightsSearchClient", "")
 	return &insightsSearchClient{
 		db:           db,
-		searchClient: client.New(logger, db, enterpriseJobs),
+		searchClient: client.New(logger, db),
 	}
 }
 

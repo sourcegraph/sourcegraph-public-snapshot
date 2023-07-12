@@ -52,7 +52,7 @@ type SearchClient interface {
 }
 
 // New will create a search client with a zoekt and searcher backed by conf.
-func New(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) SearchClient {
+func New(logger log.Logger, db database.DB) SearchClient {
 	return &searchClient{
 		logger:                      logger,
 		db:                          db,
@@ -61,7 +61,6 @@ func New(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJob
 		searcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
 		settingsService:             settings.NewService(db),
 		sourcegraphDotComMode:       envvar.SourcegraphDotComMode(),
-		enterpriseJobs:              enterpriseJobs,
 	}
 }
 
@@ -74,7 +73,6 @@ func MockedZoekt(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer
 		zoekt:                 zoektStreamer,
 		settingsService:       settings.Mock(&schema.Settings{}),
 		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
-		enterpriseJobs:        jobutil.NewUnimplementedEnterpriseJobs(),
 	}
 }
 
@@ -86,7 +84,6 @@ type searchClient struct {
 	searcherGRPCConnectionCache *defaults.ConnectionCache
 	settingsService             settings.Service
 	sourcegraphDotComMode       bool
-	enterpriseJobs              jobutil.EnterpriseJobs
 }
 
 func (s *searchClient) Plan(
@@ -162,7 +159,7 @@ func (s *searchClient) Execute(
 	tr, ctx := trace.New(ctx, "Execute")
 	defer tr.FinishWithErr(&err)
 
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan, s.enterpriseJobs)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
 		return nil, err
 	}

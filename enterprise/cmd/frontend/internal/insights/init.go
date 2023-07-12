@@ -23,7 +23,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(observationCtx, db, enterpriseServices.EnterpriseSearchJobs)
+	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(observationCtx, db)
 
 	if !insights.IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
