@@ -143,12 +143,14 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		}
 
 		t := time.Now()
+
 		// runRemoteGitCommand since one of our commands could be git push
 		out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
+		redactor := newURLRedactor(remoteURL)
 
 		logger := logger.With(
 			log.String("prefix", prefix),
-			log.String("command", argsToString(cmd.Args)),
+			log.String("command", redactor.redact(argsToString(cmd.Args))),
 			log.Duration("duration", time.Since(t)),
 			log.String("output", string(out)),
 		)
