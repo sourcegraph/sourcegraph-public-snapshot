@@ -61,6 +61,17 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
+	fetcher := &revisionFetcher{
+		repo:      repo.Name,
+		revision:  record.Revision,
+		gitserver: h.gitserverClient,
+	}
+
+	err = fetcher.validateRevision(ctx)
+	if err != nil {
+		return err
+	}
+
 	embeddingsClient, err := embed.NewEmbeddingsClient(embeddingsConfig)
 	if err != nil {
 		return err
@@ -80,11 +91,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		}
 	}
 
-	fetcher := &revisionFetcher{
-		repo:      repo.Name,
-		revision:  record.Revision,
-		gitserver: h.gitserverClient,
-	}
 	includedFiles, excludedFiles := getFileFilterPathPatterns(embeddingsConfig)
 	opts := embed.EmbedRepoOpts{
 		RepoName: repo.Name,
@@ -247,4 +253,23 @@ func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 	}
 
 	return
+}
+
+// validateRevision returns an error if the revision provided to this job is empty.
+// This can happen when GetDefaultBranch's response is error or empty at the time this job was scheduled.
+// Only the handler should provide the error to mark a failed/errored job, therefore handler requires a revision check.
+func (r *revisionFetcher) validateRevision(ctx context.Context) error {
+	// if the revision is empty then fetch from gitserver to determine this job's failure message
+	if r.revision == "" {
+		_, _, err := r.gitserver.GetDefaultBranch(ctx, r.repo, false)
+
+		if err != nil {
+			return err
+		}
+
+		// We likely had an empty repo at the time of scheduling this job.
+		// The repo can be processed once it's resubmitted with a non-empty revision.
+		return errors.Newf("could not get latest commit for repo %s", r.repo)
+	}
+	return nil
 }
