@@ -45,6 +45,7 @@ const CodySurveyToastInner: React.FC<
     const [loading, setLoading] = useState(false)
     const [isCodyForWork, setIsCodyForWork] = useState(false)
     const [isCodyForPersonalStuff, setIsCodyForPersonalStuff] = useState(false)
+    const [showError, setShowError] = useState(false)
 
     const handleCodyForWorkChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setIsCodyForWork(event.target.checked)
@@ -72,6 +73,7 @@ const CodySurveyToastInner: React.FC<
     const handleSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
             setLoading(true)
+            setShowError(false)
             const eventParams = { isCodyForPersonalStuff, isCodyForWork }
             telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
@@ -86,9 +88,10 @@ const CodySurveyToastInner: React.FC<
                 setLoading(false)
                 onSubmitEnd()
             } catch (error) {
+                setShowError(true)
+                setLoading(false)
                 /* eslint-disable no-console */
                 console.error(error)
-                setLoading(false)
             }
         },
         [
@@ -132,6 +135,7 @@ const CodySurveyToastInner: React.FC<
                     onChange={handleCodyForPersonalStuffChange}
                     className={styles.modalCheckbox}
                 />
+                {showError && <Text size='small' className="text-danger mt-3 mb-2">An error occurred. Please reload the page and try again. If this persists, contact support at support@sourcegraph.com</Text>}
                 <div className="d-flex justify-content-end">
                     <LoaderButton
                         className={styles.codySurveyToastModalButton}
