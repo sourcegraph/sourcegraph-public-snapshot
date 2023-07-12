@@ -2,6 +2,7 @@ package userlimitchecker
 
 import (
 	"context"
+	"log"
 	"time"
 
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
@@ -13,6 +14,26 @@ import (
 
 // send email to site admins if approaching user limit on active license
 func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
+	licenseDb := ps.NewDbLicense(db)
+	licenses, err := licenseDb.List(ctx, ps.DbLicencesListNoOpt())
+	if err != nil {
+		return errors.Wrap(err, "could not get list of db licenses")
+	}
+
+	var licenseID string
+	for _, license := range licenses {
+		if license.RevokedAt == nil {
+			licenseID = license.ID
+			break
+		}
+	}
+
+	userCountAlertSent, err := licenseDb.GetUserCountAlertSentAt(ctx, licenseID)
+	if time.Now().UTC().After(userCountAlertSent.UTC().Add(7 * 24 * time.Hour)) {
+		log.Println("email recently sent")
+		return nil
+	}
+
 	userCount, err := getUserCount(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, "could not get user count")

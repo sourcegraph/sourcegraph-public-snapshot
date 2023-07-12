@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"regexp"
 	"testing"
 	"time"
 
@@ -20,6 +21,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
+
+const timestampPattern = `\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6} \+0000 UTC`
 
 func TestProductLicenses_Create(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -381,4 +384,50 @@ func TestRevokeLicense(t *testing.T) {
 	// Revoke non-existent license
 	err = store.Revoke(ctx, "12345678-1234-5678-1234-567812345678", "reason")
 	require.Error(t, err, "product license not found")
+}
+
+func TestUserCountAlertSentAt(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	store := dbLicenses{db: db}
+
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "user"})
+	require.NoError(t, err)
+
+	license := insertLicense(t, ctx, db, u, "key")
+	t.Run("should be null, initially", func(t *testing.T) {
+		if license.UserCountAlertSentAt != nil {
+			t.Errorf("wanted a nil value for UserCountAlertSentAt but got %v", license.UserCountAlertSentAt)
+		}
+	})
+
+	t.Run("should set user_count_alert_sent_at", func(t *testing.T) {
+		err := store.UpdateUserCountAlertSentAt(ctx, license.ID)
+		if err != nil {
+			t.Errorf("could not update user_count_alert_sent_at: %s", err)
+		}
+	})
+
+	t.Run("should get user_count_alert_sent_at", func(t *testing.T) {
+		err := store.UpdateUserCountAlertSentAt(ctx, license.ID)
+		if err != nil {
+			t.Errorf("could not update user_count_alert_sent_at: %s", err)
+		}
+
+		sentAtTime, err := store.GetUserCountAlertSentAt(ctx, license.ID)
+		if err != nil {
+			t.Errorf("could not retrieve user_count_alert_sent_at: %s", err)
+		}
+
+		match, err := regexp.MatchString(timestampPattern, sentAtTime.String())
+		if err != nil {
+			t.Errorf("could not get regexp: %s", err)
+		}
+
+		if !match {
+			t.Errorf("sentAtTime %q does not match expected timestamp format %q", sentAtTime, timestampPattern)
+		}
+	})
 }

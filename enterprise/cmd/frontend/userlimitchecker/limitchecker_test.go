@@ -2,6 +2,8 @@ package userlimitchecker
 
 import (
 	"context"
+	"io/ioutil"
+	"os"
 	"reflect"
 	"testing"
 	"time"
@@ -22,7 +24,7 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 	ctx := context.Background()
 
 	userStore := db.Users()
-	_, err := userStore.Create(ctx, users[0])
+	user, err := userStore.Create(ctx, users[0])
 	if err != nil {
 		t.Errorf("could not create user: %s", err)
 	}
@@ -35,7 +37,7 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		}
 		t.Cleanup(func() { txemail.MockSend = nil })
 
-		err = sendApproachingUserLimitAlert(context.Background(), db)
+		err = sendApproachingUserLimitAlert(ctx, db)
 		if err != nil {
 			t.Errorf("could not send email: %s", err)
 		}
@@ -59,6 +61,31 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		assert.Equal(t, want.MessageID, gotEmail.MessageID)
 		gotEmailData := want.Data.(SetApproachingUserLimitTemplateData)
 		assert.Equal(t, 4, gotEmailData.RemainingUsers)
+	})
+
+	t.Run("does not run function if email sent within 7 days of current time", func(t *testing.T) {
+		subStore := ps.NewDbSubscription(db)
+		subId, err := subStore.Create(ctx, user.ID, user.Username)
+		if err != nil {
+			t.Errorf("could not create subscription: %s", err)
+		}
+
+		licensesStore := ps.NewDbLicense(db)
+		licensesStore.Create(ctx, subId, "12345", 5, license.Info{})
+
+		old := os.Stdout
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+
+		err = sendApproachingUserLimitAlert(ctx, db)
+
+		w.Close()
+		out, _ := ioutil.ReadAll(r)
+		os.Stdout = old
+
+		if string(out) != "email recently sent\n" {
+			t.Errorf("Expected 'email recently sent' to be printed, got %q", string(out))
+		}
 	})
 }
 
