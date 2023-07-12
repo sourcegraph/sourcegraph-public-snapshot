@@ -70,6 +70,9 @@ const EmailCheckVerificationForm: FC = () => {
     const { onNextStep } = useContext(SetupStepsContext)
     const { data } = useQuery(EMAIL_VERIFICATION_QUERY, { pollInterval: 3000 })
     const hasEmailBeenVerified = data?.user.hasVerifiedEmail ?? false
+    if (window.context.currentUser) {
+        window.context.currentUser.hasVerifiedEmail = hasEmailBeenVerified
+    }
 
     return (
         <div className={styles.emailForm}>
