@@ -26,9 +26,6 @@ func TestSecurityEventLogs_ValidInfo(t *testing.T) {
 	})
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
 		Log: &schema.Log{
-			//AuditLog: &schema.AuditLog{
-			//	InternalTraffic: true,
-			//},
 			SecurityEventLog: &schema.SecurityEventLog{Location: "all"},
 		},
 	}})
