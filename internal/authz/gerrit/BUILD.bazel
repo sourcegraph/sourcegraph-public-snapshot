@@ -1,0 +1,10 @@
+load("//dev:go_defs.bzl", "go_test")
+
+go_test(
+    name = "gerrit_test",
+    srcs = ["mocks_test.go"],
+    deps = [
+        "//internal/extsvc/auth",
+        "//internal/extsvc/gerrit",
+    ],
+)
