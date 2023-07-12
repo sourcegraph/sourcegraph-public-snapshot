@@ -290,15 +290,15 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                             <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
-                    {/*<div className="col-8">*/}
+                    <div className="col-8">
                         <Input
-                            className='col-8'
                             value={searchContext}
                             id="text"
                             name="text"
                             type="text"
                             onChange={event => setSearchContext(event.target.value)}
                         />
+                    </div>
                 </div>
 
                 <div className="form-group row">
