@@ -54,7 +54,7 @@ describe('PostSignUpPage', () => {
         expect(screen.getByText('How will you be using Cody, our AI assistant?')).toBeVisible()
     })
 
-    test('renders post signup page - with cody survey', async () => {
+    test('renders post signup page - with cody survey', () => {
         const { asFragment } = renderPage({ completedPostSignup: false, hasVerifiedEmail: true })
         expect(document.title).toBe('Post signup - Sourcegraph')
         expect(screen.getByText('How will you be using Cody, our AI assistant?')).toBeVisible()
