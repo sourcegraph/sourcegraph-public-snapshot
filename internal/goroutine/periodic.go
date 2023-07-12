@@ -46,7 +46,10 @@ type PeriodicGoroutine struct {
 
 var _ recorder.Recordable = &PeriodicGoroutine{}
 
-type errorHandler interface {
+// fullErrorHandler implements Handler and ErrorHandler.
+// Cannot be named errorHandler because gomockgen tries to generate 2 mocks that
+// conflicts (because of ErrorHandler).
+type fullErrorHandler interface {
 	Handler
 	ErrorHandler
 }
