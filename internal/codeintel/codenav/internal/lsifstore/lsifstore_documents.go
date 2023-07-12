@@ -93,7 +93,7 @@ JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = l6.upload_id AND l2.id =
 JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id = l2.parent_id
 WHERE
 	l6.upload_id = ANY(%s) AND
-	l6.scip_name_type = 'DESCRIPTOR_NO_SUFFIX' AND
+	l6.segment_type = 'DESCRIPTOR_NO_SUFFIX' AND
 	l6.name ILIKE ANY(%s)
 `
 

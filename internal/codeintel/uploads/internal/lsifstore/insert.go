@@ -110,7 +110,7 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		s.db.Handle(),
 		"t_codeintel_scip_symbols_lookup",
 		batch.MaxNumPostgresParameters,
-		"scip_name_type",
+		"segment_type",
 		"name",
 		"id",
 		"parent_id",
@@ -153,7 +153,7 @@ const newSCIPWriterTemporarySymbolLookupTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
 	id integer NOT NULL,
 	name text NOT NULL,
-	scip_name_type text NOT NULL,
+	segment_type SymbolNameSegmentType NOT NULL,
 	parent_id integer
 ) ON COMMIT DROP
 `
@@ -334,8 +334,8 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 
 	// Bulk insert the content of the tree / descriptor-no-suffix map
-	visit := func(scipNameType, name string, id int, parentID *int) error {
-		return s.symbolLookupInserter.Insert(ctx, scipNameType, name, id, parentID)
+	visit := func(segmentType, name string, id int, parentID *int) error {
+		return s.symbolLookupInserter.Insert(ctx, segmentType, name, id, parentID)
 	}
 	if err := traverser(visit); err != nil {
 		return err
@@ -435,14 +435,14 @@ INSERT INTO codeintel_scip_symbols_lookup (
 	upload_id,
 	id,
 	name,
-	scip_name_type,
+	segment_type,
 	parent_id
 )
 SELECT
 	%s,
 	source.id,
 	source.name,
-	source.scip_name_type,
+	source.segment_type,
 	source.parent_id
 FROM t_codeintel_scip_symbols_lookup source
 `
@@ -509,7 +509,7 @@ type explodedIDs struct {
 	descriptorNoSuffixID int
 }
 
-type visitFunc func(scipNameType, name string, id int, parentID *int) error
+type visitFunc func(segmentType, name string, id int, parentID *int) error
 
 func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error, error) {
 	// Create helpers to create new tree nodes with (upload-)unique identifiers
@@ -547,7 +547,7 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 		}
 	}
 
-	scipNameTypeByDepth := []string{
+	segmentTypeByDepth := []string{
 		"SCHEME",          // depth 0
 		"PACKAGE_MANAGER", // depth 1
 		"PACKAGE_NAME",    // depth 2
@@ -559,7 +559,7 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 	traverser := func(visit visitFunc) error {
 		// Call visit on each node of the tree
 		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
-			return visit(scipNameTypeByDepth[depth], name, id, parentID)
+			return visit(segmentTypeByDepth[depth], name, id, parentID)
 		}); err != nil {
 			return err
 		}

@@ -1,0 +1,10 @@
+DROP TYPE IF EXISTS SymbolNameSegmentType;
+
+CREATE TYPE SymbolNameSegmentType AS ENUM (
+    'SCHEME',
+    'PACKAGE_MANAGER',
+    'PACKAGE_NAME',
+    'PACKAGE_VERSION',
+    'DESCRIPTOR',
+    'DESCRIPTOR_NO_SUFFIX'
+);

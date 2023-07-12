@@ -199,7 +199,7 @@ matching_symbol_names AS (
 		FROM symbols_parts p
 
 		-- Initially match descriptor scoped to an upload
-		JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = ANY(%s) AND l5.scip_name_type = 'DESCRIPTOR' AND l5.name = p.descriptor
+		JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = ANY(%s) AND l5.segment_type = 'DESCRIPTOR' AND l5.name = p.descriptor
 
 		-- Follow parent path l5->l4->l3->l2->l1, filter out anything that doesn't match exploded symbol parts
 		JOIN codeintel_scip_symbols_lookup l4 ON l4.name = p.package_version AND l4.upload_id = l5.upload_id AND l4.id = l5.parent_id

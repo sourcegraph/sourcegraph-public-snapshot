@@ -191,16 +191,16 @@ func TestConstructSymbolLookupTable(t *testing.T) {
 	}
 
 	type rowType struct {
-		scipNameType string
-		name         string
-		id           int
-		parentID     *int
+		segmentType string
+		name        string
+		id          int
+		parentID    *int
 	}
 	rows := map[int]rowType{}
 
 	// Traverse the tree and build a map of rows by identifier for quick lookup
-	if err := traverser(func(scipNameType, name string, id int, parentID *int) error {
-		rows[id] = rowType{scipNameType, name, id, parentID}
+	if err := traverser(func(segmentType, name string, id int, parentID *int) error {
+		rows[id] = rowType{segmentType, name, id, parentID}
 		return nil
 	}); err != nil {
 		t.Fatalf("unexpected error: %s", err)
