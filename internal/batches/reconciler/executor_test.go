@@ -273,6 +273,29 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
 			},
 		},
+		"push error and not archived repo": {
+			hasCurrentSpec: true,
+			changeset: bt.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublish,
+				},
+			},
+			gitClientErr: &gitprotocol.CreateCommitFromPatchError{
+				CombinedOutput: "archived",
+			},
+			isRepoArchived: false,
+			sourcerErr:     repoArchivedErr,
+
+			wantGitserverCommit: true,
+
+			wantChangeset: bt.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+		},
 		"general push error": {
 			hasCurrentSpec: true,
 			changeset: bt.TestChangesetOpts{
