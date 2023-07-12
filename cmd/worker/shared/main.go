@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
@@ -57,6 +58,7 @@ func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigra
 		"repo-statistics-compactor": repostatistics.NewCompactor(),
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
 		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
+		"license-check":             licensing.NewLicenseWorker(),
 	}
 
 	var config Config

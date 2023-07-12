@@ -13,7 +13,7 @@ import (
 
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
