@@ -6,13 +6,13 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: enterprise/internal/insights/discovery/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
+- filename: internal/insights/discovery/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/discovery
   interfaces:
     - IndexableReposLister
     - RepoStore
-- filename: enterprise/internal/insights/store/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
+- filename: internal/insights/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/store
   interfaces:
     - DataSeriesStore
     - InsightMetadataStore
@@ -21,8 +21,8 @@
   path: github.com/sourcegraph/sourcegraph/internal/authz
   interfaces:
     - SubRepoPermissionChecker
-- filename: enterprise/internal/authz/subrepoperms/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms
+- filename: internal/authz/subrepoperms/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms
   interfaces:
     - SubRepoPermissionsGetter
 - filename: internal/database/mocks_temp.go
@@ -117,8 +117,8 @@
   interfaces:
     - UserEmailsService
     - ReposService
-- filename: enterprise/internal/executor/store/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store
+- filename: internal/executor/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/executor/store
   interfaces:
     - JobTokenStore
 - filename: internal/github_apps/store/mocks_temp.go

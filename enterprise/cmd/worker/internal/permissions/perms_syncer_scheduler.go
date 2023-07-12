@@ -10,9 +10,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -79,7 +79,7 @@ func (p *permissionSyncJobScheduler) Routines(_ context.Context, observationCtx 
 			context.Background(),
 			goroutine.HandlerFunc(
 				func(ctx context.Context) error {
-					if authz.PermissionSyncingDisabled() {
+					if providers.PermissionSyncingDisabled() {
 						logger.Debug("scheduler disabled due to permission syncing disabled")
 						return nil
 					}

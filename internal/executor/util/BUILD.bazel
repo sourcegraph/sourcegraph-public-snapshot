@@ -1,0 +1,22 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "util",
+    srcs = [
+        "batcheshelper.go",
+        "multiqueue.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/executor/util",
+    visibility = ["//:__subpackages__"],
+)
+
+go_test(
+    name = "util_test",
+    srcs = [
+        "batcheshelper_test.go",
+        "multiqueue_test.go",
+    ],
+    embed = [":util"],
+    deps = ["@com_github_stretchr_testify//assert"],
+)

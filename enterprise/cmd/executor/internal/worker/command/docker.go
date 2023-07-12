@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/executor/types"
 )
 
 // DockerOptions are the options that are specific to running a container.

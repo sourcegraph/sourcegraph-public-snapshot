@@ -1,4 +1,4 @@
-- filename: enterprise/internal/authz/gerrit/mocks_test.go
+- filename: internal/authz/providers/gerrit/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit
       interfaces:
@@ -323,8 +323,8 @@
     - Store
     - WithHooks
     - WithPreDequeue
-- filename: enterprise/internal/authz/github/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github
+- filename: internal/authz/providers/github/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/authz/providers/github
   interfaces:
     - client
 - filename: internal/conf/mocks_test.go
@@ -364,20 +364,20 @@
   interfaces:
     - AutoIndexingService
     - CodeNavService
-- filename: enterprise/internal/insights/background/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background
+- filename: internal/insights/background/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/background
   interfaces:
     - RepoStore
-- filename: enterprise/internal/insights/discovery/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
+- filename: internal/insights/discovery/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/discovery
   interfaces:
     - RepoQueryExecutor
-- filename: enterprise/internal/insights/scheduler/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler
+- filename: internal/insights/scheduler/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/scheduler
   interfaces:
     - RepoQueryExecutor
-- filename: enterprise/internal/insights/store/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
+- filename: internal/insights/store/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/store
   interfaces:
     - InsightPermissionStore
 - filename: cmd/cody-gateway/internal/auth/mocks_test.go

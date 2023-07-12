@@ -8,16 +8,15 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
+	"github.com/sourcegraph/sourcegraph/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -120,28 +119,25 @@ func getUserPermissions(ctx context.Context, orgStore database.OrgStore) (userId
 
 // AggregationResolver is the GraphQL resolver for insights aggregations.
 type AggregationResolver struct {
-	postgresDB     database.DB
-	enterpriseJobs jobutil.EnterpriseJobs
-	logger         log.Logger
-	operations     *aggregationsOperations
+	postgresDB database.DB
+	logger     log.Logger
+	operations *aggregationsOperations
 }
 
-func NewAggregationResolver(observationCtx *observation.Context, postgres database.DB, enterpriseJobs jobutil.EnterpriseJobs) graphqlbackend.InsightsAggregationResolver {
+func NewAggregationResolver(observationCtx *observation.Context, postgres database.DB) graphqlbackend.InsightsAggregationResolver {
 	return &AggregationResolver{
-		logger:         log.Scoped("AggregationResolver", ""),
-		postgresDB:     postgres,
-		enterpriseJobs: enterpriseJobs,
-		operations:     newAggregationsOperations(observationCtx),
+		logger:     log.Scoped("AggregationResolver", ""),
+		postgresDB: postgres,
+		operations: newAggregationsOperations(observationCtx),
 	}
 }
 
 func (r *AggregationResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
 	return &searchAggregateResolver{
-		postgresDB:     r.postgresDB,
-		enterpriseJobs: r.enterpriseJobs,
-		searchQuery:    args.Query,
-		patternType:    args.PatternType,
-		operations:     r.operations,
+		postgresDB:  r.postgresDB,
+		searchQuery: args.Query,
+		patternType: args.PatternType,
+		operations:  r.operations,
 	}, nil
 }
 

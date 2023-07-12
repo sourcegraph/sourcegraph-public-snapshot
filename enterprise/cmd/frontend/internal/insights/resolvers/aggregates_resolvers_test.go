@@ -7,7 +7,7 @@ import (
 
 	"github.com/hexops/autogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/insights/types"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )

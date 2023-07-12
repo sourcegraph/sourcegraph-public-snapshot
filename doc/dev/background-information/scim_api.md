@@ -6,7 +6,7 @@ If you're just getting started with SCIM, watch [this](https://www.youtube.com/w
 
 IETF RFCs [7642](https://www.rfc-editor.org/rfc/rfc7642), [7643](https://www.rfc-editor.org/rfc/rfc7643), and [7644](https://www.rfc-editor.org/rfc/rfc7644) are pretty dry, but very useful reference materials.
 
-Our implementation is in [this folder](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/enterprise/internal/scim).
+Our implementation is in [this folder](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/internal/scim).
 
 To try it, follow the [How to use section of our SCIM admin guide](../../admin/scim.md#how-to-use), then see the [manual-testing-with-postman](#manual-testing-with-postman) section below to see it in action. It should take you 10–20 minutes to set up everything and see the full CRUD magic happen.
 

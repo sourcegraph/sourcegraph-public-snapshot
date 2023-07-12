@@ -18,20 +18,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // NewResolver returns a new Resolver that uses the given database
-func NewResolver(logger log.Logger, db database.DB, enterpriseJobs jobutil.EnterpriseJobs) graphqlbackend.CodeMonitorsResolver {
-	return &Resolver{logger: logger, db: db, enterpriseJobs: enterpriseJobs}
+func NewResolver(logger log.Logger, db database.DB) graphqlbackend.CodeMonitorsResolver {
+	return &Resolver{logger: logger, db: db}
 }
 
 type Resolver struct {
-	logger         log.Logger
-	db             database.DB
-	enterpriseJobs jobutil.EnterpriseJobs
+	logger log.Logger
+	db     database.DB
 }
 
 func (r *Resolver) Now() time.Time {
@@ -152,7 +150,7 @@ func (r *Resolver) CreateCodeMonitor(ctx context.Context, args *graphqlbackend.C
 		if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, tx.db, r.enterpriseJobs, args.Trigger.Query, m.ID)
+			err = codemonitors.Snapshot(ctx, r.logger, tx.db, args.Trigger.Query, m.ID)
 			if err != nil {
 				return err
 			}
@@ -547,7 +545,7 @@ func (r *Resolver) updateCodeMonitor(ctx context.Context, args *graphqlbackend.U
 		if currentTrigger.QueryString != args.Trigger.Update.Query {
 			// Snapshot the state of the searched repos when the monitor is created so that
 			// we can distinguish new repos.
-			err = codemonitors.Snapshot(ctx, r.logger, r.db, r.enterpriseJobs, args.Trigger.Update.Query, monitorID)
+			err = codemonitors.Snapshot(ctx, r.logger, r.db, args.Trigger.Update.Query, monitorID)
 			if err != nil {
 				return nil, err
 			}

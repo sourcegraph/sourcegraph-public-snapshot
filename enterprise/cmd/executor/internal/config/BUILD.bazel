@@ -11,9 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/config",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
-        "//enterprise/internal/executor/types",
         "//internal/conf/confdefaults",
         "//internal/env",
+        "//internal/executor/types",
         "//internal/hostname",
         "//internal/version",
         "//lib/errors",

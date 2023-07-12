@@ -10,9 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz"
-	frontendAuthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -81,9 +81,9 @@ func EnterpriseInit(
 func watchAuthzProviders(ctx context.Context, db database.DB) {
 	globals.WatchPermissionsUserMapping()
 	go func() {
-		t := time.NewTicker(frontendAuthz.RefreshInterval())
+		t := time.NewTicker(providers.RefreshInterval())
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := frontendAuthz.ProvidersFromConfig(
+			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(
 				ctx,
 				conf.Get(),
 				db.ExternalServices(),
