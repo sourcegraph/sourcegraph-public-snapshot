@@ -162,7 +162,7 @@ public class CodeEditorFactory {
     return layeredEditorPane;
   }
 
-  private static void setHighlighting(@NotNull EditorEx editor, String languageName) {
+  private static void setHighlighting(@NotNull EditorEx editor, @Nullable String languageName) {
     FileType fileType =
         Language.getRegisteredLanguages().stream()
             .filter(it -> it.getDisplayName().equalsIgnoreCase(languageName))
