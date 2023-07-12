@@ -16,10 +16,10 @@ import (
 	"time"
 
 	diff "github.com/sourcegraph/go-diff/diff"
-	store "github.com/sourcegraph/sourcegraph/internal/batches/store"
-	types1 "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
+	store "github.com/sourcegraph/sourcegraph/internal/batches/store"
+	types1 "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	azuredevops "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
@@ -34,8 +34,8 @@ import (
 
 // MockChangesetSource is a mock implementation of the ChangesetSource
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/batches/sources)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/batches/sources) used for
+// unit testing.
 type MockChangesetSource struct {
 	// BuildCommitOptsFunc is an instance of a mock function object
 	// controlling the behavior of the method BuildCommitOpts.
@@ -1431,8 +1431,8 @@ func (c ChangesetSourceWithAuthenticatorFuncCall) Results() []interface{} {
 
 // MockForkableChangesetSource is a mock implementation of the
 // ForkableChangesetSource interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/batches/sources)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/batches/sources) used for
+// unit testing.
 type MockForkableChangesetSource struct {
 	// BuildCommitOptsFunc is an instance of a mock function object
 	// controlling the behavior of the method BuildCommitOpts.
@@ -2981,8 +2981,8 @@ func (c ForkableChangesetSourceWithAuthenticatorFuncCall) Results() []interface{
 
 // MockSourcerStore is a mock implementation of the SourcerStore interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/internal/batches/sources)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/batches/sources) used for
+// unit testing.
 type MockSourcerStore struct {
 	// ExternalServicesFunc is an instance of a mock function object
 	// controlling the behavior of the method ExternalServices.

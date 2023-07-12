@@ -18,8 +18,7 @@ import (
 )
 
 // MockSyncStore is a mock implementation of the SyncStore interface (from
-// the package
-// github.com/sourcegraph/sourcegraph/internal/batches/syncer)
+// the package github.com/sourcegraph/sourcegraph/internal/batches/syncer)
 // used for unit testing.
 type MockSyncStore struct {
 	// ClockFunc is an instance of a mock function object controlling the
