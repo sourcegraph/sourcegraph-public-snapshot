@@ -742,8 +742,8 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 func sonarcloudScan() operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(
-			fmt.Sprintf("Sonarcloud Scan"),
-			bk.Cmd(fmt.Sprintf("echo 'sonarcloud pipeline step'")),
+			"Sonarcloud Scan",
+			bk.Cmd("echo 'hello buildkite'"),
 		)
 	}
 
