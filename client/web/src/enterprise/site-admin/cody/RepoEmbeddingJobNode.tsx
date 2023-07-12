@@ -59,9 +59,7 @@ export const RepoEmbeddingJobNode: FC<RepoEmbeddingJobNodeProps> = ({
                             </Link>
                         )
                     ) : repo ? (
-                        <>
-                            {repo.name}
-                        </>
+                        <>{repo.name}</>
                     ) : (
                         <div>Unknown repository</div>
                     )}
