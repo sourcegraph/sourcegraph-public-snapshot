@@ -97,6 +97,7 @@ go_library(
         "@com_github_nytimes_gziphandler//:gziphandler",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_shurcool_httpgzip//:httpgzip",
         "@com_github_sourcegraph_log//:log",
         "@com_github_throttled_throttled_v2//:throttled",
         "@com_github_throttled_throttled_v2//store/memstore",
