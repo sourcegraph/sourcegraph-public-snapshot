@@ -1,28 +1,14 @@
 package com.sourcegraph.cody.chat;
 
-import com.intellij.ide.highlighter.HighlighterFactory;
-import com.intellij.lang.Language;
-import com.intellij.openapi.editor.Document;
-import com.intellij.openapi.editor.EditorFactory;
-import com.intellij.openapi.editor.EditorSettings;
-import com.intellij.openapi.editor.colors.EditorColorsManager;
-import com.intellij.openapi.editor.ex.EditorEx;
-import com.intellij.openapi.editor.highlighter.EditorHighlighter;
-import com.intellij.openapi.fileTypes.FileType;
-import com.intellij.openapi.fileTypes.FileTypeManager;
-import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.ui.ColorUtil;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
-import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.api.Speaker;
 import com.sourcegraph.cody.ui.HtmlViewer;
 import java.awt.*;
 import java.util.List;
-import java.util.Optional;
 import javax.swing.*;
-import javax.swing.border.EmptyBorder;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
 import org.commonmark.node.Image;
@@ -40,6 +26,7 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private final HtmlRenderer htmlRenderer =
       HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
   private final JPanel messagePanel;
+  private final JPanel parentPanel;
   private final Speaker speaker;
   private final int gradientWidth;
   private StringBuilder htmlContent = new StringBuilder();
@@ -47,8 +34,12 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private JEditorPane textPane;
 
   public MessageContentCreatorFromMarkdownNodes(
-      @NotNull JPanel messagePanel, @NotNull Speaker speaker, int gradientWidth) {
+      @NotNull JPanel messagePanel,
+      @NotNull JPanel parentPanel,
+      @NotNull Speaker speaker,
+      int gradientWidth) {
     this.messagePanel = messagePanel;
+    this.parentPanel = parentPanel;
     this.speaker = speaker;
     this.gradientWidth = gradientWidth;
     createNewEmptyTextPane();
@@ -119,24 +110,12 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
 
   @RequiresEdt
   private void insertCodeEditor(@NotNull String codeContent, @Nullable String languageName) {
-    /* Create document */
-    Document codeDocument = EditorFactory.getInstance().createDocument(codeContent);
-
-    /* Create editor */
-    EditorEx editor = (EditorEx) EditorFactory.getInstance().createViewer(codeDocument);
-    setHighlighting(editor, languageName);
-    fillEditorSettings(editor.getSettings());
-    editor.setVerticalScrollbarVisible(false);
-    editor.getGutterComponentEx().setPaintBackground(false);
-
-    /* Create editor panel and add it to a parent */
-    JPanel editorPanel = new JPanel(new BorderLayout());
-    editorPanel.setBorder(new EmptyBorder(JBInsets.create(new Insets(0, gradientWidth, 0, 0))));
-    editorPanel.add(editor.getComponent(), BorderLayout.CENTER);
-    editorPanel.setOpaque(false);
-    messagePanel.add(editorPanel, BorderLayout.CENTER, textPaneIndex++);
-
-    /* Start a new block */
+    JComponent codeEditor =
+        new CodeEditorFactory(parentPanel, gradientWidth)
+            .createCodeEditor(codeContent, languageName);
+    messagePanel.add(codeEditor, BorderLayout.CENTER, textPaneIndex++);
+    messagePanel.revalidate();
+    messagePanel.repaint();
     htmlContent = new StringBuilder();
     createNewEmptyTextPane();
   }
@@ -222,32 +201,5 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
         UIUtil.getCssFontDeclaration(
             UIUtil.getLabelFont(), UIUtil.getActiveTextColor(), null, null),
         bodyContent);
-  }
-
-  private static void setHighlighting(@NotNull EditorEx editor, @Nullable String languageName) {
-    FileType fileType =
-        Language.getRegisteredLanguages().stream()
-            .filter(it -> it.getDisplayName().equalsIgnoreCase(languageName))
-            .findFirst()
-            .flatMap(
-                it -> Optional.ofNullable(FileTypeManager.getInstance().findFileTypeByLanguage(it)))
-            .orElse(PlainTextFileType.INSTANCE);
-
-    EditorHighlighter editorHighlighter =
-        HighlighterFactory.createHighlighter(
-            fileType, EditorColorsManager.getInstance().getSchemeForCurrentUITheme(), null);
-    editor.setHighlighter(editorHighlighter);
-  }
-
-  private static void fillEditorSettings(@NotNull final EditorSettings editorSettings) {
-    editorSettings.setAdditionalColumnsCount(0);
-    editorSettings.setAdditionalLinesCount(0);
-    editorSettings.setGutterIconsShown(false);
-    editorSettings.setWhitespacesShown(false);
-    editorSettings.setLineMarkerAreaShown(false);
-    editorSettings.setIndentGuidesShown(false);
-    editorSettings.setLineNumbersShown(false);
-    editorSettings.setUseSoftWraps(false);
-    editorSettings.setCaretRowShown(false);
   }
 }
