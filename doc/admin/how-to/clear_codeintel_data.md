@@ -70,6 +70,7 @@ TRUNCATE
   codeintel_scip_symbols_schema_versions,
   codeintel_scip_symbol_names,
   codeintel_scip_symbols_lookup,
+  codeintel_scip_symbols_lookup_leaves,
   codeintel_last_reconcile
   CASCADE;
 COMMIT;
