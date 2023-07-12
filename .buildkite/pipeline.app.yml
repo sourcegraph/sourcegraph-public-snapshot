@@ -44,7 +44,7 @@ steps:
           agents: { queue: stateless }
           command:
             - './dev/ci/pnpm-install-with-retry.sh'
-            - './enterprise/dev/app/windows-tauri-sig.sh'
+            - './enterprise/dev/app/windows-tauri-sign.sh'
   #     - label: ':linux::tauri: Bundle with Tauri'
   #       key: 'linux-build-tauri-sourcegraph-app'
   #       agents: { queue: stateless }
