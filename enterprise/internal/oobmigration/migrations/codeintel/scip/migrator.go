@@ -408,13 +408,15 @@ func (m *migrator) updateBatch(ctx context.Context, tx *basestore.Store, uploadI
 		return err
 	}
 
+	schemaVersionAssignment := sqlf.Sprintf("schema_version = %s", targetVersion)
+	assignments := append(m.updateAssignments, schemaVersionAssignment)
+
 	// Note that we assign a parameterized dump identifier and schema version here since
 	// both values are the same for all rows in this operation.
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		updateBatchUpdateQuery,
 		sqlf.Sprintf(m.options.tableName),
-		sqlf.Join(m.updateAssignments, ", "),
-		targetVersion,
+		sqlf.Join(assignments, ", "),
 		temporaryTableExpression,
 		uploadID,
 		sqlf.Join(m.updateConditions, " AND "),
@@ -430,5 +432,5 @@ CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
 `
 
 const updateBatchUpdateQuery = `
-UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE upload_id = %s AND %s
+UPDATE %s dest SET %s FROM %s src WHERE upload_id = %s AND %s
 `
