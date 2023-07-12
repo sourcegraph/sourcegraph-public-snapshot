@@ -1,5 +1,6 @@
 package com.sourcegraph.cody.chat;
 
+import com.intellij.openapi.project.Project;
 import com.intellij.ui.ColorUtil;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.intellij.util.ui.SwingHelper;
@@ -25,6 +26,7 @@ import org.jetbrains.annotations.Nullable;
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private final HtmlRenderer htmlRenderer =
       HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
+  private final Project project;
   private final JPanel messagePanel;
   private final JPanel parentPanel;
   private final Speaker speaker;
@@ -34,10 +36,12 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private JEditorPane textPane;
 
   public MessageContentCreatorFromMarkdownNodes(
+      @NotNull Project project,
       @NotNull JPanel messagePanel,
       @NotNull JPanel parentPanel,
       @NotNull Speaker speaker,
       int gradientWidth) {
+    this.project = project;
     this.messagePanel = messagePanel;
     this.parentPanel = parentPanel;
     this.speaker = speaker;
@@ -111,7 +115,7 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   @RequiresEdt
   private void insertCodeEditor(@NotNull String codeContent, @Nullable String languageName) {
     JComponent codeEditor =
-        new CodeEditorFactory(parentPanel, gradientWidth)
+        new CodeEditorFactory(project, parentPanel, gradientWidth)
             .createCodeEditor(codeContent, languageName);
     messagePanel.add(codeEditor, BorderLayout.CENTER, textPaneIndex++);
     messagePanel.revalidate();
