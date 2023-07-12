@@ -22,6 +22,10 @@ export interface UpdateInfo {
     error?: string
 }
 
+export interface UpdaterSettings {
+    keepChecking?: boolean
+}
+
 /**
  * A React hook to check for app updates.
  *
@@ -35,7 +39,7 @@ export interface UpdateInfo {
  * - `checkNow(force)`: A function to manually check for updates. Pass `true` to force a check even if an update was recently found.
  * - `error`: Any error that occurred during update checking
  */
-export function useUpdater(): UpdateInfo {
+export function useUpdater({ keepChecking }: UpdaterSettings = { keepChecking: true }): UpdateInfo {
     const [lastCheck, setLastCheck] = useState<UpdateInfo>({
         stage: 'CHECKING',
         hasNewVersion: false,
@@ -83,14 +87,17 @@ export function useUpdater(): UpdateInfo {
     }, [])
 
     useEffect(() => {
-        const timer = setInterval(() => {
-            if (lastCheck.stage !== 'IDLE') {
-                return
-            }
-            lastCheck.checkNow?.(false)
-        }, UpdateCheckIntervalMs)
-        return () => clearInterval(timer)
-    }, [lastCheck])
+        if (keepChecking) {
+            const timer = setInterval(() => {
+                if (lastCheck.stage !== 'IDLE') {
+                    return
+                }
+                lastCheck.checkNow?.(false)
+            }, UpdateCheckIntervalMs)
+            return () => clearInterval(timer)
+        }
+        return () => {}
+    }, [keepChecking, lastCheck])
 
     useEffect(() => {
         const unregisterAvailable = listen<UpdateManifest>(TauriEvent.UPDATE_AVAILABLE, ({ payload }) => {
