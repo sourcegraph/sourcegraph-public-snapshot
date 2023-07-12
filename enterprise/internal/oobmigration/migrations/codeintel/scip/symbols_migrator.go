@@ -3,6 +3,7 @@ package scip
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"os"
 	"sort"
 	"strconv"
@@ -44,7 +45,7 @@ func NewSCIPSymbolsMigrator(codeintelStore *basestore.Store) *migrator {
 		tableName:     "codeintel_scip_symbols",
 		targetVersion: 2,
 		batchSize:     symbolsMigratorSymbolRecordBatchSize,
-		numRoutines:   1,
+		numRoutines:   symbolsMigratorConcurrencyLevel,
 		fields: []fieldSpec{
 			{name: "symbol_id", postgresType: "integer not null", primaryKey: true},
 			{name: "document_lookup_id", postgresType: "integer not null", primaryKey: true},
@@ -58,6 +59,8 @@ func (m *scipSymbolsMigrator) ID() int                 { return 24 }
 func (m *scipSymbolsMigrator) Interval() time.Duration { return time.Second }
 
 func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *basestore.Store, rows *sql.Rows) (_ [][]any, err error) {
+	start := time.Now()
+
 	// Consume symbol_id/document_id pairs from the incoming rows
 	symbolInDocuments, err := readSymbolInDocuments(rows)
 	if err != nil {
@@ -130,6 +133,7 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 		})
 	}
 
+	fmt.Printf("> updated %d rows and inserted %d symbols in %s\n", len(values), len(symbolNames), time.Since(start))
 	return values, nil
 }
 
