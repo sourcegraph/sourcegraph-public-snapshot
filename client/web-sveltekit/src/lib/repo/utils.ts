@@ -7,6 +7,15 @@ const TREE_ROUTE_ID = '/[...repo]/(code)/-/tree/[...path]'
 /**
  * Returns a [segment, url] mapping for every segement in `path`.
  * The URL for the last segment is empty.
+ *
+ * Example:
+ *   'foo/bar/baz' converts to
+ *   [
+ *     ['foo', '/<repo>/-/tree/foo'],
+ *     ['bar', '/<repo>/-/tree/foo/bar'],
+ *     ['baz', '/<repo>/-/tree/foo/bar/baz'],
+ *   ]
+ *
  */
 export function navFromPath(path: string, repo: string): [string, string][] {
     const parts = path.split('/')
