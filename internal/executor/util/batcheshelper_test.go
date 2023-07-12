@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
+	"github.com/sourcegraph/sourcegraph/internal/executor/util"
 )
 
 func TestFormatPreKey(t *testing.T) {

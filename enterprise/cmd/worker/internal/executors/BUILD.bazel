@@ -15,8 +15,8 @@ go_library(
     deps = [
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
-        "//enterprise/internal/executor/types",
         "//internal/env",
+        "//internal/executor/types",
         "//internal/goroutine",
         "//internal/httpserver",
         "//internal/metrics/store",
@@ -36,7 +36,7 @@ go_test(
     embed = [":executors"],
     tags = ["requires-network"],
     deps = [
-        "//enterprise/internal/executor/types",
+        "//internal/executor/types",
         "//internal/rcache",
     ],
 )

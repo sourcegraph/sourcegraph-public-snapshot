@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	cmdlogger "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	types "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 )
 

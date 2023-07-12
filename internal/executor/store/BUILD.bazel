@@ -8,8 +8,8 @@ go_library(
         "observability.go",
         "store.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/executor/store",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database",
         "//internal/database/basestore",

@@ -12,12 +12,12 @@ import (
 
 	"github.com/mroth/weightedrand/v2"
 
-	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
+	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"

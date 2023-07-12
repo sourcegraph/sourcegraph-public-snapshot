@@ -18,7 +18,7 @@ import (
 	command "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/command"
 	files "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/files"
 	workspace "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	types "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 )
 

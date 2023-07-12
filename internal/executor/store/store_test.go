@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
+	"github.com/sourcegraph/sourcegraph/internal/executor/store"
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"

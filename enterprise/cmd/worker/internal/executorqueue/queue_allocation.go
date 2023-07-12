@@ -3,7 +3,7 @@ package executorqueue
 import (
 	"github.com/inconshreveable/log15"
 
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
