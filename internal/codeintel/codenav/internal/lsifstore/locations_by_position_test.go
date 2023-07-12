@@ -21,7 +21,7 @@ import (
 
 const (
 	testSCIPUploadID1 = 2408562
-	testSCIPUploadID2 = 2429670
+	testSCIPUploadID2 = 2429908
 )
 
 func TestExtractDefinitionLocationsFromPosition(t *testing.T) {
@@ -130,7 +130,7 @@ func TestGetMinimalBulkMonikerLocations(t *testing.T) {
 		},
 		{
 			Scheme:     "scip-go",
-			Identifier: "scip-go gomod github.com/derision-test/go-mockgen d061eb01e698 github.com/derision-test/go-mockgen/internal/mockgen/generation/errorWithSolutions#",
+			Identifier: "scip-go gomod github.com/derision-test/go-mockgen d061eb01e698 `github.com/derision-test/go-mockgen/internal/mockgen/generation`/errorWithSolutions#",
 		},
 	}
 
@@ -706,7 +706,7 @@ func TestGetBulkMonikerLocations(t *testing.T) {
 		},
 		{
 			Scheme:     "scip-go",
-			Identifier: "scip-go gomod github.com/derision-test/go-mockgen d061eb01e698 github.com/derision-test/go-mockgen/internal/mockgen/generation/errorWithSolutions#",
+			Identifier: "scip-go gomod github.com/derision-test/go-mockgen d061eb01e698 `github.com/derision-test/go-mockgen/internal/mockgen/generation`/errorWithSolutions#",
 		},
 	}
 
