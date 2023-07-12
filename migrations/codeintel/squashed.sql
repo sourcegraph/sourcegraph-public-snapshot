@@ -10,6 +10,16 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
 
+CREATE TYPE symbolnamesegmenttype AS ENUM (
+    'SCHEME',
+    'PACKAGE_MANAGER',
+    'PACKAGE_NAME',
+    'PACKAGE_VERSION',
+    'DESCRIPTOR_NAMESPACE',
+    'DESCRIPTOR_SUFFIX',
+    'DESCRIPTOR_SUFFIX_FUZZY'
+);
+
 CREATE FUNCTION get_file_extension(path text) RETURNS text
     LANGUAGE plpgsql IMMUTABLE
     AS $_$ BEGIN
@@ -236,9 +246,7 @@ CREATE TABLE codeintel_scip_symbols (
     reference_ranges bytea,
     implementation_ranges bytea,
     type_definition_ranges bytea,
-    symbol_id integer NOT NULL,
-    descriptor_id integer,
-    descriptor_no_suffix_id integer
+    symbol_id integer NOT NULL
 );
 
 COMMENT ON TABLE codeintel_scip_symbols IS 'A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40sourcegraph/all+repo:%5Egithub%5C.com/sourcegraph/scip%24+file:%5Escip%5C.proto+message+Symbol&patternType=standard) to path and ranges where that symbol occurs within a particular SCIP index.';
@@ -261,10 +269,17 @@ COMMENT ON COLUMN codeintel_scip_symbols.symbol_id IS 'The identifier of the seg
 
 CREATE TABLE codeintel_scip_symbols_lookup (
     upload_id integer NOT NULL,
-    scip_name_type text NOT NULL,
+    segment_type symbolnamesegmenttype NOT NULL,
     name text NOT NULL,
     id integer NOT NULL,
     parent_id integer
+);
+
+CREATE TABLE codeintel_scip_symbols_lookup_leaves (
+    upload_id integer NOT NULL,
+    symbol_id integer NOT NULL,
+    descriptor_suffix_id integer NOT NULL,
+    fuzzy_descriptor_suffix_id integer NOT NULL
 );
 
 CREATE TABLE codeintel_scip_symbols_migration_progress (
@@ -416,13 +431,15 @@ CREATE INDEX codeintel_scip_symbol_names_upload_id_roots ON codeintel_scip_symbo
 
 CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id);
 
-CREATE INDEX codeintel_scip_symbols_fuzzy_selector ON codeintel_scip_symbols USING btree (upload_id, descriptor_no_suffix_id);
+CREATE INDEX codeintel_scip_symbols_lookup_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, name) WHERE (segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype);
 
-CREATE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name);
+CREATE INDEX codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, reverse(name) text_pattern_ops) WHERE (segment_type = 'DESCRIPTOR_SUFFIX_FUZZY'::symbolnamesegmenttype);
 
-CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_precise ON codeintel_scip_symbols_lookup USING btree (upload_id, id);
+CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_id ON codeintel_scip_symbols_lookup USING btree (upload_id, id);
 
-CREATE INDEX codeintel_scip_symbols_precise_selector ON codeintel_scip_symbols USING btree (upload_id, descriptor_id);
+CREATE INDEX codeintel_scip_symbols_lookup_leaves_descriptor_suffix_id ON codeintel_scip_symbols_lookup_leaves USING btree (upload_id, descriptor_suffix_id);
+
+CREATE INDEX codeintel_scip_symbols_lookup_leaves_fuzzy_descriptor_suffix_id ON codeintel_scip_symbols_lookup_leaves USING btree (upload_id, fuzzy_descriptor_suffix_id);
 
 CREATE INDEX codeisdntel_scip_symbol_names_upload_id_children ON codeintel_scip_symbol_names USING btree (upload_id, prefix_id) WHERE (prefix_id IS NOT NULL);
 

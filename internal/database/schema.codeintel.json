@@ -4,7 +4,20 @@
     "pg_stat_statements",
     "pg_trgm"
   ],
-  "Enums": null,
+  "Enums": [
+    {
+      "Name": "symbolnamesegmenttype",
+      "Labels": [
+        "SCHEME",
+        "PACKAGE_MANAGER",
+        "PACKAGE_NAME",
+        "PACKAGE_VERSION",
+        "DESCRIPTOR_NAMESPACE",
+        "DESCRIPTOR_SUFFIX",
+        "DESCRIPTOR_SUFFIX_FUZZY"
+      ]
+    }
+  ],
   "Functions": [
     {
       "Name": "get_file_extension",
@@ -716,32 +729,6 @@
           "Comment": "An encoded set of ranges within the associated document that have a **definition** relationship to the associated symbol."
         },
         {
-          "Name": "descriptor_id",
-          "Index": 10,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "descriptor_no_suffix_id",
-          "Index": 11,
-          "TypeName": "integer",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "document_lookup_id",
           "Index": 3,
           "TypeName": "bigint",
@@ -853,26 +840,6 @@
           "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
-        },
-        {
-          "Name": "codeintel_scip_symbols_fuzzy_selector",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_fuzzy_selector ON codeintel_scip_symbols USING btree (upload_id, descriptor_no_suffix_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
-        },
-        {
-          "Name": "codeintel_scip_symbols_precise_selector",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_precise_selector ON codeintel_scip_symbols USING btree (upload_id, descriptor_id)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -935,9 +902,9 @@
           "Comment": ""
         },
         {
-          "Name": "scip_name_type",
+          "Name": "segment_type",
           "Index": 2,
-          "TypeName": "text",
+          "TypeName": "symbolnamesegmenttype",
           "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -963,22 +930,114 @@
       ],
       "Indexes": [
         {
-          "Name": "codeintel_scip_symbols_lookup_unique_precise",
+          "Name": "codeintel_scip_symbols_lookup_id",
           "IsPrimaryKey": false,
           "IsUnique": true,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_unique_precise ON codeintel_scip_symbols_lookup USING btree (upload_id, id)",
+          "IndexDefinition": "CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_id ON codeintel_scip_symbols_lookup USING btree (upload_id, id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
         {
-          "Name": "codeintel_scip_symbols_lookup_unique_fuzzy",
+          "Name": "codeintel_scip_symbols_lookup_descriptor_suffix",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_unique_fuzzy ON codeintel_scip_symbols_lookup USING btree (upload_id, scip_name_type, name)",
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, name) WHERE segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, reverse(name) text_pattern_ops) WHERE segment_type = 'DESCRIPTOR_SUFFIX_FUZZY'::symbolnamesegmenttype",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
+      "Constraints": null,
+      "Triggers": []
+    },
+    {
+      "Name": "codeintel_scip_symbols_lookup_leaves",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "descriptor_suffix_id",
+          "Index": 3,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "fuzzy_descriptor_suffix_id",
+          "Index": 4,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "symbol_id",
+          "Index": 2,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "upload_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "codeintel_scip_symbols_lookup_leaves_descriptor_suffix_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_leaves_descriptor_suffix_id ON codeintel_scip_symbols_lookup_leaves USING btree (upload_id, descriptor_suffix_id)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "codeintel_scip_symbols_lookup_leaves_fuzzy_descriptor_suffix_id",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_leaves_fuzzy_descriptor_suffix_id ON codeintel_scip_symbols_lookup_leaves USING btree (upload_id, fuzzy_descriptor_suffix_id)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
