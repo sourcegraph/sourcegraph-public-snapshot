@@ -9,9 +9,6 @@ import (
 	"sort"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
@@ -37,29 +34,17 @@ var tracer = otel.Tracer("cody-gateway/httpapi/embeddings")
 const apiURL = "https://api.openai.com/v1/embeddings"
 
 func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway.EmbeddingsRequest) (_ *codygateway.EmbeddingsResponse, _ int, err error) {
-	var span trace.Span
-	ctx, span = tracer.Start(ctx, "openai.GenerateEmbeddings",
-		trace.WithAttributes(
-			attribute.Int("input.model", len(input.Model)),
-			attribute.Int("input.length", len(input.Input))))
-	defer func() {
-		if err != nil {
-			span.SetStatus(codes.Error, "GenerateEmbeddings failed") // Record generic error to avoid response body
-		}
-		span.End()
-	}()
-
 	for _, s := range input.Input {
 		if s == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
 			// so fail fast to avoid making tons of retryable requests.
-			return nil, 0, response.NewHTTPStatusCodeError(http.StatusBadRequest, errors.New("cannot generate embeddings for an empty string"))
+			return nil, 0, response.NewCustomHTTPStatusCodeError(http.StatusBadRequest, errors.New("cannot generate embeddings for an empty string"), -1)
 		}
 	}
 
 	model, ok := openAIModelMappings[input.Model]
 	if !ok {
-		return nil, 0, response.NewHTTPStatusCodeError(http.StatusBadRequest, errors.Newf("no OpenAI model found for %q", input.Model))
+		return nil, 0, response.NewCustomHTTPStatusCodeError(http.StatusBadRequest, errors.Newf("no OpenAI model found for %q", input.Model), -1)
 	}
 
 	response, err := c.requestEmbeddings(ctx, model, input.Input)
@@ -119,8 +104,8 @@ func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel,
 		// return a 503 to the client. It's not them being limited, it's us and that an operations
 		// error on our side.
 		if resp.StatusCode == http.StatusTooManyRequests {
-			return nil, response.NewHTTPStatusCodeError(http.StatusServiceUnavailable,
-				errors.New("we're facing too much load at the moment, please retry"))
+			return nil, response.NewCustomHTTPStatusCodeError(http.StatusServiceUnavailable,
+				errors.New("we're facing too much load at the moment, please retry"), resp.StatusCode)
 		}
 
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))

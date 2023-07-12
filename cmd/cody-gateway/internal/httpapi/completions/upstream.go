@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
@@ -180,6 +181,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				completionCharacterCount int = -1
 			)
 			defer func() {
+				if span := oteltrace.SpanFromContext(r.Context()); span.IsRecording() {
+					span.SetAttributes(
+						attribute.Int("upstreamStatusCode", upstreamStatusCode),
+						attribute.Int("resolvedStatusCode", resolvedStatusCode))
+				}
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
