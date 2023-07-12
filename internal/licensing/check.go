@@ -13,7 +13,7 @@ import (
 
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -31,6 +31,7 @@ var (
 const (
 	LicenseCheckInterval    = 12 * time.Hour
 	lastCalledAtStoreKey    = "licensing:last_called_at"
+	licensingMutexKey       = "licensing:mutex"
 	licenseValidityStoreKey = "licensing:is_license_valid"
 	prevLicenseTokenKey     = "licensing:prev_license_hash"
 )
@@ -168,6 +169,20 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 	conf.Watch(func() {
 		// stop previously running routine
 		cancel()
+
+		// Acquire a short-lived 30 second lock.
+		// This should prevent multiple goroutines to be spinned up in case there are
+		// multiple instances of frontend service.
+		lockAcquired, err := store.SetNxEx(licensingMutexKey, 30, 1)
+		if !lockAcquired {
+			logger.Info("Another goroutine already acquired the licensing lock")
+			return
+		}
+		if err != nil {
+			logger.Error("Cannot acquire licensing lock", log.Error(err))
+			return
+		}
+
 		ctxWithCancel, cancel = context.WithCancel(originalCtx)
 
 		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()

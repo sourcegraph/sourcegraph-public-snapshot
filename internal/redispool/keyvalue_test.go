@@ -241,11 +241,29 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(kv.Set("expires-set", "2"))
 		require.Works(kv.Expire("expires-set", 1))
 
+		// Set when not exists
+		set, err := kv.SetNxEx("expires-setnx", 60, "1")
+		require.Works(err)
+		require.TTL(kv, "expires-setnx", 60)
+		assert.True(t, set)
+		set, err = kv.SetNxEx("expires-setnx", 60, "2")
+		require.Works(err)
+		assert.False(t, set)
+		require.Equal(kv.Get("expires-setnx"), "1")
+
 		time.Sleep(1100 * time.Millisecond)
 		require.Equal(kv.Get("expires-setex"), nil)
 		require.Equal(kv.Get("expires-set"), nil)
 		require.TTL(kv, "expires-setex", -2)
 		require.TTL(kv, "expires-set", -2)
+
+		require.TTL(kv, "expires-setnx", 59)
+
+		set, err = kv.SetNxEx("expires-setnx", 60, "3")
+		require.Works(err)
+		assert.False(t, set)
+		require.TTL(kv, "expires-setnx", 59)
+		require.Equal(kv.Get("expires-setnx"), "1")
 	})
 
 	t.Run("hash-expire", func(t *testing.T) {

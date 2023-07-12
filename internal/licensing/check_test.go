@@ -31,6 +31,7 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 	cleanupStore := func() {
 		_ = store.Del(licenseValidityStoreKey)
 		_ = store.Del(lastCalledAtStoreKey)
+		_ = store.Del(licensingMutexKey)
 	}
 
 	now := time.Now().Round(time.Second)
@@ -114,6 +115,7 @@ func Test_licenseChecker(t *testing.T) {
 	cleanupStore := func() {
 		_ = store.Del(licenseValidityStoreKey)
 		_ = store.Del(lastCalledAtStoreKey)
+		_ = store.Del(licensingMutexKey)
 	}
 
 	siteID := "some-site-id"

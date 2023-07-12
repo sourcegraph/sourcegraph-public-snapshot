@@ -26,6 +26,7 @@ type KeyValue interface {
 	Set(key string, value any) error
 	SetEx(key string, ttlSeconds int, value any) error
 	SetNx(key string, value any) (bool, error)
+	SetNxEx(key string, ttlSeconds int, val any) (bool, error)
 	Incr(key string) (int, error)
 	Incrby(key string, value int) (int, error)
 	Del(key string) error
@@ -190,6 +191,14 @@ func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
 
 func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
 	_, err := r.do("SET", r.prefix+key, val, "NX").String()
+	if err == redis.ErrNil {
+		return false, nil
+	}
+	return true, err
+}
+
+func (r *redisKeyValue) SetNxEx(key string, ttlSeconds int, val any) (bool, error) {
+	_, err := r.do("SET", r.prefix+key, val, "NX", "EX", ttlSeconds).String()
 	if err == redis.ErrNil {
 		return false, nil
 	}
