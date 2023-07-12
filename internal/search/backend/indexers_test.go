@@ -18,13 +18,13 @@ func TestReposSubset(t *testing.T) {
 	var indexed map[string][]types.MinimalRepo
 	index := &Indexers{
 		Map: prefixMap([]string{"foo", "bar", "baz.fully.qualified:80"}),
-		Indexed: func(ctx context.Context, k string) map[uint32]*zoekt.MinimalRepoListEntry {
-			set := map[uint32]*zoekt.MinimalRepoListEntry{}
+		Indexed: func(ctx context.Context, k string) zoekt.ReposMap {
+			set := zoekt.ReposMap{}
 			if indexed == nil {
 				return set
 			}
 			for _, s := range indexed[k] {
-				set[uint32(s.ID)] = &zoekt.MinimalRepoListEntry{HasSymbols: true}
+				set[uint32(s.ID)] = zoekt.MinimalRepoListEntry{HasSymbols: true}
 			}
 			return set
 		},
