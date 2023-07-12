@@ -33,15 +33,15 @@ const getQuery = ({ repoPattern, repoNames, useForks, useArchive, predicateState
 
     // default to select:repo so that we always get the right result
     terms.push('select:repo')
-    if (repoPattern?.length > 0) {
+    if (repoPattern && repoPattern?.length > 0) {
         terms.push(`repo:${repoPattern}`)
     }
-    if (repoNames?.length > 0) {
+    if (repoNames && repoNames?.length > 0) {
         terms.push(`repo:${repoNames}$`)
     }
 
     for (const [predicateStateKey, val] of Object.entries(predicateState)) {
-        if (val?.length === 0) {
+        if (!val || val?.length === 0) {
             continue;
         }
         terms.push(`repo:has.${predicateStateKey}(${val})`);
@@ -121,14 +121,15 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     </div>
 
                     <div className="form-group row">
-                        <Label htmlFor="searchForks" className="col-4 col-form-label">
-                            Search over repository forks?
-                            <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
-                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </Label>
-                        <div className="col-2">
+                        <div className="col-6">
                             <Select
+                                label={<div>
+                                    Search over repository forks?
+                                    <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
+                                        <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                    </Tooltip>
+                                </div>}
+                                labelClassName='col-4 col-form-label pl-0'
                                 id="searchForks"
                                 name="searchForks"
                                 onChange={event => setUseForks(event.target.value)}
@@ -139,14 +140,15 @@ export const RepoSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                             </Select>
                         </div>
 
-                        <Label htmlFor="searchArchive" className="col-4 col-form-label">
-                            Search over archived repositories?
-                            <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
-                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </Label>
-                        <div className="col-2">
+                        <div className="col-6">
                             <Select
+                                label={<div>
+                                    Search over archived repositories?
+                                    <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
+                                        <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                    </Tooltip>
+                                </div>}
+                                labelClassName='col-4 col-form-label pl-0'
                                 id="searchArchive"
                                 name="searchArchive"
                                 onChange={event => setUseArchive(event.target.value)}

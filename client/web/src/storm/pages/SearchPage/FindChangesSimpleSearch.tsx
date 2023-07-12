@@ -1,4 +1,4 @@
-import React, { FC, useEffect, useState } from 'react'
+import { FC, useEffect, useState } from 'react'
 
 import { mdiHelpCircleOutline } from '@mdi/js'
 
@@ -32,14 +32,14 @@ const getQuery = ({
     // build query
     const terms: string[] = []
 
-    if (searchContext?.length > 0) {
+    if (searchContext && searchContext?.length > 0) {
         terms.push(`context:${searchContext}`)
     }
 
-    if (repoPattern?.length > 0) {
+    if (repoPattern && repoPattern?.length > 0) {
         terms.push(`repo:${repoPattern}`)
     }
-    if (repoNames?.length > 0) {
+    if (repoNames && repoNames?.length > 0) {
         terms.push(`repo:${repoNames}$`)
     }
 
@@ -48,13 +48,13 @@ const getQuery = ({
 
     // here we are going to default to commit search, and only override if there is code present. This is because diff search is a subset of commit search, so there is always
     // a valid search available
-    if (diffCodePattern?.length > 0) {
+    if (diffCodePattern & diffCodePattern?.length > 0) {
         // terms.push('type:diff')
         type = 'diff'
         // terms.push(`${diffCodePattern}`)
         ptn = `${diffCodePattern}`
     }
-    if (filePaths?.length > 0) {
+    if (filePaths && filePaths?.length > 0) {
         type = 'diff'
         terms.push(`file:${filePaths}`)
     }
@@ -64,10 +64,10 @@ const getQuery = ({
         terms.push(`${ptn}`)
     }
 
-    if (messagePattern?.length > 0) {
+    if (messagePattern && messagePattern?.length > 0) {
         terms.push(`message:${messagePattern} `)
     }
-    if (authorPattern?.length > 0) {
+    if (authorPattern && authorPattern?.length > 0) {
         terms.push(`author:${authorPattern}`)
     }
 
@@ -252,14 +252,15 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                     </div>
 
                     <div className="form-group row">
-                        <Label htmlFor="searchForks" className="col-4 col-form-label">
-                            Search over repository forks?
-                            <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
-                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </Label>
-                        <div className="col-2">
+                        <div className="col-6">
                             <Select
+                                label={<div>
+                                    Search over repository forks?
+                                    <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
+                                        <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                    </Tooltip>
+                                </div>}
+                                labelClassName='col-4 col-form-label pl-0'
                                 id="searchForks"
                                 name="searchForks"
                                 onChange={event => setUseForks(event.target.value)}
@@ -270,14 +271,15 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                             </Select>
                         </div>
 
-                        <Label htmlFor="searchArchive" className="col-4 col-form-label">
-                            Search over archived repositories?
-                            <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
-                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
-                            </Tooltip>
-                        </Label>
-                        <div className="col-2">
+                        <div className="col-6">
                             <Select
+                                label={<div>
+                                    Search over archived repositories?
+                                    <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
+                                        <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                    </Tooltip>
+                                </div>}
+                                labelClassName='col-4 col-form-label pl-0'
                                 id="searchArchive"
                                 name="searchArchive"
                                 onChange={event => setUseArchive(event.target.value)}
