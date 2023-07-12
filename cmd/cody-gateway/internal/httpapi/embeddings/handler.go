@@ -9,6 +9,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
@@ -76,7 +78,8 @@ func NewHandler(
 
 			upstreamStarted := time.Now()
 			var (
-				upstreamFinished time.Duration
+				upstreamFinished   time.Duration
+				upstreamStatusCode = -1
 				// resolvedStatusCode is the status code that we returned to the
 				// client - in most case it is the same as upstreamStatusCode,
 				// but sometimes we write something different.
@@ -84,6 +87,11 @@ func NewHandler(
 				usedTokens         int = -1
 			)
 			defer func() {
+				if span := oteltrace.SpanFromContext(r.Context()); span.IsRecording() {
+					span.SetAttributes(
+						attribute.Int("upstreamStatusCode", upstreamStatusCode),
+						attribute.Int("resolvedStatusCode", resolvedStatusCode))
+				}
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
@@ -112,13 +120,17 @@ func NewHandler(
 				var statusCodeErr response.HTTPStatusCodeError
 				if errors.As(err, &statusCodeErr) {
 					resolvedStatusCode = statusCodeErr.HTTPStatusCode()
-					response.JSONError(logger, w, statusCodeErr.HTTPStatusCode(), statusCodeErr)
+					response.JSONError(logger, w, resolvedStatusCode, statusCodeErr)
+					// Record original code if the status error is a custom one
+					if originalCode, ok := statusCodeErr.IsCustom(); ok {
+						upstreamStatusCode = originalCode
+					}
 					return
 				}
 
 				// Return generic error for other unexpected errors.
 				resolvedStatusCode = http.StatusInternalServerError
-				response.JSONError(logger, w, http.StatusInternalServerError, err)
+				response.JSONError(logger, w, resolvedStatusCode, err)
 				return
 			}
 
@@ -127,7 +139,7 @@ func NewHandler(
 			data, err := json.Marshal(resp)
 			if err != nil {
 				resolvedStatusCode = http.StatusInternalServerError
-				response.JSONError(logger, w, http.StatusInternalServerError, errors.Wrap(err, "failed to marshal response"))
+				response.JSONError(logger, w, resolvedStatusCode, errors.Wrap(err, "failed to marshal response"))
 				return
 			}
 
