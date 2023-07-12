@@ -52,7 +52,7 @@ type errorHandler interface {
 }
 
 // Handler represents the main behavior of a PeriodicGoroutine. Additional
-// interfacesl ike ErrorHandler can also be implemented.
+// interfaces like ErrorHandler can also be implemented.
 type Handler interface {
 	// Handle performs an action with the given context.
 	Handle(ctx context.Context) error
