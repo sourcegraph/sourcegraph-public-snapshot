@@ -62,13 +62,14 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
                       int lineEndOffset =
                           document.getLineEndOffset(
                               document.getLineNumber(autoComplete.caret.getOffset()));
-                      document.replaceString(
-                          autoComplete.caret.getOffset(),
-                          lineEndOffset,
+                      String autoCompletionString =
                           autoComplete.autoCompleteText.getAutoCompletionString(
                               document.getText(
-                                  TextRange.create(
-                                      autoComplete.caret.getOffset(), lineEndOffset))));
+                                  TextRange.create(autoComplete.caret.getOffset(), lineEndOffset)));
+                      document.replaceString(
+                          autoComplete.caret.getOffset(), lineEndOffset, autoCompletionString);
+                      autoComplete.caret.moveToOffset(
+                          autoComplete.caret.getOffset() + autoCompletionString.length());
                     });
               });
     }
