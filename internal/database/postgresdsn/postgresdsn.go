@@ -60,7 +60,7 @@ func New(prefix, currentUser string, getenv func(string) string) string {
 	// PGPORT values may be (legally) quoted, but should remain quoted
 	// when constructed as part of the DSN. Strip it here.
 	if port := dequote(env("PGPORT")); port != "" {
-		dsn.Host += ":" + port
+		dsn.Host = strings.Split(dsn.Host, ":")[0] + ":" + port
 	}
 
 	if db := env("PGDATABASE"); db != "" {
