@@ -23,7 +23,7 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 
 	// internal actors add a lot of noise to the audit log
 	siteConfig := conf.SiteConfig()
-	if act.Internal && !IsEnabled(siteConfig, InternalTraffic) {
+	if (act.Internal || actorId(act) == "unknown") && !IsEnabled(siteConfig, InternalTraffic) {
 		return
 	}
 
