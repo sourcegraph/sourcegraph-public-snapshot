@@ -84,7 +84,7 @@ SELECT DISTINCT
 FROM codeintel_scip_symbols_lookup l7
 
 -- Join to symbols table, which will bridge DESCRIPTOR_SUFFIX_FUZZY (syntect) and DESCRIPTOR_SUFFIX (precise)
-JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l6.upload_id AND ll.fuzzy_descriptor_suffix_id = l6.id
+JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l7.upload_id AND ll.fuzzy_descriptor_suffix_id = l7.id
 
 -- Follow parent path from descriptor l6->l5->l4->l3->l2->l1
 JOIN codeintel_scip_symbols_lookup l6 ON l6.upload_id = l6.upload_id AND l6.id = ll.descriptor_suffix_id -- DESCRIPTOR_SUFFIX
