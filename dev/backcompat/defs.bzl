@@ -10,7 +10,7 @@ how to define them.
 The final result is the definition of a @sourcegraph_back_compat target, whose test targets are exactly
 the same as back then, but with instead a new schema.
 
-Example: `bazel test @sourcegraph_back_compat//enterprise/internal/batches/...`.
+Example: `bazel test @sourcegraph_back_compat//internal/batches/...`.
 
 See https://sourcegraph.com/search?q=context:global+dev/backcompat/patches/back_compat_migrations.patch+repo:github.com/sourcegraph/sourcegraph+lang:Go&patternType=standard&sm=0&groupBy=repo
 for the command generating the mandatory patch file in CI for these tests to run.
@@ -21,7 +21,6 @@ eventuality of someone running those locally).
 
 load("test_release_version.bzl", "MINIMUM_UPGRADEABLE_VERSION", "MINIMUM_UPGRADEABLE_VERSION_REF")
 load("flakes.bzl", "FLAKES")
-
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
@@ -100,8 +99,8 @@ def back_compat_defs():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:fWPxLkDObzzKTGe9vb6wpzK0FYkwcfSxmxUBvAOc8aw=", # Need to be manually updated when bumping the back compat release target.
-        version = "v0.2.4-0.20221213205653-aa0e511dcfef", # Need to be manually updated when bumping the back compat release target.
+        sum = "h1:fWPxLkDObzzKTGe9vb6wpzK0FYkwcfSxmxUBvAOc8aw=",  # Need to be manually updated when bumping the back compat release target.
+        version = "v0.2.4-0.20221213205653-aa0e511dcfef",  # Need to be manually updated when bumping the back compat release target.
     )
 
     # Same logic for this repository.
@@ -110,12 +109,12 @@ def back_compat_defs():
         build_directives = [
             "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @sourcegraph_back_compat//lib/errors",
         ],
-        build_file_proto_mode = "disable_global", importpath =
-        "github.com/sourcegraph/conc",
-        sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=", # Need to be manually updated when bumping the back compat release target.
-        version = "v0.2.0", # Need to be manually updated when bumping the back compat release target.
+        build_file_proto_mode = "disable_global",
+        importpath =
+            "github.com/sourcegraph/conc",
+        sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=",  # Need to be manually updated when bumping the back compat release target.
+        version = "v0.2.0",  # Need to be manually updated when bumping the back compat release target.
     )
-
 
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it

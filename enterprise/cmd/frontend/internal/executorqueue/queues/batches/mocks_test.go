@@ -10,8 +10,8 @@ import (
 	"context"
 	"sync"
 
-	store "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	store "github.com/sourcegraph/sourcegraph/internal/batches/store"
+	types "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 )
 
