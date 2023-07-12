@@ -20,6 +20,7 @@ import com.intellij.openapi.fileTypes.FileType;
 import com.intellij.openapi.fileTypes.FileTypeManager;
 import com.intellij.openapi.fileTypes.PlainTextFileType;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.JBInsets;
 import com.sourcegraph.cody.ui.TransparentButton;
 import java.awt.Dimension;
@@ -101,6 +102,9 @@ public class CodeEditorFactory {
                 () -> {
                   try {
                     document.insertString(caretPos, text);
+                    IdeFocusManager.getInstance(project)
+                        .requestFocus(mainEditor.getContentComponent(), true)
+                        .doWhenDone(() -> caretModel.moveToOffset(caretPos + text.length()));
                   } catch (Exception ex) {
                     logger.warn("Failed to insert text at cursor", ex);
                   }
