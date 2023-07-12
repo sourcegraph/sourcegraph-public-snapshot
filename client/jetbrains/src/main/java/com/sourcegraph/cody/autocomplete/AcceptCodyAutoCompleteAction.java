@@ -66,10 +66,17 @@ public class AcceptCodyAutoCompleteAction extends EditorAction {
                           autoComplete.autoCompleteText.getAutoCompletionString(
                               document.getText(
                                   TextRange.create(autoComplete.caret.getOffset(), lineEndOffset)));
+                      String sameLineSuffix =
+                          document.getText(
+                              TextRange.create(autoComplete.caret.getOffset(), lineEndOffset));
+                      String sameLineSuffixIfMissing =
+                          autoCompletionString.contains(sameLineSuffix) ? "" : sameLineSuffix;
+                      String finalAutoCompletionString =
+                          autoCompletionString + sameLineSuffixIfMissing;
                       document.replaceString(
-                          autoComplete.caret.getOffset(), lineEndOffset, autoCompletionString);
+                          autoComplete.caret.getOffset(), lineEndOffset, finalAutoCompletionString);
                       autoComplete.caret.moveToOffset(
-                          autoComplete.caret.getOffset() + autoCompletionString.length());
+                          autoComplete.caret.getOffset() + finalAutoCompletionString.length());
                     });
               });
     }
