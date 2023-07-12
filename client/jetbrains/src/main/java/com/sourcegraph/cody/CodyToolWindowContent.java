@@ -390,7 +390,7 @@ class CodyToolWindowContent implements UpdatableChat {
         .invokeLater(
             () -> {
               // Bubble panel
-              ChatBubble bubble = new ChatBubble(message);
+              ChatBubble bubble = new ChatBubble(message, messagesPanel);
               addComponentToChat(bubble);
             });
   }
@@ -462,7 +462,7 @@ class CodyToolWindowContent implements UpdatableChat {
                 Component component = lastBubblePanel.getComponent(0);
                 if (component instanceof ChatBubble) {
                   ChatBubble lastBubble = (ChatBubble) component;
-                  lastBubble.updateText(message);
+                  lastBubble.updateText(message, messagesPanel);
                   messagesPanel.revalidate();
                   messagesPanel.repaint();
                 }
