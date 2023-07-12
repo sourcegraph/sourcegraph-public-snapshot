@@ -20,8 +20,9 @@ func (testRegisterer) Register(prometheus.Collector) error  { return nil }
 func (testRegisterer) MustRegister(...prometheus.Collector) {}
 func (testRegisterer) Unregister(prometheus.Collector) bool { return true }
 
-// TestRegisterer is a behaviorless Prometheus Registerer usable for unit tests.
-var TestRegisterer prometheus.Registerer = testRegisterer{}
+// NoOpRegisterer is a behaviorless Prometheus Registerer usable for unit tests
+// or to disable metrics collection.
+var NoOpRegisterer prometheus.Registerer = testRegisterer{}
 
 // registerer exists so we can override it in tests
 var registerer = prometheus.DefaultRegisterer

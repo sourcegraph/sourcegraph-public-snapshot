@@ -164,8 +164,8 @@ func (s *Sources) Worker(obCtx *observation.Context, rmux *redsync.Mutex, rootIn
 				sources:      s,
 				syncInterval: rootInterval,
 			},
-			goroutine.WithName("periodic.sourcesSync"),
-			goroutine.WithDescription("periodic sources sync worker"),
+			goroutine.WithName("sourcesSync"),
+			goroutine.WithDescription("periodic full sources sync worker"),
 			goroutine.WithInterval(rootInterval),
 			goroutine.WithOperation(
 				obCtx.Operation(observation.Op{
