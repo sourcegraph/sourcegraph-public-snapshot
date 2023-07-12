@@ -2,7 +2,6 @@ package com.sourcegraph.cody.chat;
 
 import com.intellij.ui.ColorUtil;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
-import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.SwingHelper;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.api.Speaker;
@@ -35,7 +34,10 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private JEditorPane textPane;
 
   public MessageContentCreatorFromMarkdownNodes(
-     @NotNull JPanel messagePanel, @NotNull JPanel parentPanel, @NotNull Speaker speaker, int gradientWidth) {
+      @NotNull JPanel messagePanel,
+      @NotNull JPanel parentPanel,
+      @NotNull Speaker speaker,
+      int gradientWidth) {
     this.messagePanel = messagePanel;
     this.parentPanel = parentPanel;
     this.speaker = speaker;

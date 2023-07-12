@@ -35,18 +35,19 @@ import javax.swing.JPanel;
 import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class CodeEditorFactory {
 
-  private final JPanel parentPanel;
+  private final @NotNull JPanel parentPanel;
   private final int rightMargin;
 
-  public CodeEditorFactory(JPanel parentPanel, int rightMargin) {
+  public CodeEditorFactory(@NotNull JPanel parentPanel, int rightMargin) {
     this.parentPanel = parentPanel;
     this.rightMargin = rightMargin;
   }
 
-  public JComponent createCodeEditor(String code, String language) {
+  public JComponent createCodeEditor(@NotNull String code, @Nullable String language) {
     Document codeDocument = EditorFactory.getInstance().createDocument(code);
     EditorEx editor = (EditorEx) EditorFactory.getInstance().createViewer(codeDocument);
     setHighlighting(editor, language);
@@ -161,7 +162,7 @@ public class CodeEditorFactory {
     return layeredEditorPane;
   }
 
-  private static void setHighlighting(EditorEx editor, String languageName) {
+  private static void setHighlighting(@NotNull EditorEx editor, @Nullable String languageName) {
     FileType fileType =
         Language.getRegisteredLanguages().stream()
             .filter(it -> it.getDisplayName().equalsIgnoreCase(languageName))
@@ -176,7 +177,7 @@ public class CodeEditorFactory {
     editor.setHighlighter(editorHighlighter);
   }
 
-  private static void fillEditorSettings(final EditorSettings editorSettings) {
+  private static void fillEditorSettings(@NotNull EditorSettings editorSettings) {
     editorSettings.setAdditionalColumnsCount(0);
     editorSettings.setAdditionalLinesCount(0);
     editorSettings.setGutterIconsShown(false);
