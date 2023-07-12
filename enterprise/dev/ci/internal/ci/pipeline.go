@@ -291,6 +291,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			IsMainBranch:              true,
 		}))
 
+		// Security scanning - sonarcloud
+		securityOps := operations.NewNamedSet("Security Scanning")
+		securityOps.Append(sonarcloudScan())
+		ops.Merge(securityOps)
+
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
 		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
