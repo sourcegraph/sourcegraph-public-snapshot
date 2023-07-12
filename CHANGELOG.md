@@ -40,6 +40,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed validation of Bitbucket Cloud configuration in site-admin create/update form. [#54494](https://github.com/sourcegraph/sourcegraph/pull/54494)
 - Fixed race condition with grpc `server.send` message. [#54500](https://github.com/sourcegraph/sourcegraph/pull/54500)
 - Fixed a configuration initialization issue that broke the outbound request in the site admin page. [#54745](https://github.com/sourcegraph/sourcegraph/pull/54745)
+- Fixed Postgres DSN construction edge-case. [#54858](https://github.com/sourcegraph/sourcegraph/pull/54858)
 
 ## 5.1.1
 
