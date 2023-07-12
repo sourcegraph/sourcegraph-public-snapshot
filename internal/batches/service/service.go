@@ -53,7 +53,7 @@ func NewWithClock(store *store.Store, clock func() time.Time) *Service {
 	svc := &Service{
 		logger: logger,
 		store:  store,
-		sourcer: sources.NewSourcer(httpcli.NewExternalClientFactory(
+		sourcer: sources.NewSourcer(store.DatabaseDB(), httpcli.NewExternalClientFactory(
 			httpcli.NewLoggingMiddleware(logger.Scoped("sourcer", "batches sourcer")),
 		)),
 		clock:      clock,

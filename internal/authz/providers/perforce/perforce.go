@@ -15,6 +15,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -62,7 +63,7 @@ type p4Execer interface {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users.
-func NewProvider(logger log.Logger, urn, host, user, password string, depots []extsvc.RepoID) *Provider {
+func NewProvider(logger log.Logger, db database.DB, urn, host, user, password string, depots []extsvc.RepoID) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
 		logger:             logger,
@@ -72,7 +73,7 @@ func NewProvider(logger log.Logger, urn, host, user, password string, depots []e
 		host:               host,
 		user:               user,
 		password:           password,
-		p4Execer:           gitserver.NewClientDeprecatedNeedsDB(),
+		p4Execer:           gitserver.NewClient(db),
 		cachedGroupMembers: make(map[string][]string),
 	}
 }

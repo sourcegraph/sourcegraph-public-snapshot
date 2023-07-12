@@ -110,7 +110,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		sourcer := sources.NewSourcer(cf)
+		sourcer := sources.NewSourcer(s.DatabaseDB(), cf)
 
 		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,

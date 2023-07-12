@@ -29,7 +29,7 @@ func NewService(
 ) *Service {
 	store := autoindexingstore.New(scopedContext("store", observationCtx), db)
 	repoUpdater := repoupdater.DefaultClient
-	inferenceSvc := inference.NewService()
+	inferenceSvc := inference.NewService(db)
 
 	return newService(
 		scopedContext("service", observationCtx),
