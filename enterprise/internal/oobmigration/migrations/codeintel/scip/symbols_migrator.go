@@ -123,7 +123,7 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 			symbolID := symbolInDocument.symbolID
 			ids := cache[symbolNamesByID[symbolID]]
 
-			if err := symbolLookupLeavesInserter.Insert(ctx, symbolID, ids.descriptorID, ids.descriptorNoSuffixID); err != nil {
+			if err := symbolLookupLeavesInserter.Insert(ctx, symbolID, ids.descriptorSuffixID, ids.fuzzyDescriptorSuffixID); err != nil {
 				return err
 			}
 		}
@@ -313,8 +313,8 @@ func withSymbolLookupLeavesInserter(ctx context.Context, tx *basestore.Store, up
 	if err := tx.Exec(ctx, sqlf.Sprintf(`
 		CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup_leaves(
 			symbol_id integer NOT NULL,
-			descriptor_id integer NOT NULL,
-			descriptor_no_suffix_id integer NOT NULL
+			descriptor_suffix_id integer NOT NULL,
+			fuzzy_descriptor_suffix_id integer NOT NULL
 		) ON COMMIT DROP
 	`)); err != nil {
 		return err
@@ -326,8 +326,8 @@ func withSymbolLookupLeavesInserter(ctx context.Context, tx *basestore.Store, up
 		"t_codeintel_scip_symbols_lookup_leaves",
 		batch.MaxNumPostgresParameters,
 		"symbol_id",
-		"descriptor_id",
-		"descriptor_no_suffix_id",
+		"descriptor_suffix_id",
+		"fuzzy_descriptor_suffix_id",
 	)
 
 	if err := f(ctx, symbolLookupLeavesInserter); err != nil {
@@ -338,8 +338,8 @@ func withSymbolLookupLeavesInserter(ctx context.Context, tx *basestore.Store, up
 	}
 
 	return tx.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO codeintel_scip_symbols_lookup_leaves (upload_id, symbol_id, descriptor_id, descriptor_no_suffix_id)
-		SELECT %s, symbol_id, descriptor_id, descriptor_no_suffix_id
+		INSERT INTO codeintel_scip_symbols_lookup_leaves (upload_id, symbol_id, descriptor_suffix_id, fuzzy_descriptor_suffix_id)
+		SELECT %s, symbol_id, descriptor_suffix_id, fuzzy_descriptor_suffix_id
 		FROM t_codeintel_scip_symbols_lookup_leaves
 	`,
 		uploadID,
@@ -374,8 +374,8 @@ func flattenValues[K comparable, V int | string](m map[K]V) []V {
 // in the uploads service for more detail (.../lsifstore/insert.go).
 
 type explodedIDs struct {
-	descriptorID         int
-	descriptorNoSuffixID int
+	descriptorSuffixID      int
+	fuzzyDescriptorSuffixID int
 }
 
 type visitFunc func(segmentType, name string, id int, parentID *int) error
@@ -388,9 +388,9 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[DescriptorNode](id())) }
 	createDescriptor := func() DescriptorNode { return DescriptorNode(newNodeWithID[descriptor](id())) }
 
-	cache := map[string]explodedIDs{}              // Tracks symbol name -> identifiers in the scheme tree
-	schemeTree := map[string]SchemeNode{}          // Tracks scheme -> manager -> name -> version -> descriptor
-	descriptorsNoSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
+	cache := map[string]explodedIDs{}                // Tracks symbol name -> identifiers in the scheme tree
+	schemeTree := map[string]SchemeNode{}            // Tracks scheme -> manager -> name -> version -> descriptor
+	fuzzyDescriptorSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
 
 	for _, symbolName := range symbolNames {
 		symbol, err := symbols.NewExplodedSymbol(symbolName)
@@ -408,20 +408,20 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 		packageNameNode := getOrCreate(packageManagerNode.children, symbol.PackageName, createPackageNameNode)       // depth 2
 		packageVersionNode := getOrCreate(packageNameNode.children, symbol.PackageVersion, createPackageVersionNode) // depth 3
 		descriptor := getOrCreate(packageVersionNode.children, symbol.Descriptor, createDescriptor)                  // depth 4
-		descriptorsNoSuffixID := getOrCreate(descriptorsNoSuffixMap, symbol.DescriptorNoSuffix, id)                  // map insertion
+		fuzzyDescriptorsSuffixID := getOrCreate(fuzzyDescriptorSuffixMap, symbol.DescriptorNoSuffix, id)             // map insertion
 
 		cache[symbolName] = explodedIDs{
-			descriptorID:         descriptor.id,
-			descriptorNoSuffixID: descriptorsNoSuffixID,
+			descriptorSuffixID:      descriptor.id,
+			fuzzyDescriptorSuffixID: fuzzyDescriptorsSuffixID,
 		}
 	}
 
 	segmentTypeByDepth := []string{
-		"SCHEME",          // depth 0
-		"PACKAGE_MANAGER", // depth 1
-		"PACKAGE_NAME",    // depth 2
-		"PACKAGE_VERSION", // depth 3
-		"DESCRIPTOR",      // depth 4
+		"SCHEME",            // depth 0
+		"PACKAGE_MANAGER",   // depth 1
+		"PACKAGE_NAME",      // depth 2
+		"PACKAGE_VERSION",   // depth 3
+		"DESCRIPTOR_SUFFIX", // depth 4
 		/*              */ // depth PANIC
 	}
 
@@ -434,8 +434,8 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 		}
 
 		// Call visit on each element in the descriptor-no-suffix map
-		for name, id := range descriptorsNoSuffixMap {
-			if err := visit("DESCRIPTOR_NO_SUFFIX", name, id, nil); err != nil {
+		for name, id := range fuzzyDescriptorSuffixMap {
+			if err := visit("DESCRIPTOR_SUFFIX_FUZZY", name, id, nil); err != nil {
 				return err
 			}
 		}

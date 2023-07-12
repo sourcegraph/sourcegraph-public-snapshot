@@ -213,7 +213,7 @@ func TestConstructSymbolLookupTable(t *testing.T) {
 
 	find := func(symbolName string) string {
 		var parts []string
-		row := rows[cache[symbolName].descriptorID]
+		row := rows[cache[symbolName].descriptorSuffixID]
 		for {
 			// prepend to construct symbol in correct order
 			parts = append([]string{row.name}, parts...)
