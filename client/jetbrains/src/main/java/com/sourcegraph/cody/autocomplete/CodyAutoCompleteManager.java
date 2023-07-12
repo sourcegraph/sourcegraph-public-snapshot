@@ -96,34 +96,6 @@ public class CodyAutoCompleteManager {
     }
   }
 
-  public static @NotNull InlineAutoCompleteItem postProcessInlineAutoCompleteBasedOnDocumentContext(
-      @NotNull InlineAutoCompleteItem resultItem,
-      @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext) {
-    String sameLineSuffix = autoCompleteDocumentContext.getSameLineSuffix();
-    if (resultItem.insertText.endsWith(sameLineSuffix)) {
-      // if the autocomplete suggestion already has the same line suffix, we strip it
-      String newInsertText = StringUtils.stripEnd(resultItem.insertText, sameLineSuffix);
-      // adjusting the range to account for the shorter autocomplete suggestion
-      Range newRange =
-          resultItem.range.withEnd(
-              resultItem.range.end.withCharacter(
-                  resultItem.range.end.character - sameLineSuffix.length()));
-      return resultItem.withRange(newRange).withInsertText(newInsertText);
-    } else if (resultItem.insertText.contains(sameLineSuffix)) {
-      // if the autocomplete suggestion already contains the same line suffix
-      // but it doesn't strictly end with it
-      // we cut the end of the autocomplete suggestion starting with the suffix
-      int index = resultItem.insertText.lastIndexOf(sameLineSuffix);
-      String newInsertText = resultItem.insertText.substring(0, index);
-      // adjusting the range to account for the shorter autocomplete suggestion
-      int rangeDiff = resultItem.insertText.length() - newInsertText.length();
-      Range newRange =
-          resultItem.range.withEnd(
-              resultItem.range.end.withCharacter(resultItem.range.end.character - rangeDiff));
-      return resultItem.withRange(newRange).withInsertText(newInsertText);
-    } else return resultItem;
-  }
-
   private CompletableFuture<Void> triggerAutoCompleteAsync(
       @NotNull Editor editor,
       int offset,
@@ -151,11 +123,6 @@ public class CodyAutoCompleteManager {
                   result.items.stream()
                       .map(CodyAutoCompleteManager::removeUndesiredCharacters)
                       .map(item -> normalizeIndentation(item, EditorUtils.indentOptions(editor)))
-                      //                      .map(
-                      //                          resultItem ->
-                      //
-                      // postProcessInlineAutoCompleteBasedOnDocumentContext(
-                      //                                  resultItem, autoCompleteDocumentContext))
                       .filter(resultItem -> !resultItem.insertText.isEmpty())
                       .findFirst();
               if (maybeItem.isEmpty()) {
