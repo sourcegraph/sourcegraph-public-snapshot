@@ -4,6 +4,20 @@
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.5]
+
+### Added
+
 - Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
 - Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
 - Auto-growing prompt input [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
