@@ -25,12 +25,14 @@ tauri-build = { version = "1.4.0", features = [] }
 serde_json = "1.0"
 log = "0.4.17"
 serde = { version = "1.0", features = ["derive"] }
-tauri = { version = "1.4.1", features = ["devtools", "dialog-confirm", "dialog-open", "fs-remove-dir", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "updater", "window-set-resizable", "window-set-size", "window-start-dragging"] }
 tauri-plugin-log = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 tauri-plugin-deep-link = { git = "https://github.com/FabianLars/tauri-plugin-deep-link", branch = "main" }
 tauri-plugin-positioner = {version="1.0.4", features = ["system-tray"] }
 tauri-utils = "1.4.0"
 
+[dependencies.tauri]
+version = "1.4.1"
+features = ["devtools", "dialog-confirm", "dialog-open", "fs-remove-dir", "process-command-api", "shell-open", "shell-sidecar", "system-tray", "updater", "window-set-resizable", "window-set-size", "window-start-dragging"]
 
 [dependencies.fix-path-env]
 git = "https://github.com/tauri-apps/fix-path-env-rs"
