@@ -101,6 +101,10 @@ func correlateSCIP(
 				return
 			}
 			document := currentDocument
+			// Most indexers should emit a single SCIP Document for a single file.
+			// In the rare case of an indexer bug, if the indexer emits multiple
+			// Documents for a single path, we will aggregate those Documents in
+			// memory so that we can merge+normalize before processing them further.
 			if docCount := indexSummary.documentCountByPath[path]; docCount > 1 {
 				samePathDocs := append(repeatedDocumentsByPath[path], document)
 				repeatedDocumentsByPath[path] = samePathDocs
