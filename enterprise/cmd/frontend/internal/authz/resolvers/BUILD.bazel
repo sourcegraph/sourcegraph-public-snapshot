@@ -61,6 +61,7 @@ go_test(
         "//internal/auth",
         "//internal/authz",
         "//internal/authz/permssync",
+        "//internal/authz/providers/github",
         "//internal/database",
         "//internal/executor",
         "//internal/extsvc",

@@ -18,7 +18,7 @@ go_library(
         "//enterprise/cmd/repo-updater/internal/authz",
         "//internal/actor",
         "//internal/authz",
-        "//internal/authz/providers:authz",
+        "//internal/authz/providers",
         "//internal/batches",
         "//internal/conf",
         "//internal/database",
