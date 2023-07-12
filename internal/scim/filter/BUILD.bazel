@@ -14,7 +14,7 @@ go_library(
         "operators.go",
         "path.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/scim/filter",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/scim/filter",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//lib/errors",

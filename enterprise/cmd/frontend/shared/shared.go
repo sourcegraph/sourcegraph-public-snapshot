@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/scim"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -45,6 +44,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/scim"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 

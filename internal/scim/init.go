@@ -9,10 +9,7 @@ import (
 	"github.com/elimity-com/scim"
 	"github.com/elimity-com/scim/optional"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -35,15 +32,8 @@ func getConfiguredIdentityProvider() IdentityProvider {
 	}
 }
 
-// Init sets SCIMHandler to a real handler.
-func Init(ctx context.Context, observationCtx *observation.Context, db database.DB, _ codeintel.Services, _ conftypes.UnifiedWatchable, s *enterprise.Services) error {
-	s.SCIMHandler = newHandler(ctx, db, observationCtx)
-
-	return nil
-}
-
-// newHandler creates and returns a new SCIM 2.0 handler.
-func newHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
+// NewHandler creates and returns a new SCIM 2.0 handler.
+func NewHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
 	config := scim.ServiceProviderConfig{
 		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
 		MaxResults:       100,
