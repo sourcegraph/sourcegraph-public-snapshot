@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -95,7 +96,7 @@ JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id =
 WHERE
 	l7.upload_id = ANY(%s) AND
 	l7.segment_type = 'DESCRIPTOR_SUFFIX_FUZZY' AND
-	l7.name ILIKE ANY(%s)
+	reverse(l7.name) ILIKE ANY(%s)
 `
 
 var scanExplodedSymbols = basestore.NewSliceScanner(func(s dbutil.Scanner) (*symbols.ExplodedSymbol, error) {
@@ -118,10 +119,19 @@ func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
 	descriptorWildcards := make([]string, 0, len(trimmedDescriptorMap))
 	for symbol := range trimmedDescriptorMap {
 		if symbol != "" {
-			descriptorWildcards = append(descriptorWildcards, "%"+symbol)
+			descriptorWildcards = append(descriptorWildcards, reverse(symbol)+"%")
 		}
 	}
 	sort.Strings(descriptorWildcards)
 
 	return descriptorWildcards, nil
+}
+
+func reverse(s string) string {
+	b := strings.Builder{}
+	for i := len(s) - 1; i >= 0; i-- {
+		b.WriteByte(s[i])
+	}
+
+	return b.String()
 }
