@@ -383,43 +383,43 @@ func prometheusGraphQLRequestName(requestName string) string {
 }
 
 func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{})
 }
 
 func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{NotebooksResolver: notebooks}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{NotebooksResolver: notebooks}})
 }
 
 func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{AuthzResolver: authz}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{AuthzResolver: authz}})
 }
 
 func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver, githubApps GitHubAppsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
 }
 
 func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
 }
 
 func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{LicenseResolver: license}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{LicenseResolver: license}})
 }
 
 func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{WebhooksResolver: webhooksResolver}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{WebhooksResolver: webhooksResolver}})
 }
 
 func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{RBACResolver: rbacResolver}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{RBACResolver: rbacResolver}})
 }
 
 func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{OwnResolver: own}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{OwnResolver: own}})
 }
 
 func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(), nil, []OptionalResolver{{CompletionsResolver: completionsResolver}})
+	return NewSchema(db, gitserver.NewClient(db), nil, []OptionalResolver{{CompletionsResolver: completionsResolver}})
 }
 
 func NewSchema(

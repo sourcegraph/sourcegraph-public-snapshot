@@ -196,7 +196,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := gql.NewRepositoryResolver(db, gitserver.NewClient(), repoName.ToRepo())
+		resolver := gql.NewRepositoryResolver(db, gitserver.NewClient(db), repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver

@@ -32,7 +32,7 @@ func NewPerforceSource(ctx context.Context, svc *types.ExternalService, _ *httpc
 		return nil, errors.Wrapf(err, "external service id=%d", svc.ID)
 	}
 
-	return &PerforceSource{server: c, gitServerClient: gitserver.NewClient()}, nil
+	return &PerforceSource{server: c, gitServerClient: gitserver.NewClientDeprecatedNeedsDB()}, nil
 }
 
 // GitserverPushConfig returns an authenticated push config used for pushing commits to the code host.

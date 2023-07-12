@@ -46,7 +46,7 @@ func (s *SymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClients, s
 		}
 
 		p.Go(func(ctx context.Context) error {
-			matches, err := searchInRepo(ctx, repoRevs, s.PatternInfo, s.Limit)
+			matches, err := searchInRepo(ctx, clients.Gitserver, repoRevs, s.PatternInfo, s.Limit)
 			status, limitHit, err := search.HandleRepoSearchResult(repoRevs.Repo.ID, repoRevs.Revs, len(matches) > s.Limit, false, err)
 			stream.Send(streaming.SearchEvent{
 				Results: matches,
@@ -86,7 +86,7 @@ func (s *SymbolSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue)
 func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
 func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
+func searchInRepo(ctx context.Context, gitserverClient gitserver.Client, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	inputRev := repoRevs.Revs[0]
 	tr, ctx := trace.New(ctx, "symbols.searchInRepo",
 		repoRevs.Repo.Name.Attr(),
@@ -97,7 +97,7 @@ func searchInRepo(ctx context.Context, repoRevs *search.RepositoryRevisions, pat
 	// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
 	// down by a lot (if we're looping over many repos). This means that it'll fail if a
 	// repo is not on gitserver.
-	commitID, err := gitserver.NewClient().ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
+	commitID, err := gitserverClient.ResolveRevision(ctx, repoRevs.GitserverRepo(), inputRev, gitserver.ResolveRevisionOptions{})
 	if err != nil {
 		return nil, err
 	}

@@ -72,7 +72,7 @@ func NewProvider(logger log.Logger, urn, host, user, password string, depots []e
 		host:               host,
 		user:               user,
 		password:           password,
-		p4Execer:           gitserver.NewClient(),
+		p4Execer:           gitserver.NewClientDeprecatedNeedsDB(),
 		cachedGroupMembers: make(map[string][]string),
 	}
 }
