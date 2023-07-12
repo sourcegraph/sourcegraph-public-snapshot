@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/compute"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -42,8 +43,8 @@ func ParseQuery(q string, patternType string) (query.Plan, error) {
 	return plan, nil
 }
 
-func ParseComputeQuery(q string) (*compute.Query, error) {
-	computeQuery, err := compute.Parse(q)
+func ParseComputeQuery(q string, gitserverClient gitserver.Client) (*compute.Query, error) {
+	computeQuery, err := compute.Parse(q, gitserverClient)
 	if err != nil {
 		return nil, errors.Wrap(err, "compute.Parse")
 	}

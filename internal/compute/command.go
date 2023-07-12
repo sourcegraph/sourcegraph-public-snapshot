@@ -13,10 +13,16 @@ type Command interface {
 	String() string
 }
 
+type CommandPostRunHook interface {
+	PostRunHook(*commandParser)
+}
+
 var (
 	_ Command = (*MatchOnly)(nil)
 	_ Command = (*Replace)(nil)
 	_ Command = (*Output)(nil)
+
+	_ CommandPostRunHook = (*Replace)(nil)
 )
 
 func (MatchOnly) command() {}

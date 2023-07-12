@@ -33,6 +33,8 @@ type cachedCommitResolver struct {
 	commitResolver resolverstubs.GitCommitResolver
 	dirCache       *dataloader.DoubleLockedCache[string, *cachedGitTreeEntryResolver]
 	pathCache      *dataloader.DoubleLockedCache[string, *cachedGitTreeEntryResolver]
+
+	// gitserverClient gitserver.Client
 }
 
 type cachedGitTreeEntryResolver struct {
@@ -71,7 +73,7 @@ func newCachedLocationResolver(
 	}
 
 	resolvePath := func(commitResolver resolverstubs.GitCommitResolver, path string, isDir bool) *cachedGitTreeEntryResolver {
-		return &cachedGitTreeEntryResolver{NewGitTreeEntryResolver(commitResolver, path, isDir)}
+		return &cachedGitTreeEntryResolver{NewGitTreeEntryResolver(commitResolver, path, isDir, gitserverClient)}
 	}
 
 	resolveRepositoryCached := func(ctx context.Context, repoID api.RepoID) (*cachedRepositoryResolver, error) {
@@ -94,6 +96,8 @@ func newCachedLocationResolver(
 				pathCache: dataloader.NewDoubleLockedCache(dataloader.NewMultiFactoryFromFactoryFunc(func(ctx context.Context, path string) (*cachedGitTreeEntryResolver, error) {
 					return resolvePath(commitResolver, path, false), nil
 				})),
+				// TODO: Where do I need this again?
+				// gitserverClient: gitserverClient,
 			}, nil
 		}
 

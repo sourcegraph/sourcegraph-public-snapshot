@@ -6,7 +6,9 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
@@ -57,6 +59,7 @@ func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context
 type InsightEnqueuer struct {
 	logger log.Logger
 
+	db                    database.DB
 	now                   func() time.Time
 	enqueueQueryRunnerJob func(context.Context, *queryrunner.Job) error
 }
@@ -64,6 +67,7 @@ type InsightEnqueuer struct {
 func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store, logger log.Logger) *InsightEnqueuer {
 	return &InsightEnqueuer{
 		now: now,
+		db:  database.NewDBWith(logger, workerBaseStore),
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
 			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
 			return err
@@ -159,7 +163,7 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 	}
 	finalQuery = modifiedQuery.String()
 	if series.GroupBy != nil {
-		computeQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy))
+		computeQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy), gitserver.NewClient(ie.db))
 		if err != nil {
 			return errors.Wrapf(err, "ComputeInsightCommandQuery series_id:%s", seriesID)
 		}

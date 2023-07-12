@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
@@ -1309,13 +1310,16 @@ func historicFill(ctx context.Context, series types.InsightSeries, tx *store.Ins
 }
 
 func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSeriesFill fillSeriesStrategy, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+	logger := log.Scoped("createAndAttachSeries", "a logger scoped to resolvers.createAndAttachSeries")
+
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
 	var dynamic bool
 	// Validate the query before creating anything; we don't want faulty insights running pointlessly.
 	if series.GroupBy != nil || series.GeneratedFromCaptureGroups != nil {
-		if _, err := querybuilder.ParseComputeQuery(series.Query); err != nil {
+		db := database.NewDBWith(logger, tx)
+		if _, err := querybuilder.ParseComputeQuery(series.Query, gitserver.NewClient(db)); err != nil {
 			return errors.Wrap(err, "query validation")
 		}
 	} else {

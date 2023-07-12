@@ -36,7 +36,7 @@ type ServiceDependencies struct {
 
 func NewServices(deps ServiceDependencies) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
-	gitserverClient := gitserver.NewClientDeprecatedNeedsDB()
+	gitserverClient := gitserver.NewClient(db)
 
 	uploadsSvc := uploads.NewService(deps.ObservationCtx, db, codeIntelDB, gitserverClient)
 	dependenciesSvc := dependencies.NewService(deps.ObservationCtx, db)

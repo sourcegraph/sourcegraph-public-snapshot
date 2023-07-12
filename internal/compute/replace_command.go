@@ -12,6 +12,8 @@ import (
 )
 
 type Replace struct {
+	gitserverClient gitserver.Client
+
 	SearchPattern  MatchPattern
 	ReplacePattern string
 }
@@ -22,6 +24,10 @@ func (c *Replace) ToSearchPattern() string {
 
 func (c *Replace) String() string {
 	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.SearchPattern.String(), c.ReplacePattern)
+}
+
+func (c *Replace) PostRunHook(p *commandParser) {
+	c.gitserverClient = p.gitserverClient
 }
 
 func replace(ctx context.Context, content []byte, matchPattern MatchPattern, replacePattern string) (*Text, error) {
@@ -52,7 +58,7 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 func (c *Replace) Run(ctx context.Context, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		content, err := gitserver.NewClientDeprecatedNeedsDB().ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
+		content, err := c.gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
 		if err != nil {
 			return nil, err
 		}

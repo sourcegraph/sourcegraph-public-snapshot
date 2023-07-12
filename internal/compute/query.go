@@ -5,14 +5,16 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Query struct {
-	Command    Command
-	Parameters []query.Node
+	gitserverClient gitserver.Client
+	Command         Command
+	Parameters      []query.Node
 }
 
 func (q Query) String() string {
@@ -239,10 +241,8 @@ func parseMatchOnly(q *query.Basic) (Command, bool, error) {
 	return &MatchOnly{SearchPattern: sp, ComputePattern: cp}, true, nil
 }
 
-type commandParser func(pattern *query.Basic) (Command, bool, error)
-
 // first returns the first parser that succeeds at parsing a command from a pattern.
-func first(parsers ...commandParser) commandParser {
+func first(gitserverClient gitserver.Client, parsers ...commandParserFunc) commandParserFunc {
 	return func(q *query.Basic) (Command, bool, error) {
 		for _, parse := range parsers {
 			command, ok, err := parse(q)
@@ -257,20 +257,36 @@ func first(parsers ...commandParser) commandParser {
 	}
 }
 
-var parseCommand = first(
-	parseReplace,
-	parseOutput,
-	parseMatchOnly,
-)
+type commandParserFunc func(pattern *query.Basic) (Command, bool, error)
 
-func toComputeQuery(plan query.Plan) (*Query, error) {
+type commandParser struct {
+	gitserverClient gitserver.Client
+	parseCommand    commandParserFunc
+}
+
+func newCommandParser(gitserverClient gitserver.Client) *commandParser {
+	parseCommand := first(
+		gitserverClient,
+		parseReplace,
+		parseOutput,
+		parseMatchOnly,
+	)
+
+	return &commandParser{gitserverClient: gitserverClient, parseCommand: parseCommand}
+}
+
+func (p *commandParser) toComputeQuery(plan query.Plan) (*Query, error) {
 	if len(plan) < 1 {
 		return nil, errors.New("compute endpoint can't do anything with empty query")
 	}
 
-	command, _, err := parseCommand(&plan[0])
+	command, _, err := p.parseCommand(&plan[0])
 	if err != nil {
 		return nil, err
+	}
+
+	if c, ok := command.(CommandPostRunHook); ok {
+		c.PostRunHook(p)
 	}
 
 	parameters := query.MapPattern(plan.ToQ(), func(_ string, _ bool, _ query.Annotation) query.Node {
@@ -278,12 +294,15 @@ func toComputeQuery(plan query.Plan) (*Query, error) {
 		return nil
 	})
 	return &Query{
-		Parameters: parameters,
-		Command:    command,
+		gitserverClient: p.gitserverClient,
+		Parameters:      parameters,
+		Command:         command,
 	}, nil
 }
 
-func Parse(q string) (*Query, error) {
+func Parse(q string, gitserverClient gitserver.Client) (*Query, error) {
+	parser := newCommandParser(gitserverClient)
+
 	parseTree, err := query.ParseRegexp(q)
 	if err != nil {
 		return nil, err
@@ -301,5 +320,5 @@ func Parse(q string) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return toComputeQuery(plan)
+	return parser.toComputeQuery(plan)
 }

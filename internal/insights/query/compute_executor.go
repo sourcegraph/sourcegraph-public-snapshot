@@ -7,8 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/internal/insights/query/streaming"
@@ -17,11 +19,13 @@ import (
 
 type ComputeExecutor struct {
 	previewExecutor
+	logger        log.Logger
 	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
 }
 
 func NewComputeExecutor(postgres database.DB, clock func() time.Time) *ComputeExecutor {
 	executor := ComputeExecutor{
+		logger: log.Scoped("ComputeExecutor", "a logger scoped to query.ComputeExecutor"),
 		previewExecutor: previewExecutor{
 			repoStore: postgres.Repos(),
 			filter:    &compression.NoopFilter{},
@@ -58,10 +62,12 @@ func (c *ComputeExecutor) Execute(ctx context.Context, query, groupBy string, re
 		repoIds[repository] = repo.ID
 	}
 
+	gitserverClient := gitserver.NewClient(database.NewDBWith(c.logger, c.repoStore))
+
 	groupedValues := make(map[string]int)
 	for _, repository := range repositories {
 		modifiedQuery := querybuilder.SingleRepoQueryIndexed(querybuilder.BasicQuery(query), repository)
-		finalQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(strings.ToLower(groupBy)))
+		finalQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(strings.ToLower(groupBy)), gitserverClient)
 		if err != nil {
 			return nil, errors.Wrap(err, "query validation")
 		}

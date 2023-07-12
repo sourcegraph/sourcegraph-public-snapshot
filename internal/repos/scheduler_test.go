@@ -1425,7 +1425,8 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			// intentionally don't close the channel so any further receives just block
 
 			contexts := make(chan context.Context, expectedRequestCount)
-			requestRepoUpdate = func(ctx context.Context, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
+			db := database.NewMockDB()
+			requestRepoUpdate = func(ctx context.Context, db database.DB, repo configuredRepo, since time.Duration) (*gitserverprotocol.RepoUpdateResponse, error) {
 				select {
 				case mock := <-mockRequestRepoUpdates:
 					if !reflect.DeepEqual(mock.repo, repo) {
@@ -1439,7 +1440,7 @@ func TestUpdateScheduler_runUpdateLoop(t *testing.T) {
 			}
 			defer func() { requestRepoUpdate = nil }()
 
-			s := NewUpdateScheduler(logtest.Scoped(t), database.NewMockDB())
+			s := NewUpdateScheduler(logtest.Scoped(t), db)
 			s.schedule.randGenerator = &mockRandomGenerator{}
 
 			// unbuffer the channel

@@ -8,12 +8,13 @@ import (
 	"github.com/hexops/autogold/v2"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 func TestToResultResolverList(t *testing.T) {
 	test := func(input string, matches []result.Match) string {
-		computeQuery, _ := compute.Parse(input)
+		computeQuery, _ := compute.Parse(input, gitserver.NewMockClient())
 		resolvers, _ := toResultResolverList(
 			context.Background(),
 			computeQuery.Command,
