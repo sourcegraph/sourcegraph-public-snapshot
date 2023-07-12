@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"

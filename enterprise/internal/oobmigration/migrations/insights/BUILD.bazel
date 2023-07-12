@@ -17,9 +17,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/insights",
         "//internal/database/basestore",
         "//internal/database/dbutil",
+        "//internal/insights",
         "//internal/jsonc",
         "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",

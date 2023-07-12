@@ -7,7 +7,6 @@ go_library(
     visibility = ["//enterprise:__subpackages__"],
     deps = [
         "//enterprise/cmd/worker/shared/init/codeintel",
-        "//enterprise/internal/insights",
         "//enterprise/internal/oobmigration/migrations/batches",
         "//enterprise/internal/oobmigration/migrations/codeintel/lsif",
         "//enterprise/internal/oobmigration/migrations/iam",
@@ -18,6 +17,7 @@ go_library(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/encryption/keyring",
+        "//internal/insights",
         "//internal/observation",
         "//internal/oobmigration",
         "//internal/oobmigration/migrations",

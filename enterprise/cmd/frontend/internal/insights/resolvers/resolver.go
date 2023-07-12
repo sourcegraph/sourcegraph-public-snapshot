@@ -8,9 +8,9 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/internal/insights/background"
+	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
+	"github.com/sourcegraph/sourcegraph/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"

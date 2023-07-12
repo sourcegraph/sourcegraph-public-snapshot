@@ -6,13 +6,13 @@
   path: github.com/prometheus/client_golang/api/prometheus/v1
   interfaces:
     - API
-- filename: enterprise/internal/insights/discovery/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery
+- filename: internal/insights/discovery/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/discovery
   interfaces:
     - IndexableReposLister
     - RepoStore
-- filename: enterprise/internal/insights/store/mocks_temp.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store
+- filename: internal/insights/store/mocks_temp.go
+  path: github.com/sourcegraph/sourcegraph/internal/insights/store
   interfaces:
     - DataSeriesStore
     - InsightMetadataStore

@@ -6,8 +6,8 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -172,7 +172,7 @@ func (m *recordingTimesMigrator) Down(ctx context.Context) error {
 
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		`WITH deleted AS (
-			DELETE FROM insight_series_recording_times 
+			DELETE FROM insight_series_recording_times
 			WHERE insight_series_id IN (SELECT id FROM insight_series WHERE supports_augmentation = TRUE LIMIT %s)
             RETURNING insight_series_id
 		)

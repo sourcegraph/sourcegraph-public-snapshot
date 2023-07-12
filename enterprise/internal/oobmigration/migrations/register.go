@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	workerCodeIntel "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
-	internalInsights "github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/batches"
 	lsifMigrations "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel/lsif"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/iam"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	internalInsights "github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
