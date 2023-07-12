@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	ossmigrations "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -36,7 +36,7 @@ func Start(logger log.Logger, registerEnterpriseMigrators store.RegisterMigrator
 	}
 
 	registerMigrators := store.ComposeRegisterMigratorsFuncs(
-		ossmigrations.RegisterOSSMigratorsUsingConfAndStoreFactory,
+		register.RegisterOSSMigratorsUsingConfAndStoreFactory,
 		registerEnterpriseMigrators,
 	)
 

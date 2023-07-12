@@ -1,10 +1,10 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
-    name = "migrations",
+    name = "register",
     srcs = ["register.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/worker/shared/init/codeintel",
         "//internal/conf/conftypes",
@@ -12,6 +12,7 @@ go_library(
         "//internal/database/basestore",
         "//internal/encryption/keyring",
         "//internal/insights",
+        "//internal/insights/database",
         "//internal/observation",
         "//internal/oobmigration",
         "//internal/oobmigration/migrations",

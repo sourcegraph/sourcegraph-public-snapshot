@@ -1,8 +1,9 @@
-package migrations
+package register
 
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
@@ -24,6 +25,69 @@ import (
 	insightsBackfiller "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights/backfillv2"
 	insightsrecordingtimes "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights/recording_times"
 )
+
+func RegisterOSSMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
+	defaultKeyring := keyring.Default()
+
+	return registerOSSMigrators(runner, false, migratorDependencies{
+		store:   basestore.NewWithHandle(db.Handle()),
+		keyring: &defaultKeyring,
+	})
+}
+
+func RegisterOSSMigratorsUsingConfAndStoreFactory(
+	ctx context.Context,
+	db database.DB,
+	runner *oobmigration.Runner,
+	conf conftypes.UnifiedQuerier,
+	_ migrations.StoreFactory,
+) error {
+	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
+	if err != nil {
+		return err
+	}
+	if keys == nil {
+		keys = &keyring.Ring{}
+	}
+
+	return registerOSSMigrators(runner, true, migratorDependencies{
+		store:   basestore.NewWithHandle(db.Handle()),
+		keyring: keys,
+	})
+}
+
+type migratorDependencies struct {
+	store   *basestore.Store
+	keyring *keyring.Ring
+}
+
+func registerOSSMigrators(runner *oobmigration.Runner, noDelay bool, deps migratorDependencies) error {
+	return RegisterAll(runner, noDelay, []TaggedMigrator{
+		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
+		batches.NewUserRoleAssignmentMigrator(deps.store, 250),
+	})
+}
+
+type TaggedMigrator interface {
+	oobmigration.Migrator
+	ID() int
+	Interval() time.Duration
+}
+
+func RegisterAll(runner *oobmigration.Runner, noDelay bool, migrators []TaggedMigrator) error {
+	for _, migrator := range migrators {
+		options := oobmigration.MigratorOptions{Interval: migrator.Interval()}
+		if noDelay {
+			options.Interval = time.Nanosecond
+		}
+
+		if err := runner.Register(migrator.ID(), migrator, options); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
 	codeIntelDB, err := workerCodeIntel.InitRawDB(&observation.TestContext)
@@ -91,7 +155,7 @@ type dependencies struct {
 }
 
 func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps dependencies) error {
-	migrators := []migrations.TaggedMigrator{
+	migrators := []TaggedMigrator{
 		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
 		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
 		iam.NewUnifiedPermissionsMigrator(deps.store),
@@ -111,5 +175,5 @@ func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps
 			insightsBackfiller.NewMigrator(deps.insightsStore, glock.NewRealClock(), 10),
 		)
 	}
-	return migrations.RegisterAll(runner, noDelay, migrators)
+	return RegisterAll(runner, noDelay, migrators)
 }

@@ -69,7 +69,7 @@ go_library(
         "//internal/jsonc",
         "//internal/observation",
         "//internal/oobmigration",
-        "//internal/oobmigration/migrations",
+        "//internal/oobmigration/migrations/register",
         "//internal/redispool",
         "//internal/requestclient",
         "//internal/service",

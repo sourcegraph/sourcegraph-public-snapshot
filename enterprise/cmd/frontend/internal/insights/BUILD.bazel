@@ -14,6 +14,7 @@ go_library(
         "//internal/conf/deploy",
         "//internal/database",
         "//internal/insights",
+        "//internal/insights/database",
         "//internal/observation",
     ],
 )
