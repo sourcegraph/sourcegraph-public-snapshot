@@ -18,11 +18,11 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
+	"github.com/sourcegraph/sourcegraph/internal/batches/store"
+	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
+	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"

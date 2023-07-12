@@ -12,7 +12,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
-        "//internal/batches",
+        "//internal/batches/syncer",
         "//internal/codeintel/dependencies",
         "//internal/database",
         "//internal/errcode",

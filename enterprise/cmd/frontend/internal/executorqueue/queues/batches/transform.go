@@ -12,11 +12,11 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/batches/store"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"

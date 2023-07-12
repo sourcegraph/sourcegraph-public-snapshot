@@ -32,7 +32,7 @@ go_test(
     ],
     deps = [
         ":store",
-        "//enterprise/internal/batches/testing",
+        "//internal/batches/testing",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/extsvc",
