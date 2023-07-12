@@ -11,10 +11,10 @@ go_test(
     # path is sandboxed properly.
     env = {"COURSIER_CACHE_DIR": "/tmp"},
     deps = [
-        "//internal/authz/subrepoperms",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/authz/subrepoperms",
         "//internal/conf",
         "//internal/database",
         "//internal/gitserver",

@@ -7,7 +7,7 @@ go_library(
         "authz.go",
         "gerrit.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/gerrit",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/gerrit",
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/authz",

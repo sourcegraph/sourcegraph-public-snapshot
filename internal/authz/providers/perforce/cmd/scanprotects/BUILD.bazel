@@ -4,10 +4,10 @@ load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 go_library(
     name = "scanprotects_lib",
     srcs = ["main.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/perforce/cmd/scanprotects",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/perforce/cmd/scanprotects",
     visibility = ["//visibility:private"],
     deps = [
-        "//internal/authz/perforce",
+        "//internal/authz/providers/perforce",
         "//internal/env",
         "//internal/extsvc",
         "//internal/hostname",
@@ -26,7 +26,7 @@ go_test(
     name = "scanprotects_test",
     timeout = "short",
     srcs = ["main_test.go"],
-    data = ["//internal/authz/perforce/testdata:data"],
+    data = ["//internal/authz/providers/perforce/testdata:data"],
     embed = [":scanprotects_lib"],
     deps = [
         "@com_github_sourcegraph_log//logtest",

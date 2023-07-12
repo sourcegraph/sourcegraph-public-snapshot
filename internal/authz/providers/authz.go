@@ -1,4 +1,4 @@
-package authz
+package providers
 
 import (
 	"context"
@@ -8,13 +8,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/authz/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/authz/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/authz/github"
-	"github.com/sourcegraph/sourcegraph/internal/authz/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/authz/perforce"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers/bitbucketcloud"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers/bitbucketserver"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gerrit"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"

@@ -5,9 +5,9 @@ go_test(
     timeout = "short",
     srcs = ["symbol_test.go"],
     deps = [
-        "//internal/authz/subrepoperms",
         "//internal/actor",
         "//internal/api",
+        "//internal/authz/subrepoperms",
         "//internal/conf",
         "//internal/search/result",
         "//internal/search/symbol",
