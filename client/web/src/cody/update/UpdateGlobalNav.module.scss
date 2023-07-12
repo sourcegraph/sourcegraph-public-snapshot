@@ -58,7 +58,6 @@
     --link-color: var(--violet-04);
     padding: 0.25rem 0.4rem;
     color: var(--violet-04);
-    // border-color: var(--violet-04);
     background-color: var(--violet-01);
 
     &:hover {
@@ -67,7 +66,7 @@
         background-color: var(--violet-02);
     }
 
-    & DIV {
+    div {
         gap: 0.2rem;
     }
 }
