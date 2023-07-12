@@ -8,8 +8,10 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
+	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -31,7 +33,7 @@ type PeriodicGoroutine struct {
 	getInterval       getIntervalFunc
 	initialDelay      time.Duration
 	getConcurrency    getConcurrencyFunc
-	handler           unifiedHandler
+	handler           Handler
 	operation         *observation.Operation
 	clock             glock.Clock
 	concurrencyClock  glock.Clock
@@ -44,12 +46,16 @@ type PeriodicGoroutine struct {
 
 var _ recorder.Recordable = &PeriodicGoroutine{}
 
-type unifiedHandler interface {
+// fullErrorHandler implements Handler and ErrorHandler.
+// Cannot be named errorHandler because gomockgen tries to generate 2 mocks that
+// conflicts (because of ErrorHandler).
+type fullErrorHandler interface {
 	Handler
 	ErrorHandler
 }
 
-// Handler represents the main behavior of a PeriodicGoroutine.
+// Handler represents the main behavior of a PeriodicGoroutine. Additional
+// interfaces like ErrorHandler can also be implemented.
 type Handler interface {
 	// Handle performs an action with the given context.
 	Handle(ctx context.Context) error
@@ -74,31 +80,6 @@ type HandlerFunc func(ctx context.Context) error
 
 func (f HandlerFunc) Handle(ctx context.Context) error {
 	return f(ctx)
-}
-
-type simpleHandler struct {
-	name  string
-	scope log.Logger
-	Handler
-}
-
-var (
-	_ unifiedHandler = (*simpleHandler)(nil)
-	_ Finalizer      = (*simpleHandler)(nil)
-)
-
-func (h *simpleHandler) Handle(ctx context.Context) error {
-	return h.Handler.Handle(ctx)
-}
-
-func (h *simpleHandler) HandleError(err error) {
-	h.scope.Error("An error occurred in a background task", log.String("handler", h.name), log.Error(err))
-}
-
-func (h *simpleHandler) OnShutdown() {
-	if finalizer, ok := h.Handler.(Finalizer); ok {
-		finalizer.OnShutdown()
-	}
 }
 
 type Option func(*PeriodicGoroutine)
@@ -156,7 +137,21 @@ func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Optio
 	r.ctx = ctx
 	r.cancel = cancel
 	r.finished = make(chan struct{})
-	r.handler = wrapHandler(handler, r.name, r.description)
+	r.handler = handler
+
+	// If no operation is provided, create a default one that only handles logging.
+	// We disable tracing and metrics by default - if any of these should be
+	// enabled, caller should use goroutine.WithOperation
+	if r.operation == nil {
+		r.operation = observation.NewContext(
+			log.Scoped("periodic", "periodic goroutine handler"),
+			observation.Tracer(oteltrace.NewNoopTracerProvider()),
+			observation.Metrics(metrics.NoOpRegisterer),
+		).Operation(observation.Op{
+			Name:        r.name,
+			Description: r.description,
+		})
+	}
 
 	return r
 }
@@ -170,18 +165,6 @@ func newDefaultPeriodicRoutine() *PeriodicGoroutine {
 		operation:        nil,
 		clock:            glock.NewRealClock(),
 		concurrencyClock: glock.NewRealClock(),
-	}
-}
-
-func wrapHandler(handler Handler, name, description string) unifiedHandler {
-	if uh, ok := handler.(unifiedHandler); ok {
-		return uh
-	}
-
-	return &simpleHandler{
-		name:    name,
-		scope:   log.Scoped(name, description),
-		Handler: handler,
 	}
 }
 
