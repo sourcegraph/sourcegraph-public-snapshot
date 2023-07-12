@@ -239,7 +239,6 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 		event = honey.NewEvent("search-zoekt")
 		event.AddField("category", cat)
 		event.AddField("query", qStr)
-		event.AddField("opts.minimal", opts != nil && opts.Minimal) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		event.AddAttributes(attrs)
 	}
 
@@ -252,8 +251,8 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 
 	event.AddField("duration_ms", time.Since(start).Milliseconds())
 	if zsl != nil {
-		event.AddField("repos", len(zsl.Repos))
-		event.AddField("minimal_repos", len(zsl.Minimal)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		// the fields are mutually exclusive so we can just add them
+		event.AddField("repos", len(zsl.Repos)+len(zsl.Minimal)+len(zsl.ReposMap)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
 		event.AddField("stats.crashes", zsl.Crashes)
 	}
 	if err != nil {
