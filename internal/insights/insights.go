@@ -8,7 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -42,7 +42,7 @@ func IsEnabled() bool {
 // database migrations before returning. It is safe to call from multiple services/containers (in
 // which case, one's migration will win and the other caller will receive an error and should exit
 // and restart until the other finishes.)
-func InitializeCodeInsightsDB(observationCtx *observation.Context, app string) (edb.InsightsDB, error) {
+func InitializeCodeInsightsDB(observationCtx *observation.Context, app string) (database.InsightsDB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeInsightsDSN
 	})
@@ -51,5 +51,5 @@ func InitializeCodeInsightsDB(observationCtx *observation.Context, app string) (
 		return nil, errors.Errorf("Failed to connect to codeinsights database: %s", err)
 	}
 
-	return edb.NewInsightsDB(db, observationCtx.Logger), nil
+	return database.NewInsightsDB(db, observationCtx.Logger), nil
 }
