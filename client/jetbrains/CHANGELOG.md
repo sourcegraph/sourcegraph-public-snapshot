@@ -4,19 +4,7 @@
 
 ### Added
 
-- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
-- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
-- Auto-growing prompt input [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
-- Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
-
 ### Changed
-
-- fix logging to use JetBrains api + other minor fixes [#54579](https://github.com/sourcegraph/sourcegraph/pull/54579)
-- Enable editor recipe context menu items when working with Cody app only when Cody app is running [#54583](https://github.com/sourcegraph/sourcegraph/pull/54583)
-- rename `completion` to `autocomplete` in both the UI and code [#54606](https://github.com/sourcegraph/sourcegraph/pull/54606)
-- Increased minimum rows of prompt input form 2 to 3 [#54733](https://github.com/sourcegraph/sourcegraph/pull/54733)
-- improved completion prompt with changes from the VS Code plugin [#54668](https://github.com/sourcegraph/sourcegraph/pull/54668)
-- Display more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
 
 ### Deprecated
 
@@ -24,9 +12,29 @@
 
 ### Fixed
 
-- Now avoiding NullPointerException in an edge case when the chat doesn't exist [#54785](https://github.com/sourcegraph/sourcegraph/pull/54785)
-
 ### Security
+
+## [3.0.4]
+
+### Added
+
+- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
+- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
+- Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
+- Made prompt input grow automatically [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
+
+### Changed
+
+- Fixed logging to use JetBrains api + other minor fixes [#54579](https://github.com/sourcegraph/sourcegraph/pull/54579)
+- Enabled editor recipe context menu items when working with Cody app only when Cody app is running [#54583](https://github.com/sourcegraph/sourcegraph/pull/54583)
+- Renamed `completion` to `autocomplete` in both the UI and code [#54606](https://github.com/sourcegraph/sourcegraph/pull/54606)
+- Increased minimum rows of prompt input form 2 to 3 [#54733](https://github.com/sourcegraph/sourcegraph/pull/54733)
+- Improved completion prompt with changes from the VS Code plugin [#54668](https://github.com/sourcegraph/sourcegraph/pull/54668)
+- Displayed more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
+
+### Fixed
+
+- Now avoiding NullPointerException in an edge case when the chat doesn't exist [#54785](https://github.com/sourcegraph/sourcegraph/pull/54785)
 
 ## [3.0.3]
 
@@ -41,16 +49,10 @@
 - Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
 - Sourcegraph link sharing and opening file in browser actions are disabled when working with Cody app [#54473](https://github.com/sourcegraph/sourcegraph/pull/54473)
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Preserve new lines in the human chat message [#54417](https://github.com/sourcegraph/sourcegraph/pull/54417)
 - JetBrains: Handle response == null case when checking for embeddings [#54492](https://github.com/sourcegraph/sourcegraph/pull/54492)
-
-### Security
 
 ## [3.0.2]
 

@@ -52,6 +52,8 @@ var (
 	warnStartServices  cli.StringSlice
 	errorStartServices cli.StringSlice
 	critStartServices  cli.StringSlice
+	exceptServices     cli.StringSlice
+	onlyServices       cli.StringSlice
 
 	startCommand = &cli.Command{
 		Name:      "start",
@@ -112,6 +114,16 @@ sg start -describe oss
 				Aliases:     []string{"c"},
 				Usage:       "Services to set at info crit level.",
 				Destination: &critStartServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "except",
+				Usage:       "List of services of the specified command set to NOT start",
+				Destination: &exceptServices,
+			},
+			&cli.StringSliceFlag{
+				Name:        "only",
+				Usage:       "List of services of the specified command set to start. Commands NOT in this list will NOT be started.",
+				Destination: &onlyServices,
 			},
 		},
 		BashComplete: completions.CompleteOptions(func() (options []string) {
@@ -280,6 +292,18 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		return err
 	}
 
+	exceptList := exceptServices.Value()
+	exceptSet := make(map[string]interface{}, len(exceptList))
+	for _, svc := range exceptList {
+		exceptSet[svc] = struct{}{}
+	}
+
+	onlyList := onlyServices.Value()
+	onlySet := make(map[string]interface{}, len(onlyList))
+	for _, svc := range onlyList {
+		onlySet[svc] = struct{}{}
+	}
+
 	cmds := make([]run.Command, 0, len(set.Commands))
 	for _, name := range set.Commands {
 		cmd, ok := conf.Commands[name]
@@ -287,7 +311,22 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 			return errors.Errorf("command %q not found in commandset %q", name, set.Name)
 		}
 
-		cmds = append(cmds, cmd)
+		if _, excluded := exceptSet[name]; excluded {
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --excluded.", cmd.Name))
+			continue
+		}
+
+		// No --only specified, just add command
+		if len(onlySet) == 0 {
+			cmds = append(cmds, cmd)
+		} else {
+			if _, inSet := onlySet[name]; inSet {
+				cmds = append(cmds, cmd)
+			} else {
+				std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's not included in --only.", cmd.Name))
+			}
+		}
+
 	}
 
 	bcmds := make([]run.BazelCommand, 0, len(set.BazelCommands))

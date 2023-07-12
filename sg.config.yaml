@@ -296,7 +296,7 @@ commands:
         export GCFLAGS='-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway
+      go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/cmd/cody-gateway
     checkBinary: .bin/cody-gateway
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
@@ -309,7 +309,7 @@ commands:
     watch:
       - lib
       - internal
-      - enterprise/cmd/cody-gateway
+      - cmd/cody-gateway
 
   searcher:
     cmd: .bin/searcher
