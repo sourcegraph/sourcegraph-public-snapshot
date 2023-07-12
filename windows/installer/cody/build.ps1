@@ -5,7 +5,8 @@ $ROOT_DIR = "..\..\.."
 $BIN_DIR = "${ROOT_DIR}\src-tauri\target\release"
 $SIGNED_DIR = "bin\${ARCH}\signed"
 $INSTALLER_OUTPUT = "bin\${ARCH}\${CFG}\en-US"
-$DIST_DIR = "${ROOT_DIR}\win-msi"
+$DIST_DIR_NAME="win-msi"
+$DIST_DIR = "${ROOT_DIR}\${DIST_DIR_NAME}"
 
 # Core version
 $major = 5
@@ -95,6 +96,6 @@ if ($env:CI -eq "true" ) {
     Resolve-Path -Path ${ROOT_DIR}
     Push-Location ${ROOT_DIR}
     Write-Host "Uploading artifacts from ${DIST_DIR}"
-    buildkite-agent artifact upload "${DIST_DIR}/*"
+    buildkite-agent artifact upload "${DIST_DIR_NAME}/*"
     Pop-Location
 }
