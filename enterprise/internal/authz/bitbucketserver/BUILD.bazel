@@ -10,8 +10,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/bitbucketserver",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/authz/types",
         "//internal/authz",
+        "//internal/authz/types",
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketserver",

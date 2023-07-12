@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"time"
 
-	atypes "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/types"
+	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
