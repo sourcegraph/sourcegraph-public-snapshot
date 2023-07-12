@@ -1,5 +1,8 @@
 package com.sourcegraph.cody.vscode;
 
+import com.sourcegraph.cody.autocomplete.AutoCompleteText;
+import java.util.stream.Collectors;
+
 public class InlineAutoCompleteItem {
   public final String insertText;
   public final String filterText;
@@ -38,6 +41,10 @@ public class InlineAutoCompleteItem {
         null);
   }
 
+  public boolean isMultiline() {
+    return this.insertText.lines().count() > 1;
+  }
+
   @Override
   public String toString() {
     return "InlineAutoCompleteItem{"
@@ -52,5 +59,27 @@ public class InlineAutoCompleteItem {
         + ", command="
         + command
         + '}';
+  }
+
+  public AutoCompleteText toAutoCompleteText(String sameLineSuffix) {
+    boolean multiline = this.isMultiline();
+    String sameLineRawAutocomplete =
+        multiline ? this.insertText.lines().findFirst().orElse("") : this.insertText;
+    boolean needAfterEndOfLineSuffix =
+        !sameLineSuffix.isEmpty() && sameLineRawAutocomplete.contains(sameLineSuffix);
+    int lastSuffixIndex = sameLineRawAutocomplete.lastIndexOf(sameLineSuffix);
+    String sameLineBeforeSuffixText =
+        needAfterEndOfLineSuffix
+            ? sameLineRawAutocomplete.substring(0, lastSuffixIndex)
+            : sameLineRawAutocomplete;
+    String afterEndOfLineSuffix =
+        needAfterEndOfLineSuffix
+            ? sameLineRawAutocomplete.substring(lastSuffixIndex + sameLineSuffix.length())
+            : "";
+    String blockText =
+        multiline
+            ? this.insertText.lines().skip(1).collect(Collectors.joining(System.lineSeparator()))
+            : "";
+    return new AutoCompleteText(sameLineBeforeSuffixText, afterEndOfLineSuffix, blockText);
   }
 }
