@@ -12,7 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	internalInsights "github.com/sourcegraph/sourcegraph/internal/insights"
+	internalinsights "github.com/sourcegraph/sourcegraph/internal/insights"
+	insightsdb "github.com/sourcegraph/sourcegraph/internal/insights/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
@@ -31,8 +32,8 @@ func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oo
 	}
 
 	var insightsStore *basestore.Store
-	if internalInsights.IsEnabled() {
-		codeInsightsDB, err := internalInsights.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
+	if internalinsights.IsEnabled() {
+		codeInsightsDB, err := insightsdb.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
 		if err != nil {
 			return err
 		}

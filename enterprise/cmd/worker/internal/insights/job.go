@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
+	insightsdb "github.com/sourcegraph/sourcegraph/internal/insights/database"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -34,7 +35,7 @@ func (s *insightsJob) Routines(_ context.Context, observationCtx *observation.Co
 		return nil, err
 	}
 
-	insightsDB, err := insights.InitializeCodeInsightsDB(observationCtx, "worker")
+	insightsDB, err := insightsdb.InitializeCodeInsightsDB(observationCtx, "worker")
 	if err != nil {
 		return nil, err
 	}
