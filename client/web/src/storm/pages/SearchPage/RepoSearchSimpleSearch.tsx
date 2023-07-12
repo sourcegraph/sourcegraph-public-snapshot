@@ -27,7 +27,7 @@ const getQuery = ({ repoPattern, repoNames, useForks, useArchive, predicateState
     // build query
     const terms: string[] = []
 
-    if (searchContext?.length > 0) {
+    if (searchContext && searchContext?.length > 0) {
         terms.push(`context:${searchContext}`)
     }
 

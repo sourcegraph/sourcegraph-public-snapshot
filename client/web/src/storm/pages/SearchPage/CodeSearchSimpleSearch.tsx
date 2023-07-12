@@ -64,7 +64,7 @@ const getQuery = ({
 
     if (literalContent && literalContent?.length > 0) {
         terms.push(literalContent)
-    } else if (regexpContent?.length > 0) {
+    } else if (regexpContent && regexpContent?.length > 0) {
         terms.push(`/${regexpContent}/`)
     }
 
@@ -259,28 +259,29 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     </div>
                 </div>
 
-                <div className="form-group row">
-                    <Label htmlFor="searchLang" className="col-4 col-form-label">
+                <Select
+                    id="searchLang"
+                    name="searchLang"
+                    onChange={event => setLanguageFilter(event.target.value)}
+                    labelClassName='col-4 col-form-label'
+                    selectClassName='col-8'
+                    className='form-group row'
+                    labelVariant='inline'
+                    isCustomStyle={true}
+                    label={<div>
                         Which programming language?
                         <Tooltip content="Only match files for a given programming language.">
                             <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
-                    </Label>
-                    <div className="col-8">
-                        <Select
-                            id="searchLang"
-                            name="searchLang"
-                            onChange={event => setLanguageFilter(event.target.value)}
-                        >
-                            <option hidden={true}>Any</option>
-                            {languages.map((lang, idx) => (
-                                <option key={idx} value={lang}>
-                                    {lang}
-                                </option>
-                            ))}
-                        </Select>
-                    </div>
-                </div>
+                    </div>}
+                >
+                    <option hidden={true}>Any</option>
+                    {languages.map((lang, idx) => (
+                        <option key={idx} value={lang}>
+                            {lang}
+                        </option>
+                    ))}
+                </Select>
 
                 <div className="form-group row">
                     <Label htmlFor="searchContext" className="col-4 col-form-label">
@@ -289,15 +290,15 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                             <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
                         </Tooltip>
                     </Label>
-                    <div className="col-8">
+                    {/*<div className="col-8">*/}
                         <Input
+                            className='col-8'
                             value={searchContext}
                             id="text"
                             name="text"
                             type="text"
                             onChange={event => setSearchContext(event.target.value)}
                         />
-                    </div>
                 </div>
 
                 <div className="form-group row">

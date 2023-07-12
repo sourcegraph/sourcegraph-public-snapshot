@@ -48,10 +48,8 @@ const getQuery = ({
 
     // here we are going to default to commit search, and only override if there is code present. This is because diff search is a subset of commit search, so there is always
     // a valid search available
-    if (diffCodePattern & diffCodePattern?.length > 0) {
-        // terms.push('type:diff')
+    if (diffCodePattern && diffCodePattern?.length > 0) {
         type = 'diff'
-        // terms.push(`${diffCodePattern}`)
         ptn = `${diffCodePattern}`
     }
     if (filePaths && filePaths?.length > 0) {
