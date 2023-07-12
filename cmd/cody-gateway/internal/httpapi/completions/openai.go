@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -38,15 +39,14 @@ func NewOpenAIHandler(
 		openAIURL,
 		allowedModels,
 		upstreamHandlerMethods[openaiRequest]{
-			transformBody: func(body *openaiRequest) {
+			transformBody: func(body *openaiRequest, act *actor.Actor) {
 				// We don't want to let users generate multiple responses, as this would
 				// mess with rate limit counting.
 				if body.N > 1 {
 					body.N = 1
 				}
-				// Null the user field, we don't want to allow users to specify it:
-				body.User = ""
-				// TODO: We can forward the actor ID here later if we want?
+				// We forward the actor ID to support tracking.
+				body.User = act.ID
 			},
 			getRequestMetadata: func(body openaiRequest) (promptCharacterCount int, model string, additionalMetadata map[string]any) {
 				for _, m := range body.Messages {

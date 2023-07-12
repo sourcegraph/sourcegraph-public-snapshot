@@ -64,20 +64,18 @@ func Run(ctx context.Context, job func(ctx context.Context, out *std.Output)) {
 }
 
 // Wait blocks until jobs registered in context are complete, rendering their results as
-// they complete.
+// they complete. If the jobs are all completed when Wait gets called, it will simply flush out
+// outputs from completed jobs.
 func Wait(ctx context.Context, out *std.Output) {
 	jobs := loadFromContext(ctx)
 	count := int(jobs.count.Load())
-	if count == 0 {
-		return // no jobs left
-	}
 
 	_, span := analytics.StartSpan(ctx, "background_wait", "",
 		trace.WithAttributes(attribute.Int("jobs", count)))
 	defer span.End()
 
 	firstResultWithOutput := true
-	if jobs.verbose {
+	if jobs.verbose && count > 0 {
 		out.WriteLine(output.Styledf(output.StylePending, "Waiting for %d remaining background %s to complete...",
 			count, pluralize("job", "jobs", count)))
 	}

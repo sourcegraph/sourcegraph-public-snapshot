@@ -13,6 +13,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -86,10 +87,13 @@ func (c *openaiClient) GenerateEmbeddings(ctx context.Context, input codygateway
 }
 
 func (c *openaiClient) requestEmbeddings(ctx context.Context, model openAIModel, input []string) (*openaiEmbeddingsResponse, error) {
+	act := actor.FromContext(ctx)
+
 	request := openaiEmbeddingsRequest{
 		Model: model.upstreamName,
 		Input: input,
-		// TODO: Maybe set user.
+		// Set the actor ID for upstream tracking.
+		User: act.ID,
 	}
 
 	bodyBytes, err := json.Marshal(request)

@@ -389,7 +389,7 @@ func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.St
 	slowGoTestPackagesGRPC := []string{
 		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
 		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                        // 52 + 60
+		"github.com/sourcegraph/sourcegraph/internal/batches",                                   // 52 + 60
 		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
 		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
 		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job

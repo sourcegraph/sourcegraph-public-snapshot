@@ -16,7 +16,7 @@ coverage:
           - cmd/frontend/graphqlbackend/batches.go
           - internal/usagestats/batches.go
           - enterprise/cmd/frontend/internal/batches
-          - enterprise/internal/batches
+          - internal/batches
           - client/web/src/enterprise/batches
       insights:
         informational: true

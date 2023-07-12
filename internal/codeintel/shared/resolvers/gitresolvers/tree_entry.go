@@ -52,7 +52,7 @@ func (r *treeEntryResolver) Content(ctx context.Context, args *resolvers.GitTree
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	content, err := gitserver.NewClient().ReadFile(
+	content, err := gitserver.NewClientDeprecatedNeedsDB().ReadFile(
 		ctx,
 		authz.DefaultSubRepoPermsChecker,
 		api.RepoName(r.commit.Repository().Name()), // repository name

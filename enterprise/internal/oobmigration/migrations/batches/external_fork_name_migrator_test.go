@@ -8,9 +8,9 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
-	bstore "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	bstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
+	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 
-	bbcs "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/bitbucketcloud"
+	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 

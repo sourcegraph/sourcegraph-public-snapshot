@@ -117,7 +117,7 @@
 
 /enterprise/internal/authz/**/* @unknwon
 
-/enterprise/internal/batches/**/* @eseliger
+/internal/batches/**/* @eseliger
 
 /enterprise/internal/cloud/**/* @unknwon @michaellzc
 

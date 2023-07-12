@@ -10,7 +10,7 @@ how to define them.
 The final result is the definition of a @sourcegraph_back_compat target, whose test targets are exactly
 the same as back then, but with instead a new schema.
 
-Example: `bazel test @sourcegraph_back_compat//enterprise/internal/batches/...`.
+Example: `bazel test @sourcegraph_back_compat//internal/batches/...`.
 
 See https://sourcegraph.com/search?q=context:global+dev/backcompat/patches/back_compat_migrations.patch+repo:github.com/sourcegraph/sourcegraph+lang:Go&patternType=standard&sm=0&groupBy=repo
 for the command generating the mandatory patch file in CI for these tests to run.
@@ -21,7 +21,6 @@ eventuality of someone running those locally).
 
 load("test_release_version.bzl", "MINIMUM_UPGRADEABLE_VERSION", "MINIMUM_UPGRADEABLE_VERSION_REF")
 load("flakes.bzl", "FLAKES")
-
 load("@bazel_gazelle//:deps.bzl", "go_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
@@ -33,13 +32,13 @@ PATCH_GO_TEST = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
-$_sed_binary -i "s/func {}/func _{}/g" {}/*.go
+$_sed_binary -i "s/func {prefix}/func _{prefix}/g" {path}/*.go
 """
 
 # Assemble go test patches, based on the currently defined version.
 # See //dev/backcompat:test_release_version.bzl for the version definition.
 PATCH_GO_TEST_CMDS = [
-    PATCH_GO_TEST.format(test["prefix"], test["prefix"], test["path"], test["prefix"], test["reason"])
+    PATCH_GO_TEST.format(**test)
     for test in FLAKES[MINIMUM_UPGRADEABLE_VERSION]
 ]
 
@@ -49,15 +48,17 @@ PATCH_ALL_GO_TESTS_CMD = "\n".join(PATCH_GO_TEST_CMDS)
 # Replaces all occurences of @com_github_sourcegraph_(scip|conc) and zoekt by @back_compat_com_github_sourcegraph_(scip|conc).
 # We need to do this, because the backcompat share the same deps as the current HEAD, so we need to handle deviations manually here.
 # It's annoying, but that's how we get cached back compat tests.
+PATCH_BUILD_TARGETS = [
+    "com_github_sourcegraph_conc",
+    "com_github_sourcegraph_scip",
+    "com_github_sourcegraph_zoekt",
+    "com_github_throttled_throttled_v2",
+]
 PATCH_BUILD_FIXES_CMD = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
-"""
+""" + "\n".join(["""find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@{0}|@back_compat_{0}|g' {{}} +""".format(target) for target in PATCH_BUILD_TARGETS])
 
 def back_compat_defs():
     # github.com/sourcegraph/scip and github.com/sourcegraph/conc both rely on a few
@@ -91,8 +92,8 @@ def back_compat_defs():
         ],
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/scip",
-        sum = "h1:6PgJPdhDHRGskCu7+NxodNtX1z8umdC40QvoQt4FsP8=", # Need to be manually updated when bumping the back compat release target.
-        version = "v0.2.4-0.20230613194658-b62733841bc3", # Need to be manually updated when bumping the back compat release target.
+        sum = "h1:6PgJPdhDHRGskCu7+NxodNtX1z8umdC40QvoQt4FsP8=",  # Need to be manually updated when bumping the back compat release target.
+        version = "v0.2.4-0.20230613194658-b62733841bc3",  # Need to be manually updated when bumping the back compat release target.
     )
 
     # Same logic for this repository.
@@ -101,10 +102,11 @@ def back_compat_defs():
         build_directives = [
             "gazelle:resolve go github.com/sourcegraph/sourcegraph/lib/errors @sourcegraph_back_compat//lib/errors",
         ],
-        build_file_proto_mode = "disable_global", importpath =
-        "github.com/sourcegraph/conc",
-        sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=", # Need to be manually updated when bumping the back compat release target.
-        version = "v0.2.0", # Need to be manually updated when bumping the back compat release target.
+        build_file_proto_mode = "disable_global",
+        importpath =
+            "github.com/sourcegraph/conc",
+        sum = "h1:96VpOCAtXDCQ8Oycz0ftHqdPyMi8w12ltN4L2noYg7s=",  # Need to be manually updated when bumping the back compat release target.
+        version = "v0.2.0",  # Need to be manually updated when bumping the back compat release target.
     )
 
     go_repository(
@@ -122,7 +124,6 @@ def back_compat_defs():
         sum = "h1:DOkCb1el7NYzRoPb1pyeHVghsUoonVWEjmo34vrcp/8=",
         version = "v2.9.0",
     )
-
 
     # Now that we have declared a replacement for the two problematic go packages that
     # @sourcegraph_back_compat depends on, we can define the repository itself. Because it
@@ -145,7 +146,6 @@ def back_compat_defs():
             # and dropping the client folder.
             #
             "rm -Rf client",
-
             PATCH_ALL_GO_TESTS_CMD,
             PATCH_BUILD_FIXES_CMD,
 
