@@ -88,6 +88,9 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolLookupTableQuery)); err != nil {
 		return nil, err
 	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolLookupLeavesTableQuery)); err != nil {
+		return nil, err
+	}
 
 	symbolInserter := batch.NewInserter(
 		ctx,
@@ -95,8 +98,6 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		"t_codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
 		"symbol_id",
-		"descriptor_id",
-		"descriptor_no_suffix_id",
 		"document_lookup_id",
 		"definition_ranges",
 		"reference_ranges",
@@ -115,12 +116,23 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		"parent_id",
 	)
 
+	symbolLookupLeavesInserter := batch.NewInserter(
+		ctx,
+		s.db.Handle(),
+		"t_codeintel_scip_symbols_lookup_leaves",
+		batch.MaxNumPostgresParameters,
+		"symbol_id",
+		"descriptor_id",
+		"descriptor_no_suffix_id",
+	)
+
 	scipWriter := &scipWriter{
-		uploadID:             uploadID,
-		db:                   s.db,
-		symbolInserter:       symbolInserter,
-		symbolLookupInserter: symbolLookupInserter,
-		count:                0,
+		uploadID:                   uploadID,
+		db:                         s.db,
+		symbolInserter:             symbolInserter,
+		symbolLookupInserter:       symbolLookupInserter,
+		symbolLookupLeavesInserter: symbolLookupLeavesInserter,
+		count:                      0,
 	}
 
 	return scipWriter, nil
@@ -129,8 +141,6 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 const newSCIPWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
-	descriptor_id integer,
-	descriptor_no_suffix_id integer,
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
@@ -148,16 +158,25 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
 ) ON COMMIT DROP
 `
 
+const newSCIPWriterTemporarySymbolLookupLeavesTableQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup_leaves(
+	symbol_id integer NOT NULL,
+	descriptor_id integer NOT NULL,
+	descriptor_no_suffix_id integer NOT NULL
+) ON COMMIT DROP
+`
+
 type scipWriter struct {
-	uploadID             int
-	nextSymbolLookupID   int
-	nextSymbolID         int
-	db                   *basestore.Store
-	symbolInserter       *batch.Inserter
-	symbolLookupInserter *batch.Inserter
-	count                uint32
-	batchPayloadSum      int
-	batch                []bufferedDocument
+	uploadID                   int
+	nextSymbolLookupID         int
+	nextSymbolID               int
+	db                         *basestore.Store
+	symbolInserter             *batch.Inserter
+	symbolLookupInserter       *batch.Inserter
+	symbolLookupLeavesInserter *batch.Inserter
+	count                      uint32
+	batchPayloadSum            int
+	batch                      []bufferedDocument
 }
 
 type bufferedDocument struct {
@@ -344,11 +363,18 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			s.nextSymbolID++
 			ids := cache[index.SymbolName]
 
-			if err := s.symbolInserter.Insert(
+			if err := s.symbolLookupLeavesInserter.Insert(
 				ctx,
 				s.nextSymbolID,
 				ids.descriptorID,
 				ids.descriptorNoSuffixID,
+			); err != nil {
+				return err
+			}
+
+			if err := s.symbolInserter.Insert(
+				ctx,
+				s.nextSymbolID,
 				documentLookupIDs[i],
 				definitionRanges,
 				referenceRanges,
@@ -383,6 +409,9 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	if err := s.symbolLookupInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
+	if err := s.symbolLookupLeavesInserter.Flush(ctx); err != nil {
+		return 0, err
+	}
 	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
@@ -391,7 +420,10 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolLookupQuery, s.uploadID)); err != nil {
 		return 0, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolLookupLeavesQuery, s.uploadID)); err != nil {
+		return 0, err
+	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 2)); err != nil {
 		return 0, err
 	}
 
@@ -415,12 +447,25 @@ SELECT
 FROM t_codeintel_scip_symbols_lookup source
 `
 
+const scipWriterFlushSymbolLookupLeavesQuery = `
+INSERT INTO codeintel_scip_symbols_lookup_leaves (
+	upload_id,
+	symbol_id,
+	descriptor_id,
+	descriptor_no_suffix_id
+)
+SELECT
+	%s,
+	source.symbol_id,
+	source.descriptor_id,
+	source.descriptor_no_suffix_id
+FROM t_codeintel_scip_symbols_lookup_leaves source
+`
+
 const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
 	symbol_id,
-	descriptor_id,
-	descriptor_no_suffix_id,
 	document_lookup_id,
 	schema_version,
 	definition_ranges,
@@ -431,8 +476,6 @@ INSERT INTO codeintel_scip_symbols (
 SELECT
 	%s,
 	source.symbol_id,
-	source.descriptor_id,
-	source.descriptor_no_suffix_id,
 	source.document_lookup_id,
 	%s,
 	source.definition_ranges,
