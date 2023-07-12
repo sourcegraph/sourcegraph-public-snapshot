@@ -135,7 +135,12 @@ const CodySurveyToastInner: React.FC<
                     onChange={handleCodyForPersonalStuffChange}
                     className={styles.modalCheckbox}
                 />
-                {showError && <Text size='small' className="text-danger mt-3 mb-2">An error occurred. Please reload the page and try again. If this persists, contact support at support@sourcegraph.com</Text>}
+                {showError && (
+                    <Text size="small" className="text-danger mt-3 mb-2">
+                        An error occurred. Please reload the page and try again. If this persists, contact support at
+                        support@sourcegraph.com
+                    </Text>
+                )}
                 <div className="d-flex justify-content-end">
                     <LoaderButton
                         className={styles.codySurveyToastModalButton}
