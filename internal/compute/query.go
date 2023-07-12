@@ -242,7 +242,7 @@ func parseMatchOnly(q *query.Basic) (Command, bool, error) {
 }
 
 // first returns the first parser that succeeds at parsing a command from a pattern.
-func first(gitserverClient gitserver.Client, parsers ...commandParserFunc) commandParserFunc {
+func first(parsers ...commandParserFunc) commandParserFunc {
 	return func(q *query.Basic) (Command, bool, error) {
 		for _, parse := range parsers {
 			command, ok, err := parse(q)
@@ -266,7 +266,6 @@ type commandParser struct {
 
 func newCommandParser(gitserverClient gitserver.Client) *commandParser {
 	parseCommand := first(
-		gitserverClient,
 		parseReplace,
 		parseOutput,
 		parseMatchOnly,
