@@ -10,7 +10,7 @@
       "docker-images/*": "ignore all code under docker-images",
       "main.go": "ignore main",
       ".*_test\\.go$": "ignore test code",
-      "enterprise/internal/batches/testing/*": "ignore batches testing code"
+      "internal/batches/testing/*": "ignore batches testing code"
     }
   },
   "bodyclose": {

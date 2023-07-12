@@ -5,7 +5,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 )
 
 func TestChangesetsStatsResolver(t *testing.T) {
