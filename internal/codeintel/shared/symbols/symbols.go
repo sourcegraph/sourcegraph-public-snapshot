@@ -7,12 +7,13 @@ import (
 )
 
 type ExplodedSymbol struct {
-	Scheme             string
-	PackageManager     string
-	PackageName        string
-	PackageVersion     string
-	Descriptor         string
-	DescriptorNoSuffix string // N.B.
+	Scheme                string
+	PackageManager        string
+	PackageName           string
+	PackageVersion        string
+	DescriptorNamespace   string
+	DescriptorSuffix      string
+	FuzzyDescriptorSuffix string // N.B.
 }
 
 func (s *ExplodedSymbol) String() string {
@@ -25,7 +26,7 @@ func (s *ExplodedSymbol) Symbol() string {
 		quote(s.PackageManager),
 		quote(s.PackageName),
 		quote(s.PackageVersion),
-		quote(s.Descriptor),
+		quote(s.DescriptorNamespace + s.DescriptorSuffix),
 	}, " ")
 }
 
@@ -38,19 +39,45 @@ func quote(s string) string {
 }
 
 func NewExplodedSymbol(symbol string) (*ExplodedSymbol, error) {
-	p, err := scip.ParseSymbol(symbol)
+	parsedSymbol, err := scip.ParseSymbol(symbol)
 	if err != nil {
 		return nil, err
 	}
+	namespaceDescriptors, nonNamespaceDescriptors := splitNamespaces(parsedSymbol)
+
+	namespace := ""
+	if namespaceDescriptors != nil {
+		namespace = scip.DescriptorOnlyFormatter.FormatSymbol(namespaceDescriptors)
+	}
 
 	return &ExplodedSymbol{
-		Scheme:             p.Scheme,
-		PackageManager:     p.Package.Manager,
-		PackageName:        p.Package.Name,
-		PackageVersion:     p.Package.Version,
-		Descriptor:         scip.DescriptorOnlyFormatter.FormatSymbol(p),
-		DescriptorNoSuffix: ReducedDescriptorOnlyFormatter.FormatSymbol(p),
+		Scheme:                parsedSymbol.Scheme,
+		PackageManager:        parsedSymbol.Package.Manager,
+		PackageName:           parsedSymbol.Package.Name,
+		PackageVersion:        parsedSymbol.Package.Version,
+		DescriptorNamespace:   namespace,
+		DescriptorSuffix:      scip.DescriptorOnlyFormatter.FormatSymbol(nonNamespaceDescriptors),
+		FuzzyDescriptorSuffix: ReducedDescriptorOnlyFormatter.FormatSymbol(nonNamespaceDescriptors),
 	}, nil
+}
+
+func splitNamespaces(p *scip.Symbol) (*scip.Symbol, *scip.Symbol) {
+	for i, descriptor := range p.Descriptors {
+		if descriptor.Suffix != scip.Descriptor_Namespace {
+			if i == 0 {
+				// no namespaces
+				return nil, p
+			}
+
+			prefix := &scip.Symbol{Scheme: p.Scheme, Package: p.Package, Descriptors: p.Descriptors[:i]}
+			suffix := &scip.Symbol{Scheme: p.Scheme, Package: p.Package, Descriptors: p.Descriptors[i:]}
+			return prefix, suffix
+
+		}
+	}
+
+	// no non-namespaces
+	return nil, p
 }
 
 // ReducedDescriptorOnlyFormatter formats a reduced descriptor omitting suffixes outside

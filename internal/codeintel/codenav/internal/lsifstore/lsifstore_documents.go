@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"sort"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -78,28 +77,30 @@ SELECT DISTINCT
     l2.name AS package_manager,
     l3.name AS package_name,
     l4.name AS package_version,
-    l5.name AS descriptor
+    l5.name AS descriptor_namespace,
+    l6.name AS descriptor_suffix
 -- Initially fuzzy search (see WHERE clause)
-FROM codeintel_scip_symbols_lookup l6
+FROM codeintel_scip_symbols_lookup l7
 
 -- Join to symbols table, which will bridge DESCRIPTOR_SUFFIX_FUZZY (syntect) and DESCRIPTOR_SUFFIX (precise)
 JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l6.upload_id AND ll.fuzzy_descriptor_suffix_id = l6.id
 
--- Follow parent path from descriptor l5->l4->l3->l2->l1
-JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = l6.upload_id AND l5.id = ll.descriptor_suffix_id
-JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = l6.upload_id AND l4.id = l5.parent_id -- PACKAGE_VERSION
-JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = l6.upload_id AND l3.id = l4.parent_id -- PACKAGE_NAME
-JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = l6.upload_id AND l2.id = l3.parent_id -- PACKAGE_MANAGER
-JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id = l2.parent_id -- SCHEME
+-- Follow parent path from descriptor l6->l5->l4->l3->l2->l1
+JOIN codeintel_scip_symbols_lookup l6 ON l6.upload_id = l6.upload_id AND l6.id = ll.descriptor_suffix_id -- DESCRIPTOR_SUFFIX
+JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = l6.upload_id AND l5.id = l6.parent_id            -- DESCRIPTOR_NAMESPACE
+JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = l6.upload_id AND l4.id = l5.parent_id            -- PACKAGE_VERSION
+JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = l6.upload_id AND l3.id = l4.parent_id            -- PACKAGE_NAME
+JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = l6.upload_id AND l2.id = l3.parent_id            -- PACKAGE_MANAGER
+JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id = l2.parent_id            -- SCHEME
 WHERE
-	l6.upload_id = ANY(%s) AND
-	l6.segment_type = 'DESCRIPTOR_SUFFIX_FUZZY' AND
-	l6.name ILIKE ANY(%s)
+	l7.upload_id = ANY(%s) AND
+	l7.segment_type = 'DESCRIPTOR_SUFFIX_FUZZY' AND
+	l7.name ILIKE ANY(%s)
 `
 
 var scanExplodedSymbols = basestore.NewSliceScanner(func(s dbutil.Scanner) (*symbols.ExplodedSymbol, error) {
 	var n symbols.ExplodedSymbol
-	err := s.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.Descriptor)
+	err := s.Scan(&n.Scheme, &n.PackageManager, &n.PackageName, &n.PackageVersion, &n.DescriptorNamespace, &n.DescriptorSuffix)
 	return &n, err
 })
 
@@ -111,9 +112,7 @@ func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
 			continue
 		}
 
-		// TODO: BIT OF A HACK
-		parts := strings.Split(ex.Descriptor, "/")
-		trimmedDescriptorMap[parts[len(parts)-1]] = struct{}{}
+		trimmedDescriptorMap[ex.FuzzyDescriptorSuffix] = struct{}{}
 	}
 
 	descriptorWildcards := make([]string, 0, len(trimmedDescriptorMap))

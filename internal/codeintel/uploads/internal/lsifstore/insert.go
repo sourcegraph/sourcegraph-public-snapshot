@@ -516,11 +516,12 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 	createSchemeNode := func() SchemeNode { return SchemeNode(newNodeWithID[PackageManagerNode](id())) }
 	createPackageManagerNode := func() PackageManagerNode { return PackageManagerNode(newNodeWithID[PackageNameNode](id())) }
 	createPackageNameNode := func() PackageNameNode { return PackageNameNode(newNodeWithID[PackageVersionNode](id())) }
-	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[DescriptorNode](id())) }
+	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[NamespaceNode](id())) }
+	createNamespaceNode := func() NamespaceNode { return NamespaceNode(newNodeWithID[DescriptorNode](id())) }
 	createDescriptor := func() DescriptorNode { return DescriptorNode(newNodeWithID[descriptor](id())) }
 
 	cache := map[string]explodedIDs{}                // Tracks symbol name -> identifiers in the scheme tree
-	schemeTree := map[string]SchemeNode{}            // Tracks scheme -> manager -> name -> version -> descriptor
+	schemeTree := map[string]SchemeNode{}            // Tracks scheme -> manager -> name -> version -> descriptor (namespace, suffix)
 	fuzzyDescriptorSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
 
 	for _, symbolName := range symbolNames {
@@ -538,8 +539,9 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 		packageManagerNode := getOrCreate(schemeNode.children, symbol.PackageManager, createPackageManagerNode)      // depth 1
 		packageNameNode := getOrCreate(packageManagerNode.children, symbol.PackageName, createPackageNameNode)       // depth 2
 		packageVersionNode := getOrCreate(packageNameNode.children, symbol.PackageVersion, createPackageVersionNode) // depth 3
-		descriptor := getOrCreate(packageVersionNode.children, symbol.Descriptor, createDescriptor)                  // depth 4
-		fuzzyDescriptorsSuffixID := getOrCreate(fuzzyDescriptorSuffixMap, symbol.DescriptorNoSuffix, id)             // map insertion
+		namespace := getOrCreate(packageVersionNode.children, symbol.DescriptorNamespace, createNamespaceNode)       // depth 4
+		descriptor := getOrCreate(namespace.children, symbol.DescriptorSuffix, createDescriptor)                     // depth 5
+		fuzzyDescriptorsSuffixID := getOrCreate(fuzzyDescriptorSuffixMap, symbol.FuzzyDescriptorSuffix, id)          // map insertion
 
 		cache[symbolName] = explodedIDs{
 			descriptorSuffixID:      descriptor.id,
@@ -548,12 +550,13 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 	}
 
 	segmentTypeByDepth := []string{
-		"SCHEME",            // depth 0
-		"PACKAGE_MANAGER",   // depth 1
-		"PACKAGE_NAME",      // depth 2
-		"PACKAGE_VERSION",   // depth 3
-		"DESCRIPTOR_SUFFIX", // depth 4
-		/*              */ // depth PANIC
+		"SCHEME",               // depth 0
+		"PACKAGE_MANAGER",      // depth 1
+		"PACKAGE_NAME",         // depth 2
+		"PACKAGE_VERSION",      // depth 3
+		"DESCRIPTOR_NAMESPACE", // depth 4
+		"DESCRIPTOR_SUFFIX",    // depth 5
+		/*                   */ // depth PANIC
 	}
 
 	traverser := func(visit visitFunc) error {

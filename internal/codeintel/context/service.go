@@ -147,7 +147,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			for _, scipName := range scipNames {
 				// We do a `descriptor ILIKE %syntectName%` in Postgres today, so this
 				// is a bit of a less lenient (we do suffix here instead of contains).
-				if strippedDescriptor := strip(ex.Descriptor); strippedDescriptor != "" && strip(scipName.Descriptor) == strippedDescriptor {
+				if strippedDescriptor := strip(ex.DescriptorSuffix); strippedDescriptor != "" && strip(scipName.DescriptorSuffix) == strippedDescriptor {
 					symbolNames = append(symbolNames, scipName)
 				}
 			}
