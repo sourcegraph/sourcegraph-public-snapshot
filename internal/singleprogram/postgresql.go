@@ -38,7 +38,7 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) (StopPo
 		var err error
 		stop, vars, err = startEmbeddedPostgreSQL(logger, embeddedPostgreSQLRootDir)
 		if err != nil {
-			return stop, errors.Wrap(err, "Failed to download or start embedded postgresql. Please start your own postgres instance then configure the PG* environment variables to connect to it as well as setting USE_EMBEDDED_POSTGRESQL=0")
+			return stop, errors.Wrap(err, "Failed to download or start embedded postgresql.")
 		}
 		os.Setenv("PGPORT", vars.PGPORT)
 		os.Setenv("PGHOST", vars.PGHOST)
