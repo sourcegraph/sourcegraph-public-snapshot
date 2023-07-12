@@ -3,10 +3,7 @@ package com.sourcegraph.cody.autocomplete;
 import com.intellij.injected.editor.EditorWindow;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.EditorCustomElementRenderer;
-import com.intellij.openapi.editor.Inlay;
-import com.intellij.openapi.editor.InlayModel;
+import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.ex.EditorEx;
 import com.intellij.openapi.editor.impl.ImaginaryEditor;
 import com.intellij.openapi.project.Project;
@@ -17,6 +14,7 @@ import com.intellij.util.concurrency.annotations.RequiresEdt;
 import com.sourcegraph.cody.CodyCompatibility;
 import com.sourcegraph.cody.api.CompletionsService;
 import com.sourcegraph.cody.autocomplete.prompt_library.*;
+import com.sourcegraph.cody.autocomplete.render.*;
 import com.sourcegraph.cody.vscode.*;
 import com.sourcegraph.common.EditorUtils;
 import com.sourcegraph.config.ConfigUtil;
@@ -45,13 +43,9 @@ public class CodyAutoCompleteManager {
   @RequiresEdt
   public void clearAutoCompleteSuggestions(@NotNull Editor editor) {
     cancelCurrentJob();
-    for (Inlay<?> inlay :
-        editor.getInlayModel().getInlineElementsInRange(0, editor.getDocument().getTextLength())) {
-      if (!(inlay.getRenderer() instanceof CodyAutoCompleteElementRenderer)) {
-        continue;
-      }
-      Disposer.dispose(inlay);
-    }
+    InlayModelUtils.getAllInlaysForEditor(editor).stream()
+        .filter(inlay -> inlay.getRenderer() instanceof CodyAutoCompleteElementRenderer)
+        .forEach(Disposer::dispose);
   }
 
   @RequiresEdt
@@ -102,34 +96,6 @@ public class CodyAutoCompleteManager {
     }
   }
 
-  public static @NotNull InlineAutoCompleteItem postProcessInlineAutoCompleteBasedOnDocumentContext(
-      @NotNull InlineAutoCompleteItem resultItem,
-      @NotNull AutoCompleteDocumentContext autoCompleteDocumentContext) {
-    String sameLineSuffix = autoCompleteDocumentContext.getSameLineSuffix();
-    if (resultItem.insertText.endsWith(sameLineSuffix)) {
-      // if the autocomplete suggestion already has the same line suffix, we strip it
-      String newInsertText = StringUtils.stripEnd(resultItem.insertText, sameLineSuffix);
-      // adjusting the range to account for the shorter autocomplete suggestion
-      Range newRange =
-          resultItem.range.withEnd(
-              resultItem.range.end.withCharacter(
-                  resultItem.range.end.character - sameLineSuffix.length()));
-      return resultItem.withRange(newRange).withInsertText(newInsertText);
-    } else if (resultItem.insertText.contains(sameLineSuffix)) {
-      // if the autocomplete suggestion already contains the same line suffix
-      // but it doesn't strictly end with it
-      // we cut the end of the autocomplete suggestion starting with the suffix
-      int index = resultItem.insertText.lastIndexOf(sameLineSuffix);
-      String newInsertText = resultItem.insertText.substring(0, index);
-      // adjusting the range to account for the shorter autocomplete suggestion
-      int rangeDiff = resultItem.insertText.length() - newInsertText.length();
-      Range newRange =
-          resultItem.range.withEnd(
-              resultItem.range.end.withCharacter(resultItem.range.end.character - rangeDiff));
-      return resultItem.withRange(newRange).withInsertText(newInsertText);
-    } else return resultItem;
-  }
-
   private CompletableFuture<Void> triggerAutoCompleteAsync(
       @NotNull Editor editor,
       int offset,
@@ -157,10 +123,6 @@ public class CodyAutoCompleteManager {
                   result.items.stream()
                       .map(CodyAutoCompleteManager::removeUndesiredCharacters)
                       .map(item -> normalizeIndentation(item, EditorUtils.indentOptions(editor)))
-                      .map(
-                          resultItem ->
-                              postProcessInlineAutoCompleteBasedOnDocumentContext(
-                                  resultItem, autoCompleteDocumentContext))
                       .filter(resultItem -> !resultItem.insertText.isEmpty())
                       .findFirst();
               if (maybeItem.isEmpty()) {
@@ -168,8 +130,6 @@ public class CodyAutoCompleteManager {
               }
               InlineAutoCompleteItem item = maybeItem.get();
               try {
-                EditorCustomElementRenderer renderer =
-                    new CodyAutoCompleteElementRenderer(item.insertText, editor);
                 ApplicationManager.getApplication()
                     .invokeLater(
                         () -> {
@@ -177,13 +137,31 @@ public class CodyAutoCompleteManager {
                           this.clearAutoCompleteSuggestions(editor);
 
                           /* Log the event */
-                          Project project = editor.getProject();
-                          if (project != null) {
-                            GraphQlLogger.logCodyEvent(project, "completion", "suggested");
-                          }
+                          Optional.ofNullable(editor.getProject())
+                              .ifPresent(
+                                  p -> GraphQlLogger.logCodyEvent(p, "completion", "suggested"));
 
-                          /* Display completion */
-                          inlayModel.addInlineElement(offset, true, renderer);
+                          /* display autocomplete */
+                          AutoCompleteText autoCompleteText =
+                              item.toAutoCompleteText(
+                                  autoCompleteDocumentContext.getSameLineSuffix().trim());
+                          autoCompleteText
+                              .getInlineRenderer(editor)
+                              .ifPresent(
+                                  inlineRenderer ->
+                                      inlayModel.addInlineElement(offset, true, inlineRenderer));
+                          autoCompleteText
+                              .getAfterLineEndRenderer(editor)
+                              .ifPresent(
+                                  afterLineEndRenderer ->
+                                      inlayModel.addAfterLineEndElement(
+                                          offset, true, afterLineEndRenderer));
+                          autoCompleteText
+                              .getBlockRenderer(editor)
+                              .ifPresent(
+                                  blockRenderer ->
+                                      inlayModel.addBlockElement(
+                                          offset, true, false, Integer.MAX_VALUE, blockRenderer));
                         });
               } catch (Exception e) {
                 // TODO: do something smarter with unexpected errors.

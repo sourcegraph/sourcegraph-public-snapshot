@@ -1,6 +1,6 @@
 # Cody troubleshooting guide
 
-Here are common troubleshooting steps to run before filing Cody bugs on the [issue tracker](https://github.com/sourcegraph/sourcegraph/issues) or asking in our [Discord](https://discord.gg/s2qDtYGnAE). (We're always happy to help, though!)
+Here are common troubleshooting steps to run before filing Cody bugs on the [issue tracker](https://github.com/sourcegraph/cody/issues) or asking in our [Discord](https://discord.gg/s2qDtYGnAE). (We're always happy to help, though!)
 
 ## VS Code extension
 

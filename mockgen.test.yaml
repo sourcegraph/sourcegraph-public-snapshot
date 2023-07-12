@@ -4,9 +4,9 @@
       interfaces:
         - Client
       prefix: Gerrit
-- filename: enterprise/internal/batches/sources/mocks_test.go
+- filename: internal/batches/sources/mocks_test.go
   sources:
-    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources
+    - path: github.com/sourcegraph/sourcegraph/internal/batches/sources
       interfaces:
         - ChangesetSource
         - ForkableChangesetSource
@@ -159,8 +159,8 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue
   interfaces:
     - GitserverClient
-- filename: enterprise/internal/batches/syncer/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer
+- filename: internal/batches/syncer/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/batches/syncer
   interfaces:
     - SyncStore
 - filename: internal/codeintel/autoindexing/internal/background/dependencies/mocks_test.go

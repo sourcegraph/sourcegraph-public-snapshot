@@ -10,6 +10,7 @@
 - Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
 - Copy code block button added to editor in the chat message to copy the text to clipboard [#54783](https://github.com/sourcegraph/sourcegraph/pull/54783)
 - Insert at Cursor button added to editor in the chat message to insert the text form the editor to main editor [#54815](https://github.com/sourcegraph/sourcegraph/pull/54815)
+- Added support for multiline autocomplete [#54848](https://github.com/sourcegraph/sourcegraph/pull/54848)
 
 ### Changed
 

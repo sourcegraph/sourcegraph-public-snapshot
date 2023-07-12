@@ -85,10 +85,40 @@ func EmbedRepo(
 		}
 	}
 
+	dimensions, err := client.GetDimensions()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	newIndex := func(numFiles int) embeddings.EmbeddingIndex {
+		return embeddings.EmbeddingIndex{
+			Embeddings:      make([]int8, 0, numFiles*dimensions/2),
+			RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, numFiles/2),
+			ColumnDimension: dimensions,
+			Ranks:           make([]float32, 0, numFiles/2),
+		}
+	}
+
 	stats := bgrepo.EmbedRepoStats{
 		CodeIndexStats: bgrepo.NewEmbedFilesStats(len(codeFileNames)),
 		TextIndexStats: bgrepo.NewEmbedFilesStats(len(textFileNames)),
 		IsIncremental:  isIncremental,
+	}
+
+	insertIndex := func(index *embeddings.EmbeddingIndex, metadata []embeddings.RepoEmbeddingRowMetadata, vectors []float32) {
+		index.RowMetadata = append(index.RowMetadata, metadata...)
+		index.Embeddings = append(index.Embeddings, embeddings.Quantize(vectors)...)
+		// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
+		// to "unimportant" files and the average for unknown files. We should probably
+		// add this here, too.
+		for _, md := range metadata {
+			index.Ranks = append(index.Ranks, float32(ranks.Paths[md.FileName]))
+		}
+	}
+
+	codeIndex := newIndex(len(codeFileNames))
+	insertCode := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
+		insertIndex(&codeIndex, md, embeddings)
+		return nil
 	}
 
 	reportCodeProgress := func(codeIndexStats bgrepo.EmbedFilesStats) {
@@ -96,18 +126,24 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, ranks, reportCodeProgress)
+	codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, insertCode, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 	stats.CodeIndexStats = codeIndexStats
+
+	textIndex := newIndex(len(textFileNames))
+	insertText := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
+		insertIndex(&textIndex, md, embeddings)
+		return nil
+	}
 
 	reportTextProgress := func(textIndexStats bgrepo.EmbedFilesStats) {
 		stats.TextIndexStats = textIndexStats
 		reportProgress(&stats)
 	}
 
-	textIndex, textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, ranks, reportTextProgress)
+	textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, insertText, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -143,6 +179,8 @@ type FileFilters struct {
 	MaxFileSizeBytes int
 }
 
+type batchInserter func(metadata []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error
+
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
 // the embeddings and metadata about the chunks the embeddings correspond to.
@@ -155,19 +193,12 @@ func embedFiles(
 	splitOptions codeintelContext.SplitOptions,
 	reader FileReader,
 	maxEmbeddingVectors int,
-	repoPathRanks types.RepoPathRanks,
+	insert batchInserter,
 	reportProgress func(bgrepo.EmbedFilesStats),
-) (embeddings.EmbeddingIndex, bgrepo.EmbedFilesStats, error) {
+) (bgrepo.EmbedFilesStats, error) {
 	dimensions, err := embeddingsClient.GetDimensions()
 	if err != nil {
-		return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
-	}
-
-	index := embeddings.EmbeddingIndex{
-		Embeddings:      make([]int8, 0, len(files)*dimensions/2),
-		RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, len(files)/2),
-		ColumnDimension: dimensions,
-		Ranks:           make([]float32, 0, len(files)/2),
+		return bgrepo.EmbedFilesStats{}, err
 	}
 
 	stats := bgrepo.NewEmbedFilesStats(len(files))
@@ -180,14 +211,14 @@ func embedFiles(
 		}
 
 		batchChunks := make([]string, len(batch))
+		metadata := make([]embeddings.RepoEmbeddingRowMetadata, len(batch))
 		for idx, chunk := range batch {
 			batchChunks[idx] = chunk.Content
-			index.RowMetadata = append(index.RowMetadata, embeddings.RepoEmbeddingRowMetadata{FileName: chunk.FileName, StartLine: chunk.StartLine, EndLine: chunk.EndLine})
-
-			// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
-			// to "unimportant" files and the average for unknown files. We should probably
-			// add this here, too.
-			index.Ranks = append(index.Ranks, float32(repoPathRanks.Paths[chunk.FileName]))
+			metadata[idx] = embeddings.RepoEmbeddingRowMetadata{
+				FileName:  chunk.FileName,
+				StartLine: chunk.StartLine,
+				EndLine:   chunk.EndLine,
+			}
 		}
 
 		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
@@ -200,7 +231,10 @@ func embedFiles(
 		if expected := len(batchChunks) * dimensions; len(batchEmbeddings) != expected {
 			return errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings))
 		}
-		index.Embeddings = append(index.Embeddings, embeddings.Quantize(batchEmbeddings)...)
+
+		if err := insert(metadata, batchEmbeddings); err != nil {
+			return err
+		}
 
 		batch = batch[:0] // reset batch
 		reportProgress(stats)
@@ -218,7 +252,7 @@ func embedFiles(
 
 	for _, file := range files {
 		if ctx.Err() != nil {
-			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, ctx.Err()
+			return bgrepo.EmbedFilesStats{}, ctx.Err()
 		}
 
 		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
@@ -244,7 +278,7 @@ func embedFiles(
 
 		contentBytes, err := reader.Read(ctx, file.Name)
 		if err != nil {
-			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while reading a file")
+			return bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while reading a file")
 		}
 
 		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
@@ -255,11 +289,11 @@ func embedFiles(
 		// At this point, we have determined that we want to embed this file.
 		chunks, err := contextService.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
 		if err != nil {
-			return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
+			return bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
 		}
 		for _, chunk := range chunks {
 			if err := addToBatch(chunk); err != nil {
-				return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
+				return bgrepo.EmbedFilesStats{}, err
 			}
 			stats.AddChunk(len(chunk.Content))
 		}
@@ -268,10 +302,10 @@ func embedFiles(
 
 	// Always do a final flush
 	if err := flush(); err != nil {
-		return embeddings.EmbeddingIndex{}, bgrepo.EmbedFilesStats{}, err
+		return bgrepo.EmbedFilesStats{}, err
 	}
 
-	return index, stats, nil
+	return stats, nil
 }
 
 type FileReadLister interface {

@@ -1,0 +1,60 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "webhooks",
+    srcs = [
+        "batch_change.go",
+        "changeset.go",
+        "event_types.go",
+        "gql.go",
+        "util.go",
+        "webhooks.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/webhooks",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api/internalapi",
+        "//internal/database/basestore",
+        "//internal/encryption",
+        "//internal/encryption/keyring",
+        "//internal/httpcli",
+        "//internal/webhooks/outbound",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graphql_go_graphql//gqlerrors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "webhooks_test",
+    timeout = "short",
+    srcs = [
+        "batch_change_test.go",
+        "changeset_test.go",
+    ],
+    embed = [":webhooks"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/frontend/graphqlbackend",
+        "//internal/actor",
+        "//internal/batches/graphql",
+        "//internal/batches/store",
+        "//internal/batches/testing",
+        "//internal/batches/types",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "//internal/timeutil",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_google_go_cmp//cmp/cmpopts",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//mock",
+        "@com_github_stretchr_testify//require",
+    ],
+)

@@ -11,9 +11,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler",
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
-        "//enterprise/internal/batches/types",
         "//enterprise/internal/executor/store",
         "//enterprise/internal/executor/types",
+        "//internal/batches/types",
         "//internal/codeintel/uploads/shared",
         "//internal/conf",
         "//internal/database",
@@ -47,9 +47,9 @@ go_test(
     tags = ["requires-network"],
     deps = [
         ":handler",
-        "//enterprise/internal/batches/types",
         "//enterprise/internal/executor/store",
         "//enterprise/internal/executor/types",
+        "//internal/batches/types",
         "//internal/codeintel/uploads/shared",
         "//internal/conf",
         "//internal/database",
