@@ -14,8 +14,8 @@ go_library(
         "types_db.go",
         "types_json.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/insights",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/database/basestore",
         "//internal/database/dbutil",

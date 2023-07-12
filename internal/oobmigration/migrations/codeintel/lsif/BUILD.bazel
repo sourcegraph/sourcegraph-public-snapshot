@@ -13,8 +13,8 @@ go_library(
         "serializer.go",
         "types.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/internal/oobmigration/migrations/codeintel/lsif",
-    visibility = ["//enterprise:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/codeintel/lsif",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//internal/codeintel/shared/ranges",
         "//internal/codeintel/shared/trie",
