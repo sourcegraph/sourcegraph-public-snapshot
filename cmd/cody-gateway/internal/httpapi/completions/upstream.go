@@ -26,7 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type bodyTransformer[T UpstreamRequest] func(*T)
+type bodyTransformer[T UpstreamRequest] func(*T, *actor.Actor)
 type requestTransformer func(*http.Request)
 type requestValidator[T UpstreamRequest] func(T) error
 type requestMetadataRetriever[T UpstreamRequest] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
@@ -133,7 +133,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 
-			transformBody(&body)
+			transformBody(&body, act)
 
 			// Re-marshal the payload for upstream to unset metadata and remove any properties
 			// not known to us.
