@@ -1,6 +1,4 @@
-import React, { ImgHTMLAttributes, SVGProps } from 'react'
-
-import logo from '../../../../../src-tauri/icons/icon.png'
+import React, { SVGProps } from 'react'
 
 export const CodyLogo: React.FunctionComponent<React.PropsWithChildren<SVGProps<SVGSVGElement>>> = (
     props: SVGProps<SVGSVGElement>
@@ -19,9 +17,4 @@ export const CodyLogo: React.FunctionComponent<React.PropsWithChildren<SVGProps<
             fill="#a6b6d9"
         />
     </svg>
-)
-
-export const CodyLogoFilled: React.FunctionComponent<ImgHTMLAttributes<HTMLImageElement>> = (props): JSX.Element => (
-    // eslint-disable-next-line no-restricted-syntax
-    <img src={logo as string} alt="logo" {...props} />
 )
