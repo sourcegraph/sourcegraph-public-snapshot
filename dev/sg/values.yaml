@@ -1,0 +1,10 @@
+envvars:
+  - name: ricky
+    value: foo
+  - name: julian
+    value: bar
+  - name: bubbles
+    value: cat
+ports:
+  - name: frontend
+    value: 80

@@ -271,6 +271,7 @@ var sg = &cli.App{
 		telemetryCommand,
 		monitoringCommand,
 		contextCommand,
+		deployCommand,
 
 		// Dev environment
 		secretCommand,
