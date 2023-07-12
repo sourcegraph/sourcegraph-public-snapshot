@@ -61,12 +61,12 @@ func LoadCtagsConfig(baseConfig env.BaseConfig) CtagsConfig {
 	}
 
 	ctagsCommandDefault := "universal-ctags"
-	if deploy.IsSingleBinary() {
+	if deploy.IsApp() {
 		ctagsCommandDefault = ""
 	}
 
 	scipCtagsCommandDefault := "scip-ctags"
-	if deploy.IsSingleBinary() {
+	if deploy.IsApp() {
 		scipCtagsCommandDefault = ""
 	}
 

@@ -153,7 +153,7 @@ func handleSearchWith(l logger.Logger, searchFunc types.SearchFunc) http.Handler
 
 func handleListLanguages(ctagsBinary string) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if deploy.IsSingleBinary() && ctagsBinary == "" {
+		if deploy.IsApp() && ctagsBinary == "" {
 			// app: ctags is not available
 			var mapping map[string][]string
 			if err := json.NewEncoder(w).Encode(mapping); err != nil {

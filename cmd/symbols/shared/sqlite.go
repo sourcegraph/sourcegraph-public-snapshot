@@ -47,7 +47,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 	// anything that tries to open a SQLite database.
 	sqlite.Init()
 
-	if deploy.IsSingleBinary() && config.Ctags.UniversalCommand == "" {
+	if deploy.IsApp() && config.Ctags.UniversalCommand == "" {
 		// app: ctags is not available
 		searchFunc := func(ctx context.Context, params search.SymbolsParameters) (result.Symbols, error) {
 			return nil, nil
@@ -82,7 +82,7 @@ func SetupSqlite(observationCtx *observation.Context, db database.DB, gitserverC
 }
 
 func parserTypesForDeployment() []ctags_config.ParserType {
-	if deploy.IsSingleBinary() {
+	if deploy.IsApp() {
 		// ScipCtags is not available
 		// TODO(burmudar): make it available
 		return []ctags_config.ParserType{ctags_config.UniversalCtags}
