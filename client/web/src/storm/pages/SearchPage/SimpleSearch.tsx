@@ -33,7 +33,7 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
             {showState !== 'default' && (
                 <div>
                     <Button className="mb-2" onClick={() => setShowState('default')}>
-                        <Icon aria-label='hover icon for help tooltip' svgPath={mdiArrowLeft} />
+                        <Icon aria-label="hover icon for help tooltip" svgPath={mdiArrowLeft} />
                         Back
                     </Button>
                     <Text>
@@ -63,7 +63,7 @@ const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
                 <div>
                     <H3>Find code</H3>
                     <Text className="mt-2">Look for examples of code, specifically or with a pattern</Text>
-                    <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                    <Icon aria-label="hover icon for help tooltip" className="ml-2" svgPath={mdiHelpCircleOutline} />
                 </div>
             </Button>
         </Tooltip>
@@ -77,7 +77,7 @@ const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
             >
                 <H3>Find repositories</H3>
                 <Text className="mt-2">Look for repositories by name, file contents, metadata, or owners</Text>
-                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                <Icon aria-label="hover icon for help tooltip" className="ml-2" svgPath={mdiHelpCircleOutline} />
             </Button>
         </Tooltip>
 
@@ -90,7 +90,7 @@ const SearchPicker: FC<SearchPickerProps> = ({ setShowState }) => (
             >
                 <H3>Look for changes</H3>
                 <Text className="mt-2">Look for changes in commit messages or search over diffs in the code</Text>
-                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                <Icon aria-label="hover icon for help tooltip" className="ml-2" svgPath={mdiHelpCircleOutline} />
             </Button>
         </Tooltip>
     </div>

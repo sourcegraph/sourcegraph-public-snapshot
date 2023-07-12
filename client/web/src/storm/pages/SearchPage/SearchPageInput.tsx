@@ -125,9 +125,12 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
         [submitSearchOnChangeRef]
     )
 
-    const onSimpleSearchUpdate = useCallback((val:string) => {
-        setQueryState({ query: val })
-    }, [setQueryState])
+    const onSimpleSearchUpdate = useCallback(
+        (val: string) => {
+            setQueryState({ query: val })
+        },
+        [setQueryState]
+    )
 
     // TODO (#48103): Remove/simplify when new search input is released
     const input = experimentalQueryInput ? (
@@ -208,10 +211,7 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             {simpleSearch && (
                 <div>
                     <hr className="mt-4 mb-4" />
-                    <SimpleSearch
-                        onSubmit={onSubmit}
-                        onSimpleSearchUpdate={onSimpleSearchUpdate}
-                    />
+                    <SimpleSearch onSubmit={onSubmit} onSimpleSearchUpdate={onSimpleSearchUpdate} />
                 </div>
             )}
         </div>

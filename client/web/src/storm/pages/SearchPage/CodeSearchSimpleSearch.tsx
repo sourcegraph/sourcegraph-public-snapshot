@@ -5,22 +5,22 @@ import { mdiHelpCircleOutline } from '@mdi/js'
 import { Icon, Select, Tooltip, Input, Button, Label, Form } from '@sourcegraph/wildcard'
 
 export interface SimpleSearchProps {
-    onSimpleSearchUpdate: (query: string) => void;
-    onSubmit: () => void;
+    onSimpleSearchUpdate: (query: string) => void
+    onSubmit: () => void
 }
 
 const languages = ['JavaScript', 'TypeScript', 'Java', 'C++', 'Python', 'Go', 'C#', 'Ruby']
 
 interface QueryOptions {
-    repoPattern?: string;
-    repoNames?: string;
-    filePaths?: string;
-    useForks?: string;
-    literalContent?: string;
-    regexpContent?: string;
-    languageFilter?: string;
-    useArchive?: string;
-    searchContext?: string;
+    repoPattern?: string
+    repoNames?: string
+    filePaths?: string
+    useForks?: string
+    literalContent?: string
+    regexpContent?: string
+    languageFilter?: string
+    useArchive?: string
+    searchContext?: string
 }
 
 const getQuery = ({
@@ -118,7 +118,11 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             Match literal string
                             <Tooltip content="Search for matching content with an exact match.">
-                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon
+                                    aria-label="hover icon for help tooltip"
+                                    className="ml-2"
+                                    svgPath={mdiHelpCircleOutline}
+                                />
                             </Tooltip>
                         </Label>
 
@@ -139,7 +143,11 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             Match regular expression
                             <Tooltip content="Search for matching content using a regular expression.">
-                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon
+                                    aria-label="hover icon for help tooltip"
+                                    className="ml-2"
+                                    svgPath={mdiHelpCircleOutline}
+                                />
                             </Tooltip>
                         </Label>
 
@@ -164,7 +172,11 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         <Label htmlFor="repoName" className="col-4 col-form-label">
                             In these repos
                             <Tooltip content="Match repository names exactly.">
-                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon
+                                    aria-label="hover icon for help tooltip"
+                                    className="ml-2"
+                                    svgPath={mdiHelpCircleOutline}
+                                />
                             </Tooltip>
                         </Label>
 
@@ -184,7 +196,11 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                         <Label htmlFor="repoNamePatterns" className="col-4 col-form-label">
                             In matching repos
                             <Tooltip content="Use a regular expression pattern to match against repository names.">
-                                <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                                <Icon
+                                    aria-label="hover icon for help tooltip"
+                                    className="ml-2"
+                                    svgPath={mdiHelpCircleOutline}
+                                />
                             </Tooltip>
                         </Label>
                         <div className="col-8">
@@ -201,13 +217,19 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     <div className="form-group row">
                         <div className="col-6">
                             <Select
-                                label={<div>
-                                    Search over repository forks?
-                                    <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
-                                        <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
-                                    </Tooltip>
-                                </div>}
-                                labelClassName='pl-0'
+                                label={
+                                    <div>
+                                        Search over repository forks?
+                                        <Tooltip content="Choose an option to include or exclude forks from the search, or search only over forks.">
+                                            <Icon
+                                                aria-label="hover icon for help tooltip"
+                                                className="ml-2"
+                                                svgPath={mdiHelpCircleOutline}
+                                            />
+                                        </Tooltip>
+                                    </div>
+                                }
+                                labelClassName="pl-0"
                                 id="searchForks"
                                 name="searchForks"
                                 onChange={event => setUseForks(event.target.value)}
@@ -220,13 +242,19 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
 
                         <div className="col-6">
                             <Select
-                                label={<div>
-                                    Search over archived repositories?
-                                    <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
-                                        <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
-                                    </Tooltip>
-                                </div>}
-                                labelClassName='pl-0'
+                                label={
+                                    <div>
+                                        Search over archived repositories?
+                                        <Tooltip content="Choose an option to include or exclude archived repos from the search, or search only over archived repos.">
+                                            <Icon
+                                                aria-label="hover icon for help tooltip"
+                                                className="ml-2"
+                                                svgPath={mdiHelpCircleOutline}
+                                            />
+                                        </Tooltip>
+                                    </div>
+                                }
+                                labelClassName="pl-0"
                                 id="searchArchive"
                                 name="searchArchive"
                                 onChange={event => setUseArchive(event.target.value)}
@@ -245,7 +273,11 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     <Label htmlFor="filePathPattern" className="col-4 col-form-label">
                         In matching file paths
                         <Tooltip content="Use a regular expression pattern to match against file paths, for example sourcegraph/.*/internal">
-                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon
+                                aria-label="hover icon for help tooltip"
+                                className="ml-2"
+                                svgPath={mdiHelpCircleOutline}
+                            />
                         </Tooltip>
                     </Label>
                     <div className="col-8">
@@ -260,15 +292,19 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                 </div>
 
                 <div className="form-group row">
-                    <Label id='searchLangLabel' htmlFor="searchLang" className="col-4 col-form-label">
+                    <Label id="searchLangLabel" htmlFor="searchLang" className="col-4 col-form-label">
                         Which programming language?
                         <Tooltip content="Only match files for a given programming language.">
-                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon
+                                aria-label="hover icon for help tooltip"
+                                className="ml-2"
+                                svgPath={mdiHelpCircleOutline}
+                            />
                         </Tooltip>
                     </Label>
                     <div className="col-8">
                         <Select
-                            aria-labelledby='searchLangLabel'
+                            aria-labelledby="searchLangLabel"
                             id="searchLang"
                             name="searchLang"
                             onChange={event => setLanguageFilter(event.target.value)}
@@ -287,7 +323,11 @@ export const CodeSearchSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchUp
                     <Label htmlFor="searchContext" className="col-4 col-form-label">
                         Search context
                         <Tooltip content="Only match files inside a search context. A search context is a Sourcegraph entity to provide shareable and repeatable filters, such as common sets of repositories. The global context  will search over all code on Sourcegraph.">
-                            <Icon aria-label='hover icon for help tooltip' className="ml-2" svgPath={mdiHelpCircleOutline} />
+                            <Icon
+                                aria-label="hover icon for help tooltip"
+                                className="ml-2"
+                                svgPath={mdiHelpCircleOutline}
+                            />
                         </Tooltip>
                     </Label>
                     <div className="col-8">

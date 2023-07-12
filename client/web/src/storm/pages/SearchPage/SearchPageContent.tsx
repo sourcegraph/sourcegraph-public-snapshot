@@ -87,7 +87,11 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             placement="top"
                         >
                             <div className={styles.translucent}>
-                                <SearchPageInput simpleSearch={false} queryState={queryState} setQueryState={setQueryState} />
+                                <SearchPageInput
+                                    simpleSearch={false}
+                                    queryState={queryState}
+                                    setQueryState={setQueryState}
+                                />
                             </div>
                         </Tooltip>
                         <AddCodeHostWidget className="mb-4" />
