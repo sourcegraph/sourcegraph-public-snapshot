@@ -40,7 +40,6 @@ export interface UpdaterSettings {
  * - `error`: Any error that occurred during update checking
  */
 export function useUpdater({ keepChecking }: UpdaterSettings = { keepChecking: true }): UpdateInfo {
-    const [firstCheck, setFirstCheck] = useState<boolean>(false)
     const [lastCheck, setLastCheck] = useState<UpdateInfo>({
         stage: 'CHECKING',
         hasNewVersion: false,
