@@ -214,9 +214,16 @@ func (r *repoEmbeddingJobResolver) Revision(ctx context.Context) (*graphqlbacken
 	if err != nil {
 		return nil, err
 	}
-	if repoResolver == nil {
+
+	// An empty revision value can accompany a valid repository if gitserver cannot resolve the default branch or latest revision during job scheduling.
+	// The job will always fail in this case and must be displayed in site admin despite the gitserver error.
+	// Site admin will only provide the job's failure_message in this case.
+	invalidRevision := r.job.Revision == ""
+
+	if repoResolver == nil || invalidRevision {
 		return nil, nil
 	}
+
 	return graphqlbackend.NewGitCommitResolver(r.db, r.gitserverClient, repoResolver, r.job.Revision, nil), nil
 }
 
