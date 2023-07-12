@@ -32,9 +32,9 @@ func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	indexGetter, err := NewCachedEmbeddingIndexGetter(
 		mockRepoStore,
 		mockRepoEmbeddingJobsStore,
-		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-			switch repoEmbeddingIndexName {
-			case embeddings.GetRepoEmbeddingIndexName(7):
+		func(ctx context.Context, repoID api.RepoID, _ api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+			switch repoID {
+			case 7:
 				hasDownloadedRepoEmbeddingIndex = true
 				return &embeddings.RepoEmbeddingIndex{}, nil
 			default:
@@ -155,7 +155,7 @@ func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
 	indexGetter, err := NewCachedEmbeddingIndexGetter(
 		mockRepoStore,
 		mockRepoEmbeddingJobsStore,
-		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
+		func(ctx context.Context, _ api.RepoID, _ api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
 			mu.Lock()
 			defer mu.Unlock()
 

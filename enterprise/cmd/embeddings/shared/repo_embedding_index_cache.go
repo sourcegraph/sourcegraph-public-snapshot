@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
+type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
 
 type repoEmbeddingIndexCacheEntry struct {
 	index      *embeddings.RepoEmbeddingIndex
@@ -170,34 +170,21 @@ func (c *CachedEmbeddingIndexGetter) get(ctx context.Context, repoID api.RepoID,
 	trace.FromContext(ctx).AddEvent("checked embedding index cache", attribute.Bool("hit", ok))
 	if !ok {
 		// We do not have the index in the cache. Download and cache it.
-		//
-		// For a brief transition period, we support index names based on
-		// either ID or repo name.
-		index, err := c.getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
-		if err != nil {
-			if tr != nil {
-				tr.AddEvent("failed to download index based on ID, trying again based on repo name",
-					attribute.String("index", string(repoEmbeddingIndexName)),
-					attribute.String("error", err.Error()))
-			}
-			// TODO (stefan): Remove support for getting indexes from the cache based on repo name after 5.3
-			return c.getAndCacheIndex(ctx, embeddings.GetRepoEmbeddingIndexNameDeprecated(repoName), lastFinishedRepoEmbeddingJob.FinishedAt)
-		}
-		return index, nil
+		return c.getAndCacheIndex(ctx, repoID, repoName, lastFinishedRepoEmbeddingJob.FinishedAt)
 	} else if lastFinishedRepoEmbeddingJob.FinishedAt.After(cacheEntry.finishedAt) {
 		// Check if we have a newer finished embedding job. If so, download the new index, cache it, and return it instead.
-		return c.getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
+		return c.getAndCacheIndex(ctx, repoID, repoName, lastFinishedRepoEmbeddingJob.FinishedAt)
 	}
 
 	// Otherwise, return the cached index.
 	return cacheEntry.index, nil
 }
 
-func (c *CachedEmbeddingIndexGetter) getAndCacheIndex(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName, finishedAt *time.Time) (*embeddings.RepoEmbeddingIndex, error) {
-	embeddingIndex, err := c.downloadRepoEmbeddingIndex(ctx, repoEmbeddingIndexName)
+func (c *CachedEmbeddingIndexGetter) getAndCacheIndex(ctx context.Context, repoID api.RepoID, repoName api.RepoName, finishedAt *time.Time) (*embeddings.RepoEmbeddingIndex, error) {
+	embeddingIndex, err := c.downloadRepoEmbeddingIndex(ctx, repoID, repoName)
 	if err != nil {
 		return nil, errors.Wrap(err, "downloading repo embedding index")
 	}
-	c.cache.Add(repoEmbeddingIndexName, repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
+	c.cache.Add(embeddings.GetRepoEmbeddingIndexName(repoID), repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
 	return embeddingIndex, nil
 }

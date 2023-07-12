@@ -134,10 +134,10 @@ func TestRepoEmbeddingIndexStorage(t *testing.T) {
 	ctx := context.Background()
 	uploadStore := newMockUploadStore()
 
-	err := UploadRepoEmbeddingIndex(ctx, uploadStore, "index", index)
+	err := UploadRepoEmbeddingIndex(ctx, uploadStore, "0.embeddingindex", index)
 	require.NoError(t, err)
 
-	downloadedIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
+	downloadedIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, 0, "")
 	require.NoError(t, err)
 
 	require.Equal(t, index, downloadedIndex)
@@ -169,11 +169,11 @@ func TestIndexFormatVersion(t *testing.T) {
 	err := enc.encode(index)
 	require.NoError(t, err)
 
-	_, err = uploadStore.Upload(ctx, "index", &buf)
+	_, err = uploadStore.Upload(ctx, "0.embeddingindex", &buf)
 	require.NoError(t, err)
 
-	_, err = DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
-	require.EqualError(t, err, fmt.Sprintf("unrecognized index format version: %d", formatVersion))
+	_, err = DownloadRepoEmbeddingIndex(ctx, uploadStore, 0, "")
+	require.ErrorContains(t, err, fmt.Sprintf("unrecognized index format version: %d", formatVersion))
 }
 
 func TestOldEmbeddingIndexDecoding(t *testing.T) {
@@ -196,11 +196,11 @@ func TestOldEmbeddingIndexDecoding(t *testing.T) {
 	uploadStore := newMockUploadStore()
 
 	// Upload the index using the "old" function.
-	err := UploadIndex(ctx, uploadStore, "index", index)
+	err := UploadIndex(ctx, uploadStore, "0.embeddingindex", index)
 	require.NoError(t, err)
 
 	// Download the index using the new, custom function.
-	downloadedIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, "index")
+	downloadedIndex, err := DownloadRepoEmbeddingIndex(ctx, uploadStore, 0, "")
 	require.NoError(t, err)
 
 	require.Equal(t, index.ToNewIndex(), downloadedIndex)

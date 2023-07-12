@@ -53,8 +53,7 @@ func TestRecall(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(b)), nil
 	})
 	getRepoEmbeddingIndex := func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-		key := embeddings.GetRepoEmbeddingIndexNameDeprecated(repoName)
-		return embeddings.DownloadRepoEmbeddingIndex(context.Background(), mockStore, string(key))
+		return embeddings.DownloadRepoEmbeddingIndex(context.Background(), mockStore, repoID, repoName)
 	}
 
 	// Weaviate is disabled per default. We don't need it for this test.
