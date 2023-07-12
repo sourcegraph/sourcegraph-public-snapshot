@@ -5,7 +5,7 @@ $ROOT_DIR = "..\..\.."
 $BIN_DIR = "${ROOT_DIR}\src-tauri\target\release"
 $SIGNED_DIR = "bin\${ARCH}\signed"
 $INSTALLER_OUTPUT = "bin\${ARCH}\${CFG}\en-US"
-$DIST_DIR = "${ROOT_DIR}\dist"
+$DIST_DIR = "${ROOT_DIR}\win-msi"
 
 # Core version
 $major = 5
@@ -92,6 +92,8 @@ if ($env:CI -eq "true" ) {
     Write-Host "Moving ${MSI_PATH} to ${DIST_DIR}"
     Copy-Item -Path "${MSI_PATH}" -Destination ${DIST_DIR}
     Start-Sleep -Seconds 1 # BUG: Powershell is leaving files open after copy and fails signing.
+    Push-Location ${ROOT_DIR}
     Write-Host "Uploading artifacts from ${DIST_DIR}"
     buildkite-agent artifact upload "${DIST_DIR}/*"
+    Pop-Location
 }

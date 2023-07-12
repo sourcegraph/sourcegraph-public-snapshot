@@ -3,7 +3,7 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
-SRC_GLOB="release\*msi"
+SRC_GLOB="win-msi\*msi"
 DEST_DIR="artifacts"
 
 download_artifacts() {
