@@ -14,6 +14,7 @@ export const AppAllSetSetupStep: FC<StepComponentProps> = ({ className }) => {
     const [isProgressFinished, setProgressFinished] = useState(false)
 
     const handleOneRepositoryFinished = useCallback(() => {
+        localStorage.setItem('app.setup.finished', 'true')
         setProgressFinished(true)
     }, [])
 

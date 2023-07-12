@@ -2,6 +2,7 @@ package repo
 
 import (
 	"context"
+	"errors"
 	"io/fs"
 	"os"
 	"sort"
@@ -78,6 +79,41 @@ func TestDiff(t *testing.T) {
 	sort.Strings(toRemove)
 	if d := cmp.Diff([]string{"deletedFile", "modifiedFile"}, toRemove); d != "" {
 		t.Fatalf("unexpected toRemove (-want +got):\n%s", d)
+	}
+}
+
+func TestValidateRevision(t *testing.T) {
+	ctx := context.Background()
+
+	gitserverClient := gitserver.NewMockClient()
+
+	rf := revisionFetcher{
+		repo:      "dummy",
+		revision:  "rev",
+		gitserver: gitserverClient,
+	}
+	err := rf.validateRevision(ctx)
+	if err != nil {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+
+	// request branch from gitserver for empty rev
+	rf = revisionFetcher{
+		repo:      "dummy",
+		revision:  "",
+		gitserver: gitserverClient,
+	}
+
+	gitserverClient.GetDefaultBranchFunc.PushReturn("ref", "rev", errors.New("some gitserver reported error"))
+	err = rf.validateRevision(ctx)
+	if err.Error() != "some gitserver reported error" {
+		t.Fatalf("Unexpected error: %s", err.Error())
+	}
+
+	gitserverClient.GetDefaultBranchFunc.PushReturn("", "rev", nil)
+	err = rf.validateRevision(ctx)
+	if err.Error() != "could not get latest commit for repo dummy" {
+		t.Fatalf("Unexpected error: %s", err.Error())
 	}
 }
 

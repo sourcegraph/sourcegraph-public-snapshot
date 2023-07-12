@@ -12,8 +12,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/janitor",
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
-        "//enterprise/internal/batches/store",
-        "//enterprise/internal/batches/types",
+        "//internal/batches/store",
+        "//internal/batches/types",
         "//internal/conf",
         "//internal/env",
         "//internal/goroutine",

@@ -111,7 +111,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*graphqlbac
 	}
 	resolvers := make([]*graphqlbackend.RepositoryResolver, len(repos))
 	for i := range repos {
-		resolvers[i] = graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), repos[i])
+		resolvers[i] = graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(r.db), repos[i])
 	}
 	return resolvers, nil
 }

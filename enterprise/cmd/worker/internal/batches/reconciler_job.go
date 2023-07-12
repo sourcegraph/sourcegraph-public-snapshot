@@ -5,8 +5,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -47,7 +47,7 @@ func (j *reconcilerJob) Routines(_ context.Context, observationCtx *observation.
 		observationCtx,
 		bstore,
 		reconcilerStore,
-		gitserver.NewClient(),
+		gitserver.NewClientDeprecatedNeedsDB(),
 		sources.NewSourcer(httpcli.NewExternalClientFactory(
 			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
 		)),

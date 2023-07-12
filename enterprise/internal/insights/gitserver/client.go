@@ -13,7 +13,7 @@ import (
 func NewGitCommitClient() *GitCommitClient {
 	return &GitCommitClient{
 		cachedFirstCommit: NewCachedGitFirstEverCommit(),
-		Gitclient:         gitserver.NewClient(),
+		Gitclient:         gitserver.NewClientDeprecatedNeedsDB(),
 	}
 }
 

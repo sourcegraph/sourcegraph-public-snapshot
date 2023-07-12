@@ -23,7 +23,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	if deploy.IsApp() {
-		gitserverClient := gitserver.NewClient()
+		gitserverClient := gitserver.NewClientDeprecatedNeedsDB()
 		enterpriseServices.OptionalResolver.AppResolver = resolvers.NewAppResolver(observationCtx.Logger, db, gitserverClient)
 	}
 	return nil
