@@ -16,8 +16,8 @@ import (
 
 // MockIndexableReposLister is a mock implementation of the
 // IndexableReposLister interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/insights/discovery)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/insights/discovery) used for
+// unit testing.
 type MockIndexableReposLister struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
@@ -168,8 +168,8 @@ func (c IndexableReposListerListFuncCall) Results() []interface{} {
 
 // MockRepoStore is a mock implementation of the RepoStore interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/internal/insights/discovery)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/insights/discovery) used for
+// unit testing.
 type MockRepoStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.

@@ -16,8 +16,8 @@ import (
 
 // MockRepoStore is a mock implementation of the RepoStore interface (from
 // the package
-// github.com/sourcegraph/sourcegraph/internal/insights/background)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/insights/background) used for
+// unit testing.
 type MockRepoStore struct {
 	// GetByNameFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByName.

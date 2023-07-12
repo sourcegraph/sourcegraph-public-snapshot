@@ -10,14 +10,14 @@ import (
 	"context"
 	"sync"
 
-	types "github.com/sourcegraph/sourcegraph/internal/insights/types"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	types "github.com/sourcegraph/sourcegraph/internal/insights/types"
 )
 
 // MockDataSeriesStore is a mock implementation of the DataSeriesStore
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/insights/store)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/insights/store) used for unit
+// testing.
 type MockDataSeriesStore struct {
 	// CompleteJustInTimeConversionAttemptFunc is an instance of a mock
 	// function object controlling the behavior of the method
@@ -1180,8 +1180,8 @@ func (c DataSeriesStoreStartJustInTimeConversionAttemptFuncCall) Results() []int
 
 // MockInsightMetadataStore is a mock implementation of the
 // InsightMetadataStore interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/insights/store)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/insights/store) used for unit
+// testing.
 type MockInsightMetadataStore struct {
 	// GetMappedFunc is an instance of a mock function object controlling
 	// the behavior of the method GetMapped.
@@ -1336,8 +1336,7 @@ func (c InsightMetadataStoreGetMappedFuncCall) Results() []interface{} {
 }
 
 // MockInterface is a mock implementation of the Interface interface (from
-// the package
-// github.com/sourcegraph/sourcegraph/internal/insights/store)
+// the package github.com/sourcegraph/sourcegraph/internal/insights/store)
 // used for unit testing.
 type MockInterface struct {
 	// AddIncompleteDatapointFunc is an instance of a mock function object

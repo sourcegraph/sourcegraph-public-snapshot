@@ -16,7 +16,7 @@ import (
 
 // MockClient is a mock implementation of the client interface (from the
 // package
-// github.com/sourcegraph/sourcegraph/internal/authz/github) used
+// github.com/sourcegraph/sourcegraph/internal/authz/providers/github) used
 // for unit testing.
 type MockClient struct {
 	// GetAuthenticatedOAuthScopesFunc is an instance of a mock function
@@ -223,7 +223,7 @@ func NewStrictMockClient() *MockClient {
 }
 
 // surrogateMockClient is a copy of the client interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/authz/github). It
+// github.com/sourcegraph/sourcegraph/internal/authz/providers/github). It
 // is redefined here as it is unexported in the source package.
 type surrogateMockClient interface {
 	GetAuthenticatedOAuthScopes(context.Context) ([]string, error)

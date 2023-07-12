@@ -15,8 +15,8 @@ import (
 
 // MockRepoQueryExecutor is a mock implementation of the RepoQueryExecutor
 // interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/insights/discovery)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/insights/discovery) used for
+// unit testing.
 type MockRepoQueryExecutor struct {
 	// ExecuteRepoListFunc is an instance of a mock function object
 	// controlling the behavior of the method ExecuteRepoList.

@@ -15,8 +15,8 @@ import (
 
 // MockInsightPermissionStore is a mock implementation of the
 // InsightPermissionStore interface (from the package
-// github.com/sourcegraph/sourcegraph/internal/insights/store)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/insights/store) used for unit
+// testing.
 type MockInsightPermissionStore struct {
 	// GetUnauthorizedRepoIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetUnauthorizedRepoIDs.

@@ -35,7 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/rbac"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/repos/webhooks"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/search"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/scim"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
@@ -44,7 +44,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/scim"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -94,12 +93,6 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	})
 	if err != nil {
 		logger.Fatal("failed to initialize code intelligence", log.Error(err))
-	}
-
-	// Initialize search first, as we require enterprise search jobs to exist already
-	// when other initializers are called.
-	if err := search.Init(ctx, observationCtx, db, codeIntelServices, conf, &enterpriseServices); err != nil {
-		logger.Fatal("failed to initialize search", log.Error(err))
 	}
 
 	for name, fn := range initFunctions {

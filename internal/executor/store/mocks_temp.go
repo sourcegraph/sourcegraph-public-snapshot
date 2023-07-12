@@ -13,8 +13,8 @@ import (
 
 // MockJobTokenStore is a mock implementation of the JobTokenStore interface
 // (from the package
-// github.com/sourcegraph/sourcegraph/internal/executor/store)
-// used for unit testing.
+// github.com/sourcegraph/sourcegraph/internal/executor/store) used for unit
+// testing.
 type MockJobTokenStore struct {
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
