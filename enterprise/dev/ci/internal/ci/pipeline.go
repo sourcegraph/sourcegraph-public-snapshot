@@ -161,6 +161,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CreateBundleSizeDiff:      true,
 		}))
 
+		securityOps := operations.NewNamedSet("Security Scanning")
+		securityOps.Append(sonarcloudScan())
+		ops.Merge(securityOps)
+
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
