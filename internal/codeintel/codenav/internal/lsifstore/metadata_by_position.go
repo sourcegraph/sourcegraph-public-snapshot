@@ -192,8 +192,8 @@ matching_symbol_names AS (
 		WHERE mp.search = '' AND ` + fmt.Sprintf("%v", !disableTrieCTE) + `
 	) UNION (
 		SELECT
-			ss.upload_id,
-			ss.symbol_id,
+			ll.upload_id,
+			ll.symbol_id,
 			-- Reconstruct symbol names from parts
 			l1.name || ' ' || l2.name || ' ' || l3.name || ' ' || l4.name || ' ' || l5.name AS symbol_name
 		FROM symbols_parts p
@@ -208,7 +208,7 @@ matching_symbol_names AS (
 		JOIN codeintel_scip_symbols_lookup l1 ON l1.name = p.scheme          AND l1.upload_id = l5.upload_id AND l1.id = l2.parent_id
 
 		-- Find symbol identifier matching descriptor
-		JOIN codeintel_scip_symbols ss ON ss.upload_id = l5.upload_id AND ss.descriptor_id = l5.id
+		JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l5.upload_id AND ll.descriptor_id = l5.id
 	)
 )
 `

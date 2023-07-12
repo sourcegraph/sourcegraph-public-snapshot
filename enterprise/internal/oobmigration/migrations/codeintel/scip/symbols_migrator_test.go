@@ -88,7 +88,8 @@ func TestSymbolsMigratorUp(t *testing.T) {
 				s.symbol_id,
 				l1.name || ' ' || l2.name || ' ' || l3.name || ' ' || l4.name || ' ' || l5.name AS symbol_name
 			FROM codeintel_scip_symbols s
-			JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = s.upload_id AND l5.id = s.descriptor_id
+			JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = s.upload_id AND ll.symbol_id = s.symbol_id
+			JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = s.upload_id AND l5.id = ll.descriptor_id
 			JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = s.upload_id AND l4.id = l5.parent_id
 			JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = s.upload_id AND l3.id = l4.parent_id
 			JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = s.upload_id AND l2.id = l3.parent_id

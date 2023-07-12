@@ -83,14 +83,14 @@ SELECT DISTINCT
 FROM codeintel_scip_symbols_lookup l6
 
 -- Join to symbols table, which will bridge DESCRIPTOR_NO_SUFFIX (syntect) and DESCRIPTOR (precise)
-JOIN codeintel_scip_symbols ss ON ss.upload_id = l6.upload_id AND ss.descriptor_no_suffix_id = l6.id
+JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l6.upload_id AND ll.descriptor_no_suffix_id = l6.id
 
 -- Follow parent path from descriptor l5->l4->l3->l2->l1
-JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = ss.upload_id AND l5.id = ss.descriptor_id
-JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = ss.upload_id AND l4.id = l5.parent_id
-JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = ss.upload_id AND l3.id = l4.parent_id
-JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = ss.upload_id AND l2.id = l3.parent_id
-JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = ss.upload_id AND l1.id = l2.parent_id
+JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = l6.upload_id AND l5.id = ll.descriptor_id
+JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = l6.upload_id AND l4.id = l5.parent_id
+JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = l6.upload_id AND l3.id = l4.parent_id
+JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = l6.upload_id AND l2.id = l3.parent_id
+JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id = l2.parent_id
 WHERE
 	l6.upload_id = ANY(%s) AND
 	l6.scip_name_type = 'DESCRIPTOR_NO_SUFFIX' AND
