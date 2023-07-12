@@ -76,7 +76,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 		},
 	})
 
-	client := NewClient()
+	client := NewClientDeprecatedNeedsDB()
 	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})
 
 	if !(m1.called && !m2.called) {
@@ -92,7 +92,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := NewClient()
+	client := NewClientDeprecatedNeedsDB()
 
 	cfg := newConfig(
 		[]string{"gitserver1", "gitserver2"},

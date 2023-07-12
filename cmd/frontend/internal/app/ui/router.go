@@ -396,7 +396,7 @@ func initRouter(db database.DB, enterpriseJobs jobutil.EnterpriseJobs, router *m
 	})))
 
 	// raw
-	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient())))
+	router.Get(routeRaw).Handler(handler(db, serveRaw(db, gitserver.NewClient(db))))
 
 	// All other routes that are not found.
 	router.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

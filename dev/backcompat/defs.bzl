@@ -33,13 +33,13 @@ PATCH_GO_TEST = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
-$_sed_binary -i "s/func {}/func _{}/g" {}/*.go
+$_sed_binary -i "s/func {prefix}/func _{prefix}/g" {path}/*.go
 """
 
 # Assemble go test patches, based on the currently defined version.
 # See //dev/backcompat:test_release_version.bzl for the version definition.
 PATCH_GO_TEST_CMDS = [
-    PATCH_GO_TEST.format(test["prefix"], test["prefix"], test["path"], test["prefix"], test["reason"])
+    PATCH_GO_TEST.format(**test)
     for test in FLAKES[MINIMUM_UPGRADEABLE_VERSION]
 ]
 
@@ -49,15 +49,17 @@ PATCH_ALL_GO_TESTS_CMD = "\n".join(PATCH_GO_TEST_CMDS)
 # Replaces all occurences of @com_github_sourcegraph_(scip|conc) and zoekt by @back_compat_com_github_sourcegraph_(scip|conc).
 # We need to do this, because the backcompat share the same deps as the current HEAD, so we need to handle deviations manually here.
 # It's annoying, but that's how we get cached back compat tests.
+PATCH_BUILD_TARGETS = [
+    "com_github_sourcegraph_conc",
+    "com_github_sourcegraph_scip",
+    "com_github_sourcegraph_zoekt",
+    "com_github_throttled_throttled_v2",
+]
 PATCH_BUILD_FIXES_CMD = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
 fi
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_conc|@back_compat_com_github_sourcegraph_conc|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_scip|@back_compat_com_github_sourcegraph_scip|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_sourcegraph_zoekt|@back_compat_com_github_sourcegraph_zoekt|g' {} +
-find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@com_github_throttled_throttled_v2|@back_compat_com_github_throttled_throttled_v2|g' {} +
-"""
+""" + "\n".join(["""find . -type f -name "*.bazel" -exec $_sed_binary -i 's|@{0}|@back_compat_{0}|g' {{}} +""".format(target) for target in PATCH_BUILD_TARGETS])
 
 def back_compat_defs():
     # github.com/sourcegraph/scip and github.com/sourcegraph/conc both rely on a few
