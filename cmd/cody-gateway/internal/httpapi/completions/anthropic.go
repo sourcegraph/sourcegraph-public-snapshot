@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
@@ -39,10 +40,12 @@ func NewAnthropicHandler(
 		anthropicAPIURL,
 		allowedModels,
 		upstreamHandlerMethods[anthropicRequest]{
-			transformBody: func(body *anthropicRequest) {
-				// Null the metadata field, we don't want to allow users to specify it:
-				body.Metadata = nil
-				// TODO: We can forward the actor ID here later if we want?
+			transformBody: func(body *anthropicRequest, act *actor.Actor) {
+				// Overwrite the metadata field, we don't want to allow users to specify it:
+				body.Metadata = &anthropicRequestMetadata{
+					// We forward the actor ID to support tracking.
+					UserID: act.ID,
+				}
 			},
 			getRequestMetadata: func(body anthropicRequest) (promptCharacterCount int, model string, additionalMetadata map[string]any) {
 				return len(body.Prompt), body.Model, map[string]any{"stream": body.Stream}
@@ -106,15 +109,19 @@ func NewAnthropicHandler(
 
 // anthropicRequest captures all known fields from https://console.anthropic.com/docs/api/reference.
 type anthropicRequest struct {
-	Prompt            string   `json:"prompt"`
-	Model             string   `json:"model"`
-	MaxTokensToSample int32    `json:"max_tokens_to_sample"`
-	StopSequences     []string `json:"stop_sequences,omitempty"`
-	Stream            bool     `json:"stream,omitempty"`
-	Temperature       float32  `json:"temperature,omitempty"`
-	TopK              int32    `json:"top_k,omitempty"`
-	TopP              int32    `json:"top_p,omitempty"`
-	Metadata          any      `json:"metadata,omitempty"`
+	Prompt            string                    `json:"prompt"`
+	Model             string                    `json:"model"`
+	MaxTokensToSample int32                     `json:"max_tokens_to_sample"`
+	StopSequences     []string                  `json:"stop_sequences,omitempty"`
+	Stream            bool                      `json:"stream,omitempty"`
+	Temperature       float32                   `json:"temperature,omitempty"`
+	TopK              int32                     `json:"top_k,omitempty"`
+	TopP              int32                     `json:"top_p,omitempty"`
+	Metadata          *anthropicRequestMetadata `json:"metadata,omitempty"`
+}
+
+type anthropicRequestMetadata struct {
+	UserID string `json:"user_id,omitempty"`
 }
 
 // anthropicResponse captures all relevant-to-us fields from https://console.anthropic.com/docs/api/reference.
