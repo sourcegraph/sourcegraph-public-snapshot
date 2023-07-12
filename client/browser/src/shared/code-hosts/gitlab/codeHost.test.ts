@@ -6,6 +6,7 @@ import { disableFetchCache, enableFetchCache, fetchCache, LineOrPositionOrRange 
 import { testCodeHostMountGetters as testMountGetters, testToolbarMountGetter } from '../shared/codeHostTestUtils'
 
 import { getToolbarMount, gitlabCodeHost, isPrivateRepository, parseHash } from './codeHost'
+import { repoNameOnSourcegraph } from './scrape'
 
 describe('gitlab/codeHost', () => {
     describe('gitlabCodeHost', () => {
@@ -24,13 +25,23 @@ describe('gitlab/codeHost', () => {
             jsdom.reconfigure({ url: 'https://gitlab.com/sourcegraph/jsonrpc2/merge_requests/1/diffs' })
             globalThis.gon = { gitlab_url: 'https://gitlab.com' }
         })
+
+        afterAll(() => {
+            // Reset resolved Sourcegraph repo name value
+            repoNameOnSourcegraph.next('')
+        })
+
         it('returns an URL to the Sourcegraph instance if the location has a viewState', () => {
+            const rawRepoName = 'gitlab.com/sourcegraph/sourcegraph'
+            // Update the resolved Sourcegraph repo name value
+            repoNameOnSourcegraph.next(rawRepoName)
+
             expect(
                 urlToFile(
                     sourcegraphURL,
                     {
                         repoName: 'sourcegraph/sourcegraph',
-                        rawRepoName: 'gitlab.com/sourcegraph/sourcegraph',
+                        rawRepoName,
                         revision: 'master',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
@@ -47,12 +58,16 @@ describe('gitlab/codeHost', () => {
         })
 
         it('returns an absolute URL if the location is not on the same code host', () => {
+            const rawRepoName = 'gitlab.sgdev.org/sourcegraph/sourcegraph'
+            // Update the resolved Sourcegraph repo name value
+            repoNameOnSourcegraph.next(rawRepoName)
+
             expect(
                 urlToFile(
                     sourcegraphURL,
                     {
                         repoName: 'sourcegraph/sourcegraph',
-                        rawRepoName: 'gitlab.sgdev.org/sourcegraph/sourcegraph',
+                        rawRepoName,
                         revision: 'master',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
@@ -67,12 +82,16 @@ describe('gitlab/codeHost', () => {
             )
         })
         it('returns an URL to a blob on the same code host if possible', () => {
+            const rawRepoName = 'gitlab.com/sourcegraph/sourcegraph'
+            // Update the resolved Sourcegraph repo name value
+            repoNameOnSourcegraph.next(rawRepoName)
+
             expect(
                 urlToFile(
                     sourcegraphURL,
                     {
                         repoName: 'sourcegraph/sourcegraph',
-                        rawRepoName: 'gitlab.com/sourcegraph/sourcegraph',
+                        rawRepoName,
                         revision: 'main',
                         filePath: 'browser/src/shared/code-hosts/code_intelligence.tsx',
                         position: {
@@ -87,12 +106,16 @@ describe('gitlab/codeHost', () => {
             )
         })
         it('returns an URL to the file on the same merge request if possible', () => {
+            const rawRepoName = 'gitlab.com/sourcegraph/jsonrpc2'
+            // Update the resolved Sourcegraph repo name value
+            repoNameOnSourcegraph.next(rawRepoName)
+
             expect(
                 urlToFile(
                     sourcegraphURL,
                     {
                         repoName: 'sourcegraph/jsonrpc2',
-                        rawRepoName: 'gitlab.com/sourcegraph/jsonrpc2',
+                        rawRepoName,
                         revision: 'changes',
                         filePath: 'call_opt.go',
                         position: {
