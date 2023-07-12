@@ -49,8 +49,6 @@ func NewSCIPSymbolsMigrator(codeintelStore *basestore.Store) *migrator {
 		fields: []fieldSpec{
 			{name: "symbol_id", postgresType: "integer not null", primaryKey: true},
 			{name: "document_lookup_id", postgresType: "integer not null", primaryKey: true},
-			{name: "descriptor_id", postgresType: "integer", updateOnly: true},
-			{name: "descriptor_no_suffix_id", postgresType: "integer", updateOnly: true},
 		},
 	})
 }
@@ -106,30 +104,49 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 	}
 
 	// Bulk insert the content of the tree / descriptor-no-suffix map
-	symbolNameBatchMigrator := func(ctx context.Context, symbolLookupInserter *batch.Inserter) error {
+	symbolNamePartInserter := func(ctx context.Context, symbolLookupInserter *batch.Inserter) error {
 		visit := func(scipNameType, name string, id int, parentID *int) error {
 			return symbolLookupInserter.Insert(ctx, scipNameType, name, id, parentID)
 		}
 		return traverser(visit)
 	}
 
-	// Batch-insert new symbol-lookup rows before batch updating the symbols table (below)
-	if err := withSymbolLookupInserter(ctx, tx, uploadID, symbolNameBatchMigrator); err != nil {
+	// In the same transaction but ouf-of-band from the row updates, batch-insert new
+	// symbol-lookup rows. These identifiers need to exist before the batch is complete.
+	if err := withSymbolLookupInserter(ctx, tx, uploadID, symbolNamePartInserter); err != nil {
+		return nil, err
+	}
+
+	// Bulk insert descriptor/descriptor-no-suffix pairs with relations to their symbol
+	symbolRelationshipInserter := func(ctx context.Context, symbolLookupLeavesInserter *batch.Inserter) error {
+		for _, symbolInDocument := range symbolInDocuments {
+			symbolID := symbolInDocument.symbolID
+			ids := cache[symbolNamesByID[symbolID]]
+
+			if err := symbolLookupLeavesInserter.Insert(ctx, symbolID, ids.descriptorID, ids.descriptorNoSuffixID); err != nil {
+				return err
+			}
+		}
+
+		return nil
+	}
+
+	// In the same transaction but ouf-of-band from the row updates, batch-insert new
+	// symbol-lookup-leaves rows. These identifiers need to exist before the batch is complete.
+	if err := withSymbolLookupLeavesInserter(ctx, tx, uploadID, symbolRelationshipInserter); err != nil {
 		return nil, err
 	}
 
 	// Construct the updated tuples for the symbols rows we have locked in this transaction.
 	// Each (original) symbol identifier is translated into the new descriptor identifier
-	// pairs batch inserted into the symbols lookup table (above).
+	// pairs batch inserted into the symbols lookup table (above). We're not supplying any
+	// additional information here, so we'll end up just writing foreign keys _to_ these rows
+	// and bumping the schema version.
 	values := make([][]any, 0, len(symbolInDocuments))
 	for _, symbolInDocument := range symbolInDocuments {
-		ids := cache[symbolNamesByID[symbolInDocument.symbolID]]
-
 		values = append(values, []any{
 			symbolInDocument.symbolID,
 			symbolInDocument.documentLookupID,
-			ids.descriptorID,
-			ids.descriptorNoSuffixID,
 		})
 	}
 
@@ -287,6 +304,43 @@ func withSymbolLookupInserter(ctx context.Context, tx *basestore.Store, uploadID
 		INSERT INTO codeintel_scip_symbols_lookup (id, upload_id, name, scip_name_type, parent_id)
 		SELECT id, %s, name, scip_name_type, parent_id
 		FROM t_codeintel_scip_symbols_lookup
+	`,
+		uploadID,
+	))
+}
+
+func withSymbolLookupLeavesInserter(ctx context.Context, tx *basestore.Store, uploadID int, f inserterFunc) error {
+	if err := tx.Exec(ctx, sqlf.Sprintf(`
+		CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup_leaves(
+			symbol_id integer NOT NULL,
+			descriptor_id integer NOT NULL,
+			descriptor_no_suffix_id integer NOT NULL
+		) ON COMMIT DROP
+	`)); err != nil {
+		return err
+	}
+
+	symbolLookupLeavesInserter := batch.NewInserter(
+		ctx,
+		tx.Handle(),
+		"t_codeintel_scip_symbols_lookup_leaves",
+		batch.MaxNumPostgresParameters,
+		"symbol_id",
+		"descriptor_id",
+		"descriptor_no_suffix_id",
+	)
+
+	if err := f(ctx, symbolLookupLeavesInserter); err != nil {
+		return err
+	}
+	if err := symbolLookupLeavesInserter.Flush(ctx); err != nil {
+		return err
+	}
+
+	return tx.Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO codeintel_scip_symbols_lookup_leaves (upload_id, symbol_id, descriptor_id, descriptor_no_suffix_id)
+		SELECT %s, symbol_id, descriptor_id, descriptor_no_suffix_id
+		FROM t_codeintel_scip_symbols_lookup_leaves
 	`,
 		uploadID,
 	))
