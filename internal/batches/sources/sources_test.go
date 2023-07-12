@@ -675,7 +675,7 @@ func TestGetRemoteRepo(t *testing.T) {
 }
 
 func newMockSourcer(css ChangesetSource) Sourcer {
-	return newSourcer(nil, func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
+	return newSourcer(database.NewMockDB(), nil, func(ctx context.Context, db database.DB, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
 		return css, nil
 	})
 }

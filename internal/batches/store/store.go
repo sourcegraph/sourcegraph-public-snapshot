@@ -66,8 +66,10 @@ func RandomID() (string, error) {
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
-	logger log.Logger
 	*basestore.Store
+
+	logger         log.Logger
+	db             database.DB
 	key            encryption.Key
 	now            func() time.Time
 	operations     *operations
@@ -84,12 +86,17 @@ func New(db database.DB, observationCtx *observation.Context, key encryption.Key
 func NewWithClock(db database.DB, observationCtx *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
 		logger:         observationCtx.Logger,
+		db:             db,
 		Store:          basestore.NewWithHandle(db.Handle()),
 		key:            key,
 		now:            clock,
 		operations:     newOperations(observationCtx),
 		observationCtx: observationCtx,
 	}
+}
+
+func (s *Store) DatabaseDB() database.DB {
+	return s.db
 }
 
 // observationCtx returns the observation context wrapped in this store.
@@ -108,7 +115,7 @@ func (s *Store) Clock() func() time.Time { return s.now }
 // instantiated with.
 // It's here for legacy reason to pass the database.DB to a repos.Store while
 // repos.Store doesn't accept a basestore.TransactableHandle yet.
-func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
+// func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
 
 var _ basestore.ShareableStore = &Store{}
 

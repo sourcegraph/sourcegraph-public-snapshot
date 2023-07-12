@@ -106,7 +106,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		); err != nil {
 			t.Fatal(err)
 		}
-		sourcer := sources.NewSourcer(cf)
+		sourcer := sources.NewSourcer(s.DatabaseDB(), cf)
 
 		spec := &btypes.BatchSpec{
 			NamespaceUserID: userID,

@@ -46,7 +46,7 @@ func (j *bulkOperationProcessorJob) Routines(_ context.Context, observationCtx *
 		observationCtx,
 		bstore,
 		resStore,
-		sources.NewSourcer(httpcli.NewExternalClientFactory(
+		sources.NewSourcer(bstore.DatabaseDB(), httpcli.NewExternalClientFactory(
 			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
 		)),
 	)

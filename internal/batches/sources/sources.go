@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -74,6 +75,7 @@ const (
 )
 
 type SourcerStore interface {
+	DatabaseDB() database.DB
 	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
@@ -111,19 +113,21 @@ type Sourcer interface {
 }
 
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
-func NewSourcer(cf *httpcli.Factory) Sourcer {
+func NewSourcer(db database.DB, cf *httpcli.Factory) Sourcer {
 	return newSourcer(cf, loadBatchesSource)
 }
 
-type changesetSourceFactory func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error)
+type changesetSourceFactory func(ctx context.Context, db database.DB, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error)
 
 type sourcer struct {
+	logger    log.Logger
 	cf        *httpcli.Factory
 	newSource changesetSourceFactory
 }
 
 func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	return &sourcer{
+		logger:    log.Scoped("sourcer", "logger scoped to sources.sourcer"),
 		cf:        cf,
 		newSource: csf,
 	}
@@ -147,7 +151,7 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, ErrExternalServiceNotGitHub
 	}
 
-	css, err := s.newSource(ctx, tx, s.cf, extSvc)
+	css, err := s.newSource(ctx, tx.DatabaseDB(), tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +186,7 @@ func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo 
 	if err != nil {
 		return nil, errors.Wrap(err, "loading external service")
 	}
-	css, err := s.newSource(ctx, tx, s.cf, extSvc)
+	css, err := s.newSource(ctx, tx.DatabaseDB(), tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
 	}
@@ -207,15 +211,15 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 		return nil, errors.Wrap(err, "loading external service")
 	}
 
-	css, err := s.newSource(ctx, tx, s.cf, extSvc)
+	css, err := s.newSource(ctx, tx.DatabaseDB(), tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
 	}
 	return css.WithAuthenticator(au)
 }
 
-func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
-	css, err := buildChangesetSource(ctx, cf, extSvc)
+func loadBatchesSource(ctx context.Context, db database.DB, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
+	css, err := buildChangesetSource(ctx, db, cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -431,7 +435,7 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 
 // buildChangesetSource builds a ChangesetSource for the given repo to load the
 // changeset state from.
-func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
+func buildChangesetSource(ctx context.Context, db database.DB, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
 	switch externalService.Kind {
 	case extsvc.KindGitHub:
 		return NewGitHubSource(ctx, externalService, cf)
@@ -446,7 +450,7 @@ func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalServ
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, externalService, cf)
 	case extsvc.KindPerforce:
-		return NewPerforceSource(ctx, externalService, cf)
+		return NewPerforceSource(ctx, db, externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}

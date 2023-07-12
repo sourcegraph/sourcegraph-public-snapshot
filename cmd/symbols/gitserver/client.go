@@ -8,6 +8,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -47,9 +48,9 @@ type gitserverClient struct {
 	operations  *operations
 }
 
-func NewClient(observationCtx *observation.Context) GitserverClient {
+func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClientDeprecatedNeedsDB(),
+		innerClient: gitserver.NewClient(db),
 		operations:  newOperations(observationCtx),
 	}
 }

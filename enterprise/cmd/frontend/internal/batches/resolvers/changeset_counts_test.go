@@ -141,7 +141,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sourcer := sources.NewSourcer(cf)
+	sourcer := sources.NewSourcer(bstore.DatabaseDB(), cf)
 
 	spec := &btypes.BatchSpec{
 		NamespaceUserID: userID,
