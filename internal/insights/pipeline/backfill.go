@@ -263,7 +263,6 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 		}
 
 		// Construct the search query that will generate data for this repository and time (revision) tuple.
-		//
 		var newQueryStr string
 		modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(rawQuery), repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
 		if err != nil {
