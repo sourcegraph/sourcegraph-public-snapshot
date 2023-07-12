@@ -217,11 +217,7 @@ func (m *meteredSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListO
 	if m.hostname == "" {
 		cat = "ListAll"
 	} else {
-		if opts == nil || !opts.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-			cat = "List"
-		} else {
-			cat = "ListMinimal"
-		}
+		cat = listCategory(opts)
 		attrs = []attribute.KeyValue{
 			attribute.String("span.kind", "client"),
 			attribute.String("peer.address", m.hostname),
@@ -283,4 +279,22 @@ func queryString(q query.Q) string {
 		return "<nil>"
 	}
 	return q.String()
+}
+
+func listCategory(opts *zoekt.ListOptions) string {
+	field, err := opts.GetField()
+	if err != nil {
+		return "ListMisconfigured"
+	}
+
+	switch field {
+	case zoekt.RepoListFieldRepos:
+		return "List"
+	case zoekt.RepoListFieldMinimal:
+		return "ListMinimal"
+	case zoekt.RepoListFieldReposMap:
+		return "ListReposMap"
+	default:
+		return "ListUnknown"
+	}
 }

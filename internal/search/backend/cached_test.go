@@ -28,55 +28,91 @@ func TestCachedSearcher(t *testing.T) {
 
 	ctx := context.Background()
 
-	s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+	// RepoListFieldMinimal
+	{
+		s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 
-	have, _ := s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
-	want := &zoekt.RepoList{
-		Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
-			1: {},
-			2: {HasSymbols: true},
-		},
-		Stats: zoekt.RepoStats{
-			Repos: 2,
-		},
+		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+		want := &zoekt.RepoList{
+			Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
+				1: {},
+				2: {HasSymbols: true},
+			},
+			Stats: zoekt.RepoStats{
+				Repos: 2,
+			},
+		}
+
+		if !cmp.Equal(have, want) {
+			t.Fatalf("list mismatch: %s", cmp.Diff(have, want))
+		}
+
+		if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
+			t.Fatalf("have ListCalls %d, want %d", have, want)
+		}
+
+		atomic.StoreInt64(&ms.ListCalls, 0)
 	}
 
-	if !cmp.Equal(have, want) {
-		t.Fatalf("list mismatch: %s", cmp.Diff(have, want))
-	}
+	// RepoListFieldReposMap
+	{
+		s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 
-	if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
-		t.Fatalf("have ListCalls %d, want %d", have, want)
-	}
+		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
+		want := &zoekt.RepoList{
+			ReposMap: zoekt.ReposMap{
+				1: {},
+				2: {HasSymbols: true},
+			},
+			Stats: zoekt.RepoStats{
+				Repos: 2,
+			},
+		}
 
-	atomic.StoreInt64(&ms.ListCalls, 0)
+		if !cmp.Equal(have, want) {
+			t.Fatalf("list mismatch: %s", cmp.Diff(have, want))
+		}
 
-	s.List(ctx, &zoektquery.Const{Value: true}, nil)
+		if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
+			t.Fatalf("have ListCalls %d, want %d", have, want)
+		}
 
-	have, _ = s.List(ctx, &zoektquery.Const{Value: true}, nil)
-	want = &zoekt.RepoList{
-		Repos: ms.FakeStreamer.Repos,
-		Stats: zoekt.RepoStats{
-			Repos: len(ms.FakeStreamer.Repos),
-		},
+		atomic.StoreInt64(&ms.ListCalls, 0)
 	}
 
 	diffOpts := cmpopts.IgnoreUnexported(zoekt.Repository{})
-	if d := cmp.Diff(want, have, diffOpts); d != "" {
-		t.Fatalf("list mismatch: %s", d)
+
+	// RepoListFieldRepos
+	{
+		s.List(ctx, &zoektquery.Const{Value: true}, nil)
+
+		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, nil)
+		want := &zoekt.RepoList{
+			Repos: ms.FakeStreamer.Repos,
+			Stats: zoekt.RepoStats{
+				Repos: len(ms.FakeStreamer.Repos),
+			},
+		}
+
+		if d := cmp.Diff(want, have, diffOpts); d != "" {
+			t.Fatalf("list mismatch: %s", d)
+		}
+
+		if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
+			t.Fatalf("have ListCalls %d, want %d", have, want)
+		}
+
+		atomic.StoreInt64(&ms.ListCalls, 0)
 	}
 
-	if have, want := atomic.LoadInt64(&ms.ListCalls), int64(1); have != want {
-		t.Fatalf("have ListCalls %d, want %d", have, want)
-	}
-
-	atomic.StoreInt64(&ms.ListCalls, 0)
+	// Now test the cache does invalidate. We only do this for one type of
+	// field since it should cover all field types.
 	now = now.Add(ttl)
 	ms.FakeStreamer.Repos = append(ms.FakeStreamer.Repos, &zoekt.RepoListEntry{Repository: zoekt.Repository{ID: 3, Name: "baz"}})
 
 	for {
-		have, _ = s.List(ctx, &zoektquery.Const{Value: true}, nil)
-		want = &zoekt.RepoList{
+		have, _ := s.List(ctx, &zoektquery.Const{Value: true}, nil)
+		want := &zoekt.RepoList{
 			Repos: ms.FakeStreamer.Repos,
 			Stats: zoekt.RepoStats{
 				Repos: len(ms.FakeStreamer.Repos),
