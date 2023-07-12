@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "featurelimiter",
+    srcs = ["featurelimiter.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/events",
+        "//cmd/cody-gateway/internal/limiter",
+        "//cmd/cody-gateway/internal/notify",
+        "//cmd/cody-gateway/internal/response",
+        "//internal/codygateway",
+        "//internal/completions/types",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)

@@ -44,7 +44,7 @@ func Init(
 	bstore := store.New(db, observationCtx, keyring.Default().BatchChangesCredentialKey)
 
 	// Register enterprise services.
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClientDeprecatedNeedsDB()
 	logger := sglog.Scoped("Batches", "batch changes webhooks")
 	enterpriseServices.BatchChangesResolver = resolvers.New(db, bstore, gitserverClient, logger)
 	enterpriseServices.BatchesGitHubWebhook = webhooks.NewGitHubWebhook(bstore, gitserverClient, logger)

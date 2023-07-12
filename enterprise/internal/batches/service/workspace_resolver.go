@@ -77,7 +77,7 @@ func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
 	return &workspaceResolver{
 		store:               s,
 		logger:              log.Scoped("batches.workspaceResolver", "The batch changes execution workspace resolver"),
-		gitserverClient:     gitserver.NewClient(),
+		gitserverClient:     gitserver.NewClientDeprecatedNeedsDB(),
 		frontendInternalURL: internalapi.Client.URL + "/.internal",
 	}
 }

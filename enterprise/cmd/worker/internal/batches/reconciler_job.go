@@ -47,7 +47,7 @@ func (j *reconcilerJob) Routines(_ context.Context, observationCtx *observation.
 		observationCtx,
 		bstore,
 		reconcilerStore,
-		gitserver.NewClient(),
+		gitserver.NewClientDeprecatedNeedsDB(),
 		sources.NewSourcer(httpcli.NewExternalClientFactory(
 			httpcli.NewLoggingMiddleware(observationCtx.Logger.Scoped("sourcer", "batches sourcer")),
 		)),

@@ -49,7 +49,7 @@ type gitserverClient struct {
 
 func NewClient(observationCtx *observation.Context) GitserverClient {
 	return &gitserverClient{
-		innerClient: gitserver.NewClient(),
+		innerClient: gitserver.NewClientDeprecatedNeedsDB(),
 		operations:  newOperations(observationCtx),
 	}
 }

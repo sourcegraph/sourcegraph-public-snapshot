@@ -30,7 +30,7 @@ func isFirstCommitEmptyRepoError(err error) bool {
 }
 
 func GitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
-	commit, err := gitserver.NewClient().FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repoName)
+	commit, err := gitserver.NewClientDeprecatedNeedsDB().FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repoName)
 	if err != nil && isFirstCommitEmptyRepoError(err) {
 		return nil, errors.Wrap(EmptyRepoErr, err.Error())
 	}

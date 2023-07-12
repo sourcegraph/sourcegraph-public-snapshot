@@ -7,7 +7,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ScheduleRepositoriesForEmbedding(
@@ -30,22 +29,22 @@ func ScheduleRepositoriesForEmbedding(
 		err = func() error {
 			r, err := repoStore.GetByName(ctx, repoName)
 			if err != nil {
-				return err
+				return nil
 			}
 
 			refName, latestRevision, err := gitserverClient.GetDefaultBranch(ctx, r.Name, false)
-			if err != nil {
-				return err
-			}
-			if refName == "" {
-				return errors.Newf("could not get latest commit for repo %s", r.Name)
+			// enqueue with an empty revision and let handler determine whether job can execute
+			if err != nil || refName == "" {
+				latestRevision = ""
 			}
 
 			// Skip creating a repo embedding job for a repo at revision, if there already exists
 			// an identical job that has been completed, or is scheduled to run (processing or queued).
 			if !forceReschedule {
 				job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
-				if job.IsRepoEmbeddingJobScheduledOrCompleted() {
+
+				// if job previously failed then only resubmit if revision is non-empty
+				if job.IsRepoEmbeddingJobScheduledOrCompleted() || job.EmptyRepoEmbeddingJob() {
 					return nil
 				}
 			}

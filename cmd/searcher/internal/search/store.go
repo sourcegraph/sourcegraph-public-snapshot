@@ -280,7 +280,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClient(), repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClientDeprecatedNeedsDB(), repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
@@ -438,7 +438,7 @@ func (s *Store) watchAndEvict() {
 func (s *Store) watchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(gitserver.NewClient().Addrs())
+		limit := 10 * len(gitserver.NewClientDeprecatedNeedsDB().Addrs())
 		if limit == 0 {
 			limit = 15
 		}

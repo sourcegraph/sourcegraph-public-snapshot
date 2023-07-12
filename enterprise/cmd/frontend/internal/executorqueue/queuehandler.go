@@ -50,7 +50,7 @@ func newExecutorQueuesHandler(
 
 	multiHandler := handler.NewMultiHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler, batchesQueueHandler)
 
-	gitserverClient := gitserver.NewClient()
+	gitserverClient := gitserver.NewClientDeprecatedNeedsDB()
 
 	// Auth middleware
 	executorAuth := executorAuthMiddleware(logger, accessToken)
