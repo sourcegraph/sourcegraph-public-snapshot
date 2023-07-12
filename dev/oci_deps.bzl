@@ -24,7 +24,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_cadvisor_base",
-        digest = "sha256:2e5aec9ba5a4835b4c35103bd27ad2ad3e65a064ec5001a35168044dd8c06a4a",
+        digest = "sha256:39f800ff006bbe579c71eaecc0157d5a57c7e2c0b11ba7a262eb8aec9fd848e0",
         image = "us.gcr.io/sourcegraph-dev/wolfi-cadvisor-base",
     )
 
