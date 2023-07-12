@@ -4,8 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
@@ -72,36 +70,16 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
-var (
-	metricReposLen = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_temp_frontend_index_repos_len",
-		Help: "A temporary metric recording different ways to calculate the indexed number of repos.",
-	})
-	metricReposRepos = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_temp_frontend_index_repos_repos",
-		Help: "A temporary metric recording different ways to calculate the indexed number of repos.",
-	})
-	metricReposCrash = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_temp_frontend_index_repos_crash",
-		Help: "A temporary metric recording different ways to calculate the indexed number of repos.",
-	})
-)
-
 // ListAllIndexed lists all indexed repositories with `Minimal: true`.
 func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
 	q := &query.Const{Value: true}
 	opts := &zoekt.ListOptions{Minimal: true}
 
 	repos, err := Indexed().List(ctx, q, opts)
-
-	// TODO(keegan) remove this before 2023-08-01. Temporary metric collection.
-	if err == nil {
-		metricReposLen.Set(float64(len(repos.Minimal))) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		metricReposRepos.Set(float64(repos.Stats.Repos))
-		metricReposCrash.Set(float64(repos.Crashes))
+	if err != nil {
+		return nil, err
 	}
-
-	return repos, err
+	return repos, nil
 }
 
 func Indexers() *backend.Indexers {
