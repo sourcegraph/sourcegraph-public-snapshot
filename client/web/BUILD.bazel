@@ -27,9 +27,6 @@ load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types"
 # gazelle:js_ignore_imports src/stores/navbarSearchQueryState
 # gazelle:js_ignore_imports ../../schema.json
 
-# Ignore icon
-# gazelle:js_ignore_imports ../../../../../src-tauri/icons/icon.png
-
 npm_link_all_packages(name = "node_modules")
 
 eslint_config_and_lint_root(
