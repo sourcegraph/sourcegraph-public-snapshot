@@ -288,7 +288,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                                         </Tooltip>
                                     </div>
                                 }
-                                labelClassName="col-4 col-form-label pl-0"
+                                labelClassName="pl-0"
                                 id="searchForks"
                                 name="searchForks"
                                 onChange={event => setUseForks(event.target.value)}
@@ -313,7 +313,7 @@ export const FindChangesSimpleSearch: FC<SimpleSearchProps> = ({ onSimpleSearchU
                                         </Tooltip>
                                     </div>
                                 }
-                                labelClassName="col-4 col-form-label pl-0"
+                                labelClassName="pl-0"
                                 id="searchArchive"
                                 name="searchArchive"
                                 onChange={event => setUseArchive(event.target.value)}
