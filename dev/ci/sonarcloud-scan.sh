@@ -2,10 +2,8 @@
 
 set -e
 export SONAR_SCANNER_VERSION=4.7.0.2747
-export SONAR_SCANNER_HOME=/buildkite/sonar-scanner-$SONAR_SCANNER_VERSION-linux
-export PATH=$SONAR_SCANNER_HOME/bin:$PATH
+export SONAR_SCANNER_HOME=/buildkite/sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
 export SONAR_SCANNER_OPTS="-server"
-
 
 echo "--- :arrow_down: downloading Sonarcloud binary"
 echo ""
@@ -15,7 +13,7 @@ unzip -o /buildkite/sonar/sonar-scanner.zip -d /buildkite/sonar/
 echo "--- :lock: running Sonarcloud scan"
 echo ""
 cd /buildkite-git-references/sourcegraph.reference
-git checkout "$BUILDKITE_BRANCH" && sonar-scanner \
+$SONAR_SCANNER_HOME/bin/sonar-scanner \
   -Dsonar.organization=sourcegraph \
   -Dsonar.projectKey=sourcegraph_sourcegraph \
   -Dsonar.sources=. \
