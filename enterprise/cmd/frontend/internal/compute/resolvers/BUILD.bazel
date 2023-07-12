@@ -27,6 +27,7 @@ go_test(
     deps = [
         "//internal/compute",
         "//internal/database",
+        "//internal/gitserver",
         "//internal/search/result",
         "@com_github_hexops_autogold_v2//:autogold",
     ],

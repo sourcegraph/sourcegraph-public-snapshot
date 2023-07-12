@@ -8,6 +8,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/insights/background/queryrunner",
         "//internal/insights/compression",
@@ -35,6 +36,7 @@ go_test(
     embed = [":pipeline"],
     deps = [
         "//internal/api",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/insights/background/queryrunner",
         "//internal/insights/compression",

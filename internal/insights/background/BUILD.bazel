@@ -17,6 +17,7 @@ go_library(
         "//internal/api",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/gitserver",
         "//internal/goroutine",
         "//internal/insights/background/limiter",
         "//internal/insights/background/pings",
