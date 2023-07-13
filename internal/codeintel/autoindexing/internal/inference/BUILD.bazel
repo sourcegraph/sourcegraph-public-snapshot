@@ -23,6 +23,7 @@ go_library(
         "//internal/codeintel/autoindexing/shared",
         "//internal/codeintel/dependencies",
         "//internal/conf/reposource",
+        "//internal/database",
         "//internal/env",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",

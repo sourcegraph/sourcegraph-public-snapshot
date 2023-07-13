@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/insights/store"
@@ -45,8 +46,8 @@ type commitFetcher interface {
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
 }
 
-func NewGitserverFilter(logger log.Logger) DataFrameFilter {
-	return &gitserverFilter{commitFetcher: gitserver.NewGitCommitClient(), logger: logger}
+func NewGitserverFilter(logger log.Logger, gitserverClient internalGitserver.Client) DataFrameFilter {
+	return &gitserverFilter{commitFetcher: gitserver.NewGitCommitClient(gitserverClient), logger: logger}
 }
 
 type gitserverFilter struct {

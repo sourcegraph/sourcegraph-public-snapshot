@@ -8,6 +8,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/insights/gitserver",
         "//internal/insights/store",

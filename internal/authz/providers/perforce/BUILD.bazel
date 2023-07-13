@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//internal/authz",
         "//internal/authz/types",
+        "//internal/database",
         "//internal/extsvc",
         "//internal/extsvc/perforce",
         "//internal/gitserver",

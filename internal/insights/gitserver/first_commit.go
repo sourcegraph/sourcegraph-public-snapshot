@@ -29,8 +29,8 @@ func isFirstCommitEmptyRepoError(err error) bool {
 	return false
 }
 
-func GitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
-	commit, err := gitserver.NewClientDeprecatedNeedsDB().FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repoName)
+func GitFirstEverCommit(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName) (*gitdomain.Commit, error) {
+	commit, err := gitserverClient.FirstEverCommit(ctx, authz.DefaultSubRepoPermsChecker, repoName)
 	if err != nil && isFirstCommitEmptyRepoError(err) {
 		return nil, errors.Wrap(EmptyRepoErr, err.Error())
 	}
@@ -47,13 +47,13 @@ func NewCachedGitFirstEverCommit() *CachedGitFirstEverCommit {
 // using a map, and entries are never evicted because they are expected to be small and in general
 // unchanging.
 type CachedGitFirstEverCommit struct {
-	impl func(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
+	impl func(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName) (*gitdomain.Commit, error)
 
 	mu    sync.Mutex
 	cache map[api.RepoName]*gitdomain.Commit
 }
 
-func (c *CachedGitFirstEverCommit) GitFirstEverCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
+func (c *CachedGitFirstEverCommit) GitFirstEverCommit(ctx context.Context, gitserverClient gitserver.Client, repoName api.RepoName) (*gitdomain.Commit, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	if c.cache == nil {
@@ -62,7 +62,7 @@ func (c *CachedGitFirstEverCommit) GitFirstEverCommit(ctx context.Context, repoN
 	if cached, ok := c.cache[repoName]; ok {
 		return cached, nil
 	}
-	entry, err := c.impl(ctx, repoName)
+	entry, err := c.impl(ctx, gitserverClient, repoName)
 	if err != nil {
 		return nil, err
 	}

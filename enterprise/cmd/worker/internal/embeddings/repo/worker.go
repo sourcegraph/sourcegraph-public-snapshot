@@ -60,7 +60,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			repoembeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle()),
 			db,
 			uploadStore,
-			gitserver.NewClientDeprecatedNeedsDB(),
+			gitserver.NewClient(db),
 			services.ContextService,
 			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
 		),
