@@ -42,10 +42,8 @@ const SET_COMPLETED_POST_SIGNUP = gql`
 const CodySurveyToastInner: React.FC<
     { onSubmitEnd: () => void; userId: string; hasVerifiedEmail: boolean } & TelemetryProps
 > = ({ userId, onSubmitEnd, telemetryService, hasVerifiedEmail }) => {
-    const [loading, setLoading] = useState(false)
     const [isCodyForWork, setIsCodyForWork] = useState(false)
     const [isCodyForPersonalStuff, setIsCodyForPersonalStuff] = useState(false)
-    const [showError, setShowError] = useState(false)
 
     const handleCodyForWorkChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(event => {
         setIsCodyForWork(event.target.checked)
@@ -54,26 +52,30 @@ const CodySurveyToastInner: React.FC<
         setIsCodyForPersonalStuff(event.target.checked)
     }, [])
 
-    const [submitCodySurvey] = useMutation<SubmitCodySurveyResult, SubmitCodySurveyVariables>(SUBMIT_CODY_SURVEY, {
+    const [submitCodySurvey, { loading: loadingCodySurvey, error: submitSurveyError }] = useMutation<
+        SubmitCodySurveyResult,
+        SubmitCodySurveyVariables
+    >(SUBMIT_CODY_SURVEY, {
         variables: {
             isForWork: isCodyForWork,
             isForPersonal: isCodyForPersonalStuff,
         },
     })
 
-    const [updatePostSignupCompletion] = useMutation<SetCompletedPostSignupResult, SetCompletedPostSignupVariables>(
-        SET_COMPLETED_POST_SIGNUP,
-        {
-            variables: {
-                userID: userId,
-            },
-        }
-    )
+    const [updatePostSignupCompletion, { loading: loadingPostSignup, error: setPostSignupError }] = useMutation<
+        SetCompletedPostSignupResult,
+        SetCompletedPostSignupVariables
+    >(SET_COMPLETED_POST_SIGNUP, {
+        variables: {
+            userID: userId,
+        },
+    })
+
+    const loading = loadingCodySurvey || loadingPostSignup
+    const error = !!submitSurveyError || !!setPostSignupError
 
     const handleSubmit = useCallback(
         async (event: React.FormEvent<HTMLFormElement>) => {
-            setLoading(true)
-            setShowError(false)
             const eventParams = { isCodyForPersonalStuff, isCodyForWork }
             telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
@@ -85,11 +87,8 @@ const CodySurveyToastInner: React.FC<
                     await updatePostSignupCompletion()
                 }
 
-                setLoading(false)
                 onSubmitEnd()
             } catch (error) {
-                setShowError(true)
-                setLoading(false)
                 /* eslint-disable no-console */
                 console.error(error)
             }
@@ -135,7 +134,7 @@ const CodySurveyToastInner: React.FC<
                     onChange={handleCodyForPersonalStuffChange}
                     className={styles.modalCheckbox}
                 />
-                {showError && (
+                {error && (
                     <Text size="small" className="text-danger mt-3 mb-2">
                         An error occurred. Please reload the page and try again. If this persists, contact support at
                         support@sourcegraph.com

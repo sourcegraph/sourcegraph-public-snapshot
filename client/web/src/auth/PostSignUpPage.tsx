@@ -9,17 +9,15 @@ import { CodySurveyToast } from '../marketing/toast/CodySurveyToast'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
+import { withAuthenticatedUser } from './withAuthenticatedUser'
+
 import styles from './PostSignUpPage.module.scss'
 
 interface PostSignUpPageProps {
-    authenticatedUser: AuthenticatedUser | null
+    authenticatedUser: AuthenticatedUser
 }
 
-export const PostSignUpPage: React.FunctionComponent<PostSignUpPageProps> = ({ authenticatedUser }) => {
-    if (!authenticatedUser) {
-        return <Navigate to={PageRoutes.SignIn} replace={true} />
-    }
-
+const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticatedUser }) => {
     // redirects user to /get-cody page if they have aleady completed the post signup flow.
     if (authenticatedUser.completedPostSignup) {
         return <Navigate to={PageRoutes.GetCody} replace={true} />
@@ -36,3 +34,5 @@ export const PostSignUpPage: React.FunctionComponent<PostSignUpPageProps> = ({ a
         </div>
     )
 }
+
+export const PostSignUpPage = withAuthenticatedUser(PostSignUp)
