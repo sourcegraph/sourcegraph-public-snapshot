@@ -14,6 +14,9 @@ export default config
 
 export const BreadcrumbsGallery: Story = () => (
     <ResizableBox width={500} height={30} axis="x" minConstraints={[200, 0]}>
-        <Breadcrumbs filename="sourcegraph/client/web/src/enteprise/insights/components/insight-view/components/InsighBackend.tsx" />
+        <Breadcrumbs
+            filename="sourcegraph/client/web/src/enteprise/insights/components/insight-view/components/InsighBackend.tsx"
+            getSegmentLink={segment => `https://www.google.com/search?q=${segment}`}
+        />
     </ResizableBox>
 )

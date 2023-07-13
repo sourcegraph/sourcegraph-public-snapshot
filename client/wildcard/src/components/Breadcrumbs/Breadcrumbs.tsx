@@ -4,7 +4,8 @@ import { mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Icon } from '../Icon'
-import { Menu, MenuButton, MenuItem, MenuList } from '../Menu'
+import { Link } from '../Link'
+import { Menu, MenuButton, MenuLink, MenuList } from '../Menu'
 
 import styles from './Breadcrumbs.module.scss'
 
@@ -17,19 +18,21 @@ enum SegmentType {
     MoreButton,
 }
 
-interface MoreButtonSegment {
-    type: SegmentType.MoreButton
-    id: string
-}
-interface InvisibleSegment {
-    type: SegmentType.Invisible
-    id: string
-    value: string
-}
 interface CommonSegment {
     type: SegmentType.Common
-    id: string
+    id: number
     value: string
+}
+
+interface InvisibleSegment {
+    type: SegmentType.Invisible
+    id: number
+    value: string
+}
+
+interface MoreButtonSegment {
+    type: SegmentType.MoreButton
+    id: number
 }
 
 type Segment = CommonSegment | InvisibleSegment | MoreButtonSegment
@@ -44,10 +47,12 @@ const MORE_BUTTON_WIDTH = 30
 interface BreadcrumbsProps {
     filename: string
     className?: string
+    children?: ReactNode
+    getSegmentLink: (segment: string, index: number, segments: string[]) => string
 }
 
 export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
-    const { filename, className } = props
+    const { filename, className, children, getSegmentLink } = props
 
     const [hidedSegments, setHidedSegments] = useState<number[]>([])
     const rootElementRef = useRef<HTMLUListElement>(null)
@@ -67,6 +72,8 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
             // Measure segments elements sizes
             let totalWidth = 0
             const elementSizesMap: Record<Index, Width> = {}
+            const extraContentElement =
+                rootElementRef.current.querySelector<HTMLLIElement>('[data-type="extra-content"]')
             const segmentsElements = rootElementRef.current.querySelectorAll<HTMLLIElement>('[data-type="common"]')
 
             for (const element of segmentsElements) {
@@ -76,6 +83,8 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
 
                 totalWidth += width
             }
+
+            totalWidth += extraContentElement ? extraContentElement.getBoundingClientRect().width : 0
 
             // Elements overflow parent container, we should remove some elements in the middle
             // until all reset elements fit in the parent element
@@ -123,7 +132,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
     const fixedSegments = useMemo<Segment[]>(() => {
         if (hidedSegments.length === 0) {
             return segments.map((segment, index) => ({
-                id: `${index}`,
+                id: index,
                 type: SegmentType.Common,
                 value: segment,
             }))
@@ -134,13 +143,13 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
         for (const [index, segment] of segments.entries()) {
             if (hidedSegments.includes(index)) {
                 result.push({
-                    id: `${index}`,
+                    id: index,
                     type: SegmentType.Invisible,
                     value: segment,
                 })
             } else {
                 result.push({
-                    id: `${index}`,
+                    id: index,
                     type: SegmentType.Common,
                     value: segment,
                 })
@@ -151,7 +160,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
 
         if (firstInvisibleElement !== -1) {
             result.splice(firstInvisibleElement, 0, {
-                id: 'more-items-button',
+                id: -1,
                 type: SegmentType.MoreButton,
             })
         }
@@ -172,34 +181,43 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
                     })}
                 >
                     {isMoreButtonSegment(segment) && (
-                        <TruncatedItemsButton truncatedSegments={fixedSegments.filter(isInvisibleSegment)} />
+                        <>
+                            <TruncatedItemsButton
+                                segments={segments}
+                                truncatedSegments={fixedSegments.filter(isInvisibleSegment)}
+                                getSegmentLink={getSegmentLink}
+                            />
+                            <Separator />
+                        </>
                     )}
-                    {getSegmentText(segment, index, fixedSegments)}
+
+                    {!isMoreButtonSegment(segment) && (
+                        <>
+                            <Link to={getSegmentLink(segment.value, segment.id, segments)}>{segment.value}</Link>
+                            {index !== fixedSegments.length - 1 && <Separator />}
+                        </>
+                    )}
                 </li>
             ))}
+            {children && (
+                <li data-type="extra-content" className={styles.item}>
+                    {children}
+                </li>
+            )}
         </ul>
     )
 }
 
-function getSegmentText(segment: Segment, index: number, segments: Segment[]): ReactNode {
-    const segmentText = !isMoreButtonSegment(segment) ? segment.value : ''
-
-    return index !== segments.length - 1 ? (
-        <>
-            {segmentText}
-            <span className={styles.separator}>/</span>
-        </>
-    ) : (
-        segmentText
-    )
-}
+const Separator = () => <span className={styles.separator}>/</span>
 
 interface TruncatedItemsButton {
     truncatedSegments: InvisibleSegment[]
+    segments: string[]
+    getSegmentLink: (segment: string, index: number, segments: string[]) => string
 }
 
 const TruncatedItemsButton: FC<TruncatedItemsButton> = props => {
-    const { truncatedSegments } = props
+    const { truncatedSegments, segments, getSegmentLink } = props
 
     return (
         <Menu>
@@ -215,10 +233,15 @@ const TruncatedItemsButton: FC<TruncatedItemsButton> = props => {
 
                     <MenuList as="ul" className={styles.truncatedList}>
                         {truncatedSegments.map(segment => (
-                            <MenuItem key={segment.id} className={styles.truncatedListItem}>
+                            <MenuLink
+                                key={segment.id}
+                                as={Link}
+                                to={getSegmentLink(segment.value, segment.id, segments)}
+                                className={styles.truncatedListItem}
+                            >
                                 <Icon svgPath={mdiFolderOutline} aria-hidden={true} />
                                 {segment.value}
-                            </MenuItem>
+                            </MenuLink>
                         ))}
                     </MenuList>
                 </>

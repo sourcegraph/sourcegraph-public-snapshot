@@ -3,6 +3,7 @@
     padding: 0;
     display: flex;
     flex-wrap: nowrap;
+    align-items: center;
     white-space: nowrap;
     list-style: none;
     position: relative;
@@ -12,6 +13,7 @@
 
 .separator {
     padding: 0 0.25rem;
+    color: var(--link-color);
 }
 
 .item {
@@ -34,10 +36,12 @@
     display: flex !important;
     border: none !important;
     padding: 0 0.25rem !important;
+    color: var(--link-color);
 
     &--active,
     &:hover,
     &:focus {
+        color: var(--link-color) !important;
         background-color: var(--dropdown-link-hover-bg) !important;
     }
 }
