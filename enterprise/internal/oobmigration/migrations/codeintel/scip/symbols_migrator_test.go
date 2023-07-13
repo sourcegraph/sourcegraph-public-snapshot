@@ -86,6 +86,8 @@ func TestSymbolsMigratorUp(t *testing.T) {
 		m, err := scanIntStringMap(codeIntelStore.Query(ctx, sqlf.Sprintf(`
 			SELECT
 				s.symbol_id,
+				-- ROUGHLY reconstruct symbol names from parts
+				-- We don't want to do this on production paths as it ignores SCIP's escaping rules
 				l1.name || ' ' || l2.name || ' ' || l3.name || ' ' || l4.name || ' ' || l5.name || l6.name AS symbol_name
 			FROM codeintel_scip_symbols s
 			JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = s.upload_id AND ll.symbol_id = s.symbol_id

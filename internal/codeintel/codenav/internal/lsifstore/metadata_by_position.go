@@ -195,7 +195,10 @@ matching_symbol_names AS (
 		SELECT
 			ll.upload_id,
 			ll.symbol_id,
-			-- Reconstruct symbol names from parts
+			-- ROUGHLY reconstruct symbol names from parts
+			-- We don't want to do this as it ignores SCIP's escaping rules, but we only use this
+			-- value in a fairly inconsequential (diagnostic-only) path at the moment. We should
+			-- remove usage of this field altogether (or reconstruct it on the consumer side).
 			l1.name || ' ' || l2.name || ' ' || l3.name || ' ' || l4.name || ' ' || l5.name || l6.name AS symbol_name
 		FROM symbols_parts p
 
