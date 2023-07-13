@@ -8,12 +8,12 @@ go_library(
     deps = [
         "//cmd/blobstore/shared",
         "//cmd/github-proxy/shared",
+        "//cmd/precise-code-intel-worker/shared",
         "//cmd/searcher/shared",
         "//enterprise/cmd/embeddings/shared",
         "//enterprise/cmd/executor/singlebinary",
         "//enterprise/cmd/frontend/shared",
         "//enterprise/cmd/gitserver/shared",
-        "//enterprise/cmd/precise-code-intel-worker/shared",
         "//enterprise/cmd/repo-updater/shared",
         "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//enterprise/cmd/symbols/shared",

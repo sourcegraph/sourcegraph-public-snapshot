@@ -109,7 +109,7 @@ digraph architecture {
                 label="precise-code-intel-worker"
                 shape="box3d"
                 fillcolor="#eac1c1"
-                URL="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/precise-code-intel-worker"
+                URL="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/precise-code-intel-worker"
             ]
 
             symbols [

@@ -458,12 +458,12 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
     checkBinary: .bin/codeintel-worker
     watch:
       - lib
       - internal
-      - enterprise/cmd/precise-code-intel-worker
+      - cmd/precise-code-intel-worker
       - enterprise/internal
       - lib/codeintel
 
@@ -947,7 +947,7 @@ bazelCommands:
   codeintel-worker:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-    target: //enterprise/cmd/precise-code-intel-worker
+    target: //cmd/precise-code-intel-worker
   executor-template: &executor_template_bazel
     target: //enterprise/cmd/executor
     env:

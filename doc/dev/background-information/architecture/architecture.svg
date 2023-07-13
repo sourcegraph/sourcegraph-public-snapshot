@@ -366,7 +366,7 @@
 <!-- codeintel_worker -->
 <g id="node12" class="node">
 <title>codeintel_worker</title>
-<g id="a_node12"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/enterprise/cmd/precise-code-intel-worker" xlink:title="precise&#45;code&#45;intel&#45;worker" target="_blank">
+<g id="a_node12"><a xlink:href="https://github.com/sourcegraph/sourcegraph/tree/main/cmd/precise-code-intel-worker" xlink:title="precise&#45;code&#45;intel&#45;worker" target="_blank">
 <polygon fill="#eac1c1" stroke="black" points="684,-577 515,-577 511,-573 511,-541 680,-541 684,-545 684,-577"/>
 <polyline fill="none" stroke="black" points="680,-573 511,-573 "/>
 <polyline fill="none" stroke="black" points="680,-573 680,-541 "/>

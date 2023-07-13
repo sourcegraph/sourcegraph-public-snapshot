@@ -99,7 +99,7 @@
 
 /enterprise/cmd/migrator/**/* @efritz
 
-/enterprise/cmd/precise-code-intel-worker/**/* @efritz
+/cmd/precise-code-intel-worker/**/* @efritz
 
 /enterprise/cmd/repo-updater/**/* @indradhanush
 
