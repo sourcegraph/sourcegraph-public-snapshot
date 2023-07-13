@@ -61,14 +61,10 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		}
 		return nil, err
 	}
-	verified, err := r.DB.UserEmails().HasVerifiedEmail(ctx, user.ID)
-	if err != nil {
-		return nil, err
-	}
+
 	return &dotcomCodyUserResolver{
-		db:            r.DB,
-		user:          user,
-		verifiedEmail: verified,
+		db:   r.DB,
+		user: user,
 	}, nil
 
 }
@@ -101,7 +97,7 @@ type codyUserGatewayAccessResolver struct {
 	verifiedEmail bool
 }
 
-func (r codyUserGatewayAccessResolver) Enabled() bool { return r.user.SiteAdmin || r.verifiedEmail }
+func (r codyUserGatewayAccessResolver) Enabled() bool { return true }
 
 func (r codyUserGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
 	// If the user isn't enabled return no rate limit

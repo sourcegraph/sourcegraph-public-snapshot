@@ -93,9 +93,9 @@ func TestCodyGatewayDotcomUserResolver(t *testing.T) {
 		{
 			name:        "unverified user",
 			user:        unverifiedUser,
-			wantChat:    0,
-			wantCode:    0,
-			wantEnabled: false,
+			wantChat:    graphqlbackend.BigInt(cfg.Completions.PerUserDailyLimit),
+			wantCode:    graphqlbackend.BigInt(cfg.Completions.PerUserCodeCompletionsDailyLimit),
+			wantEnabled: true,
 		},
 		{
 			name:        "override user",
