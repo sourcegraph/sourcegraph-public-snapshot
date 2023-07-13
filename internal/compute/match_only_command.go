@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -88,7 +89,7 @@ func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
 	return &MatchContext{Matches: matches, Path: fm.Path, RepositoryID: int32(fm.Repo.ID), Repository: string(fm.Repo.Name)}
 }
 
-func (c *MatchOnly) Run(_ context.Context, r result.Match) (Result, error) {
+func (c *MatchOnly) Run(_ context.Context, _ gitserver.Client, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
 		return matchOnly(m, c.ComputePattern.(*Regexp).Value), nil
