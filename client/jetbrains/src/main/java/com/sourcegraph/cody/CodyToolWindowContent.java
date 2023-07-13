@@ -596,7 +596,7 @@ class CodyToolWindowContent implements UpdatableChat {
                       this,
                       cancellationToken);
                 } catch (Exception e) {
-                  logger.error("Error sending message '" + humanMessage + "' to chat", e);
+                  logger.warn("Error sending message '" + humanMessage + "' to chat", e);
                 }
               } else {
                 List<ContextMessage> contextMessages =
@@ -620,7 +620,7 @@ class CodyToolWindowContent implements UpdatableChat {
                 try {
                   chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
                 } catch (Exception e) {
-                  logger.error("Error sending message '" + humanMessage + "' to chat", e);
+                  logger.warn("Error sending message '" + humanMessage + "' to chat", e);
                 }
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
