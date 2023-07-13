@@ -14,9 +14,9 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/run"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/run"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/util"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 )

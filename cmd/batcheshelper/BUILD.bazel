@@ -8,12 +8,12 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "batcheshelper_lib",
     srcs = ["main.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/batcheshelper",
     visibility = ["//visibility:private"],
     deps = [
-        "//enterprise/cmd/batcheshelper/log",
-        "//enterprise/cmd/batcheshelper/run",
-        "//enterprise/cmd/batcheshelper/util",
+        "//cmd/batcheshelper/log",
+        "//cmd/batcheshelper/run",
+        "//cmd/batcheshelper/util",
         "//internal/sanitycheck",
         "//lib/batches",
         "//lib/batches/execution",

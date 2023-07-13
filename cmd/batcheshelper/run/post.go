@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/util"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
