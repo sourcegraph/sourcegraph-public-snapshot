@@ -4,7 +4,7 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "siteid",
     srcs = ["siteid.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid",
+    importpath = "github.com/sourcegraph/sourcegraph/internal/siteid",
     visibility = ["//cmd/frontend:__subpackages__"],
     deps = ["//internal/database"],
 )
