@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -90,17 +89,14 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	// lastSuccessfulJobRevision is the revision of the last successful embeddings
-	// job for this repo. If we can find one, we'll attempt an incremental index,
-	// otherwise we fall back to a full index.
-	var lastSuccessfulJobRevision api.CommitID
 	var previousIndex *embeddings.RepoEmbeddingIndex
 	if embeddingsConfig.Incremental {
-		lastSuccessfulJobRevision, previousIndex = h.getPreviousEmbeddingIndex(ctx, logger, repo)
-
-		if previousIndex != nil && !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
+		previousIndex, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)))
+		if err != nil {
+			logger.Info("no previous embeddings index found. Performing a full index")
+		} else if !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
 			logger.Info("Embeddings model has changed in config. Performing a full index")
-			lastSuccessfulJobRevision, previousIndex = "", nil
+			previousIndex = nil
 		}
 	}
 
@@ -116,7 +112,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
-		IndexedRevision:   lastSuccessfulJobRevision,
+	}
+
+	if previousIndex != nil {
+		logger.Info("found previous embeddings index. Attempting incremental update", log.String("old revision", string(previousIndex.Revision)))
+		opts.IndexedRevision = previousIndex.Revision
 	}
 
 	ranks, err := getDocumentRanks(ctx, string(repo.Name))
@@ -176,20 +176,6 @@ func getFileFilterPathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) (in
 		excludedGlobPatterns = embed.GetDefaultExcludedFilePathPatterns()
 	}
 	return includedGlobPatterns, excludedGlobPatterns
-}
-
-// getPreviousEmbeddingIndex checks the last successfully indexed revision and returns its embeddings index. If there
-// is no previous revision, or if there's a problem downloading the index, then it returns a nil index. This means we
-// need to do a full (non-incremental) reindex.
-func (h *handler) getPreviousEmbeddingIndex(ctx context.Context, logger log.Logger, repo *types.Repo) (api.CommitID, *embeddings.RepoEmbeddingIndex) {
-	index, err := embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
-	if err != nil {
-		logger.Info("Could not find or could not download previous embeddings index. Falling back to full index", log.Error(err))
-		return "", nil
-	}
-	logger.Info("Found existing embeddings index. Attempting incremental index", log.String("old revision", string(index.Revision)))
-
-	return index.Revision, index
 }
 
 type revisionFetcher struct {
