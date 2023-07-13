@@ -17,12 +17,13 @@ type Tracer struct {
 
 // New returns a new Trace with the specified name. Must be closed with Finish().
 func (t Tracer) New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
+	tracerProvider := t.TracerProvider
 	if t.TracerProvider == nil {
-		t.TracerProvider = otel.GetTracerProvider()
+		tracerProvider = otel.GetTracerProvider()
 	}
 
 	var otelSpan oteltrace.Span
-	ctx, otelSpan = t.TracerProvider.
+	ctx, otelSpan = tracerProvider.
 		Tracer("sourcegraph/internal/trace").
 		Start(ctx, name, oteltrace.WithAttributes(attrs...))
 
