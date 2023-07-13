@@ -10,7 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	repoembeddingsbg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	fileembeddingsbg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/file"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -57,12 +57,12 @@ func (s *fileEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 		newFileEmbeddingJobWorker(
 			workCtx,
 			observationCtx,
-			repoembeddingsbg.NewRepoEmbeddingJobWorkerStore(observationCtx, db.Handle()),
+			fileembeddingsbg.NewFileEmbeddingJobWorkerStore(observationCtx, db.Handle()),
 			db,
 			uploadStore,
 			gitserver.NewClient(),
 			services.ContextService,
-			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
+			fileembeddingsbg.NewFileEmbeddingJobsStore(db),
 		),
 	}, nil
 }
@@ -70,21 +70,21 @@ func (s *fileEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 func newFileEmbeddingJobWorker(
 	ctx context.Context,
 	observationCtx *observation.Context,
-	workerStore dbworkerstore.Store[*repoembeddingsbg.RepoEmbeddingJob],
+	workerStore dbworkerstore.Store[*fileembeddingsbg.FileEmbeddingJob],
 	db database.DB,
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
 	contextService embed.ContextService,
-	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,
-) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
+	fileEmbeddingJobsStore fileembeddingsbg.FileEmbeddingJobsStore,
+) *workerutil.Worker[*fileembeddingsbg.FileEmbeddingJob] {
 	handler := &handler{
 		db:                     db,
 		uploadStore:            uploadStore,
 		gitserverClient:        gitserverClient,
 		contextService:         contextService,
-		fileEmbeddingJobsStore: repoEmbeddingJobsStore,
+		fileEmbeddingJobsStore: fileEmbeddingJobsStore,
 	}
-	return dbworker.NewWorker[*repoembeddingsbg.RepoEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
+	return dbworker.NewWorker[*fileembeddingsbg.FileEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "file_embedding_job_worker",
 		Interval:          10 * time.Second, // Poll for a job once every 10 seconds
 		NumHandlers:       1,                // Process only one job at a time (per instance)

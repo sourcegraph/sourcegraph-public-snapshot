@@ -21,3 +21,10 @@ func GetRepoEmbeddingIndexName(repoName api.RepoName) RepoEmbeddingIndexName {
 	hash := md5.Sum([]byte(repoName))
 	return RepoEmbeddingIndexName(fmt.Sprintf(`%s_%s.embeddingindex`, fsSafeRepoName, hex.EncodeToString(hash[:])))
 }
+
+func GetFileEmbeddingIndexName(pluginName string) string {
+	fsSafeRepoName := nonAlphanumericCharsRegexp.ReplaceAllString(string(pluginName), "_")
+	// Add a hash as well to avoid name collisions
+	hash := md5.Sum([]byte(pluginName))
+	return fmt.Sprintf(`%s_%s.embeddingindex`, fsSafeRepoName, hex.EncodeToString(hash[:]))
+}

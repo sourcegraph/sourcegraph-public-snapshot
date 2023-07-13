@@ -10,13 +10,13 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -101,13 +101,12 @@ type FileEmbeddingJobsStore interface {
 
 	CreateFileEmbeddingJob(ctx context.Context, embeddingPluginID int32, fileType string) (int, error)
 	GetLastCompletedFileEmbeddingJob(ctx context.Context, repoID int32) (*FileEmbeddingJob, error)
-	GetLastFileEmbeddingJobForRevision(ctx context.Context, repoID int32, revision api.CommitID) (*FileEmbeddingJob, error)
 	ListFileEmbeddingJobs(ctx context.Context, args ListOpts) ([]*FileEmbeddingJob, error)
 	CountFileEmbeddingJobs(ctx context.Context, args ListOpts) (int, error)
 	GetEmbeddableFiles(ctx context.Context, opts EmbeddableFileOpts) ([]EmbeddableFile, error)
 	CancelFileEmbeddingJob(ctx context.Context, job int) error
 
-	UpdateFileEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedFileStats) error
+	UpdateFileEmbeddingJobStats(ctx context.Context, jobID int, stats *bgrepo.EmbedRepoStats) error
 	GetFileEmbeddingJobStats(ctx context.Context, jobID int) (EmbedFileStats, error)
 }
 
@@ -189,9 +188,9 @@ type EmbeddableFileOpts struct {
 
 type ListOpts struct {
 	*database.PaginationArgs
-	Query *string
-	State *string
-	EmbeddingPlugin  *int32
+	Query           *string
+	State           *string
+	EmbeddingPlugin *int32
 }
 
 func GetEmbeddableFileOpts() EmbeddableFileOpts {
@@ -300,7 +299,7 @@ func (s *fileEmbeddingJobsStore) GetFileEmbeddingJobStats(ctx context.Context, j
 	return scanFileEmbeddingStats(rows)
 }
 
-func (s *fileEmbeddingJobsStore) UpdateFileEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedFileStats) error {
+func (s *fileEmbeddingJobsStore) UpdateFileEmbeddingJobStats(ctx context.Context, jobID int, stats *bgrepo.EmbedRepoStats) error {
 	const updateFileEmbeddingJobStats = `
 	INSERT INTO file_embedding_job_stats (
 		job_id,
@@ -370,33 +369,16 @@ func (s *fileEmbeddingJobsStore) UpdateFileEmbeddingJobStats(ctx context.Context
 const getLastFinishedFileEmbeddingJob = `
 SELECT %s
 FROM file_embedding_jobs
-WHERE state = 'completed' AND repo_id = %d
+WHERE state = 'completed' AND embedding_plugin_id = %d
 ORDER BY finished_at DESC
 LIMIT 1
 `
 
-func (s *fileEmbeddingJobsStore) GetLastCompletedFileEmbeddingJob(ctx context.Context, repoID int32) (*FileEmbeddingJob, error) {
-	q := sqlf.Sprintf(getLastFinishedFileEmbeddingJob, sqlf.Join(fileEmbeddingJobsColumns, ", "), repoID)
+func (s *fileEmbeddingJobsStore) GetLastCompletedFileEmbeddingJob(ctx context.Context, embeddingPluginID int32) (*FileEmbeddingJob, error) {
+	q := sqlf.Sprintf(getLastFinishedFileEmbeddingJob, sqlf.Join(fileEmbeddingJobsColumns, ", "), embeddingPluginID)
 	job, err := scanFileEmbeddingJob(s.QueryRow(ctx, q))
 	if err == sql.ErrNoRows {
-		return nil, &FileEmbeddingJobNotFoundErr{embeddingPluginID: repoID}
-	}
-	return job, nil
-}
-
-const getLastFileEmbeddingJobForRevision = `
-SELECT %s
-FROM file_embedding_jobs
-WHERE repo_id = %d AND revision = %s
-ORDER BY queued_at DESC
-LIMIT 1
-`
-
-func (s *fileEmbeddingJobsStore) GetLastFileEmbeddingJobForRevision(ctx context.Context, repoID int32, revision api.CommitID) (*FileEmbeddingJob, error) {
-	q := sqlf.Sprintf(getLastFileEmbeddingJobForRevision, sqlf.Join(fileEmbeddingJobsColumns, ", "), repoID, revision)
-	job, err := scanFileEmbeddingJob(s.QueryRow(ctx, q))
-	if err == sql.ErrNoRows {
-		return nil, &FileEmbeddingJobNotFoundErr{embeddingPluginID: repoID}
+		return nil, &FileEmbeddingJobNotFoundErr{embeddingPluginID: embeddingPluginID}
 	}
 	return job, nil
 }

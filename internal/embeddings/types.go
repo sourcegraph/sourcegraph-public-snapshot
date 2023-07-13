@@ -71,6 +71,12 @@ type RepoEmbeddingIndex struct {
 	TextIndex       EmbeddingIndex
 }
 
+type FileEmbeddingIndex struct {
+	PluginName      string
+	EmbeddingsModel string
+	Index           EmbeddingIndex
+}
+
 func (i *RepoEmbeddingIndex) EstimateSize() uint64 {
 	return i.CodeIndex.EstimateSize() + i.TextIndex.EstimateSize()
 }

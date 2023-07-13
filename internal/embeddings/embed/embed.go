@@ -137,6 +137,66 @@ type EmbedRepoOpts struct {
 	IndexedRevision api.CommitID
 }
 
+// EmbedRepo embeds file contents from the given file names for a repository.
+// It separates the file names into code files and text files and embeds them separately.
+// It returns a RepoEmbeddingIndex containing the embeddings and metadata.
+func EmbedFiles(
+	ctx context.Context,
+	client client.EmbeddingsClient,
+	contextService ContextService,
+	readLister FileReadLister,
+	ranks types.RepoPathRanks,
+	opts EmbedFilesOpts,
+	logger log.Logger,
+	reportProgress func(*bgrepo.EmbedRepoStats),
+) (*embeddings.FileEmbeddingIndex, []string, *bgrepo.EmbedRepoStats, error) {
+	var toIndex []FileEntry
+	var toRemove []string
+	var err error
+
+	toIndex, err = readLister.List(ctx)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	var codeFileNames, textFileNames []FileEntry
+	for _, file := range toIndex {
+		if IsValidTextFile(file.Name) {
+			textFileNames = append(textFileNames, file)
+		} else {
+			codeFileNames = append(codeFileNames, file)
+		}
+	}
+
+	stats := bgrepo.EmbedRepoStats{}
+
+	reportCodeProgress := func(codeIndexStats bgrepo.EmbedFilesStats) {
+		reportProgress(&stats)
+	}
+
+	codeIndex, codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxEmbeddings, ranks, reportCodeProgress)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	stats.CodeIndexStats = codeIndexStats
+
+	embeddingsModel := client.GetModelIdentifier()
+	index := &embeddings.FileEmbeddingIndex{
+		PluginName:        opts.PluginName,
+		EmbeddingsModel: embeddingsModel,
+		Index:       codeIndex,
+	}
+
+	return index, toRemove, &stats, nil
+}
+
+type EmbedFilesOpts struct {
+	PluginName    string
+	FileFilters   FileFilters
+	MaxEmbeddings int
+	SplitOptions      codeintelContext.SplitOptions
+}
+
 type FileFilters struct {
 	ExcludePatterns  []*paths.GlobPattern
 	IncludePatterns  []*paths.GlobPattern

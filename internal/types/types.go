@@ -2064,3 +2064,9 @@ type EmbeddingPluginFile struct {
 	Contents          []byte
 	EmbeddingPluginID int32
 }
+
+type EmbeddingPlugin struct {
+	ID                int32
+	Name              string
+	OriginalSourceURL string
+}

@@ -38,6 +38,7 @@
     - CodeownersStore
     - ConfStore
     - DB
+    - EmbeddingPluginStore
     - EventLogStore
     - ExecutorSecretAccessLogStore
     - ExecutorSecretStore
