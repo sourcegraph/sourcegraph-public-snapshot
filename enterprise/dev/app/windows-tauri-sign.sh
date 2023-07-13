@@ -3,7 +3,7 @@ set -eu
 
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../.. || exit 1
 
-SRC_GLOB="win-msi\*msi"
+SRC_GLOB="release-msi\*msi"
 DEST_DIR="artifacts"
 
 download_artifacts() {
@@ -41,13 +41,16 @@ fi
 
 pushd .
 cd ${DEST_DIR}
+# due to how the artifact is downloaded from buildkite, the msi will be in release-msi\*
+# so we move everything from release-msi\* to the current dir
+mv release-msi/* .
+# now lets get the full path to the msi
 target=$(find . -name "*.msi")
 
 echo "--- :tauri::pencil: signing ${target}"
-sign_artifacts ${DEST_DIR}
-# this is also subtly works around the fact that in `create-github-release` our download glob is `dist/` (notice the forward) slash
-# and since we're uploading it here we might as well upload the msi again
+sign_artifacts "${target}"
 mkdir -p dist
+# lets move everything in the current dir to dist ... which *should* be the .msi and the .msi.sig
 mv "${DEST_DIR}/*" dist/
 popd
 
