@@ -106,16 +106,16 @@ func Indexers() *backend.Indexers {
 	return indexers
 }
 
-func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) map[uint32]*zoekt.MinimalRepoListEntry {
-	return func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
+func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) zoekt.ReposMap {
+	return func(ctx context.Context, endpoint string) zoekt.ReposMap {
 		cl := dial(endpoint)
 
-		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 		if err != nil {
-			return map[uint32]*zoekt.MinimalRepoListEntry{}
+			return zoekt.ReposMap{}
 		}
 
-		return resp.Minimal //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		return resp.ReposMap
 	}
 }
 
