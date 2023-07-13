@@ -86,6 +86,10 @@ const CodyConfigurationPage = lazyComponent(
     () => import('../cody/configuration/pages/CodyConfigurationPage'),
     'CodyConfigurationPage'
 )
+const EmbeddingUploadPage = lazyComponent(
+    () => import('../cody/upload/pages/EmbeddingUploadPage'),
+    'EmbeddingUploadPage'
+)
 
 const codyIsEnabled = (): boolean => Boolean(window.context?.codyEnabled && window.context?.embeddingsEnabled)
 
@@ -234,6 +238,12 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
         {
             path: '/embeddings/configuration/:id',
             render: props => <CodeIntelConfigurationPolicyPage {...props} domain="embeddings" />,
+            condition: codyIsEnabled,
+        },
+        {
+            exact: true,
+            path: '/embeddings/upload',
+            render: props => <EmbeddingUploadPage {...props} />,
             condition: codyIsEnabled,
         },
 

@@ -295,6 +295,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 			NewDotcomLicenseCheckHandler:    enterprise.NewDotcomLicenseCheckHandler,
 			NewChatCompletionsStreamHandler: enterprise.NewChatCompletionsStreamHandler,
 			NewCodeCompletionsHandler:       enterprise.NewCodeCompletionsHandler,
+			EmbeddingsFileUploadHandler:     enterprise.EmbeddingsFileUploadHandler,
 		},
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,

@@ -699,6 +699,7 @@ ts_project(
         "src/enterprise/cody/configuration/pages/CodyConfigurationPage.tsx",
         "src/enterprise/cody/repo/CodyRepoArea.tsx",
         "src/enterprise/cody/repo/CodyRepoSidebar.tsx",
+        "src/enterprise/cody/upload/pages/EmbeddingUploadPage.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountEmailAddresses.tsx",
         "src/enterprise/dotcom/productSubscriptions/AccountName.tsx",
         "src/enterprise/dotcom/productSubscriptions/ProductLicenseValidity.tsx",

@@ -1,0 +1,17 @@
+.upload-container {
+    border: 2px solid var(--text-muted);
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    height: 18.75rem;
+    cursor: pointer;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.upload-icon {
+    width: 3rem;
+    height: 3rem;
+    margin-bottom: 0.5rem;
+}
