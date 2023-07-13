@@ -504,12 +504,12 @@ func (h *searchIndexerServer) handleIndexStatusUpdate(_ http.ResponseWriter, r *
 func (h *searchIndexerServer) doIndexStatusUpdate(ctx context.Context, args *indexStatusUpdateArgs) error {
 	var (
 		ids     = make([]int32, len(args.Repositories))
-		minimal = make(map[uint32]*zoekt.MinimalRepoListEntry, len(args.Repositories))
+		minimal = make(zoekt.ReposMap, len(args.Repositories))
 	)
 
 	for i, repo := range args.Repositories {
 		ids[i] = int32(repo.RepoID)
-		minimal[repo.RepoID] = &zoekt.MinimalRepoListEntry{Branches: repo.Branches, IndexTimeUnix: repo.IndexTimeUnix}
+		minimal[repo.RepoID] = zoekt.MinimalRepoListEntry{Branches: repo.Branches, IndexTimeUnix: repo.IndexTimeUnix}
 	}
 
 	h.logger.Info("updating index status", log.Int32s("repositories", ids))

@@ -519,7 +519,7 @@ func TestIndexStatusUpdate(t *testing.T) {
 		called := false
 
 		zoektReposStore := database.NewMockZoektReposStore()
-		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed zoekt.ReposMap) error {
 			entry, ok := indexed[1234]
 			if !ok {
 				t.Fatalf("wrong repo ID")
@@ -562,7 +562,7 @@ func TestIndexStatusUpdate(t *testing.T) {
 		called := false
 
 		zoektReposStore := database.NewMockZoektReposStore()
-		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error {
+		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed zoekt.ReposMap) error {
 			entry, ok := indexed[wantRepoID]
 			if !ok {
 				t.Fatalf("wrong repo ID")

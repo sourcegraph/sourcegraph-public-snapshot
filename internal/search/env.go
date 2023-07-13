@@ -70,16 +70,28 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
-// ListAllIndexed lists all indexed repositories with `Minimal: true`.
-func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
+// ZoektAllIndexed is the subset of zoekt.RepoList that we set in
+// ListAllIndexed.
+type ZoektAllIndexed struct {
+	ReposMap zoekt.ReposMap
+	Crashes  int
+	Stats    zoekt.RepoStats
+}
+
+// ListAllIndexed lists all indexed repositories.
+func ListAllIndexed(ctx context.Context) (*ZoektAllIndexed, error) {
 	q := &query.Const{Value: true}
-	opts := &zoekt.ListOptions{Minimal: true}
+	opts := &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap}
 
 	repos, err := Indexed().List(ctx, q, opts)
 	if err != nil {
 		return nil, err
 	}
-	return repos, nil
+	return &ZoektAllIndexed{
+		ReposMap: repos.ReposMap,
+		Crashes:  repos.Crashes,
+		Stats:    repos.Stats,
+	}, nil
 }
 
 func Indexers() *backend.Indexers {
