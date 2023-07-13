@@ -12,9 +12,8 @@ import (
 )
 
 type Query struct {
-	gitserverClient gitserver.Client
-	Command         Command
-	Parameters      []query.Node
+	Command    Command
+	Parameters []query.Node
 }
 
 func (q Query) String() string {
@@ -308,9 +307,8 @@ func (p *commandParser) toComputeQuery(plan query.Plan) (*Query, error) {
 		return nil
 	})
 	return &Query{
-		gitserverClient: p.gitserverClient,
-		Parameters:      parameters,
-		Command:         command,
+		Parameters: parameters,
+		Command:    command,
 	}, nil
 }
 
