@@ -11,6 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type replaceCommandOptions struct {
+	gitserverClient gitserver.Client
+}
+
+var _ CommandOptions = (*replaceCommandOptions)(nil)
+
 type Replace struct {
 	gitserverClient gitserver.Client
 
@@ -24,10 +30,6 @@ func (c *Replace) ToSearchPattern() string {
 
 func (c *Replace) String() string {
 	return fmt.Sprintf("Replace in place: (%s) -> (%s)", c.SearchPattern.String(), c.ReplacePattern)
-}
-
-func (c *Replace) PostRunHook(p *commandParser) {
-	c.gitserverClient = p.gitserverClient
 }
 
 func replace(ctx context.Context, content []byte, matchPattern MatchPattern, replacePattern string) (*Text, error) {

@@ -132,7 +132,12 @@ func parseArrowSyntax(args string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-func parseReplace(q *query.Basic) (Command, bool, error) {
+func parseReplace(q *query.Basic, opts CommandOptions) (Command, bool, error) {
+	cmdOpt, ok := opts.(replaceCommandOptions)
+	if !ok {
+		panic("invalid CommandOptions, must be of type replaceCommandOptions")
+	}
+
 	pattern, err := extractPattern(q)
 	if err != nil {
 		return nil, false, err
@@ -163,10 +168,14 @@ func parseReplace(q *query.Basic) (Command, bool, error) {
 		return nil, false, nil
 	}
 
-	return &Replace{SearchPattern: matchPattern, ReplacePattern: right}, true, nil
+	return &Replace{
+		gitserverClient: cmdOpt.gitserverClient,
+		SearchPattern:   matchPattern,
+		ReplacePattern:  right,
+	}, true, nil
 }
 
-func parseOutput(q *query.Basic) (Command, bool, error) {
+func parseOutput(q *query.Basic, _ CommandOptions) (Command, bool, error) {
 	pattern, err := extractPattern(q)
 	if err != nil {
 		return nil, false, err
@@ -219,7 +228,7 @@ func parseOutput(q *query.Basic) (Command, bool, error) {
 	}, true, nil
 }
 
-func parseMatchOnly(q *query.Basic) (Command, bool, error) {
+func parseMatchOnly(q *query.Basic, _ CommandOptions) (Command, bool, error) {
 	pattern, err := extractPattern(q)
 	if err != nil {
 		return nil, false, err
@@ -242,10 +251,10 @@ func parseMatchOnly(q *query.Basic) (Command, bool, error) {
 }
 
 // first returns the first parser that succeeds at parsing a command from a pattern.
-func first(parsers ...commandParserFunc) commandParserFunc {
+func first(parserFuncs []*parserWithOpts) commandParserFunc {
 	return func(q *query.Basic) (Command, bool, error) {
-		for _, parse := range parsers {
-			command, ok, err := parse(q)
+		for _, p := range parserFuncs {
+			command, ok, err := p.parser(q, p.opts)
 			if err != nil {
 				return nil, false, err
 			}
@@ -259,17 +268,27 @@ func first(parsers ...commandParserFunc) commandParserFunc {
 
 type commandParserFunc func(pattern *query.Basic) (Command, bool, error)
 
+type commandParserGeneratorFunc func(pattern *query.Basic, opts CommandOptions) (Command, bool, error)
+
+type parserWithOpts struct {
+	parser commandParserGeneratorFunc
+	opts   CommandOptions
+}
+
 type commandParser struct {
 	gitserverClient gitserver.Client
 	parseCommand    commandParserFunc
 }
 
 func newCommandParser(gitserverClient gitserver.Client) *commandParser {
-	parseCommand := first(
-		parseReplace,
-		parseOutput,
-		parseMatchOnly,
-	)
+	parseCommand := first([]*parserWithOpts{
+		{
+			parser: parseReplace,
+			opts:   replaceCommandOptions{gitserverClient: gitserverClient},
+		},
+		{parser: parseOutput},
+		{parser: parseMatchOnly},
+	})
 
 	return &commandParser{gitserverClient: gitserverClient, parseCommand: parseCommand}
 }
@@ -282,10 +301,6 @@ func (p *commandParser) toComputeQuery(plan query.Plan) (*Query, error) {
 	command, _, err := p.parseCommand(&plan[0])
 	if err != nil {
 		return nil, err
-	}
-
-	if c, ok := command.(CommandPostRunHook); ok {
-		c.PostRunHook(p)
 	}
 
 	parameters := query.MapPattern(plan.ToQ(), func(_ string, _ bool, _ query.Annotation) query.Node {
