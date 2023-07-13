@@ -18,8 +18,6 @@ type Command interface {
 	String() string
 }
 
-type CommandOptions interface{}
-
 var (
 	_ Command = (*MatchOnly)(nil)
 	_ Command = (*Replace)(nil)

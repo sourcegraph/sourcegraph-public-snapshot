@@ -4,12 +4,11 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
 func TestParse(t *testing.T) {
 	test := func(input string) string {
-		q, err := Parse(input, gitserver.NewMockClient())
+		q, err := Parse(input)
 		if err != nil {
 			return err.Error()
 		}
@@ -46,7 +45,7 @@ func TestParse(t *testing.T) {
 
 func TestToSearchQuery(t *testing.T) {
 	test := func(input string) string {
-		q, err := Parse(input, gitserver.NewMockClient())
+		q, err := Parse(input)
 		if err != nil {
 			return err.Error()
 		}

@@ -5,7 +5,6 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -131,12 +130,7 @@ func parseArrowSyntax(args string) (string, string, error) {
 	return parts[0], parts[1], nil
 }
 
-func parseReplace(q *query.Basic, opts CommandOptions) (Command, bool, error) {
-	cmdOpt, ok := opts.(replaceCommandOptions)
-	if !ok {
-		panic("invalid CommandOptions, must be of type replaceCommandOptions")
-	}
-
+func parseReplace(q *query.Basic) (Command, bool, error) {
 	pattern, err := extractPattern(q)
 	if err != nil {
 		return nil, false, err
@@ -168,13 +162,12 @@ func parseReplace(q *query.Basic, opts CommandOptions) (Command, bool, error) {
 	}
 
 	return &Replace{
-		gitserverClient: cmdOpt.gitserverClient,
-		SearchPattern:   matchPattern,
-		ReplacePattern:  right,
+		SearchPattern:  matchPattern,
+		ReplacePattern: right,
 	}, true, nil
 }
 
-func parseOutput(q *query.Basic, _ CommandOptions) (Command, bool, error) {
+func parseOutput(q *query.Basic) (Command, bool, error) {
 	pattern, err := extractPattern(q)
 	if err != nil {
 		return nil, false, err
@@ -227,7 +220,7 @@ func parseOutput(q *query.Basic, _ CommandOptions) (Command, bool, error) {
 	}, true, nil
 }
 
-func parseMatchOnly(q *query.Basic, _ CommandOptions) (Command, bool, error) {
+func parseMatchOnly(q *query.Basic) (Command, bool, error) {
 	pattern, err := extractPattern(q)
 	if err != nil {
 		return nil, false, err
@@ -249,11 +242,13 @@ func parseMatchOnly(q *query.Basic, _ CommandOptions) (Command, bool, error) {
 	return &MatchOnly{SearchPattern: sp, ComputePattern: cp}, true, nil
 }
 
+type commandParser func(pattern *query.Basic) (Command, bool, error)
+
 // first returns the first parser that succeeds at parsing a command from a pattern.
-func first(parserFuncs []*parserWithOpts) commandParserFunc {
+func first(parsers ...commandParser) commandParser {
 	return func(q *query.Basic) (Command, bool, error) {
-		for _, p := range parserFuncs {
-			command, ok, err := p.parser(q, p.opts)
+		for _, parse := range parsers {
+			command, ok, err := parse(q)
 			if err != nil {
 				return nil, false, err
 			}
@@ -265,39 +260,18 @@ func first(parserFuncs []*parserWithOpts) commandParserFunc {
 	}
 }
 
-type commandParserFunc func(pattern *query.Basic) (Command, bool, error)
+var parseCommand = first(
+	parseReplace,
+	parseOutput,
+	parseMatchOnly,
+)
 
-type commandParserGeneratorFunc func(pattern *query.Basic, opts CommandOptions) (Command, bool, error)
-
-type parserWithOpts struct {
-	parser commandParserGeneratorFunc
-	opts   CommandOptions
-}
-
-type commandParser struct {
-	gitserverClient gitserver.Client
-	parseCommand    commandParserFunc
-}
-
-func newCommandParser(gitserverClient gitserver.Client) *commandParser {
-	parseCommand := first([]*parserWithOpts{
-		{
-			parser: parseReplace,
-			opts:   replaceCommandOptions{gitserverClient: gitserverClient},
-		},
-		{parser: parseOutput},
-		{parser: parseMatchOnly},
-	})
-
-	return &commandParser{gitserverClient: gitserverClient, parseCommand: parseCommand}
-}
-
-func (p *commandParser) toComputeQuery(plan query.Plan) (*Query, error) {
+func toComputeQuery(plan query.Plan) (*Query, error) {
 	if len(plan) < 1 {
 		return nil, errors.New("compute endpoint can't do anything with empty query")
 	}
 
-	command, _, err := p.parseCommand(&plan[0])
+	command, _, err := parseCommand(&plan[0])
 	if err != nil {
 		return nil, err
 	}
@@ -312,9 +286,7 @@ func (p *commandParser) toComputeQuery(plan query.Plan) (*Query, error) {
 	}, nil
 }
 
-func Parse(q string, gitserverClient gitserver.Client) (*Query, error) {
-	parser := newCommandParser(gitserverClient)
-
+func Parse(q string) (*Query, error) {
 	parseTree, err := query.ParseRegexp(q)
 	if err != nil {
 		return nil, err
@@ -332,5 +304,5 @@ func Parse(q string, gitserverClient gitserver.Client) (*Query, error) {
 	if err != nil {
 		return nil, err
 	}
-	return parser.toComputeQuery(plan)
+	return toComputeQuery(plan)
 }

@@ -11,15 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type replaceCommandOptions struct {
-	gitserverClient gitserver.Client
-}
-
-var _ CommandOptions = (*replaceCommandOptions)(nil)
-
 type Replace struct {
-	gitserverClient gitserver.Client
-
 	SearchPattern  MatchPattern
 	ReplacePattern string
 }

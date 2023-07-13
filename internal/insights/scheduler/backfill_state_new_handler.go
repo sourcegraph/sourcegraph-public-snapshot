@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
@@ -177,7 +176,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 
 func parseQuery(series types.InsightSeries, db database.DB) (query.Plan, error) {
 	if series.GeneratedFromCaptureGroups {
-		seriesQuery, err := compute.Parse(series.Query, gitserver.NewClient(db))
+		seriesQuery, err := compute.Parse(series.Query)
 		if err != nil {
 			return nil, errors.Wrap(err, "compute.Parse")
 		}

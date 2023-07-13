@@ -44,7 +44,7 @@ func ParseQuery(q string, patternType string) (query.Plan, error) {
 }
 
 func ParseComputeQuery(q string, gitserverClient gitserver.Client) (*compute.Query, error) {
-	computeQuery, err := compute.Parse(q, gitserverClient)
+	computeQuery, err := compute.Parse(q)
 	if err != nil {
 		return nil, errors.Wrap(err, "compute.Parse")
 	}

@@ -225,7 +225,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 // NewBatchComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
 func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db database.DB, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
-	computeQuery, err := compute.Parse(args.Query, gitserver.NewClient(db))
+	computeQuery, err := compute.Parse(args.Query)
 	if err != nil {
 		return nil, err
 	}

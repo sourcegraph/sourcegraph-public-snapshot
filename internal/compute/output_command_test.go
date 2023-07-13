@@ -79,7 +79,7 @@ func commitMatch(content string) result.Match {
 
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
-		computeQuery, _ := Parse(q, nil)
+		computeQuery, _ := Parse(q)
 		commandResult, err := computeQuery.Command.Run(context.Background(), gitserver.NewMockClient(), m)
 		if err != nil {
 			return err.Error()

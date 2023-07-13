@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -62,7 +61,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	computeQuery, err := compute.Parse(args.Query, gitserver.NewClient(h.db))
+	computeQuery, err := compute.Parse(args.Query)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
