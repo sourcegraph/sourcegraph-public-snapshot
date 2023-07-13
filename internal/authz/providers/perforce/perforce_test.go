@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
@@ -85,10 +86,11 @@ cindy <cindy@example.com> (Cindy) accessed 2020/12/04
 
 func TestProvider_FetchUserPerms(t *testing.T) {
 	ctx := context.Background()
+	db := database.NewMockDB()
 
 	t.Run("nil account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", nil)
+		p := NewProvider(logger, db, "", "ssl:111.222.333.444:1666", "admin", "password", nil)
 		_, err := p.FetchUserPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no account provided"
 		got := fmt.Sprintf("%v", err)
@@ -99,7 +101,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("not the code host of the account", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
+		p := NewProvider(logger, db, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
 		_, err := p.FetchUserPerms(context.Background(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -118,7 +120,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 
 	t.Run("no user found in account data", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
+		p := NewProvider(logger, db, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
 		_, err := p.FetchUserPerms(ctx,
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
@@ -340,9 +342,10 @@ read user alice * -//Sourcegraph/Security/...
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
+	db := database.NewMockDB()
 
 	t.Run("nil repository", func(t *testing.T) {
-		p := NewProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
+		p := NewProvider(logger, db, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
 		_, err := p.FetchRepoPerms(ctx, nil, authz.FetchPermsOptions{})
 		want := "no repository provided"
 		got := fmt.Sprintf("%v", err)
@@ -352,7 +355,7 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
-		p := NewProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
+		p := NewProvider(logger, db, "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{})
 		_, err := p.FetchRepoPerms(ctx,
 			&extsvc.Repository{
 				URI: "gitlab.com/user/repo",
@@ -438,7 +441,7 @@ Users:
 }
 
 func NewTestProvider(logger log.Logger, urn, host, user, password string, execer p4Execer) *Provider {
-	p := NewProvider(logger, urn, host, user, password, []extsvc.RepoID{})
+	p := NewProvider(logger, database.NewMockDB(), urn, host, user, password, []extsvc.RepoID{})
 	p.p4Execer = execer
 	return p
 }
