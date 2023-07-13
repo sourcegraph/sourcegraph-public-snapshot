@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -28,7 +27,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			_, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			_, err := newSchemaResolver(db, gitserver.NewClient(db)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 
@@ -44,7 +43,7 @@ func TestSiteConfiguration(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			r, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewClient(db)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -97,7 +96,7 @@ func TestSiteConfiguration(t *testing.T) {
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 
 		t.Run("ReturnSafeConfigsOnly is false", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewClient(db)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(false),
 			})
 			if err != nil {
@@ -129,7 +128,7 @@ func TestSiteConfiguration(t *testing.T) {
 		})
 
 		t.Run("ReturnSafeConfigsOnly is true", func(t *testing.T) {
-			r, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{
+			r, err := newSchemaResolver(db, gitserver.NewClient(db)).Site().Configuration(ctx, &SiteConfigurationArgs{
 				ReturnSafeConfigsOnly: pointers.Ptr(true),
 			})
 			if err != nil {
@@ -163,7 +162,7 @@ func TestSiteConfigurationHistory(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClientDeprecatedNeedsDB(), jobutil.NewUnimplementedEnterpriseJobs()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClientDeprecatedNeedsDB()).Site().Configuration(ctx, &SiteConfigurationArgs{})
 	if err != nil {
 		t.Fatalf("failed to create schemaResolver: %v", err)
 	}

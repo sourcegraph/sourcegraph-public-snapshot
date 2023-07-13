@@ -117,7 +117,7 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Resolve", attribute.Stringer("opts", &op))
-	defer tr.FinishWithErr(&errs)
+	defer tr.EndWithErr(&errs)
 
 	excludePatterns := op.MinusRepoFilters
 	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
@@ -536,7 +536,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}()
 
 	// Early return if there are no filters
@@ -617,7 +617,7 @@ func (r *Resolver) filterRepoHasFileContent(
 				q := searchzoekt.QueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
 				q = zoektquery.NewAnd(&zoektquery.BranchesRepos{List: indexed.BranchRepos()}, q)
 
-				repos, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Minimal: true})
+				repos, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 				if err != nil {
 					return err
 				}
@@ -625,7 +625,7 @@ func (r *Resolver) filterRepoHasFileContent(
 				addBackendsMissing(repos.Crashes)
 
 				foundRevs := Set[repoAndRev]{}
-				for repoID, repo := range repos.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+				for repoID, repo := range repos.ReposMap {
 					inputRevs := indexed.RepoRevs[api.RepoID(repoID)].Revs
 					for _, branch := range repo.Branches {
 						for _, inputRev := range inputRevs {
@@ -761,7 +761,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		tr.SetAttributes(
 			attribute.Int("excludedForks", ex.Forks),
 			attribute.Int("excludedArchived", ex.Archived))
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 
 	excludePatterns := op.MinusRepoFilters

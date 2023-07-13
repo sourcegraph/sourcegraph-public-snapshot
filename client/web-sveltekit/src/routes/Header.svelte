@@ -42,7 +42,7 @@
         border-bottom: 1px solid var(--border-color-2);
         height: var(--navbar-height);
         min-height: 40px;
-        padding: 0 1rem;
+        padding: 0 0.5rem;
         background-color: var(--color-bg-1);
     }
 

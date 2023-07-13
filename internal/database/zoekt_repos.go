@@ -23,7 +23,7 @@ type ZoektReposStore interface {
 
 	// UpdateIndexStatuses updates the index status of the rows in zoekt_repos
 	// whose repo_id matches an entry in the `indexed` map.
-	UpdateIndexStatuses(ctx context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) error
+	UpdateIndexStatuses(ctx context.Context, indexed zoekt.ReposMap) error
 
 	// GetStatistics returns a summary of the zoekt_repos table.
 	GetStatistics(ctx context.Context) (ZoektRepoStatistics, error)
@@ -110,7 +110,7 @@ AND
 ;
 `
 
-func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed map[uint32]*zoekt.MinimalRepoListEntry) (err error) {
+func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed zoekt.ReposMap) (err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return err

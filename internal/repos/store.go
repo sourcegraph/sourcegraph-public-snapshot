@@ -9,7 +9,6 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 
 	"github.com/sourcegraph/log"
@@ -35,8 +34,6 @@ type Store interface {
 
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
-	// SetTracer updates tracer for the store in place.
-	SetTracer(t trace.Tracer)
 
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) Store
@@ -99,8 +96,6 @@ type store struct {
 	Logger log.Logger
 	// Metrics are sent to Prometheus by default.
 	Metrics StoreMetrics
-	// Used for tracing calls to store methods. Uses otel.GetTracerProvider() by default.
-	Tracer trace.Tracer
 
 	txtrace *trace.Trace
 	txctx   context.Context
@@ -112,7 +107,6 @@ func NewStore(logger log.Logger, db database.DB) Store {
 	return &store{
 		Store:  s,
 		Logger: logger,
-		Tracer: trace.Tracer{TracerProvider: otel.GetTracerProvider()},
 	}
 }
 
@@ -129,14 +123,12 @@ func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
-func (s *store) SetTracer(t trace.Tracer)  { s.Tracer = t }
 
 func (s *store) With(other basestore.ShareableStore) Store {
 	return &store{
 		Store:   s.Store.With(other),
 		Logger:  s.Logger,
 		Metrics: s.Metrics,
-		Tracer:  s.Tracer,
 	}
 }
 
@@ -157,7 +149,7 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 
 			tr.SetError(err)
 			// Finish is called in Done in the non-error case
-			tr.Finish()
+			tr.End()
 		}
 	}(time.Now())
 
@@ -169,7 +161,6 @@ func (s *store) transact(ctx context.Context) (stx *store, err error) {
 		Store:   txBase,
 		Logger:  s.Logger,
 		Metrics: s.Metrics,
-		Tracer:  s.Tracer,
 		txtrace: tr,
 		txctx:   ctx,
 	}, nil
@@ -197,7 +188,7 @@ func (s *store) Done(err error) error {
 			s.Metrics.Done.Observe(secs, 1, nil)
 		}
 
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	return s.Store.Done(err)
@@ -208,9 +199,9 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 	if txctx == nil {
 		txctx = ctx
 	}
-	tr, txctx := s.Tracer.New(txctx, family)
+	tr, txctx := trace.New(txctx, family)
 	ctx = trace.CopyContext(ctx, txctx)
-	return tr, ctx
+	return &tr, ctx
 }
 
 func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
@@ -231,7 +222,7 @@ func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	set := make(pq.Int64Array, 0, len(ids))
@@ -282,7 +273,7 @@ func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if !s.InTransaction() {
@@ -347,7 +338,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	metadata, err := json.Marshal(r.Metadata)
@@ -448,7 +439,7 @@ func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Rep
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if r.ID == 0 {
@@ -507,7 +498,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 		}
 
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	if r.ID == 0 {
@@ -610,7 +601,7 @@ func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 		secs := time.Since(began).Seconds()
 		s.Metrics.EnqueueSyncJobs.Observe(secs, 0, &err)
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}(time.Now())
 
 	filter := "TRUE"

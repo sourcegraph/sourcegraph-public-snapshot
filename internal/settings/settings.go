@@ -75,7 +75,7 @@ func (s *service) ForSubject(ctx context.Context, subject api.SettingsSubject) (
 	tr, ctx := trace.New(ctx, "settings.ForSubject")
 	defer func() {
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}()
 
 	subjects, err := s.RelevantSubjects(ctx, subject)

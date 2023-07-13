@@ -30,6 +30,9 @@ func Init(logger log.Logger) CleanupFunc {
 	if deploy.IsApp() {
 		fmt.Fprintln(os.Stderr, "✱ Sourcegraph App version:", version.Version(), runtime.GOOS, runtime.GOARCH)
 	}
+	if deploy.IsAppFullSourcegraph() {
+		fmt.Fprintln(os.Stderr, "✱✱✱ Sourcegraph App ✱✱✱ full Sourcegraph mode enabled!")
+	}
 
 	// TODO(sqs) TODO(single-binary): see the env.HackClearEnvironCache docstring, we should be able to remove this
 	// eventually.
@@ -159,37 +162,39 @@ func Init(logger log.Logger) CleanupFunc {
 		}
 	}
 
-	setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
+	if deploy.IsAppFullSourcegraph() || !deploy.IsApp() {
+		setDefaultEnv(logger, "CTAGS_PROCESSES", "2")
 
-	haveDocker := isDockerAvailable()
-	if !haveDocker {
-		printStatusCheckError(
-			"Docker is unavailable",
-			"Sourcegraph is better when Docker is available; some features may not work:",
-			"- Batch changes",
-			"- Symbol search",
-			"- Symbols overview tab (on repository pages)",
-		)
-	}
+		haveDocker := isDockerAvailable()
+		if !haveDocker {
+			printStatusCheckError(
+				"Docker is unavailable",
+				"Sourcegraph is better when Docker is available; some features may not work:",
+				"- Batch changes",
+				"- Symbol search",
+				"- Symbols overview tab (on repository pages)",
+			)
+		}
 
-	if _, err := exec.LookPath("src"); err != nil {
-		printStatusCheckError(
-			"src-cli is unavailable",
-			"Sourcegraph is better when src-cli is available; batch changes may not work.",
-			"Installation: https://github.com/sourcegraph/src-cli",
-		)
-	}
+		if _, err := exec.LookPath("src"); err != nil {
+			printStatusCheckError(
+				"src-cli is unavailable",
+				"Sourcegraph is better when src-cli is available; batch changes may not work.",
+				"Installation: https://github.com/sourcegraph/src-cli",
+			)
+		}
 
-	// generate a shell script to run a ctags Docker image
-	// unless the environment is already set up to find ctags
-	ctagsPath := os.Getenv("CTAGS_COMMAND")
-	if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
-		// Write script that invokes universal-ctags via Docker, if Docker is available.
-		// TODO(single-binary): stop relying on a ctags Docker image
-		if haveDocker {
-			ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
-			writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
-			setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+		// generate a shell script to run a ctags Docker image
+		// unless the environment is already set up to find ctags
+		ctagsPath := os.Getenv("CTAGS_COMMAND")
+		if stat, err := os.Stat(ctagsPath); err != nil || stat.IsDir() {
+			// Write script that invokes universal-ctags via Docker, if Docker is available.
+			// TODO(single-binary): stop relying on a ctags Docker image
+			if haveDocker {
+				ctagsPath = filepath.Join(cacheDir, "universal-ctags-dev")
+				writeFile(ctagsPath, []byte(universalCtagsDevScript), 0700)
+				setDefaultEnv(logger, "CTAGS_COMMAND", ctagsPath)
+			}
 		}
 	}
 	return func() error {

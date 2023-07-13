@@ -15,11 +15,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/resolvers"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/authz/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/enforcement"
-	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
+	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -42,7 +42,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	database.ValidateExternalServiceConfig = eiauthz.ValidateExternalServiceConfig
+	database.ValidateExternalServiceConfig = providers.ValidateExternalServiceConfig
 	database.AuthzWith = func(other basestore.ShareableStore) database.AuthzStore {
 		return database.NewAuthzStore(observationCtx.Logger, db, clock)
 	}
@@ -52,7 +52,7 @@ func Init(
 	// TODO(nsc): use c
 	// Report any authz provider problems in external configs.
 	conf.ContributeWarning(func(cfg conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		_, providers, seriousProblems, warnings, _ := eiauthz.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
+		_, providers, seriousProblems, warnings, _ := providers.ProvidersFromConfig(ctx, cfg, extsvcStore, db)
 		problems = append(problems, conf.NewExternalServiceProblems(seriousProblems...)...)
 
 		// Validating the connection may make a cross service call, so we should use an
@@ -100,7 +100,7 @@ func Init(
 			return nil
 		}
 
-		_, _, _, _, invalidConnections := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+		_, _, _, _, invalidConnections := providers.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 
 		// We currently support three types of authz providers: GitHub, GitLab and Bitbucket Server.
 		authzTypes := make(map[string]struct{}, 3)
@@ -217,7 +217,7 @@ func Init(
 	go func() {
 		t := time.NewTicker(5 * time.Second)
 		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
+			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), extsvcStore, db)
 			authz.SetProviders(allowAccessByDefault, authzProviders)
 		}
 	}()

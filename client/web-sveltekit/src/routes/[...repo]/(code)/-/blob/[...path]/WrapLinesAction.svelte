@@ -8,11 +8,16 @@
     import { mdiWrap, mdiWrapDisabled } from '@mdi/js'
 
     import Icon from '$lib/Icon.svelte'
+    import Tooltip from '$lib/Tooltip.svelte'
+
+    $: tooltip = ($lineWrap ? 'Disable' : 'Enable') + ' wrapping long lines'
 </script>
 
-<button on:click={() => lineWrap.update(wrap => !wrap)}
-    ><Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline /></button
->
+<Tooltip {tooltip}>
+    <button on:click={() => lineWrap.update(wrap => !wrap)}
+        ><Icon svgPath={$lineWrap ? mdiWrap : mdiWrapDisabled} inline /></button
+    >
+</Tooltip>
 
 <style lang="scss">
     button {
@@ -21,6 +26,5 @@
         border: 0;
         background-color: transparent;
         cursor: pointer;
-        margin-right: 1rem;
     }
 </style>

@@ -143,7 +143,7 @@ func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.Co
 
 func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
 	tr, ctx := trace.New(ctx, "ArchiveStore.PrepareZipPaths")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	var cacheHit bool
 	start := time.Now()
@@ -257,7 +257,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 			metricFetchFailed.Inc()
 		}
 		metricFetching.Dec()
-		defer tr.FinishWithErr(&err)
+		defer tr.EndWithErr(&err)
 	}
 	defer func() {
 		if rc == nil {

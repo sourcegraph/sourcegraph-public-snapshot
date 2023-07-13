@@ -135,7 +135,7 @@ func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+	err = db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
 		uint32(repo.ID): {},
 	})
 	if err != nil {
@@ -2381,7 +2381,7 @@ func TestParseIncludePattern(t *testing.T) {
 	}
 
 	tr, _ := trace.New(context.Background(), "")
-	defer tr.Finish()
+	defer tr.End()
 
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)

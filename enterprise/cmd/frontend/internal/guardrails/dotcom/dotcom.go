@@ -55,7 +55,7 @@ func (tc *tracedClient) MakeRequest(
 
 	span.SetError(err)
 	span.SetError(resp.Errors)
-	span.Finish()
+	span.End()
 
 	return err
 }

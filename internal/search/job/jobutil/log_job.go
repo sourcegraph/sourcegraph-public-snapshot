@@ -71,7 +71,7 @@ func (l *LogJob) MapChildren(fn job.MapFunc) job.Job {
 // invariant that query and pattern error checking has already been performed.
 func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, duration time.Duration) {
 	tr, ctx := trace.New(ctx, "LogSearchDuration")
-	defer tr.Finish()
+	defer tr.End()
 
 	var types []string
 	resultTypes, _ := l.inputs.Query.StringValues(query.FieldType)

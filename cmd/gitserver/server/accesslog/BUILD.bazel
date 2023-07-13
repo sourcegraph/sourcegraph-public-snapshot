@@ -21,6 +21,7 @@ go_test(
     srcs = ["accesslog_test.go"],
     embed = [":accesslog"],
     deps = [
+        "//internal/actor",
         "//internal/conf/conftypes",
         "//internal/requestclient",
         "//schema",

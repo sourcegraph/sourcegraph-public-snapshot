@@ -20,8 +20,8 @@ import (
 	runner "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runner"
 	runtime "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/runtime"
 	workspace "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/workspace"
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
+	types "github.com/sourcegraph/sourcegraph/internal/executor/types"
 )
 
 // MockCommand is a mock implementation of the Command interface (from the

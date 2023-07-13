@@ -75,8 +75,6 @@
     }
 
     span {
-        position: sticky;
-        left: 0;
         background-color: inherit;
     }
 </style>

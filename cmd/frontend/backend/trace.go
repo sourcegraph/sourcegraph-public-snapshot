@@ -45,7 +45,7 @@ func startTrace(ctx context.Context, method string, arg any, err *error) (contex
 		}
 		requestDuration.With(labels).Observe(elapsed.Seconds())
 		requestGauge.WithLabelValues(name).Dec()
-		tr.FinishWithErr(err)
+		tr.EndWithErr(err)
 	}
 
 	return ctx, done

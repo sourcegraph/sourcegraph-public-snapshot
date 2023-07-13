@@ -14,6 +14,8 @@
 
 ### Changed
 
+- Disable summarize recent code changes button if git repository is not available [#54859](https://github.com/sourcegraph/sourcegraph/pull/54859)
+
 ### Deprecated
 
 ### Removed
