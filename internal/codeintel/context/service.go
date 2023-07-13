@@ -57,7 +57,6 @@ const (
 )
 
 func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseContext, error) {
-	// TODO: validate args whether here or at the resolver level
 	filename := args.Input.ActiveFile
 	content := args.Input.ActiveFileContent
 	commitID := args.Input.CommitID
