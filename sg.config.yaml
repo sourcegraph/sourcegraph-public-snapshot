@@ -578,18 +578,18 @@ commands:
     cmd: exit 0
     install: |
       if [[ $(uname) == "Linux" ]]; then
-        bazel build //enterprise/cmd/batcheshelper:image_tarball
-        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --output=files)
+        bazel build //cmd/batcheshelper:image_tarball
+        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
       else
-        bazel build //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
+        bazel build //cmd/batcheshelper:image_tarball --config darwin-docker
+        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
       fi
     env:
       IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
     watch:
-      - enterprise/cmd/batcheshelper
+      - cmd/batcheshelper
       - lib/batches
     continueWatchOnExit: true
 

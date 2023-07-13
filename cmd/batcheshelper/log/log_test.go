@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 

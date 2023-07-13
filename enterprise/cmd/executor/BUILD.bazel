@@ -40,7 +40,7 @@ pkg_tar(
 
 pkg_tar(
     name = "tar_batcheshelper",
-    srcs = ["//enterprise/cmd/batcheshelper"],
+    srcs = ["//cmd/batcheshelper"],
     package_dir = "/usr/local/bin",
 )
 
