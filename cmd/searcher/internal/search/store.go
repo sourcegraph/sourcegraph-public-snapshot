@@ -55,6 +55,9 @@ const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:
 // (tar). We want to be able to support random concurrent access for reading,
 // so we store as a zip.
 type Store struct {
+	// GitserverClient is the client to interact with gitserver.
+	GitserverClient gitserver.Client
+
 	// FetchTar returns an io.ReadCloser to a tar archive of repo at commit.
 	// If the error implements "BadRequest() bool", it will be used to
 	// determine if the error is a bad request (eg invalid repo).
@@ -280,7 +283,7 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 
 	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
 	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, gitserver.NewClientDeprecatedNeedsDB(), repo, commit)
+		filter.CommitIgnore, err = s.FilterTar(ctx, s.GitserverClient, repo, commit)
 		if err != nil {
 			return nil, errors.Errorf("error while calling FilterTar: %w", err)
 		}
@@ -438,7 +441,7 @@ func (s *Store) watchAndEvict() {
 func (s *Store) watchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
-		limit := 10 * len(gitserver.NewClientDeprecatedNeedsDB().Addrs())
+		limit := 10 * len(s.GitserverClient.Addrs())
 		if limit == 0 {
 			limit = 15
 		}
