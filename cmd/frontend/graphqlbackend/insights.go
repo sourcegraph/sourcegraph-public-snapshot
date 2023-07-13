@@ -12,7 +12,7 @@ import (
 
 // This file just contains stub GraphQL resolvers and data types for Code Insights which merely
 // return an error if not running in enterprise mode. The actual resolvers can be found in
-// enterprise/internal/insights/resolvers
+// internal/insights/resolvers
 
 // InsightsResolver is the root resolver.
 type InsightsResolver interface {

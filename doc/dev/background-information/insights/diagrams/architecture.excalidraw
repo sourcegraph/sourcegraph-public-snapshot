@@ -456,12 +456,12 @@
       "locked": false,
       "fontSize": 16,
       "fontFamily": 3,
-      "text": "enterprise/internal/insights/resolvers",
+      "text": "internal/insights/resolvers",
       "baseline": 16,
       "textAlign": "center",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "enterprise/internal/insights/resolvers"
+      "originalText": "internal/insights/resolvers"
     },
     {
       "type": "text",
@@ -704,12 +704,12 @@
       "locked": false,
       "fontSize": 16,
       "fontFamily": 3,
-      "text": "enterprise/internal/insights/store",
+      "text": "internal/insights/store",
       "baseline": 16,
       "textAlign": "center",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "enterprise/internal/insights/store"
+      "originalText": "internal/insights/store"
     },
     {
       "type": "rectangle",
@@ -1959,12 +1959,12 @@
       "locked": false,
       "fontSize": 16,
       "fontFamily": 3,
-      "text": "enterprise/internal/insights/store",
+      "text": "internal/insights/store",
       "baseline": 16,
       "textAlign": "center",
       "verticalAlign": "top",
       "containerId": null,
-      "originalText": "enterprise/internal/insights/store"
+      "originalText": "internal/insights/store"
     },
     {
       "type": "rectangle",

@@ -6,11 +6,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/httpapi"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/resolvers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/insights"
+	insightsdb "github.com/sourcegraph/sourcegraph/internal/insights/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -23,7 +24,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(observationCtx, db, enterpriseServices.EnterpriseSearchJobs)
+	enterpriseServices.InsightsAggregationResolver = resolvers.NewAggregationResolver(observationCtx, db)
 
 	if !insights.IsEnabled() {
 		if deploy.IsDeployTypeSingleDockerContainer(deploy.Type()) {
@@ -33,7 +34,7 @@ func Init(
 		}
 		return nil
 	}
-	rawInsightsDB, err := insights.InitializeCodeInsightsDB(observationCtx, "frontend")
+	rawInsightsDB, err := insightsdb.InitializeCodeInsightsDB(observationCtx, "frontend")
 	if err != nil {
 		return err
 	}

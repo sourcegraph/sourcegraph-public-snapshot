@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
-	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
+	"github.com/sourcegraph/sourcegraph/internal/executor/types"
+	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 

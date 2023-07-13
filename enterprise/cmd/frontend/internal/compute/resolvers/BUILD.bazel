@@ -11,7 +11,6 @@ go_library(
         "//internal/compute",
         "//internal/database",
         "//internal/gitserver",
-        "//internal/search/job/jobutil",
         "//internal/search/result",
         "//internal/types",
         "@com_github_inconshreveable_log15//:log15",

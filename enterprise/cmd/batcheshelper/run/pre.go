@@ -14,7 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	"github.com/sourcegraph/sourcegraph/internal/executor/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"

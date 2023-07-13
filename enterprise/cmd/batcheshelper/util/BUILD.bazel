@@ -10,8 +10,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util",
     visibility = ["//visibility:public"],
     deps = [
-        "//enterprise/internal/executor/types",
-        "//enterprise/internal/executor/util",
+        "//internal/executor/types",
+        "//internal/executor/util",
         "//lib/errors",
     ],
 )

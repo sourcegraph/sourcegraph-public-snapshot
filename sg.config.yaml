@@ -254,7 +254,7 @@ commands:
       - internal
       - cmd/symbols
       - enterprise/cmd/symbols
-      - enterprise/internal/rockskip
+      - internal/rockskip
 
   embeddings:
     cmd: |
