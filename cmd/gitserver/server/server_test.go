@@ -1464,70 +1464,6 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	})
 }
 
-func TestHostnameMatch(t *testing.T) {
-	testCases := []struct {
-		hostname    string
-		addr        string
-		shouldMatch bool
-	}{
-		{
-			hostname:    "gitserver-1",
-			addr:        "gitserver-1",
-			shouldMatch: true,
-		},
-		{
-			hostname:    "gitserver-1",
-			addr:        "gitserver-1.gitserver:3178",
-			shouldMatch: true,
-		},
-		{
-			hostname:    "gitserver-1",
-			addr:        "gitserver-10.gitserver:3178",
-			shouldMatch: false,
-		},
-		{
-			hostname:    "gitserver-1",
-			addr:        "gitserver-10",
-			shouldMatch: false,
-		},
-		{
-			hostname:    "gitserver-10",
-			addr:        "",
-			shouldMatch: false,
-		},
-		{
-			hostname:    "gitserver-10",
-			addr:        "gitserver-10:3178",
-			shouldMatch: true,
-		},
-		{
-			hostname:    "gitserver-10",
-			addr:        "gitserver-10:3178",
-			shouldMatch: true,
-		},
-		{
-			hostname:    "gitserver-0.prod",
-			addr:        "gitserver-0.prod.default.namespace",
-			shouldMatch: true,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run("", func(t *testing.T) {
-			s := Server{
-				Logger:         logtest.Scoped(t),
-				ObservationCtx: observation.TestContextTB(t),
-				Hostname:       tc.hostname,
-				DB:             database.NewMockDB(),
-			}
-			have := s.hostnameMatch(tc.addr)
-			if have != tc.shouldMatch {
-				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
-			}
-		})
-	}
-}
-
 func TestSyncRepoState(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -1996,6 +1932,116 @@ func TestIgnorePath(t *testing.T) {
 	} {
 		t.Run("", func(t *testing.T) {
 			assert.Equal(t, tc.shouldIgnore, s.ignorePath(tc.path))
+		})
+	}
+}
+
+func TestHostnameMatch(t *testing.T) {
+	testCases := []struct {
+		hostname    string
+		addr        string
+		shouldMatch bool
+	}{
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-1",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-1.gitserver:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-10.gitserver:3178",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "gitserver-1",
+			addr:        "gitserver-10",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "",
+			shouldMatch: false,
+		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "gitserver-10:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-10",
+			addr:        "gitserver-10:3178",
+			shouldMatch: true,
+		},
+		{
+			hostname:    "gitserver-0.prod",
+			addr:        "gitserver-0.prod.default.namespace",
+			shouldMatch: true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			s := Server{
+				Logger:         logtest.Scoped(t),
+				ObservationCtx: observation.TestContextTB(t),
+				Hostname:       tc.hostname,
+				DB:             database.NewMockDB(),
+			}
+			have := s.hostnameMatch(tc.addr)
+			if have != tc.shouldMatch {
+				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
+			}
+		})
+	}
+}
+
+func TestRedactor(t *testing.T) {
+	testCases := []struct {
+		name           string
+		remoteURL      string
+		stringToRedact string
+		expected       string
+	}{
+		{
+			name:           "User and Password set",
+			remoteURL:      "https://user:pass@github.com",
+			stringToRedact: "git clone https://user:pass@github.com/my/repo",
+			expected:       "git clone https://user:<redacted>@github.com/my/repo",
+		},
+		{
+			name:           "Token set",
+			remoteURL:      "https://token@github.com",
+			stringToRedact: "git clone https://token@github.com/my/repo",
+			expected:       "git clone https://<redacted>@github.com/my/repo",
+		},
+		{
+			name:           "Redact different URL, no redactions",
+			remoteURL:      "https://tokenGitlab@gitlab.com",
+			stringToRedact: "git clone https://tokenGithub@github.com/my/repo",
+			expected:       "git clone https://tokenGithub@github.com/my/repo",
+		},
+		{
+			name:           "No credentials, redact full URL",
+			remoteURL:      "https://github.com",
+			stringToRedact: "git clone https://github.com/my/repo",
+			expected:       "git clone <redacted>/my/repo",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			url, err := vcs.ParseURL(tc.remoteURL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			redactor := newURLRedactor(url)
+			redactedString := redactor.redact(tc.stringToRedact)
+			assert.Equal(t, tc.expected, redactedString)
 		})
 	}
 }
