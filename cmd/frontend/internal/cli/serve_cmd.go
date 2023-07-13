@@ -220,7 +220,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	schema, err := graphqlbackend.NewSchema(
 		db,
 		gitserver.NewClient(),
-		enterpriseServices.EnterpriseSearchJobs,
 		[]graphqlbackend.OptionalResolver{enterpriseServices.OptionalResolver},
 	)
 	if err != nil {
