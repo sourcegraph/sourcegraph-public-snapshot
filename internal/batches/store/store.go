@@ -69,7 +69,6 @@ type Store struct {
 	*basestore.Store
 
 	logger         log.Logger
-	db             database.DB
 	key            encryption.Key
 	now            func() time.Time
 	operations     *operations
@@ -86,18 +85,12 @@ func New(db database.DB, observationCtx *observation.Context, key encryption.Key
 func NewWithClock(db database.DB, observationCtx *observation.Context, key encryption.Key, clock func() time.Time) *Store {
 	return &Store{
 		logger:         observationCtx.Logger,
-		db:             db,
 		Store:          basestore.NewWithHandle(db.Handle()),
 		key:            key,
 		now:            clock,
 		operations:     newOperations(observationCtx),
 		observationCtx: observationCtx,
 	}
-}
-
-// DatabaseDB returns the database.DB that this Store was instantiated with.
-func (s *Store) DatabaseDB() database.DB {
-	return s.db
 }
 
 // observationCtx returns the observation context wrapped in this store.
@@ -108,6 +101,12 @@ func (s *Store) ObservationCtx() *observation.Context {
 func (s *Store) GitHubAppsStore() store.GitHubAppsStore {
 	return store.GitHubAppsWith(s.Store).WithEncryptionKey(keyring.Default().GitHubAppKey)
 }
+
+// DatabaseDB returns a database.DB with the same handle that this Store was
+// instantiated with.
+// It's here for legacy reason to pass the database.DB to a repos.Store while
+// repos.Store doesn't accept a basestore.TransactableHandle yet.
+func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
 
 // Clock returns the clock used by the Store.
 func (s *Store) Clock() func() time.Time { return s.now }
