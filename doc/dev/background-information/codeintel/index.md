@@ -4,7 +4,7 @@ This guide documents our approach to developing code navigation-related features
 
 Services:
 
-- [precise-code-intel-worker](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/precise-code-intel-worker/README.md)
+- [precise-code-intel-worker](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/precise-code-intel-worker/README.md)
 
 Code navigation-specific code:
 
