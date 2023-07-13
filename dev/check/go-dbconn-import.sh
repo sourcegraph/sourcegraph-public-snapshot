@@ -19,7 +19,6 @@ allowed_prefix=(
   github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
   github.com/sourcegraph/sourcegraph/enterprise/cmd/gitserver
   github.com/sourcegraph/sourcegraph/enterprise/cmd/worker
-  github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
   github.com/sourcegraph/sourcegraph/enterprise/cmd/migrator
   github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
   github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols

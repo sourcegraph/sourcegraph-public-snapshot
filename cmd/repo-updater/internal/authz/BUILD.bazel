@@ -9,8 +9,8 @@ go_library(
         "perms_syncer.go",
         "perms_syncer_worker.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater/internal/authz",
-    visibility = ["//enterprise/cmd/repo-updater:__subpackages__"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/authz",
+    visibility = ["//cmd/repo-updater:__subpackages__"],
     deps = [
         "//cmd/frontend/envvar",
         "//internal/api",

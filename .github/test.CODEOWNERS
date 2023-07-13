@@ -101,9 +101,9 @@
 
 /cmd/precise-code-intel-worker/**/* @efritz
 
-/enterprise/cmd/repo-updater/**/* @indradhanush
+/cmd/repo-updater/**/* @indradhanush
 
-/enterprise/cmd/repo-updater/internal/authz/**/* @unknwon
+/cmd/repo-updater/internal/authz/**/* @unknwon
 
 /enterprise/cmd/worker/**/* @efritz
 

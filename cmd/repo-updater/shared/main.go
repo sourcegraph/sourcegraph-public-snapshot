@@ -8,6 +8,7 @@ import (
 	"html/template"
 	"net"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -21,10 +22,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/authz"
+	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
+	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -35,6 +39,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
+	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -46,6 +52,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -56,20 +63,6 @@ const port = "3182"
 //go:embed state.html.tmpl
 var stateHTMLTemplate string
 
-// EnterpriseInit is a function that allows enterprise code to be triggered when dependencies
-// created in Main are ready for use.
-//
-// It returns a debugserver.Dumper and a function with which to enqueue a
-// permission sync for a repository.
-type EnterpriseInit func(
-	observationCtx *observation.Context,
-	db database.DB,
-	store repos.Store,
-	keyring keyring.Ring,
-	cf *httpcli.Factory,
-	server *repoupdater.Server,
-)
-
 type LazyDebugserverEndpoint struct {
 	repoUpdaterStateEndpoint     http.HandlerFunc
 	listAuthzProvidersEndpoint   http.HandlerFunc
@@ -78,7 +71,7 @@ type LazyDebugserverEndpoint struct {
 	manualPurgeEndpoint          http.HandlerFunc
 }
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint, enterpriseInit EnterpriseInit) error {
+func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint) error {
 	// NOTE: Internal actor is required to have full visibility of the repo table
 	// 	(i.e. bypass repository authorization).
 	ctx = actor.WithInternalActor(ctx)
@@ -162,9 +155,47 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	// All dependencies ready
 	debugDumpers := make(map[string]debugserver.Dumper)
-	if enterpriseInit != nil {
-		enterpriseInit(observationCtx, db, store, keyring.Default(), cf, server)
+
+	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
+	if debug {
+		observationCtx.Logger.Info("enterprise edition")
 	}
+
+	kr := keyring.Default()
+
+	// No Batch Changes on dotcom, so we don't need to spawn the
+	// background jobs for this feature.
+	if !envvar.SourcegraphDotComMode() {
+		syncRegistry := batches.InitBackgroundJobs(ctx, db, kr.BatchChangesCredentialKey, cf)
+		if server != nil {
+			server.ChangesetSyncRegistry = syncRegistry
+		}
+	}
+
+	ghAppsStore := db.GitHubApps().WithEncryptionKey(kr.GitHubAppKey)
+	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, kr.GitHubAppKey)
+
+	permsStore := database.Perms(observationCtx.Logger, db, timeutil.Now)
+	permsSyncer := authz.NewPermsSyncer(observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"), db, store, permsStore, timeutil.Now)
+
+	if server != nil {
+		if server.Syncer != nil {
+			server.Syncer.EnterpriseCreateRepoHook = enterpriseCreateRepoHook
+			server.Syncer.EnterpriseUpdateRepoHook = enterpriseUpdateRepoHook
+		}
+	}
+
+	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
+	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
+	permissionSyncJobStore := database.PermissionSyncJobsWith(observationCtx.Logger, db)
+	repoSyncWorker := authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore)
+	userSyncWorker := authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore)
+	// Type of store (repo/user) for resetter doesn't matter, because it has its
+	// separate name for logging and metrics.
+	resetter := authz.MakeResetter(observationCtx, repoWorkerStore)
+
+	go goroutine.MonitorBackgroundRoutines(ctx, repoSyncWorker, userSyncWorker, resetter)
+	go watchAuthzProviders(ctx, db)
 
 	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
 	go func() {
@@ -382,7 +413,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 			ExternalServiceURL string `json:"external_service_url"`
 		}
 
-		_, providers := authz.GetProviders()
+		_, providers := ossAuthz.GetProviders()
 		infos := make([]providerInfo, len(providers))
 		for i, p := range providers {
 			_, id := extsvc.DecodeURN(p.URN())
@@ -534,4 +565,21 @@ func manageUnclonedRepos(ctx context.Context, logger log.Logger, sched *repos.Up
 		case <-time.After(30 * time.Second):
 		}
 	}
+}
+
+// watchAuthzProviders updates authz providers if config changes.
+func watchAuthzProviders(ctx context.Context, db database.DB) {
+	globals.WatchPermissionsUserMapping()
+	go func() {
+		t := time.NewTicker(providers.RefreshInterval())
+		for range t.C {
+			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(
+				ctx,
+				conf.Get(),
+				db.ExternalServices(),
+				db,
+			)
+			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
+		}
+	}()
 }
