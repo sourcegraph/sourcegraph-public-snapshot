@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/limiter"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/pings"
@@ -69,6 +70,8 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
 	}
 
+	gitserverClient := internalGitserver.NewClient(mainAppDB)
+
 	// Register the background goroutine which discovers historical gaps in data and enqueues
 	// work to fill them - if not disabled.
 	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
@@ -76,10 +79,10 @@ func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB databas
 		searchRateLimiter := limiter.SearchQueryRate()
 		historicRateLimiter := limiter.HistoricalWorkRate()
 		backfillConfig := pipeline.BackfillerConfig{
-			CompressionPlan:         compression.NewGitserverFilter(logger),
+			CompressionPlan:         compression.NewGitserverFilter(logger, gitserverClient),
 			SearchHandlers:          queryrunner.GetSearchHandlers(),
 			InsightStore:            insightsStore,
-			CommitClient:            gitserver.NewGitCommitClient(),
+			CommitClient:            gitserver.NewGitCommitClient(gitserverClient),
 			SearchPlanWorkerLimit:   1,
 			SearchRunnerWorkerLimit: 1, // TODO: this can scale with the number of searcher endpoints
 			SearchRateLimiter:       searchRateLimiter,

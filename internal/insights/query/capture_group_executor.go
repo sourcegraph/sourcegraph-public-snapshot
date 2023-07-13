@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/internal/insights/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
@@ -19,6 +20,7 @@ import (
 )
 
 type CaptureGroupExecutor struct {
+	gitserverClient internalGitserver.Client
 	previewExecutor
 	computeSearch func(ctx context.Context, query string) ([]GroupedResults, error)
 
@@ -27,6 +29,7 @@ type CaptureGroupExecutor struct {
 
 func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
 	return &CaptureGroupExecutor{
+		gitserverClient: internalGitserver.NewClient(postgres),
 		previewExecutor: previewExecutor{
 			repoStore: postgres.Repos(),
 			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
@@ -68,7 +71,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := gitserver.GitFirstEverCommit(ctx, api.RepoName(repository))
+		firstCommit, err := gitserver.GitFirstEverCommit(ctx, c.gitserverClient, api.RepoName(repository))
 		if err != nil {
 			if errors.Is(err, gitserver.EmptyRepoErr) {
 				continue
@@ -88,7 +91,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-			commits, err := gitserver.NewGitCommitClient().RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
+			commits, err := gitserver.NewGitCommitClient(c.gitserverClient).RecentCommits(ctx, api.RepoName(repository), execution.RecordingTime, "")
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {

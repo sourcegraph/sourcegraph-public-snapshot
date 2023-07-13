@@ -51,6 +51,7 @@ go_library(
         "//schema",
         "@com_github_inconshreveable_log15//:log15",
         "@com_github_masterminds_semver//:semver",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

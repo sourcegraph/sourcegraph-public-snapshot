@@ -10,10 +10,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
-func NewGitCommitClient() *GitCommitClient {
+func NewGitCommitClient(gitserverClient gitserver.Client) *GitCommitClient {
 	return &GitCommitClient{
 		cachedFirstCommit: NewCachedGitFirstEverCommit(),
-		gitserverClient:   gitserver.NewClientDeprecatedNeedsDB(),
+		gitserverClient:   gitserverClient,
 	}
 }
 
@@ -23,7 +23,7 @@ type GitCommitClient struct {
 }
 
 func (g *GitCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
-	return g.cachedFirstCommit.GitFirstEverCommit(ctx, repoName)
+	return g.cachedFirstCommit.GitFirstEverCommit(ctx, g.gitserverClient, repoName)
 }
 func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 	options := gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}
