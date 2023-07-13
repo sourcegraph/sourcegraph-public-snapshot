@@ -1,8 +1,12 @@
-import { FC, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { FC, ReactNode, useLayoutEffect, useMemo, useRef, useState } from 'react'
+
+import { mdiFolderOutline } from '@mdi/js'
+import classNames from 'classnames'
+
+import { Icon } from '../Icon'
+import { Menu, MenuButton, MenuItem, MenuList } from '../Menu'
 
 import styles from './Breadcrumbs.module.scss'
-import classNames from 'classnames';
-import { Button } from '../Button';
 
 type Index = number
 type Width = number
@@ -10,13 +14,32 @@ type Width = number
 enum SegmentType {
     Common,
     Invisible,
-    MoreButton
+    MoreButton,
 }
 
-type Segment =
-    { type: SegmentType.MoreButton } |
-    { type: SegmentType.Invisible, value: string } |
-    { type: SegmentType.Common, value: string }
+interface MoreButtonSegment {
+    type: SegmentType.MoreButton
+    id: string
+}
+interface InvisibleSegment {
+    type: SegmentType.Invisible
+    id: string
+    value: string
+}
+interface CommonSegment {
+    type: SegmentType.Common
+    id: string
+    value: string
+}
+
+type Segment = CommonSegment | InvisibleSegment | MoreButtonSegment
+
+const isInvisibleSegment = (segment: Segment): segment is InvisibleSegment => segment.type === SegmentType.Invisible
+const isMoreButtonSegment = (segment: Segment): segment is MoreButtonSegment => segment.type === SegmentType.MoreButton
+
+// Static width value for the more width value, it's used below
+// in items layout calculation in useLayoutEffect
+const MORE_BUTTON_WIDTH = 30
 
 interface BreadcrumbsProps {
     filename: string
@@ -44,7 +67,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
             // Measure segments elements sizes
             let totalWidth = 0
             const elementSizesMap: Record<Index, Width> = {}
-            const segmentsElements = rootElementRef.current.querySelectorAll('li')
+            const segmentsElements = rootElementRef.current.querySelectorAll<HTMLLIElement>('[data-type="common"]')
 
             for (const element of segmentsElements) {
                 const index = +(element.dataset?.index ?? 0)
@@ -61,7 +84,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
                 const segmentsToHide = []
                 const middleElementIndex = Math.floor((segmentsElements.length - 1) / 2)
 
-                while (totalWidth > width - 40) {
+                while (totalWidth > width - MORE_BUTTON_WIDTH) {
                     const elementToRemoveIndex = middleElementIndex + offset
 
                     totalWidth -= elementSizesMap[elementToRemoveIndex]
@@ -78,6 +101,8 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
                 }
 
                 setHidedSegments(segmentsToHide)
+            } else {
+                setHidedSegments([])
             }
         }
 
@@ -97,7 +122,11 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
 
     const fixedSegments = useMemo<Segment[]>(() => {
         if (hidedSegments.length === 0) {
-            return segments
+            return segments.map((segment, index) => ({
+                id: `${index}`,
+                type: SegmentType.Common,
+                value: segment,
+            }))
         }
 
         const result: Segment[] = []
@@ -105,21 +134,26 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
         for (const [index, segment] of segments.entries()) {
             if (hidedSegments.includes(index)) {
                 result.push({
+                    id: `${index}`,
                     type: SegmentType.Invisible,
-                    value: segment
+                    value: segment,
                 })
             } else {
                 result.push({
+                    id: `${index}`,
                     type: SegmentType.Common,
-                    value: segment
+                    value: segment,
                 })
             }
         }
 
         const firstInvisibleElement = result.findIndex(item => item.type === SegmentType.Invisible)
 
-        if (firstInvisibleElement === -1) {
-            result.splice(firstInvisibleElement, 0, { type: SegmentType.MoreButton })
+        if (firstInvisibleElement !== -1) {
+            result.splice(firstInvisibleElement, 0, {
+                id: 'more-items-button',
+                type: SegmentType.MoreButton,
+            })
         }
 
         return result
@@ -127,34 +161,68 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
 
     return (
         <ul ref={rootElementRef} className={classNames(styles.list, className)}>
-            { segments.map((segment, index) =>
+            {fixedSegments.map((segment, index) => (
                 <li
-                    key={`${segment}-${index}`}
-                    data-index={index}
-                    className={classNames(styles.item, { [styles.itemHidden]: hidedSegments.includes(index)})}
+                    key={segment.id}
+                    data-index={segment.id}
+                    data-type={isMoreButtonSegment(segment) ? 'internal' : 'common'}
+                    className={classNames(styles.item, {
+                        [styles.itemHidden]: isInvisibleSegment(segment),
+                        [styles.itemWithButton]: isMoreButtonSegment(segment),
+                    })}
                 >
-                    { getSegmentText(segments, index, segment) }
+                    {isMoreButtonSegment(segment) && (
+                        <TruncatedItemsButton truncatedSegments={fixedSegments.filter(isInvisibleSegment)} />
+                    )}
+                    {getSegmentText(segment, index, fixedSegments)}
                 </li>
-            )}
+            ))}
         </ul>
     )
 }
 
-function getSegmentText(segments: string[], index: number, segment: string): string {
-    return index !== segments.length - 1 ? `${segment}/` : segment
+function getSegmentText(segment: Segment, index: number, segments: Segment[]): ReactNode {
+    const segmentText = !isMoreButtonSegment(segment) ? segment.value : ''
+
+    return index !== segments.length - 1 ? (
+        <>
+            {segmentText}
+            <span className={styles.separator}>/</span>
+        </>
+    ) : (
+        segmentText
+    )
 }
 
 interface TruncatedItemsButton {
-    segments: string[]
-    truncatedSegments: Set<number>
+    truncatedSegments: InvisibleSegment[]
 }
 
 const TruncatedItemsButton: FC<TruncatedItemsButton> = props => {
-    const { segments, truncatedSegments} = props
+    const { truncatedSegments } = props
 
     return (
-        <Button variant='secondary' outline={true}>
-            ...
-        </Button>
+        <Menu>
+            {({ isOpen }) => (
+                <>
+                    <MenuButton
+                        variant="secondary"
+                        outline={true}
+                        className={classNames(styles.moreButton, { [styles.moreButtonActive]: isOpen })}
+                    >
+                        ... <span aria-hidden={true}>▾</span>
+                    </MenuButton>
+
+                    <MenuList as="ul" className={styles.truncatedList}>
+                        {truncatedSegments.map(segment => (
+                            <MenuItem key={segment.id} className={styles.truncatedListItem}>
+                                <Icon svgPath={mdiFolderOutline} aria-hidden={true} />
+                                {segment.value}
+                            </MenuItem>
+                        ))}
+                    </MenuList>
+                </>
+            )}
+        </Menu>
     )
 }
