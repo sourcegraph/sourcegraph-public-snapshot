@@ -9,7 +9,6 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/file",
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
-        "//cmd/searcher/diff",
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
         "//enterprise/cmd/worker/shared/init/codeintel",
@@ -21,6 +20,7 @@ go_library(
         "//internal/conf/conftypes",
         "//internal/database",
         "//internal/embeddings",
+        "//internal/embeddings/background/file",
         "//internal/embeddings/background/repo",
         "//internal/embeddings/embed",
         "//internal/env",
@@ -29,7 +29,6 @@ go_library(
         "//internal/goroutine",
         "//internal/observation",
         "//internal/paths",
-        "//internal/types",
         "//internal/uploadstore",
         "//internal/workerutil",
         "//internal/workerutil/dbworker",

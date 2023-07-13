@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/codemonitors"
+	fileembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/file"
 	repoembeddings "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/embeddings/repo"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executormultiqueue"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executors"
@@ -70,6 +71,8 @@ var additionalJobs = map[string]job.Job{
 	"repo-embedding-janitor":   repoembeddings.NewRepoEmbeddingJanitorJob(),
 	"repo-embedding-job":       repoembeddings.NewRepoEmbeddingJob(),
 	"repo-embedding-scheduler": repoembeddings.NewRepoEmbeddingSchedulerJob(),
+
+	"file-embedding-job":       fileembeddings.NewFileEmbeddingJob(),
 
 	"own-repo-indexing-queue": own.NewOwnRepoIndexingQueue(),
 

@@ -14,9 +14,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -246,16 +246,11 @@ func (s *fileEmbeddingJobsStore) CreateFileEmbeddingJob(ctx context.Context, emb
 var fileEmbeddingJobStatsColumns = []*sqlf.Query{
 	sqlf.Sprintf("file_embedding_job_stats.job_id"),
 	sqlf.Sprintf("file_embedding_job_stats.is_incremental"),
-	sqlf.Sprintf("file_embedding_job_stats.code_files_total"),
-	sqlf.Sprintf("file_embedding_job_stats.code_files_embedded"),
-	sqlf.Sprintf("file_embedding_job_stats.code_chunks_embedded"),
-	sqlf.Sprintf("file_embedding_job_stats.code_files_skipped"),
-	sqlf.Sprintf("file_embedding_job_stats.code_bytes_embedded"),
-	sqlf.Sprintf("file_embedding_job_stats.text_files_total"),
-	sqlf.Sprintf("file_embedding_job_stats.text_files_embedded"),
-	sqlf.Sprintf("file_embedding_job_stats.text_chunks_embedded"),
-	sqlf.Sprintf("file_embedding_job_stats.text_files_skipped"),
-	sqlf.Sprintf("file_embedding_job_stats.text_bytes_embedded"),
+	sqlf.Sprintf("file_embedding_job_stats.files_total"),
+	sqlf.Sprintf("file_embedding_job_stats.files_embedded"),
+	sqlf.Sprintf("file_embedding_job_stats.chunks_embedded"),
+	sqlf.Sprintf("file_embedding_job_stats.files_skipped"),
+	sqlf.Sprintf("file_embedding_job_stats.bytes_embedded"),
 }
 
 func scanFileEmbeddingStats(s dbutil.Scanner) (EmbedFileStats, error) {
@@ -269,11 +264,6 @@ func scanFileEmbeddingStats(s dbutil.Scanner) (EmbedFileStats, error) {
 		&stats.CodeIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
 		&stats.CodeIndexStats.BytesEmbedded,
-		&stats.TextIndexStats.FilesScheduled,
-		&stats.TextIndexStats.FilesEmbedded,
-		&stats.TextIndexStats.ChunksEmbedded,
-		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
-		&stats.TextIndexStats.BytesEmbedded,
 	)
 	return stats, err
 }
@@ -304,34 +294,23 @@ func (s *fileEmbeddingJobsStore) UpdateFileEmbeddingJobStats(ctx context.Context
 	INSERT INTO file_embedding_job_stats (
 		job_id,
 		is_incremental,
-		code_files_total,
-		code_files_embedded,
-		code_chunks_embedded,
-		code_files_skipped,
-		code_bytes_embedded,
-		text_files_total,
-		text_files_embedded,
-		text_chunks_embedded,
-		text_files_skipped,
-		text_bytes_embedded
+		files_total,
+		files_embedded,
+		chunks_embedded,
+		files_skipped,
+		bytes_embedded
 	) VALUES (
 		%s, %s, %s, %s,
-		%s, %s, %s, %s,
-		%s, %s, %s, %s
+		%s, %s, %s
 	)
 	ON CONFLICT (job_id) DO UPDATE
 	SET
 		is_incremental = %s,
-		code_files_total = %s,
-		code_files_embedded = %s,
-		code_chunks_embedded = %s,
-		code_files_skipped = %s,
-		code_bytes_embedded = %s,
-		text_files_total = %s,
-		text_files_embedded = %s,
-		text_chunks_embedded = %s,
-		text_files_skipped = %s,
-		text_bytes_embedded = %s
+		files_total = %s,
+		files_embedded = %s,
+		chunks_embedded = %s,
+		files_skipped = %s,
+		bytes_embedded = %s
 	`
 
 	q := sqlf.Sprintf(
@@ -344,11 +323,6 @@ func (s *fileEmbeddingJobsStore) UpdateFileEmbeddingJobStats(ctx context.Context
 		stats.CodeIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
 		stats.CodeIndexStats.BytesEmbedded,
-		stats.TextIndexStats.FilesScheduled,
-		stats.TextIndexStats.FilesEmbedded,
-		stats.TextIndexStats.ChunksEmbedded,
-		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
-		stats.TextIndexStats.BytesEmbedded,
 
 		stats.IsIncremental,
 		stats.CodeIndexStats.FilesScheduled,
@@ -356,11 +330,6 @@ func (s *fileEmbeddingJobsStore) UpdateFileEmbeddingJobStats(ctx context.Context
 		stats.CodeIndexStats.ChunksEmbedded,
 		dbutil.JSONMessage(&stats.CodeIndexStats.FilesSkipped),
 		stats.CodeIndexStats.BytesEmbedded,
-		stats.TextIndexStats.FilesScheduled,
-		stats.TextIndexStats.FilesEmbedded,
-		stats.TextIndexStats.ChunksEmbedded,
-		dbutil.JSONMessage(&stats.TextIndexStats.FilesSkipped),
-		stats.TextIndexStats.BytesEmbedded,
 	)
 
 	return s.Exec(ctx, q)

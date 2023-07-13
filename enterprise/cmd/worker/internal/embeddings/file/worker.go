@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/init/codeintel"
@@ -53,6 +54,7 @@ func (s *fileEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 	}
 
 	workCtx := actor.WithInternalActor(context.Background())
+	logger := log.Scoped("FileEmbeddingJobWorker", "")
 	return []goroutine.BackgroundRoutine{
 		newFileEmbeddingJobWorker(
 			workCtx,
@@ -63,6 +65,7 @@ func (s *fileEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			gitserver.NewClient(),
 			services.ContextService,
 			fileembeddingsbg.NewFileEmbeddingJobsStore(db),
+			database.EmbeddingPluginFilesWith(logger, db),
 		),
 	}, nil
 }
@@ -76,6 +79,7 @@ func newFileEmbeddingJobWorker(
 	gitserverClient gitserver.Client,
 	contextService embed.ContextService,
 	fileEmbeddingJobsStore fileembeddingsbg.FileEmbeddingJobsStore,
+	embeddingPluginFilesStore database.EmbeddingPluginFilesStore,
 ) *workerutil.Worker[*fileembeddingsbg.FileEmbeddingJob] {
 	handler := &handler{
 		db:                     db,
@@ -83,6 +87,7 @@ func newFileEmbeddingJobWorker(
 		gitserverClient:        gitserverClient,
 		contextService:         contextService,
 		fileEmbeddingJobsStore: fileEmbeddingJobsStore,
+		embeddingPluginFilesStore: embeddingPluginFilesStore,
 	}
 	return dbworker.NewWorker[*fileembeddingsbg.FileEmbeddingJob](ctx, workerStore, handler, workerutil.WorkerOptions{
 		Name:              "file_embedding_job_worker",

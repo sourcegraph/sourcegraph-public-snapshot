@@ -29,6 +29,7 @@ type handler struct {
 	gitserverClient        gitserver.Client
 	contextService         embed.ContextService
 	fileEmbeddingJobsStore bgfile.FileEmbeddingJobsStore
+	embeddingPluginFilesStore database.EmbeddingPluginFilesStore
 }
 
 var _ workerutil.Handler[*bgfile.FileEmbeddingJob] = &handler{}
@@ -55,7 +56,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgfile.
 
 	ctx = featureflag.WithFlags(ctx, h.db.FeatureFlags())
 
-	// TODO: GetEmbeddingPluginID
 	plugin, err := h.db.EmbeddingPlugins().Get(ctx, record.EmbeddingPluginID)
 	if err != nil {
 		return err
@@ -68,6 +68,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgfile.
 
 	fetcher := &fileFetcher{
 		plugin:      plugin.Name,
+		pluginID:    plugin.ID,
+		embeddingPluginFilesStore: h.embeddingPluginFilesStore,
 	}
 	includedFiles, excludedFiles := getFileFilterPathPatterns(embeddingsConfig)
 	opts := embed.EmbedFilesOpts{
@@ -135,19 +137,47 @@ func getFileFilterPathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) (in
 
 type fileFetcher struct {
 	plugin      string
+	pluginID    int32
+	embeddingPluginFilesStore database.EmbeddingPluginFilesStore
 }
 
-func (r *fileFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
-	// TODO
-	return nil, nil
+func (f *fileFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
+	byPlugin := struct {
+		EmbeddingPluginID int32
+		FilePath string
+	}{
+		EmbeddingPluginID: f.pluginID,
+		FilePath: fileName,
+	}
+
+	file, err := f.embeddingPluginFilesStore.Get(ctx, database.PluginFilesListOpts{
+		ByPlugin: &byPlugin,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return []byte(file.Contents), nil
 }
 
-func (r *fileFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
-	// TODO
-	return nil, nil
+func (f *fileFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
+	pluginFiles, err := f.embeddingPluginFilesStore.GetByPluginID(ctx, f.pluginID)
+	if err != nil {
+		return nil, err
+	}
+
+	entries := make([]embed.FileEntry, 0, len(pluginFiles))
+	for _, f := range pluginFiles {
+		entries = append(entries, embed.FileEntry{
+			Name: f.FilePath,
+			Size: int64(len([]byte(f.Contents))),
+		})
+	}
+
+	return entries, nil
 }
 
-func (r *fileFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
+func (f *fileFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
 	toIndex []embed.FileEntry,
 	toRemove []string,
 	err error,
