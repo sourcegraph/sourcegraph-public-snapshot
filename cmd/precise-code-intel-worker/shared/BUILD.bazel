@@ -7,7 +7,7 @@ go_library(
         "service.go",
         "shared.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker/shared",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/shared",
     visibility = ["//visibility:public"],
     deps = [
         "//internal/authz",
