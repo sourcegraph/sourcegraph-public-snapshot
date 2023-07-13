@@ -49,6 +49,7 @@ go_test(
         "//internal/encryption/testing",
         "//internal/extsvc",
         "//internal/extsvc/perforce",
+        "//internal/gitserver",
         "//internal/types",
         "//schema",
         "@com_github_google_go_cmp//cmp",
