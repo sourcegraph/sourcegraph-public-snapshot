@@ -19,6 +19,10 @@ func NewRootResolver(observationCtx *observation.Context, svc ContextService) re
 }
 
 func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstubs.GetPreciseContextInput) (resolverstubs.PreciseContextResolver, error) {
+	if err := validateGetPreciseContextInput(input); err != nil {
+		return nil, err
+	}
+
 	context, err := r.svc.GetPreciseContext(ctx, input)
 	if err != nil {
 		return nil, err
