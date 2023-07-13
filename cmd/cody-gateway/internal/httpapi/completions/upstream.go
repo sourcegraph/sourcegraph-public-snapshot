@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
@@ -217,12 +218,22 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if err != nil {
 				// Ignore reporting errors where client disconnected
 				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
-					oteltrace.SpanFromContext(req.Context()).RecordError(err)
+					oteltrace.SpanFromContext(req.Context()).
+						SetStatus(codes.Error, err.Error())
 					logger.Info("request canceled", log.Error(err))
 					return
 				}
 
-				response.JSONError(logger, w, http.StatusInternalServerError,
+				// More user-friendly message for timeouts
+				if errors.Is(err, context.DeadlineExceeded) {
+					resolvedStatusCode = http.StatusGatewayTimeout
+					response.JSONError(logger, w, resolvedStatusCode,
+						errors.Newf("request to upstream provider %s timed out", upstreamName))
+					return
+				}
+
+				resolvedStatusCode = http.StatusInternalServerError
+				response.JSONError(logger, w, resolvedStatusCode,
 					errors.Wrapf(err, "failed to make request to upstream provider %s", upstreamName))
 				return
 			}
