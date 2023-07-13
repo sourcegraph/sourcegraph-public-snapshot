@@ -6,6 +6,20 @@
     flex-wrap: nowrap;
     white-space: nowrap;
     list-style: none;
+    position: relative;
+    width: 100%;
+    overflow: hidden;
 }
 
+.item {
+    z-index: 1;
+
+    &--hidden {
+        position: absolute;
+        top: 0;
+        left: 0;
+        visibility: hidden;
+        z-index: -1;
+    }
+}
 

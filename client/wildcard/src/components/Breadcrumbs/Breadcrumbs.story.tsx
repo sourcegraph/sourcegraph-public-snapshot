@@ -1,4 +1,5 @@
 import { Meta, Story } from '@storybook/react'
+import { ResizableBox } from 'react-resizable'
 
 import { BrandedStory } from '../../stories'
 
@@ -12,7 +13,7 @@ const config: Meta = {
 export default config
 
 export const BreadcrumbsGallery: Story = () => (
-    <div style={{ width: 500, overflow: 'hidden', border: '1px solid black'}}>
+    <ResizableBox width={500} axis="x" minConstraints={[200, 0]}>
         <Breadcrumbs filename='sourcegraph/client/web/src/enteprise/insights/components/insight-view/components/InsighBackend.tsx'/>
-    </div>
+    </ResizableBox>
 )
