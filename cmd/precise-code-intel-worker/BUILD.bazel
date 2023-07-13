@@ -7,10 +7,10 @@ load("//dev:oci_defs.bzl", "image_repository")
 go_library(
     name = "precise-code-intel-worker_lib",
     srcs = ["main.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker",
     visibility = ["//visibility:private"],
     deps = [
-        "//enterprise/cmd/precise-code-intel-worker/shared",
+        "//cmd/precise-code-intel-worker/shared",
         "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//internal/sanitycheck",
     ],

@@ -111,12 +111,12 @@ pkg_tar(
 
 DEPS = [
     "//cmd/github-proxy",
+    "//cmd/precise-code-intel-worker",
     "//cmd/searcher",
     "//enterprise/cmd/embeddings",
     "//enterprise/cmd/frontend",
     "//enterprise/cmd/gitserver",
     "//enterprise/cmd/migrator",
-    "//enterprise/cmd/precise-code-intel-worker",
     "//enterprise/cmd/repo-updater",
     "//enterprise/cmd/symbols",
     "//enterprise/cmd/worker",
