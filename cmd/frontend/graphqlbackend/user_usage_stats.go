@@ -216,6 +216,11 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			EventID:          args.EventID,
 			InsertID:         args.InsertID,
 			DeviceSessionID:  args.DeviceSessionID,
+			Client:			args.Client,
+			BillingProductCategory: args.BillingProductCategory,
+			BillingEventID: args.BillingEventID,
+			ConnectedSiteID: args.ConnectedSiteID,
+			HashedLicenseKey: args.HashedLicenseKey,
 		})
 	}
 

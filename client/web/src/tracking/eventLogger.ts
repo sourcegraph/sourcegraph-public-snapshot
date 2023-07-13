@@ -366,6 +366,8 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
     public getClient(): string {
         if (window.context?.sourcegraphAppMode) {
             return EventClient.APP_WEB
+        } else if (window.context?.sourcegraphDotComMode) {
+            return EventClient.DOTCOM_WEB
         }
         return EventClient.SERVER_WEB
     }

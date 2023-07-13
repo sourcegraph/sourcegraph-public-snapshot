@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 )
@@ -86,12 +87,14 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 	if err != nil {
 		return nil, err
 	}
+	hashedKeyValue := string(hashutil.ToSHA256Bytes([]byte(r.v.LicenseKey)))
 	return &graphqlbackend.ProductLicenseInfo{
 		TagsValue:                     info.Tags,
 		UserCountValue:                info.UserCount,
 		ExpiresAtValue:                info.ExpiresAt,
 		SalesforceSubscriptionIDValue: info.SalesforceSubscriptionID,
 		SalesforceOpportunityIDValue:  info.SalesforceOpportunityID,
+		HashedKeyValue: &hashedKeyValue,
 	}, nil
 }
 

@@ -1120,9 +1120,11 @@ The product clients where events can come from.
 enum EventClient {
     SERVER_WEB
     APP_WEB
+    DOTCOM_WEB
     MARKETING_WEB
-    SERVER_BACKEND
+    DOTCOM_BACKEND
     APP_BACKEND
+    SERVER_BACKEND
     BITBUCKET_INTEGRATION
     GITLAB_INTEGRATION
     CHROME_SOURCEGRAPH_EXTENSION
@@ -1140,13 +1142,13 @@ The product categories for events, used for billing purposes.
 """
 enum EventBillingProductCategory {
     """
-    Used for all events related to non-billable, non-product usage associated with product marketing, calls-
-    to-action, etc.
+    Used for all events related to non-billable, non-product usage (e.g. marketing, CTAs, signed out
+    events, etc.)
     """
-    MARKETING_CTAS
+    NOT_BILLABLE
     """
-    Used for all truly shared user interface events, such as administration, authentication, user profile,
-    shared landing pages, etc.
+    Used for all billable but shared user interface events, such as administration, authentication, user
+    profile and settings, shared landing pages, etc.
     """
     SHARED
     """
@@ -1174,7 +1176,7 @@ enum EventBillingID {
     """
     CodyCompletion
     """
-    A billable Cody code graph creation (aka embedding) event.
+    A billable Cody embedding/code graph creation or search event.
     """
     CodyEmbedding
 }
@@ -8401,6 +8403,10 @@ type ProductLicenseInfo {
     The Salesforce opportunity ID associated with this license.
     """
     salesforceOpportunityID: String
+    """
+    The license key, hashed using sha256.
+    """
+    hashedKey: String
 }
 
 """

@@ -29,6 +29,7 @@ type ProductLicenseInfo struct {
 	RevokedAtValue                *time.Time
 	SalesforceSubscriptionIDValue *string
 	SalesforceOpportunityIDValue  *string
+	HashedKeyValue  *string
 }
 
 func (r ProductLicenseInfo) ProductNameWithBrand() string {
@@ -51,4 +52,8 @@ func (r ProductLicenseInfo) SalesforceSubscriptionID() *string {
 
 func (r ProductLicenseInfo) SalesforceOpportunityID() *string {
 	return r.SalesforceOpportunityIDValue
+}
+
+func (r ProductLicenseInfo) HashedKey() *string {
+	return r.HashedKeyValue
 }
