@@ -533,7 +533,7 @@ func TestRepoHasFileContent(t *testing.T) {
 	cases := []struct {
 		name          string
 		filters       []query.RepoHasFileContentArgs
-		matchingRepos map[uint32]*zoekt.MinimalRepoListEntry
+		matchingRepos zoekt.ReposMap
 		expected      []*search.RepositoryRevisions
 	}{{
 		name:          "no filters",
@@ -558,7 +558,7 @@ func TestRepoHasFileContent(t *testing.T) {
 		filters: []query.RepoHasFileContentArgs{{
 			Path: "pathB",
 		}},
-		matchingRepos: map[uint32]*zoekt.MinimalRepoListEntry{
+		matchingRepos: zoekt.ReposMap{
 			2: {
 				Branches: []zoekt.RepositoryBranch{{
 					Name: "HEAD",
@@ -613,7 +613,7 @@ func TestRepoHasFileContent(t *testing.T) {
 			// Only repos A and B are indexed
 			mockZoekt := NewMockStreamer()
 			mockZoekt.ListFunc.PushReturn(&zoekt.RepoList{
-				Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
+				ReposMap: zoekt.ReposMap{
 					uint32(repoA.ID): {
 						Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
 					},
@@ -624,7 +624,7 @@ func TestRepoHasFileContent(t *testing.T) {
 			}, nil)
 
 			mockZoekt.ListFunc.PushReturn(&zoekt.RepoList{
-				Minimal: tc.matchingRepos,
+				ReposMap: tc.matchingRepos,
 			}, nil)
 
 			res := NewResolver(logtest.Scoped(t), db, mockGitserver, endpoint.Static("test"), mockZoekt)
