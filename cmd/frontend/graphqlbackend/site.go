@@ -576,15 +576,6 @@ func (r *siteResolver) PerUserCodeCompletionsQuota() *int32 {
 }
 
 func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
-	// This section can be removed if dotcom stops requiring verified emails
-	if deploy.IsApp() {
-		c := conf.GetCompletionsConfig(conf.Get().SiteConfig())
-		// App users can specify their own keys using one of the regular providers.
-		// If they use their own keys requests are not going through Cody Gateway
-		// which means a verified email is not needed.
-		return c == nil || c.Provider == conftypes.CompletionsProviderNameSourcegraph
-	}
-
 	// We only require this on dotcom
 	if !envvar.SourcegraphDotComMode() {
 		return false
