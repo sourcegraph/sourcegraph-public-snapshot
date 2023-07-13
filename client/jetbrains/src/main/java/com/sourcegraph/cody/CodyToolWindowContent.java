@@ -18,11 +18,13 @@ import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
+import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.IconUtil;
+import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
@@ -148,6 +150,7 @@ class CodyToolWindowContent implements UpdatableChat {
     recipesPanel.add(translateToLanguageButton);
     recipesPanel.add(gitHistoryButton);
     recipesPanel.add(findCodeSmellsButton);
+    enableAutoUpdateAvailabilityOfSummarizeRecentCodeChangesRecipe(project, gitHistoryButton);
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
@@ -233,6 +236,38 @@ class CodyToolWindowContent implements UpdatableChat {
     updateVisibilityOfContentPanels();
     // Add welcome message
     addWelcomeMessage();
+  }
+
+  private static void enableAutoUpdateAvailabilityOfSummarizeRecentCodeChangesRecipe(
+      @NotNull Project project, @NotNull JButton gitHistoryButton) {
+    updateAvailabilityOfTheSummarizeRecentCodeChangesRecipe(project, gitHistoryButton);
+    MessageBusConnection messageBusConnection = project.getMessageBus().connect();
+    messageBusConnection.subscribe(
+        ProjectLevelVcsManager.VCS_CONFIGURATION_CHANGED,
+        () -> updateAvailabilityOfTheSummarizeRecentCodeChangesRecipe(project, gitHistoryButton));
+  }
+
+  private static void updateAvailabilityOfTheSummarizeRecentCodeChangesRecipe(
+      @NotNull Project project, @NotNull JButton gitHistoryButton) {
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              VirtualFile currentFile = EditorUtil.getCurrentFile(project);
+
+              ApplicationManager.getApplication()
+                  .executeOnPooledThread(
+                      () -> {
+                        boolean noVersionControlSystem =
+                            RepoUtil.findRepositoryName(project, currentFile) == null;
+                        if (noVersionControlSystem) {
+                          gitHistoryButton.setEnabled(false);
+                          gitHistoryButton.setToolTipText("No version control system found");
+                        } else {
+                          gitHistoryButton.setEnabled(true);
+                          gitHistoryButton.setToolTipText(null);
+                        }
+                      });
+            });
   }
 
   private void updateVisibilityOfContentPanels() {
