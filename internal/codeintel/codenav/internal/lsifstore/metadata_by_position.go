@@ -203,11 +203,11 @@ matching_symbol_names AS (
 		JOIN codeintel_scip_symbols_lookup l6 ON l6.upload_id = ANY(%s) AND l6.segment_type = 'DESCRIPTOR_SUFFIX' AND l6.name = p.descriptor_suffix
 
 		-- Follow parent path l6->l5->l4->l3->l2->l1, filter out anything that doesn't match exploded symbol parts
-		JOIN codeintel_scip_symbols_lookup l5 ON l5.name = p.descriptor_namespace AND l5.upload_id = l6.upload_id AND l5.id = l6.parent_id
-		JOIN codeintel_scip_symbols_lookup l4 ON l4.name = p.package_version      AND l4.upload_id = l6.upload_id AND l4.id = l5.parent_id
-		JOIN codeintel_scip_symbols_lookup l3 ON l3.name = p.package_name         AND l3.upload_id = l6.upload_id AND l3.id = l4.parent_id
-		JOIN codeintel_scip_symbols_lookup l2 ON l2.name = p.package_manager      AND l2.upload_id = l6.upload_id AND l2.id = l3.parent_id
-		JOIN codeintel_scip_symbols_lookup l1 ON l1.name = p.scheme               AND l1.upload_id = l6.upload_id AND l1.id = l2.parent_id
+		JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = l6.upload_id AND l5.id = l6.parent_id AND l5.name = p.descriptor_namespace
+		JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = l6.upload_id AND l4.id = l5.parent_id AND l4.name = p.package_version
+		JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = l6.upload_id AND l3.id = l4.parent_id AND l3.name = p.package_name
+		JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = l6.upload_id AND l2.id = l3.parent_id AND l2.name = p.package_manager
+		JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id = l2.parent_id AND l1.name = p.scheme
 
 		-- Find symbol identifier matching descriptor
 		JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l5.upload_id AND ll.descriptor_suffix_id = l6.id
