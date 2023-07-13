@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/compute"
@@ -124,7 +123,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 		return errors.Wrap(err, "reposIterator.ForEach")
 	}
 
-	queryPlan, err := parseQuery(*series, database.NewDBWith(logger, h.workerStore))
+	queryPlan, err := parseQuery(*series)
 	if err != nil {
 		return errors.Wrap(err, "parseQuery")
 	}
@@ -174,7 +173,7 @@ func (h *newBackfillHandler) Handle(ctx context.Context, logger log.Logger, job 
 	return err
 }
 
-func parseQuery(series types.InsightSeries, db database.DB) (query.Plan, error) {
+func parseQuery(series types.InsightSeries) (query.Plan, error) {
 	if series.GeneratedFromCaptureGroups {
 		seriesQuery, err := compute.Parse(series.Query)
 		if err != nil {
