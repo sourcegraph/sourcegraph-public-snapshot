@@ -82,24 +82,6 @@ type ClientSource interface {
 	Addresses() []AddressWithClient
 }
 
-// NewClientDeprecatedNeedsDB means this call site needs to be updated to use
-// NewClient and pass in a DB.
-//
-// Right now the DB is not used so this is not a bug. This variable was
-// introduced to make it possible to break out the updates to NewClient happen
-// over multiple PRs.
-//
-// If you are introducing DB, prefer changing your code so that gitserver
-// client is injected from a higher layer rather than constructed at your call
-// site.
-//
-// Shout at Keegan and Indradhanush if you still see this call in August 2023.
-// Context: we want to make looking up which shard to speak to stateful. First
-// target is deduplicating storage for forks.
-func NewClientDeprecatedNeedsDB() Client {
-	return NewClient(nil)
-}
-
 // NewClient returns a new gitserver.Client.
 func NewClient(_ database.DB) Client {
 	return &clientImplementor{
