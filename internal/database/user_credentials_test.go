@@ -229,7 +229,7 @@ func TestUserCredentials_CreateUpdate(t *testing.T) {
 
 			have, err := cred.Authenticator(fx.userCtx)
 			assert.NoError(t, err)
-			assert.Equal(t, authenticator, have)
+			assert.Equal(t, authenticator.Hash(), have.Hash())
 
 			// Ensure that trying to insert again fails.
 			second, err := fx.db.Create(fx.userCtx, scope, authenticator)
