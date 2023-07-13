@@ -41,7 +41,7 @@ public class AnthropicAutoCompleteProvider extends AutoCompleteProvider {
   @Override
   protected List<Message> createPromptPrefix() {
     String[] prefixLines = this.prefix.split("\n");
-    if (prefixLines.length == 0) logger.error("Cody: Anthropic: missing prefix lines");
+    if (prefixLines.length == 0) logger.warn("Cody: Anthropic: missing prefix lines");
 
     PrefixComponents pc = getHeadAndTail(this.prefix);
 
@@ -68,7 +68,7 @@ public class AnthropicAutoCompleteProvider extends AutoCompleteProvider {
     // Create prompt
     List<Message> prompt = this.createPrompt();
     if (prompt.size() > this.promptChars) {
-      logger.error("Cody: Anthropic: prompt length exceeded maximum allotted chars");
+      logger.warn("Cody: Anthropic: prompt length exceeded maximum allotted chars");
       return CompletableFuture.completedFuture(Collections.emptyList());
     }
 

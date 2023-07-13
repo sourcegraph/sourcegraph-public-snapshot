@@ -110,7 +110,7 @@ public class SSEClient {
       try {
         inputStream.close();
       } catch (Exception e) {
-        logger.error("Got error stopCurrentRequest: " + e.getMessage());
+        logger.warn("Got error stopCurrentRequest: " + e.getMessage());
       }
     }
   }

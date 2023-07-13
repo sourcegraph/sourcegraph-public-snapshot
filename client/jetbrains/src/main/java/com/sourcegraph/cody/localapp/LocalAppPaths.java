@@ -51,7 +51,7 @@ public class LocalAppPaths {
         LocalAppInfo appInfo = objectMapper.readValue(jsonContent, LocalAppInfo.class);
         return Optional.of(appInfo);
       } catch (IOException e) {
-        logger.error("Error reading local Cody app JSON file: " + e.getMessage());
+        logger.warn("Error reading local Cody app JSON file: " + e.getMessage());
         return Optional.empty();
       }
     } else return Optional.empty();

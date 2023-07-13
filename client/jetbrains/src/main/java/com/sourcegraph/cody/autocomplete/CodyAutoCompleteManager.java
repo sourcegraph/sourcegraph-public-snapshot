@@ -165,7 +165,7 @@ public class CodyAutoCompleteManager {
                         });
               } catch (Exception e) {
                 // TODO: do something smarter with unexpected errors.
-                logger.error(e);
+                logger.warn(e);
               }
             });
   }

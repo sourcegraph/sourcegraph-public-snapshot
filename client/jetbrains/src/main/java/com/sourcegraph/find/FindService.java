@@ -99,7 +99,7 @@ public class FindService implements Disposable {
                   try {
                     mainPanel.getPreviewPanel().getPreviewContent().openInEditorOrBrowser();
                   } catch (Exception e) {
-                    logger.error("Error opening file in editor", e);
+                    logger.warn("Error opening file in editor", e);
                   }
                 });
         return true;

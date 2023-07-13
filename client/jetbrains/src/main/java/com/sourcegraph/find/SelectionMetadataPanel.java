@@ -31,7 +31,7 @@ public class SelectionMetadataPanel extends JPanel {
                   previewContent.openInEditorOrBrowser();
                 } catch (Exception e) {
                   Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
-                  logger.error(
+                  logger.warn(
                       "Error opening file in editor: \"" + selectionMetadataLabel.getText() + "\"",
                       e);
                 }
