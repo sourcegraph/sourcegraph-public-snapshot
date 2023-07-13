@@ -109,7 +109,7 @@ func initDB(observationCtx *observation.Context) (*sql.DB, error) {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "worker")
+	db, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "searcher")
 	return db, errors.Wrap(err, "searcher: failed to connect to frontend database")
 }
 
