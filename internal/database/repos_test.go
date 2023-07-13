@@ -135,7 +135,7 @@ func setZoektIndexed(t *testing.T, db DB, name api.RepoName) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+	err = db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
 		uint32(repo.ID): {},
 	})
 	if err != nil {
