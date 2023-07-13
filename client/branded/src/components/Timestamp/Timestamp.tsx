@@ -55,6 +55,10 @@ export const Timestamp: React.FunctionComponent<React.PropsWithChildren<Timestam
 }) => {
     const [label, setLabel] = useState<string>(calculateLabel(date, now, strict, noAbout, noAgo))
     useEffect(() => {
+        // Update the label
+        setLabel(calculateLabel(date, now, strict, noAbout, noAgo))
+
+        // Refresh the label periodically
         const intervalHandle = window.setInterval(
             () => setLabel(calculateLabel(date, now, strict, noAbout, noAgo)),
             RERENDER_INTERVAL_MSEC
