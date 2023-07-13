@@ -956,6 +956,8 @@ bazelCommands:
       CTAGS_COMMAND: dev/universal-ctags-dev
       CTAGS_PROCESSES: 2
       USE_ROCKSKIP: 'false'
+  syntect-server:
+    target: //docker-images/syntax-highlighter:syntect_server
   gitserver-template: &gitserver_bazel_template
     target: //enterprise/cmd/gitserver
     env: &gitserverenv
@@ -1025,10 +1027,10 @@ commandsets:
       - oss-gitserver-1
       - github-proxy
       - searcher
+      - syntect-server
     commands:
       - oss-web
       - caddy
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
@@ -1078,11 +1080,11 @@ commandsets:
       - searcher
       - symbols
       - github-proxy
+      - syntect-server
     commands:
       - web
       - blobstore
       - docsite
-      - syntax-highlighter
       - zoekt-index-0
       - zoekt-index-1
       - zoekt-web-0
