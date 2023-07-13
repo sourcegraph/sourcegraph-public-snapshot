@@ -22,7 +22,7 @@ func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
 		Error: func(w http.ResponseWriter, req *http.Request, status int, err error) {
 			if status < 200 || status >= 400 {
 				var traceURL, traceID string
-				if tr := trace.TraceFromContext(req.Context()); tr != nil {
+				if tr := trace.FromContext(req.Context()); tr.IsRecording() {
 					tr.SetError(err)
 					traceID = trace.ID(req.Context())
 					traceURL = trace.URL(traceID, conf.DefaultClient())

@@ -225,7 +225,7 @@ func PartitionRepos(
 	}
 
 	tr, ctx := trace.New(ctx, "PartitionRepos", attribute.String("type", string(typ)))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	// Only include indexes with symbol information if a symbol request.
 	var filterFunc func(repo zoekt.MinimalRepoListEntry) bool
@@ -756,7 +756,7 @@ func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }
 // access to on all connected code hosts / external services.
 func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
 	tr, ctx := trace.New(ctx, "privateReposForActor")
-	defer tr.Finish()
+	defer tr.End()
 
 	userID := int32(0)
 	if envvar.SourcegraphDotComMode() {

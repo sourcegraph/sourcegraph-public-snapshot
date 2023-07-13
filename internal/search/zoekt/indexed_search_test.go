@@ -732,7 +732,7 @@ func TestContextWithoutDeadline(t *testing.T) {
 	}
 
 	// We want to keep trace info
-	if tr2 := trace.TraceFromContext(ctxNoDeadline); tr != tr2 {
+	if tr2 := trace.FromContext(ctxNoDeadline); !tr.SpanContext().Equal(tr2.SpanContext()) {
 		t.Error("trace information not propogated")
 	}
 

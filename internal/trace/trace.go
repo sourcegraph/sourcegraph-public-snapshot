@@ -11,37 +11,42 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// Trace is a combined version of opentelemetry.Span and (optionally)
-// golang.org/x/net/trace.Trace, applying its various API functions to both
-// underlying trace types. Use New to construct one.
-type Trace struct {
-	// oteltraceSpan is always set.
-	oteltraceSpan oteltrace.Span
+// tracerName is the name of the default tracer for the Sourcegraph backend.
+const tracerName = "sourcegraph/internal/trace"
+
+// GetTracer returns the default tracer for the Sourcegraph backend.
+func GetTracer() oteltrace.Tracer {
+	return otel.GetTracerProvider().Tracer(tracerName)
 }
 
-// New returns a new Trace with the specified name.
+// Trace is a light wrapper of opentelemetry.Span. Use New to construct one.
+type Trace struct {
+	oteltrace.Span // never nil
+}
+
+// New returns a new Trace with the specified name in the default tracer.
 // For tips on naming, see the OpenTelemetry Span documentation:
 // https://opentelemetry.io/docs/specs/otel/trace/api/#span
-func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (*Trace, context.Context) {
-	tr := Tracer{TracerProvider: otel.GetTracerProvider()}
-	return tr.New(ctx, name, attrs...)
+func New(ctx context.Context, name string, attrs ...attribute.KeyValue) (Trace, context.Context) {
+	return NewInTracer(ctx, GetTracer(), name, attrs...)
 }
 
-// SetAttributes sets kv as attributes of the Span.
-func (t *Trace) SetAttributes(attributes ...attribute.KeyValue) {
-	t.oteltraceSpan.SetAttributes(attributes...)
+// NewInTracer is the same as New, but uses the given tracer.
+func NewInTracer(ctx context.Context, tracer oteltrace.Tracer, name string, attrs ...attribute.KeyValue) (Trace, context.Context) {
+	ctx, span := tracer.Start(ctx, name, oteltrace.WithAttributes(attrs...))
+	return Trace{span}, ctx
 }
 
 // AddEvent records an event on this span with the given name and attributes.
 //
 // Note that it differs from the underlying (oteltrace.Span).AddEvent slightly, and only
-// accepts attributes for simplicity, and for ease of adapting to nettrace.
-func (t *Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
-	t.oteltraceSpan.AddEvent(name, oteltrace.WithAttributes(attributes...))
+// accepts attributes for simplicity.
+func (t Trace) AddEvent(name string, attributes ...attribute.KeyValue) {
+	t.Span.AddEvent(name, oteltrace.WithAttributes(attributes...))
 }
 
 // SetError declares that this trace and span resulted in an error.
-func (t *Trace) SetError(err error) {
+func (t Trace) SetError(err error) {
 	if err == nil {
 		return
 	}
@@ -49,32 +54,26 @@ func (t *Trace) SetError(err error) {
 	// Truncate the error string to avoid tracing massive error messages.
 	err = truncateError(err, defaultErrorRuneLimit)
 
-	t.oteltraceSpan.RecordError(err)
-	t.oteltraceSpan.SetStatus(codes.Error, err.Error())
+	t.RecordError(err)
+	t.SetStatus(codes.Error, err.Error())
 }
 
 // SetErrorIfNotContext calls SetError unless err is context.Canceled or
 // context.DeadlineExceeded.
-func (t *Trace) SetErrorIfNotContext(err error) {
+func (t Trace) SetErrorIfNotContext(err error) {
 	if errors.IsAny(err, context.Canceled, context.DeadlineExceeded) {
 		err = truncateError(err, defaultErrorRuneLimit)
-		t.oteltraceSpan.RecordError(err)
+		t.RecordError(err)
 		return
 	}
 
 	t.SetError(err)
 }
 
-// Finish declares that this trace and span is complete.
-// The trace should not be used after calling this method.
-func (t *Trace) Finish() {
-	t.oteltraceSpan.End()
-}
-
-// FinishWithErr finishes the span and sets its error value.
+// EndWithErr finishes the span and sets its error value.
 // It takes a pointer to an error so it can be used directly
 // in a defer statement.
-func (t *Trace) FinishWithErr(err *error) {
+func (t Trace) EndWithErr(err *error) {
 	t.SetError(*err)
-	t.Finish()
+	t.End()
 }

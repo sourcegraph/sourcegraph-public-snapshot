@@ -2381,7 +2381,7 @@ func TestParseIncludePattern(t *testing.T) {
 	}
 
 	tr, _ := trace.New(context.Background(), "")
-	defer tr.Finish()
+	defer tr.End()
 
 	for pattern, want := range tests {
 		exact, like, regexp, err := parseIncludePattern(pattern)

@@ -505,7 +505,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 
 	// Determine trace URL and log the error.
 	var traceURL string
-	if tr := trace.TraceFromContext(r.Context()); tr != nil {
+	if tr := trace.FromContext(r.Context()); tr.IsRecording() {
 		tr.SetError(err)
 		tr.SetAttributes(attribute.String("error-id", errorID))
 		traceURL = trace.URL(trace.ID(r.Context()), conf.DefaultClient())

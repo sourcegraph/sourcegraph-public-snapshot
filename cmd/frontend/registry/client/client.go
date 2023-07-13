@@ -41,7 +41,7 @@ func List(ctx context.Context, registry *url.URL, query string) (xs []*Extension
 		if xs != nil {
 			tr.SetAttributes(attribute.Int("results", len(xs)))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 
 	var q url.Values

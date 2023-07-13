@@ -116,7 +116,6 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",
-        "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_x_net//http2",
         "@org_golang_x_sync//errgroup",
@@ -197,7 +196,6 @@ go_test(
         "//internal/rcache",
         "//internal/testutil",
         "//internal/timeutil",
-        "//internal/trace",
         "//internal/types",
         "//internal/types/typestest",
         "//lib/errors",
@@ -217,7 +215,6 @@ go_test(
         "@com_github_sourcegraph_zoekt//:zoekt",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-        "@io_opentelemetry_go_otel//:otel",
         "@org_golang_x_time//rate",
     ],
 )

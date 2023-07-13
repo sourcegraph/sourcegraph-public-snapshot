@@ -171,9 +171,7 @@ func (c *CachedEmbeddingIndexGetter) get(ctx context.Context, repoName api.RepoN
 	repoEmbeddingIndexName := embeddings.GetRepoEmbeddingIndexName(repoName)
 
 	cacheEntry, ok := c.cache.Get(repoEmbeddingIndexName)
-	if tr := trace.TraceFromContext(ctx); tr != nil {
-		tr.AddEvent("checked embedding index cache", attribute.Bool("hit", ok))
-	}
+	trace.FromContext(ctx).AddEvent("checked embedding index cache", attribute.Bool("hit", ok))
 	if !ok {
 		// We do not have the index in the cache. Download and cache it.
 		return c.getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)

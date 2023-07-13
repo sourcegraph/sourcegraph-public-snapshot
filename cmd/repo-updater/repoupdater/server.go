@@ -128,7 +128,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 			)
 		}
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}()
 
 	rs, err := s.Store.RepoStore().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
@@ -305,7 +305,7 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	defer func() {
 		s.Logger.Debug("repoLookup", log.String("result", fmt.Sprint(result)), log.Error(err))
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}()
 
 	if args.Repo == "" {

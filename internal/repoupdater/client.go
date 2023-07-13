@@ -133,7 +133,7 @@ func (c *Client) RepoLookup(
 		if result != nil {
 			tr.SetAttributes(attribute.Bool("found", result.Repo != nil))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
@@ -443,7 +443,7 @@ func (c *Client) httpPost(ctx context.Context, method string, payload any) (resp
 
 func (c *Client) do(ctx context.Context, req *http.Request) (_ *http.Response, err error) {
 	tr, ctx := trace.New(ctx, "repoupdater.do")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	req.Header.Set("Content-Type", "application/json")
 

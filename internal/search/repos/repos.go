@@ -117,7 +117,7 @@ func (r *Resolver) Iterator(ctx context.Context, opts search.RepoOptions) *itera
 
 func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Resolve", attribute.Stringer("opts", &op))
-	defer tr.FinishWithErr(&errs)
+	defer tr.EndWithErr(&errs)
 
 	excludePatterns := op.MinusRepoFilters
 	includePatterns, includePatternRevs := findPatternRevs(op.RepoFilters)
@@ -536,7 +536,7 @@ func (r *Resolver) filterRepoHasFileContent(
 	tr.SetAttributes(attribute.Int("inputRevCount", len(repoRevs)))
 	defer func() {
 		tr.SetError(err)
-		tr.Finish()
+		tr.End()
 	}()
 
 	// Early return if there are no filters
@@ -761,7 +761,7 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 		tr.SetAttributes(
 			attribute.Int("excludedForks", ex.Forks),
 			attribute.Int("excludedArchived", ex.Archived))
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 
 	excludePatterns := op.MinusRepoFilters

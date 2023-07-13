@@ -145,7 +145,7 @@ func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Optio
 	if r.operation == nil {
 		r.operation = observation.NewContext(
 			log.Scoped("periodic", "periodic goroutine handler"),
-			observation.Tracer(oteltrace.NewNoopTracerProvider()),
+			observation.Tracer(oteltrace.NewNoopTracerProvider().Tracer("noop")),
 			observation.Metrics(metrics.NoOpRegisterer),
 		).Operation(observation.Op{
 			Name:        r.name,

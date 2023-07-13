@@ -193,7 +193,7 @@ func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
 
 func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
 	tr, _ := trace.New(ctx, "DynamicFilters", attribute.String("resolver", "SearchResultsResolver"))
-	defer tr.Finish()
+	defer tr.End()
 
 	var filters streaming.SearchFilters
 	filters.Update(streaming.SearchEvent{
@@ -236,7 +236,7 @@ func (sf *searchFilterResolver) Kind() string {
 // the first line match inside of it was authored.
 func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
 	tr, ctx := trace.New(ctx, "SearchResultsResolver.blameFileMatch")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	// Blame the first line match.
 	if len(fm.ChunkMatches) == 0 {

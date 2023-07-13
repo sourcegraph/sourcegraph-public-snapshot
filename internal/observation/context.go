@@ -7,7 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
-	"go.opentelemetry.io/otel"
 	oteltrace "go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/honey"
@@ -20,7 +19,7 @@ import (
 // any location that wants to use it for observing operations.
 type Context struct {
 	Logger       log.Logger
-	Tracer       *trace.Tracer
+	Tracer       oteltrace.Tracer // may be nil
 	Registerer   prometheus.Registerer
 	HoneyDataset *honey.Dataset
 }
@@ -49,6 +48,7 @@ func TestContextTB(t testing.TB) *Context {
 	return &Context{
 		Logger:     logtest.Scoped(t),
 		Registerer: metrics.NoOpRegisterer,
+		Tracer:     oteltrace.NewNoopTracerProvider().Tracer("noop"),
 	}
 }
 
@@ -97,7 +97,7 @@ func (c *Context) Operation(args Op) *Operation {
 func NewContext(logger log.Logger, opts ...Opt) *Context {
 	ctx := &Context{
 		Logger:     logger,
-		Tracer:     &trace.Tracer{TracerProvider: otel.GetTracerProvider()},
+		Tracer:     trace.GetTracer(),
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
@@ -110,9 +110,9 @@ func NewContext(logger log.Logger, opts ...Opt) *Context {
 
 type Opt func(*Context)
 
-func Tracer(provider oteltrace.TracerProvider) Opt {
+func Tracer(tracer oteltrace.Tracer) Opt {
 	return func(ctx *Context) {
-		ctx.Tracer = &trace.Tracer{TracerProvider: provider}
+		ctx.Tracer = tracer
 	}
 }
 

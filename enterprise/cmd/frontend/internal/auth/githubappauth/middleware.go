@@ -59,7 +59,7 @@ func newMiddleware(db database.DB, authPrefix string, isAPIHandler bool, next ht
 		// redirecting.
 		span, _ := trace.New(r.Context(), "githubapp")
 		span.SetAttributes(attribute.Bool("isAPIHandler", isAPIHandler))
-		span.Finish()
+		span.End()
 		if strings.HasPrefix(r.URL.Path, authPrefix+"/") {
 			handler.ServeHTTP(w, r)
 			return

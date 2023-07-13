@@ -95,7 +95,7 @@ func (s *searchClient) Plan(
 	protocol search.Protocol,
 ) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	searchType, err := detectSearchType(version, patternType)
 	if err != nil {
@@ -157,7 +157,7 @@ func (s *searchClient) Execute(
 	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Execute")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {

@@ -438,7 +438,7 @@ func (s *userExternalAccountsStore) List(ctx context.Context, opt ExternalAccoun
 			attribute.Int("accounts.count", len(acct)),
 		)
 
-		tr.Finish()
+		tr.End()
 	}()
 
 	conds := s.listSQL(opt)
@@ -457,7 +457,7 @@ func (s *userExternalAccountsStore) ListForUsers(ctx context.Context, userIDs []
 			attribute.String("userIDs", fmt.Sprintf("%v", userIDs)),
 			attribute.Int("accounts.count", count),
 		)
-		tr.Finish()
+		tr.End()
 	}()
 	if len(userIDs) == 0 {
 		return

@@ -530,7 +530,7 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 		defer func() {
 			// Avoid trace log spam if we haven't invoked the retry policy.
 			shouldTraceLog := retry || a.Index > 0
-			if tr := trace.TraceFromContext(a.Request.Context()); tr != nil && shouldTraceLog {
+			if tr := trace.FromContext(a.Request.Context()); tr.IsRecording() && shouldTraceLog {
 				fields := []attribute.KeyValue{
 					attribute.Bool("retry", retry),
 					attribute.Int("attempt", a.Index),

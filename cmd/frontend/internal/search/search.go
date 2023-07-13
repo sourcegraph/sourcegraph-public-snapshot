@@ -59,7 +59,7 @@ type streamHandler struct {
 
 func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	tr, ctx := trace.New(r.Context(), "search.ServeStream")
-	defer tr.Finish()
+	defer tr.End()
 	r = r.WithContext(ctx)
 
 	streamWriter, err := streamhttp.NewWriter(w)
@@ -82,7 +82,7 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter *eventWriter) (err error) {
+func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *eventWriter) (err error) {
 	ctx := r.Context()
 	start := time.Now()
 

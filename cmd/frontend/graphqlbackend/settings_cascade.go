@@ -46,7 +46,7 @@ func (r *settingsCascade) Final(ctx context.Context) (string, error) {
 // Deprecated: in the GraphQL API
 func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver, err error) {
 	tr, ctx := trace.New(ctx, "SettingsCascade.Merged")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	var messages []string
 	s, err := r.Final(ctx)

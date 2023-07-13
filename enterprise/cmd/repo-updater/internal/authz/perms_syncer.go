@@ -713,7 +713,7 @@ func (s *PermsSyncer) observe(ctx context.Context, name string) (context.Context
 	tr, ctx := trace.New(ctx, name)
 
 	return ctx, func(typ requestType, id int32, err *error) {
-		defer tr.Finish()
+		defer tr.End()
 		tr.SetAttributes(attribute.Int64("id", int64(id)))
 
 		var typLabel string
