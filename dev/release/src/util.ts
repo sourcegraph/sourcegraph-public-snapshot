@@ -15,7 +15,7 @@ import { getPreviousVersionExecutor, getPreviousVersionSrcCli } from './git'
 import { cloneRepo, EditFunc, getAuthenticatedGitHubClient, listIssues } from './github'
 import * as update from './update'
 
-const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://k8s.sgdev.org'
+const SOURCEGRAPH_RELEASE_INSTANCE_URL = 'https://sourcegraph.sourcegraph.com'
 
 export interface ReleaseTag {
     repo: string

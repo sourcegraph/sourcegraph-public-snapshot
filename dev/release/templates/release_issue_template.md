@@ -146,7 +146,7 @@ On the day of the release, confirm there are no more release-blocking issues (as
 - [ ] Ensure that the following pipelines all pass for the `v$MAJOR.$MINOR.$PATCH` tag:
   - [ ] [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
 - [ ] Wait for the `v$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
-- [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes)):
+- [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes)):
 
   ```sh
   pnpm run release release:stage
@@ -154,7 +154,7 @@ On the day of the release, confirm there are no more release-blocking issues (as
 
 ### Finalize release
 
-- [ ] From the [release batch change](https://k8s.sgdev.org/organizations/sourcegraph/batch-changes), merge the release-publishing PRs created previously.
+- [ ] From the [release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes), merge the release-publishing PRs created previously.
   - For [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
     - [ ] Ensure the [release tag `v$MAJOR.$MINOR.$PATCH`](https://github.com/sourcegraph/deploy-sourcegraph/tags) has been created
   - For [deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker)

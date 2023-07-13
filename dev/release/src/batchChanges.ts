@@ -22,7 +22,7 @@ export async function sourcegraphCLIConfig(): Promise<SourcegraphCLIConfig> {
     await commandExists('src') // CLI must be present for batch change interactions
     return {
         SRC_ENDPOINT: DEFAULT_SRC_ENDPOINT,
-        // I updated the file name here to avoid a situation where folks with existing k8s.sgdev.org token
+        // I updated the file name here to avoid a situation where folks with existing s2 token
         // cached will get a 403 because it's not valid for S2.
         SRC_ACCESS_TOKEN: await readLine('s2 src-cli token: ', `${cacheFolder}/src-cli-s2.txt`),
     }
