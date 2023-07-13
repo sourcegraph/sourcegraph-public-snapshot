@@ -45,7 +45,6 @@ The commands are:
 	repos,repo      manages repositories
 	search          search for results on Sourcegraph
 	serve-git       serves your local git repositories over HTTP for Sourcegraph to pull
-	upload          upload an index to a Sourcegraph instance
 	users,user      manages users
 	codeowners      manages code ownership information
 	version         display and compare the src-cli version against the recommended version for your instance
