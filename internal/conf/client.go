@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -79,6 +80,10 @@ func SiteConfig() schema.SiteConfiguration {
 
 func ServiceConnections() conftypes.ServiceConnections {
 	return Get().ServiceConnections()
+}
+
+func HashedLicenseKey() string {
+	return string(hashutil.ToSHA256Bytes([]byte(Get().LicenseKey)))
 }
 
 // Raw returns a copy of the raw configuration.

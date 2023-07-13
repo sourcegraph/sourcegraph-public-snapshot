@@ -1029,6 +1029,26 @@ input Event {
     Used on Sourcegraph Cloud only.
     """
     insertID: String
+    """
+    The client that this event is being sent from.
+    """
+    client: String
+    """
+    The product category for the event, used for billing purposes.
+    """
+    billingProductCategory: String
+    """
+    The billing ID for the event, used for tagging user events for billing aggregation purposes.
+    """
+    billingEventID: String
+    """
+    The site ID that the client was connected to when the event was logged.
+    """
+    connectedSiteID: String
+    """
+    The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+    """
+    hashedLicenseKey: String
 }
 
 """
@@ -1092,6 +1112,71 @@ enum EventSource {
     STATICWEB
     IDEEXTENSION
     CODY
+}
+
+"""
+The product clients where events can come from.
+"""
+enum EventClient {
+    SERVER_WEB
+    APP_WEB
+    MARKETING_WEB
+    SERVER_BACKEND
+    APP_BACKEND
+    BITBUCKET_INTEGRATION
+    GITLAB_INTEGRATION
+    CHROME_SOURCEGRAPH_EXTENSION
+    FIREFOX_SOURCEGRAPH_EXTENSION
+    EDGE_SOURCEGRAPH_EXTENSION
+    VSCODE_CODY_EXTENSION
+    VSCODE_SOURCEGRAPH_EXTENSION
+    JETBRAINS_CODY_EXTENSION
+    NEOVIM_CODY_EXTENSION
+    EMACS_CODY_EXTENSION
+}
+
+"""
+The product categories for events, used for billing purposes.
+"""
+enum EventBillingProductCategory {
+    """
+    Used for all events related to non-billable, non-product usage associated with product marketing, calls-
+    to-action, etc.
+    """
+    MARKETING_CTAS
+    """
+    Used for all truly shared user interface events, such as administration, authentication, user profile,
+    shared landing pages, etc.
+    """
+    SHARED
+    """
+    Used for all events primarily related to the Code Search product, including file and repo pageviews,
+    search actions, code navigation, batch changes, code insights, etc.
+    """
+    CODE_SEARCH
+    """
+    Used for all events primarily related to the Cody product, including chats, recipes, completions, web
+    chat views, etc.
+    """
+    CODY
+}
+
+"""
+Billing IDs for events, used for tagging user events for billing aggregation purposes.
+"""
+enum EventBillingID {
+    """
+    A billable Cody chat event, including manual chats, recipes, and more.
+    """
+    CodyChat
+    """
+    A billable Cody completion (aka suggestion or autocomplete) event.
+    """
+    CodyCompletion
+    """
+    A billable Cody code graph creation (aka embedding) event.
+    """
+    CodyEmbedding
 }
 
 """

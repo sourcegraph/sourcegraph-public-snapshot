@@ -51,6 +51,15 @@ type Event struct {
 	InsertID         *string
 	EventID          *int32
 	DeviceSessionID  *string
+	Client           *string
+	BillingProductCategory *string
+	BillingEventID *string
+	// ConnectedSiteID is only logged for Cloud events; therefore, this only goes to the BigQuery database
+	// and does not go to the Postgres DB.
+	ConnectedSiteID *string
+	// HashedLicenseKey is only logged for Cloud events; therefore, this only goes to the BigQuery database
+	// and does not go to the Postgres DB.
+	HashedLicenseKey *string
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -121,6 +130,11 @@ type bigQueryEvent struct {
 	DeviceID         *string `json:"device_id,omitempty"`
 	InsertID         *string `json:"insert_id,omitempty"`
 	DeviceSessionID  *string `json:"device_session_id,omitempty"`
+	Client           *string `json:"client,omitempty"`
+	BillingProductCategory *string `json:"billing_product_category,omitempty"`
+	BillingEventID *string `json:"billing_event_id,omitempty"`
+	ConnectedSiteID *string `json:"connected_site_id,omitempty"`
+	HashedLicenseKey *string `json:"hashed_license_key,omitempty"`
 }
 
 // publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
@@ -202,6 +216,12 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			DeviceID:         event.DeviceID,
 			InsertID:         event.InsertID,
 			DeviceSessionID:  event.DeviceSessionID,
+			Client:				event.Client,
+			BillingProductCategory: event.BillingProductCategory,
+			BillingEventID: event.BillingEventID,
+			ConnectedSiteID: event.ConnectedSiteID,
+			HashedLicenseKey: event.HashedLicenseKey,
+		
 		})
 		if err != nil {
 			return nil, err
@@ -253,6 +273,9 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 			Referrer:         event.Referrer,
 			DeviceID:         event.DeviceID,
 			InsertID:         event.InsertID,
+			Client:				event.Client,
+			BillingProductCategory: event.BillingProductCategory,
+			BillingEventID: event.BillingEventID,
 		})
 	}
 

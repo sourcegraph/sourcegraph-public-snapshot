@@ -101,6 +101,11 @@ type Event struct {
 	DeviceID         *string
 	InsertID         *string
 	EventID          *int32
+	Client           *string
+	BillingProductCategory *string
+	BillingEventID *string
+	ConnectedSiteID *string
+	HashedLicenseKey *string
 }
 
 type EventBatch struct {
