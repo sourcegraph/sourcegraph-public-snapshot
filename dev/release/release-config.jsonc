@@ -19,14 +19,6 @@
       "current": "5.1.0",
       "captainGitHubUsername": "unknwon",
       "captainSlackUsername": "joe"
-    },
-    "5.1.3": {
-      "codeFreezeDate": "2023-07-05T10:39:21.121-07:00",
-      "securityApprovalDate": "2023-07-05T10:39:21.121-07:00",
-      "releaseDate": "2023-07-12T10:39:21.121-07:00",
-      "current": "5.1.3",
-      "captainGitHubUsername": "camdencheek",
-      "captainSlackUsername": "camden"
     }
   },
   "dryRun": {
