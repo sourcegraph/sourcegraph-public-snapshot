@@ -140,7 +140,7 @@ func Init(
 		if info == nil || err != nil {
 			return nil, err
 		}
-		hashedKeyValue := string(hashutil.ToSHA256Bytes([]byte(confLib.Get().LicenseKey)))
+		hashedKeyValue := confLib.HashedCurrentLicenseKeyForAnalytics()
 		return &graphqlbackend.ProductLicenseInfo{
 			TagsValue:      info.Tags,
 			UserCountValue: info.UserCount,

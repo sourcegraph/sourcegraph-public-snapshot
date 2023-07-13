@@ -87,14 +87,14 @@ func (r *productLicense) Info() (*graphqlbackend.ProductLicenseInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	hashedKeyValue := string(hashutil.ToSHA256Bytes([]byte(r.v.LicenseKey)))
+	hashedKeyValue := conf.HashedLicenseKeyForAnalytics(r.v.LicenseKey)
 	return &graphqlbackend.ProductLicenseInfo{
 		TagsValue:                     info.Tags,
 		UserCountValue:                info.UserCount,
 		ExpiresAtValue:                info.ExpiresAt,
 		SalesforceSubscriptionIDValue: info.SalesforceSubscriptionID,
 		SalesforceOpportunityIDValue:  info.SalesforceOpportunityID,
-		HashedKeyValue: &hashedKeyValue,
+		HashedKeyValue:                &hashedKeyValue,
 	}, nil
 }
 

@@ -390,7 +390,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		LicenseInfo: licenseInfo,
 
-		HashedLicenseKey: conf.HashedLicenseKey(),
+		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics()
 
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 

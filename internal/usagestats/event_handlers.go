@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/inconshreveable/log15"
-
+	"github.com/inconshreveable/log15"	
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -67,6 +68,18 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
 	eventID := int32(rand.Int())
+
+	client := "SERVER_BACKEND"
+	if envvar.SourcegraphDotComMode() {
+		client = "DOTCOM_BACKEND"
+	}
+	if deploy.IsApp() {
+		client = "APP_BACKEND"
+	}
+
+	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()
+	connectedSiteID := siteid.Get()
+
 	return LogEvent(context.Background(), db, Event{
 		EventName:        eventName,
 		UserID:           userID,
@@ -81,6 +94,9 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 		DeviceID:         &deviceID,
 		InsertID:         &insertIDFinal,
 		EventID:          &eventID,
+		Client:           &client,
+		ConnectedSiteID:  &connectedSiteID,
+		HashedLicenseKey: &hashedLicenseKey,
 	})
 }
 

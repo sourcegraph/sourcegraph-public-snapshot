@@ -82,10 +82,6 @@ func ServiceConnections() conftypes.ServiceConnections {
 	return Get().ServiceConnections()
 }
 
-func HashedLicenseKey() string {
-	return string(hashutil.ToSHA256Bytes([]byte(Get().LicenseKey)))
-}
-
 // Raw returns a copy of the raw configuration.
 func (c *client) Raw() conftypes.RawUnified {
 	return c.store.Raw()
