@@ -36,7 +36,7 @@ const config = {
     typescript: {
       config: config => {
         config.extends = '../../../tsconfig.base.json'
-        config.include = [...(config.include ?? []), '../src/**/*.tsx']
+        config.include = [...(config.include ?? []), '../src/**/*.tsx', '../.storybook/*.ts']
       },
     },
   },

@@ -37,6 +37,7 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "storybook": "^7.0.26",
+    "storybook-dark-mode": "^3.0.0",
     "svelte": "^4.0.0",
     "svelte-check": "^3.4.3",
     "tslib": "2.1.0",
