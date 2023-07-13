@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/hexops/autogold/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -323,7 +324,7 @@ func TestComputeInsightCommandQuery(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got, err := ComputeInsightCommandQuery(BasicQuery(test.inputQuery), test.mapType)
+			got, err := ComputeInsightCommandQuery(BasicQuery(test.inputQuery), test.mapType, gitserver.NewMockClient())
 			if err != nil {
 				t.Error(err)
 			}

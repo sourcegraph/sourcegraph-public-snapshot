@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/insights/types"
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -276,8 +277,8 @@ const insightsComputeCommand = "output.extra"
 
 // ComputeInsightCommandQuery will convert a standard Sourcegraph search query into a compute "map type" insight query. This command type will group by
 // certain fields. The original search query semantic should be preserved, although any new limitations or restrictions in Compute will apply.
-func ComputeInsightCommandQuery(query BasicQuery, mapType MapType) (ComputeInsightQuery, error) {
-	q, err := ParseComputeQuery(string(query))
+func ComputeInsightCommandQuery(query BasicQuery, mapType MapType, gitserverClient gitserver.Client) (ComputeInsightQuery, error) {
+	q, err := ParseComputeQuery(string(query), gitserverClient)
 	if err != nil {
 		return "", err
 	}

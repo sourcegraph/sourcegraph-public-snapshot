@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
@@ -44,7 +45,10 @@ type Backfiller interface {
 type GitCommitClient interface {
 	FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error)
 	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
+	GitserverClient() internalGitserver.Client
 }
+
+var _ GitCommitClient = (*gitserver.GitCommitClient)(nil)
 
 type SearchJobGenerator func(ctx context.Context, req requestContext) (*requestContext, []*queryrunner.SearchJob, error)
 type SearchRunner func(ctx context.Context, reqContext *requestContext, jobs []*queryrunner.SearchJob) (*requestContext, []store.RecordSeriesPointArgs, error)
@@ -267,7 +271,7 @@ func makeHistoricalSearchJobFunc(logger log.Logger, commitClient GitCommitClient
 		}
 		newQueryStr = modifiedQuery.String()
 		if bctx.series.GroupBy != nil {
-			computeQuery, computeErr := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy))
+			computeQuery, computeErr := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy), commitClient.GitserverClient())
 			if computeErr != nil {
 				err = errors.Append(err, errors.Wrap(err, "ComputeInsightCommandQuery"))
 				return

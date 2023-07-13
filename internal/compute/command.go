@@ -3,12 +3,17 @@ package compute
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
 type Command interface {
 	command()
-	Run(context.Context, result.Match) (Result, error)
+	// Run transforms r into a computed Result.
+	//
+	// Note: It takes a gitserver client since the replace action needs to
+	// request the full file contents.
+	Run(ctx context.Context, gitserverClient gitserver.Client, r result.Match) (Result, error)
 	ToSearchPattern() string
 	String() string
 }

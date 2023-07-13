@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
 	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
@@ -109,11 +110,17 @@ type fakeCommitClient struct {
 	recentCommits func(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
 }
 
+var _ GitCommitClient = (*fakeCommitClient)(nil)
+
 func (f *fakeCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
 	return f.firstCommit(ctx, repoName)
 }
 func (f *fakeCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
 	return f.recentCommits(ctx, repoName, target, revision)
+}
+
+func (f *fakeCommitClient) GitserverClient() internalGitserver.Client {
+	return internalGitserver.NewMockClient()
 }
 
 func newFakeCommitClient(first *gitdomain.Commit, recents []*gitdomain.Commit) GitCommitClient {

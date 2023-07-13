@@ -49,10 +49,10 @@ func replace(ctx context.Context, content []byte, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "replace-in-place"}, nil
 }
 
-func (c *Replace) Run(ctx context.Context, r result.Match) (Result, error) {
+func (c *Replace) Run(ctx context.Context, gitserverClient gitserver.Client, r result.Match) (Result, error) {
 	switch m := r.(type) {
 	case *result.FileMatch:
-		content, err := gitserver.NewClientDeprecatedNeedsDB().ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
+		content, err := gitserverClient.ReadFile(ctx, authz.DefaultSubRepoPermsChecker, m.Repo.Name, m.CommitID, m.Path)
 		if err != nil {
 			return nil, err
 		}

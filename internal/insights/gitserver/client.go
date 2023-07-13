@@ -13,13 +13,13 @@ import (
 func NewGitCommitClient() *GitCommitClient {
 	return &GitCommitClient{
 		cachedFirstCommit: NewCachedGitFirstEverCommit(),
-		Gitclient:         gitserver.NewClientDeprecatedNeedsDB(),
+		gitserverClient:   gitserver.NewClientDeprecatedNeedsDB(),
 	}
 }
 
 type GitCommitClient struct {
 	cachedFirstCommit *CachedGitFirstEverCommit
-	Gitclient         gitserver.Client
+	gitserverClient   gitserver.Client
 }
 
 func (g *GitCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
@@ -30,5 +30,9 @@ func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoNa
 	if len(revision) > 0 {
 		options.Range = revision
 	}
-	return g.Gitclient.Commits(ctx, authz.DefaultSubRepoPermsChecker, repoName, options)
+	return g.gitserverClient.Commits(ctx, authz.DefaultSubRepoPermsChecker, repoName, options)
+}
+
+func (g *GitCommitClient) GitserverClient() gitserver.Client {
+	return g.gitserverClient
 }

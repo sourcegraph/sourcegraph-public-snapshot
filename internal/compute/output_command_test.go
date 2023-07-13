@@ -10,6 +10,7 @@ import (
 	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/comby"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -79,7 +80,7 @@ func commitMatch(content string) result.Match {
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
 		computeQuery, _ := Parse(q)
-		commandResult, err := computeQuery.Command.Run(context.Background(), m)
+		commandResult, err := computeQuery.Command.Run(context.Background(), gitserver.NewMockClient(), m)
 		if err != nil {
 			return err.Error()
 		}
