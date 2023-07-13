@@ -49,7 +49,7 @@ class VcsCommitsMetadataProvider {
     return commitMetadataConsumer.getCommitsContent();
   }
 
-  public static boolean isGitRepositoryAvailable(Project project) {
+  public static boolean isGitRepositoryAvailable(@NotNull Project project) {
     @NotNull Collection<GitRepository> repositories = GitUtil.getRepositories(project);
     for (GitRepository repository : repositories) {
       VirtualFile gitDir = repository.getRoot().findChild(".git");
