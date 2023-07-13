@@ -31,7 +31,7 @@ type DB interface {
 	Conf() ConfStore
 	EventLogs() EventLogStore
 	SecurityEventLogs() SecurityEventLogsStore
-	EmbeddingPluginFiles() EmbeddingPluginFileStore
+	EmbeddingPluginFiles() EmbeddingPluginFilesStore
 	EmbeddingPlugins() EmbeddingPluginStore
 	ExternalServices() ExternalServiceStore
 	FeatureFlags() FeatureFlagStore
@@ -165,8 +165,8 @@ func (d *db) Conf() ConfStore {
 	}
 }
 
-func (d *db) EmbeddingPluginFiles() EmbeddingPluginFileStore {
-	return EmbeddingPluginFilesWith(d.Store)
+func (d *db) EmbeddingPluginFiles() EmbeddingPluginFilesStore {
+	return EmbeddingPluginFilesWith(d.logger, d.Store)
 }
 
 func (d *db) EmbeddingPlugins() EmbeddingPluginStore {

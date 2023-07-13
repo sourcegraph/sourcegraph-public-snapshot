@@ -2058,13 +2058,6 @@ type PerforceChangelist struct {
 	ChangelistID int64
 }
 
-type EmbeddingPluginFile struct {
-	ID                int32
-	FilePath          string
-	Contents          []byte
-	EmbeddingPluginID int32
-}
-
 type EmbeddingPlugin struct {
 	ID                int32
 	Name              string
