@@ -2,9 +2,9 @@ package lsifstore
 
 import (
 	"context"
-	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
@@ -179,10 +179,18 @@ func TestInsertDocumentWithSymbols(t *testing.T) {
 
 func TestConstructSymbolLookupTable(t *testing.T) {
 	id := 0
-	symbolNames := []string{
-		"node pnpm pkg1 0.1.0 foo.bar.ident#",
-		"node pnpm pkg1 0.1.1 bar.baz.longerName#",
-		"node pnpm pkg2 0.1.2 baz.bonk.quux#",
+	testCases := []struct {
+		symbolName string
+		parts      []string
+	}{
+		{"node pnpm pkg1 0.1.0 foo.bar.ident#", []string{"node", "pnpm", "pkg1", "0.1.0", "", "foo.bar.ident#"}},
+		{"node pnpm pkg1 0.1.1 bar/`types.ts`/baz/longerName#", []string{"node", "pnpm", "pkg1", "0.1.1", "bar/`types.ts`/baz/", "longerName#"}},
+		{"node pnpm pkg2 0.1.2 baz.bonk.quux#", []string{"node", "pnpm", "pkg2", "0.1.2", "", "baz.bonk.quux#"}},
+	}
+
+	var symbolNames []string
+	for _, testCase := range testCases {
+		symbolNames = append(symbolNames, testCase.symbolName)
 	}
 
 	cache, traverser, err := constructSymbolLookupTable(symbolNames, func() int { v := id; id++; return v })
@@ -211,7 +219,7 @@ func TestConstructSymbolLookupTable(t *testing.T) {
 	// output match for everything we've inserted. If so we'll consider the tree
 	// to be "well-formed".
 
-	find := func(symbolName string) string {
+	find := func(symbolName string) []string {
 		var parts []string
 		row := rows[cache[symbolName].descriptorSuffixID]
 		for {
@@ -224,12 +232,12 @@ func TestConstructSymbolLookupTable(t *testing.T) {
 			row = rows[*row.parentID]
 		}
 
-		return strings.Join(parts, " ")
+		return parts
 	}
 
-	for _, symbolName := range symbolNames {
-		if got := find(symbolName); got != symbolName {
-			t.Errorf("failed to retrieve %q (got %q)", symbolName, got)
+	for _, testCase := range testCases {
+		if diff := cmp.Diff(testCase.parts, find(testCase.symbolName)); diff != "" {
+			t.Errorf("unexpected result (-want +got):\n%s", diff)
 		}
 	}
 }
