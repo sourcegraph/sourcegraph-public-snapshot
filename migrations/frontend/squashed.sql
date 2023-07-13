@@ -2201,6 +2201,23 @@ CREATE SEQUENCE discussion_threads_target_repo_id_seq
 
 ALTER SEQUENCE discussion_threads_target_repo_id_seq OWNED BY discussion_threads_target_repo.id;
 
+CREATE TABLE embedding_plugin_files (
+    id integer NOT NULL,
+    file_path text NOT NULL,
+    contents bytea NOT NULL,
+    embedding_plugin_id integer NOT NULL
+);
+
+CREATE SEQUENCE embedding_plugin_files_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE embedding_plugin_files_id_seq OWNED BY embedding_plugin_files.id;
+
 CREATE TABLE event_logs (
     id bigint NOT NULL,
     name text NOT NULL,
@@ -2579,6 +2596,44 @@ COMMENT ON COLUMN feature_flags.rollout IS 'Rollout only defined when flag_type 
 COMMENT ON CONSTRAINT required_bool_fields ON feature_flags IS 'Checks that bool_value is set IFF flag_type = bool';
 
 COMMENT ON CONSTRAINT required_rollout_fields ON feature_flags IS 'Checks that rollout is set IFF flag_type = rollout';
+
+CREATE TABLE file_embedding_job_stats (
+    job_id integer NOT NULL,
+    is_incremental boolean DEFAULT false NOT NULL,
+    files_total integer DEFAULT 0 NOT NULL,
+    files_embedded integer DEFAULT 0 NOT NULL,
+    chunks_embedded integer DEFAULT 0 NOT NULL,
+    files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
+    bytes_embedded integer DEFAULT 0 NOT NULL
+);
+
+CREATE TABLE file_embedding_jobs (
+    id integer NOT NULL,
+    state text DEFAULT 'queued'::text,
+    failure_message text,
+    queued_at timestamp with time zone DEFAULT now(),
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    last_heartbeat_at timestamp with time zone,
+    execution_logs json[],
+    worker_hostname text DEFAULT ''::text NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
+    archive_id text NOT NULL,
+    file_type text DEFAULT 'html'::text NOT NULL
+);
+
+CREATE SEQUENCE file_embedding_jobs_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE file_embedding_jobs_id_seq OWNED BY file_embedding_jobs.id;
 
 CREATE TABLE github_app_installs (
     id integer NOT NULL,
@@ -4978,6 +5033,8 @@ ALTER TABLE ONLY discussion_threads ALTER COLUMN id SET DEFAULT nextval('discuss
 
 ALTER TABLE ONLY discussion_threads_target_repo ALTER COLUMN id SET DEFAULT nextval('discussion_threads_target_repo_id_seq'::regclass);
 
+ALTER TABLE ONLY embedding_plugin_files ALTER COLUMN id SET DEFAULT nextval('embedding_plugin_files_id_seq'::regclass);
+
 ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_seq'::regclass);
 
 ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval('event_logs_export_allowlist_id_seq'::regclass);
@@ -4997,6 +5054,8 @@ ALTER TABLE ONLY executor_secrets ALTER COLUMN id SET DEFAULT nextval('executor_
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY external_services ALTER COLUMN id SET DEFAULT nextval('external_services_id_seq'::regclass);
+
+ALTER TABLE ONLY file_embedding_jobs ALTER COLUMN id SET DEFAULT nextval('file_embedding_jobs_id_seq'::regclass);
 
 ALTER TABLE ONLY github_app_installs ALTER COLUMN id SET DEFAULT nextval('github_app_installs_id_seq'::regclass);
 
@@ -5306,6 +5365,9 @@ ALTER TABLE ONLY discussion_threads
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY embedding_plugin_files
+    ADD CONSTRAINT embedding_plugin_files_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY event_logs_export_allowlist
     ADD CONSTRAINT event_logs_export_allowlist_pkey PRIMARY KEY (id);
 
@@ -5356,6 +5418,12 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flags
     ADD CONSTRAINT feature_flags_pkey PRIMARY KEY (flag_name);
+
+ALTER TABLE ONLY file_embedding_job_stats
+    ADD CONSTRAINT file_embedding_job_stats_pkey PRIMARY KEY (job_id);
+
+ALTER TABLE ONLY file_embedding_jobs
+    ADD CONSTRAINT file_embedding_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY github_app_installs
     ADD CONSTRAINT github_app_installs_pkey PRIMARY KEY (id);
@@ -6511,6 +6579,9 @@ ALTER TABLE ONLY feature_flag_overrides
 
 ALTER TABLE ONLY feature_flag_overrides
     ADD CONSTRAINT feature_flag_overrides_namespace_user_id_fkey FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY file_embedding_job_stats
+    ADD CONSTRAINT file_embedding_job_stats_job_id_fkey FOREIGN KEY (job_id) REFERENCES file_embedding_jobs(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY codeintel_initial_path_ranks_processed
     ADD CONSTRAINT fk_codeintel_initial_path_ranks FOREIGN KEY (codeintel_initial_path_ranks_id) REFERENCES codeintel_initial_path_ranks(id) ON DELETE CASCADE;

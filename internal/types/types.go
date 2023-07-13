@@ -2057,3 +2057,10 @@ type PerforceChangelist struct {
 	CommitSHA    api.CommitID
 	ChangelistID int64
 }
+
+type EmbeddingPluginFile struct {
+	ID                int32
+	FilePath          string
+	Contents          []byte
+	EmbeddingPluginID int32
+}
