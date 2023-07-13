@@ -182,23 +182,14 @@ func getFileFilterPathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) (in
 // is no previous revision, or if there's a problem downloading the index, then it returns a nil index. This means we
 // need to do a full (non-incremental) reindex.
 func (h *handler) getPreviousEmbeddingIndex(ctx context.Context, logger log.Logger, repo *types.Repo) (api.CommitID, *embeddings.RepoEmbeddingIndex) {
-	lastSuccessfulJob, err := h.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, repo.ID)
-	if err != nil {
-		logger.Info("No previous successful embeddings job found. Falling back to full index")
-		return "", nil
-	}
-
 	index, err := embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
 	if err != nil {
-		logger.Error("Error downloading previous embeddings index. Falling back to full index")
+		logger.Info("Could not find or could not download previous embeddings index. Falling back to full index", log.Error(err))
 		return "", nil
 	}
+	logger.Info("Found existing embeddings index. Attempting incremental index", log.String("old revision", string(index.Revision)))
 
-	logger.Info(
-		"Found previous successful embeddings job. Attempting incremental index",
-		log.String("old revision", string(lastSuccessfulJob.Revision)),
-	)
-	return lastSuccessfulJob.Revision, index
+	return index.Revision, index
 }
 
 type revisionFetcher struct {
