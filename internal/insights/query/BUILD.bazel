@@ -10,7 +10,7 @@ go_library(
         "streaming_query_executor.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/query",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//internal/api",
         "//internal/database",

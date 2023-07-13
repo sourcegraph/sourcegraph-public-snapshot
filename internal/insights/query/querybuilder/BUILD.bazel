@@ -9,7 +9,7 @@ go_library(
         "regexp.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
         "//internal/compute",
         "//internal/gitserver",
