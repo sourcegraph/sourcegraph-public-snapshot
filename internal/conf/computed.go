@@ -2,7 +2,7 @@ package conf
 
 import (
 	"context"
-	"hex"
+	"encoding/hex"
 	"log"
 	"strings"
 	"time"
