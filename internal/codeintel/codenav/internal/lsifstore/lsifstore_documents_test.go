@@ -34,7 +34,7 @@ func TestGetFullSCIPNameByDescriptor(t *testing.T) {
 			PackageManager:      "gomod",
 			PackageName:         "github.com/dave/jennifer",
 			PackageVersion:      "v1.5.0",
-			DescriptorNamespace: "github.com/dave/jennifer/jen/",
+			DescriptorNamespace: "`github.com/dave/jennifer/jen`/",
 			DescriptorSuffix:    "Statement#Add().",
 		},
 		{
@@ -42,7 +42,7 @@ func TestGetFullSCIPNameByDescriptor(t *testing.T) {
 			PackageManager:      "gomod",
 			PackageName:         "github.com/derision-test/go-mockgen",
 			PackageVersion:      "d061eb01e698",
-			DescriptorNamespace: "github.com/derision-test/go-mockgen/cmd/go-mockgen/",
+			DescriptorNamespace: "`github.com/derision-test/go-mockgen/cmd/go-mockgen`/",
 			DescriptorSuffix:    "yamlPayload#Force.",
 		},
 		{
@@ -50,7 +50,7 @@ func TestGetFullSCIPNameByDescriptor(t *testing.T) {
 			PackageManager:      "gomod",
 			PackageName:         "github.com/derision-test/go-mockgen",
 			PackageVersion:      "d061eb01e698",
-			DescriptorNamespace: "github.com/derision-test/go-mockgen/internal/mockgen/generation/",
+			DescriptorNamespace: "`github.com/derision-test/go-mockgen/internal/mockgen/generation`/",
 			DescriptorSuffix:    "generateMockStructFromConstructorCommon().",
 		},
 		{
@@ -58,7 +58,7 @@ func TestGetFullSCIPNameByDescriptor(t *testing.T) {
 			PackageManager:      "gomod",
 			PackageName:         "github.com/derision-test/go-mockgen",
 			PackageVersion:      "d061eb01e698",
-			DescriptorNamespace: "github.com/derision-test/go-mockgen/testutil/require/",
+			DescriptorNamespace: "`github.com/derision-test/go-mockgen/testutil/require`/",
 			DescriptorSuffix:    "CalledWith().",
 		},
 
@@ -70,7 +70,7 @@ func TestGetFullSCIPNameByDescriptor(t *testing.T) {
 			PackageManager:      "gomod",
 			PackageName:         "github.com/derision-test/go-mockgen",
 			PackageVersion:      "d061eb01e698",
-			DescriptorNamespace: "github.com/derision-test/go-mockgen/testutil/require/",
+			DescriptorNamespace: "`github.com/derision-test/go-mockgen/testutil/require`/",
 			DescriptorSuffix:    "NotCalledWith().",
 		},
 		{
@@ -78,7 +78,7 @@ func TestGetFullSCIPNameByDescriptor(t *testing.T) {
 			PackageManager:      "gomod",
 			PackageName:         "github.com/derision-test/go-mockgen",
 			PackageVersion:      "d061eb01e698",
-			DescriptorNamespace: "github.com/derision-test/go-mockgen/testutil/assert/",
+			DescriptorNamespace: "`github.com/derision-test/go-mockgen/testutil/assert`/",
 			DescriptorSuffix:    "CalledWith().",
 		},
 		{
@@ -86,7 +86,7 @@ func TestGetFullSCIPNameByDescriptor(t *testing.T) {
 			PackageManager:      "gomod",
 			PackageName:         "github.com/derision-test/go-mockgen",
 			PackageVersion:      "d061eb01e698",
-			DescriptorNamespace: "github.com/derision-test/go-mockgen/testutil/assert/",
+			DescriptorNamespace: "`github.com/derision-test/go-mockgen/testutil/assert`/",
 			DescriptorSuffix:    "NotCalledWith().",
 		},
 		{
@@ -94,7 +94,7 @@ func TestGetFullSCIPNameByDescriptor(t *testing.T) {
 			PackageManager:      "gomod",
 			PackageName:         "github.com/derision-test/go-mockgen",
 			PackageVersion:      "d061eb01e698",
-			DescriptorNamespace: "github.com/derision-test/go-mockgen/testutil/gomega/",
+			DescriptorNamespace: "`github.com/derision-test/go-mockgen/testutil/gomega`/",
 			DescriptorSuffix:    "BeCalledWith().",
 		},
 	}
