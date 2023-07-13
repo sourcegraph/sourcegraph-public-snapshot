@@ -108,7 +108,7 @@ func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
 	for _, symbolName := range symbolNames {
 		ex, err := symbols.NewExplodedSymbol(symbolName)
 		if err != nil {
-			return nil, err
+			continue
 		}
 
 		// TODO: BIT OF A HACK
