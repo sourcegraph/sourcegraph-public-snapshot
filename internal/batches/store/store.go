@@ -95,6 +95,7 @@ func NewWithClock(db database.DB, observationCtx *observation.Context, key encry
 	}
 }
 
+// DatabaseDB returns the database.DB that this Store was instantiated with.
 func (s *Store) DatabaseDB() database.DB {
 	return s.db
 }
@@ -110,12 +111,6 @@ func (s *Store) GitHubAppsStore() store.GitHubAppsStore {
 
 // Clock returns the clock used by the Store.
 func (s *Store) Clock() func() time.Time { return s.now }
-
-// DatabaseDB returns a database.DB with the same handle that this Store was
-// instantiated with.
-// It's here for legacy reason to pass the database.DB to a repos.Store while
-// repos.Store doesn't accept a basestore.TransactableHandle yet.
-// func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
 
 var _ basestore.ShareableStore = &Store{}
 

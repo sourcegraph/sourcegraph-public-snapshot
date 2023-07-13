@@ -113,7 +113,7 @@ type Sourcer interface {
 }
 
 // NewSourcer returns a new Sourcer to be used in Batch Changes.
-func NewSourcer(db database.DB, cf *httpcli.Factory) Sourcer {
+func NewSourcer(cf *httpcli.Factory) Sourcer {
 	return newSourcer(cf, loadBatchesSource)
 }
 
