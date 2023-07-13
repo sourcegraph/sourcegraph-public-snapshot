@@ -116,15 +116,15 @@ func initDB(observationCtx *observation.Context) (*sql.DB, error) {
 func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
 	logger := observationCtx.Logger
 
-	// Ready immediately
-	ready()
-
 	rawDB, err := initDB(observationCtx)
 	if err != nil {
 		return err
 	}
 
 	db := database.NewDB(observationCtx.Logger, rawDB)
+
+	// Ready as soon as the database connection has been established.
+	ready()
 
 	var cacheSizeBytes int64
 	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {

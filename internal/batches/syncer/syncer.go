@@ -486,7 +486,7 @@ func (s *changesetSyncer) SyncChangeset(ctx context.Context, id int64) error {
 	}
 
 	db := s.syncStore.DatabaseDB()
-	srcer := sources.NewSourcer(db, s.httpFactory)
+	srcer := sources.NewSourcer(s.httpFactory)
 	source, err := srcer.ForChangeset(ctx, s.syncStore, cs, sources.AuthenticationStrategyUserCredential)
 	if err != nil {
 		if errors.Is(err, store.ErrDeletedNamespace) {
