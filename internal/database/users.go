@@ -597,6 +597,7 @@ func (u *userStore) Update(ctx context.Context, id int32, update UserUpdate) (er
 }
 
 // Delete performs a soft-delete of the user and all resources associated with this user.
+// Permissions for soft-deleted users are removed from the user_repo_permissions table via a trigger.
 func (u *userStore) Delete(ctx context.Context, id int32) (err error) {
 	return u.DeleteList(ctx, []int32{id})
 }
