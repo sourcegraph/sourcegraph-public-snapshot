@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/run"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/batcheshelper/util"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/run"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/util"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"

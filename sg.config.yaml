@@ -604,7 +604,7 @@ commands:
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
     watch:
-      - enterprise/cmd/batcheshelper
+      - cmd/batcheshelper
       - lib/batches
     continueWatchOnExit: true
 
