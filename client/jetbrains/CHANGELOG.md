@@ -22,6 +22,8 @@
 
 ### Fixed
 
+- Downgraded connection errors for invalid or inaccessible enterprise instances to warnings [#54916](https://github.com/sourcegraph/sourcegraph/pull/54916)
+
 ### Security
 
 ## [3.0.4]
