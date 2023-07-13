@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -17,13 +18,13 @@ var (
 	maximumFileWithContentSizeBytes = env.MustGetInt("CODEINTEL_AUTOINDEXING_INFERENCE_MAXIMUM_FILE_WITH_CONTENT_SIZE_BYTES", 1024*1024, "The maximum size of the content of a single file requested by the inference script. Inference operations exceeding this limit will fail.")
 )
 
-func NewService() *Service {
+func NewService(db database.DB) *Service {
 	observationCtx := observation.NewContext(log.Scoped("inference.service", "inference service"))
 
 	return newService(
 		observationCtx,
 		luasandbox.NewService(),
-		NewDefaultGitService(nil),
+		NewDefaultGitService(db, nil),
 		ratelimit.NewInstrumentedLimiter("InferenceService", rate.NewLimiter(rate.Limit(gitserverRequestRateLimit), 1)),
 		maximumFilesWithContentCount,
 		maximumFileWithContentSizeBytes,

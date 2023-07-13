@@ -218,7 +218,7 @@ func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *da
 	opt := s.opt
 	opt.PaginationArgs = args
 
-	client := gitserver.NewClientDeprecatedNeedsDB()
+	client := gitserver.NewClient(s.db)
 	repos, err := backend.NewRepos(s.logger, s.db, client).List(ctx, opt)
 	if err != nil {
 		return nil, err
@@ -316,7 +316,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 		return nil, err
 	}
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
-	client := gitserver.NewClientDeprecatedNeedsDB()
+	client := gitserver.NewClient(r.db)
 	for i, repo := range repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break

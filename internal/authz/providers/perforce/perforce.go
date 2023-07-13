@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -62,7 +61,7 @@ type p4Execer interface {
 // host, user and password to talk to a Perforce Server that is the source of
 // truth for permissions. It assumes emails of Sourcegraph accounts match 1-1
 // with emails of Perforce Server users.
-func NewProvider(logger log.Logger, urn, host, user, password string, depots []extsvc.RepoID) *Provider {
+func NewProvider(logger log.Logger, p4Execer p4Execer, urn, host, user, password string, depots []extsvc.RepoID) *Provider {
 	baseURL, _ := url.Parse(host)
 	return &Provider{
 		logger:             logger,
@@ -72,7 +71,7 @@ func NewProvider(logger log.Logger, urn, host, user, password string, depots []e
 		host:               host,
 		user:               user,
 		password:           password,
-		p4Execer:           gitserver.NewClientDeprecatedNeedsDB(),
+		p4Execer:           p4Execer,
 		cachedGroupMembers: make(map[string][]string),
 	}
 }

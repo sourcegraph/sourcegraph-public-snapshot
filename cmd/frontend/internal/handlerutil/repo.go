@@ -37,7 +37,7 @@ func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[st
 // getRepoRev resolves the repository and commit specified in the route vars.
 func getRepoRev(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string, repoID api.RepoID) (api.RepoID, api.CommitID, error) {
 	repoRev := routevar.ToRepoRev(vars)
-	gsClient := gitserver.NewClientDeprecatedNeedsDB()
+	gsClient := gitserver.NewClient(db)
 	repo, err := backend.NewRepos(logger, db, gsClient).Get(ctx, repoID)
 	if err != nil {
 		return repoID, "", err

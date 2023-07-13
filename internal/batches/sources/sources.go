@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -74,6 +76,7 @@ const (
 )
 
 type SourcerStore interface {
+	DatabaseDB() database.DB
 	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
 	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
 	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
@@ -118,12 +121,14 @@ func NewSourcer(cf *httpcli.Factory) Sourcer {
 type changesetSourceFactory func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error)
 
 type sourcer struct {
+	logger    log.Logger
 	cf        *httpcli.Factory
 	newSource changesetSourceFactory
 }
 
 func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	return &sourcer{
+		logger:    log.Scoped("sourcer", "logger scoped to sources.sourcer"),
 		cf:        cf,
 		newSource: csf,
 	}
@@ -215,7 +220,7 @@ func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au au
 }
 
 func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
-	css, err := buildChangesetSource(ctx, cf, extSvc)
+	css, err := buildChangesetSource(ctx, tx, cf, extSvc)
 	if err != nil {
 		return nil, errors.Wrap(err, "building changeset source")
 	}
@@ -431,7 +436,7 @@ func loadExternalService(ctx context.Context, s database.ExternalServiceStore, o
 
 // buildChangesetSource builds a ChangesetSource for the given repo to load the
 // changeset state from.
-func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
+func buildChangesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
 	switch externalService.Kind {
 	case extsvc.KindGitHub:
 		return NewGitHubSource(ctx, externalService, cf)
@@ -446,7 +451,7 @@ func buildChangesetSource(ctx context.Context, cf *httpcli.Factory, externalServ
 	case extsvc.KindGerrit:
 		return NewGerritSource(ctx, externalService, cf)
 	case extsvc.KindPerforce:
-		return NewPerforceSource(ctx, externalService, cf)
+		return NewPerforceSource(ctx, gitserver.NewClient(tx.DatabaseDB()), externalService, cf)
 	default:
 		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
 	}
