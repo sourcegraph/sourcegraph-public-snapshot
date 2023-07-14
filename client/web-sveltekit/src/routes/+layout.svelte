@@ -92,7 +92,7 @@
     <meta name="description" content="Code search" />
 </svelte:head>
 
-<div class="app" class:overflowHidden={!$scrollAll} data-sveltekit-preload-data="off">
+<div class="app" class:overflowHidden={!$scrollAll}>
     <Header authenticatedUser={$user} />
 
     <main bind:this={main}>
