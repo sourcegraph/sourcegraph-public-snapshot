@@ -59,6 +59,7 @@ go_test(
     srcs = [
         "dot_test.go",
         "index_storage_test.go",
+        "quantize_test.go",
         "schedule_test.go",
         "similarity_search_test.go",
         "types_test.go",
