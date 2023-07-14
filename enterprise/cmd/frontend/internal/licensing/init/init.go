@@ -144,7 +144,7 @@ func Init(
 			UserCountValue:               info.UserCount,
 			ExpiresAtValue:               info.ExpiresAt,
 			IsValidValue:                 licensing.IsLicenseValid(),
-			LicenseInvalidityReasonValue: pointers.Ptr("No license key configured"),
+			LicenseInvalidityReasonValue: pointers.NonZeroPtr(licensing.GetLicenseInvalidReason()),
 		}, nil
 	}
 
