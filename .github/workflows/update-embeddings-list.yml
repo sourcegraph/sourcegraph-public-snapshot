@@ -31,7 +31,7 @@ jobs:
       - name: check output
         run: ls dev/update-embeddings-list
       - name: move into doc folder
-        run: mv embedded-repos.md doc/cody/embedded-repos.md
+        run: mv dev/update-embeddings-list/embedded-repos.md doc/cody/embedded-repos.md
       - name: check list in doc folder
         run: head -n 10 doc/cody/embedded-repos.md
       - name: Create Pull Request
