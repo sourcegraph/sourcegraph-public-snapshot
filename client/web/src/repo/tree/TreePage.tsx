@@ -136,7 +136,7 @@ export const TreePage: FC<Props> = ({
 
             return {
                 key: 'treePath',
-                className: 'flex-shrink-past-contents',
+                className: 'flex-shrink-past-contents flex-grow-1',
                 element: (
                     <FilePathBreadcrumbs
                         key="path"
