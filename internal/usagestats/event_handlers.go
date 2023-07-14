@@ -253,7 +253,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			DeviceID:               event.DeviceID,
 			InsertID:               event.InsertID,
 			DeviceSessionID:        event.DeviceSessionID,
-			Client:				    client,
+			Client:                 client,
 			BillingProductCategory: billingProductCategory,
 			BillingEventID:         billingEventID,
 			ConnectedSiteID:        connectedSiteID,
@@ -309,7 +309,7 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 			Referrer:               event.Referrer,
 			DeviceID:               event.DeviceID,
 			InsertID:               event.InsertID,
-			Client:				    event.Client,
+			Client:                 event.Client,
 			BillingProductCategory: event.BillingProductCategory,
 			BillingEventID:         event.BillingEventID,
 		})
