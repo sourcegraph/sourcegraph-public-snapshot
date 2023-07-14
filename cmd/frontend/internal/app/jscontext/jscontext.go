@@ -207,6 +207,8 @@ type JSContext struct {
 
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 
+	HashedLicenseKey string `json:"hashedLicenseKey"`
+
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
@@ -389,6 +391,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
 		LicenseInfo: licenseInfo,
+
+		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics()
 
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 
