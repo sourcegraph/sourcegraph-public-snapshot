@@ -204,6 +204,9 @@ type Event struct {
 	Referrer         *string
 	DeviceID         *string
 	InsertID         *string
+	Client *string
+	BillingProductCategory *string
+	BillingEventID *string
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
