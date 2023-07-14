@@ -40,7 +40,13 @@ func (c *Context) Clone(opts ...Opt) *Context {
 }
 
 // TestContext is a behaviorless Context usable for unit tests.
-var TestContext = Context{Logger: log.NoOp(), Registerer: metrics.NoOpRegisterer}
+var TestContext = Context{
+	Logger:     log.NoOp(),
+	Tracer:     oteltrace.NewNoopTracerProvider().Tracer("noop"),
+	Registerer: metrics.NoOpRegisterer,
+	// We do not set HoneyDataset since if we accidently have HONEYCOMB_TEAM
+	// set in a test run it will log to honeycomb.
+}
 
 // TestContextTB creates a Context similar to `TestContext` but with a logger scoped
 // to the `testing.TB`.
