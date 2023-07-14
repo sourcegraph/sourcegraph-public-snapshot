@@ -15,10 +15,13 @@ def go_stringer(src, typ, name, additional_args=[]):
         # result in absolute paths. To account for this, we resolve the
         # relative path returned by location to an absolute path.
         cmd = """\
+GO_ABS_PATH=`cd $$(dirname $(location @go_sdk//:bin/go)) && pwd`
+GO_SDK_ABS_PATH=`dirname $$GO_ABS_PATH`
+
 env \
-    PATH=$$(pwd)/external/go_sdk/bin \
+    PATH=$$GO_ABS_PATH \
     GOCACHE=$$(mktemp -d) \
-    GOROOT=$$(pwd)/external/go_sdk \
+    GOROOT=$$GO_SDK_ABS_PATH \
     $(location @org_golang_x_tools//cmd/stringer:stringer) \
         -output=$@ \
         -type={typ} \
