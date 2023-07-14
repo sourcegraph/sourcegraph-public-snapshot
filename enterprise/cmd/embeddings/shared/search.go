@@ -18,7 +18,7 @@ const (
 )
 
 type (
-	getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
+	getRepoEmbeddingIndexFn func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
 	getQueryEmbeddingFn     func(ctx context.Context, model string) ([]float32, string, error)
 )
 
@@ -57,7 +57,7 @@ func searchRepoEmbeddingIndexes(
 			return weaviate.Search(ctx, repoName, repoID, floatQuery, params.CodeResultsCount, params.TextResultsCount)
 		}
 
-		embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoName)
+		embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoID, repoName)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "getting repo embedding index for repo %q", repoName)
 		}
