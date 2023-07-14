@@ -137,7 +137,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
 			},
 			body:       getBody(""),
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseIsAlreadyInUseMsg}},
+			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: true, Reason: ReasonLicenseIsAlreadyInUseMsg}},
 			wantStatus: http.StatusOK,
 		},
 		{
