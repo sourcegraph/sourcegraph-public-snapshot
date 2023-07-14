@@ -26,6 +26,7 @@
 
 - Downgraded connection errors for invalid or inaccessible enterprise instances to warnings [#54916](https://github.com/sourcegraph/sourcegraph/pull/54916)
 - Try to log error stacktraces and recover from them, rather than re-throw the exception [#54917](https://github.com/sourcegraph/sourcegraph/pull/54917)
+- Show only one informative message in case of invalid access token [#54951](https://github.com/sourcegraph/sourcegraph/pull/54951)
 
 ### Security
 
