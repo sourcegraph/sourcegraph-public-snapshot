@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
@@ -14,8 +13,8 @@ func HasExternalAuthProvider(c conftypes.SiteConfigQuerier) bool {
 	return false
 }
 
-func GetDeduplicatedForksIndex() map[api.RepoName]struct{} {
-	index := map[api.RepoName]struct{}{}
+func GetDeduplicatedForksIndex() map[string]struct{} {
+	index := map[string]struct{}{}
 
 	repoConf := Get().Repositories
 	if repoConf == nil {
@@ -23,7 +22,7 @@ func GetDeduplicatedForksIndex() map[api.RepoName]struct{} {
 	}
 
 	for _, name := range repoConf.DeduplicateForks {
-		index[api.RepoName(name)] = struct{}{}
+		index[name] = struct{}{}
 	}
 
 	return index

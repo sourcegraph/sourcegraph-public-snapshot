@@ -498,7 +498,7 @@ func TestServer_addrForRepo(t *testing.T) {
 	db := database.NewMockDB()
 
 	gs := database.NewMockGitserverRepoStore()
-	gs.GetPoolRepoNameFunc.SetDefaultReturn(nil, nil, nil)
+	gs.GetPoolRepoURIFunc.SetDefaultReturn(nil, nil, nil)
 
 	db.GitserverReposFunc.SetDefaultReturn(gs)
 
@@ -538,7 +538,7 @@ func TestServer_addrForRepo(t *testing.T) {
 			expectedShardRepo2: shard1,
 		},
 		{
-			name:               "GetPoolRepoName returns an error",
+			name:               "GetPoolRepoURI returns an error",
 			error:              errors.New("mocked error"),
 			expectedShardRepo1: shard1,
 			expectedShardRepo2: shard2,
@@ -547,7 +547,7 @@ func TestServer_addrForRepo(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gs.GetPoolRepoNameFunc.SetDefaultReturn(tc.forkedRepoPoolID, tc.parentRepoName, tc.error)
+			gs.GetPoolRepoURIFunc.SetDefaultReturn(tc.forkedRepoPoolID, tc.parentRepoName, tc.error)
 
 			require.Equal(t, s.addrForRepo(api.RepoName(repo1), testAddrs), tc.expectedShardRepo1)
 			require.Equal(t, s.addrForRepo(api.RepoName(repo2), testAddrs), tc.expectedShardRepo2)

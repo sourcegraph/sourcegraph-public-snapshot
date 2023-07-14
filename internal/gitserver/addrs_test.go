@@ -226,3 +226,36 @@ func TestGitserverAddresses_getCachedRepoAddress(t *testing.T) {
 	ga.repoAddressCache.Write(repo, addr)
 	require.Equal(t, addr, ga.getCachedRepoAddress(repo))
 }
+
+func TestRepoAddressCache(t *testing.T) {
+	repoAddrCache := repoAddressCache{}
+
+	// Read an object that does not exist in the cache.
+	item := repoAddrCache.Read("foo")
+	require.Nil(t, item)
+
+	// Mock currentTime. Expect this when the value is read.
+	expectedFirstWrite := time.Date(2023, 01, 01, 23, 00, 00, 0, time.UTC)
+	currentTime = func() time.Time {
+		return expectedFirstWrite
+	}
+
+	// Now insert an item to the cache.
+	repoName := api.RepoName("github.com/foo/bar")
+	addr := "127.0.0.1:3080"
+	repoAddrCache.Write(repoName, addr)
+
+	// Increment the clock for a subsequent read.
+	currentTime = func() time.Time {
+		return time.Date(2023, 01, 01, 23, 30, 00, 1, time.UTC)
+	}
+
+	item = repoAddrCache.Read(repoName)
+	require.NotNil(t, item)
+	require.Equal(t, item.address, addr)
+	require.Equal(t, item.lastAccessed, expectedFirstWrite)
+
+	// No verify that the item in the cache has the updated timestamp after we Read the item.
+	item2 := repoAddrCache.cache[repoName]
+	require.Greater(t, item2.lastAccessed, item.lastAccessed)
+}
