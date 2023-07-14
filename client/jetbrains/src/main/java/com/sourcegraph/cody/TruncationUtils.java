@@ -25,6 +25,10 @@ public class TruncationUtils {
     return getChatMaxPromptTokenLength(project) - SOLUTION_TOKEN_LENGTH;
   }
 
+  /**
+   * Gets the chat model max tokens for the given project, if available. Otherwise falls back to
+   * CodyLLMConfiguration.DEFAULT_CHAT_MODEL_MAX_TOKENS.
+   */
   public static int getChatMaxPromptTokenLength(@NotNull Project project) {
     return CodyLLMConfiguration.getInstance(project).getChatModelMaxTokensForProject();
   }

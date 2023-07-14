@@ -31,6 +31,7 @@ public class CodyLLMConfiguration {
     if (chatModelMaxTokensCache.get() > 0) {
       return chatModelMaxTokensCache.get();
     } else {
+      // schedules a cache refresh and uses the default value if the cache was empty
       refreshCache();
       return DEFAULT_CHAT_MODEL_MAX_TOKENS;
     }
