@@ -207,26 +207,6 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		client, err := json.Marshal(event.Client)
-		if err != nil {
-			return nil, err
-		}
-		billingProductCategory, err := json.Marshal(event.BillingProductCategory)
-		if err != nil {
-			return nil, err
-		}
-		billingEventID, err := json.Marshal(event.BillingEventID)
-		if err != nil {
-			return nil, err
-		}
-		connectedSiteID, err := json.Marshal(event.ConnectedSiteID)
-		if err != nil {
-			return nil, err
-		}
-		hashedLicenseKey, err := json.Marshal(event.HashedLicenseKey)
-		if err != nil {
-			return nil, err
-		}
 
 		saferUrl, err := redactSensitiveInfoFromCloudURL(event.URL)
 		if err != nil {
@@ -253,11 +233,11 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			DeviceID:               event.DeviceID,
 			InsertID:               event.InsertID,
 			DeviceSessionID:        event.DeviceSessionID,
-			Client:                 client,
-			BillingProductCategory: billingProductCategory,
-			BillingEventID:         billingEventID,
-			ConnectedSiteID:        connectedSiteID,
-			HashedLicenseKey:       hashedLicenseKey,
+			Client:                 event.Client,
+			BillingProductCategory: event.BillingProductCategory,
+			BillingEventID:         event.BillingEventID,
+			ConnectedSiteID:        event.ConnectedSiteID,
+			HashedLicenseKey:       event.HashedLicenseKey,
 		})
 		if err != nil {
 			return nil, err
