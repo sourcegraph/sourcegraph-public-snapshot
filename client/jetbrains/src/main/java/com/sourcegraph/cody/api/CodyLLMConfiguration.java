@@ -13,7 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class CodyLLMConfiguration {
   public static Logger logger = Logger.getInstance(CodyLLMConfiguration.class);
-  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+  private final ExecutorService executor = Executors.newSingleThreadExecutor();
   public static final int DEFAULT_CHAT_MODEL_MAX_TOKENS = 7000;
   private final @NotNull Project project;
 
@@ -38,10 +38,7 @@ public class CodyLLMConfiguration {
   }
 
   public void refreshCache() {
-    this.scheduler.schedule(
-        () -> chatModelMaxTokensCache.set(fetchChatModelMaxTokens()),
-        20,
-        java.util.concurrent.TimeUnit.SECONDS);
+    this.executor.submit(() -> chatModelMaxTokensCache.set(fetchChatModelMaxTokens()));
   }
 
   private int fetchChatModelMaxTokens() {
