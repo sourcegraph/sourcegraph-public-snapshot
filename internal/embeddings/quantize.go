@@ -10,6 +10,9 @@ import "math"
 // quantization function yielded rankings where the average change in rank was
 // only 1.2%. 93 of the top 100 rows  were unchanged, and 950 of the top 1000
 // were unchanged.
+//
+// When buf is large enough to fit the output, it will be used instead of
+// an allocation.
 func Quantize(input []float32, buf []int8) []int8 {
 	output := buf
 	if len(input) > len(buf) {
