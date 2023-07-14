@@ -607,6 +607,11 @@ type GitserverRepo struct {
 	PoolRepoID *api.RepoID
 }
 
+type PoolRepo struct {
+	RepoName api.RepoName
+	RepoURI  string
+}
+
 // RepoCorruptionLog represents a corruption event that has been detected on a repo.
 type RepoCorruptionLog struct {
 	// When the corruption event was detected

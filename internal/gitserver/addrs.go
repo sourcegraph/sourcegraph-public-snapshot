@@ -1,11 +1,13 @@
 package gitserver
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/binary"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -17,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -33,8 +36,9 @@ var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 
 // NewGitserverAddressesFromConf fetches the current set of gitserver addresses
 // and pinned repos for gitserver.
-func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
+func NewGitserverAddressesFromConf(db database.DB, cfg *conf.Unified) GitserverAddresses {
 	addrs := GitserverAddresses{
+		db:        db,
 		Addresses: cfg.ServiceConnectionConfig.GitServers,
 	}
 	if cfg.ExperimentalFeatures != nil {
@@ -53,7 +57,7 @@ type TestClientSourceOptions struct {
 	Logger log.Logger
 }
 
-func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+func NewTestClientSource(t *testing.T, db database.DB, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
 	logger := logtest.Scoped(t)
 	opts := TestClientSourceOptions{
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
@@ -83,6 +87,7 @@ func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestCl
 	source := testGitserverConns{
 		conns: &GitserverConns{
 			GitserverAddresses: GitserverAddresses{
+				db:        db,
 				Addresses: addrs,
 			},
 			grpcConns: conns,
@@ -146,7 +151,66 @@ func (t *testConnAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
 var _ ClientSource = &testGitserverConns{}
 var _ AddressWithClient = &testConnAndErr{}
 
+// curentTime returns the current time and exists as a function to mock time.Now() in tests.
+var currentTime = func() time.Time { return time.Now() }
+
+type repoAddressCachedItem struct {
+	address string
+	// lastAccessed is the time when this item was last read and is used by the consumer of the cached
+	// item to decide whether they would like to treat it as an expired item or not.
+	lastAccessed time.Time
+}
+
+// repoAddressCache is is used to cache the gitserver shard address of a repo. It is safe for
+// concurrent access.
+//
+// It provides a mechanism to determine when the time an item was last accessed (read or written to)
+// but ultimately leaves the decision of invalidating the cache to the consumer.
+type repoAddressCache struct {
+	mu    sync.RWMutex
+	cache map[api.RepoName]repoAddressCachedItem
+}
+
+// Read returns the item from cache or else returns nil if it does not exist. If it exists, it also
+// updates the value of lastRead to the current time. This means, that if the item is already stored
+// in the cache it may look like (T is the timestamp):
+//
+// {address: "127.0.0.1:8080", lastRead: T}
+//
+// A call to Read at T+1 second will return the above item but also update the item in the cache to
+// then look like:
+//
+// {address: "127.0.0.1:8080", lastRead: T+1}
+func (rc *repoAddressCache) Read(name api.RepoName) *repoAddressCachedItem {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	if item, ok := rc.cache[name]; ok {
+		rc.cache[name] = repoAddressCachedItem{
+			address:      item.address,
+			lastAccessed: currentTime(),
+		}
+
+		return &item
+	}
+
+	return nil
+}
+
+// Write inserts a new repoAddressCachedItem in the cache for the given repo name. It will overwrite
+// the cache if an entry already exists in the cache.
+func (rc *repoAddressCache) Write(name api.RepoName, address string) {
+	rc.mu.Lock()
+	if rc.cache == nil {
+		rc.cache = make(map[api.RepoName]repoAddressCachedItem)
+	}
+
+	rc.cache[name] = repoAddressCachedItem{address: address, lastAccessed: currentTime()}
+	rc.mu.Unlock()
+}
+
 type GitserverAddresses struct {
+	db database.DB
 	// The current list of gitserver addresses
 	Addresses []string
 
@@ -155,21 +219,85 @@ type GitserverAddresses struct {
 	// not be moved.
 	PinnedServers map[string]string
 
-	DeduplicatedForksAddresses map[api.RepoName]string
+	repoAddressCache *repoAddressCache
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (g GitserverAddresses) AddrForRepo(userAgent string, repo api.RepoName) string {
+// TODO: Insert link to doc with decision tree.
+func (g GitserverAddresses) AddrForRepo(userAgent string, repoName api.RepoName) string {
+	// TODO: Check if this can be passed down as an arg instead.
+	logger := log.Scoped("GitserverAddresses.AddrForRepo", "logger to scoped to ").With(
+		log.String("repoName", string(repoName)),
+	)
+
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
-	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	rs := string(repo)
+	getRepoAddress := func(repoName api.RepoName) string {
+		repoName = protocol.NormalizeRepo(repoName) // in case the caller didn't already normalize it
+		name := string(repoName)
 
-	if pinnedAddr, ok := g.PinnedServers[rs]; ok {
-		return pinnedAddr
+		if pinnedAddr, ok := g.PinnedServers[name]; ok {
+			return pinnedAddr
+		}
+
+		return addrForKey(name, g.Addresses)
 	}
 
-	return addrForKey(rs, g.Addresses)
+	// TODO: propagate context from method call.
+	ctx := context.Background()
+
+	repoConf := conf.Get().Repositories
+	if repoConf != nil && len(repoConf.DeduplicateForks) != 0 {
+		if addr := g.getCachedRepoAddress(repoName); addr != "" {
+			return addr
+		}
+
+		repo, err := g.db.Repos().GetByName(ctx, repoName)
+		// The repo is not a fork and is also not in a list of deduplicated repos, so we do not need
+		// to look up a pool repo for this.
+		if err != nil || !repo.Fork {
+			return g.withUpdateCache(repoName, getRepoAddress(repoName))
+		}
+
+		poolRepo, err := g.db.GitserverRepos().GetPoolRepo(ctx, repo.Name)
+		if err != nil {
+			logger.Warn("failed to get pool repo (if fork deduplication is enabled this repo may not be colocated on the same shard as the parent / other forks)", log.Error(err))
+			return g.withUpdateCache(repoName, getRepoAddress(repoName))
+		}
+
+		if poolRepo != nil {
+			return g.withUpdateCache(poolRepo.RepoName, getRepoAddress(poolRepo.RepoName))
+		}
+	}
+
+	return getRepoAddress(repoName)
+}
+
+func (g GitserverAddresses) withUpdateCache(repoName api.RepoName, address string) string {
+	if g.repoAddressCache == nil {
+		g.repoAddressCache = &repoAddressCache{cache: make(map[api.RepoName]repoAddressCachedItem)}
+	}
+
+	g.repoAddressCache.Write(repoName, address)
+	return address
+}
+
+func (g GitserverAddresses) getCachedRepoAddress(repoName api.RepoName) string {
+	if g.repoAddressCache == nil {
+		g.repoAddressCache = &repoAddressCache{cache: make(map[api.RepoName]repoAddressCachedItem)}
+		return ""
+	}
+
+	item := g.repoAddressCache.Read(repoName)
+	if item == nil {
+		return ""
+	}
+
+	if time.Now().Sub(item.lastAccessed) > time.Duration(15*time.Minute) {
+		return ""
+	}
+
+	return item.address
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -181,6 +309,7 @@ func addrForKey(key string, addrs []string) string {
 }
 
 type GitserverConns struct {
+	db database.DB
 	GitserverAddresses
 	// invariant: there is one conn for every gitserver address
 	grpcConns map[string]connAndErr
@@ -216,6 +345,7 @@ func (c *connAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
 }
 
 type atomicGitServerConns struct {
+	db        database.DB
 	conns     atomic.Pointer[GitserverConns]
 	watchOnce sync.Once
 }
@@ -265,7 +395,8 @@ func (a *atomicGitServerConns) initOnce() {
 
 func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	after := GitserverConns{
-		GitserverAddresses: NewGitserverAddressesFromConf(cfg),
+		db:                 a.db,
+		GitserverAddresses: NewGitserverAddressesFromConf(a.db, cfg),
 		grpcConns:          nil, // to be filled in
 	}
 

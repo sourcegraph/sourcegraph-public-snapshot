@@ -13,6 +13,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -51,7 +52,6 @@ var (
 	clientFactory  = httpcli.NewInternalClientFactory("gitserver")
 	defaultDoer, _ = clientFactory.Doer()
 	defaultLimiter = limiter.New(500)
-	conns          = &atomicGitServerConns{}
 )
 
 var ClientMocks, emptyClientMocks struct {
@@ -59,6 +59,20 @@ var ClientMocks, emptyClientMocks struct {
 	Archive                 func(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error)
 	LocalGitserver          bool
 	LocalGitCommandReposDir string
+}
+
+// These must not be used anywhere else.
+var initConnsOnce sync.Once
+
+// NOTE: Do not use this directly. Use getAtomicGitServerConns.
+var conns *atomicGitServerConns
+
+func getAtomicGitServerConns(log sglog.Logger, db database.DB) *atomicGitServerConns {
+	initConnsOnce.Do(func() {
+		conns = &atomicGitServerConns{db: db}
+	})
+
+	return conns
 }
 
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
@@ -83,9 +97,10 @@ type ClientSource interface {
 }
 
 // NewClient returns a new gitserver.Client.
-func NewClient(_ database.DB) Client {
+func NewClient(db database.DB) Client {
+	logger := sglog.Scoped("NewClient", "returns a new gitserver.Client")
 	return &clientImplementor{
-		logger:      sglog.Scoped("NewClient", "returns a new gitserver.Client"),
+		logger:      logger,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for userAgent. This should effectively identify
@@ -93,7 +108,7 @@ func NewClient(_ database.DB) Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: conns,
+		clientSource: getAtomicGitServerConns(logger, db),
 	}
 }
 

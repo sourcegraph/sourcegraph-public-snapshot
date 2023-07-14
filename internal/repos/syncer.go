@@ -50,7 +50,7 @@ type Syncer struct {
 	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
 	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
 
-	DeduplicatedForksIndex *types.ThreadsafeRepoNameCache
+	DeduplicatedForksIndex *types.RepoURICache
 }
 
 // RunOptions contains options customizing Run behaviour.
@@ -856,17 +856,13 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 // 1. Get the repo_id of the parent repo
 // 2. Insert that as the pool_id into gitserver_repos table
 func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, svc *types.ExternalService, repo *types.Repo) error {
-	logger := log.Scoped("Syncer.maybePrepareForDeduplication", "").With(log.String("repo", string(repo.Name)))
-
 	// Nothing special needs to be done for non-forks.
 	if !repo.Fork {
-		logger.Warn("not a fork")
 		return nil
 	}
 
 	metadata, ok := repo.Metadata.(*github.Repository)
 	if !ok {
-		logger.Warn("not a github repository")
 		return errors.New("only GitHub repositories are supported for deduplication")
 	}
 
@@ -874,18 +870,26 @@ func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, svc *types.Ex
 		BaseRepository: metadata.Parent,
 	}
 
-	// HACK: The current API is not making it easy to retrieve the "originalHostname" here. Revisit
-	// and find a better way.
-	parentRepoName := reposource.GitHubRepoName("", "github.com", parentRepo.NameWithOwner)
+	// FIXME: Breaks for repositoryPathPattern.
 
-	if !s.DeduplicatedForksIndex.Contains(parentRepoName) {
+	// HACK: The current API is not making it easy to retrieve the "originalHostname" here. Revisit
+	// and find a better way. But we only support "github.com" repositories for the time being so
+	// it's okay for now until this changes.
+	//
+	// NOTE: GitHubRepoName without an empty repositoryPathPattern is the repo URI. We use the repo
+	// URI since we want users to add the repo names as they are on their code host and not the
+	// representation that we store in Sourcegraph. If a repositoryPathPattern is set on the code
+	// host config, the repo name may be different than the URI. But the URI will always be the name
+	// of the repo as it appears on the code host.
+
+	// TODO: Decrypt and read repositoryPathPattern from config svc.Config.
+	poolRepoName := reposource.GitHubRepoName("", "github.com", parentRepo.NameWithOwner)
+
+	if !s.DeduplicatedForksIndex.Contains(string(poolRepoName)) {
 		return nil
 	}
 
-	// HACK: Same hack as above. FIXME.
-	// forkedRepoName := reposource.GitHubRepoName("", "github.com", repo.Name)
-
-	return s.Store.GitserverReposStore().UpdatePoolRepoID(ctx, parentRepoName, repo.Name)
+	return s.Store.GitserverReposStore().UpdatePoolRepoID(ctx, poolRepoName, repo.Name)
 }
 
 func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen map[api.RepoID]struct{}) (int, error) {

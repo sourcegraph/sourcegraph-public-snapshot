@@ -72,9 +72,11 @@ type GitserverRepoStore interface {
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
 	SetCloningProgress(context.Context, api.RepoName, string) error
 
+	// UpdatePoolRepoID updates the pool_repo_id column of a repo.
 	UpdatePoolRepoID(context.Context, api.RepoName, api.RepoName) error
 
-	GetPoolRepoName(context.Context, api.RepoName) (*api.RepoName, error)
+	// GetPoolRepo will return the PoolRepo of a repo matching the repo name if it exists.
+	GetPoolRepo(context.Context, api.RepoName) (*types.PoolRepo, error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -126,6 +128,7 @@ const updatePoolRepoIDQueryFmtStr = `
 UPDATE
 	gitserver_repos
 SET
+    -- set pool_repo_id of the repo that matches repoName with the repo id of the pool repo obtained in the nested query below
 	pool_repo_id = (
 		SELECT
 			id
@@ -133,25 +136,29 @@ SET
 			repo
 			JOIN gitserver_repos ON id = repo_id
 		WHERE
-			NAME = %s::citext)
+			name = %s::citext)
 WHERE
+    -- find the repo that matches the poolRepoName
 	repo_id = (
 		SELECT
 			id
 		FROM
 			repo
 		WHERE
-			NAME = %s::citext)
+			name = %s::citext)
 `
 
+// UpdatePoolRepoID updates the repo matching `repoName` with the repo ID of the repo matching
+// `poolRepoName`.
 func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) error {
-	err := s.Exec(ctx, sqlf.Sprintf(updatePoolRepoIDQueryFmtStr, string(poolRepoName), repoName))
+	err := s.Exec(ctx, sqlf.Sprintf(updatePoolRepoIDQueryFmtStr, poolRepoName, repoName))
 	return errors.Wrap(err, "UpdatePoolRepoID: failed to add pool_repo_id to gitserver_repos row")
 }
 
-const getPoolRepoNameQueryFmtStr = `
+const getPoolRepoQueryFmtStr = `
 SELECT
-	name
+	name,
+	uri
 FROM
 	repo
 	JOIN gitserver_repos AS gs ON id = gs.repo_id
@@ -163,23 +170,21 @@ WHERE
 			repo
 			JOIN gitserver_repos AS gs ON id = gs.repo_id
 		WHERE
-			NAME = %s);
+			name = %s);
 `
 
-func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.RepoName) (*api.RepoName, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoNameQueryFmtStr, string(repoName)))
+func (s *gitserverRepoStore) GetPoolRepo(ctx context.Context, repoURI api.RepoName) (*types.PoolRepo, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoURI))
 
-	var parentRepoName api.RepoName
-
-	err := row.Scan(&parentRepoName)
-	if err != nil {
+	var poolRepo types.PoolRepo
+	if err := row.Scan(&poolRepo.RepoName, &poolRepo.RepoURI); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "GetPoolRepoName: failed to scan")
+		return nil, errors.Wrap(err, "GetPoolRepoURI: failed to scan")
 	}
 
-	return &parentRepoName, errors.Wrap(err, "GetPoolRepoName: failed to scan")
+	return &poolRepo, nil
 }
 
 const updateGitserverReposQueryFmtstr = `
@@ -382,7 +387,7 @@ SELECT
 	gr.corrupted_at,
 	gr.corruption_logs,
 	gr.pool_repo_id,
-	go.last_output,
+	go.last_output
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
 LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id

@@ -1199,7 +1199,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 }
 
-func TestGetPoolRepoName(t *testing.T) {
+func TestGetPoolRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1210,38 +1210,43 @@ func TestGetPoolRepoName(t *testing.T) {
 
 	// Create one test poolRepo
 	poolRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
+		Name:          "internal.github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
 	})
 
 	// Create one test repo
 	forkedRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/forked/repo",
+		Name:          "internal.github.com/forked/repo",
+		URI:           "github.com/forked/repo",
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
 	})
 
 	// A relationship between pool repo and forked repo has not been established yet.
-	poolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+	gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, forkedRepo.Name)
 	require.NoError(t, err)
-	require.Nil(t, poolRepoName)
+	require.Nil(t, gotPoolRepo)
 
 	err = db.GitserverRepos().UpdatePoolRepoID(ctx, poolRepo.Name, forkedRepo.Name)
 	require.NoError(t, err)
 
 	// A relationship between pool repo and forked repo has now been established.
-	poolRepoName, err = db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+	gotPoolRepo, err = db.GitserverRepos().GetPoolRepo(ctx, forkedRepo.Name)
 	require.NoError(t, err)
-	require.NotNil(t, poolRepoName)
+	require.NotNil(t, gotPoolRepo)
 
-	require.Equal(t, poolRepo.Name, *poolRepoName)
+	wantPoolRepo := types.PoolRepo{RepoName: poolRepo.Name, RepoURI: poolRepo.URI}
+	if diff := cmp.Diff(wantPoolRepo, *gotPoolRepo); diff != "" {
+		t.Fatalf("mismatched pool repo got, (-want, +got):\n%s", diff)
+	}
 }
 
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
-	repo := &types.Repo{Name: payload.Name}
+	repo := &types.Repo{Name: payload.Name, URI: payload.URI}
 
 	// Create Repo
 	err := db.Repos().Create(ctx, repo)
@@ -1276,6 +1281,8 @@ type createTestRepoPayload struct {
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
+
+	URI string
 
 	// Gitserver related properties
 
