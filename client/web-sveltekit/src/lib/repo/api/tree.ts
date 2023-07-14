@@ -1,3 +1,5 @@
+import { dirname } from 'path'
+
 import { memoize } from 'lodash'
 import type { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -132,8 +134,8 @@ export interface FileTreeLoader {
         commitID: string
         revision: string
         filePath: string
-        parent?: TreeProvider<FileTreeNodeValue>
-    }): Promise<TreeProvider<FileTreeNodeValue>>
+        parent?: FileTreeProvider
+    }): Promise<FileTreeProvider>
 }
 
 interface FileTreeProviderArgs {
@@ -165,7 +167,7 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
         return [this.args.root, ...this.args.values]
     }
 
-    async fetchChildren(entry: FileTreeNodeValue): Promise<TreeProvider<FileTreeNodeValue>> {
+    async fetchChildren(entry: FileTreeNodeValue): Promise<FileTreeProvider> {
         if (!this.isExpandable(entry)) {
             // This should never happen because the caller should only call fetchChildren
             // for entries where isExpandable returns true
@@ -178,6 +180,16 @@ export class FileTreeProvider implements TreeProvider<FileTreeNodeValue> {
             revision: this.args.revision,
             filePath: entry.path,
             parent: this,
+        })
+    }
+
+    async fetchParent(): Promise<FileTreeProvider> {
+        const parentPath = dirname(this.args.root.path)
+        return this.args.loader({
+            repoName: this.args.repoName,
+            commitID: this.args.commitID,
+            revision: this.args.revision,
+            filePath: parentPath,
         })
     }
 

@@ -26,6 +26,10 @@
 
     export let treeProvider: TreeProvider<N>
 
+    export function scrollSelectedItemIntoView() {
+        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: 'center' })
+    }
+
     const dispatch = createEventDispatcher<{ select: HTMLElement }>()
 
     let treeState = getTreeContext()
@@ -45,7 +49,7 @@
             element.focus()
             // We want to scroll actual label into view, not the whole treeitem (including subtree), to
             // prevent the list from jumping.
-            element.querySelector('.label')?.scrollIntoView({ block: 'nearest' })
+            element.querySelector('[data-treeitem-label]')?.scrollIntoView({ block: 'nearest' })
         }
     }
 

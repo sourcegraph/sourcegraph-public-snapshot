@@ -5,12 +5,13 @@
 
     import type { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 
-    import { goto } from '$app/navigation'
+    import { afterNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
     import { type FileTreeProvider, NODE_LIMIT } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
+    import { onMount, tick } from 'svelte'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
@@ -29,6 +30,31 @@
     }
 
     /**
+     * Navigates to the tree item on selection.
+     */
+    function handleSelect(element: HTMLElement | null): void {
+        if (element) {
+            const anchor =
+                element.tagName.toLowerCase() === 'a'
+                    ? (element as HTMLAnchorElement)
+                    : element.querySelector<HTMLAnchorElement>('a')
+            if (anchor) {
+                if (anchor.dataset.goUp) {
+                    let currentTreeProvider = treeProvider
+                    treeProvider.fetchParent().then(parentTreeProvider => {
+                        if (treeProvider === currentTreeProvider) {
+                            treeProvider = parentTreeProvider
+                        }
+                    })
+
+                } else {
+                    goto(anchor.href, { keepFocus: true })
+                }
+            }
+        }
+    }
+
+    /**
      * For a given path (e.g. foo/bar/baz) returns a list of ancestor paths (e.g.
      * [foo, foo/bar]
      */
@@ -39,34 +65,11 @@
             .map((_, index, segements) => segements.slice(0, index + 1).join('/'))
     }
 
+
     /**
-     * Navigates to the tree item on selection.
-     */
-    function handleSelect(element: HTMLElement | null): void {
-        if (element) {
-            const anchor =
-                element.tagName.toLowerCase() === 'a'
-                    ? (element as HTMLAnchorElement)
-                    : element.querySelector<HTMLAnchorElement>('a')
-            if (anchor) {
-                goto(anchor.href, { keepFocus: true })
-            }
-        }
-    }
-
-    let repoName = treeProvider.getRepoName()
-    // Since context is only set once when the component is created
-    // we need to dynamically sync any changes to the corresponding
-    // file tree state store
-    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(repoName))
-    // Propagating the tree state via context yielded better performance than passing
-    // it via props.
-    setTreeContext(treeState)
-
-    $: repoName = treeProvider.getRepoName()
-    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
-
-    function selectTreeItem(path: string) {
+    * Takes a file path and makes all intermediate nodes as open, and the last node as selected.
+    */
+    async function markSelected(path: string) {
         const nodesCopy = new Set($treeState.expandedNodes)
 
         for (const ancestor of getAncestorPaths(path)) {
@@ -77,15 +80,40 @@
         $treeState = { focused: path, selected: path, expandedNodes: nodesCopy }
     }
 
-    // Update open and selected nodes when the path changes.
-    $: selectTreeItem(selectedPath)
+    function scrollSelectedItemIntoView() {
+        treeView.scrollSelectedItemIntoView()
+    }
+
+
+    let treeView: TreeView<FileTreeProvider>
+    let repoName = treeProvider.getRepoName()
+    // Since context is only set once when the component is created
+    // we need to dynamically sync any changes to the corresponding
+    // file tree state store
+    const treeState = createForwardStore(getSidebarFileTreeStateForRepo(repoName))
+    // Propagating the tree state via context yielded better performance than passing
+    // it via props.
+    setTreeContext(treeState)
 
     $: treeRoot = treeProvider.getRoot()
+    $: repoName = treeProvider.getRepoName()
+    $: treeState.updateStore(getSidebarFileTreeStateForRepo(repoName))
+    // Update open and selected nodes when the path changes.
+    $: markSelected(selectedPath)
+
+    // Always scroll the selected item into view when we navigate to a different one.
+    // NOTE: At the moment this won't always work because the file tree might not be
+    // fully loaded after navigation.
+    afterNavigate(scrollSelectedItemIntoView)
+    // The documentation says afterNavigate will also run on mount but
+    // that doesn't seem to be the case
+    onMount(scrollSelectedItemIntoView)
 </script>
 
 <div tabindex="-1">
-    <TreeView {treeProvider} on:select={event => handleSelect(event.detail)}>
+    <TreeView bind:this={treeView} {treeProvider} on:select={event => handleSelect(event.detail)}>
         <svelte:fragment let:entry let:expanded>
+            {@const isRoot = entry === treeRoot}
             {#if entry === NODE_LIMIT}
                 <!-- todo: create alert component -->
                 <span class="note">Full list is too long to display. Use search to find a specific file.</span>
@@ -94,9 +122,9 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <a href={entry.url ?? ''} on:click|preventDefault={() => {}} tabindex={-1}>
+                <a href={entry.url ?? ''} on:click|preventDefault={() => {}} tabindex={-1} data-go-up={isRoot ? true : undefined}>
                     <Icon svgPath={getIconPath(entry, expanded)} inline />
-                    {entry === treeRoot ? '..' : entry.name}
+                    {isRoot ? '..' : entry.name}
                 </a>
             {/if}
         </svelte:fragment>

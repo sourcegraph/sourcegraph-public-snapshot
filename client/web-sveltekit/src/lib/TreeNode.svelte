@@ -32,28 +32,24 @@
             )
         }
     }
-
-    function scrollIntoView(node: HTMLElement, scroll: boolean) {
-        if (scroll) {
-            node.scrollIntoView({ block: 'nearest' })
-        }
-    }
 </script>
 
 <li
     class="treeitem"
     class:selectable
     class:selected
-    use:scrollIntoView={selected}
     role="treeitem"
     aria-selected={selectable ? selected : undefined}
     aria-expanded={expandable ? expanded : undefined}
     {tabindex}
     data-node-id={nodeID}
 >
-    <span class="label">
+    <span class="label" data-treeitem-label>
         <!-- hide the open/close button to preserve alignment with expandable entries -->
         <span class:hidden={!expandable}>
+            <!-- We have to stop even propagation because the tree root listens for click events for
+                 selecting items. We don't want the item to be selected when the open/close button is pressed.
+             -->
             <Button
                 variant="icon"
                 on:click={event => {
