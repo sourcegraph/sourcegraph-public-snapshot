@@ -6,12 +6,27 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
+func (s *schemaResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	user, err := auth.CurrentUser(ctx, s.db)
+	if err != nil {
+		return nil, err
+	}
+
+	var userID *int32
+	if !user.SiteAdmin {
+		userID = &user.ID
+	}
+
+	return s.CodeMonitorsResolver.Monitors(ctx, userID, args)
+}
+
 type CodeMonitorsResolver interface {
 	// Query
-	Monitors(ctx context.Context, userID int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
+	Monitors(ctx context.Context, userID *int32, args *ListMonitorsArgs) (MonitorConnectionResolver, error)
 	MonitorByID(ctx context.Context, id graphql.ID) (MonitorResolver, error)
 
 	// Mutations

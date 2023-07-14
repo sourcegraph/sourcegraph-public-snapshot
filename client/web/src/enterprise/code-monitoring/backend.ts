@@ -12,6 +12,8 @@ import {
     DeleteCodeMonitorVariables,
     FetchCodeMonitorResult,
     FetchCodeMonitorVariables,
+    ListAllCodeMonitorsResult,
+    ListAllCodeMonitorsVariables,
     ListCodeMonitors,
     ListUserCodeMonitorsResult,
     ListUserCodeMonitorsVariables,
@@ -79,6 +81,11 @@ const CodeMonitorFragment = gql`
                 ...MonitorWebhookFields
                 ...MonitorSlackWebhookFields
             }
+        }
+        owner {
+            id
+            namespaceName
+            url
         }
     }
     ${MonitorEmailFragment}
@@ -163,6 +170,26 @@ export const fetchUserCodeMonitors = ({
 
             return data.node.monitors
         })
+    )
+}
+
+export const fetchCodeMonitors = ({ first, after }: ListAllCodeMonitorsVariables): Observable<ListCodeMonitors> => {
+    const query = gql`
+        query ListAllCodeMonitors($first: Int!, $after: String) {
+            monitors(first: $first, after: $after) {
+                ...ListCodeMonitors
+            }
+        }
+
+        ${ListCodeMonitorsFragment}
+    `
+
+    return requestGraphQL<ListAllCodeMonitorsResult, ListAllCodeMonitorsVariables>(query, {
+        first,
+        after,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.monitors)
     )
 }
 

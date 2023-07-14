@@ -205,12 +205,18 @@ func (s *codeMonitorStore) GetMonitor(ctx context.Context, monitorID int64) (*Mo
 const totalCountMonitorsFmtStr = `
 SELECT COUNT(*)
 FROM cm_monitors
-WHERE namespace_user_id = %s;
+%s;
 `
 
-func (s *codeMonitorStore) CountMonitors(ctx context.Context, userID int32) (int32, error) {
+func (s *codeMonitorStore) CountMonitors(ctx context.Context, userID *int32) (int32, error) {
 	var count int32
-	err := s.QueryRow(ctx, sqlf.Sprintf(totalCountMonitorsFmtStr, userID)).Scan(&count)
+	var query *sqlf.Query
+	if userID != nil {
+		query = sqlf.Sprintf(totalCountMonitorsFmtStr, sqlf.Sprintf("WHERE namespace_user_id = %s", *userID))
+	} else {
+		query = sqlf.Sprintf(totalCountMonitorsFmtStr, sqlf.Sprintf(""))
+	}
+	err := s.QueryRow(ctx, query).Scan(&count)
 	return count, err
 }
 
