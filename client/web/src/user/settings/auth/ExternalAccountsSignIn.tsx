@@ -41,10 +41,6 @@ const getNormalizedAccount = (
         return null
     }
 
-    const providerAccounts = accounts[authProvider.serviceID]
-    if (!providerAccounts) {
-        return null
-    }
     const { icon, title: name } = defaultExternalAccounts[authProvider.serviceType]
 
     const normalizedAccount: NormalizedExternalAccount = {
@@ -52,7 +48,9 @@ const getNormalizedAccount = (
         name,
     }
 
-    const providerAccount = providerAccounts.find(acc => acc.clientID === authProvider.clientID)
+    const providerAccounts = accounts[authProvider.serviceID]
+
+    const providerAccount = providerAccounts?.find(acc => acc.clientID === authProvider.clientID)
     if (providerAccount?.publicAccountData) {
         normalizedAccount.external = {
             id: providerAccount.id,
