@@ -6,12 +6,14 @@
     import type { PageData } from './$types'
     import FileDiff from './FileDiff.svelte'
 
+    type Deferred = PageData['deferred']
+
     export let data: PageData
 
-    const { pending: commitPending, value: commit, set: setCommit } = createPromiseStore<typeof data.commit.deferred>()
-    $: setCommit(data.commit.deferred)
-    const { pending: diffPending, value: diff, set: setDiff } = createPromiseStore<typeof data.diff.deferred>()
-    $: setDiff(data.diff.deferred)
+    const { pending: commitPending, value: commit, set: setCommit } = createPromiseStore<Deferred['commit']>()
+    $: setCommit(data.deferred.commit)
+    const { pending: diffPending, value: diff, set: setDiff } = createPromiseStore<Deferred['diff']>()
+    $: setDiff(data.deferred.diff)
     $: pending = $diffPending || $commitPending
 </script>
 

@@ -1,8 +1,15 @@
+import { join } from 'path'
+
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig } from 'vite'
 
 const config = defineConfig(({ mode }) => ({
     plugins: [sveltekit()],
+    resolve: {
+        alias: {
+            $testdata: join(__dirname, 'src/testdata.ts'),
+        },
+    },
     define:
         mode === 'test'
             ? {}

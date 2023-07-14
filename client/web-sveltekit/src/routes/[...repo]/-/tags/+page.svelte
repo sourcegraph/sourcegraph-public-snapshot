@@ -7,8 +7,8 @@
 
     export let data: PageData
 
-    const { pending, value: tags, set } = createPromiseStore<typeof data.tags.deferred>()
-    $: set(data.tags.deferred)
+    const { pending, value: tags, set } = createPromiseStore<PageData['deferred']['tags']>()
+    $: set(data.deferred.tags)
 
     $: nodes = $tags?.nodes
     $: total = $tags?.totalCount

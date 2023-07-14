@@ -6,7 +6,7 @@
 </script>
 
 <section>
-    <div class="left" style:min-width={width} style:max-width={width}>Left content</div>
+    <div class="left match-highlight" style:min-width={width} style:max-width={width}>Left content</div>
     <Separator {currentPosition} />
     <div class="right">Right content</div>
 </section>
