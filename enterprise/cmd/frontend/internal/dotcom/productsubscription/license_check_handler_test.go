@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	elicensing "github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -137,7 +137,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
 			},
 			body:       getBody(""),
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: "license is already in use"}},
+			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: true, Reason: ReasonLicenseIsAlreadyInUseMsg}},
 			wantStatus: http.StatusOK,
 		},
 		{
