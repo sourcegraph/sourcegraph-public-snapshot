@@ -1,12 +1,15 @@
 import { sveltekit } from '@sveltejs/kit/vite'
-import type { UserConfig } from 'vite'
+import { defineConfig } from 'vite'
 
-const config: UserConfig = {
+const config = defineConfig(({ mode }) => ({
     plugins: [sveltekit()],
-    define: {
-        'process.platform': '"browser"',
-        'process.env': '{}',
-    },
+    define:
+        mode === 'test'
+            ? {}
+            : {
+                  'process.platform': '"browser"',
+                  'process.env': '{}',
+              },
     css: {
         modules: {
             localsConvention: 'camelCase',
@@ -29,6 +32,6 @@ const config: UserConfig = {
             'linguist-languages',
         ],
     },
-}
+}))
 
 export default config
