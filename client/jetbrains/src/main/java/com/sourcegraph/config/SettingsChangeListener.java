@@ -17,6 +17,7 @@ import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
+import com.sourcegraph.cody.api.CodyLLMConfiguration;
 import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
 import com.sourcegraph.find.browser.JavaToJSBridge;
 import com.sourcegraph.telemetry.GraphQlLogger;
@@ -106,6 +107,9 @@ public class SettingsChangeListener implements Disposable {
                   .map(fileEditor -> ((TextEditor) fileEditor).getEditor())
                   .forEach(codyAutoCompleteManager::clearAutoCompleteSuggestions);
             }
+
+            // refresh Cody LLM configuration
+            CodyLLMConfiguration.getInstance(project).refreshCache();
           }
         });
   }

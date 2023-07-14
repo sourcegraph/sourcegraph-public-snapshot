@@ -44,6 +44,7 @@
             secondary="false"
             factoryClass="com.sourcegraph.cody.CodyToolWindowFactory"/>
         <projectService serviceImplementation="com.sourcegraph.cody.agent.CodyAgent"/>
+        <projectService serviceImplementation="com.sourcegraph.cody.api.CodyLLMConfiguration"/>
 
 
         <!-- autocomplete -->
