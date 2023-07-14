@@ -212,6 +212,7 @@ func Test_licenseChecker(t *testing.T) {
 		want     bool
 		err      bool
 		baseUrl  *string
+		reason   *string
 	}{
 		"returns error if unable to make a request to license server": {
 			response: []byte(`{"error": "some error"}`),
@@ -232,6 +233,7 @@ func Test_licenseChecker(t *testing.T) {
 			response: []byte(`{"data": {"is_valid": false, "reason": "some reason"}}`),
 			status:   http.StatusOK,
 			want:     false,
+			reason:   pointers.Ptr("some reason"),
 		},
 		`uses sourcegraph baseURL from env`: {
 			response: []byte(`{"data": {"is_valid": true}}`),
@@ -271,6 +273,13 @@ func Test_licenseChecker(t *testing.T) {
 				got, err := store.Get(licenseValidityStoreKey).Bool()
 				require.NoError(t, err)
 				require.Equal(t, test.want, got)
+
+				// check result reason was set
+				if test.reason != nil {
+					got, err := store.Get(licenseInvalidReason).String()
+					require.NoError(t, err)
+					require.Equal(t, *test.reason, got)
+				}
 			}
 
 			// check last called at was set
