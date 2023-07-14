@@ -196,11 +196,6 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
 
     return (
         <nav data-testid="repo-header" className={classNames('navbar navbar-expand', 'px-3', styles.repoHeader)}>
-            {/*<div className={styles.breadcrumb}>*/}
-            {/*    /!* Breadcrumb for the nav elements *!/*/}
-            {/*    */}
-            {/*</div>*/}
-
             <Breadcrumbs
                 breadcrumbs={props.breadcrumbs}
                 className={classNames(
