@@ -3,11 +3,11 @@
 
     import { afterNavigate, disableScrollHandling } from '$app/navigation'
     import { page } from '$app/stores'
-    import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
-    import { sidebarOpen } from '$lib/repo/stores'
     import { isErrorLike } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
+    import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
+    import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { scrollAll } from '$lib/stores'
 

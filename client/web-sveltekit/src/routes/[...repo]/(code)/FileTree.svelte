@@ -2,6 +2,7 @@
 
 <script lang="ts">
     import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
+    import { onMount, tick } from 'svelte'
 
     import type { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 
@@ -11,7 +12,6 @@
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
-    import { onMount, tick } from 'svelte'
 
     export let treeProvider: FileTreeProvider
     export let selectedPath: string
@@ -46,7 +46,6 @@
                             treeProvider = parentTreeProvider
                         }
                     })
-
                 } else {
                     goto(anchor.href, { keepFocus: true })
                 }
@@ -65,10 +64,9 @@
             .map((_, index, segements) => segements.slice(0, index + 1).join('/'))
     }
 
-
     /**
-    * Takes a file path and makes all intermediate nodes as open, and the last node as selected.
-    */
+     * Takes a file path and makes all intermediate nodes as open, and the last node as selected.
+     */
     async function markSelected(path: string) {
         const nodesCopy = new Set($treeState.expandedNodes)
 
@@ -83,7 +81,6 @@
     function scrollSelectedItemIntoView() {
         treeView.scrollSelectedItemIntoView()
     }
-
 
     let treeView: TreeView<FileTreeProvider>
     let repoName = treeProvider.getRepoName()
@@ -122,7 +119,12 @@
                     We handle navigation via the TreeView's select event, to preserve the focus state.
                     Using a link here allows us to benefit from data preloading.
                 -->
-                <a href={entry.url ?? ''} on:click|preventDefault={() => {}} tabindex={-1} data-go-up={isRoot ? true : undefined}>
+                <a
+                    href={entry.url ?? ''}
+                    on:click|preventDefault={() => {}}
+                    tabindex={-1}
+                    data-go-up={isRoot ? true : undefined}
+                >
                     <Icon svgPath={getIconPath(entry, expanded)} inline />
                     {isRoot ? '..' : entry.name}
                 </a>

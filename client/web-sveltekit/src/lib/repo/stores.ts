@@ -1,5 +1,5 @@
-import { writable, type Writable } from 'svelte/store'
 import { memoize } from 'lodash'
+import { writable, type Writable } from 'svelte/store'
 
 import { createEmptySingleSelectTreeState, type TreeState } from '$lib/TreeView'
 

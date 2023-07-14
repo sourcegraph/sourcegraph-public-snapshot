@@ -5,9 +5,9 @@
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { NODE_LIMIT } from '$lib/repo/api/tree'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
-    import { NODE_LIMIT } from '$lib/repo/api/tree'
     import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
