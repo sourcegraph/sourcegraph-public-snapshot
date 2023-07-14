@@ -8318,7 +8318,7 @@ type ProductLicenseInfo {
     salesforceOpportunityID: String
     """
     This indicates if the current license is valid. It will be false if:
-    - The license key has expired.
+    - The license key has expired
     - The license key is in use on another instance
     - The license key was revoked
     """
