@@ -209,7 +209,7 @@ const LicenseDetails: FC<LicenseDetailsProps> = ({ license }) => {
     return (
         <Alert variant="danger">
             <Text className="mb-0">
-                The Sourcegraph license key is invalid. Reason: "{license.licenseInvalidityReason}"
+                The Sourcegraph license key is invalid. Reason: {license.licenseInvalidityReason}
             </Text>
         </Alert>
     )
