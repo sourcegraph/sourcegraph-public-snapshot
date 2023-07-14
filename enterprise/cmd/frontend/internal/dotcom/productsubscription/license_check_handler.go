@@ -22,8 +22,9 @@ var (
 	ErrInvalidSiteIDMsg        = "invalid site ID, cannot parse UUID"
 	ErrFailedToAssignSiteIDMsg = "failed to assign site ID to license"
 
-	ReasonLicenseIsAlreadyInUseMsg = "license is already in use"
-	ReasonLicenseRevokedMsg        = "license revoked"
+	ReasonLicenseIsAlreadyInUseMsg = "license key is already in use by another instance"
+	ReasonLicenseRevokedMsg        = "license key was revoked"
+	ReasonLicenseExpired           = "license key is expired"
 
 	EventNameSuccess  = "license.check.api.success"
 	EventNameAssigned = "license.check.api.assigned"
@@ -98,7 +99,10 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		if license.LicenseExpiresAt != nil && license.LicenseExpiresAt.Before(now) {
 			logger.Warn("license is expired")
 			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
-				Error: ErrExpiredLicenseMsg,
+				Data: &licensing.LicenseCheckResponseData{
+					IsValid: false,
+					Reason:  ReasonLicenseExpired,
+				},
 			})
 			return
 		}

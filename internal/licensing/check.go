@@ -13,7 +13,7 @@ import (
 
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -32,6 +32,7 @@ const (
 	LicenseCheckInterval    = 12 * time.Hour
 	lastCalledAtStoreKey    = "licensing:last_called_at"
 	licenseValidityStoreKey = "licensing:is_license_valid"
+	licenseInvalidReason    = "licensing:license_invalid_reason"
 	prevLicenseTokenKey     = "licensing:prev_license_hash"
 )
 
@@ -117,9 +118,13 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return errors.New("No data returned from license check")
 	}
 
+	// best effort, ignore errors here
+	_ = store.Set(licenseInvalidReason, body.Data.Reason)
+
 	if err := store.Set(licenseValidityStoreKey, body.Data.IsValid); err != nil {
 		return err
 	}
+
 	l.logger.Debug("finished license check", log.String("siteID", l.siteID))
 	return nil
 }

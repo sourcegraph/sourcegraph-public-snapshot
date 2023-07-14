@@ -112,6 +112,26 @@ func IsLicenseValid() bool {
 	return v
 }
 
+func GetLicenseInvalidReason() string {
+	if IsLicenseValid() {
+		return ""
+	}
+
+	defaultReason := "unknown"
+
+	val := store.Get(licenseInvalidReason)
+	if val.IsNil() {
+		return defaultReason
+	}
+
+	v, err := val.String()
+	if err != nil {
+		return defaultReason
+	}
+
+	return v
+}
+
 // GetConfiguredProductLicenseInfoWithSignature returns information about the current product license key
 // specified in site configuration, with the signed key's signature.
 func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {

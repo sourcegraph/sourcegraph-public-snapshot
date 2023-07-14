@@ -13,7 +13,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	elicensing "github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -110,7 +110,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(expiredLicense.LicenseCheckToken)},
 			},
-			want:       elicensing.LicenseCheckResponse{Error: ErrExpiredLicenseMsg},
+			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseExpired}},
 			wantStatus: http.StatusForbidden,
 		},
 		{
@@ -119,7 +119,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(revokedLicense.LicenseCheckToken)},
 			},
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: "license revoked"}},
+			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseRevokedMsg}},
 			wantStatus: http.StatusForbidden,
 		},
 		{
@@ -137,7 +137,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
 			},
 			body:       getBody(""),
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: "license is already in use"}},
+			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseIsAlreadyInUseMsg}},
 			wantStatus: http.StatusOK,
 		},
 		{
@@ -185,7 +185,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			require.Equal(t, "application/json", res.Header().Get("Content-Type"))
 
 			var got elicensing.LicenseCheckResponse
-			json.Unmarshal([]byte(res.Body.String()), &got)
+			_ = json.Unmarshal([]byte(res.Body.String()), &got)
 			require.Equal(t, test.want, got)
 		})
 	}
