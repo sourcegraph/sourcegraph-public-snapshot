@@ -223,7 +223,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
     env:
       ENTERPRISE: 1
@@ -231,8 +231,6 @@ commands:
       - lib
       - internal
       - cmd/repo-updater
-      - enterprise/internal
-      - enterprise/cmd/repo-updater
 
   symbols:
     cmd: .bin/symbols
@@ -906,7 +904,7 @@ bazelCommands:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
   repo-updater:
-    target: //enterprise/cmd/repo-updater
+    target: //cmd/repo-updater
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
     env:
