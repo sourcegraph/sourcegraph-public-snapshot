@@ -71,6 +71,7 @@ go_test(
         "@com_github_sergi_go_diff//diffmatchpatch",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
         "@org_golang_x_oauth2//:oauth2",
     ],
 )
