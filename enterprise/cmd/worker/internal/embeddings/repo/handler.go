@@ -48,7 +48,7 @@ var splitOptions = codeintelContext.SplitOptions{
 	ChunkEarlySplitTokensThreshold: embeddingChunkEarlySplitTokensThreshold,
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) error {
+func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) (err error) {
 	embeddingsConfig := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	if embeddingsConfig == nil {
 		return errors.New("embeddings are not configured or disabled")
@@ -71,6 +71,19 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	if err != nil {
 		return err
 	}
+
+	defer func() {
+		if err != nil {
+			return
+		}
+
+		// If we return with err=nil, then we have created a new index with a
+		// name based on the repo ID. It might be that the previous index had a
+		// name based on the repo name (deprecated), which we can delete now on
+		// a best-effort basis.
+		indexNameDeprecated := string(embeddings.GetRepoEmbeddingIndexNameDeprecated(repo.Name))
+		_ = h.uploadStore.Delete(ctx, indexNameDeprecated)
+	}()
 
 	embeddingsClient, err := embed.NewEmbeddingsClient(embeddingsConfig)
 	if err != nil {
@@ -136,11 +149,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	logger.Info(
 		"finished generating repo embeddings",
 		log.String("repoName", string(repo.Name)),
+		log.Int32("repoID", int32(repo.ID)),
 		log.String("revision", string(record.Revision)),
 		log.Object("stats", stats.ToFields()...),
 	)
 
-	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.Name))
+	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.ID))
 	if stats.IsIncremental {
 		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, indexName, previousIndex, repoEmbeddingIndex, toRemove, ranks)
 	} else {
@@ -174,8 +188,7 @@ func (h *handler) getPreviousEmbeddingIndex(ctx context.Context, logger log.Logg
 		return "", nil
 	}
 
-	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.Name))
-	index, err := embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, indexName)
+	index, err := embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
 	if err != nil {
 		logger.Error("Error downloading previous embeddings index. Falling back to full index")
 		return "", nil
