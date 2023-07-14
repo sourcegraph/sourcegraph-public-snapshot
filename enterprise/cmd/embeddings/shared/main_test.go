@@ -55,15 +55,15 @@ func TestEmbeddingsSearch(t *testing.T) {
 		}
 	}
 
-	indexes := map[api.RepoName]*embeddings.RepoEmbeddingIndex{
-		"repo1": makeIndex("repo1", 1),
-		"repo2": makeIndex("repo2", 2),
-		"repo3": makeIndex("repo3", 3),
-		"repo4": makeIndex("repo4", 4),
+	indexes := map[api.RepoID]*embeddings.RepoEmbeddingIndex{
+		0: makeIndex("repo1", 1),
+		1: makeIndex("repo2", 2),
+		2: makeIndex("repo3", 3),
+		3: makeIndex("repo4", 4),
 	}
 
-	getRepoEmbeddingIndex := func(_ context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-		return indexes[repoName], nil
+	getRepoEmbeddingIndex := func(_ context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+		return indexes[repoID], nil
 	}
 	getMockQueryEmbedding := func(_ context.Context, query string) ([]float32, string, error) {
 		model := "openai/text-embedding-ada-002"
@@ -105,7 +105,7 @@ func TestEmbeddingsSearch(t *testing.T) {
 		// embeddings.
 		params := embeddings.EmbeddingsSearchParameters{
 			RepoNames:        []api.RepoName{"repo1", "repo2", "repo3", "repo4"},
-			RepoIDs:          []api.RepoID{1, 2, 3, 4},
+			RepoIDs:          []api.RepoID{0, 1, 2, 3},
 			Query:            "one",
 			CodeResultsCount: 2,
 			TextResultsCount: 2,
@@ -149,7 +149,7 @@ func TestEmbeddingsSearch(t *testing.T) {
 		// Second test: providing a subset of repos should only search those repos
 		params := embeddings.EmbeddingsSearchParameters{
 			RepoNames:        []api.RepoName{"repo1", "repo3"},
-			RepoIDs:          []api.RepoID{1, 2, 3, 4},
+			RepoIDs:          []api.RepoID{0, 2},
 			Query:            "one",
 			CodeResultsCount: 2,
 			TextResultsCount: 2,
@@ -193,7 +193,7 @@ func TestEmbeddingsSearch(t *testing.T) {
 		// Third test: try a different file just to be safe
 		params := embeddings.EmbeddingsSearchParameters{
 			RepoNames:        []api.RepoName{"repo1", "repo2", "repo3", "repo4"},
-			RepoIDs:          []api.RepoID{1, 2, 3, 4},
+			RepoIDs:          []api.RepoID{0, 1, 2, 3},
 			Query:            "three",
 			CodeResultsCount: 2,
 			TextResultsCount: 2,
@@ -277,7 +277,7 @@ func TestEmbeddingModelMismatch(t *testing.T) {
 		"repo3": makeIndex("repo3", ""),
 	}
 
-	getRepoEmbeddingIndex := func(_ context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+	getRepoEmbeddingIndex := func(_ context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
 		return indexes[repoName], nil
 	}
 

@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error)
+type downloadRepoEmbeddingIndexFn func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
 
 type repoEmbeddingIndexCacheEntry struct {
 	index      *embeddings.RepoEmbeddingIndex
@@ -148,47 +149,42 @@ type CachedEmbeddingIndexGetter struct {
 	sf    singleflight.Group
 }
 
-func (c *CachedEmbeddingIndexGetter) Get(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+func (c *CachedEmbeddingIndexGetter) Get(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
 	// Run the fetch request through a singleflight to keep from fetching the
 	// same index multiple times concurrently
-	v, err, _ := c.sf.Do(string(repoName), func() (interface{}, error) {
-		return c.get(ctx, repoName)
+	v, err, _ := c.sf.Do(fmt.Sprintf("%d", repoID), func() (interface{}, error) {
+		return c.get(ctx, repoID, repoName)
 	})
 	return v.(*embeddings.RepoEmbeddingIndex), err
 }
 
-func (c *CachedEmbeddingIndexGetter) get(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-	repo, err := c.repoStore.GetByName(ctx, repoName)
+func (c *CachedEmbeddingIndexGetter) get(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+	lastFinishedRepoEmbeddingJob, err := c.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	lastFinishedRepoEmbeddingJob, err := c.repoEmbeddingJobsStore.GetLastCompletedRepoEmbeddingJob(ctx, repo.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	repoEmbeddingIndexName := embeddings.GetRepoEmbeddingIndexName(repoName)
+	repoEmbeddingIndexName := embeddings.GetRepoEmbeddingIndexName(repoID)
 
 	cacheEntry, ok := c.cache.Get(repoEmbeddingIndexName)
 	trace.FromContext(ctx).AddEvent("checked embedding index cache", attribute.Bool("hit", ok))
 	if !ok {
 		// We do not have the index in the cache. Download and cache it.
-		return c.getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
+		return c.getAndCacheIndex(ctx, repoID, repoName, lastFinishedRepoEmbeddingJob.FinishedAt)
 	} else if lastFinishedRepoEmbeddingJob.FinishedAt.After(cacheEntry.finishedAt) {
 		// Check if we have a newer finished embedding job. If so, download the new index, cache it, and return it instead.
-		return c.getAndCacheIndex(ctx, repoEmbeddingIndexName, lastFinishedRepoEmbeddingJob.FinishedAt)
+		return c.getAndCacheIndex(ctx, repoID, repoName, lastFinishedRepoEmbeddingJob.FinishedAt)
 	}
 
 	// Otherwise, return the cached index.
 	return cacheEntry.index, nil
 }
 
-func (c *CachedEmbeddingIndexGetter) getAndCacheIndex(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName, finishedAt *time.Time) (*embeddings.RepoEmbeddingIndex, error) {
-	embeddingIndex, err := c.downloadRepoEmbeddingIndex(ctx, repoEmbeddingIndexName)
+func (c *CachedEmbeddingIndexGetter) getAndCacheIndex(ctx context.Context, repoID api.RepoID, repoName api.RepoName, finishedAt *time.Time) (*embeddings.RepoEmbeddingIndex, error) {
+	embeddingIndex, err := c.downloadRepoEmbeddingIndex(ctx, repoID, repoName)
 	if err != nil {
 		return nil, errors.Wrap(err, "downloading repo embedding index")
 	}
-	c.cache.Add(repoEmbeddingIndexName, repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
+	c.cache.Add(embeddings.GetRepoEmbeddingIndexName(repoID), repoEmbeddingIndexCacheEntry{index: embeddingIndex, finishedAt: *finishedAt})
 	return embeddingIndex, nil
 }
