@@ -5,7 +5,7 @@ go_library(
     name = "siteid",
     srcs = ["siteid.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/siteid",
-    visibility = ["//cmd/frontend:__subpackages__"],
+    visibility = ["//:__subpackages__"],
     deps = ["//internal/database"],
 )
 
