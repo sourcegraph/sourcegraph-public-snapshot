@@ -7,32 +7,43 @@ import com.sourcegraph.api.GraphQlClient;
 import com.sourcegraph.api.GraphQlResponse;
 import com.sourcegraph.config.ConfigUtil;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jetbrains.annotations.NotNull;
 
-public class CodyLLMConfigurationUtils {
-  public static Logger logger = Logger.getInstance(CodyLLMConfigurationUtils.class);
+public class CodyLLMConfiguration {
+  public static Logger logger = Logger.getInstance(CodyLLMConfiguration.class);
+  private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
   public static final int DEFAULT_CHAT_MODEL_MAX_TOKENS = 7000;
-  private static final ConcurrentHashMap<String, Integer> projectNameToChatModelMaxTokensCache =
-      new ConcurrentHashMap<>();
+  private final @NotNull Project project;
 
-  public static int getChatModelMaxTokensForProject(@NotNull Project project) {
-    String projectName = project.getName();
-    return Optional.ofNullable(projectNameToChatModelMaxTokensCache.get(projectName))
-        .or(
-            () -> {
-              int newValue = fetchChatModelMaxTokens(project);
-              projectNameToChatModelMaxTokensCache.put(projectName, newValue);
-              return Optional.of(newValue);
-            })
-        .orElse(DEFAULT_CHAT_MODEL_MAX_TOKENS);
+  private final AtomicInteger chatModelMaxTokensCache = new AtomicInteger();
+
+  public CodyLLMConfiguration(@NotNull Project project) {
+    this.project = project;
   }
 
-  public static void refreshCacheForProject(@NotNull Project project) {
-    projectNameToChatModelMaxTokensCache.put(project.getName(), fetchChatModelMaxTokens(project));
+  public static CodyLLMConfiguration getInstance(@NotNull Project project) {
+    return project.getService(CodyLLMConfiguration.class);
   }
 
-  private static int fetchChatModelMaxTokens(@NotNull Project project) {
+  public int getChatModelMaxTokensForProject() {
+    if (chatModelMaxTokensCache.get() > 0) {
+      return chatModelMaxTokensCache.get();
+    } else {
+      refreshCache();
+      return DEFAULT_CHAT_MODEL_MAX_TOKENS;
+    }
+  }
+
+  public void refreshCache() {
+    this.scheduler.schedule(
+        () -> chatModelMaxTokensCache.set(fetchChatModelMaxTokens()),
+        20,
+        java.util.concurrent.TimeUnit.SECONDS);
+  }
+
+  private int fetchChatModelMaxTokens() {
     String graphQlQuery =
         "query fetchChatModelMaxTokens {\n"
             + "  site {\n"
@@ -42,9 +53,9 @@ public class CodyLLMConfigurationUtils {
             + "    }\n"
             + "  }\n"
             + "}";
-    String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
-    String accessToken = ConfigUtil.getProjectAccessToken(project);
-    String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(project);
+    String instanceUrl = ConfigUtil.getSourcegraphUrl(this.project);
+    String accessToken = ConfigUtil.getProjectAccessToken(this.project);
+    String customRequestHeaders = ConfigUtil.getCustomRequestHeaders(this.project);
     try {
       GraphQlResponse response =
           GraphQlClient.callGraphQLService(
