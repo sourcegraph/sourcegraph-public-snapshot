@@ -25,15 +25,13 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Compile Javascript
-        run: cd dev/update-embeddings-list && pnpm build
+        run: cd dev/update-embeddings-list && pnpm start
       - name: check output
         run: ls
-      - name: run script
-        run: node dev/update-embeddings-list/build/index.js
       - name: check output
-        run: ls
+        run: ls dev/update-embeddings-list
       - name: move into doc folder
-        run: mv embedded-repos.md doc/cody/embedded-repos.md
+        run: mv dev/update-embeddings-list/embedded-repos.md doc/cody/embedded-repos.md
       - name: check list in doc folder
         run: head -n 10 doc/cody/embedded-repos.md
       - name: Create Pull Request
