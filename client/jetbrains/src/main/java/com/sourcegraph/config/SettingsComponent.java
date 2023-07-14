@@ -16,6 +16,7 @@ import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.time.Duration;
 import java.util.Enumeration;
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -45,6 +46,10 @@ public class SettingsComponent {
 
   private JButton testCodyAppConnectionButton;
   private JLabel testCodyAppConnectionLabel;
+  private ActionLink installLocalAppLink;
+  private JLabel installLocalAppComment;
+  private ActionLink runLocalAppLink;
+  private JLabel runLocalAppComment;
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
@@ -168,7 +173,6 @@ public class SettingsComponent {
                     .orElse(getDefaultInstanceType()));
     boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
     boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
-    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
     boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
@@ -199,28 +203,22 @@ public class SettingsComponent {
     JBLabel codyAppComment =
         new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
-    JLabel installLocalAppComment =
+    installLocalAppComment =
         new JBLabel(
             "Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
     installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    ActionLink installLocalAppLink =
+    installLocalAppLink =
         simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
-    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
     installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
-    ActionLink runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
-    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
     runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    JLabel runLocalAppComment =
+    runLocalAppComment =
         new JBLabel(
             "Cody App seems to be installed, but it's not running, currently.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
     runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
@@ -308,7 +306,21 @@ public class SettingsComponent {
     userAuthenticationPanel.setBorder(
         IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
 
+    updateVisibilityOfHelperLinks();
+    new Timer((int) Duration.ofSeconds(1).toMillis(), e -> updateVisibilityOfHelperLinks()).start();
     return userAuthenticationPanel;
+  }
+
+  private void updateVisibilityOfHelperLinks() {
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
+    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
+    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
+    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
   }
 
   @NotNull
