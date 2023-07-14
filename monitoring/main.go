@@ -1,5 +1,4 @@
-//go:generate go build -o /tmp/monitoring-generator
-//go:generate /tmp/monitoring-generator
+//go:generate bazel run //:write_monitoring_docs
 package main
 
 import (
