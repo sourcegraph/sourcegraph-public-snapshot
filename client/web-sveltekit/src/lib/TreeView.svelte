@@ -27,7 +27,7 @@
     export let treeProvider: TreeProvider<N>
 
     export function scrollSelectedItemIntoView() {
-        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: 'center' })
+        treeRoot?.querySelector('[aria-selected="true"] [data-treeitem-label]')?.scrollIntoView({ block: 'nearest' })
     }
 
     const dispatch = createEventDispatcher<{ select: HTMLElement }>()
