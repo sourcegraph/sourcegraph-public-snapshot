@@ -255,8 +255,8 @@ func gerritCloneURL(logger log.Logger, project *gerrit.Project, cfg *schema.Gerr
 	}
 	u.User = url.UserPassword(cfg.Username, cfg.Password)
 
-	// Gerrit encodes slashes in IDs, so need to decode them.
-	u.Path = strings.ReplaceAll(project.ID, "%2F", "/")
+	// Gerrit encodes slashes in IDs, so need to decode them. The 'a' is for cloning with auth.
+	u.Path = path.Join("a", strings.ReplaceAll(project.ID, "%2F", "/"))
 
 	return u.String()
 }
