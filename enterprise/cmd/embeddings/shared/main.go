@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
@@ -69,8 +70,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	indexGetter, err := NewCachedEmbeddingIndexGetter(
 		repoStore,
 		repoEmbeddingJobsStore,
-		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
+		func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, repoID, repoName)
 		},
 		config.EmbeddingsCacheSize,
 	)
