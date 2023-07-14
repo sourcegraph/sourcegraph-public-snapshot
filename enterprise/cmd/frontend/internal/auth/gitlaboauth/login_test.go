@@ -10,13 +10,14 @@ import (
 	oauth2Login "github.com/dghubble/gologin/oauth2"
 	"github.com/dghubble/gologin/testutils"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
 )
 
 func TestSSOLoginHandler(t *testing.T) {
 	expectedState := "state_val"
 	ssoURL := "https://api.example.com/-/saml/sso?token=1234"
-	expectedRedirect := ssoURL + "&redirect=" + url.QueryEscape("https://api.example.com/authorize?client_id=client_id&redirect_uri=redirect_url&response_type=code&state=state_val")
+	expectedRedirectURL := "https://api.example.com/authorize?client_id=client_id&redirect_uri=redirect_url&response_type=code&state=state_val"
 	config := &oauth2.Config{
 		ClientID:     "client_id",
 		ClientSecret: "client_secret",
@@ -37,5 +38,9 @@ func TestSSOLoginHandler(t *testing.T) {
 	ctx := oauth2Login.WithState(context.Background(), expectedState)
 	loginHandler.ServeHTTP(w, req.WithContext(ctx))
 	assert.Equal(t, http.StatusFound, w.Code)
-	assert.Equal(t, expectedRedirect, w.HeaderMap.Get("Location"))
+	locationURL, err := url.Parse(w.HeaderMap.Get("Location"))
+	require.NoError(t, err)
+	locationRedirectURL, err := url.QueryUnescape(locationURL.Query().Get("redirect"))
+	require.NoError(t, err)
+	assert.Equal(t, expectedRedirectURL, locationRedirectURL)
 }
