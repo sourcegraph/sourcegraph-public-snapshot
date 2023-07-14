@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start:dev": "npx nodemon",
-    "build": "ts-node ./src/index.ts --outDir build",
+    "start":  "ts-node ./src/index.ts",
     "test": "jest ./src/index.test.ts --forceExit"
   },
   "keywords": [],
