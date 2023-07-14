@@ -17,7 +17,7 @@ def go_stringer(src, typ, name, additional_args=[]):
         cmd = """\
 env \
     PATH=$$(pwd)/external/go_sdk/bin \
-    GOCACHE=$$(pwd)/bazel-out/darwin_arm64-fastbuild/bin/Library/Caches/go-build \
+    GOCACHE=$$(mktemp -d) \
     GOROOT=$$(pwd)/external/go_sdk \
     $(location @org_golang_x_tools//cmd/stringer:stringer) \
         -output=$@ \
