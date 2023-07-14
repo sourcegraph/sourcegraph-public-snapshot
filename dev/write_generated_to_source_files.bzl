@@ -4,7 +4,6 @@ load("@aspect_bazel_lib//lib:write_source_files.bzl", "write_source_files")
 load("@bazel_skylib//lib:paths.bzl", "paths")
 
 def write_generated_to_source_files(name, src, files, dest = "", strip_prefix = "", verbose_copy=True, **kwargs):
-
     currentTarget = native.package_relative_label(name)
     srcTarget = Label(src)
     copy_opts = {
