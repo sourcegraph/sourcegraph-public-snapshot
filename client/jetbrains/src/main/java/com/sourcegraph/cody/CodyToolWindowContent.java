@@ -615,7 +615,7 @@ class CodyToolWindowContent implements UpdatableChat {
                 List<Message> prompt =
                     transcript.getPromptForLastInteraction(
                         Preamble.getPreamble(repoName),
-                        TruncationUtils.MAX_AVAILABLE_PROMPT_LENGTH);
+                        TruncationUtils.getChatMaxAvailablePromptLength(project));
 
                 try {
                   chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
