@@ -13,6 +13,8 @@ import org.jetbrains.annotations.NotNull;
 
 public class CodyLLMConfiguration {
   public static Logger logger = Logger.getInstance(CodyLLMConfiguration.class);
+
+  // TODO: consolidate and reuse executors in the plugin
   private final ExecutorService executor = Executors.newSingleThreadExecutor();
   public static final int DEFAULT_CHAT_MODEL_MAX_TOKENS = 7000;
   private final @NotNull Project project;
@@ -38,10 +40,10 @@ public class CodyLLMConfiguration {
   }
 
   public void refreshCache() {
-    this.executor.submit(() -> chatModelMaxTokensCache.set(fetchChatModelMaxTokens()));
+    this.executor.submit(() -> chatModelMaxTokensCache.set(fetchChatModelMaxTokens().orElse(0)));
   }
 
-  private int fetchChatModelMaxTokens() {
+  private Optional<Integer> fetchChatModelMaxTokens() {
     String graphQlQuery =
         "query fetchChatModelMaxTokens {\n"
             + "  site {\n"
@@ -61,8 +63,7 @@ public class CodyLLMConfiguration {
       JsonObject body = response.getBodyAsJson();
       if (body.has("errors")) {
         logger.warn("Fetching chat model max tokens failed with errors: " + body.get("errors"));
-        logger.warn("Defaulting chat model max tokens to: " + DEFAULT_CHAT_MODEL_MAX_TOKENS);
-        return DEFAULT_CHAT_MODEL_MAX_TOKENS;
+        return Optional.empty();
       }
       return Optional.ofNullable(body.getAsJsonObject("data"))
           .flatMap(data -> Optional.ofNullable(data.getAsJsonObject("site")))
@@ -77,20 +78,14 @@ public class CodyLLMConfiguration {
                   return Optional.of(r.getAsInt());
                 } catch (NumberFormatException e) {
                   logger.warn(e);
-                  logger.warn(
-                      "Failed to fetch a valid value, defaulting chat model max tokens to: "
-                          + DEFAULT_CHAT_MODEL_MAX_TOKENS);
-                  return Optional.of(DEFAULT_CHAT_MODEL_MAX_TOKENS);
+                  logger.warn("Failed to fetch a valid value for chat model max tokens to");
+                  return Optional.empty();
                 }
-              })
-          .orElse(DEFAULT_CHAT_MODEL_MAX_TOKENS);
+              });
     } catch (Exception e) {
-
       logger.warn(e);
-      logger.warn(
-          "Could not fetch chat model max tokens from Sourcegraph instance, defaulting to: "
-              + DEFAULT_CHAT_MODEL_MAX_TOKENS);
-      return DEFAULT_CHAT_MODEL_MAX_TOKENS;
+      logger.warn("Could not fetch chat model max tokens from Sourcegraph instance");
+      return Optional.empty();
     }
   }
 }
