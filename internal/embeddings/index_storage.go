@@ -230,13 +230,13 @@ func (d *decoder) decode() (*RepoEmbeddingIndex, error) {
 		}
 
 		ei.Embeddings = make([]int8, 0, numChunks*embeddingsChunkSize)
-		embeddingSlice := make([]float32, 0, embeddingsChunkSize)
+		embeddingsBuf := make([]float32, 0, embeddingsChunkSize)
 		quantizeBuf := make([]int8, embeddingsChunkSize)
 		for i := 0; i < numChunks; i++ {
-			if err := d.dec.Decode(&embeddingSlice); err != nil {
+			if err := d.dec.Decode(&embeddingsBuf); err != nil {
 				return nil, err
 			}
-			ei.Embeddings = append(ei.Embeddings, Quantize(embeddingSlice, quantizeBuf)...)
+			ei.Embeddings = append(ei.Embeddings, Quantize(embeddingsBuf, quantizeBuf)...)
 		}
 	}
 
