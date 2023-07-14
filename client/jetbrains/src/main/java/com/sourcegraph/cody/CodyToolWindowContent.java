@@ -28,6 +28,7 @@ import com.intellij.util.messages.MessageBusConnection;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
+import com.sourcegraph.cody.api.CodyLLMConfiguration;
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
@@ -236,6 +237,8 @@ class CodyToolWindowContent implements UpdatableChat {
     updateVisibilityOfContentPanels();
     // Add welcome message
     addWelcomeMessage();
+    // Refresh the LLM Configuration for the project for the incoming prompts
+    CodyLLMConfiguration.getInstance(project).refreshCache();
   }
 
   private static void enableAutoUpdateAvailabilityOfSummarizeRecentCodeChangesRecipe(
