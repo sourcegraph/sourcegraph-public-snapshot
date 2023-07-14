@@ -23,7 +23,7 @@ jobs:
         id: date
         run: echo "::set-output name=date::$(date +'%Y-%m-%dT%H:%M:%S')"
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
       - name: Compile Javascript
         run: cd dev/update-embeddings-list && pnpm build
       - name: check output
