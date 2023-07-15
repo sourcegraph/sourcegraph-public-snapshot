@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC1091
 source /root/.profile
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 root_dir=$(pwd)
 set -e
 

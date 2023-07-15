@@ -2,7 +2,7 @@
 
 # shellcheck disable=SC1091
 source /root/.profile
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 root_dir=$(pwd)
 
 set -ex
@@ -16,7 +16,7 @@ dev/ci/integration/setup-display.sh
 
 cleanup() {
   cd "$root_dir"
-  dev/ci/integration/cleanup-display.sh
+  testing/integration/cleanup-display.sh
 
   # We don't use run-integration so make sure we stop/remove the containers
   echo "--- docker cleanup"
@@ -34,4 +34,4 @@ trap cleanup EXIT
 # ==========================
 
 echo "--- test.sh"
-"${root_dir}"/dev/ci/integration/upgrade/test.sh
+"${root_dir}"/testing/integration/upgrade/test.sh

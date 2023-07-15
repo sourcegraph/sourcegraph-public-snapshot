@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euxo pipefail
 
-cd "$(dirname "${BASH_SOURCE[0]}")/../../../.."
+cd "$(dirname "${BASH_SOURCE[0]}")/../../.."
 root_dir=$(pwd)
 set -ex
 
@@ -12,4 +12,4 @@ git clone --depth 1 \
   "$test_dir/deploy-sourcegraph"
 
 echo "--- test.sh"
-"${root_dir}"/dev/ci/integration/cluster/test.sh
+"${root_dir}"/testing/integration/cluster/test.sh
