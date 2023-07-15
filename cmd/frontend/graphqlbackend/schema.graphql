@@ -8316,6 +8316,17 @@ type ProductLicenseInfo {
     The Salesforce opportunity ID associated with this license.
     """
     salesforceOpportunityID: String
+    """
+    This indicates if the current license is valid. It will be false if:
+    - The license key has expired
+    - The license key is in use on another instance
+    - The license key was revoked
+    """
+    isValid: Boolean!
+    """
+    This indicates the reason the license is invalid. It'll be null if `isValid` is true.
+    """
+    licenseInvalidityReason: String
 }
 
 """
