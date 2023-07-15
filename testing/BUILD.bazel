@@ -86,12 +86,12 @@ server_integration_test(
         "$(location //testing/integration/code-intel:repos.json)",
     ],
     data = [
-        "//testing/integration/code-intel:repos.json",
         "//dev/codeintel-qa/cmd/clear",
         "//dev/codeintel-qa/cmd/download",
         "//dev/codeintel-qa/cmd/query",
         "//dev/codeintel-qa/cmd/upload",
         "//internal/cmd/init-sg",
+        "//testing/integration/code-intel:repos.json",
         "@src-cli-linux-amd64//:src-cli-linux-amd64",
     ],
     env = {
