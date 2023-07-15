@@ -11,8 +11,8 @@ set -ex
 pnpm install --frozen-lockfile
 pnpm generate
 
-dev/ci/integration/setup-deps.sh
-dev/ci/integration/setup-display.sh
+testing/integration/setup-deps.sh
+testing/integration/setup-display.sh
 
 cleanup() {
   cd "$root_dir"

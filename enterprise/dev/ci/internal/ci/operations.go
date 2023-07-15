@@ -541,30 +541,6 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 	}
 }
 
-func codeIntelQA(candidateTag string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":bazel::docker::brain: Code Intel QA",
-			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
-				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
-				ChannelName: "code-intel-buildkite",
-				Conditions: bk.SlackStepNotifyPayloadConditions{
-					Failed: true,
-				},
-			}),
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Agent("queue", "bazel"),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
-			bk.ArtifactPaths("./*.log"),
-			bk.SoftFail(1))
-	}
-}
-
 func executorsE2E(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":bazel::docker::packer: Executors E2E",
@@ -576,34 +552,13 @@ func executorsE2E(candidateTag string) operations.Operation {
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			// See enterprise/dev/ci/integration/executors/docker-compose.yaml
+			// See testing/integration/executors/docker-compose.yaml
 			// This enable the executor to reach the dind container
 			// for docker commands.
 			bk.Env("DOCKER_GATEWAY_HOST", "172.17.0.1"),
-			bk.Cmd("enterprise/dev/ci/integration/executors/run.sh"),
+			bk.Cmd("testing/integration/executors/run.sh"),
 			bk.ArtifactPaths("./*.log"),
 		)
-	}
-}
-
-func serverQA(candidateTag string) operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":docker::chromium: Sourcegraph QA",
-			// Run tests against the candidate server image
-			bk.DependsOn(candidateImageStepKey("server")),
-			bk.Env("CANDIDATE_VERSION", candidateTag),
-			bk.Env("DISPLAY", ":99"),
-			bk.Env("LOG_STATUS_MESSAGES", "true"),
-			bk.Env("NO_CLEANUP", "false"),
-			bk.Env("SOURCEGRAPH_BASE_URL", "http://127.0.0.1:7080"),
-			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
-			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
-			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.AnnotatedCmd("dev/ci/integration/qa/run.sh", bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{},
-			}),
-			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
 
@@ -622,7 +577,7 @@ func testUpgrade(candidateTag, minimumUpgradeableVersion string) operations.Oper
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("dev/ci/integration/upgrade/run.sh"),
+			bk.Cmd("testing/integration/upgrade/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"))
 	}
 }
@@ -642,7 +597,7 @@ func clusterQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Env("INCLUDE_ADMIN_ONBOARDING", "false"),
-			bk.Cmd("./dev/ci/integration/cluster/run.sh"),
+			bk.Cmd("./testing/integration/cluster/run.sh"),
 			bk.ArtifactPaths("./*.png", "./*.mp4", "./*.log"),
 		)...)
 	}

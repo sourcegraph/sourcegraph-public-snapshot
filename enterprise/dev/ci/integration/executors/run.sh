@@ -15,7 +15,7 @@ mkdir "${DATA}/data"
 mkdir "${DATA}/config"
 
 cleanup() {
-  pushd "$root_dir"/enterprise/dev/ci/integration/executors/ 1>/dev/null
+  pushd "$root_dir"/testing/integration/executors/ 1>/dev/null
   docker-compose logs >"${root_dir}/docker-compose.log"
   docker-compose down --volumes --timeout 30 # seconds
   docker volume rm executors-e2e || true
@@ -42,7 +42,7 @@ BATCHESHELPER_IMAGE="us.gcr.io/sourcegraph-dev/batcheshelper:${CANDIDATE_VERSION
 docker pull "${BATCHESHELPER_IMAGE}"
 
 echo "--- :terminal: Start server with executor"
-pushd "enterprise/dev/ci/integration/executors" 1>/dev/null
+pushd "testing/integration/executors" 1>/dev/null
 
 # Temporary workaround, see https://github.com/sourcegraph/sourcegraph/issues/44816
 envsubst >"${TMP_WORK_DIR}/site-config.json" <./tester/config/site-config.json
