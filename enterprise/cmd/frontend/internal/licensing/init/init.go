@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // TODO(efritz) - de-globalize assignments in this function
@@ -139,9 +140,11 @@ func Init(
 			return nil, err
 		}
 		return &graphqlbackend.ProductLicenseInfo{
-			TagsValue:      info.Tags,
-			UserCountValue: info.UserCount,
-			ExpiresAtValue: info.ExpiresAt,
+			TagsValue:                    info.Tags,
+			UserCountValue:               info.UserCount,
+			ExpiresAtValue:               info.ExpiresAt,
+			IsValidValue:                 licensing.IsLicenseValid(),
+			LicenseInvalidityReasonValue: pointers.NonZeroPtr(licensing.GetLicenseInvalidReason()),
 		}, nil
 	}
 
