@@ -35,7 +35,10 @@ export class QueryState {
     private defaultQuery = ''
     private defaultSearchContext = 'global'
 
-    private constructor(private options: Partial<Options>, private settings: QuerySettings) {}
+    private constructor(
+        private options: Partial<Options>,
+        private settings: QuerySettings
+    ) {}
 
     public static init(options: Partial<Options>, settings: QuerySettings): QueryState {
         return new QueryState(options, settings)
