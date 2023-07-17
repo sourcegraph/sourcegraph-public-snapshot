@@ -100,10 +100,12 @@ func (s *store) DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int)
 		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolsSchemaVersionsQuery, pq.Array(bundleIDs))); err != nil {
 			return err
 		}
-		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolsLookupsQuery, pq.Array(bundleIDs))); err != nil {
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolLookupsQuery, pq.Array(bundleIDs))); err != nil {
 			return err
 		}
-
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(deleteSCIPSymbolLookupLeavesQuery, pq.Array(bundleIDs))); err != nil {
+			return err
+		}
 		if err := s.db.Exec(ctx, sqlf.Sprintf(deleteLastReconcileQuery, pq.Array(bundleIDs))); err != nil {
 			return err
 		}
@@ -159,8 +161,12 @@ const deleteSCIPSymbolsSchemaVersionsQuery = `
 DELETE FROM codeintel_scip_symbols_schema_versions WHERE upload_id = ANY(%s)
 `
 
-const deleteSCIPSymbolsLookupsQuery = `
+const deleteSCIPSymbolLookupsQuery = `
 DELETE FROM codeintel_scip_symbols_lookup WHERE upload_id = ANY(%s)
+`
+
+const deleteSCIPSymbolLookupLeavesQuery = `
+DELETE FROM codeintel_scip_symbols_lookup_leaves WHERE upload_id = ANY(%s)
 `
 
 const deleteLastReconcileQuery = `

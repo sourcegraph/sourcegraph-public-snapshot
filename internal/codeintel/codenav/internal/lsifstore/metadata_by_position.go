@@ -179,7 +179,8 @@ symbols_parts AS (
 		convert_from(decode(split_part(t.payload, '$', 2), 'base64'), 'utf-8') AS package_manager,
 		convert_from(decode(split_part(t.payload, '$', 3), 'base64'), 'utf-8') AS package_name,
 		convert_from(decode(split_part(t.payload, '$', 4), 'base64'), 'utf-8') AS package_version,
-		convert_from(decode(split_part(t.payload, '$', 5), 'base64'), 'utf-8') AS descriptor
+		convert_from(decode(split_part(t.payload, '$', 5), 'base64'), 'utf-8') AS descriptor_namespace,
+		convert_from(decode(split_part(t.payload, '$', 6), 'base64'), 'utf-8') AS descriptor_suffix
 	FROM unnest(%s::text[]) AS t(payload)
 ),
 -- Consume from the worktable results defined above. This will throw out any rows
@@ -192,23 +193,27 @@ matching_symbol_names AS (
 		WHERE mp.search = '' AND ` + fmt.Sprintf("%v", !disableTrieCTE) + `
 	) UNION (
 		SELECT
-			ss.upload_id,
-			ss.symbol_id,
-			-- Reconstruct symbol names from parts
-			l1.name || ' ' || l2.name || ' ' || l3.name || ' ' || l4.name || ' ' || l5.name AS symbol_name
+			ll.upload_id,
+			ll.symbol_id,
+			-- ROUGHLY reconstruct symbol names from parts
+			-- We don't want to do this as it ignores SCIP's escaping rules, but we only use this
+			-- value in a fairly inconsequential (diagnostic-only) path at the moment. We should
+			-- remove usage of this field altogether (or reconstruct it on the consumer side).
+			l1.name || ' ' || l2.name || ' ' || l3.name || ' ' || l4.name || ' ' || l5.name || l6.name AS symbol_name
 		FROM symbols_parts p
 
 		-- Initially match descriptor scoped to an upload
-		JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = ANY(%s) AND l5.scip_name_type = 'DESCRIPTOR' AND l5.name = p.descriptor
+		JOIN codeintel_scip_symbols_lookup l6 ON l6.upload_id = ANY(%s) AND l6.segment_type = 'DESCRIPTOR_SUFFIX' AND l6.name = p.descriptor_suffix
 
-		-- Follow parent path l5->l4->l3->l2->l1, filter out anything that doesn't match exploded symbol parts
-		JOIN codeintel_scip_symbols_lookup l4 ON l4.name = p.package_version AND l4.upload_id = l5.upload_id AND l4.id = l5.parent_id
-		JOIN codeintel_scip_symbols_lookup l3 ON l3.name = p.package_name    AND l3.upload_id = l5.upload_id AND l3.id = l4.parent_id
-		JOIN codeintel_scip_symbols_lookup l2 ON l2.name = p.package_manager AND l2.upload_id = l5.upload_id AND l2.id = l3.parent_id
-		JOIN codeintel_scip_symbols_lookup l1 ON l1.name = p.scheme          AND l1.upload_id = l5.upload_id AND l1.id = l2.parent_id
+		-- Follow parent path l6->l5->l4->l3->l2->l1, filter out anything that doesn't match exploded symbol parts
+		JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = l6.upload_id AND l5.id = l6.parent_id AND l5.name = p.descriptor_namespace
+		JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = l6.upload_id AND l4.id = l5.parent_id AND l4.name = p.package_version
+		JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = l6.upload_id AND l3.id = l4.parent_id AND l3.name = p.package_name
+		JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = l6.upload_id AND l2.id = l3.parent_id AND l2.name = p.package_manager
+		JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id = l2.parent_id AND l1.name = p.scheme
 
 		-- Find symbol identifier matching descriptor
-		JOIN codeintel_scip_symbols ss ON ss.upload_id = l5.upload_id AND ss.descriptor_id = l5.id
+		JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l5.upload_id AND ll.descriptor_suffix_id = l6.id
 	)
 )
 `

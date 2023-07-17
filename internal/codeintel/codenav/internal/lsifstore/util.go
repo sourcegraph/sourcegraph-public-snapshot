@@ -2,7 +2,7 @@ package lsifstore
 
 import (
 	"encoding/base64"
-	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 
@@ -33,12 +33,12 @@ func explodeSymbol(symbol string) (string, error) {
 		return "", err
 	}
 
-	return fmt.Sprintf(
-		"%s$%s$%s$%s$%s",
+	return strings.Join([]string{
 		base64.StdEncoding.EncodeToString([]byte(s.Scheme)),
 		base64.StdEncoding.EncodeToString([]byte(s.PackageManager)),
 		base64.StdEncoding.EncodeToString([]byte(s.PackageName)),
 		base64.StdEncoding.EncodeToString([]byte(s.PackageVersion)),
-		base64.StdEncoding.EncodeToString([]byte(s.Descriptor)),
-	), nil
+		base64.StdEncoding.EncodeToString([]byte(s.DescriptorNamespace)),
+		base64.StdEncoding.EncodeToString([]byte(s.DescriptorSuffix)),
+	}, "$"), nil
 }

@@ -17,7 +17,8 @@ type descriptor struct {
 }
 
 type DescriptorNode = treeNode[descriptor]
-type PackageVersionNode = treeNode[DescriptorNode]
+type NamespaceNode = treeNode[DescriptorNode]
+type PackageVersionNode = treeNode[NamespaceNode]
 type PackageNameNode = treeNode[PackageVersionNode]
 type PackageManagerNode = treeNode[PackageNameNode]
 type SchemeNode = treeNode[PackageManagerNode]

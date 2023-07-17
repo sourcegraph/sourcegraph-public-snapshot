@@ -135,20 +135,17 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			return nil, err
 		}
 
-		strip := func(s string) string {
-			parts := strings.Split(s, "/")
-			return parts[len(parts)-1]
-		}
 		scipNamesBySyntectName := map[string][]*symbols.ExplodedSymbol{}
 		for _, syntectName := range symbolNames {
 			ex, _ := symbols.NewExplodedSymbol(syntectName)
 			var symbolNames []*symbols.ExplodedSymbol
 			for _, scipName := range scipNames {
-				// We do a `descriptor ILIKE %syntectName%` in Postgres today, so this
-				// is a bit of a less lenient (we do suffix here instead of contains).
-				if strippedDescriptor := strip(ex.Descriptor); strippedDescriptor != "" && strip(scipName.Descriptor) == strippedDescriptor {
-					symbolNames = append(symbolNames, scipName)
+				// N.B. this matches what we search against in formatSymbolNamesToLikeClause
+				if !strings.HasSuffix(ex.DescriptorSuffix, scipName.DescriptorSuffix) {
+					continue
 				}
+
+				symbolNames = append(symbolNames, scipName)
 			}
 
 			if len(symbolNames) > 20 {

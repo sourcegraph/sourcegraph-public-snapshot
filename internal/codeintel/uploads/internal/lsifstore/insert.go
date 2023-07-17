@@ -88,6 +88,9 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolLookupTableQuery)); err != nil {
 		return nil, err
 	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(newSCIPWriterTemporarySymbolLookupLeavesTableQuery)); err != nil {
+		return nil, err
+	}
 
 	symbolInserter := batch.NewInserter(
 		ctx,
@@ -95,8 +98,6 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		"t_codeintel_scip_symbols",
 		batch.MaxNumPostgresParameters,
 		"symbol_id",
-		"descriptor_id",
-		"descriptor_no_suffix_id",
 		"document_lookup_id",
 		"definition_ranges",
 		"reference_ranges",
@@ -109,18 +110,29 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		s.db.Handle(),
 		"t_codeintel_scip_symbols_lookup",
 		batch.MaxNumPostgresParameters,
-		"scip_name_type",
+		"segment_type",
 		"name",
 		"id",
 		"parent_id",
 	)
 
+	symbolLookupLeavesInserter := batch.NewInserter(
+		ctx,
+		s.db.Handle(),
+		"t_codeintel_scip_symbols_lookup_leaves",
+		batch.MaxNumPostgresParameters,
+		"symbol_id",
+		"descriptor_suffix_id",
+		"fuzzy_descriptor_suffix_id",
+	)
+
 	scipWriter := &scipWriter{
-		uploadID:             uploadID,
-		db:                   s.db,
-		symbolInserter:       symbolInserter,
-		symbolLookupInserter: symbolLookupInserter,
-		count:                0,
+		uploadID:                   uploadID,
+		db:                         s.db,
+		symbolInserter:             symbolInserter,
+		symbolLookupInserter:       symbolLookupInserter,
+		symbolLookupLeavesInserter: symbolLookupLeavesInserter,
+		count:                      0,
 	}
 
 	return scipWriter, nil
@@ -129,8 +141,6 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 const newSCIPWriterTemporarySymbolsTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
-	descriptor_id integer,
-	descriptor_no_suffix_id integer,
 	document_lookup_id integer NOT NULL,
 	definition_ranges bytea,
 	reference_ranges bytea,
@@ -143,21 +153,30 @@ const newSCIPWriterTemporarySymbolLookupTableQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
 	id integer NOT NULL,
 	name text NOT NULL,
-	scip_name_type text NOT NULL,
+	segment_type SymbolNameSegmentType NOT NULL,
 	parent_id integer
 ) ON COMMIT DROP
 `
 
+const newSCIPWriterTemporarySymbolLookupLeavesTableQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup_leaves(
+	symbol_id integer NOT NULL,
+	descriptor_suffix_id integer NOT NULL,
+	fuzzy_descriptor_suffix_id integer NOT NULL
+) ON COMMIT DROP
+`
+
 type scipWriter struct {
-	uploadID             int
-	nextSymbolLookupID   int
-	nextSymbolID         int
-	db                   *basestore.Store
-	symbolInserter       *batch.Inserter
-	symbolLookupInserter *batch.Inserter
-	count                uint32
-	batchPayloadSum      int
-	batch                []bufferedDocument
+	uploadID                   int
+	nextSymbolLookupID         int
+	nextSymbolID               int
+	db                         *basestore.Store
+	symbolInserter             *batch.Inserter
+	symbolLookupInserter       *batch.Inserter
+	symbolLookupLeavesInserter *batch.Inserter
+	count                      uint32
+	batchPayloadSum            int
+	batch                      []bufferedDocument
 }
 
 type bufferedDocument struct {
@@ -315,8 +334,8 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	}
 
 	// Bulk insert the content of the tree / descriptor-no-suffix map
-	visit := func(scipNameType, name string, id int, parentID *int) error {
-		return s.symbolLookupInserter.Insert(ctx, scipNameType, name, id, parentID)
+	visit := func(segmentType, name string, id int, parentID *int) error {
+		return s.symbolLookupInserter.Insert(ctx, segmentType, name, id, parentID)
 	}
 	if err := traverser(visit); err != nil {
 		return err
@@ -344,11 +363,18 @@ func (s *scipWriter) flush(ctx context.Context) error {
 			s.nextSymbolID++
 			ids := cache[index.SymbolName]
 
+			if err := s.symbolLookupLeavesInserter.Insert(
+				ctx,
+				s.nextSymbolID,
+				ids.descriptorSuffixID,
+				ids.fuzzyDescriptorSuffixID,
+			); err != nil {
+				return err
+			}
+
 			if err := s.symbolInserter.Insert(
 				ctx,
 				s.nextSymbolID,
-				ids.descriptorID,
-				ids.descriptorNoSuffixID,
 				documentLookupIDs[i],
 				definitionRanges,
 				referenceRanges,
@@ -383,6 +409,9 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	if err := s.symbolLookupInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
+	if err := s.symbolLookupLeavesInserter.Flush(ctx); err != nil {
+		return 0, err
+	}
 	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return 0, err
 	}
@@ -391,7 +420,10 @@ func (s *scipWriter) Flush(ctx context.Context) (uint32, error) {
 	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolLookupQuery, s.uploadID)); err != nil {
 		return 0, err
 	}
-	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 1)); err != nil {
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolLookupLeavesQuery, s.uploadID)); err != nil {
+		return 0, err
+	}
+	if err := s.db.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID, 2)); err != nil {
 		return 0, err
 	}
 
@@ -403,24 +435,37 @@ INSERT INTO codeintel_scip_symbols_lookup (
 	upload_id,
 	id,
 	name,
-	scip_name_type,
+	segment_type,
 	parent_id
 )
 SELECT
 	%s,
 	source.id,
 	source.name,
-	source.scip_name_type,
+	source.segment_type,
 	source.parent_id
 FROM t_codeintel_scip_symbols_lookup source
+`
+
+const scipWriterFlushSymbolLookupLeavesQuery = `
+INSERT INTO codeintel_scip_symbols_lookup_leaves (
+	upload_id,
+	symbol_id,
+	descriptor_suffix_id,
+	fuzzy_descriptor_suffix_id
+)
+SELECT
+	%s,
+	source.symbol_id,
+	source.descriptor_suffix_id,
+	source.fuzzy_descriptor_suffix_id
+FROM t_codeintel_scip_symbols_lookup_leaves source
 `
 
 const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
 	upload_id,
 	symbol_id,
-	descriptor_id,
-	descriptor_no_suffix_id,
 	document_lookup_id,
 	schema_version,
 	definition_ranges,
@@ -431,8 +476,6 @@ INSERT INTO codeintel_scip_symbols (
 SELECT
 	%s,
 	source.symbol_id,
-	source.descriptor_id,
-	source.descriptor_no_suffix_id,
 	source.document_lookup_id,
 	%s,
 	source.definition_ranges,
@@ -462,23 +505,24 @@ var scanIDsByHash = basestore.NewMapScanner(func(s dbutil.Scanner) (hash string,
 // See the migrator in .../codeintel/scip/symbols_migrator.go for more detail.
 
 type explodedIDs struct {
-	descriptorID         int
-	descriptorNoSuffixID int
+	descriptorSuffixID      int
+	fuzzyDescriptorSuffixID int
 }
 
-type visitFunc func(scipNameType, name string, id int, parentID *int) error
+type visitFunc func(segmentType, name string, id int, parentID *int) error
 
 func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error, error) {
 	// Create helpers to create new tree nodes with (upload-)unique identifiers
 	createSchemeNode := func() SchemeNode { return SchemeNode(newNodeWithID[PackageManagerNode](id())) }
 	createPackageManagerNode := func() PackageManagerNode { return PackageManagerNode(newNodeWithID[PackageNameNode](id())) }
 	createPackageNameNode := func() PackageNameNode { return PackageNameNode(newNodeWithID[PackageVersionNode](id())) }
-	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[DescriptorNode](id())) }
+	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[NamespaceNode](id())) }
+	createNamespaceNode := func() NamespaceNode { return NamespaceNode(newNodeWithID[DescriptorNode](id())) }
 	createDescriptor := func() DescriptorNode { return DescriptorNode(newNodeWithID[descriptor](id())) }
 
-	cache := map[string]explodedIDs{}              // Tracks symbol name -> identifiers in the scheme tree
-	schemeTree := map[string]SchemeNode{}          // Tracks scheme -> manager -> name -> version -> descriptor
-	descriptorsNoSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
+	cache := map[string]explodedIDs{}                // Tracks symbol name -> identifiers in the scheme tree
+	schemeTree := map[string]SchemeNode{}            // Tracks scheme -> manager -> name -> version -> descriptor (namespace, suffix)
+	fuzzyDescriptorSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
 
 	for _, symbolName := range symbolNames {
 		symbol, err := symbols.NewExplodedSymbol(symbolName)
@@ -495,35 +539,37 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 		packageManagerNode := getOrCreate(schemeNode.children, symbol.PackageManager, createPackageManagerNode)      // depth 1
 		packageNameNode := getOrCreate(packageManagerNode.children, symbol.PackageName, createPackageNameNode)       // depth 2
 		packageVersionNode := getOrCreate(packageNameNode.children, symbol.PackageVersion, createPackageVersionNode) // depth 3
-		descriptor := getOrCreate(packageVersionNode.children, symbol.Descriptor, createDescriptor)                  // depth 4
-		descriptorsNoSuffixID := getOrCreate(descriptorsNoSuffixMap, symbol.DescriptorNoSuffix, id)                  // map insertion
+		namespace := getOrCreate(packageVersionNode.children, symbol.DescriptorNamespace, createNamespaceNode)       // depth 4
+		descriptor := getOrCreate(namespace.children, symbol.DescriptorSuffix, createDescriptor)                     // depth 5
+		fuzzyDescriptorsSuffixID := getOrCreate(fuzzyDescriptorSuffixMap, symbol.FuzzyDescriptorSuffix, id)          // map insertion
 
 		cache[symbolName] = explodedIDs{
-			descriptorID:         descriptor.id,
-			descriptorNoSuffixID: descriptorsNoSuffixID,
+			descriptorSuffixID:      descriptor.id,
+			fuzzyDescriptorSuffixID: fuzzyDescriptorsSuffixID,
 		}
 	}
 
-	scipNameTypeByDepth := []string{
-		"SCHEME",          // depth 0
-		"PACKAGE_MANAGER", // depth 1
-		"PACKAGE_NAME",    // depth 2
-		"PACKAGE_VERSION", // depth 3
-		"DESCRIPTOR",      // depth 4
-		/*              */ // depth PANIC
+	segmentTypeByDepth := []string{
+		"SCHEME",               // depth 0
+		"PACKAGE_MANAGER",      // depth 1
+		"PACKAGE_NAME",         // depth 2
+		"PACKAGE_VERSION",      // depth 3
+		"DESCRIPTOR_NAMESPACE", // depth 4
+		"DESCRIPTOR_SUFFIX",    // depth 5
+		/*                   */ // depth PANIC
 	}
 
 	traverser := func(visit visitFunc) error {
 		// Call visit on each node of the tree
 		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
-			return visit(scipNameTypeByDepth[depth], name, id, parentID)
+			return visit(segmentTypeByDepth[depth], name, id, parentID)
 		}); err != nil {
 			return err
 		}
 
 		// Call visit on each element in the descriptor-no-suffix map
-		for name, id := range descriptorsNoSuffixMap {
-			if err := visit("DESCRIPTOR_NO_SUFFIX", name, id, nil); err != nil {
+		for name, id := range fuzzyDescriptorSuffixMap {
+			if err := visit("DESCRIPTOR_SUFFIX_FUZZY", name, id, nil); err != nil {
 				return err
 			}
 		}

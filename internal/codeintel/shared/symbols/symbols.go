@@ -1,18 +1,19 @@
 package symbols
 
 import (
-	"strings"
+	"fmt"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 )
 
 type ExplodedSymbol struct {
-	Scheme             string
-	PackageManager     string
-	PackageName        string
-	PackageVersion     string
-	Descriptor         string
-	DescriptorNoSuffix string // N.B.
+	Scheme                string
+	PackageManager        string
+	PackageName           string
+	PackageVersion        string
+	DescriptorNamespace   string
+	DescriptorSuffix      string
+	FuzzyDescriptorSuffix string // N.B.
 }
 
 func (s *ExplodedSymbol) String() string {
@@ -20,37 +21,72 @@ func (s *ExplodedSymbol) String() string {
 }
 
 func (s *ExplodedSymbol) Symbol() string {
-	return strings.Join([]string{
-		quote(s.Scheme),
-		quote(s.PackageManager),
-		quote(s.PackageName),
-		quote(s.PackageVersion),
-		quote(s.Descriptor),
-	}, " ")
-}
-
-func quote(s string) string {
-	if s == "" {
-		return "."
-	}
-
-	return s
+	return fmt.Sprintf(
+		"%s %s%s",
+		SchemeAndPackageOnlyFormatter.FormatSymbol(&scip.Symbol{
+			Scheme: s.Scheme,
+			Package: &scip.Package{
+				Manager: s.PackageManager,
+				Name:    s.PackageName,
+				Version: s.PackageVersion,
+			},
+		}),
+		s.DescriptorNamespace,
+		s.DescriptorSuffix,
+	)
 }
 
 func NewExplodedSymbol(symbol string) (*ExplodedSymbol, error) {
-	p, err := scip.ParseSymbol(symbol)
+	parsedSymbol, err := scip.ParseSymbol(symbol)
 	if err != nil {
 		return nil, err
 	}
+	namespaceDescriptors, nonNamespaceDescriptors := splitNamespaces(parsedSymbol)
+
+	namespace := ""
+	if namespaceDescriptors != nil {
+		namespace = scip.DescriptorOnlyFormatter.FormatSymbol(namespaceDescriptors)
+	}
 
 	return &ExplodedSymbol{
-		Scheme:             p.Scheme,
-		PackageManager:     p.Package.Manager,
-		PackageName:        p.Package.Name,
-		PackageVersion:     p.Package.Version,
-		Descriptor:         scip.DescriptorOnlyFormatter.FormatSymbol(p),
-		DescriptorNoSuffix: ReducedDescriptorOnlyFormatter.FormatSymbol(p),
+		Scheme:                parsedSymbol.Scheme,
+		PackageManager:        parsedSymbol.Package.Manager,
+		PackageName:           parsedSymbol.Package.Name,
+		PackageVersion:        parsedSymbol.Package.Version,
+		DescriptorNamespace:   namespace,
+		DescriptorSuffix:      scip.DescriptorOnlyFormatter.FormatSymbol(nonNamespaceDescriptors),
+		FuzzyDescriptorSuffix: ReducedDescriptorOnlyFormatter.FormatSymbol(nonNamespaceDescriptors),
 	}, nil
+}
+
+func splitNamespaces(p *scip.Symbol) (*scip.Symbol, *scip.Symbol) {
+	for i, descriptor := range p.Descriptors {
+		if descriptor.Suffix != scip.Descriptor_Namespace {
+			if i == 0 {
+				// no namespaces
+				return nil, p
+			}
+
+			prefix := &scip.Symbol{Scheme: p.Scheme, Package: p.Package, Descriptors: p.Descriptors[:i]}
+			suffix := &scip.Symbol{Scheme: p.Scheme, Package: p.Package, Descriptors: p.Descriptors[i:]}
+			return prefix, suffix
+
+		}
+	}
+
+	// no non-namespaces
+	return nil, p
+}
+
+var SchemeAndPackageOnlyFormatter = scip.SymbolFormatter{
+	OnError:               func(err error) error { return err },
+	IncludeScheme:         func(scheme string) bool { return true },
+	IncludePackageManager: func(_ string) bool { return true },
+	IncludePackageName:    func(_ string) bool { return true },
+	IncludePackageVersion: func(_ string) bool { return true },
+	IncludeDescriptor:     func(_ string) bool { return false },
+	IncludeRawDescriptor:  func(_ *scip.Descriptor) bool { return false },
+	IncludeDisambiguator:  func(_ string) bool { return false },
 }
 
 // ReducedDescriptorOnlyFormatter formats a reduced descriptor omitting suffixes outside
