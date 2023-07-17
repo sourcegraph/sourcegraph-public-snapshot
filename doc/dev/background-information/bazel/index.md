@@ -12,6 +12,7 @@ Sourcegraph uses [Bazel](https://bazel.build) as its build system. Reach out on 
 - **Context specific**
   - [Bazel and Go](./go.md)
   - [Bazel and client](./web.md)
+  - [Overview of the Bazel configuration for client](./web_overview.md)
   - [Bazel and container images](./containers.md)
 - **How-tos**
   - [Writing a server integration test](./server_integration_tests.md)
