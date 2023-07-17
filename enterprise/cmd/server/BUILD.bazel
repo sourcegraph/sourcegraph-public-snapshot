@@ -117,7 +117,7 @@ DEPS = [
     "//enterprise/cmd/frontend",
     "//enterprise/cmd/gitserver",
     "//enterprise/cmd/migrator",
-    "//enterprise/cmd/repo-updater",
+    "//cmd/repo-updater",
     "//enterprise/cmd/symbols",
     "//enterprise/cmd/worker",
 ]
