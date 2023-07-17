@@ -411,7 +411,9 @@ public class SettingsComponent implements Disposable {
 
   public void setCodyEnabled(boolean value) {
     isCodyEnabledCheckBox.setSelected(value);
-    isCodyAutoCompleteEnabledCheckBox.setEnabled(value);
+    if (!value) {
+      setCodyAutoCompleteEnabled(false);
+    }
   }
 
   public boolean isCodyAutoCompleteEnabled() {
