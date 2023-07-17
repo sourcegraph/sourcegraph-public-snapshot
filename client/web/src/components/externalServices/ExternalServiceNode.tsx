@@ -111,21 +111,24 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    {!editingDisabled && (
-                        <>
-                            <Tooltip content="Edit code host connection settings">
-                                <Button
-                                    className="test-edit-external-service-button"
-                                    to={`/site-admin/external-services/${encodeURIComponent(node.id)}/edit`}
-                                    variant="secondary"
-                                    size="sm"
-                                    as={Link}
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
-                                </Button>
-                            </Tooltip>{' '}
-                        </>
-                    )}
+                    <Tooltip
+                        content={
+                            editingDisabled
+                                ? 'Editing code host connection is disabled via the UI when EXTSVC_CONFIG_FILE is set.'
+                                : 'Edit code host connection settings'
+                        }
+                    >
+                        <Button
+                            className="test-edit-external-service-button"
+                            to={`/site-admin/external-services/${encodeURIComponent(node.id)}/edit`}
+                            variant="secondary"
+                            size="sm"
+                            as={Link}
+                            disabled={editingDisabled}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
+                        </Button>
+                    </Tooltip>{' '}
                     <Tooltip content="Delete code host connection">
                         <Button
                             aria-label="Delete"
