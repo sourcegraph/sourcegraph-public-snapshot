@@ -43,6 +43,7 @@ buf_lint_test(
 
 buf_breaking_test(
     name = "v1_proto_breaking",
+    timeout = "short",
     against = "//internal/own/codeowners/v1:image.bin",
     config = "//internal:buf.yaml",
     targets = [":v1_proto"],  # The Protobuf library
