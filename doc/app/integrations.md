@@ -1,6 +1,6 @@
 ## Cody app API integrations
 
-This page outlines how clients can integrate with Cody app.
+This page outlines how extensions and other clients can integrate with Cody app.
 
 ## API
 
@@ -32,7 +32,7 @@ Example contents of `app.json`:
 
 ## Token
 
-API requests require a token. The token is generated when the Cody app runs for the first time and placed in `app.json` in the app's config directory.
+API requests require a token. The token is generated when the Cody app runs for the first time and placed in `app.json` in the app's config directory. See the [Sourcegraph API docs](../api/graphql/index.md) for how to make requests with the token.
 
 ## Endpoint
 
