@@ -1,8 +1,7 @@
 import { catchError } from 'rxjs/operators'
 
 import { asError, isErrorLike, type ErrorLike } from '$lib/common'
-import { fetchTreeEntries } from '$lib/loader/repo'
-import { requestGraphQL } from '$lib/web'
+import { fetchTreeEntries } from '$lib/repo/api/tree'
 
 import type { PageLoad } from './$types'
 
@@ -15,11 +14,11 @@ export const load: PageLoad = ({ params, parent }) => ({
                       commitID: resolvedRevision.commitID,
                       revision: revision ?? '',
                       filePath: params.path,
-                      first: 2500,
-                      requestGraphQL: options => requestGraphQL(options.request, options.variables),
+                      first: 1000,
                   })
                       .pipe(catchError((error): [ErrorLike] => [asError(error)]))
                       .toPromise()
+                      .then(commit => (isErrorLike(commit) ? null : commit.tree))
                 : null
         ),
     },

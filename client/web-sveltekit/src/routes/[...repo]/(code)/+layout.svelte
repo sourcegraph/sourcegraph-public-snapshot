@@ -3,22 +3,58 @@
 
     import { afterNavigate, disableScrollHandling } from '$app/navigation'
     import { page } from '$app/stores'
-    import FileTree from '$lib/repo/FileTree.svelte'
+    import { isErrorLike } from '$lib/common'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { scrollAll } from '$lib/stores'
-    import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
+    import FileTree from './FileTree.svelte'
 
     export let data: PageData
 
-    function last<T>(arr: T[]): T {
-        return arr[arr.length - 1]
+    const fileTreeLoader: FileTreeLoader = args =>
+        fetchSidebarFileTree(args).then(
+            ({ root, values }) =>
+                new FileTreeProvider({
+                    root,
+                    values,
+                    loader: fileTreeLoader,
+                    ...args,
+                })
+        )
+    let treeProvider: FileTreeProvider | null = null
+
+    async function updateFileTreeProvider(
+        repoName: string,
+        revision: string | undefined,
+        commitID: string,
+        parentPath: string
+    ) {
+        const { root, values } = await data.fileTree.deferred
+
+        // Do nothing if update was called with new arguments in the meantime
+        if (repoName !== data.repoName || revision !== data.revision || parentPath !== data.parentPath) {
+            return
+        }
+        treeProvider = new FileTreeProvider({
+            root,
+            values,
+            repoName,
+            revision: revision ?? '',
+            commitID,
+            loader: fileTreeLoader,
+        })
     }
 
-    $: treeOrError = asStore(data.treeEntries.deferred)
+    $: ({ repoName, revision, parentPath, resolvedRevision } = data)
+    $: commitID = isErrorLike(resolvedRevision) ? '' : resolvedRevision.commitID
+    // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
+    // changes
+    $: updateFileTreeProvider(repoName, revision, commitID, parentPath)
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -37,15 +73,13 @@
 
 <section>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
-        {#if !$treeOrError.loading && $treeOrError.data}
-            <FileTree
-                activeEntry={$page.params.path ? last($page.params.path.split('/')) : ''}
-                treeOrError={$treeOrError.data}
-            >
-                <h3 slot="title">
-                    <SidebarToggleButton />&nbsp; Files
-                </h3>
-            </FileTree>
+        <h3>
+            <SidebarToggleButton />&nbsp; Files
+        </h3>
+        {#if treeProvider}
+            <FileTree {treeProvider} selectedPath={$page.params.path ?? ''} />
+        {:else}
+            <LoadingSpinner center={false} />
         {/if}
     </div>
     {#if $sidebarOpen}
