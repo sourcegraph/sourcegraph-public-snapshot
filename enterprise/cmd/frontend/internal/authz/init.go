@@ -83,9 +83,11 @@ func Init(
 			return nil
 		}
 
+		reason := licensing.GetLicenseInvalidReason()
+
 		return []*graphqlbackend.Alert{{
 			TypeValue:    graphqlbackend.AlertTypeError,
-			MessageValue: "To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration).",
+			MessageValue: fmt.Sprintf("The Sourcegraph license key is invalid. Reason: %s. To continue using Sourcegraph, a site admin must renew the Sourcegraph license (or downgrade to only using Sourcegraph Free features). Update the license key in the [**site configuration**](/site-admin/configuration). Please contact Sourcegraph support for more information.", reason),
 		}}
 	})
 
