@@ -7167,6 +7167,9 @@ def go_dependencies():
         build_file_proto_mode = "disable_global",
         importpath = "cloud.google.com/go/bigquery",
         sum = "h1:JKLNdxI0N+TIUWD6t9KN646X27N5dQWq9dZbbTWZ8hc=",
+        build_directives = [
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+        ],
         version = "v1.52.0",
     )
     go_repository(
