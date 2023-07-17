@@ -409,6 +409,7 @@ public class SettingsComponent {
 
   public void setCodyEnabled(boolean value) {
     isCodyEnabledCheckBox.setSelected(value);
+    isCodyAutoCompleteEnabledCheckBox.setEnabled(value);
   }
 
   public boolean isCodyAutoCompleteEnabled() {
@@ -554,6 +555,15 @@ public class SettingsComponent {
             .getPanel();
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
+
+    // Disable isCodyAutoCompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
+    isCodyEnabledCheckBox.addActionListener(e -> {
+      if (!isCodyEnabledCheckBox.isSelected()) {
+        isCodyAutoCompleteEnabledCheckBox.setSelected(false);
+      }
+      isCodyAutoCompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+    });
+
     return codySettingsPanel;
   }
 }

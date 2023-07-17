@@ -220,7 +220,8 @@ public class ConfigUtil {
   }
 
   public static boolean isCodyAutoCompleteEnabled() {
-    return getApplicationLevelConfig().isCodyAutoCompleteEnabled();
+    return getApplicationLevelConfig().isCodyEnabled()
+        && getApplicationLevelConfig().isCodyAutoCompleteEnabled();
   }
 
   public static boolean isAccessTokenNotificationDismissed() {
