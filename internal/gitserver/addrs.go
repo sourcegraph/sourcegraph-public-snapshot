@@ -29,10 +29,22 @@ import (
 
 const maxMessageSizeBytes = 64 * 1024 * 1024 // 64MiB
 
-var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitserver_addr_for_repo_invoked",
-	Help: "Number of times gitserver.AddrForRepo was invoked",
-}, []string{"user_agent"})
+var (
+	addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_addr_for_repo_invoked",
+		Help: "Number of times gitserver.AddrForRepo was invoked",
+	}, []string{"user_agent"})
+
+	addrForRepoCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_addr_for_repo_cache_hit",
+		Help: "Number of cache hits of the repoAddressCache managed by GitserverAddresses",
+	}, []string{"user_ageng"})
+
+	addrForRepoCacheMiss = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_addr_for_repo_cache_miss",
+		Help: "Number of cache misses of the repoAddressCache managed by GitserverAddresses",
+	}, []string{"user_ageng"})
+)
 
 // NewGitserverAddressesFromConf fetches the current set of gitserver addresses
 // and pinned repos for gitserver.
@@ -224,7 +236,7 @@ type GitserverAddresses struct {
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // TODO: Insert link to doc with decision tree.
-func (g GitserverAddresses) AddrForRepo(userAgent string, repoName api.RepoName) string {
+func (g *GitserverAddresses) AddrForRepo(userAgent string, repoName api.RepoName) string {
 	// TODO: Check if this can be passed down as an arg instead.
 	logger := log.Scoped("GitserverAddresses.AddrForRepo", "logger to scoped to ").With(
 		log.String("repoName", string(repoName)),
@@ -249,8 +261,11 @@ func (g GitserverAddresses) AddrForRepo(userAgent string, repoName api.RepoName)
 	repoConf := conf.Get().Repositories
 	if repoConf != nil && len(repoConf.DeduplicateForks) != 0 {
 		if addr := g.getCachedRepoAddress(repoName); addr != "" {
+			addrForRepoCacheHit.WithLabelValues(userAgent).Inc()
 			return addr
 		}
+
+		addrForRepoCacheMiss.WithLabelValues(userAgent).Inc()
 
 		repo, err := g.db.Repos().GetByName(ctx, repoName)
 		// Either the repo was not found or the repo is not a fork. The repo is also not in the
@@ -275,7 +290,7 @@ func (g GitserverAddresses) AddrForRepo(userAgent string, repoName api.RepoName)
 	return getRepoAddress(repoName)
 }
 
-func (g GitserverAddresses) withUpdateCache(repoName api.RepoName, address string) string {
+func (g *GitserverAddresses) withUpdateCache(repoName api.RepoName, address string) string {
 	if g.repoAddressCache == nil {
 		g.repoAddressCache = &repoAddressCache{cache: make(map[api.RepoName]repoAddressCachedItem)}
 	}
@@ -284,7 +299,7 @@ func (g GitserverAddresses) withUpdateCache(repoName api.RepoName, address strin
 	return address
 }
 
-func (g GitserverAddresses) getCachedRepoAddress(repoName api.RepoName) string {
+func (g *GitserverAddresses) getCachedRepoAddress(repoName api.RepoName) string {
 	if g.repoAddressCache == nil {
 		g.repoAddressCache = &repoAddressCache{cache: make(map[api.RepoName]repoAddressCachedItem)}
 		return ""
