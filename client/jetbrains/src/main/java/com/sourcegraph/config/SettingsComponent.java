@@ -1,5 +1,7 @@
 package com.sourcegraph.config;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -18,6 +20,9 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.swing.*;
@@ -45,6 +50,13 @@ public class SettingsComponent {
 
   private JButton testCodyAppConnectionButton;
   private JLabel testCodyAppConnectionLabel;
+  private ActionLink installLocalAppLink;
+  private JLabel installLocalAppComment;
+  private ActionLink runLocalAppLink;
+  private JLabel runLocalAppComment;
+
+  private final ScheduledExecutorService codyAppStateCheckerExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
@@ -168,7 +180,6 @@ public class SettingsComponent {
                     .orElse(getDefaultInstanceType()));
     boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
     boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
-    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
     boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
@@ -199,28 +210,26 @@ public class SettingsComponent {
     JBLabel codyAppComment =
         new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
-    JLabel installLocalAppComment =
+    installLocalAppComment =
         new JBLabel(
             "Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppComment.setVisible(false);
     installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    ActionLink installLocalAppLink =
+    installLocalAppLink =
         simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
-    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppLink.setVisible(false);
     installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
-    ActionLink runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
-    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
+    runLocalAppLink.setVisible(false);
     runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    JLabel runLocalAppComment =
+    runLocalAppComment =
         new JBLabel(
             "Cody App seems to be installed, but it's not running, currently.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppComment.setVisible(false);
     runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
@@ -308,7 +317,27 @@ public class SettingsComponent {
     userAuthenticationPanel.setBorder(
         IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
 
+    updateVisibilityOfHelperLinks();
+    codyAppStateCheckerExecutorService.scheduleWithFixedDelay(
+        this::updateVisibilityOfHelperLinks, 0, 1, TimeUnit.SECONDS);
     return userAuthenticationPanel;
+  }
+
+  private void updateVisibilityOfHelperLinks() {
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
+    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
+    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+              installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+              runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+              runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+            },
+            ModalityState.any());
   }
 
   @NotNull
