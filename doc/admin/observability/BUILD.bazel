@@ -1,5 +1,16 @@
 load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
+filegroup(
+    name = "doc_files",
+    srcs = glob(
+        ["**/*"],
+        [
+            ".gitattributes",
+        ],
+    ),
+    visibility = ["//doc:__pkg__"],
+)
+
 write_generated_to_source_files(
     name = "write_monitoring_docs",
     src = "//monitoring:generate_config",

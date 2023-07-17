@@ -7,6 +7,7 @@ sh_test(
     data = [
         "//dev/tools:docsite",
         "//doc/cli/references:doc_files",
+        "//doc/admin/observability:doc_files",
     ] + glob(
         ["**/*"],
         ["test.sh"],
