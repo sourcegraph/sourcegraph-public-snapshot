@@ -10,8 +10,14 @@ import "math"
 // quantization function yielded rankings where the average change in rank was
 // only 1.2%. 93 of the top 100 rows  were unchanged, and 950 of the top 1000
 // were unchanged.
-func Quantize(input []float32) []int8 {
-	output := make([]int8, len(input))
+//
+// When buf is large enough to fit the output, it will be used instead of
+// an allocation.
+func Quantize(input []float32, buf []int8) []int8 {
+	output := buf
+	if len(input) > len(buf) {
+		output = make([]int8, len(input))
+	}
 	for i, val := range input {
 		// All our inputs should be in [-1, 1],
 		// but double check just in case.
@@ -27,7 +33,7 @@ func Quantize(input []float32) []int8 {
 		// better accuracy.
 		output[i] = int8(math.Round(float64(val) * 127.0))
 	}
-	return output
+	return output[:len(input)]
 }
 
 func Dequantize(input []int8) []float32 {

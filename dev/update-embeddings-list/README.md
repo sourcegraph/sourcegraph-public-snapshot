@@ -13,5 +13,4 @@ To work on this file:
 
 Alternatively you can also:
 
-1. run `pnpm run build`
-2. node `build/index.js`
+1. run `pnpm run start`
