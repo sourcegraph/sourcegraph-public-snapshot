@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	database "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -29,7 +30,7 @@ type GitoliteSource struct {
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
-func NewGitoliteSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
+func NewGitoliteSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitoliteSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -60,7 +61,7 @@ func NewGitoliteSource(ctx context.Context, svc *types.ExternalService, cf *http
 		return nil, err
 	}
 
-	lister := gitserver.NewGitoliteLister(gitoliteDoer)
+	lister := gitserver.NewGitoliteLister(db, gitoliteDoer)
 
 	return &GitoliteSource{
 		svc:     svc,

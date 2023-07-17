@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
@@ -21,13 +23,16 @@ type GitoliteLister struct {
 	userAgent  string
 }
 
-func NewGitoliteLister(cli httpcli.Doer) *GitoliteLister {
+func NewGitoliteLister(db database.DB, cli httpcli.Doer) *GitoliteLister {
+	logger := log.Scoped("NewGitoliteLister", "logger scoped to a GitoliteLister")
+	atomicConns := getAtomicGitServerConns(logger, db)
+
 	return &GitoliteLister{
 		httpClient: cli,
 		addrs: func() []string {
-			return conns.get().Addresses
+			return atomicConns.get().Addresses
 		},
-		grpcClient: conns,
+		grpcClient: atomicConns,
 		userAgent:  filepath.Base(os.Args[0]),
 	}
 }

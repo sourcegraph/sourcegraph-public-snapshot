@@ -47,6 +47,8 @@ type Syncer struct {
 	// Hooks for enterprise specific functionality. Ignored in OSS
 	EnterpriseCreateRepoHook func(context.Context, Store, *types.Repo) error
 	EnterpriseUpdateRepoHook func(context.Context, Store, *types.Repo, *types.Repo) error
+
+	DeduplicatedForksIndex *types.RepoURICache
 }
 
 // RunOptions contains options customizing Run behaviour.

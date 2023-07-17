@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -20,7 +21,8 @@ import (
 )
 
 func TestClientSource_AddrMatchesTarget(t *testing.T) {
-	source := NewTestClientSource(t, []string{"localhost:1234", "localhost:4321"})
+	db := database.NewMockDB()
+	source := NewTestClientSource(t, db, []string{"localhost:1234", "localhost:4321"})
 	testGitserverConns := source.(*testGitserverConns)
 	conns := GitserverConns(*testGitserverConns.conns)
 
@@ -93,13 +95,19 @@ func TestClient_GRPCRouting(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := NewClient(database.NewMockDB())
+	db := database.NewMockDB()
+	client := NewClient(db)
 
 	cfg := newConfig(
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver2"},
 	)
-	conns.update(cfg)
+
+	logger := logtest.NoOp(t)
+
+	atomicConns := getAtomicGitServerConns(logger, db)
+
+	atomicConns.update(cfg)
 
 	addr := client.AddrForRepo("repo1")
 	require.Equal(t, "gitserver2", addr)
@@ -109,7 +117,7 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 		[]string{"gitserver1", "gitserver2"},
 		map[string]string{"repo1": "gitserver1"},
 	)
-	conns.update(cfg)
+	atomicConns.update(cfg)
 
 	require.Equal(t, "gitserver1", client.AddrForRepo("repo1"))
 }
