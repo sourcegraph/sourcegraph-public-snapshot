@@ -29,21 +29,21 @@ enum ExtensionStatus {
 
 const EXTENSIONS: Extension[] = [
     {
-        name: 'Visual Studio Code',
+        name: 'Cody for VS Code',
         status: ExtensionStatus.GA,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/vscode-icon.png',
         docLink: null,
         extensionDeepLink: 'vscode:extension/sourcegraph.cody-ai',
     },
     {
-        name: 'IntelliJ Idea',
+        name: 'Cody for IntelliJ Idea',
         status: ExtensionStatus.Experimental,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/idea-icon.png',
         docLink: null,
         extensionDeepLink: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph',
     },
     {
-        name: 'NeoVim',
+        name: 'Cody for NeoVim',
         status: ExtensionStatus.ComingSoon,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/neovim-icon.png',
         docLink: null,
