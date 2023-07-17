@@ -115,6 +115,12 @@ func TestAddrForRepo(t *testing.T) {
 				expectedShardParentRepo:      shardParentRepo,
 				expectedShardForkedRepo:      shardForkedRepo,
 			},
+			{
+				name:                         "get pool repo returns an error",
+				getPoolRepoFuncDefaultReturn: func() (*types.PoolRepo, error) { return nil, errors.New("mocked error") },
+				expectedShardParentRepo:      shardParentRepo,
+				expectedShardForkedRepo:      shardForkedRepo,
+			},
 		}
 
 		for _, tc := range testCases {
@@ -258,4 +264,27 @@ func TestRepoAddressCache(t *testing.T) {
 	// No verify that the item in the cache has the updated timestamp after we Read the item.
 	item2 := repoAddrCache.cache[repoName]
 	require.Greater(t, item2.lastAccessed, item.lastAccessed)
+}
+
+func TestWithUpdateCache(t *testing.T) {
+	db := database.NewMockDB()
+	ga := GitserverAddresses{
+		db:        db,
+		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
+		PinnedServers: map[string]string{
+			"repo2": "gitserver-1",
+		},
+	}
+
+	// Ensures that a nil repoAddressCache will not cause a panic if consumers of GitserverAddresses
+	// do not initialise a cache.
+	require.Nil(t, ga.repoAddressCache)
+
+	repo := api.RepoName("repo1")
+	addr := "address1"
+	gotAddress := ga.withUpdateCache(repo, addr)
+	require.Equal(t, gotAddress, addr)
+
+	item := ga.repoAddressCache.Read(repo)
+	require.Equal(t, item.address, addr)
 }
