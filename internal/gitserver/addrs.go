@@ -97,8 +97,9 @@ func NewTestClientSource(t *testing.T, db database.DB, addrs []string, options .
 	}
 
 	source := testGitserverConns{
-		logger: log.Scoped("testGitserverConns", "a logger scoped to testGitserverConns"),
+		logger: logger,
 		conns: &GitserverConns{
+			logger: logger,
 			GitserverAddresses: GitserverAddresses{
 				db:        db,
 				Addresses: addrs,
@@ -166,6 +167,9 @@ var _ ClientSource = &testGitserverConns{}
 var _ AddressWithClient = &testConnAndErr{}
 
 // curentTime returns the current time and exists as a function to mock time.Now() in tests.
+//
+// If you're using it to mock the current time in tests, make sure to restore it as part of test
+// cleanup.
 var currentTime = func() time.Time { return time.Now() }
 
 type repoAddressCachedItem struct {
@@ -273,7 +277,7 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 		// deduplicateforks list, so we do not need to look up a pool repo for this.
 		//
 		// Fallback to regular name based hashing.
-		if err != nil || !repo.Fork {
+		if err != nil || (repo != nil && !repo.Fork) {
 			return g.withUpdateCache(repoName, getRepoAddress(repoName))
 		}
 

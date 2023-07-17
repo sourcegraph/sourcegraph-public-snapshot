@@ -75,10 +75,10 @@ func TestAddrForRepo(t *testing.T) {
 		// This serves both as a test and a test documentation on what shard to expect for which
 		// repo.
 		shardParentRepo := ga.AddrForRepo(ctx, logger, "gitserver", parentRepo)
-		require.Equal(t, shardParentRepo, "gitserver-2")
+		require.Equal(t, "gitserver-2", shardParentRepo)
 
 		shardForkedRepo := ga.AddrForRepo(ctx, logger, "gitserver", forkedRepo)
-		require.Equal(t, shardForkedRepo, "gitserver-3")
+		require.Equal(t, "gitserver-3", shardForkedRepo)
 
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
@@ -140,8 +140,8 @@ func TestAddrForRepo(t *testing.T) {
 				gs.GetPoolRepoFunc.SetDefaultReturn(tc.getPoolRepoFuncDefaultReturn())
 				db.GitserverReposFunc.SetDefaultReturn(gs)
 
-				require.Equal(t, ga.AddrForRepo(ctx, logger, "gitserver", parentRepo), tc.expectedShardParentRepo)
-				require.Equal(t, ga.AddrForRepo(ctx, logger, "gitserver", forkedRepo), tc.expectedShardForkedRepo)
+				require.Equal(t, tc.expectedShardParentRepo, ga.AddrForRepo(ctx, logger, "gitserver", parentRepo))
+				require.Equal(t, tc.expectedShardForkedRepo, ga.AddrForRepo(ctx, logger, "gitserver", forkedRepo))
 			})
 		}
 	})
@@ -153,6 +153,9 @@ func TestRepoAddressCache(t *testing.T) {
 	// Read an object that does not exist in the cache.
 	item := repoAddrCache.Read("foo")
 	require.Nil(t, item)
+
+	originalCurrentTime := currentTime
+	t.Cleanup(func() { currentTime = originalCurrentTime })
 
 	// Mock currentTime. Expect this when the value is read.
 	expectedFirstWrite := time.Date(2023, 01, 01, 23, 00, 00, 0, time.UTC)
@@ -172,8 +175,8 @@ func TestRepoAddressCache(t *testing.T) {
 
 	item = repoAddrCache.Read(repoName)
 	require.NotNil(t, item)
-	require.Equal(t, item.address, addr)
-	require.Equal(t, item.lastAccessed, expectedFirstWrite)
+	require.Equal(t, addr, item.address)
+	require.Equal(t, expectedFirstWrite, item.lastAccessed)
 
 	// No verify that the item in the cache has the updated timestamp after we Read the item.
 	item2 := repoAddrCache.cache[repoName]
@@ -190,15 +193,15 @@ func TestWithUpdateCache(t *testing.T) {
 	repo := api.RepoName("repo1")
 	addr := "address1"
 	gotAddress := ga.withUpdateCache(repo, addr)
-	require.Equal(t, gotAddress, addr)
+	require.Equal(t, addr, gotAddress)
 
 	item := ga.repoAddressCache.Read(repo)
-	require.Equal(t, item.address, addr)
+	require.Equal(t, addr, item.address)
 }
 
 func TestGetCachedRepoAddress(t *testing.T) {
 	db := database.NewMockDB()
-	ga := GitserverAddresses{
+	ga := &GitserverAddresses{
 		db:        db,
 		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
 		PinnedServers: map[string]string{
@@ -209,12 +212,12 @@ func TestGetCachedRepoAddress(t *testing.T) {
 	require.Nil(t, ga.repoAddressCache)
 
 	repo := api.RepoName("repo1")
-	require.Equal(t, ga.getCachedRepoAddress(repo), "")
+	require.Equal(t, "", ga.getCachedRepoAddress(repo))
 
 	require.NotNil(t, ga.repoAddressCache)
-	require.Equal(t, ga.getCachedRepoAddress(repo), "")
+	require.Equal(t, "", ga.getCachedRepoAddress(repo))
 
 	addr := "address1"
 	ga.repoAddressCache.Write(repo, addr)
-	require.Equal(t, ga.getCachedRepoAddress(repo), addr)
+	require.Equal(t, addr, ga.getCachedRepoAddress(repo))
 }

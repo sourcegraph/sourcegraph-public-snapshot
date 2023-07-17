@@ -4,7 +4,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -12,16 +11,16 @@ func TestGetDeduplicatedForksIndex(t *testing.T) {
 	testCases := []struct {
 		name       string
 		haveConfig *schema.Repositories
-		wantIndex  map[api.RepoName]struct{}
+		wantIndex  map[string]struct{}
 	}{
 		{
 			name:      "config not set",
-			wantIndex: map[api.RepoName]struct{}{},
+			wantIndex: map[string]struct{}{},
 		},
 		{
 			name:       "repositories set, but deduplicated forks is empty",
 			haveConfig: &schema.Repositories{},
-			wantIndex:  map[api.RepoName]struct{}{},
+			wantIndex:  map[string]struct{}{},
 		},
 		{
 			name: "deduplicated forks is not empty",
@@ -31,9 +30,9 @@ func TestGetDeduplicatedForksIndex(t *testing.T) {
 					"def",
 				},
 			},
-			wantIndex: map[api.RepoName]struct{}{
-				"abc": struct{}{},
-				"def": struct{}{},
+			wantIndex: map[string]struct{}{
+				"abc": {},
+				"def": {},
 			},
 		},
 	}
