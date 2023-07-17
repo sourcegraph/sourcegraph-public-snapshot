@@ -55,7 +55,7 @@ func TestParseConfig(t *testing.T) {
 				ServiceType: extsvc.TypeGerrit,
 			}},
 			wantProblems: []string{
-				`Cannot have more than one auth provider with url "https://gerrit.example.com"`,
+				`Cannot have more than one Gerrit auth provider with url "https://gerrit.example.com"`,
 			},
 		},
 		"2 gerrit configs with different URLs is okay": {
