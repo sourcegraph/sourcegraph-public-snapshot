@@ -13,7 +13,7 @@ unzip -o /tmp/sonar-scanner.zip -d /tmp/sonar/
 echo "--- :lock: running Sonarcloud scan"
 echo ""
 $SONAR_SCANNER_HOME/bin/sonar-scanner \
-  -Dsonar.organization=sourcegraph \
-  -Dsonar.projectKey=sourcegraph_sourcegraph \
-  -Dsonar.sources=/root/buildkite/build/sourcegraph/ \
+  -Dsonar.organization=test-shiva-surya \
+  -Dsonar.projectKey=test-shiva-surya_sourcegraph \
+  -Dsonar.sources=. \
   -Dsonar.host.url=https://sonarcloud.io
