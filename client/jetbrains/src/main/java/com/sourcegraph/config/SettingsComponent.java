@@ -54,7 +54,6 @@ public class SettingsComponent {
   private JLabel installLocalAppComment;
   private ActionLink runLocalAppLink;
   private JLabel runLocalAppComment;
-  private JPanel codyAppPanel;
 
   private final ScheduledExecutorService codyAppStateCheckerExecutorService =
       Executors.newSingleThreadScheduledExecutor();
@@ -232,7 +231,7 @@ public class SettingsComponent {
             UIUtil.FontColor.BRIGHTER);
     runLocalAppComment.setVisible(false);
     runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    codyAppPanel =
+    JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)
             .addComponent(codyAppComment, 2)
@@ -337,9 +336,8 @@ public class SettingsComponent {
               installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
               runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
               runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
-              codyAppPanel.revalidate();
-              codyAppPanel.repaint();
-            }, ModalityState.any());
+            },
+            ModalityState.any());
   }
 
   @NotNull
