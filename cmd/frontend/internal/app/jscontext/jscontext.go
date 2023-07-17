@@ -44,6 +44,7 @@ type authProviderInfo struct {
 	ServiceType       string  `json:"serviceType"`
 	AuthenticationURL string  `json:"authenticationURL"`
 	ServiceID         string  `json:"serviceID"`
+	ClientID          string  `json:"clientID"`
 }
 
 // GenericPasswordPolicy a generic password policy that holds password requirements
@@ -260,6 +261,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 				ServiceType:       p.ConfigID().Type,
 				AuthenticationURL: info.AuthenticationURL,
 				ServiceID:         info.ServiceID,
+				ClientID:          info.ClientID,
 			})
 		}
 	}

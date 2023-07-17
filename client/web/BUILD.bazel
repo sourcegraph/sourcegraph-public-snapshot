@@ -2082,9 +2082,6 @@ BUNDLE_DATA_DEPS = [
 ]
 
 ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
-    # static assets imported in .ts
-    "src/enterprise/productSubscription/ProductCertificate-background.png",
-
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",

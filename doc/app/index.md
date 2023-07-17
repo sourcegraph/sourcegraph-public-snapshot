@@ -56,13 +56,7 @@ If you're on a version that's 2023.6.13 or older, we recommend you uninstall the
 
 ## Rate limiting
 
-There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as we continue development on [Cody Gateway](../cody/explanations/cody_gateway.md). If you'd like to use your own third-party LLM provider instead of Cody Gateway, you must create your own key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).  
-
-### Cody Chat
-Interactions with Cody Chat (whether in the app UI or in the editor extension) are capped at 100 requests per day.
-
-### Code autocomplete
-Code autocomplete is capped at 1000 requests per day. Learn more about [Cody Completions](../cody/autocomplete.md).
+There are several forms of rate limiting that help us control costs for free versions of Cody. We expect to relax these limits as we continue development on [Cody Gateway](../cody/explanations/cody_gateway.md). If you hit these limits, you can can request an increase by visiting our [discord](https://discord.com/servers/sourcegraph-969688426372825169) channel and requesting a higher limit for both chats and completions. If you'd like to use your own third-party LLM provider instead of Cody Gateway, you must create your own key with Anthropic or OpenAI and [update your app configuration](app_configuration.md).  
 
 ### Embeddings
 The setup experience allows users to select up to 10 repos for embeddings. Additional repos can be added, and embeddings can be scheduled, under Settings > Advanced settings > Embedding jobs, but the number of additional repos supported will vary depending on size.

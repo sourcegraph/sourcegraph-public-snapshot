@@ -8,6 +8,7 @@ go_library(
     visibility = ["//enterprise/cmd/frontend:__subpackages__"],
     deps = [
         "//internal/auth/providers",
+        "//internal/collections",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/extsvc",
