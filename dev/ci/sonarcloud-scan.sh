@@ -15,5 +15,5 @@ echo ""
 $SONAR_SCANNER_HOME/bin/sonar-scanner \
   -Dsonar.organization=sourcegraph \
   -Dsonar.projectKey=sourcegraph_sourcegraph \
-  -Dsonar.sources=. \
+  -Dsonar.sources=/root/buildkite/build/sourcegraph/ \
   -Dsonar.host.url=https://sonarcloud.io
