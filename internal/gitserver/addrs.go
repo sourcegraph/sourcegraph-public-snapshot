@@ -315,7 +315,7 @@ func (g *GitserverAddresses) getCachedRepoAddress(repoName api.RepoName) string 
 		return ""
 	}
 
-	if time.Now().Sub(item.lastAccessed) > time.Duration(15*time.Minute) {
+	if time.Since(item.lastAccessed) > time.Duration(15*time.Minute) {
 		return ""
 	}
 
