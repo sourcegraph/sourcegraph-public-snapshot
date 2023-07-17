@@ -32,7 +32,6 @@ go_library(
         "//internal/goroutine",
         "//internal/httpcli",
         "//internal/observation",
-        "//internal/search/job/jobutil",
         "//internal/search/result",
         "//internal/txemail",
         "//internal/txemail/txtypes",

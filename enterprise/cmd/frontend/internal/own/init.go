@@ -22,7 +22,7 @@ func Init(
 	_ conftypes.UnifiedWatchable,
 	enterpriseServices *enterprise.Services,
 ) error {
-	g := gitserver.NewClientDeprecatedNeedsDB()
+	g := gitserver.NewClient(db)
 	enterpriseServices.OwnResolver = resolvers.New(db, g, observationCtx.Logger.Scoped("own", "Code ownership"))
 	return nil
 }

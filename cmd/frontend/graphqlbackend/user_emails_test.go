@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -166,7 +165,7 @@ func TestSetUserEmailVerified(t *testing.T) {
 			t.Run(test.name, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs()).SetUserEmailVerified(
+				_, err := newSchemaResolver(db, gitserver.NewClient(db)).SetUserEmailVerified(
 					test.ctx,
 					&setUserEmailVerifiedArgs{
 						User: MarshalUserID(1),

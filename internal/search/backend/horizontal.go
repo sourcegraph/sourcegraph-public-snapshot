@@ -764,11 +764,9 @@ func isZoektRolloutError(ctx context.Context, err error) bool {
 	}
 
 	metricIgnoredError.WithLabelValues(reason).Inc()
-	if span := trace.TraceFromContext(ctx); span != nil {
-		span.AddEvent("rollout",
-			attribute.String("rollout.reason", reason),
-			attribute.String("rollout.error", err.Error()))
-	}
+	trace.FromContext(ctx).AddEvent("rollout",
+		attribute.String("rollout.reason", reason),
+		attribute.String("rollout.error", err.Error()))
 
 	return true
 }

@@ -13,7 +13,7 @@ write_source_files(
     additional_update_targets = [
         "//lib/codeintel/lsif/protocol:write_symbol_kind",
         "//lib/codeintel/lsif/protocol:write_symbol_tag",
-        "//enterprise/internal/batches/search/syntax:write_token_type",
+        "//internal/batches/search/syntax:write_token_type",
         "//doc/cli/references:write_doc_files",
         "//enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
         "//cmd/cody-gateway/internal/dotcom:write_genql_yaml",

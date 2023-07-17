@@ -28,7 +28,7 @@ public class ThemeUtil {
           intelliJTheme.addProperty(key.toString(), getHexString(UIManager.getColor(key)));
         }
       } catch (Exception e) {
-        logger.error(e.getMessage());
+        logger.warn(e.getMessage());
       }
     }
 

@@ -218,6 +218,7 @@ go_library(
         "search_contexts.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend",
+    visibility = ["//:__subpackages__"],
     deps = [
         "//cmd/frontend/auth",
         "//cmd/frontend/backend",
@@ -488,7 +489,6 @@ go_test(
         "//internal/search",
         "//internal/search/backend",
         "//internal/search/client",
-        "//internal/search/job/jobutil",
         "//internal/search/query",
         "//internal/search/repos",
         "//internal/search/result",

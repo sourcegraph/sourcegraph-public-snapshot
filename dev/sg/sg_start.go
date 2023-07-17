@@ -312,7 +312,7 @@ func startCommandSet(ctx context.Context, set *sgconf.Commandset, conf *sgconf.C
 		}
 
 		if _, excluded := exceptSet[name]; excluded {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --excluded.", cmd.Name))
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Skipping command %s since it's in --except.", cmd.Name))
 			continue
 		}
 

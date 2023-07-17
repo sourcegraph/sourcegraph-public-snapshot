@@ -25,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -41,7 +40,7 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 		db := database.NewDB(logger, dbtest.NewDB(logger, t))
 		act := actor.Actor{UID: 1}
 		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs())
+		sr := newSchemaResolver(db, gitserver.NewClient(db))
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -172,7 +171,7 @@ func TestExternalAccounts_AddExternalAccount(t *testing.T) {
 				ctx = actor.WithActor(ctx, &act)
 			}
 
-			sr := newSchemaResolver(db, gitserver.NewClient(db), jobutil.NewUnimplementedEnterpriseJobs())
+			sr := newSchemaResolver(db, gitserver.NewClient(db))
 
 			args := struct {
 				ServiceType    string

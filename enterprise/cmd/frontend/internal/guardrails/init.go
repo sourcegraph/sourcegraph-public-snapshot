@@ -26,7 +26,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	opts := attribution.ServiceOpts{
-		SearchClient: client.New(observationCtx.Logger, db, enterpriseServices.EnterpriseSearchJobs),
+		SearchClient: client.New(observationCtx.Logger, db),
 	}
 
 	// TODO(keegancsmith) configuration for access token and enabling.

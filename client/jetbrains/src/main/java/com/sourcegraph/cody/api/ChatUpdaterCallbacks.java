@@ -54,7 +54,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
     String message = error.getMessage();
     chat.respondToErrorFromServer(message != null ? message : "");
     chat.finishMessageProcessing();
-    logger.error("Error: " + error);
+    logger.warn(error);
   }
 
   @Override

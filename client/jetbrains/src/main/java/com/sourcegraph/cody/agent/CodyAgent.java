@@ -107,12 +107,12 @@ public class CodyAgent implements Disposable {
             } catch (Exception e) {
               initializationErrorMessage =
                   "failed to send 'initialize' JSON-RPC request Cody agent";
-              logger.error(initializationErrorMessage, e);
+              logger.warn(initializationErrorMessage, e);
             }
           });
     } catch (Exception e) {
       initializationErrorMessage = "unable to start Cody agent";
-      logger.error(initializationErrorMessage, e);
+      logger.warn(initializationErrorMessage, e);
     }
   }
 
@@ -197,7 +197,7 @@ public class CodyAgent implements Disposable {
             Files.newOutputStream(
                 trace, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
       } catch (IOException e) {
-        logger.error("unable to trace JSON-RPC debugging information to path " + tracePath, e);
+        logger.warn("unable to trace JSON-RPC debugging information to path " + tracePath, e);
       }
     }
     return null;

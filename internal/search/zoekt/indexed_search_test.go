@@ -375,7 +375,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 		"foo/unindexed-two",
 	)
 
-	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{}
+	zoektRepos := zoekt.ReposMap{}
 	for i, branches := range [][]zoekt.RepositoryBranch{
 		{
 			{Name: "HEAD", Version: "deadbeef"},
@@ -393,7 +393,7 @@ func TestZoektIndexedRepos(t *testing.T) {
 	} {
 		r := repos[i]
 		branches := branches
-		zoektRepos[uint32(r.Repo.ID)] = &zoekt.MinimalRepoListEntry{Branches: branches}
+		zoektRepos[uint32(r.Repo.ID)] = zoekt.MinimalRepoListEntry{Branches: branches}
 	}
 
 	cases := []struct {
@@ -453,7 +453,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 			Revs: []string{revSpec},
 		}
 	}
-	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{
+	zoektRepos := zoekt.ReposMap{
 		1: {
 			Branches: []zoekt.RepositoryBranch{
 				{
@@ -732,7 +732,7 @@ func TestContextWithoutDeadline(t *testing.T) {
 	}
 
 	// We want to keep trace info
-	if tr2 := trace.TraceFromContext(ctxNoDeadline); tr != tr2 {
+	if tr2 := trace.FromContext(ctxNoDeadline); !tr.SpanContext().Equal(tr2.SpanContext()) {
 		t.Error("trace information not propogated")
 	}
 

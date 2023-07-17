@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"golang.org/x/exp/slices"
 
@@ -26,7 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type bodyTransformer[T UpstreamRequest] func(*T)
+type bodyTransformer[T UpstreamRequest] func(*T, *actor.Actor)
 type requestTransformer func(*http.Request)
 type requestValidator[T UpstreamRequest] func(T) error
 type requestMetadataRetriever[T UpstreamRequest] func(T) (promptCharacterCount int, model string, additionalMetadata map[string]any)
@@ -133,7 +135,7 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				return
 			}
 
-			transformBody(&body)
+			transformBody(&body, act)
 
 			// Re-marshal the payload for upstream to unset metadata and remove any properties
 			// not known to us.
@@ -180,6 +182,11 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 				completionCharacterCount int = -1
 			)
 			defer func() {
+				if span := oteltrace.SpanFromContext(r.Context()); span.IsRecording() {
+					span.SetAttributes(
+						attribute.Int("upstreamStatusCode", upstreamStatusCode),
+						attribute.Int("resolvedStatusCode", resolvedStatusCode))
+				}
 				err := eventLogger.LogEvent(
 					r.Context(),
 					events.Event{
@@ -211,12 +218,22 @@ func makeUpstreamHandler[ReqT UpstreamRequest](
 			if err != nil {
 				// Ignore reporting errors where client disconnected
 				if req.Context().Err() == context.Canceled && errors.Is(err, context.Canceled) {
-					oteltrace.SpanFromContext(req.Context()).RecordError(err)
+					oteltrace.SpanFromContext(req.Context()).
+						SetStatus(codes.Error, err.Error())
 					logger.Info("request canceled", log.Error(err))
 					return
 				}
 
-				response.JSONError(logger, w, http.StatusInternalServerError,
+				// More user-friendly message for timeouts
+				if errors.Is(err, context.DeadlineExceeded) {
+					resolvedStatusCode = http.StatusGatewayTimeout
+					response.JSONError(logger, w, resolvedStatusCode,
+						errors.Newf("request to upstream provider %s timed out", upstreamName))
+					return
+				}
+
+				resolvedStatusCode = http.StatusInternalServerError
+				response.JSONError(logger, w, resolvedStatusCode,
 					errors.Wrapf(err, "failed to make request to upstream provider %s", upstreamName))
 				return
 			}

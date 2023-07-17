@@ -84,6 +84,12 @@ type Info struct {
 	AuthenticationURL string
 }
 
+// UniqueID returns a unique identifier that's a combination of the ServiceID and the ClientID of
+// the provider.
+func (i *Info) UniqueID() string {
+	return i.ServiceID + ":" + i.ClientID
+}
+
 var (
 	// curProviders is a map (package name -> (config string -> Provider)). The first key is the
 	// package name under which the provider was registered (this should be unique among

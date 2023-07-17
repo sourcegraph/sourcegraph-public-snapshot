@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -76,7 +77,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 		},
 	})
 
-	client := NewClientDeprecatedNeedsDB()
+	client := NewClient(database.NewMockDB())
 	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})
 
 	if !(m1.called && !m2.called) {
@@ -92,7 +93,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	client := NewClientDeprecatedNeedsDB()
+	client := NewClient(database.NewMockDB())
 
 	cfg := newConfig(
 		[]string{"gitserver1", "gitserver2"},

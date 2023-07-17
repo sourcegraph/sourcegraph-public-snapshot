@@ -1,8 +1,11 @@
 <script lang="ts">
+    import { mdiFileCodeOutline } from '@mdi/js'
+
     import { page } from '$app/stores'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
     import type { BlobFileFields } from '$lib/graphql-operations'
-    import HeaderAction from '$lib/repo/HeaderAction.svelte'
+    import Icon from '$lib/Icon.svelte'
+    import FileHeader from '$lib/repo/FileHeader.svelte'
     import { asStore } from '$lib/utils'
 
     import type { PageData } from './$types'
@@ -22,12 +25,18 @@
     $: showRaw = $page.url.searchParams.get('view') === 'raw'
 </script>
 
-{#if !formatted || showRaw}
-    <HeaderAction key="wrap-lines" priority={0} component={WrapLinesAction} />
-{/if}
-{#if formatted}
-    <HeaderAction key="format" priority={-1} component={FormatAction} />
-{/if}
+<FileHeader>
+    <Icon slot="icon" svgPath={mdiFileCodeOutline} />
+    <svelte:fragment slot="actions">
+        {#if !formatted || showRaw}
+            <WrapLinesAction />
+        {/if}
+        {#if formatted}
+            <FormatAction />
+        {/if}
+    </svelte:fragment>
+</FileHeader>
+
 <div class="content" class:loading>
     {#if blobData}
         {#if blobData.richHTML && !showRaw}
@@ -46,8 +55,8 @@
 
 <style lang="scss">
     .content {
-        overflow: hidden;
         display: flex;
+        overflow-x: auto;
     }
     .loading {
         filter: blur(1px);

@@ -126,7 +126,7 @@ func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.Get")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		IDs:            []api.RepoID{id},
@@ -195,7 +195,7 @@ func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetByName")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		Names:          []string{string(nameOrURI)},
@@ -234,7 +234,7 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 // When a repo isn't found or has been blocked, an error is returned.
 func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetByHashedName")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
 		HashedName:     string(repoHashedName),
@@ -256,7 +256,7 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 // than the candidate list due to no repository is associated with some IDs.
 func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetByIDs")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	// listRepos will return a list of all repos if we pass in an empty ID list,
 	// so it is better to just return here rather than leak repo info.
@@ -284,7 +284,7 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 
 func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]string, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetRepoDescriptionsByIDs")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	opts := ReposListOptions{
 		Select: []string{"repo.id", "repo.description"},
@@ -311,7 +311,7 @@ func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.Rep
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
 	tr, ctx := trace.New(ctx, "repos.Count")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	opt.Select = []string{"COUNT(*)"}
 	opt.OrderBy = nil
@@ -328,7 +328,7 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 // number of IDs given if a repo with the given ID does not exist.
 func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.Metadata")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	opts := ReposListOptions{
 		IDs: ids,
@@ -798,7 +798,7 @@ const (
 // Matching is done with fuzzy matching, i.e. "query" will match any repo name that matches the regexp `q.*u.*e.*r.*y`
 func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
 	tr, ctx := trace.New(ctx, "repos.List")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	if len(opt.OrderBy) == 0 {
 		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
@@ -810,7 +810,7 @@ func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*
 // StreamMinimalRepos calls the given callback for each of the repositories names and ids that match the given options.
 func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions, cb func(*types.MinimalRepo)) (err error) {
 	tr, ctx := trace.New(ctx, "repos.StreamMinimalRepos")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	opt.Select = minimalRepoColumns
 	if len(opt.OrderBy) == 0 {
@@ -874,7 +874,7 @@ func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) 
 	})
 }
 
-func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
+func (s *repoStore) listRepos(ctx context.Context, tr trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
 	var privateIDs []api.RepoID
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.Repo
@@ -898,7 +898,7 @@ func (s *repoStore) listRepos(ctx context.Context, tr *trace.Trace, opt ReposLis
 	return rs, err
 }
 
-func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+func (s *repoStore) list(ctx context.Context, tr trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
 	q, err := s.listSQL(ctx, tr, opt)
 	if err != nil {
 		return err
@@ -922,7 +922,7 @@ func (s *repoStore) list(ctx context.Context, tr *trace.Trace, opt ReposListOpti
 	return rows.Err()
 }
 
-func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
+func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
 	var ctes, joins, where []*sqlf.Query
 
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
@@ -1290,7 +1290,7 @@ const listSourcegraphDotComIndexableReposMinStars = 5
 
 func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.ListIndexable")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	var joins, where []*sqlf.Query
 	if opts.CloneStatus != types.CloneStatusUnknown {
@@ -1368,7 +1368,7 @@ ORDER BY stars DESC NULLS LAST
 // Associated external services must already exist.
 func (s *repoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
 	tr, ctx := trace.New(ctx, "repos.Create")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	records := make([]*repoRecord, 0, len(repos))
 
@@ -1672,7 +1672,7 @@ func (s *repoStore) GetFirstRepoByCloneURL(ctx context.Context, cloneURL string)
 	return s.GetByName(ctx, repoName)
 }
 
-func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
+func parsePattern(tr trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
@@ -1710,7 +1710,7 @@ func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query,
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
+func parseDescriptionPattern(tr trace.Trace, p string) ([]*sqlf.Query, error) {
 	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err

@@ -17,11 +17,11 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/frontend/globals",
-        "//enterprise/internal/authz",
-        "//enterprise/internal/authz/subrepoperms",
         "//internal/actor",
         "//internal/api",
         "//internal/authz",
+        "//internal/authz/providers",
+        "//internal/authz/subrepoperms",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",

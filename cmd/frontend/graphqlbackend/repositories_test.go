@@ -745,7 +745,7 @@ func TestRepositories_Integration(t *testing.T) {
 		}
 
 		if rsc.indexed {
-			err := db.ZoektRepos().UpdateIndexStatuses(ctx, map[uint32]*zoekt.MinimalRepoListEntry{
+			err := db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
 				uint32(rsc.repo.ID): {},
 			})
 			if err != nil {

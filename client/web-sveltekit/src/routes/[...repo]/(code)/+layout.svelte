@@ -1,49 +1,88 @@
 <script lang="ts">
-    import { mdiChevronDoubleLeft, mdiChevronDoubleRight } from '@mdi/js'
+    import { onMount } from 'svelte'
 
+    import { afterNavigate, disableScrollHandling } from '$app/navigation'
     import { page } from '$app/stores'
-    import Icon from '$lib/Icon.svelte'
-    import FileTree from '$lib/repo/FileTree.svelte'
-    import { asStore } from '$lib/utils'
+    import { isErrorLike } from '$lib/common'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
+    import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
+    import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
+    import { scrollAll } from '$lib/stores'
 
     import type { PageData } from './$types'
+    import FileTree from './FileTree.svelte'
 
     export let data: PageData
 
-    function last<T>(arr: T[]): T {
-        return arr[arr.length - 1]
+    const fileTreeLoader: FileTreeLoader = args =>
+        fetchSidebarFileTree(args).then(
+            ({ root, values }) =>
+                new FileTreeProvider({
+                    root,
+                    values,
+                    loader: fileTreeLoader,
+                    ...args,
+                })
+        )
+    let treeProvider: FileTreeProvider | null = null
+
+    async function updateFileTreeProvider(
+        repoName: string,
+        revision: string | undefined,
+        commitID: string,
+        parentPath: string
+    ) {
+        const { root, values } = await data.fileTree.deferred
+
+        // Do nothing if update was called with new arguments in the meantime
+        if (repoName !== data.repoName || revision !== data.revision || parentPath !== data.parentPath) {
+            return
+        }
+        treeProvider = new FileTreeProvider({
+            root,
+            values,
+            repoName,
+            revision: revision ?? '',
+            commitID,
+            loader: fileTreeLoader,
+        })
     }
 
-    $: treeOrError = asStore(data.treeEntries.deferred)
+    $: ({ repoName, revision, parentPath, resolvedRevision } = data)
+    $: commitID = isErrorLike(resolvedRevision) ? '' : resolvedRevision.commitID
+    // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
+    // changes
+    $: updateFileTreeProvider(repoName, revision, commitID, parentPath)
 
-    let showSidebar = true
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
-    $: sidebarWidth = showSidebar ? `max(200px, ${$sidebarSize * 100}%)` : undefined
+    $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
+
+    onMount(() => {
+        // We want the whole page to be scrollable and hide page and repo navigation
+        scrollAll.set(true)
+        return () => scrollAll.set(false)
+    })
+
+    afterNavigate(() => {
+        // Prevents SvelteKit from resetting the scroll position to the top
+        disableScrollHandling()
+    })
 </script>
 
 <section>
-    <div class="sidebar" class:open={showSidebar} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
-        {#if showSidebar && !$treeOrError.loading && $treeOrError.data}
-            <FileTree
-                activeEntry={$page.params.path ? last($page.params.path.split('/')) : ''}
-                treeOrError={$treeOrError.data}
-            >
-                <h3 slot="title">
-                    Files
-                    <button on:click={() => (showSidebar = false)}
-                        ><Icon svgPath={mdiChevronDoubleLeft} inline /></button
-                    >
-                </h3>
-            </FileTree>
-        {/if}
-        {#if !showSidebar}
-            <button class="open-sidebar" on:click={() => (showSidebar = true)}
-                ><Icon svgPath={mdiChevronDoubleRight} inline /></button
-            >
+    <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
+        <h3>
+            <SidebarToggleButton />&nbsp; Files
+        </h3>
+        {#if treeProvider}
+            <FileTree {treeProvider} selectedPath={$page.params.path ?? ''} />
+        {:else}
+            <LoadingSpinner center={false} />
         {/if}
     </div>
-    {#if showSidebar}
+    {#if $sidebarOpen}
         <Separator currentPosition={sidebarSize} />
     {/if}
     <div class="content">
@@ -54,50 +93,37 @@
 <style lang="scss">
     section {
         display: flex;
-        overflow: hidden;
-        margin: 1rem;
-        margin-bottom: 0;
         flex: 1;
+        flex-shrink: 0;
+        background-color: var(--code-bg);
+        min-height: 100vh;
     }
 
     .sidebar {
         &.open {
-            width: 200px;
+            display: flex;
+            flex-direction: column;
         }
-
+        display: none;
         overflow: hidden;
-        display: flex;
-        flex-direction: column;
+        background-color: var(--body-bg);
+        padding: 0.5rem;
+        padding-bottom: 0;
+        position: sticky;
+        top: 0px;
+        max-height: 100vh;
     }
 
     .content {
         flex: 1;
-        margin: 0 1rem;
-        background-color: var(--code-bg);
-        overflow: hidden;
         display: flex;
         flex-direction: column;
-        border: 1px solid var(--border-color);
-        border-radius: var(--border-radius);
-    }
-
-    button {
-        border: 0;
-        background-color: transparent;
-        padding: 0;
-        margin: 0;
-        cursor: pointer;
+        min-width: 0;
     }
 
     h3 {
         display: flex;
-        justify-content: space-between;
         align-items: center;
-    }
-
-    .open-sidebar {
-        position: absolute;
-        left: 0;
-        border: 1px solid var(--border-color);
+        margin-bottom: 0.5rem;
     }
 </style>

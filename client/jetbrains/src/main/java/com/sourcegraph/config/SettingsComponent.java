@@ -1,6 +1,8 @@
 package com.sourcegraph.config;
 
-import com.intellij.openapi.project.Project;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
@@ -18,9 +20,17 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.swing.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonGroup;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
@@ -28,8 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Supports creating and managing a {@link JPanel} for the Settings Dialog. */
-public class SettingsComponent {
-  private final Project project;
+public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
   private JBTextField urlTextField;
@@ -41,17 +50,22 @@ public class SettingsComponent {
   private JBTextField defaultBranchNameTextField;
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
+  private JBCheckBox isCodyEnabledCheckBox;
   private JBCheckBox isCodyAutoCompleteEnabledCheckBox;
 
-  private JButton testCodyAppConnectionButton;
-  private JLabel testCodyAppConnectionLabel;
+  private ActionLink installLocalAppLink;
+  private JLabel installLocalAppComment;
+  private ActionLink runLocalAppLink;
+  private JLabel runLocalAppComment;
+
+  private final ScheduledExecutorService codyAppStateCheckerExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
   }
 
-  public SettingsComponent(@NotNull Project project) {
-    this.project = project;
+  public SettingsComponent() {
     JPanel userAuthenticationPanel = createAuthenticationPanel();
     JPanel navigationSettingsPanel = createNavigationSettingsPanel();
     JPanel codySettingsPanel = createCodySettingsPanel();
@@ -168,7 +182,6 @@ public class SettingsComponent {
                     .orElse(getDefaultInstanceType()));
     boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
     boolean isLocalAppAccessTokenConfigured = LocalAppManager.getLocalAppAccessToken().isPresent();
-    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
     boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
     JRadioButton codyAppRadioButton = new JRadioButton("Use the local Cody App");
     codyAppRadioButton.setMnemonic(KeyEvent.VK_A);
@@ -191,6 +204,7 @@ public class SettingsComponent {
     // Assemble the three main panels String platformName =
     String platformName =
         Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
+    @SuppressWarnings("DialogTitleCapitalization")
     String codyAppCommentText =
         isLocalAppPlatformSupported
             ? "Use Sourcegraph through Cody App."
@@ -199,28 +213,26 @@ public class SettingsComponent {
     JBLabel codyAppComment =
         new JBLabel(codyAppCommentText, UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
     codyAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
-    JLabel installLocalAppComment =
+    installLocalAppComment =
         new JBLabel(
             "Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppComment.setVisible(false);
     installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    ActionLink installLocalAppLink =
+    installLocalAppLink =
         simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
-    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+    installLocalAppLink.setVisible(false);
     installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
-    ActionLink runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
-    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
+    runLocalAppLink.setVisible(false);
     runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
-    JLabel runLocalAppComment =
+    runLocalAppComment =
         new JBLabel(
             "Cody App seems to be installed, but it's not running, currently.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
-    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+    runLocalAppComment.setVisible(false);
     runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     JPanel codyAppPanel =
         FormBuilder.createFormBuilder()
@@ -308,7 +320,27 @@ public class SettingsComponent {
     userAuthenticationPanel.setBorder(
         IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
 
+    updateVisibilityOfHelperLinks();
+    codyAppStateCheckerExecutorService.scheduleWithFixedDelay(
+        this::updateVisibilityOfHelperLinks, 0, 1, TimeUnit.SECONDS);
     return userAuthenticationPanel;
+  }
+
+  private void updateVisibilityOfHelperLinks() {
+    boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
+    boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
+    boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
+    boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
+    boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+              installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+              runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+              runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+            },
+            ModalityState.any());
   }
 
   @NotNull
@@ -373,6 +405,17 @@ public class SettingsComponent {
     isUrlNotificationDismissedCheckBox.setSelected(value);
   }
 
+  public boolean isCodyEnabled() {
+    return isCodyEnabledCheckBox.isSelected();
+  }
+
+  public void setCodyEnabled(boolean value) {
+    isCodyEnabledCheckBox.setSelected(value);
+    if (!value) {
+      setCodyAutoCompleteEnabled(false);
+    }
+  }
+
   public boolean isCodyAutoCompleteEnabled() {
     return isCodyAutoCompleteEnabledCheckBox.isSelected();
   }
@@ -413,7 +456,7 @@ public class SettingsComponent {
 
   private void addValidation(
       @NotNull JTextComponent component, @NotNull Supplier<ValidationInfo> validator) {
-    new ComponentValidator(project).withValidator(validator).installOn(component);
+    new ComponentValidator(this).withValidator(validator).installOn(component);
     addDocumentListener(
         component,
         e -> ComponentValidator.getInstance(component).ifPresent(ComponentValidator::revalidate));
@@ -505,13 +548,31 @@ public class SettingsComponent {
 
   @NotNull
   private JPanel createCodySettingsPanel() {
+    //noinspection DialogTitleCapitalization
+    isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
     isCodyAutoCompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
     JPanel codySettingsPanel =
         FormBuilder.createFormBuilder()
-            .addComponent(isCodyAutoCompleteEnabledCheckBox, 10)
+            .addComponent(isCodyEnabledCheckBox, 10)
+            .addTooltip(
+                "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
+            .addComponent(isCodyAutoCompleteEnabledCheckBox, 5)
             .getPanel();
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
+
+    // Disable isCodyAutoCompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
+    isCodyEnabledCheckBox.addActionListener(
+        e -> {
+          if (!isCodyEnabledCheckBox.isSelected()) {
+            isCodyAutoCompleteEnabledCheckBox.setSelected(false);
+          }
+          isCodyAutoCompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+        });
+
     return codySettingsPanel;
   }
+
+  @Override
+  public void dispose() {}
 }
