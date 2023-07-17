@@ -38,12 +38,12 @@ var (
 	addrForRepoCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_addr_for_repo_cache_hit",
 		Help: "Number of cache hits of the repoAddressCache managed by GitserverAddresses",
-	}, []string{"user_ageng"})
+	}, []string{"user_agent"})
 
 	addrForRepoCacheMiss = promauto.NewCounterVec(prometheus.CounterOpts{
 		Name: "src_gitserver_addr_for_repo_cache_miss",
 		Help: "Number of cache misses of the repoAddressCache managed by GitserverAddresses",
-	}, []string{"user_ageng"})
+	}, []string{"user_agent"})
 )
 
 // NewGitserverAddressesFromConf fetches the current set of gitserver addresses

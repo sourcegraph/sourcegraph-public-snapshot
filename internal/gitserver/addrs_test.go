@@ -177,14 +177,7 @@ func TestRepoAddressCache(t *testing.T) {
 }
 
 func TestWithUpdateCache(t *testing.T) {
-	db := database.NewMockDB()
-	ga := GitserverAddresses{
-		db:        db,
-		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
-		PinnedServers: map[string]string{
-			"repo2": "gitserver-1",
-		},
-	}
+	ga := GitserverAddresses{}
 
 	// Ensures that a nil repoAddressCache will not cause a panic if consumers of GitserverAddresses
 	// do not initialise a cache.
@@ -197,4 +190,27 @@ func TestWithUpdateCache(t *testing.T) {
 
 	item := ga.repoAddressCache.Read(repo)
 	require.Equal(t, item.address, addr)
+}
+
+func TestGetCachedRepoAddress(t *testing.T) {
+	db := database.NewMockDB()
+	ga := GitserverAddresses{
+		db:        db,
+		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
+		PinnedServers: map[string]string{
+			"repo2": "gitserver-1",
+		},
+	}
+
+	require.Nil(t, ga.repoAddressCache)
+
+	repo := api.RepoName("repo1")
+	require.Equal(t, ga.getCachedRepoAddress(repo), "")
+
+	require.NotNil(t, ga.repoAddressCache)
+	require.Equal(t, ga.getCachedRepoAddress(repo), "")
+
+	addr := "address1"
+	ga.repoAddressCache.Write(repo, addr)
+	require.Equal(t, ga.getCachedRepoAddress(repo), addr)
 }
