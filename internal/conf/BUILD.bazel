@@ -57,6 +57,7 @@ go_test(
         "client_test.go",
         "computed_test.go",
         "diff_test.go",
+        "helpers_test.go",
         "mocks_test.go",
         "validate_test.go",
     ],
@@ -64,6 +65,7 @@ go_test(
     deps = [
         "//cmd/frontend/envvar",
         "//internal/accesstoken",
+        "//internal/api",
         "//internal/api/internalapi",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
