@@ -179,7 +179,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_opentelemetry_collector_base",
-        digest = "sha256:e6ebf3853f5ac70f7d63d35197a1e2ffb802c0229034e68b46c608d74e27dd44",
+        digest = "sha256:100b879c8a33d1f8aa640d1462165ce66f783e546c41d0e491dc7aa80a47a404",
         image = "index.docker.io/sourcegraph/wolfi-opentelemetry-collector-base",
     )
 
