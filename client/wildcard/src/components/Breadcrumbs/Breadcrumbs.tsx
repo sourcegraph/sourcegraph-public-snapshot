@@ -64,7 +64,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
             return
         }
 
-        function fixItemsAppearance(width: number) {
+        function fixItemsAppearance(width: number): void {
             // Base guards for root element and it's width
             if (!rootElementRef.current || width === 0) {
                 return
@@ -90,7 +90,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
             // Elements overflow parent container, we should remove some elements in the middle
             // until all reset elements fit in the parent element
             if (totalWidth > width) {
-                let offset: number = 0
+                let offset = 0
                 const segmentsToHide = []
                 const middleElementIndex = Math.floor((segmentsElements.length - 1) / 2)
 
@@ -220,7 +220,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
     )
 }
 
-const Separator = () => <span className={styles.separator}>/</span>
+const Separator: FC = () => <span className={styles.separator}>/</span>
 
 interface TruncatedItemsButton {
     truncatedSegments: InvisibleSegment[]
