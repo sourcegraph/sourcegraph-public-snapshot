@@ -137,6 +137,7 @@ def back_compat_defs():
             "//dev/backcompat/patches:back_compat_migrations.patch",
             "//dev/backcompat/patches:ui_assets.patch",
             "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
+            "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
         ],
         patch_args = ["-p1"],
         commit = MINIMUM_UPGRADEABLE_VERSION_REF,
