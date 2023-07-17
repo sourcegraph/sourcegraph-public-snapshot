@@ -7,6 +7,12 @@ export SONAR_SCANNER_OPTS="-server"
 
 export SONAR_TOKEN="${SONAR_TOKEN}"
 
+if [ "$SONAR_TOKEN" = "" ];
+then
+  echo "Please set the SONAR_TOKEN environment variable"
+  exit 1
+fi
+
 set -x
 
 echo "--- :arrow_down: downloading Sonarcloud binary"
