@@ -230,12 +230,18 @@ export const ExternalServicePage: FC<Props> = props => {
                                     </div>
                                 )}
                                 <div className="flex-shrink-0 ml-1">
-                                    <Tooltip content="Delete code host connection">
+                                    <Tooltip
+                                        content={
+                                            editingEnabled
+                                                ? 'Delete code host connection'
+                                                : 'Deleting code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                        }
+                                    >
                                         <Button
                                             aria-label="Delete"
                                             className="test-delete-external-service-button"
                                             onClick={onDelete}
-                                            disabled={isDeleting === true}
+                                            disabled={isDeleting === true || !editingEnabled}
                                             variant="danger"
                                             size="sm"
                                         >

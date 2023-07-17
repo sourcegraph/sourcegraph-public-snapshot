@@ -114,7 +114,7 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     <Tooltip
                         content={
                             editingDisabled
-                                ? 'Editing code host connection is disabled via the UI when EXTSVC_CONFIG_FILE is set.'
+                                ? 'Editing code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
                                 : 'Edit code host connection settings'
                         }
                     >
@@ -129,12 +129,18 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                             <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
                         </Button>
                     </Tooltip>{' '}
-                    <Tooltip content="Delete code host connection">
+                    <Tooltip
+                        content={
+                            editingDisabled
+                                ? 'Deleting code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                : 'Delete code host connection'
+                        }
+                    >
                         <Button
                             aria-label="Delete"
                             className="test-delete-external-service-button"
                             onClick={onDelete}
-                            disabled={isDeleting === true}
+                            disabled={isDeleting === true || editingDisabled}
                             variant="danger"
                             size="sm"
                         >
