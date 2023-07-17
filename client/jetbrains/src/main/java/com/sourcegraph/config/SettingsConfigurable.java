@@ -1,14 +1,16 @@
 package com.sourcegraph.config;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.Disposer;
 import com.intellij.util.messages.MessageBus;
 import javax.swing.*;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
 /** Provides controller functionality for application settings. */
-public class SettingsConfigurable implements Configurable {
+public class SettingsConfigurable implements Configurable, Disposable {
   private final Project project;
   private SettingsComponent mySettingsComponent;
 
@@ -30,7 +32,8 @@ public class SettingsConfigurable implements Configurable {
   @Nullable
   @Override
   public JComponent createComponent() {
-    mySettingsComponent = new SettingsComponent(project);
+    mySettingsComponent = new SettingsComponent();
+    Disposer.register(this, mySettingsComponent);
     return mySettingsComponent.getPanel();
   }
 
@@ -59,8 +62,7 @@ public class SettingsConfigurable implements Configurable {
             .equals(ConfigUtil.getRemoteUrlReplacements(project))
         || mySettingsComponent.isUrlNotificationDismissed()
             != ConfigUtil.isUrlNotificationDismissed()
-        || mySettingsComponent.isCodyEnabled()
-            != ConfigUtil.isCodyEnabled()
+        || mySettingsComponent.isCodyEnabled() != ConfigUtil.isCodyEnabled()
         || mySettingsComponent.isCodyAutoCompleteEnabled()
             != ConfigUtil.isCodyAutoCompleteEnabled();
   }
@@ -166,4 +168,7 @@ public class SettingsConfigurable implements Configurable {
   public void disposeUIResources() {
     mySettingsComponent = null;
   }
+
+  @Override
+  public void dispose() {}
 }
