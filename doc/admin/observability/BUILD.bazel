@@ -7,14 +7,11 @@ write_generated_to_source_files(
     # - grafana dashboards
     # - prometheus config
     # - docs describing dashboards and alerts
-    # the grafana dashboards and prometheus config are handled by other targets under //monitoring
-    # but we need to write the docs back to the repo root, and in Bazel we can't use relative paths
-    # to go to the parents directory (i.e one up from monitoring is the repo root)
     files = [
-        "outputs/docs/alerts.md",
-        "outputs/docs/dashboards.md",
+        "monitoring/outputs/docs/alerts.md",
+        "monitoring/outputs/docs/dashboards.md",
     ],
-    # since :generate_config stores all the generated files under outputs, we want to copy them out without "outputs/"
-    strip_prefix = "outputs/docs/",
+    # since :generate_config stores all the generated files under monitroing/outputs when outside of the monitoring package
+    strip_prefix = "monitoring/outputs/docs/",
     tags = ["go_generate"],
 )
