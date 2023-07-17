@@ -60,15 +60,10 @@ func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int,
 	ctx, _, endObservation := s.operations.getFullSCIPNameByDescriptor.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{}})
 	defer endObservation(1, observation.Args{})
 
-	symbolNamesIlike, err := formatSymbolNamesToLikeClause(symbolNames)
-	if err != nil {
-		return nil, err
-	}
-
 	return scanExplodedSymbols(s.db.Query(ctx, sqlf.Sprintf(
 		getFullSCIPNameByDescriptorQuery,
 		pq.Array(uploadID),
-		pq.Array(symbolNamesIlike),
+		pq.Array(formatSymbolNamesToLikeClause(symbolNames)),
 	)))
 }
 
@@ -105,7 +100,7 @@ var scanExplodedSymbols = basestore.NewSliceScanner(func(s dbutil.Scanner) (*sym
 	return &n, err
 })
 
-func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
+func formatSymbolNamesToLikeClause(symbolNames []string) []string {
 	trimmedDescriptorMap := make(map[string]struct{}, len(symbolNames))
 	for _, symbolName := range symbolNames {
 		ex, err := symbols.NewExplodedSymbol(symbolName)
@@ -125,7 +120,7 @@ func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
 	}
 	sort.Strings(descriptorWildcards)
 
-	return descriptorWildcards, nil
+	return descriptorWildcards
 }
 
 func reverse(s string) string {
