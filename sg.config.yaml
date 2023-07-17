@@ -223,7 +223,7 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/cmd/repo-updater
     checkBinary: .bin/repo-updater
     env:
       ENTERPRISE: 1
@@ -231,8 +231,6 @@ commands:
       - lib
       - internal
       - cmd/repo-updater
-      - enterprise/internal
-      - enterprise/cmd/repo-updater
 
   symbols:
     cmd: .bin/symbols
@@ -254,7 +252,7 @@ commands:
       - internal
       - cmd/symbols
       - enterprise/cmd/symbols
-      - enterprise/internal/rockskip
+      - internal/rockskip
 
   embeddings:
     cmd: |
@@ -296,7 +294,7 @@ commands:
         export GCFLAGS='-N -l'
       fi
 
-      go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/enterprise/cmd/cody-gateway
+      go build -gcflags="$GCFLAGS" -o .bin/cody-gateway github.com/sourcegraph/sourcegraph/cmd/cody-gateway
     checkBinary: .bin/cody-gateway
     env:
       CODY_GATEWAY_ANTHROPIC_ACCESS_TOKEN: foobar
@@ -309,7 +307,7 @@ commands:
     watch:
       - lib
       - internal
-      - enterprise/cmd/cody-gateway
+      - cmd/cody-gateway
 
   searcher:
     cmd: .bin/searcher
@@ -458,12 +456,12 @@ commands:
       if [ -n "$DELVE" ]; then
         export GCFLAGS='-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/enterprise/cmd/precise-code-intel-worker
+      go build -gcflags="$GCFLAGS" -o .bin/codeintel-worker github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker
     checkBinary: .bin/codeintel-worker
     watch:
       - lib
       - internal
-      - enterprise/cmd/precise-code-intel-worker
+      - cmd/precise-code-intel-worker
       - enterprise/internal
       - lib/codeintel
 
@@ -578,18 +576,18 @@ commands:
     cmd: exit 0
     install: |
       if [[ $(uname) == "Linux" ]]; then
-        bazel build //enterprise/cmd/batcheshelper:image_tarball
-        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --output=files)
+        bazel build //cmd/batcheshelper:image_tarball
+        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --output=files)
       else
-        bazel build //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker
-        docker load --input $(bazel cquery //enterprise/cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
+        bazel build //cmd/batcheshelper:image_tarball --config darwin-docker
+        docker load --input $(bazel cquery //cmd/batcheshelper:image_tarball --config darwin-docker --output=files)
       fi
     env:
       IMAGE: batcheshelper:candidate
       # TODO: This is required but should only be set on M1 Macs.
       PLATFORM: linux/arm64
     watch:
-      - enterprise/cmd/batcheshelper
+      - cmd/batcheshelper
       - lib/batches
     continueWatchOnExit: true
 
@@ -906,7 +904,7 @@ bazelCommands:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
   repo-updater:
-    target: //enterprise/cmd/repo-updater
+    target: //cmd/repo-updater
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
     env:
@@ -947,7 +945,7 @@ bazelCommands:
   codeintel-worker:
     precmd: |
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
-    target: //enterprise/cmd/precise-code-intel-worker
+    target: //cmd/precise-code-intel-worker
   executor-template: &executor_template_bazel
     target: //enterprise/cmd/executor
     env:

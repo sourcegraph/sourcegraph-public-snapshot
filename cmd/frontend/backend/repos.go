@@ -181,9 +181,9 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	ctx, done := startTrace(ctx, "List", opt, &err)
 	defer func() {
 		if err == nil {
-			if tr := trace.TraceFromContext(ctx); tr != nil {
-				tr.SetAttributes(attribute.Int("result.len", len(repos)))
-			}
+			trace.FromContext(ctx).SetAttributes(
+				attribute.Int("result.len", len(repos)),
+			)
 		}
 		done()
 	}()
@@ -200,9 +200,9 @@ func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, e
 	ctx, done := startTrace(ctx, "ListIndexable", nil, &err)
 	defer func() {
 		if err == nil {
-			if tr := trace.TraceFromContext(ctx); tr != nil {
-				tr.SetAttributes(attribute.Int("result.len", len(repos)))
-			}
+			trace.FromContext(ctx).SetAttributes(
+				attribute.Int("result.len", len(repos)),
+			)
 		}
 		done()
 	}()

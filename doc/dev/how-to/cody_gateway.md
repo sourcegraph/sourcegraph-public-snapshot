@@ -50,7 +50,7 @@ commands:
       CODY_GATEWAY_DOTCOM_ACCESS_TOKEN: "..."
 ```
 
-For more configuration options, refer to the [configuration source code](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/cody-gateway/shared/config.go#L60).
+For more configuration options, refer to the [configuration source code](https://github.com/sourcegraph/sourcegraph/blob/main/cmd/cody-gateway/shared/config.go#L60).
 
 Then, restart `sg start dotcom` and try interacting with Cody!
 

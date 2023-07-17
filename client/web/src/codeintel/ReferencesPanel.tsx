@@ -1,6 +1,6 @@
 import React, { MouseEvent, useCallback, useEffect, useLayoutEffect, useMemo, useState } from 'react'
 
-import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronUp, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize, uniqBy } from 'lodash'
@@ -99,6 +99,7 @@ interface State {
         references: boolean
         definitions: boolean
         implementations: boolean
+        prototypes: boolean
     }
 }
 
@@ -119,10 +120,16 @@ function createStateFromLocation(location: H.Location): null | State {
         references: viewState === 'references',
         definitions: viewState === 'definitions',
         implementations: viewState?.startsWith('implementations_') ?? false,
+        prototypes: viewState?.startsWith('implementations_') ?? false,
     }
     // If the URL doesn't contain tab=<tab>, we open it (likely because the
     // user clicked on a link in the preview code blob) to show definitions.
-    if (!collapsedState.references && !collapsedState.definitions && !collapsedState.implementations) {
+    if (
+        !collapsedState.references &&
+        !collapsedState.definitions &&
+        !collapsedState.implementations &&
+        !collapsedState.prototypes
+    ) {
         collapsedState.definitions = true
     }
 
@@ -594,9 +601,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-hidden={true} svgPath={mdiChevronUp} />
-                        ) : (
                             <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                        ) : (
+                            <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -839,7 +846,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    <Icon aria-hidden="true" svgPath={open ? mdiChevronUp : mdiChevronDown} />
+                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
                     <small>
                         <span className={classNames('text-small', styles.repoLocationGroupHeaderRepoName)}>
                             {displayRepoName(repoLocationGroup.repoName)}
@@ -963,9 +970,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-hidden={true} svgPath={mdiChevronUp} />
-                    ) : (
                         <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                    ) : (
+                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>

@@ -24,7 +24,7 @@ func handleAnalytics(ctx context.Context, lgr log.Logger, repoId api.RepoID, db 
 	// 🚨 SECURITY: we use the internal actor because the background indexer is not associated with any user,
 	// and needs to see all repos and files.
 	internalCtx := actor.WithInternalActor(ctx)
-	indexer := newAnalyticsIndexer(gitserver.NewClient(), db, subRepoPermsCache, lgr)
+	indexer := newAnalyticsIndexer(gitserver.NewClient(db), db, subRepoPermsCache, lgr)
 	err := indexer.indexRepo(internalCtx, repoId, authz.DefaultSubRepoPermsChecker)
 	if err != nil {
 		lgr.Error("own analytics indexing failure", log.String("msg", err.Error()))

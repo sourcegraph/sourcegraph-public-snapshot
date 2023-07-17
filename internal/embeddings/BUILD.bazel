@@ -59,6 +59,7 @@ go_test(
     srcs = [
         "dot_test.go",
         "index_storage_test.go",
+        "quantize_test.go",
         "schedule_test.go",
         "similarity_search_test.go",
         "types_test.go",
@@ -81,6 +82,7 @@ go_test(
         "//lib/errors",
         "//lib/iterator",
         "@com_github_google_go_cmp//cmp",
+        "@com_github_keegancsmith_sqlf//:sqlf",
         "@com_github_sourcegraph_log//logtest",
         "@com_github_stretchr_testify//require",
     ],

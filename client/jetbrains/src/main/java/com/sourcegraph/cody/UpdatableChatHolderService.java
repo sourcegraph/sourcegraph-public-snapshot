@@ -1,13 +1,15 @@
 package com.sourcegraph.cody;
 
-public class UpdatableChatHolderService {
-  private UpdatableChat updatableChat;
+import org.jetbrains.annotations.Nullable;
 
-  public UpdatableChat getUpdatableChat() {
+public class UpdatableChatHolderService {
+  private @Nullable UpdatableChat updatableChat;
+
+  public @Nullable UpdatableChat getUpdatableChat() {
     return updatableChat;
   }
 
-  public void setUpdatableChat(UpdatableChat updatableChat) {
+  public void setUpdatableChat(@Nullable UpdatableChat updatableChat) {
     this.updatableChat = updatableChat;
   }
 }

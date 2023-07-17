@@ -1,7 +1,6 @@
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.intellij.psi.codeStyle.CommonCodeStyleSettings;
-import com.sourcegraph.cody.autocomplete.AutoCompleteDocumentContext;
 import com.sourcegraph.cody.autocomplete.CodyAutoCompleteManager;
 import com.sourcegraph.cody.vscode.InlineAutoCompleteItem;
 import com.sourcegraph.cody.vscode.Position;
@@ -9,56 +8,7 @@ import com.sourcegraph.cody.vscode.Range;
 import org.junit.jupiter.api.Test;
 
 public class InlineCompletionsPostProcessingTest {
-
-  private final String sameLinePrefix = "System.out.println(\"Hello ";
   private final String sameLineSuffix = "\");";
-  private final AutoCompleteDocumentContext testDocumentContext =
-      new AutoCompleteDocumentContext(sameLinePrefix, sameLineSuffix);
-
-  @Test
-  public void lineSuffixSeparateFromCompletion() {
-    String suggestionText = "world!";
-    Range inputRange = new Range(new Position(0, 0), new Position(0, 6));
-    InlineAutoCompleteItem inputCompletion =
-        new InlineAutoCompleteItem(suggestionText, sameLineSuffix, inputRange, null);
-    InlineAutoCompleteItem outputCompletion =
-        CodyAutoCompleteManager.postProcessInlineAutoCompleteBasedOnDocumentContext(
-            inputCompletion, testDocumentContext);
-    assertEquals(outputCompletion.insertText, inputCompletion.insertText);
-    assertEquals(outputCompletion.range, inputCompletion.range);
-  }
-
-  @Test
-  public void completionEndsInLineSuffix() {
-    String suggestionTextWithoutSuffix = "world!";
-    String suggestionText = suggestionTextWithoutSuffix + sameLineSuffix;
-    Range inputRange = new Range(new Position(0, 0), new Position(0, 9));
-    InlineAutoCompleteItem inputCompletion =
-        new InlineAutoCompleteItem(suggestionText, sameLineSuffix, inputRange, null);
-    InlineAutoCompleteItem outputCompletion =
-        CodyAutoCompleteManager.postProcessInlineAutoCompleteBasedOnDocumentContext(
-            inputCompletion, testDocumentContext);
-    assertEquals(outputCompletion.insertText, suggestionTextWithoutSuffix);
-    assertEquals(
-        outputCompletion.range,
-        inputCompletion.range.withEnd(inputCompletion.range.end.withCharacter(6)));
-  }
-
-  @Test
-  public void completionContainsLineSuffix() {
-    String suggestionTextWithoutSuffix = "world!";
-    String suggestionText = suggestionTextWithoutSuffix + sameLineSuffix + " // prints hello world";
-    Range inputRange = new Range(new Position(0, 0), new Position(0, 31));
-    InlineAutoCompleteItem inputCompletion =
-        new InlineAutoCompleteItem(suggestionText, sameLineSuffix, inputRange, null);
-    InlineAutoCompleteItem outputCompletion =
-        CodyAutoCompleteManager.postProcessInlineAutoCompleteBasedOnDocumentContext(
-            inputCompletion, testDocumentContext);
-    assertEquals(outputCompletion.insertText, suggestionTextWithoutSuffix);
-    assertEquals(
-        outputCompletion.range,
-        inputCompletion.range.withEnd(inputCompletion.range.end.withCharacter(6)));
-  }
 
   @Test
   public void completionContainsZeroWidthSpaces() {

@@ -175,7 +175,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 	tr, ctx := trace.New(ctx, "symbols.Search",
 		args.Repo.Attr(),
 		args.CommitID.Attr())
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	var response search.SymbolsResponse
 
@@ -275,7 +275,7 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 	tr, ctx := trace.New(ctx, "symbols.LocalCodeIntel",
 		attribute.String("repo", args.Repo),
 		attribute.String("commitID", args.Commit))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		return c.localCodeIntelGRPC(ctx, args)
@@ -340,7 +340,7 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 	tr, ctx := trace.New(ctx, "squirrel.SymbolInfo",
 		attribute.String("repo", args.Repo),
 		attribute.String("commitID", args.Commit))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		result, err = c.symbolInfoGRPC(ctx, args)
@@ -445,7 +445,7 @@ func (c *Client) httpPost(
 	tr, ctx := trace.New(ctx, "symbols.httpPost",
 		attribute.String("method", method),
 		repo.Attr())
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	symbolsURL, err := c.url(repo)
 	if err != nil {

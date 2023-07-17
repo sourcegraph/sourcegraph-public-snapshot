@@ -71,7 +71,7 @@ func newCachedLocationResolver(
 	}
 
 	resolvePath := func(commitResolver resolverstubs.GitCommitResolver, path string, isDir bool) *cachedGitTreeEntryResolver {
-		return &cachedGitTreeEntryResolver{NewGitTreeEntryResolver(commitResolver, path, isDir)}
+		return &cachedGitTreeEntryResolver{NewGitTreeEntryResolver(commitResolver, path, isDir, gitserverClient)}
 	}
 
 	resolveRepositoryCached := func(ctx context.Context, repoID api.RepoID) (*cachedRepositoryResolver, error) {

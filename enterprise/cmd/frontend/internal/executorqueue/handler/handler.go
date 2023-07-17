@@ -14,10 +14,10 @@ import (
 	"github.com/prometheus/common/expfmt"
 	"github.com/sourcegraph/log"
 
-	executorstore "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/store"
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
+	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
+	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"

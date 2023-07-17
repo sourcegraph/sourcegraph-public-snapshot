@@ -79,6 +79,8 @@
 
         isolation: isolate;
         font-size: var(--tooltip-font-size);
+        font-style: normal;
+        font-weight: normal;
         line-height: var(--tooltip-line-height);
         max-width: var(--tooltip-max-width);
         background-color: var(--tooltip-bg);
@@ -90,6 +92,7 @@
         border: none;
         min-width: 0;
         display: none;
+        z-index: 100;
 
         &.visible {
             display: block;

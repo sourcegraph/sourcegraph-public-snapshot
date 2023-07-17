@@ -25,6 +25,9 @@ public class TranslateToLanguageAction extends BaseRecipeAction {
     UpdatableChatHolderService updatableChatHolderService =
         project.getService(UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
+    if (updatableChat == null) {
+      return;
+    }
     RecipeRunner recipeRunner = new RecipeRunner(project, updatableChat);
     ActionUtil.runIfCodeSelected(
         updatableChat,

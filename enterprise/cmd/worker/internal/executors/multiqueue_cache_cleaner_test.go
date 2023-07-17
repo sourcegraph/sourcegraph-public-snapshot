@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 

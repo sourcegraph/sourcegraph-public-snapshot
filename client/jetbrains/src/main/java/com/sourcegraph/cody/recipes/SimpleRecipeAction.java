@@ -17,10 +17,13 @@ public abstract class SimpleRecipeAction extends BaseRecipeAction {
     UpdatableChatHolderService updatableChatHolderService =
         project.getService(UpdatableChatHolderService.class);
     UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    executeRecipeWithPromptProvider(updatableChat, project);
+    if (updatableChat != null) {
+      executeRecipeWithPromptProvider(updatableChat, project);
+    }
   }
 
-  public void executeRecipeWithPromptProvider(UpdatableChat updatableChat, Project project) {
+  public void executeRecipeWithPromptProvider(
+      @NotNull UpdatableChat updatableChat, @NotNull Project project) {
     GraphQlLogger.logCodyEvents(project, this.getActionComponentName(), "clicked");
     RecipeRunner recipeRunner = new RecipeRunner(project, updatableChat);
     ActionUtil.runIfCodeSelected(

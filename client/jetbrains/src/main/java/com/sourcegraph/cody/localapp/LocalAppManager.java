@@ -125,7 +125,7 @@ public class LocalAppManager {
               try {
                 Desktop.getDesktop().open(new File(p.codyAppFile.toString()));
               } catch (IOException e) {
-                logger.error(e);
+                logger.warn(e);
               }
             });
   }

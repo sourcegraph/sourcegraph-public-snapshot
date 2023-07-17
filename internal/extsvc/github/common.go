@@ -1601,7 +1601,7 @@ func doRequest(ctx context.Context, logger log.Logger, apiURL *url.URL, auther a
 		if resp != nil {
 			tr.SetAttributes(attribute.String("status", resp.Status))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 	req = req.WithContext(ctx)
 

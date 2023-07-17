@@ -1,7 +1,5 @@
 # Getting started with running batch changes server-side
 
-<aside class="experimental">This feature is experimental. Follow the <a href="server_side#setup">setup guide</a> to get started.</aside>
-
 ## Creating your first batch change
 
 To get started, click on the "Create batch change" button on the Batch Changes page, or go to `/batch-changes/create`.

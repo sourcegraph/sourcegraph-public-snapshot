@@ -28,7 +28,7 @@ go_library(
         "//internal/httpserver",
         "//internal/observation",
         "//internal/oobmigration",
-        "//internal/oobmigration/migrations",
+        "//internal/oobmigration/migrations/register",
         "//internal/service",
         "//internal/symbols",
         "//lib/errors",

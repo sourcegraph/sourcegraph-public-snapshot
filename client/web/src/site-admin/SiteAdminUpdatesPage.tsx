@@ -43,9 +43,7 @@ import { SITE_UPDATE_CHECK, SITE_UPGRADE_READINESS, SET_AUTO_UPGRADE } from './b
 
 import styles from './SiteAdminUpdatesPage.module.scss'
 
-interface Props extends TelemetryProps {
-    isSourcegraphApp: boolean
-}
+interface Props extends TelemetryProps {}
 const capitalize = (text: string): string => (text && text[0].toUpperCase() + text.slice(1)) || ''
 
 const SiteUpdateCheck: React.FC = () => {
@@ -393,7 +391,7 @@ const SiteUpgradeReadiness: FunctionComponent = () => {
 /**
  * A page displaying information about available updates for the Sourcegraph instance. As well as the readiness status of the instance for upgrade.
  */
-export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, isSourcegraphApp }) => {
+export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService }) => {
     useMemo(() => {
         telemetryService.logViewEvent('SiteAdminUpdates')
     }, [telemetryService])
@@ -404,28 +402,13 @@ export const SiteAdminUpdatesPage: React.FC<Props> = ({ telemetryService, isSour
 
             <PageHeader path={[{ text: 'Updates' }]} headingElement="h2" className="mb-3" />
             <Container className="mb-3">
-                {isSourcegraphApp ? (
-                    <Text className="mb-1">
-                        We're making regular improvements to the Cody app.
-                        <br /> For information on how to upgrade to the latest version, see{' '}
-                        <Link to="/help/app#upgrading" target="_blank" rel="noopener">
-                            our docs
-                        </Link>
-                        .
-                    </Text>
-                ) : (
-                    <SiteUpdateCheck />
-                )}
+                <SiteUpdateCheck />
             </Container>
 
-            {!isSourcegraphApp && (
-                <>
-                    <PageHeader path={[{ text: 'Upgrade Readiness' }]} headingElement="h2" className="mb-3" />
-                    <Container className="mb-3">
-                        <SiteUpgradeReadiness />
-                    </Container>
-                </>
-            )}
+            <PageHeader path={[{ text: 'Upgrade Readiness' }]} headingElement="h2" className="mb-3" />
+            <Container className="mb-3">
+                <SiteUpgradeReadiness />
+            </Container>
         </div>
     )
 }

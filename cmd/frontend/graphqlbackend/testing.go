@@ -20,7 +20,7 @@ import (
 )
 
 func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
-	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient())
+	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient(db))
 }
 
 func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverClient gitserver.Client) *graphql.Schema {
@@ -29,7 +29,6 @@ func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverCli
 	parsedSchema, parseSchemaErr := NewSchema(
 		db,
 		gitserverClient,
-		nil,
 		[]OptionalResolver{},
 		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
 	)

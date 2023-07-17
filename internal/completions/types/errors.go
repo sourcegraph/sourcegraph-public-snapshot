@@ -104,8 +104,8 @@ func (e *ErrStatusNotOK) WriteHeader(w http.ResponseWriter) {
 	// status codes while indicating that the upstream service is unavailable.
 	//
 	// Currently, we only write back status code 429 as-is to help support
-	// rate limit handling in clients.
-	case http.StatusTooManyRequests:
+	// rate limit handling in clients, and 504 to indicate timeouts.
+	case http.StatusTooManyRequests, http.StatusGatewayTimeout:
 		w.WriteHeader(e.statusCode)
 	default:
 		w.WriteHeader(http.StatusServiceUnavailable)

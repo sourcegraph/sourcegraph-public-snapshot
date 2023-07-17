@@ -17,7 +17,7 @@ public enum AutoCompleteProviderType {
     try {
       return Optional.of(AutoCompleteProviderType.valueOf(normalizedName));
     } catch (IllegalArgumentException e) {
-      logger.error("Cody: Error: Invalid autocomplete provider type: " + name);
+      logger.warn("Cody: Error: Invalid autocomplete provider type: " + name);
       return Optional.empty();
     }
   }

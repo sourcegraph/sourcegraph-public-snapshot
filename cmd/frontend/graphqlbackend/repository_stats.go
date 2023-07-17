@@ -38,7 +38,7 @@ func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, erro
 
 func (r *repositoryStatsResolver) computeGitDirBytes(ctx context.Context) (int64, error) {
 	r.gitDirBytesOnce.Do(func() {
-		stats, err := gitserver.NewClient().ReposStats(ctx)
+		stats, err := gitserver.NewClient(r.db).ReposStats(ctx)
 		if err != nil {
 			r.gitDirBytesErr = err
 			return
@@ -93,7 +93,7 @@ func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int3
 			r.indexedStatsErr = err
 			return
 		}
-		r.indexedRepos = int32(len(repos.Minimal)) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		r.indexedRepos = int32(repos.Stats.Repos)
 		r.indexedLinesCount = int64(repos.Stats.DefaultBranchNewLinesCount) + int64(repos.Stats.OtherBranchesNewLinesCount)
 	})
 

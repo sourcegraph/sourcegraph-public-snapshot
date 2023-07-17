@@ -6,10 +6,9 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/insights/httpapi",
     visibility = ["//enterprise:__subpackages__"],
     deps = [
-        "//enterprise/internal/database",
-        "//enterprise/internal/insights/store",
         "//internal/actor",
         "//internal/database",
+        "//internal/insights/store",
         "//internal/licensing",
         "//lib/errors",
         "@com_github_gorilla_mux//:mux",

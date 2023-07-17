@@ -88185,7 +88185,7 @@ func NewMockZoektReposStore() *MockZoektReposStore {
 			},
 		},
 		UpdateIndexStatusesFunc: &ZoektReposStoreUpdateIndexStatusesFunc{
-			defaultHook: func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) (r0 error) {
+			defaultHook: func(context.Context, zoekt.ReposMap) (r0 error) {
 				return
 			},
 		},
@@ -88217,7 +88217,7 @@ func NewStrictMockZoektReposStore() *MockZoektReposStore {
 			},
 		},
 		UpdateIndexStatusesFunc: &ZoektReposStoreUpdateIndexStatusesFunc{
-			defaultHook: func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error {
+			defaultHook: func(context.Context, zoekt.ReposMap) error {
 				panic("unexpected invocation of MockZoektReposStore.UpdateIndexStatuses")
 			},
 		},
@@ -88570,15 +88570,15 @@ func (c ZoektReposStoreHandleFuncCall) Results() []interface{} {
 // UpdateIndexStatuses method of the parent MockZoektReposStore instance is
 // invoked.
 type ZoektReposStoreUpdateIndexStatusesFunc struct {
-	defaultHook func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error
-	hooks       []func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error
+	defaultHook func(context.Context, zoekt.ReposMap) error
+	hooks       []func(context.Context, zoekt.ReposMap) error
 	history     []ZoektReposStoreUpdateIndexStatusesFuncCall
 	mutex       sync.Mutex
 }
 
 // UpdateIndexStatuses delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockZoektReposStore) UpdateIndexStatuses(v0 context.Context, v1 map[uint32]*zoekt.MinimalRepoListEntry) error {
+func (m *MockZoektReposStore) UpdateIndexStatuses(v0 context.Context, v1 zoekt.ReposMap) error {
 	r0 := m.UpdateIndexStatusesFunc.nextHook()(v0, v1)
 	m.UpdateIndexStatusesFunc.appendCall(ZoektReposStoreUpdateIndexStatusesFuncCall{v0, v1, r0})
 	return r0
@@ -88587,7 +88587,7 @@ func (m *MockZoektReposStore) UpdateIndexStatuses(v0 context.Context, v1 map[uin
 // SetDefaultHook sets function that is called when the UpdateIndexStatuses
 // method of the parent MockZoektReposStore instance is invoked and the hook
 // queue is empty.
-func (f *ZoektReposStoreUpdateIndexStatusesFunc) SetDefaultHook(hook func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error) {
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) SetDefaultHook(hook func(context.Context, zoekt.ReposMap) error) {
 	f.defaultHook = hook
 }
 
@@ -88596,7 +88596,7 @@ func (f *ZoektReposStoreUpdateIndexStatusesFunc) SetDefaultHook(hook func(contex
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *ZoektReposStoreUpdateIndexStatusesFunc) PushHook(hook func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error) {
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) PushHook(hook func(context.Context, zoekt.ReposMap) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -88605,19 +88605,19 @@ func (f *ZoektReposStoreUpdateIndexStatusesFunc) PushHook(hook func(context.Cont
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ZoektReposStoreUpdateIndexStatusesFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error {
+	f.SetDefaultHook(func(context.Context, zoekt.ReposMap) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ZoektReposStoreUpdateIndexStatusesFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error {
+	f.PushHook(func(context.Context, zoekt.ReposMap) error {
 		return r0
 	})
 }
 
-func (f *ZoektReposStoreUpdateIndexStatusesFunc) nextHook() func(context.Context, map[uint32]*zoekt.MinimalRepoListEntry) error {
+func (f *ZoektReposStoreUpdateIndexStatusesFunc) nextHook() func(context.Context, zoekt.ReposMap) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -88656,7 +88656,7 @@ type ZoektReposStoreUpdateIndexStatusesFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 map[uint32]*zoekt.MinimalRepoListEntry
+	Arg1 zoekt.ReposMap
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
