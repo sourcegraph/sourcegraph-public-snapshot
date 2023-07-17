@@ -111,17 +111,21 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
-                        <Button
-                            className="test-edit-external-service-button"
-                            to={`/site-admin/external-services/${encodeURIComponent(node.id)}/edit`}
-                            variant="secondary"
-                            size="sm"
-                            as={Link}
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiCog} /> {editingDisabled ? 'View' : 'Edit'}
-                        </Button>
-                    </Tooltip>{' '}
+                    {!editingDisabled && (
+                        <>
+                            <Tooltip content="Edit code host connection settings">
+                                <Button
+                                    className="test-edit-external-service-button"
+                                    to={`/site-admin/external-services/${encodeURIComponent(node.id)}/edit`}
+                                    variant="secondary"
+                                    size="sm"
+                                    as={Link}
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
+                                </Button>
+                            </Tooltip>{' '}
+                        </>
+                    )}
                     <Tooltip content="Delete code host connection">
                         <Button
                             aria-label="Delete"
