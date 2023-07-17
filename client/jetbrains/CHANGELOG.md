@@ -4,6 +4,20 @@
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.6]
+
+### Added
+
 - Automatic detection of Cody app status in the settings window [#54955](https://github.com/sourcegraph/sourcegraph/pull/54955)
 - Add "Enable Cody" option to settings [#55004](https://github.com/sourcegraph/sourcegraph/pull/55004)
 
@@ -36,14 +50,6 @@
 - Copy code block button added to editor in the chat message to copy the text to clipboard [#54783](https://github.com/sourcegraph/sourcegraph/pull/54783)
 - Insert at Cursor button added to editor in the chat message to insert the text form the editor to main editor [#54815](https://github.com/sourcegraph/sourcegraph/pull/54815)
 - Added support for multiline autocomplete [#54848](https://github.com/sourcegraph/sourcegraph/pull/54848)
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Security
 
 ### Fixed
 
