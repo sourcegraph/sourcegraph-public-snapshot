@@ -106,7 +106,7 @@ func EmbedRepo(
 
 	insertIndex := func(index *embeddings.EmbeddingIndex, metadata []embeddings.RepoEmbeddingRowMetadata, vectors []float32) {
 		index.RowMetadata = append(index.RowMetadata, metadata...)
-		index.Embeddings = append(index.Embeddings, embeddings.Quantize(vectors)...)
+		index.Embeddings = append(index.Embeddings, embeddings.Quantize(vectors, nil)...)
 		// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
 		// to "unimportant" files and the average for unknown files. We should probably
 		// add this here, too.

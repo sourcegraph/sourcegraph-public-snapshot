@@ -36,7 +36,7 @@ func searchRepoEmbeddingIndexes(
 	if err != nil {
 		return nil, err
 	}
-	embeddedQuery := embeddings.Quantize(floatQuery)
+	embeddedQuery := embeddings.Quantize(floatQuery, nil)
 
 	workerOpts := embeddings.WorkerOptions{
 		NumWorkers:     runtime.GOMAXPROCS(0),
