@@ -235,7 +235,7 @@ func TestMultiHandler_HandleDequeue(t *testing.T) {
 			dequeueEvents: []dequeueEvent{
 				{
 					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
+					expectedResponseBody: `{"error":"failed to check version \"\\n1.2\": Invalid Semantic Version"}`,
 				},
 			},
 		},

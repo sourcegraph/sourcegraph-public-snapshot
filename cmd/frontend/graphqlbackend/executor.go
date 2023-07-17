@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const oneReleaseCycle = 35 * 24 * time.Hour
@@ -124,12 +125,12 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 
 	s, err := semver.NewVersion(sv)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to parse Sourcegraph version %q", sv)
 	}
 
 	e, err := semver.NewVersion(ev)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "failed to parse executor version %q", ev)
 	}
 
 	// it's okay for an executor to be one minor version behind or ahead of the sourcegraph version.
