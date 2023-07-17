@@ -99,6 +99,7 @@ interface State {
         references: boolean
         definitions: boolean
         implementations: boolean
+        prototypes: boolean
     }
 }
 
@@ -119,10 +120,16 @@ function createStateFromLocation(location: H.Location): null | State {
         references: viewState === 'references',
         definitions: viewState === 'definitions',
         implementations: viewState?.startsWith('implementations_') ?? false,
+        prototypes: viewState?.startsWith('implementations_') ?? false,
     }
     // If the URL doesn't contain tab=<tab>, we open it (likely because the
     // user clicked on a link in the preview code blob) to show definitions.
-    if (!collapsedState.references && !collapsedState.definitions && !collapsedState.implementations) {
+    if (
+        !collapsedState.references &&
+        !collapsedState.definitions &&
+        !collapsedState.implementations &&
+        !collapsedState.prototypes
+    ) {
         collapsedState.definitions = true
     }
 

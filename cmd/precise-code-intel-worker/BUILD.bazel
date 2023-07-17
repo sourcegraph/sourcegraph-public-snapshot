@@ -5,20 +5,20 @@ load("@container_structure_test//:defs.bzl", "container_structure_test")
 load("//dev:oci_defs.bzl", "image_repository")
 
 go_library(
-    name = "repo-updater_lib",
+    name = "precise-code-intel-worker_lib",
     srcs = ["main.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker",
     visibility = ["//visibility:private"],
     deps = [
-        "//enterprise/cmd/repo-updater/shared",
+        "//cmd/precise-code-intel-worker/shared",
         "//enterprise/cmd/sourcegraph/enterprisecmd",
         "//internal/sanitycheck",
     ],
 )
 
 go_binary(
-    name = "repo-updater",
-    embed = [":repo-updater_lib"],
+    name = "precise-code-intel-worker",
+    embed = [":precise-code-intel-worker_lib"],
     visibility = ["//visibility:public"],
     x_defs = {
         "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
@@ -27,26 +27,26 @@ go_binary(
 )
 
 pkg_tar(
-    name = "tar_repo-updater",
-    srcs = [":repo-updater"],
+    name = "tar_precise-code-intel-worker",
+    srcs = [":precise-code-intel-worker"],
 )
 
 oci_image(
     name = "image",
-    base = "@wolfi_repo_updater_base",
+    base = "@wolfi_base",
     entrypoint = [
         "/sbin/tini",
         "--",
-        "/repo-updater",
+        "/precise-code-intel-worker",
     ],
-    tars = [":tar_repo-updater"],
+    tars = [":tar_precise-code-intel-worker"],
     user = "sourcegraph",
 )
 
 oci_tarball(
     name = "image_tarball",
     image = ":image",
-    repo_tags = ["repo-updater:candidate"],
+    repo_tags = ["precise-code-intel-worker:candidate"],
 )
 
 container_structure_test(
@@ -64,5 +64,5 @@ container_structure_test(
 oci_push(
     name = "candidate_push",
     image = ":image",
-    repository = image_repository("repo-updater"),
+    repository = image_repository("precise-code-intel-worker"),
 )

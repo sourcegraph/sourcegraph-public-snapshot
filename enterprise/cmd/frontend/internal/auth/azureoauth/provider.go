@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -69,7 +70,8 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		return ps, problems
 	}
 
-	var configured bool
+	existingProviders := make(collections.Set[string])
+
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.AzureDevOps == nil {
 			continue
@@ -84,10 +86,8 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			continue
 		}
 
-		// Currently Azure Dev Ops will work only against https://dev.azure.com. If we have more
-		// than one configuration for Azure Dev Ops auth provider, we want to fail early.
-		if configured {
-			problems = append(problems, conf.NewSiteProblem("Cannot have more than one auth provider for Azure Dev Ops, only the first one will be used"))
+		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider for Azure Dev Ops with Client ID %q, only the first one will be used", pr.AzureDevOps.ClientID)))
 			continue
 		}
 
@@ -96,7 +96,7 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 			Provider:                provider,
 		})
 
-		configured = true
+		existingProviders.Add(provider.CachedInfo().UniqueID())
 	}
 
 	return ps, problems

@@ -8,7 +8,7 @@ go_library(
         "observability.go",
         "server.go",
     ],
-    importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater",
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater",
     visibility = ["//visibility:public"],
     deps = [
         "//internal/api",

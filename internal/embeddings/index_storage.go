@@ -9,6 +9,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
@@ -110,7 +111,25 @@ func UpdateRepoEmbeddingIndex(
 	return UploadRepoEmbeddingIndex(ctx, uploadStore, key, previous)
 }
 
-func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (_ *RepoEmbeddingIndex, err error) {
+// DownloadRepoEmbeddingIndex wraps downloadRepoEmbeddingIndex to support
+// embeddings named based on either repo ID or repo Name.
+//
+// TODO: 2023/07: Remove this wrapper either after we have forced a complete
+// reindex or after we have removed the internal embeddings store, whichever
+// comes first.
+func DownloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, repoID api.RepoID, repoName api.RepoName) (_ *RepoEmbeddingIndex, err error) {
+	index, err1 := downloadRepoEmbeddingIndex(ctx, uploadStore, string(GetRepoEmbeddingIndexName(repoID)))
+	if err1 != nil {
+		var err2 error
+		index, err2 = downloadRepoEmbeddingIndex(ctx, uploadStore, string(GetRepoEmbeddingIndexNameDeprecated(repoName)))
+		if err2 != nil {
+			return nil, errors.CombineErrors(err1, err2)
+		}
+	}
+	return index, nil
+}
+
+func downloadRepoEmbeddingIndex(ctx context.Context, uploadStore uploadstore.Store, key string) (_ *RepoEmbeddingIndex, err error) {
 	tr, ctx := trace.New(ctx, "DownloadRepoEmbeddingIndex", attribute.String("key", key))
 	defer tr.EndWithErr(&err)
 
@@ -210,13 +229,14 @@ func (d *decoder) decode() (*RepoEmbeddingIndex, error) {
 			return nil, err
 		}
 
-		ei.Embeddings = make([]int8, 0, numChunks*ei.ColumnDimension)
+		ei.Embeddings = make([]int8, 0, numChunks*embeddingsChunkSize)
+		embeddingsBuf := make([]float32, 0, embeddingsChunkSize)
+		quantizeBuf := make([]int8, embeddingsChunkSize)
 		for i := 0; i < numChunks; i++ {
-			var embeddingSlice []float32
-			if err := d.dec.Decode(&embeddingSlice); err != nil {
+			if err := d.dec.Decode(&embeddingsBuf); err != nil {
 				return nil, err
 			}
-			ei.Embeddings = append(ei.Embeddings, Quantize(embeddingSlice)...)
+			ei.Embeddings = append(ei.Embeddings, Quantize(embeddingsBuf, quantizeBuf)...)
 		}
 	}
 
