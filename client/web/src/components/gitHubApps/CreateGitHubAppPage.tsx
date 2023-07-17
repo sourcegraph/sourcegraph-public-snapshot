@@ -199,19 +199,21 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
             <PageTitle title={pageTitle} />
             <PageHeader
                 path={[{ text: pageTitle }]}
+                headingElement="h2"
                 description={
                     headerDescription || (
                         <>
-                            Register a GitHub App to better manage GitHub code host connections.
-                            <Link to="/help/admin/external_service/github#using-a-github-app" className="ml-1">
+                            Register a GitHub App to better manage GitHub code host connections.{' '}
+                            <Link to="/help/admin/external_service/github#using-a-github-app" target="_blank">
                                 See how GitHub App configuration works.
                             </Link>
                         </>
                     )
                 }
                 annotation={headerAnnotation}
+                className="mb-3"
             />
-            <Container className="mt-3">
+            <Container className="mb-3">
                 {error && <Alert variant="danger">Error creating GitHub App: {error}</Alert>}
                 <Text>
                     Provide the details for a new GitHub App with the form below. Once you click "Create GitHub App",
@@ -297,20 +299,20 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                         </>
                     }
                 />
-                <div className="mt-4">
-                    <Button variant="primary" onClick={createState} disabled={!!nameError || !!urlError}>
-                        Create Github App
-                    </Button>
-                    <ButtonLink className="ml-3" to={cancelUrl} variant="secondary">
-                        Cancel
-                    </ButtonLink>
-                </div>
                 {/* eslint-disable-next-line react/forbid-elements */}
                 <form ref={ref} method="post">
                     {/* eslint-disable-next-line react/forbid-elements */}
                     <input ref={formInput} name="manifest" onChange={noop} hidden={true} />
                 </form>
             </Container>
+            <div>
+                <Button variant="primary" onClick={createState} disabled={!!nameError || !!urlError}>
+                    Create Github App
+                </Button>
+                <ButtonLink className="ml-2" to={cancelUrl} variant="secondary">
+                    Cancel
+                </ButtonLink>
+            </div>
         </>
     )
 }
