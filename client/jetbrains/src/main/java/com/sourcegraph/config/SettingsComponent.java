@@ -49,8 +49,6 @@ public class SettingsComponent {
   private JBCheckBox isCodyEnabledCheckBox;
   private JBCheckBox isCodyAutoCompleteEnabledCheckBox;
 
-  private JButton testCodyAppConnectionButton;
-  private JLabel testCodyAppConnectionLabel;
   private ActionLink installLocalAppLink;
   private JLabel installLocalAppComment;
   private ActionLink runLocalAppLink;
@@ -203,7 +201,7 @@ public class SettingsComponent {
     // Assemble the three main panels String platformName =
     String platformName =
         Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
-    String codyAppCommentText =
+    @SuppressWarnings("DialogTitleCapitalization") String codyAppCommentText =
         isLocalAppPlatformSupported
             ? "Use Sourcegraph through Cody App."
             : platformName
