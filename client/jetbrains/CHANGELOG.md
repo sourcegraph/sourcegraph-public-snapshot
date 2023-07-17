@@ -4,20 +4,6 @@
 
 ### Added
 
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
-
-### Security
-
-## [3.0.6]
-
-### Added
-
 - Automatic detection of Cody app status in the settings window [#54955](https://github.com/sourcegraph/sourcegraph/pull/54955)
 - Add "Enable Cody" option to settings [#55004](https://github.com/sourcegraph/sourcegraph/pull/55004)
 
