@@ -40,7 +40,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/semaphore"
@@ -497,7 +496,7 @@ func TestServer_addrForRepo(t *testing.T) {
 	db := database.NewMockDB()
 
 	gs := database.NewMockGitserverRepoStore()
-	gs.GetPoolRepoURIFunc.SetDefaultReturn(nil, nil, nil)
+	gs.GetPoolRepoFunc.SetDefaultReturn(nil, nil)
 
 	db.GitserverReposFunc.SetDefaultReturn(gs)
 
@@ -518,8 +517,7 @@ func TestServer_addrForRepo(t *testing.T) {
 
 	testCases := []struct {
 		name               string
-		forkedRepoPoolID   *api.RepoID
-		parentRepoName     *api.RepoName
+		poolRepo           *types.PoolRepo
 		error              error
 		expectedShardRepo1 string
 		expectedShardRepo2 string
@@ -531,8 +529,7 @@ func TestServer_addrForRepo(t *testing.T) {
 		},
 		{
 			name:               "a forked and parent repo relationship exists",
-			forkedRepoPoolID:   pointers.Ptr(api.RepoID(2)),
-			parentRepoName:     &repo1,
+			poolRepo:           &types.PoolRepo{RepoName: repo1},
 			expectedShardRepo1: shard1,
 			expectedShardRepo2: shard1,
 		},
@@ -546,10 +543,10 @@ func TestServer_addrForRepo(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gs.GetPoolRepoURIFunc.SetDefaultReturn(tc.forkedRepoPoolID, tc.parentRepoName, tc.error)
+			gs.GetPoolRepoFunc.SetDefaultReturn(tc.poolRepo, tc.error)
 
-			require.Equal(t, s.addrForRepo(api.RepoName(repo1), testAddrs), tc.expectedShardRepo1)
-			require.Equal(t, s.addrForRepo(api.RepoName(repo2), testAddrs), tc.expectedShardRepo2)
+			require.Equal(t, s.addrForRepo(ctx, api.RepoName(repo1), testAddrs), tc.expectedShardRepo1)
+			require.Equal(t, s.addrForRepo(ctx, api.RepoName(repo2), testAddrs), tc.expectedShardRepo2)
 		})
 
 	}

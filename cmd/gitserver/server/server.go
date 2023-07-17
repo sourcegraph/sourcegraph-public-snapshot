@@ -550,8 +550,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
-	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
+func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
+	return gitServerAddrs.AddrForRepo(ctx, s.Logger, filepath.Base(os.Args[0]), repoName)
 }
 
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
@@ -762,7 +762,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 			repo.Name = api.UndeletedRepoName(repo.Name)
 
 			// Ensure we're only dealing with repos we are responsible for.
-			addr := s.addrForRepo(repo.Name, gitServerAddrs)
+			addr := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
 			if !s.hostnameMatch(addr) {
 				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 				continue

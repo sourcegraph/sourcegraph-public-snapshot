@@ -44,7 +44,7 @@ func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (li
 	}
 	if internalgrpc.IsGRPCEnabled(ctx) {
 
-		client, err := c.grpcClient.ClientForRepo(c.userAgent, "")
+		client, err := c.grpcClient.ClientForRepo(ctx, c.userAgent, "")
 		if err != nil {
 			return nil, err
 		}

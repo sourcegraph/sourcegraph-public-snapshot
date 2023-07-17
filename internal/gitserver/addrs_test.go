@@ -1,9 +1,11 @@
 package gitserver
 
 import (
+	"context"
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,6 +24,8 @@ func TestAddrForRepo(t *testing.T) {
 			"repo2": "gitserver-1",
 		},
 	}
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
 
 	t.Run("no deduplicated forks", func(t *testing.T) {
 		testCases := []struct {
@@ -53,7 +57,7 @@ func TestAddrForRepo(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				got := ga.AddrForRepo("gitserver", tc.repo)
+				got := ga.AddrForRepo(ctx, logger, "gitserver", tc.repo)
 				if got != tc.want {
 					t.Fatalf("Want %q, got %q", tc.want, got)
 				}
@@ -70,10 +74,10 @@ func TestAddrForRepo(t *testing.T) {
 		//
 		// This serves both as a test and a test documentation on what shard to expect for which
 		// repo.
-		shardParentRepo := ga.AddrForRepo("gitserver", parentRepo)
+		shardParentRepo := ga.AddrForRepo(ctx, logger, "gitserver", parentRepo)
 		require.Equal(t, shardParentRepo, "gitserver-2")
 
-		shardForkedRepo := ga.AddrForRepo("gitserver", forkedRepo)
+		shardForkedRepo := ga.AddrForRepo(ctx, logger, "gitserver", forkedRepo)
 		require.Equal(t, shardForkedRepo, "gitserver-3")
 
 		conf.Mock(&conf.Unified{
@@ -136,8 +140,8 @@ func TestAddrForRepo(t *testing.T) {
 				gs.GetPoolRepoFunc.SetDefaultReturn(tc.getPoolRepoFuncDefaultReturn())
 				db.GitserverReposFunc.SetDefaultReturn(gs)
 
-				require.Equal(t, ga.AddrForRepo("gitserver", parentRepo), tc.expectedShardParentRepo)
-				require.Equal(t, ga.AddrForRepo("gitserver", forkedRepo), tc.expectedShardForkedRepo)
+				require.Equal(t, ga.AddrForRepo(ctx, logger, "gitserver", parentRepo), tc.expectedShardParentRepo)
+				require.Equal(t, ga.AddrForRepo(ctx, logger, "gitserver", forkedRepo), tc.expectedShardForkedRepo)
 			})
 		}
 	})

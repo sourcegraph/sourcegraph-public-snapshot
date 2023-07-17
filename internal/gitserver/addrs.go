@@ -97,6 +97,7 @@ func NewTestClientSource(t *testing.T, db database.DB, addrs []string, options .
 	}
 
 	source := testGitserverConns{
+		logger: log.Scoped("testGitserverConns", "a logger scoped to testGitserverConns"),
 		conns: &GitserverConns{
 			GitserverAddresses: GitserverAddresses{
 				db:        db,
@@ -113,6 +114,7 @@ func NewTestClientSource(t *testing.T, db database.DB, addrs []string, options .
 }
 
 type testGitserverConns struct {
+	logger        log.Logger
 	conns         *GitserverConns
 	testAddresses []AddressWithClient
 
@@ -120,8 +122,8 @@ type testGitserverConns struct {
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (c *testGitserverConns) AddrForRepo(userAgent string, repo api.RepoName) string {
-	return c.conns.AddrForRepo(userAgent, repo)
+func (c *testGitserverConns) AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string {
+	return c.conns.AddrForRepo(ctx, c.logger, userAgent, repo)
 }
 
 // Addresses returns the current list of gitserver addresses.
@@ -130,8 +132,8 @@ func (c *testGitserverConns) Addresses() []AddressWithClient {
 }
 
 // ClientForRepo returns a client or host for the given repo name.
-func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conn, err := c.conns.ConnForRepo(userAgent, repo)
+func (c *testGitserverConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := c.conns.ConnForRepo(ctx, userAgent, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -139,8 +141,8 @@ func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) 
 	return c.clientFunc(conn), nil
 }
 
-func (c *testGitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.conns.ConnForRepo(userAgent, repo)
+func (c *testGitserverConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
+	return c.conns.ConnForRepo(ctx, userAgent, repo)
 }
 
 type testConnAndErr struct {
@@ -236,11 +238,13 @@ type GitserverAddresses struct {
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // TODO: Insert link to doc with decision tree.
-func (g *GitserverAddresses) AddrForRepo(userAgent string, repoName api.RepoName) string {
+func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger, userAgent string, repoName api.RepoName) string {
 	// TODO: Check if this can be passed down as an arg instead.
-	logger := log.Scoped("GitserverAddresses.AddrForRepo", "logger to scoped to ").With(
-		log.String("repoName", string(repoName)),
-	)
+	// logger := log.Scoped("GitserverAddresses.AddrForRepo", "logger to scoped to ").With(
+	// 	log.String("repoName", string(repoName)),
+	// )
+
+	logger = logger.With(log.String("repoName", string(repoName)))
 
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
@@ -254,9 +258,6 @@ func (g *GitserverAddresses) AddrForRepo(userAgent string, repoName api.RepoName
 
 		return addrForKey(name, g.Addresses)
 	}
-
-	// TODO: propagate context from method call.
-	ctx := context.Background()
 
 	repoConf := conf.Get().Repositories
 	if repoConf != nil && len(repoConf.DeduplicateForks) != 0 {
@@ -326,14 +327,20 @@ func addrForKey(key string, addrs []string) string {
 }
 
 type GitserverConns struct {
-	db database.DB
+	// TODO: The embedding here makes it confusing while reading this code. I see little benefit in
+	// embedding it instead of declaring it as an attribute apart from a minor syntactic benefit at
+	// the cost of code navigability.
+	//
+	// Let's convert this into an attribute in a follow up PR.
 	GitserverAddresses
+
+	logger log.Logger
 	// invariant: there is one conn for every gitserver address
 	grpcConns map[string]connAndErr
 }
 
-func (g *GitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	addr := g.AddrForRepo(userAgent, repo)
+func (g *GitserverConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
+	addr := g.AddrForRepo(ctx, g.logger, userAgent, repo)
 	ce, ok := g.grpcConns[addr]
 	if !ok {
 		return nil, errors.Newf("no gRPC connection found for address %q", addr)
@@ -363,24 +370,25 @@ func (c *connAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
 
 type atomicGitServerConns struct {
 	db        database.DB
+	logger    log.Logger
 	conns     atomic.Pointer[GitserverConns]
 	watchOnce sync.Once
 }
 
-func (a *atomicGitServerConns) AddrForRepo(userAgent string, repo api.RepoName) string {
-	return a.get().AddrForRepo(userAgent, repo)
+func (a *atomicGitServerConns) AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string {
+	return a.get().AddrForRepo(ctx, a.logger, userAgent, repo)
 }
 
-func (a *atomicGitServerConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conn, err := a.get().ConnForRepo(userAgent, repo)
+func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := a.get().ConnForRepo(ctx, userAgent, repo)
 	if err != nil {
 		return nil, err
 	}
 	return proto.NewGitserverServiceClient(conn), nil
 }
 
-func (a *atomicGitServerConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	return a.get().ConnForRepo(userAgent, repo)
+func (a *atomicGitServerConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
+	return a.get().ConnForRepo(ctx, userAgent, repo)
 }
 
 func (a *atomicGitServerConns) Addresses() []AddressWithClient {
@@ -412,7 +420,6 @@ func (a *atomicGitServerConns) initOnce() {
 
 func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	after := GitserverConns{
-		db:                 a.db,
 		GitserverAddresses: NewGitserverAddressesFromConf(a.db, cfg),
 		grpcConns:          nil, // to be filled in
 	}
