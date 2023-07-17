@@ -300,3 +300,64 @@ rust_binary(
 )
 ```
 
+## Docs
+
+### `//docs:test` is not finding my documents after I added `BUILD.bazel` file in a child directory
+
+When you add a `BUILD.bazel` to a directory Bazel will start recognizing that directory as a package. By default
+nothing is exposed from the package - Yes, even plain files. So you need to tell Bazel that you would like to expose
+the files in the directory to the outside world / other targets by using a filegroup target:
+
+```
+filegroup(
+  name = "my_files",
+  srcs = glob(
+    [**/*],
+  visibility = ["//doc:__pkg__"], # only targets in the //doc package can use it
+)
+```
+
+We can see that all the docs are exposed by our doc by running `bazel cquery //<path/to/my/target>:my_files --output=files` - example:
+
+```
+bazel cquery "//doc/cli/references:doc_files" --output=files
+
+INFO: Analyzed target //doc/cli/references:doc_files (100 packages loaded, 439 targets configured).
+INFO: Found 1 target...
+doc/cli/references/BUILD.bazel
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/admin.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/api.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/apply.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/exec.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/index.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/new.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/preview.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/remote.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/repositories.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/validate.md
+<snip>
+```
+
+Now that our files are exposed by a target, we need to tell Bazel to expose it to `//doc:test`. In `/doc/BUILD.bazel`
+update the `data` attribute:
+
+```
+sh_test(
+    name = "test",
+    size = "small",
+    timeout = "moderate",
+    srcs = ["test.sh"],
+    args = ["$(location //dev/tools:docsite)"],
+    data = [
+        "//dev/tools:docsite",
+        "//doc/cli/references:doc_files",
+        "//doc/mydocs:my_files, # our target
+    ] + glob(
+        ["**/*"],
+        ["test.sh"],
+    ),
+    tags = [
+        "requires-network",
+    ],
+)
+```
