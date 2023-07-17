@@ -36,7 +36,7 @@ Check out the **Bazel for teammates in a hurry** section [here](./index.md) firs
 
 ### Running Node.js programs with `rules_js`
 
-Bazel operates in a different file system layout than Node.js. The challenge is to make Bazel and Node.js work together without re-writing npm packages or disrupting Node.js resolution algorithm. `rules_js` accomplishes this by running JavaScript tools in the Bazel output tree. It uses `pnpm` to create a `node_modules` directory in `bazel-out`, enabling smooth resolution of dependencies.
+Bazel operates with a different file layout than Node.js. The challenge is to make Bazel and Node.js work together without re-writing npm packages or disrupting Node.js resolution algorithm. `rules_js` accomplishes this by running JavaScript tools in the Bazel output tree. It uses `pnpm` to create a `node_modules` directory in `bazel-out`, enabling smooth resolution of dependencies.
 
 This approach comes with several benefits, like solving TypeScript's `rootDirs` issue. However, it does require Bazel rules/macro authors to adjust paths and ensure sources are copied to `bazel-out` before execution. This requires setting a `BAZEL_BINDIR` environment variable for each action.
 
@@ -66,11 +66,11 @@ http_archive(
 
 ## Root BUILD.bazel file
 
-This `BUILD.bazel` file primarily configures various rules for our monorepo including linking npm packages, setting up static code analysis tools like ESLint, defining TypeScript and Babel configs, along with Gazelle for dependency management and BUILD file generation.
+The `BUILD.bazel` file standing at the root of the repositosy primarily configures various rules for our monorepo including linking npm packages, setting up static code analysis tools like ESLint, defining TypeScript and Babel configs, along with Gazelle for dependency management and BUILD file generation when applicable.
 
 ### `js_library` target definition
 
-One of the first Javascript related snippets in the root `BUILD.bazel` file is `js_library` target definition:
+One of the first Javascript related snippets in the root `BUILD.bazel` file is the rule `js_library` used to define a target named `postcss_config_js`:
 
 ```py
 load("@aspect_rules_js//js:defs.bzl", "js_library")
@@ -87,25 +87,27 @@ js_library(
 )
 ```
 
-1. `load("@aspect_rules_js//js:defs.bzl", "js_library")` imports the `js_library` rule from the `defs.bzl` file located in the `js` directory of the `aspect_rules_js` package that we fetched in the WORKSPACE file above.
+1. `load("@aspect_rules_js//js:defs.bzl", "js_library")` imports the `js_library` rule from the `defs.bzl` file located in the `js` directory of the `aspect_rules_js` third party repository that we fetched in the WORKSPACE file above.
 2. `js_library(...)` initiates the declaration of a JS library.
-3. `name = "postcss_config_js"` assigns the name to the JS library. This is how other rules will refer to this library if they depend on it or how we can reference this target in your bazel commands (e.g., `bazel build //:postcss_config_js`).
+3. `name = "postcss_config_js"` assigns the name to the JS library. It's the _target_ name. This is how other rules will refer to this library if they depend on it or how we can reference this target in your bazel commands (e.g., `bazel build //:postcss_config_js`).
 4. `srcs = ["postcss.config.js"]` specifies the list of source files that are included in this library.
 5. `deps = [...]` defines dependencies of this target. This may include other `js_library` targets or other targets with JS files.
 
-### What is js_library?
+### What is `js_library`?
 
-`js_library` is a rule provided by [rules_js](https://docs.aspect.build/rules/aspect_rules_js). It groups together JS sources and their transitive and npm dependencies into a provided `JsInfo` added to the build graph.
+`js_library` is a rule provided by [rules_js](https://docs.aspect.build/rules/aspect_rules_js). It assembles together JS sources and their transitive and npm dependencies into a single unit. In concrete terms, it takes the form of a `JsInfo` provider, added to the build graph.
 
 See [docs](https://docs.aspect.build/rules/aspect_rules_js/docs/js_library) for more details.
 
-### What is build graph and info providers?
+### What are the build graph and info providers?
 
 In the Bazel build system, everything is represented in a structure called a build graph. Each node in the graph represents a build target (like our `js_library`), and the edges between nodes represent dependencies. When a target is built, Bazel analyses the dependencies (edges) and builds those first, ensuring that everything a target needs to build correctly is in place before the build begins.
 
-In case of `js_library`, each node represents a collection of JavaScript sources, which might be individual JS files or packages, and these nodes are linked by their dependencies. For example, our `postcss_config_js` node would be connected to the `autoprefixer`, `postcss-custom-media`, `postcss-focus-visible`, and `postcss-inset` nodes in the build graph.
+In case of the `js_library` rule, it produces a node that represents a collection of JavaScript sources, which might be individual JS files or packages, and these nodes are linked by their dependencies. For example, our `postcss_config_js` node would be connected to the `autoprefixer`, `postcss-custom-media`, `postcss-focus-visible`, and `postcss-inset` nodes in the build graph. So if Bazel wants to build `postcss_config_js`, it knows that it has to build those nodes (targets) first. 
 
-`JsInfo` is a Bazel info provider. Info Providers supply metadata or additional information about the build target. In our example, `JsInfo` is like a property or an attribute attached to each `js_library` node in the build graph. This attribute contains essential information about what files this target provides once it is built. It can include various pieces of data, such as the names and locations of the JavaScript source files, the dependencies that the target has, and any other metadata that Bazel or other parts of the build system might need to know to properly build and use the target.
+`JsInfo` is a Bazel info provider. Info Providers supply metadata or additional information about the build target. In our example, `JsInfo` is like a property or an attribute attached to each node created with `js_library` in the build graph. This attribute contains essential information about what files this target provides once it is built. It can include various pieces of data, such as the names and locations of the JavaScript source files, the dependencies that the target has, and any other metadata that Bazel or other parts of the build system might need to know to properly build and use the target.
+
+While on a daily basis, you'll never interact with the `JSInfo` provider, it's a crucial concept to understand when interacting with custom rules that wraps in Bazel various client tasks that we may want to perform in a build. 
 
 ### ts_config
 
@@ -137,7 +139,7 @@ eslint_bin.eslint_binary(
 )
 ```
 
-The `load()` function loads the `eslint` npm package that was installed by `rules_js` based on `pnpm-lock.yaml`. The syntax `"@npm//:eslint/package_json.bzl"` is indicating the location of the `eslint` package within the Bazel-managed npm dependencies. It's loading the `bin` macro which is generated by `rules_js` for the `eslint` package and aliasing it as `eslint_bin`.
+The `load()` function loads the `eslint` npm package that was installed by `rules_js` based on `pnpm-lock.yaml`. The path `"@npm//:eslint/package_json.bzl"` is indicating the location of the `eslint` package within the Bazel-managed npm dependencies. It's loading the `bin` macro which is generated by `rules_js` for the `eslint` package and aliasing it as `eslint_bin` for convenience and clarity..
 
 After that, `eslint_bin.eslint_binary()` is used to create a new Bazel build target. This target will execute the eslint binary when run (bazel way of doing `pnpm eslint`).
 
@@ -160,17 +162,17 @@ See **I want to execute a js binary with bazel. How do I do that?** for more det
 
 ## Gazelle for Javascript/Typescript code
 
-[Gazelle](https://github.com/bazelbuild/bazel-gazelle) is a BUILD file generator for Bazel, a software development tool. It automates the creation and management of Bazel's BUILD files by analyzing project source code and dependencies.
+[Gazelle](https://github.com/bazelbuild/bazel-gazelle) is a BUILD file generator for Bazel. It partially automates the creation and management of Bazel's BUILD files by analyzing project source code and dependencies. We say partially, because it can generate targets for you, populate `srcs` and `deps`, but it stops there. It won't be able to understand for example that a given script is an integration test runner that depends on a server container image for example. It's best to think about it as a skeleton generator, that you can run again to update things that can be inferred. 
 
 In the context of TypeScript and JavaScript, Gazelle uses Tree-sitter, a parser generator tool, to interpret the code. It navigates the abstract syntax tree (AST) produced by Tree-sitter to detect dependencies, including type-only imports in TypeScript, and reflects these relationships in the generated BUILD files.
 
-Use `bazel configure` to update source file lists for `ts_project` rules in BUILD files. This command inspects all nested folders starting from the current one and non-destructively updates `ts_project` targets. You can use a # keep directive to force the tool to leave existing BUILD contents alone.
+Use `bazel configure` to update source file lists for `ts_project` rules in BUILD files. This command inspects all nested folders starting from the current one and non-destructively updates `ts_project` targets. You can use a `# keep` directive to force the tool to leave existing BUILD contents alone.
 
 ```py
 ts_project(
   srcs = [
     "index.ts",
-    "manual.ts" # keep
+    "manual.ts" # keep # <- gazelle won't touch this.
   ]
 )
 ```
@@ -192,7 +194,7 @@ In our monorepo most of the JS related Gazelle directives are defined in the roo
 
 ## Structure of the simplest client package
 
-Based on `./client/common/BUILD.bazel` as one of the smallest client packages.
+Based on `./client/common/BUILD.bazel`, one of the smallest client packages.
 
 ### How to create nested BUILD files to leverage caching
 
