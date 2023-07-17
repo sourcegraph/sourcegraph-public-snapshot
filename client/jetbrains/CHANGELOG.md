@@ -4,6 +4,8 @@
 
 ### Added
 
+- Add "Enable Cody" option to settings [#55004](https://github.com/sourcegraph/sourcegraph/pull/55004)
+
 ### Changed
 
 ### Deprecated
