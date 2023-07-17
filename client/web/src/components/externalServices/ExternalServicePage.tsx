@@ -99,7 +99,7 @@ export const ExternalServicePage: FC<Props> = props => {
 
     const externalServiceCategory = resolveExternalServiceCategory(externalService)
 
-    const editingEnabled = allowEditExternalServicesWithFile || !externalServicesFromFile
+    const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
 
     const [isDeleting, setIsDeleting] = useState<boolean | Error>(false)
     const client = useApolloClient()
@@ -211,7 +211,7 @@ export const ExternalServicePage: FC<Props> = props => {
                                         />
                                     </Tooltip>
                                 </div>
-                                {editingEnabled && (
+                                {!editingDisabled && (
                                     <div className="flex-grow-1 ml-1">
                                         <Tooltip content="Edit code host connection settings">
                                             <Button
@@ -232,16 +232,16 @@ export const ExternalServicePage: FC<Props> = props => {
                                 <div className="flex-shrink-0 ml-1">
                                     <Tooltip
                                         content={
-                                            editingEnabled
-                                                ? 'Delete code host connection'
-                                                : 'Deleting code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                            editingDisabled
+                                                ? 'Deleting code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                                : 'Delete code host connection'
                                         }
                                     >
                                         <Button
                                             aria-label="Delete"
                                             className="test-delete-external-service-button"
                                             onClick={onDelete}
-                                            disabled={isDeleting === true || !editingEnabled}
+                                            disabled={isDeleting === true || editingDisabled}
                                             variant="danger"
                                             size="sm"
                                         >
