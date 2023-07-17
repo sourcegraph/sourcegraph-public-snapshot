@@ -45,5 +45,5 @@ buf_breaking_test(
     name = "v1_proto_breaking",
     against = "//internal/own/codeowners/v1:image.bin",
     config = "//internal:buf.yaml",
-    targets = [":v1_proto"], # The Protobuf library
+    targets = [":v1_proto"],  # The Protobuf library
 )

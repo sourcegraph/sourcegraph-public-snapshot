@@ -45,10 +45,9 @@ buf_lint_test(
     targets = [":v1_proto"],
 )
 
-
 buf_breaking_test(
     name = "v1_proto_breaking",
     against = "//internal/repoupdater/v1:image.bin",
     config = "//internal:buf.yaml",
-    targets = [":v1_proto"], # The Protobuf library
+    targets = [":v1_proto"],  # The Protobuf library
 )
