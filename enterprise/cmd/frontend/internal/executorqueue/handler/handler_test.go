@@ -76,7 +76,7 @@ func TestHandler_HandleDequeue(t *testing.T) {
 			name:                 "Invalid version",
 			body:                 `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB"}`,
 			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"Invalid Semantic Version"}`,
+			expectedResponseBody: `{"error":"failed to check version \"\\n1.2\": Invalid Semantic Version"}`,
 			assertionFunc: func(t *testing.T, mockStore *dbworkerstoremocks.MockStore[testRecord], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, mockStore.DequeueFunc.History(), 0)
 				require.Len(t, jobTokenStore.CreateFunc.History(), 0)

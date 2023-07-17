@@ -323,6 +323,7 @@ go_library(
         "//internal/version",
         "//internal/version/upgradestore",
         "//internal/webhooks/outbound",
+        "//lib/api",
         "//lib/batches",
         "//lib/errors",
         "//lib/output",
