@@ -6249,8 +6249,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:7sUHMeEc0U5j7pUxEy7jzfJPC3agJxI3FO79ld5Fzic=",
-        version = "v0.0.0-20230717075711-3d0bdd5c9cc9",
+        sum = "h1:DG6Q2oEy4hNRmusZxOp1jypgTBbptiY8HGp8pYuT48Q=",
+        version = "v0.0.0-20230717083219-45f608ff95bd",
     )
 
     go_repository(
@@ -9018,8 +9018,8 @@ def go_dependencies():
         name = "org_golang_x_exp",
         build_file_proto_mode = "disable_global",
         importpath = "golang.org/x/exp",
-        sum = "h1:5llv2sWeaMSnA3w2kS57ouQQ4pudlXrR0dCgw51QK9o=",
-        version = "v0.0.0-20230425010034-47ecfdc1ba53",
+        sum = "h1:MGwJjxBy0HJshjDNfLsYO8xppfqWlA5ZT9OhtUUhTNw=",
+        version = "v0.0.0-20230713183714-613f0c0eb8a1",
     )
     go_repository(
         name = "org_golang_x_image",
