@@ -119,6 +119,7 @@ func formatSymbolNamesToLikeClause(symbolNames []string) ([]string, error) {
 	descriptorWildcards := make([]string, 0, len(trimmedDescriptorMap))
 	for symbol := range trimmedDescriptorMap {
 		if symbol != "" {
+			// TODO - too lenient?
 			descriptorWildcards = append(descriptorWildcards, reverse(symbol)+"%")
 		}
 	}
