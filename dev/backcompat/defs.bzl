@@ -50,6 +50,12 @@ PATCH_ALL_GO_TESTS_CMD = "\n".join(PATCH_GO_TEST_CMDS)
 # Replaces all occurences of @com_github_sourcegraph_(scip|conc) and zoekt by @back_compat_com_github_sourcegraph_(scip|conc).
 # We need to do this, because the backcompat share the same deps as the current HEAD, so we need to handle deviations manually here.
 # It's annoying, but that's how we get cached back compat tests.
+PATCH_BUILD_TARGETS = [
+    "com_github_sourcegraph_conc",
+    "com_github_sourcegraph_scip",
+    "com_github_sourcegraph_zoekt",
+    "com_github_throttled_throttled_v2",
+]
 PATCH_BUILD_FIXES_CMD = """_sed_binary="sed"
 if [ "$(uname)" == "Darwin" ]; then
     _sed_binary="gsed"
@@ -145,7 +151,12 @@ def back_compat_defs():
     git_repository(
         name = "sourcegraph_back_compat",
         remote = "https://github.com/sourcegraph/sourcegraph.git",
-        patches = ["//dev/backcompat/patches:back_compat_migrations.patch"],
+        patches = [
+            "//dev/backcompat/patches:back_compat_migrations.patch",
+            "//dev/backcompat/patches:ui_assets.patch",
+            "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
+            "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
+        ],
         patch_args = ["-p1"],
         commit = MINIMUM_UPGRADEABLE_VERSION_REF,
         patch_cmds = [
@@ -157,7 +168,7 @@ def back_compat_defs():
             # a backported fix  to make it buildable. That fix is merely about running `bazel configure`
             # and dropping the client folder.
             #
-            # "rm -Rf client",
+            "rm -Rf client",
             PATCH_ALL_GO_TESTS_CMD,
             PATCH_BUILD_FIXES_CMD,
             PATCH_OTEL_CMD,
