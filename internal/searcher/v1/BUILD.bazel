@@ -50,7 +50,7 @@ buf_lint_test(
 
 buf_breaking_test(
     name = "v1_proto_breaking",
-    against = "",
+    against = "//internal/searcher/v1:main.bin",
     config = "//internal:buf.yaml",
     targets = [":v1_proto"], # The Protobuf library
 )
