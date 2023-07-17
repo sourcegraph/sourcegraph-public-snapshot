@@ -65,7 +65,6 @@ go_test(
     deps = [
         "//cmd/frontend/envvar",
         "//internal/accesstoken",
-        "//internal/api",
         "//internal/api/internalapi",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
