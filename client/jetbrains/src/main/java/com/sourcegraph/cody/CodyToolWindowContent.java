@@ -37,7 +37,6 @@ import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.chat.ChatUIConstants;
 import com.sourcegraph.cody.chat.ContentWithGradientBorder;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
-import com.sourcegraph.cody.chat.HumanMessageToMarkdownTextTransformer;
 import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextGetter;
@@ -560,10 +559,9 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void sendMessage(@NotNull Project project) {
-    String messageText =
-        new HumanMessageToMarkdownTextTransformer(promptInput.getText()).transform();
+    String text = promptInput.getText();
     promptInput.setText("");
-    sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
+    sendMessage(project, ChatMessage.createHumanMessage(text, text), "");
   }
 
   private void sendMessage(

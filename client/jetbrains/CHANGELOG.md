@@ -14,6 +14,8 @@
 
 ### Fixed
 
+- Don't display `<br />` tag in the chat message when trying to insert new line in the code block [#55007](https://github.com/sourcegraph/sourcegraph/pull/55007)
+
 ### Security
 
 ## [3.0.5]
