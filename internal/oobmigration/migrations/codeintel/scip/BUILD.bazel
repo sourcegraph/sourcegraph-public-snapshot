@@ -9,7 +9,10 @@ go_library(
         "symbols_util.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/codeintel/scip",
-    visibility = ["//enterprise:__subpackages__"],
+    visibility = [
+        "//enterprise:__subpackages__",
+        "//internal/oobmigration/migrations/register:__pkg__",
+    ],
     deps = [
         "//internal/codeintel/shared/symbols",
         "//internal/database/basestore",
