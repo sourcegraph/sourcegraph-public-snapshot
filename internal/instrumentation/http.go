@@ -35,7 +35,8 @@ var defaultOTELHTTPOptions = []otelhttp.Option{
 		}
 		return fmt.Sprintf("%s %s", r.Method, target)
 	}),
-	// Disable OTEL metrics which can be quite high-cardinality
+	// Disable OTEL metrics which can be quite high-cardinality by setting
+	// a no-op MeterProvider.
 	otelhttp.WithMeterProvider(noop.NewMeterProvider()),
 	// Make sure we use the global propagator, which should be set up on
 	// service initialization to support all our commonly used propagation
