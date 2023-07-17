@@ -1,7 +1,7 @@
 package graphql
 
 import (
-	"errors"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 )
