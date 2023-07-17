@@ -527,3 +527,10 @@
     :why: 
     :versions: []
     :when: 2023-06-19 19:11:34.298774000 Z
+- - :license
+  - github.com/hashicorp/go-retryablehttp
+  - MPL-2.0
+  - :who: 
+    :why: 
+    :versions: []
+    :when: 2023-07-17 17:10:16.265371000 Z
