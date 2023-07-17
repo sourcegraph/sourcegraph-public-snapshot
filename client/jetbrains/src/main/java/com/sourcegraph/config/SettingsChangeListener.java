@@ -13,6 +13,8 @@ import com.intellij.openapi.keymap.KeymapUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import com.sourcegraph.cody.agent.CodyAgent;
@@ -25,7 +27,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.Objects;
-import javax.swing.*;
+import javax.swing.KeyStroke;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -68,8 +70,8 @@ public class SettingsChangeListener implements Disposable {
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
             } else if ((!Objects.equals(context.oldDotComAccessToken, context.newDotComAccessToken)
-                    || !Objects.equals(
-                        context.oldEnterpriseAccessToken, context.newEnterpriseAccessToken))
+                || !Objects.equals(
+                context.oldEnterpriseAccessToken, context.newEnterpriseAccessToken))
                 && !ConfigUtil.isInstallEventLogged()) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
             }
@@ -108,6 +110,20 @@ public class SettingsChangeListener implements Disposable {
                   .forEach(codyAutoCompleteManager::clearAutoCompleteSuggestions);
             }
 
+            // Disable/enable the Cody tool window depending on the setting
+            if (!context.newCodyEnabled && context.oldCodyEnabled) {
+              ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+              ToolWindow toolWindow = toolWindowManager.getToolWindow("Cody");
+              if (toolWindow != null) {
+                toolWindow.setAvailable(false, null);
+              }
+            } else if (context.newCodyEnabled && !context.oldCodyEnabled) {
+              ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
+              ToolWindow toolWindow = toolWindowManager.getToolWindow("Cody");
+              if (toolWindow != null) {
+                toolWindow.setAvailable(true, null);
+              }
+            }
             // refresh Cody LLM configuration
             CodyLLMConfiguration.getInstance(project).refreshCache();
           }
