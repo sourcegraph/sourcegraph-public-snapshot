@@ -38,11 +38,12 @@ interface MoreButtonSegment {
 type Segment = CommonSegment | InvisibleSegment | MoreButtonSegment
 
 const isInvisibleSegment = (segment: Segment): segment is InvisibleSegment => segment.type === SegmentType.Invisible
+const isCommonSegment = (segment: Segment): segment is CommonSegment => segment.type === SegmentType.Common
 const isMoreButtonSegment = (segment: Segment): segment is MoreButtonSegment => segment.type === SegmentType.MoreButton
 
 // Static width value for the more width value, it's used below
 // in items layout calculation in useLayoutEffect
-const MORE_BUTTON_WIDTH = 30
+const MORE_BUTTON_WIDTH = 40
 
 interface BreadcrumbsProps {
     filename: string
@@ -95,6 +96,12 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
 
                 while (totalWidth > width - MORE_BUTTON_WIDTH) {
                     const elementToRemoveIndex = middleElementIndex + offset
+
+                    // Always render the last segment (truncation of the last segment is
+                    // handled by CSS truncation
+                    if (elementToRemoveIndex === segmentsElements.length - 1) {
+                        break
+                    }
 
                     totalWidth -= elementSizesMap[elementToRemoveIndex]
                     segmentsToHide.push(elementToRemoveIndex)
@@ -168,6 +175,8 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
         return result
     }, [segments, hidedSegments])
 
+    const isOnlyFileNameVisible = fixedSegments.filter(isCommonSegment).length === 1
+
     return (
         <ul ref={rootElementRef} className={classNames(styles.list, className)}>
             {fixedSegments.map((segment, index) => (
@@ -178,6 +187,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
                     className={classNames(styles.item, {
                         [styles.itemHidden]: isInvisibleSegment(segment),
                         [styles.itemWithButton]: isMoreButtonSegment(segment),
+                        [styles.itemLast]: isOnlyFileNameVisible && index === fixedSegments.length - 1,
                     })}
                 >
                     {isMoreButtonSegment(segment) && (
@@ -228,7 +238,7 @@ const TruncatedItemsButton: FC<TruncatedItemsButton> = props => {
                         outline={true}
                         className={classNames(styles.moreButton, { [styles.moreButtonActive]: isOpen })}
                     >
-                        ... <span aria-hidden={true}>▾</span>
+                        ...
                     </MenuButton>
 
                     <MenuList as="ul" className={styles.truncatedList}>

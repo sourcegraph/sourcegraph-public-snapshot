@@ -30,6 +30,11 @@
     &--with-button {
         display: flex;
     }
+
+    &--last {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 }
 
 .more-button {
