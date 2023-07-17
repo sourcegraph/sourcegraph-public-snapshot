@@ -188,6 +188,8 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
                         [styles.itemHidden]: isInvisibleSegment(segment),
                         [styles.itemWithButton]: isMoreButtonSegment(segment),
                         [styles.itemLast]: isOnlyFileNameVisible && index === fixedSegments.length - 1,
+                        // Only for test purpose (see nav.test.ts integration test)
+                        'test-breadcrumb-part-last': index === fixedSegments.length - 1,
                     })}
                 >
                     {isMoreButtonSegment(segment) && (
