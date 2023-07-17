@@ -2693,12 +2693,15 @@ CREATE TABLE gitserver_repos (
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
     corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
-    cloning_progress text DEFAULT ''::text
+    cloning_progress text DEFAULT ''::text,
+    pool_repo_id integer
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
 
 COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
+
+COMMENT ON COLUMN gitserver_repos.pool_repo_id IS 'This is used to refer to the pool repository for deduplicated repos';
 
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,
