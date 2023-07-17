@@ -43,6 +43,7 @@
 - Show only one informative message in case of invalid access token [#54951](https://github.com/sourcegraph/sourcegraph/pull/54951)
 
 ### Security
+
 ### Fixed
 
 - Fixed telemetry for Sourcegraph.com [#54885](https://github.com/sourcegraph/sourcegraph/pull/54885)
