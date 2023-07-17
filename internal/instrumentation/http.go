@@ -8,7 +8,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/metric"
+	"go.opentelemetry.io/otel/metric/noop"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -36,7 +36,7 @@ var defaultOTELHTTPOptions = []otelhttp.Option{
 		return fmt.Sprintf("%s %s", r.Method, target)
 	}),
 	// Disable OTEL metrics which can be quite high-cardinality
-	otelhttp.WithMeterProvider(metric.NewNoopMeterProvider()),
+	otelhttp.WithMeterProvider(noop.NewMeterProvider()),
 	// Make sure we use the global propagator, which should be set up on
 	// service initialization to support all our commonly used propagation
 	// formats (OpenTelemetry, W3c, Jaeger, etc)
