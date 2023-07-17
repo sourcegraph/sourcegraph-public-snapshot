@@ -5,6 +5,10 @@ export SONAR_SCANNER_VERSION=4.7.0.2747
 export SONAR_SCANNER_HOME=/tmp/sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
 export SONAR_SCANNER_OPTS="-server"
 
+export SONAR_TOKEN="${SONAR_TOKEN}"
+
+set -x
+
 echo "--- :arrow_down: downloading Sonarcloud binary"
 echo ""
 curl --fail --create-dirs -sSLo /tmp/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
