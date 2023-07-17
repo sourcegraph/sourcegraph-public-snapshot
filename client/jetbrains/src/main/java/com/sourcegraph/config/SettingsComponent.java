@@ -549,6 +549,7 @@ public class SettingsComponent {
     JPanel codySettingsPanel =
         FormBuilder.createFormBuilder()
             .addComponent(isCodyEnabledCheckBox, 10)
+            .addTooltip("Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
             .addComponent(isCodyAutoCompleteEnabledCheckBox, 5)
             .getPanel();
     codySettingsPanel.setBorder(
