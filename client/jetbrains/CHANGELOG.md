@@ -4,6 +4,20 @@
 
 ### Added
 
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.5]
+
+### Added
+
 - Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
 - Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
 - Auto-growing prompt input [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
@@ -29,6 +43,10 @@
 - Show only one informative message in case of invalid access token [#54951](https://github.com/sourcegraph/sourcegraph/pull/54951)
 
 ### Security
+
+### Fixed
+
+- Fixed telemetry for Sourcegraph.com [#54885](https://github.com/sourcegraph/sourcegraph/pull/54885)
 
 ## [3.0.4]
 
