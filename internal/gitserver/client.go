@@ -133,7 +133,6 @@ func NewTestClient(cli httpcli.Doer, clientSource ClientSource) Client {
 // NewMockClientWithExecReader return new MockClient with provided mocked
 // behaviour of ExecReader function.
 func NewMockClientWithExecReader(execReader func(context.Context, api.RepoName, []string) (io.ReadCloser, error)) *MockClient {
-}
 	client := NewMockClient()
 	// NOTE: This hook is the same as DiffFunc, but with `execReader` used above
 	client.DiffFunc.SetDefaultHook(func(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error) {
