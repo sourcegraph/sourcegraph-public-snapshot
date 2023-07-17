@@ -1,5 +1,7 @@
 package com.sourcegraph.config;
 
+import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.ModalityState;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
@@ -16,9 +18,11 @@ import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.time.Duration;
 import java.util.Enumeration;
 import java.util.Optional;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import javax.swing.*;
@@ -50,6 +54,10 @@ public class SettingsComponent {
   private JLabel installLocalAppComment;
   private ActionLink runLocalAppLink;
   private JLabel runLocalAppComment;
+  private JPanel codyAppPanel;
+
+  private final ScheduledExecutorService codyAppStateCheckerExecutorService =
+      Executors.newSingleThreadScheduledExecutor();
 
   public JComponent getPreferredFocusedComponent() {
     return defaultBranchNameTextField;
@@ -208,19 +216,23 @@ public class SettingsComponent {
             "Cody App wasn't detected on this system, it seems it hasn't been installed yet.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
+    installLocalAppComment.setVisible(false);
     installLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
     installLocalAppLink =
         simpleActionLink("Install Cody App...", LocalAppManager::browseLocalAppInstallPage);
+    installLocalAppLink.setVisible(false);
     installLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
     runLocalAppLink = simpleActionLink("Run Cody App...", LocalAppManager::runLocalApp);
+    runLocalAppLink.setVisible(false);
     runLocalAppLink.setBorder(JBUI.Borders.emptyLeft(20));
     runLocalAppComment =
         new JBLabel(
             "Cody App seems to be installed, but it's not running, currently.",
             UIUtil.ComponentStyle.SMALL,
             UIUtil.FontColor.BRIGHTER);
+    runLocalAppComment.setVisible(false);
     runLocalAppComment.setBorder(JBUI.Borders.emptyLeft(20));
-    JPanel codyAppPanel =
+    codyAppPanel =
         FormBuilder.createFormBuilder()
             .addComponent(codyAppRadioButton, 1)
             .addComponent(codyAppComment, 2)
@@ -307,7 +319,8 @@ public class SettingsComponent {
         IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
 
     updateVisibilityOfHelperLinks();
-    new Timer((int) Duration.ofSeconds(1).toMillis(), e -> updateVisibilityOfHelperLinks()).start();
+    codyAppStateCheckerExecutorService.scheduleWithFixedDelay(
+        this::updateVisibilityOfHelperLinks, 0, 1, TimeUnit.SECONDS);
     return userAuthenticationPanel;
   }
 
@@ -317,10 +330,16 @@ public class SettingsComponent {
     boolean isLocalAppPlatformSupported = LocalAppManager.isPlatformSupported();
     boolean shouldShowInstallLocalAppLink = !isLocalAppInstalled && isLocalAppPlatformSupported;
     boolean shouldShowRunLocalAppLink = isLocalAppInstalled && !isLocalAppRunning;
-    installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
-    installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
-    runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
-    runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              installLocalAppComment.setVisible(shouldShowInstallLocalAppLink);
+              installLocalAppLink.setVisible(shouldShowInstallLocalAppLink);
+              runLocalAppLink.setVisible(shouldShowRunLocalAppLink);
+              runLocalAppComment.setVisible(shouldShowRunLocalAppLink);
+              codyAppPanel.revalidate();
+              codyAppPanel.repaint();
+            }, ModalityState.any());
   }
 
   @NotNull
