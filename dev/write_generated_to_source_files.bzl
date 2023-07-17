@@ -6,7 +6,7 @@ load("@bazel_skylib//lib:paths.bzl", "paths")
 def write_generated_to_source_files(name, src, files, strip_prefix = "", verbose_copy=False, **kwargs):
     # We use a copy_to_directory macro so write_source_files inputs and outputs are not at the same
     # path, which enables the write_doc_files_diff_test to work.
-    copy_to_directory(name="copy_"+name, src=[src], verbose=verbose_copy)
+    copy_to_directory(name="copy_"+name, srcs=[src], verbose=verbose_copy)
 
     write_source_files(
         name = name,
