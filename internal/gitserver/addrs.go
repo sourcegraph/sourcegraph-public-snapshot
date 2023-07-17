@@ -253,8 +253,10 @@ func (g GitserverAddresses) AddrForRepo(userAgent string, repoName api.RepoName)
 		}
 
 		repo, err := g.db.Repos().GetByName(ctx, repoName)
-		// The repo is not a fork and is also not in a list of deduplicated repos, so we do not need
-		// to look up a pool repo for this.
+		// Either the repo was not found or the repo is not a fork. The repo is also not in the
+		// deduplicateforks list, so we do not need to look up a pool repo for this.
+		//
+		// Fallback to regular name based hashing.
 		if err != nil || !repo.Fork {
 			return g.withUpdateCache(repoName, getRepoAddress(repoName))
 		}
