@@ -471,15 +471,7 @@ class CodyToolWindowContent implements UpdatableChat {
           ChatMessage.createAssistantMessage(
               "I'm sorry, I can't connect to the server. Please make sure that the server is running and try again."));
     } else if (errorMessage.startsWith("Got error response 401")) {
-      String invalidAccessTokenText =
-          "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
-              + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
-      AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-          new AssistantMessageWithSettingsButton(project, invalidAccessTokenText);
-      var messageContentPanel = new JPanel(new BorderLayout());
-      messageContentPanel.add(assistantMessageWithSettingsButton);
-      ApplicationManager.getApplication()
-          .invokeLater(() -> this.addComponentToChat(messageContentPanel));
+      addMessageWithInformationAboutInvalidAccessToken();
     } else {
       this.addMessageToChat(
           ChatMessage.createAssistantMessage(
@@ -487,6 +479,18 @@ class CodyToolWindowContent implements UpdatableChat {
                   + errorMessage
                   + "\"."));
     }
+  }
+
+  private void addMessageWithInformationAboutInvalidAccessToken() {
+    String invalidAccessTokenText =
+        "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
+            + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
+    AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
+        new AssistantMessageWithSettingsButton(project, invalidAccessTokenText);
+    var messageContentPanel = new JPanel(new BorderLayout());
+    messageContentPanel.add(assistantMessageWithSettingsButton);
+    ApplicationManager.getApplication()
+        .invokeLater(() -> this.addComponentToChat(messageContentPanel));
   }
 
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {
@@ -602,28 +606,33 @@ class CodyToolWindowContent implements UpdatableChat {
                   logger.warn("Error sending message '" + humanMessage + "' to chat", e);
                 }
               } else {
-                List<ContextMessage> contextMessages =
-                    getContextFromEmbeddings(
-                        project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
-                this.displayUsedContext(contextMessages);
-                List<ContextMessage> editorContextMessages =
-                    getEditorContextMessages(editorContext);
-                contextMessages.addAll(editorContextMessages);
-                List<ContextMessage> selectionContextMessages =
-                    getSelectionContextMessages(editorContext);
-                contextMessages.addAll(selectionContextMessages);
-                // Add human message
-                transcript.addInteraction(new Interaction(humanMessage, contextMessages));
-
-                List<Message> prompt =
-                    transcript.getPromptForLastInteraction(
-                        Preamble.getPreamble(repoName),
-                        TruncationUtils.getChatMaxAvailablePromptLength(project));
-
                 try {
-                  chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
-                } catch (Exception e) {
-                  logger.warn("Error sending message '" + humanMessage + "' to chat", e);
+                  List<ContextMessage> contextMessages =
+                      getContextFromEmbeddings(
+                          project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
+                  this.displayUsedContext(contextMessages);
+                  List<ContextMessage> editorContextMessages =
+                      getEditorContextMessages(editorContext);
+                  contextMessages.addAll(editorContextMessages);
+                  List<ContextMessage> selectionContextMessages =
+                      getSelectionContextMessages(editorContext);
+                  contextMessages.addAll(selectionContextMessages);
+                  // Add human message
+                  transcript.addInteraction(new Interaction(humanMessage, contextMessages));
+
+                  List<Message> prompt =
+                      transcript.getPromptForLastInteraction(
+                          Preamble.getPreamble(repoName),
+                          TruncationUtils.getChatMaxAvailablePromptLength(project));
+
+                  try {
+                    chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
+                  } catch (Exception e) {
+                    logger.warn("Error sending message '" + humanMessage + "' to chat", e);
+                  }
+                } catch (InvalidAccessTokenException ex) {
+                  addMessageWithInformationAboutInvalidAccessToken();
+                  finishMessageProcessing();
                 }
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
@@ -681,6 +690,11 @@ class CodyToolWindowContent implements UpdatableChat {
                 + ", in repo: "
                 + repoName,
             e);
+        String message = e.getMessage();
+        if (message != null && message.contains("request failed with status code 401")) {
+          throw new InvalidAccessTokenException(
+              "Invalid access token while loading context messages", e);
+        }
       }
     }
     return contextMessages;
