@@ -11,6 +11,7 @@ mod tray;
 use common::{extract_path_from_scheme_url, show_window};
 use std::collections::HashMap;
 use std::sync::RwLock;
+use tauri::GlobalShortcutManager;
 use tauri::Manager;
 use tauri_utils::config::RemoteDomainAccessScope;
 
@@ -68,6 +69,9 @@ fn set_launch_path(url: String) {
 // Url scheme for sourcegraph:// urls.
 const SCHEME: &str = "sourcegraph";
 const BUNDLE_IDENTIFIER: &str = "com.sourcegraph.cody";
+
+// Global shortcut key combination
+const SHORTCUT: &str = "Ctrl+Space";
 
 fn main() {
     // Prepare handler for sourcegraph:// scheme urls.
@@ -139,6 +143,7 @@ fn main() {
         .plugin(tauri_plugin_positioner::init())
         .setup(|app| {
             let handle = app.handle();
+            register_shortcut(&handle);
             start_embedded_services(&handle);
             // Register handler for sourcegraph:// scheme urls.
             tauri_plugin_deep_link::register(SCHEME, move |request| {
@@ -295,4 +300,20 @@ fn get_sourcegraph_args(app_handle: &tauri::AppHandle) -> Vec<String> {
         args.push(data_dir.to_string_lossy().to_string())
     }
     return args;
+}
+
+fn handle_shortcut_press(_app_handle: &tauri::AppHandle) {
+    println!("Shortcut pressed!");
+}
+
+fn register_shortcut(app_handle: &tauri::AppHandle) {
+    let app_handle_clone = app_handle.clone();
+    let mut shortcut_manager = app_handle.global_shortcut_manager();
+
+    if shortcut_manager.is_registered(SHORTCUT).unwrap() {
+        return;
+    }
+
+    println!("Registering shortcut");
+    shortcut_manager.register(SHORTCUT, move || handle_shortcut_press(&app_handle_clone));
 }
