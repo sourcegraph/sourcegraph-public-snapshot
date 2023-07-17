@@ -91,9 +91,9 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 
 	var previousIndex *embeddings.RepoEmbeddingIndex
 	if embeddingsConfig.Incremental {
-		previousIndex, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, string(embeddings.GetRepoEmbeddingIndexName(repo.Name)))
+		previousIndex, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
 		if err != nil {
-			logger.Info("no previous embeddings index found. Performing a full index")
+			logger.Info("no previous embeddings index found. Performing a full index", log.Error(err))
 		} else if !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
 			logger.Info("Embeddings model has changed in config. Performing a full index")
 			previousIndex = nil
@@ -115,7 +115,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	}
 
 	if previousIndex != nil {
-		logger.Info("found previous embeddings index. Attempting incremental update", log.String("old revision", string(previousIndex.Revision)))
+		logger.Info("found previous embeddings index. Attempting incremental update", log.String("old_revision", string(previousIndex.Revision)))
 		opts.IndexedRevision = previousIndex.Revision
 	}
 
