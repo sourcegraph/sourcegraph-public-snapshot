@@ -116,7 +116,7 @@ func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
 
 	logger := logtest.NoOp(t)
 
-	atomicConns := getAtomicGitServerConns(logger, db)
+	atomicConns := getAtomicGitserverConns(logger, db)
 
 	atomicConns.update(cfg)
 

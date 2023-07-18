@@ -221,7 +221,7 @@ func (rc *repoAddressCache) Write(name api.RepoName, address string) {
 	// Add a jitter of ± 30 seconds around the repoAddressCacheTTL to avoid a spike of DB reads when
 	// the cache expires for workload types that process repositories in bulk.
 	jitter := time.Duration(ttlJitterGenerator.Int63n(2*30) - 30)
-	expiresAt := time.Now().Add(repoAddressCacheTTL + (jitter*time.Second))
+	expiresAt := time.Now().Add(repoAddressCacheTTL + (jitter * time.Second))
 	rc.cache[name] = repoAddressCachedItem{address: address, expiresAt: expiresAt}
 }
 

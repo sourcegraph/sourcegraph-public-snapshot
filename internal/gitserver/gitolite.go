@@ -25,7 +25,7 @@ type GitoliteLister struct {
 
 func NewGitoliteLister(db database.DB, cli httpcli.Doer) *GitoliteLister {
 	logger := log.Scoped("NewGitoliteLister", "logger scoped to a GitoliteLister")
-	atomicConns := getAtomicGitServerConns(logger, db)
+	atomicConns := getAtomicGitserverConns(logger, db)
 
 	return &GitoliteLister{
 		httpClient: cli,
