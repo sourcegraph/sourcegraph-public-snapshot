@@ -181,14 +181,23 @@ WHERE
 func (s *gitserverRepoStore) GetPoolRepo(ctx context.Context, repoURI api.RepoName) (*types.PoolRepo, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoURI))
 
-	var poolRepo types.PoolRepo
-	if err := row.Scan(&poolRepo.RepoName, &poolRepo.RepoURI); err != nil {
+	poolRepo, err := scanPoolRepo(row)
+	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
 		}
-		return nil, errors.Wrap(err, "GetPoolRepoURI: failed to scan")
+		return nil, errors.Wrap(err, "GetPoolRepoURI failed")
 	}
 
+	return poolRepo, nil
+}
+
+func scanPoolRepo(scanner dbutil.Scanner) (*types.PoolRepo, error) {
+	var poolRepo types.PoolRepo
+	err := scanner.Scan(&poolRepo.RepoName, &poolRepo.RepoURI)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to scan poolRepo")
+	}
 	return &poolRepo, nil
 }
 
