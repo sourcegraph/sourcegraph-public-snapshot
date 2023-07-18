@@ -16,3 +16,5 @@ buf_breaking_test(
         "//internal/grpc/testprotos/news/v1:news_proto",
     ],  # The Protobuf library
 )
+
+exports_files(["image.binpb"])

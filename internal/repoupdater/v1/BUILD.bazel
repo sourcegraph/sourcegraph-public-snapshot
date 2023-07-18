@@ -1,6 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 load("@io_bazel_rules_go//proto:def.bzl", "go_proto_library")
-load("@rules_buf//buf:defs.bzl", "buf_breaking_test")
 load("@rules_buf//buf:defs.bzl", "buf_lint_test")
 load("@rules_proto//proto:defs.bzl", "proto_library")
 load("//dev:proto.bzl", "write_proto_stubs_to_source")
@@ -43,12 +42,4 @@ buf_lint_test(
     timeout = "short",
     config = "//internal:buf.yaml",
     targets = [":v1_proto"],
-)
-
-buf_breaking_test(
-    name = "v1_proto_breaking",
-    timeout = "short",
-    against = "//internal/repoupdater/v1:image.bin",
-    config = "//internal:buf.yaml",
-    targets = [":v1_proto"],  # The Protobuf library
 )
