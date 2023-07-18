@@ -209,17 +209,18 @@ A mapping from SCIP [Symbol names](https://sourcegraph.com/search?q=context:%40s
 
 # Table "public.codeintel_scip_symbols_lookup"
 ```
-    Column    |         Type          | Collation | Nullable | Default 
---------------+-----------------------+-----------+----------+---------
- upload_id    | integer               |           | not null | 
- segment_type | symbolnamesegmenttype |           | not null | 
- name         | text                  |           | not null | 
- id           | integer               |           | not null | 
- parent_id    | integer               |           |          | 
+     Column      |           Type           | Collation | Nullable | Default 
+-----------------+--------------------------+-----------+----------+---------
+ upload_id       | integer                  |           | not null | 
+ segment_type    | symbolnamesegmenttype    |           | not null | 
+ segment_quality | symbolnamesegmentquality |           |          | 
+ name            | text                     |           | not null | 
+ id              | integer                  |           | not null | 
+ parent_id       | integer                  |           |          | 
 Indexes:
     "codeintel_scip_symbols_lookup_id" UNIQUE, btree (upload_id, id)
-    "codeintel_scip_symbols_lookup_descriptor_suffix" btree (upload_id, name) WHERE segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype
-    "codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix" btree (upload_id, reverse(name) text_pattern_ops) WHERE segment_type = 'DESCRIPTOR_SUFFIX_FUZZY'::symbolnamesegmenttype
+    "codeintel_scip_symbols_lookup_descriptor_suffix" btree (upload_id, name) WHERE segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype AND segment_quality <> 'FUZZY'::symbolnamesegmentquality
+    "codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix" btree (upload_id, reverse(name) text_pattern_ops) WHERE segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype AND segment_quality <> 'PRECISE'::symbolnamesegmentquality
 
 ```
 
@@ -335,6 +336,12 @@ Indexes:
 
 ```
 
+# Type symbolnamesegmentquality
+
+- FUZZY
+- PRECISE
+- BOTH
+
 # Type symbolnamesegmenttype
 
 - SCHEME
@@ -343,4 +350,3 @@ Indexes:
 - PACKAGE_VERSION
 - DESCRIPTOR_NAMESPACE
 - DESCRIPTOR_SUFFIX
-- DESCRIPTOR_SUFFIX_FUZZY

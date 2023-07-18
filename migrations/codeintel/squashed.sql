@@ -10,14 +10,19 @@ CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 COMMENT ON EXTENSION pg_trgm IS 'text similarity measurement and index searching based on trigrams';
 
+CREATE TYPE symbolnamesegmentquality AS ENUM (
+    'FUZZY',
+    'PRECISE',
+    'BOTH'
+);
+
 CREATE TYPE symbolnamesegmenttype AS ENUM (
     'SCHEME',
     'PACKAGE_MANAGER',
     'PACKAGE_NAME',
     'PACKAGE_VERSION',
     'DESCRIPTOR_NAMESPACE',
-    'DESCRIPTOR_SUFFIX',
-    'DESCRIPTOR_SUFFIX_FUZZY'
+    'DESCRIPTOR_SUFFIX'
 );
 
 CREATE FUNCTION get_file_extension(path text) RETURNS text
@@ -270,6 +275,7 @@ COMMENT ON COLUMN codeintel_scip_symbols.symbol_id IS 'The identifier of the seg
 CREATE TABLE codeintel_scip_symbols_lookup (
     upload_id integer NOT NULL,
     segment_type symbolnamesegmenttype NOT NULL,
+    segment_quality symbolnamesegmentquality,
     name text NOT NULL,
     id integer NOT NULL,
     parent_id integer
@@ -431,9 +437,9 @@ CREATE INDEX codeintel_scip_symbol_names_upload_id_roots ON codeintel_scip_symbo
 
 CREATE INDEX codeintel_scip_symbols_document_lookup_id ON codeintel_scip_symbols USING btree (document_lookup_id);
 
-CREATE INDEX codeintel_scip_symbols_lookup_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, name) WHERE (segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype);
+CREATE INDEX codeintel_scip_symbols_lookup_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, name) WHERE ((segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype) AND (segment_quality <> 'FUZZY'::symbolnamesegmentquality));
 
-CREATE INDEX codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, reverse(name) text_pattern_ops) WHERE (segment_type = 'DESCRIPTOR_SUFFIX_FUZZY'::symbolnamesegmenttype);
+CREATE INDEX codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, reverse(name) text_pattern_ops) WHERE ((segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype) AND (segment_quality <> 'PRECISE'::symbolnamesegmentquality));
 
 CREATE UNIQUE INDEX codeintel_scip_symbols_lookup_id ON codeintel_scip_symbols_lookup USING btree (upload_id, id);
 
