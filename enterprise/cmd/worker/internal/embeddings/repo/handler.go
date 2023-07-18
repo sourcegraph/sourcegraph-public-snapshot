@@ -60,6 +60,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
+	logger = logger.With(
+		log.String("repoName", string(repo.Name)),
+		log.Int32("repoID", int32(repo.ID)),
+	)
+
 	fetcher := &revisionFetcher{
 		repo:      repo.Name,
 		revision:  record.Revision,
@@ -148,8 +153,6 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 
 	logger.Info(
 		"finished generating repo embeddings",
-		log.String("repoName", string(repo.Name)),
-		log.Int32("repoID", int32(repo.ID)),
 		log.String("revision", string(record.Revision)),
 		log.Object("stats", stats.ToFields()...),
 	)
