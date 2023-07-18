@@ -583,7 +583,6 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 	}
 
 	traverser := func(visit visitFunc) error {
-		// Call visit on each node of the tree
 		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
 			return visit(segmentTypeByDepth[depth], segmentQualityForID(id), name, id, parentID)
 		}); err != nil {
