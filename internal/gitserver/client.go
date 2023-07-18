@@ -70,7 +70,7 @@ var initConnsOnce sync.Once
 // initialised correctly.
 var conns *atomicGitServerConns
 
-func getAtomicGitServerConns(logger sglog.Logger, db database.DB) *atomicGitServerConns {
+func getAtomicGitserverConns(logger sglog.Logger, db database.DB) *atomicGitServerConns {
 	initConnsOnce.Do(func() {
 		conns = &atomicGitServerConns{db: db, logger: logger}
 	})
@@ -111,7 +111,7 @@ func NewClient(db database.DB) Client {
 		// frontend internal API)
 		userAgent:    filepath.Base(os.Args[0]),
 		operations:   getOperations(),
-		clientSource: getAtomicGitServerConns(logger, db),
+		clientSource: getAtomicGitserverConns(logger, db),
 	}
 }
 
