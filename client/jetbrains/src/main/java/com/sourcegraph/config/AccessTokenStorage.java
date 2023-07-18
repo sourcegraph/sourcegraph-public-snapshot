@@ -11,14 +11,10 @@ import org.jetbrains.annotations.NotNull;
 
 public class AccessTokenStorage {
 
-  private static final String SOURCEGRAPH = "sourcegraph";
-  private static final String ACCESS_TOKEN_KEY = "accessToken";
-  private static final String ENTERPRISE = "enterprise";
-  private static final String DOT_COM = "dotcom";
   private static final List<String> enterpriseAccessTokenKeyParts =
-      List.of(ACCESS_TOKEN_KEY, ENTERPRISE);
+      List.of("accessToken", "enterprise");
 
-  private static final List<String> dotComAccessTokenKeyParts = List.of(ACCESS_TOKEN_KEY, DOT_COM);
+  private static final List<String> dotComAccessTokenKeyParts = List.of("accessToken", "dotcom");
 
   @NotNull
   public static Optional<String> getEnterpriseAccessToken() {
@@ -58,6 +54,6 @@ public class AccessTokenStorage {
 
   @NotNull
   private static CredentialAttributes createCredentialAttributes(@NotNull String key) {
-    return new CredentialAttributes(CredentialAttributesKt.generateServiceName(SOURCEGRAPH, key));
+    return new CredentialAttributes(CredentialAttributesKt.generateServiceName("sourcegraph", key));
   }
 }
