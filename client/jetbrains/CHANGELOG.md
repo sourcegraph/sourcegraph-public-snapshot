@@ -6,6 +6,8 @@
 
 ### Changed
 
+- Store global access token in a safe place [#55052](https://github.com/sourcegraph/sourcegraph/pull/55052)
+
 ### Deprecated
 
 ### Removed
