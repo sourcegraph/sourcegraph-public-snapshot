@@ -1,1 +1,17 @@
+load("@rules_buf//buf:defs.bzl", "buf_breaking_test")
+
 exports_files(["buf.yaml"])
+
+buf_breaking_test(
+    name = "v1_proto_breaking",
+    timeout = "short",
+    against = ":image.binpb",
+    config = "//internal:buf.yaml",
+    targets = [
+        "//internal/own/codeowners/v1:v1_proto",
+        "//internal/repoupdater/v1:v1_proto",
+        "//internal/searcher/v1:v1_proto",
+        "//internal/symbols/v1:v1_proto",
+        "//internal/gitserver/v1:v1_proto",
+    ],  # The Protobuf library
+)

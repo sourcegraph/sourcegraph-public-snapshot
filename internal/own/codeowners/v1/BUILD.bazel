@@ -11,7 +11,7 @@ proto_library(
     name = "v1_proto",
     srcs = ["codeowners.proto"],
     strip_import_prefix = "/internal",  # keep
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:public"],
 )
 
 go_proto_library(
@@ -44,7 +44,9 @@ buf_lint_test(
 buf_breaking_test(
     name = "v1_proto_breaking",
     timeout = "short",
-    against = "//internal/own/codeowners/v1:image.bin",
+    against = ":image.binpb",
     config = "//internal:buf.yaml",
     targets = [":v1_proto"],  # The Protobuf library
 )
+
+exports_files(["image.binpb"])

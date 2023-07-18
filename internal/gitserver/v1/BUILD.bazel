@@ -10,7 +10,7 @@ proto_library(
     name = "v1_proto",
     srcs = ["gitserver.proto"],
     strip_import_prefix = "/internal",  # keep
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:public"],
     deps = [
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
@@ -25,7 +25,7 @@ go_proto_library(
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/gitserver/v1",
     proto = ":v1_proto",
-    visibility = ["//visibility:private"],
+    visibility = ["//visibility:public"],
 )
 
 go_library(
