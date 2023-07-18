@@ -126,7 +126,7 @@ func (s *gitServiceHandler) serveGitUploadPack() func(http.ResponseWriter, *http
 func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.Request, gitPath string) error {
 	repo := mux.Vars(r)["RepoName"]
 
-	addrForRepo := s.Gitserver.AddrForRepo(context.Background(), api.RepoName(repo))
+	addrForRepo := s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo))
 	u := &url.URL{
 		Scheme:   "http",
 		Host:     addrForRepo,
