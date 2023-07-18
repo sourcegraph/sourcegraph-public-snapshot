@@ -111,6 +111,7 @@ func (s *store) NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, er
 		"t_codeintel_scip_symbols_lookup",
 		batch.MaxNumPostgresParameters,
 		"segment_type",
+		"segment_quality",
 		"name",
 		"id",
 		"parent_id",
@@ -154,6 +155,7 @@ CREATE TEMPORARY TABLE t_codeintel_scip_symbols_lookup(
 	id integer NOT NULL,
 	name text NOT NULL,
 	segment_type SymbolNameSegmentType NOT NULL,
+	segment_quality SymbolNameSegmentQuality,
 	parent_id integer
 ) ON COMMIT DROP
 `
@@ -335,7 +337,8 @@ func (s *scipWriter) flush(ctx context.Context) error {
 
 	// Bulk insert the content of the tree / descriptor-no-suffix map
 	visit := func(segmentType, name string, id int, parentID *int) error {
-		return s.symbolLookupInserter.Insert(ctx, segmentType, name, id, parentID)
+		// TODO
+		return s.symbolLookupInserter.Insert(ctx, segmentType, "PRECISE", name, id, parentID)
 	}
 	if err := traverser(visit); err != nil {
 		return err
@@ -436,6 +439,7 @@ INSERT INTO codeintel_scip_symbols_lookup (
 	id,
 	name,
 	segment_type,
+	segment_quality,
 	parent_id
 )
 SELECT
@@ -443,6 +447,7 @@ SELECT
 	source.id,
 	source.name,
 	source.segment_type,
+	source.segment_quality,
 	source.parent_id
 FROM t_codeintel_scip_symbols_lookup source
 `
@@ -509,6 +514,7 @@ type explodedIDs struct {
 	fuzzyDescriptorSuffixID int
 }
 
+// TODO
 type visitFunc func(segmentType, name string, id int, parentID *int) error
 
 func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error, error) {

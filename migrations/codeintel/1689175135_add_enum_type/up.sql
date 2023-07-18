@@ -6,6 +6,13 @@ CREATE TYPE SymbolNameSegmentType AS ENUM (
     'PACKAGE_NAME',
     'PACKAGE_VERSION',
     'DESCRIPTOR_NAMESPACE',
-    'DESCRIPTOR_SUFFIX',
-    'DESCRIPTOR_SUFFIX_FUZZY'
+    'DESCRIPTOR_SUFFIX'
+);
+
+DROP TYPE IF EXISTS SymbolNameSegmentQuality;
+
+CREATE TYPE SymbolNameSegmentQuality AS ENUM (
+    'FUZZY',
+    'PRECISE',
+    'BOTH'
 );
