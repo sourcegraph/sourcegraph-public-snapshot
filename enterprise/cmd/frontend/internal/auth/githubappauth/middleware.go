@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -496,7 +497,13 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtyp
 	if err != nil {
 		return nil, err
 	}
-	resp, err := http.DefaultClient.Do(r)
+
+	client, err := newGitHubClient()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create GitHub client")
+	}
+
+	resp, err := client.Do(r)
 	if err != nil {
 		return nil, err
 	}
@@ -529,4 +536,23 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtyp
 		Domain:        domain,
 		Logo:          fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
+}
+
+func newGitHubClient() (httpcli.Doer, error) {
+	cf := httpcli.ExternalClientFactory
+
+	var certs []string
+	tlsExternalConfig := httpcli.TLSExternalConfig()
+	if tlsExternalConfig != nil && len(tlsExternalConfig.Certificates) > 0 {
+		certs = tlsExternalConfig.Certificates
+	}
+
+	opts := []httpcli.Opt{
+		// Use a 30s timeout to avoid running into EOF errors, because GitHub
+		// closes idle connections after 60s
+		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
+		httpcli.NewCertPoolOpt(certs...),
+	}
+
+	return cf.Doer(opts...)
 }
