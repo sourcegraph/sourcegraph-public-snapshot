@@ -72,6 +72,11 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
             actions: {
                 nodes: [],
             },
+            owner: {
+                id: '',
+                namespaceName: '',
+                url: '',
+            },
         }
     )
 

@@ -112,9 +112,18 @@ extend type User {
 }
 
 extend type Query {
+    """
+    A list of monitors visibile to the user or her organization (all code monitors if the user
+    is a site-admin).
+    """
     monitors(
+        """
+        Returns the first n monitors from the list.
+        """
         first: Int!
-
+        """
+        Opaque pagination cursor.
+        """
         after: String
     ): MonitorConnection!
 }
