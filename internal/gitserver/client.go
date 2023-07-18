@@ -64,7 +64,10 @@ var ClientMocks, emptyClientMocks struct {
 // initConnsOnce is used internally in getAtomicGitServerConns`. Only use it there.
 var initConnsOnce sync.Once
 
-// NOTE: Do not use this directly. Use getAtomicGitServerConns.
+// conns is the global variable holding a reference to the gitserver connections.
+//
+// WARNING: Do not use it directly. Instead use getAtomicGitServerConns to ensure conns is
+// initialised correctly.
 var conns *atomicGitServerConns
 
 func getAtomicGitServerConns(logger sglog.Logger, db database.DB) *atomicGitServerConns {

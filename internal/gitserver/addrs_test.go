@@ -3,6 +3,7 @@ package gitserver
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -162,13 +163,28 @@ func TestRepoAddressCache(t *testing.T) {
 	item = repoAddrCache.Read(repoName)
 	require.NotNil(t, item)
 	require.Equal(t, addr, item.address)
-	require.Equal(t, cachedItem.createdAt, item.createdAt)
+	require.Equal(t, cachedItem.expiresAt, item.expiresAt)
 
-	// Now verify that the item in the cache when read again is the same.
+	// Now verify that the item in the cache when read again is the same, that is we did not update
+	// the cached on the Read path.
+	//
+	// The following test may seem unnecessary looking at the current design of the cache, but the
+	// first version of this cache during development was updating the timestamp of the cached item
+	// on the read path. This test is to ensure that is not happening anymore.
 	item2 := repoAddrCache.cache[repoName]
 	require.NotNil(t, item2)
 	require.Equal(t, item.address, item2.address)
-	require.Equal(t, item.createdAt, item2.createdAt)
+	require.Equal(t, item.expiresAt, item2.expiresAt)
+
+	// Mock now to be 17 minutes in the past such that the next time the item is read, it will be
+	// expired.
+	now := time.Now().Add(-17 * time.Minute)
+	repoAddrCache.cache[repoName] = repoAddressCachedItem{
+		address:   addr,
+		expiresAt: now,
+	}
+
+	require.Nil(t, repoAddrCache.Read(repoName))
 }
 
 func TestGitserverAddresses_withUpdateCache(t *testing.T) {

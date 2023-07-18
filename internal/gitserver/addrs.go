@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -166,11 +167,16 @@ func (t *testConnAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
 var _ ClientSource = &testGitserverConns{}
 var _ AddressWithClient = &testConnAndErr{}
 
+const repoAddressCacheTTL = 15 * time.Minute
+
+var ttlJitterGenerator = rand.New(rand.NewSource(time.Now().UnixNano()))
+
 type repoAddressCachedItem struct {
+	// addresss is the gitserver address of the repository.
 	address string
-	// createdAt is the time when this item written to the cache and can be used by the consumer of
-	// the cached item to decide whether they would like to treat it as an expired item or not.
-	createdAt time.Time
+
+	// expiresAt is the time beyond which this item is considered stale.
+	expiresAt time.Time
 }
 
 // repoAddressCache is is used to cache the gitserver shard address of a repo. It is safe for
@@ -185,14 +191,22 @@ type repoAddressCache struct {
 
 // Read returns the item from cache or else returns nil if it does not exist.
 func (rc *repoAddressCache) Read(name api.RepoName) *repoAddressCachedItem {
+	// We might have to wait for the lock, so get the current timestamp first.
+	now := time.Now()
+
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
 
-	if item, ok := rc.cache[name]; ok {
-		return &item
+	item, ok := rc.cache[name]
+	if !ok {
+		return nil
 	}
 
-	return nil
+	if now.After(item.expiresAt) {
+		return nil
+	}
+
+	return &item
 }
 
 // Write inserts a new repoAddressCachedItem in the cache for the given repo name. It will overwrite
@@ -205,7 +219,11 @@ func (rc *repoAddressCache) Write(name api.RepoName, address string) {
 		rc.cache = make(map[api.RepoName]repoAddressCachedItem)
 	}
 
-	rc.cache[name] = repoAddressCachedItem{address: address, createdAt: time.Now()}
+	// Add a jitter of ± 30 seconds around the repoAddressCacheTTL to avoid a spike of DB reads when
+	// the cache expires for workload types that process repositories in bulk.
+	jitter := time.Duration(ttlJitterGenerator.Int63n(2*30) - 30)
+	expiresAt := time.Now().Add(repoAddressCacheTTL + time.Duration(jitter*time.Second))
+	rc.cache[name] = repoAddressCachedItem{address: address, expiresAt: expiresAt}
 }
 
 type GitserverAddresses struct {
@@ -297,10 +315,6 @@ func (g *GitserverAddresses) getCachedRepoAddress(repoName api.RepoName) string 
 
 	item := g.repoAddressCache.Read(repoName)
 	if item == nil {
-		return ""
-	}
-
-	if time.Since(item.createdAt) > time.Duration(15*time.Minute) {
 		return ""
 	}
 
