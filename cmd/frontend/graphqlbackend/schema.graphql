@@ -8414,6 +8414,7 @@ type ProductLicenseInfo {
     This indicates the reason the license is invalid. It'll be null if `isValid` is true.
     """
     licenseInvalidityReason: String
+    """
     The license key, hashed using sha256.
     """
     hashedKey: String
