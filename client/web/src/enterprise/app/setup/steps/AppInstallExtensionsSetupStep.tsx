@@ -110,13 +110,17 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                 ))}
 
                 <li className={styles.extensionsSuggestionLink}>
-                    <Link
-                        to="https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&title=Cody%20extension%20suggestion"
-                        target="_blank"
-                        rel="noopener"
-                    >
-                        Suggest our next extension
-                    </Link>
+                    <span>
+                        Your editor not listed here?
+                        <br/>
+                        <Link
+                            to="https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&title=Cody%20extension%20suggestion"
+                            target="_blank"
+                            rel="noopener"
+                        >
+                            Suggest an extension
+                        </Link>
+                    </span>
                 </li>
             </ul>
 
