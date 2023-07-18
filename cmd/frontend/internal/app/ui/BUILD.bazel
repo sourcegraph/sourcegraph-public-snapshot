@@ -99,7 +99,6 @@ go_test(
         "//internal/gitserver/gitdomain",
         "//internal/repoupdater",
         "//internal/search/result",
-        "//internal/siteid",
         "//internal/types",
         "//internal/version",
         "//schema",
