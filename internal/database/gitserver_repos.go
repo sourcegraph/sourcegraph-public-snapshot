@@ -162,7 +162,7 @@ func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, poolRepoName,
 const getPoolRepoQueryFmtStr = `
 WITH gs AS (
 	SELECT
-		pool_repo_id
+		gitserver_repos.pool_repo_id
 	FROM
 		gitserver_repos
 		JOIN repo AS r ON repo_id = r.id
