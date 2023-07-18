@@ -115,7 +115,7 @@ The state of user or repository permissions can be checked directly in the Sourc
 
 **User permissions**
 
-1. Click on your avatar in top right of the page
+1. Click on your avatar in top right corner of the page
 1. Navigate to **Settings > Permissions** (Or URL path `/users/$USER/settings/permissions`)
 1. The permissions page should look similar to: ![User permissions page](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/permissions/user-permissions-page.png)
 
