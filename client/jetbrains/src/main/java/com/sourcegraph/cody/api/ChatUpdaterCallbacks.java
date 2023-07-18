@@ -5,7 +5,11 @@ import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.Optional;
+import java.util.concurrent.*;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.jetbrains.annotations.NotNull;
@@ -13,12 +17,17 @@ import org.jetbrains.annotations.Nullable;
 
 public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   private static final Logger logger = Logger.getInstance(ChatUpdaterCallbacks.class);
+  private static final ScheduledExecutorService scheduler =
+      Executors.newSingleThreadScheduledExecutor();
   private static final String STOP_SEQUENCE_REGEXP = "(H|Hu|Hum|Huma|Human|Human:)$";
   private static final Pattern stopSequencePattern = Pattern.compile(STOP_SEQUENCE_REGEXP);
   @NotNull private final UpdatableChat chat;
   @NotNull private final CancellationToken cancellationToken;
   @NotNull private final String prefix;
   private final AtomicBoolean gotFirstMessage = new AtomicBoolean(false);
+  private final AtomicBoolean isCompleted = new AtomicBoolean(false);
+  private final AtomicReference<String> lastMessage = new AtomicReference<>("");
+  private final BlockingQueue<String> queue = new LinkedBlockingQueue<>();
 
   public ChatUpdaterCallbacks(
       @NotNull UpdatableChat chat,
@@ -32,15 +41,40 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   @Override
   public void onSubscribed() {
     logger.info("Subscribed to completions.");
+    if (!cancellationToken.isCancelled()) {
+      scheduler.schedule(
+          () -> {
+            while (!Thread.currentThread().isInterrupted()
+                && !cancellationToken.isCancelled()
+                && (!queue.isEmpty() || !isCompleted.get())) {
+              try {
+                Optional.ofNullable(queue.poll(5, TimeUnit.MILLISECONDS))
+                    .ifPresent(this::passMessageToChat);
+              } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+              }
+            }
+            chat.finishMessageProcessing();
+          },
+          20,
+          TimeUnit.MILLISECONDS);
+    }
   }
 
   @Override
   public void onData(@Nullable String data) {
     if (!cancellationToken.isCancelled())
-      Optional.ofNullable(data).ifPresent(d -> passMessageToChat(reformatBotMessage(d, prefix)));
+      Optional.ofNullable(data)
+          .ifPresent(
+              d -> {
+                String msg = reformatBotMessage(d, prefix);
+                if (msg.length() > lastMessage.get().length())
+                  queue.offer(reformatBotMessage(d, prefix));
+              });
   }
 
   private void passMessageToChat(@NotNull String messageText) {
+    lastMessage.set(messageText);
     ChatMessage chatMessage = ChatMessage.createAssistantMessage(messageText);
     if (!gotFirstMessage.getAndSet(true)) chat.addMessageToChat(chatMessage);
     else chat.updateLastMessage(chatMessage);
@@ -48,6 +82,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onError(@NotNull Throwable error) {
+    isCompleted.set(true);
     if (!cancellationToken.isCancelled()) {
       String message = error.getMessage();
       chat.respondToErrorFromServer(message != null ? message : "");
@@ -59,13 +94,12 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   @Override
   public void onComplete() {
     logger.info("Streaming completed.");
-    if (!cancellationToken.isCancelled()) {
-      chat.finishMessageProcessing();
-    }
+    isCompleted.set(true);
   }
 
   @Override
   public void onCancelled() {
+    isCompleted.set(true);
     if (!cancellationToken.isCancelled()) {
       chat.finishMessageProcessing();
     }
