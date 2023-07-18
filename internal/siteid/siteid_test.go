@@ -82,7 +82,7 @@ func TestGet(t *testing.T) {
 
 		db := database.NewMockDB()
 
-		got, err  := tryGet()
+		got, err  := tryGet(db)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -102,7 +102,7 @@ func TestGet(t *testing.T) {
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
-		got, err := tryGet()
+		got, err := tryGet(db)
 		if err != nil {
 			t.Fatal(err)
 		}
