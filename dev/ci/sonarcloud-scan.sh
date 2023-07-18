@@ -26,4 +26,5 @@ $SONAR_SCANNER_HOME/bin/sonar-scanner \
   -Dsonar.organization=test-shiva-surya \
   -Dsonar.projectKey=test-shiva-surya_sourcegraph \
   -Dsonar.sources=. \
-  -Dsonar.host.url=https://sonarcloud.io
+  -Dsonar.host.url=https://sonarcloud.io \
+  -Dsonar.sourceEncoding=UTF-8
