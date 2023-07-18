@@ -33,7 +33,6 @@ export class CaseInsensitiveFuzzySearch extends FuzzySearch {
         const query = this?.params?.transformer?.modifyQuery
             ? this.params.transformer.modifyQuery(parameters.query)
             : parameters.query
-        console.log({ query })
         const historyCache = parameters.cache ?? new SearchValueRankingCache()
         const tiebreakers: Tiebreaker<SearchValue>[] = [
             (a, b) => historyCache.rank(b.item) - historyCache.rank(a.item),
