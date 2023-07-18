@@ -139,7 +139,7 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                                 <tr>
                                     <th>
                                         Last partial sync{' '}
-                                        <Tooltip content="Syncs user permissions from the code host. If the user-centric sync returns this repository as accessible, it is noted here as partial sync. Partial syncs do not show in the list of permission sync jobs below.">
+                                        <Tooltip content="Syncs user permissions from the code host. If a user-centric sync returns this repository as accessible, it is noted here as partial sync. Partial syncs do not show in the list of permission sync jobs below.">
                                             <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
                                         </Tooltip>
                                     </th>
