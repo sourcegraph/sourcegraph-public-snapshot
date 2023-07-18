@@ -117,7 +117,6 @@ func TestAddrForRepo(t *testing.T) {
 
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-
 				repos := database.NewMockRepoStore()
 				repos.GetByNameFunc.PushReturn(
 					&types.Repo{
@@ -172,7 +171,7 @@ func TestRepoAddressCache(t *testing.T) {
 	require.Equal(t, item.createdAt, item2.createdAt)
 }
 
-func TestWithUpdateCache(t *testing.T) {
+func TestGitserverAddresses_withUpdateCache(t *testing.T) {
 	ga := GitserverAddresses{}
 
 	// Ensures that a nil repoAddressCache will not cause a panic if consumers of GitserverAddresses
@@ -188,7 +187,7 @@ func TestWithUpdateCache(t *testing.T) {
 	require.Equal(t, addr, item.address)
 }
 
-func TestGetCachedRepoAddress(t *testing.T) {
+func TestGitserverAddresses_getCachedRepoAddress(t *testing.T) {
 	db := database.NewMockDB()
 	ga := &GitserverAddresses{
 		db:        db,

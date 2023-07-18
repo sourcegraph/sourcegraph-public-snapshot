@@ -61,7 +61,7 @@ var ClientMocks, emptyClientMocks struct {
 	LocalGitCommandReposDir string
 }
 
-// These must not be used anywhere else.
+// initConnsOnce is used internally in getAtomicGitServerConns`. Only use it there.
 var initConnsOnce sync.Once
 
 // NOTE: Do not use this directly. Use getAtomicGitServerConns.

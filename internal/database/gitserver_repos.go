@@ -72,10 +72,10 @@ type GitserverRepoStore interface {
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
 	SetCloningProgress(context.Context, api.RepoName, string) error
 
-	// UpdatePoolRepoID updates the pool_repo_id column of a repo.
+	// UpdatePoolRepoID updates the pool_repo_id column of a gitserver_repo.
 	UpdatePoolRepoID(context.Context, api.RepoName, api.RepoName) error
 
-	// GetPoolRepo will return the PoolRepo of a repo matching the repo name if it exists.
+	// GetPoolRepo will return the PoolRepo of a repository matching the repo name if it exists.
 	GetPoolRepo(context.Context, api.RepoName) (*types.PoolRepo, error)
 }
 
@@ -165,7 +165,7 @@ WITH gs AS (
 		gitserver_repos.pool_repo_id
 	FROM
 		gitserver_repos
-		JOIN repo AS r ON repo_id = r.id
+	JOIN repo AS r ON repo_id = r.id
 	WHERE
 		name = %s::citext
 )
@@ -175,11 +175,7 @@ SELECT
 FROM
 	repo
 WHERE
-	id = (
-		SELECT
-			pooL_repo_id
-		FROM
-			gs)
+	id = (SELECT pool_repo_id FROM gs)
 `
 
 func (s *gitserverRepoStore) GetPoolRepo(ctx context.Context, repoURI api.RepoName) (*types.PoolRepo, error) {
