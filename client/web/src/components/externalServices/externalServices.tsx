@@ -585,7 +585,8 @@ const azureDevOpsEditorActions = (): EditorAction[] => [
 
 const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
-    title: 'GitHub',
+    shortDescription: 'Connect GitHub.com hosted repositories using an access token',
+    title: 'GitHub.com',
     icon: GithubIcon,
     jsonSchema: githubSchemaJSON,
     editorActions: githubEditorActions(false),
@@ -600,6 +601,7 @@ const GITHUB_DOTCOM: AddExternalServiceOptions = {
 const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     ...GITHUB_DOTCOM,
     title: 'GitHub Enterprise',
+    shortDescription: 'Connect repositories on self-hosted GitHub Enterprise installations using an access token',
     defaultConfig: `{
   "url": "https://github.example.com",
   "token": "<access token>",
@@ -611,6 +613,8 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
 const GITHUB_APP: AddExternalServiceOptions = {
     ...GITHUB_DOTCOM,
     title: 'GitHub App',
+    shortDescription:
+        'Connect repositories on GitHub.com or self-hosted GitHub Enterprise installations using a GitHub App installation',
     editorActions: gitHubAppEditorActions(false),
     Instructions: () => <GitHubAppInstructions />,
     additionalFormComponent: <GitHubAppSelector />,
@@ -1006,8 +1010,9 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
 }
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
-    title: 'GitLab',
+    title: 'GitLab.com',
     icon: GitLabIcon,
+    shortDescription: 'Connect GitLab.com hosted repositories using an access token',
     jsonSchema: gitlabSchemaJSON,
     defaultDisplayName: 'GitLab',
     defaultConfig: `{
@@ -1023,6 +1028,7 @@ const GITLAB_DOTCOM: AddExternalServiceOptions = {
 const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
     ...GITLAB_DOTCOM,
     title: 'GitLab Self-Managed',
+    shortDescription: 'Connect repositories on self-hosted GitLab installations using an access token',
     Instructions: () => <GitLabInstructions isSelfManaged={true} />,
     editorActions: gitlabEditorActions(true),
     defaultConfig: `{
@@ -1366,13 +1372,23 @@ const GERRIT: AddExternalServiceOptions = {
     jsonSchema: gerritSchemaJSON,
     defaultDisplayName: 'Gerrit',
     defaultConfig: `{
-  "url": "https://gerrit.example.com"
+  "url": "https://gerrit.example.com",
+  "username": "<fill in>",
+  "password": "<fill in>"
 }`,
     Instructions: () => (
         <div>
             <ol>
                 <li>
                     In the configuration below, set <Field>url</Field> to the URL of Gerrit instance.
+                </li>
+                <li>
+                    Provide <Field>username</Field> and <Field>password</Field> of a user account that has access to all
+                    the repositories you want to sync.
+                </li>
+                <li>
+                    Optionally, use <Field>projects</Field> to limit syncing from the Gerrit instance to specific
+                    projects.
                 </li>
             </ol>
         </div>
