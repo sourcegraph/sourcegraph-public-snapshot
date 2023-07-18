@@ -38,7 +38,13 @@ func SSOLoginHandler(config *oauth2.Config, failure http.Handler, ssoAuthURL str
 			failure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
-		authURL := config.AuthCodeURL(state)
+		authURL, err := url.Parse(config.AuthCodeURL(state))
+		if err != nil {
+			ctx = gologin.WithError(ctx, err)
+			failure.ServeHTTP(w, req.WithContext(ctx))
+			return
+		}
+
 		ssoAuthURL, err := url.Parse(ssoAuthURL)
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
@@ -46,7 +52,7 @@ func SSOLoginHandler(config *oauth2.Config, failure http.Handler, ssoAuthURL str
 			return
 		}
 		queryParams := ssoAuthURL.Query()
-		queryParams.Add("redirect", url.QueryEscape(authURL))
+		queryParams.Add("redirect", authURL.Path+"?"+authURL.RawQuery)
 		ssoAuthURL.RawQuery = queryParams.Encode()
 		http.Redirect(w, req, ssoAuthURL.String(), http.StatusFound)
 	}

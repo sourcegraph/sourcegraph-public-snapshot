@@ -17,7 +17,7 @@ import (
 func TestSSOLoginHandler(t *testing.T) {
 	expectedState := "state_val"
 	ssoURL := "https://api.example.com/-/saml/sso?token=1234"
-	expectedRedirectURL := "https://api.example.com/authorize?client_id=client_id&redirect_uri=redirect_url&response_type=code&state=state_val"
+	expectedRedirectURL := "/authorize?client_id=client_id&redirect_uri=redirect_url&response_type=code&state=state_val"
 	config := &oauth2.Config{
 		ClientID:     "client_id",
 		ClientSecret: "client_secret",
