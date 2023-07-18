@@ -61,7 +61,7 @@ var ClientMocks, emptyClientMocks struct {
 	LocalGitCommandReposDir string
 }
 
-// initConnsOnce is used internally in getAtomicGitServerConns`. Only use it there.
+// initConnsOnce is used internally in getAtomicGitServerConns. Only use it there.
 var initConnsOnce sync.Once
 
 // conns is the global variable holding a reference to the gitserver connections.

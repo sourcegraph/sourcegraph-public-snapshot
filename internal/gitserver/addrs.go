@@ -172,17 +172,16 @@ const repoAddressCacheTTL = 15 * time.Minute
 var ttlJitterGenerator = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 type repoAddressCachedItem struct {
-	// addresss is the gitserver address of the repository.
+	// address is the gitserver address of the repository.
 	address string
 
 	// expiresAt is the time beyond which this item is considered stale.
 	expiresAt time.Time
 }
 
-// repoAddressCache is is used to cache the gitserver shard address of a repo. It is safe for
+// repoAddressCache is used to cache the gitserver shard address of a repo. It is safe for
 // concurrent access.
 //
-// It provides a mechanism to determine when the time an item was last accessed (read or written to)
 // but ultimately leaves the decision of invalidating the cache to the consumer.
 type repoAddressCache struct {
 	mu    sync.RWMutex
@@ -222,7 +221,7 @@ func (rc *repoAddressCache) Write(name api.RepoName, address string) {
 	// Add a jitter of ± 30 seconds around the repoAddressCacheTTL to avoid a spike of DB reads when
 	// the cache expires for workload types that process repositories in bulk.
 	jitter := time.Duration(ttlJitterGenerator.Int63n(2*30) - 30)
-	expiresAt := time.Now().Add(repoAddressCacheTTL + time.Duration(jitter*time.Second))
+	expiresAt := time.Now().Add(repoAddressCacheTTL + (jitter*time.Second))
 	rc.cache[name] = repoAddressCachedItem{address: address, expiresAt: expiresAt}
 }
 
@@ -254,8 +253,8 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
 	getRepoAddress := func(repoName api.RepoName) string {
-		repoName = protocol.NormalizeRepo(repoName) // in case the caller didn't already normalize it
-		name := string(repoName)
+		// Normalizing the name in case the caller didn't.
+		name := string(protocol.NormalizeRepo(repoName))
 
 		if pinnedAddr, ok := g.PinnedServers[name]; ok {
 			return pinnedAddr
@@ -265,7 +264,7 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 	}
 
 	repoConf := conf.Get().Repositories
-	if repoConf == nil || (repoConf != nil && len(repoConf.DeduplicateForks) == 0) {
+	if repoConf == nil || len(repoConf.DeduplicateForks) == 0 {
 		return getRepoAddress(repoName)
 	}
 
@@ -287,7 +286,7 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 
 	poolRepo, err := g.db.GitserverRepos().GetPoolRepo(ctx, repo.Name)
 	if err != nil {
-		logger.Warn("failed to get pool repo (if fork deduplication is enabled this repo may not be colocated on the same shard as the parent / other forks)", log.Error(err))
+		logger.Warn("failed to get pool repo (if fork deduplication is enabled this repo may not be colocated on the same shard as the parent/other forks)", log.Error(err))
 		return g.withUpdateCache(repoName, getRepoAddress(repoName))
 	}
 
