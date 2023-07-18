@@ -335,6 +335,8 @@ type GitserverConns struct {
 	// the cost of code navigability.
 	//
 	// Let's convert this into an attribute in a follow up PR.
+	//
+	// https://github.com/sourcegraph/sourcegraph/issues/55077
 	GitserverAddresses
 
 	logger log.Logger
