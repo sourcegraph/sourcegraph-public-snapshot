@@ -3,7 +3,7 @@ import { FC, useContext } from 'react'
 import { mdiDownload, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Badge, Button, H1, H3, Link, Text, Icon, BadgeVariantType } from '@sourcegraph/wildcard'
+import { Badge, Button, H1, H3, Link, Text, Icon } from '@sourcegraph/wildcard'
 
 import { tauriShellOpen } from '../../../../app/tauriIcpUtils'
 import { FooterWidget, SetupStepsContext, StepComponentProps } from '../../../../setup-wizard/components'
@@ -78,7 +78,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                         <img src={extension.iconURL} alt="" className={styles.extensionsIcon} />
                         <div className={styles.extensionsName}>
                             <H3 className="m-0">{extension.name}</H3>
-                            <Badge variant={getBadgeStatus(extension.status)} small={true}>
+                            <Badge variant='outlineSecondary' small={true}>
                                 {extension.status}
                             </Badge>
                         </div>
@@ -131,14 +131,3 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
     )
 }
 
-function getBadgeStatus(status: ExtensionStatus): BadgeVariantType {
-    switch (status) {
-        case ExtensionStatus.Beta:
-        case ExtensionStatus.Experimental:
-            return 'secondary'
-        case ExtensionStatus.ComingSoon:
-            return 'outlineSecondary'
-        default:
-            return 'outlineSecondary'
-    }
-}
