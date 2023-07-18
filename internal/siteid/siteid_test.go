@@ -44,8 +44,9 @@ func TestGet(t *testing.T) {
 
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
-
-		if got, err := tryGet(db); err != nil {
+		
+		got, err := tryGet(db)
+		if err != nil {
 			t.Fatal(err)
 		}
 		want := "a"
@@ -63,7 +64,8 @@ func TestGet(t *testing.T) {
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		want := errors.Errorf("panic: [Error initializing global state: x]")
-		if got, err := tryGet(db); fmt.Sprint(err) != fmt.Sprint(want) {
+		got, err := tryGet(db)
+		if fmt.Sprint(err) != fmt.Sprint(want) {
 			t.Errorf("got error %q, want %q", err, want)
 		}
 		if inited {
@@ -80,7 +82,8 @@ func TestGet(t *testing.T) {
 
 		db := database.NewMockDB()
 
-		if got, err  := tryGet(); err != nil {
+		got, err  := tryGet()
+		if err != nil {
 			t.Fatal(err)
 		}
 		want := "a"
@@ -99,7 +102,8 @@ func TestGet(t *testing.T) {
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
-		if got, err := tryGet(); err != nil {
+		got, err := tryGet()
+		if err != nil {
 			t.Fatal(err)
 		}
 		want := "a"
