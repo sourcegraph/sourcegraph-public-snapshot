@@ -34,14 +34,14 @@ const EXTENSIONS: Extension[] = [
         status: ExtensionStatus.GA,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/vscode-icon.png',
         installHref: 'vscode:extension/sourcegraph.cody-ai',
-        installLabel: 'Install extension'
+        installLabel: 'Install extension',
     },
     {
         name: 'IntelliJ Idea',
         status: ExtensionStatus.Experimental,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/idea-icon.png',
         installHref: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph',
-        installLabel: 'Install plugin'
+        installLabel: 'Install plugin',
     },
     {
         name: 'NeoVim',
@@ -78,7 +78,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                         <img src={extension.iconURL} alt="" className={styles.extensionsIcon} />
                         <div className={styles.extensionsName}>
                             <H3 className="m-0">{extension.name}</H3>
-                            <Badge variant='outlineSecondary' small={true}>
+                            <Badge variant="outlineSecondary" small={true}>
                                 {extension.status}
                             </Badge>
                         </div>
@@ -90,9 +90,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                                 size="sm"
                                 onClick={() => handleInstallExtensionClick(extension)}
                             >
-                                <Icon svgPath={mdiDownload} aria-hidden={true} />
-                                {' '}
-                                {extension.installLabel}
+                                <Icon svgPath={mdiDownload} aria-hidden={true} /> {extension.installLabel}
                             </Button>
                         )}
 
@@ -112,7 +110,7 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                 <li className={styles.extensionsSuggestionLink}>
                     <span>
                         Your editor not listed here?
-                        <br/>
+                        <br />
                         <Link
                             to="https://github.com/sourcegraph/sourcegraph/discussions/new?category=product-feedback&title=Cody%20extension%20suggestion"
                             target="_blank"
@@ -130,4 +128,3 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
         </div>
     )
 }
-
