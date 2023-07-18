@@ -76,7 +76,7 @@ func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
 	tests := []struct {
 		name string
 		sc   *Unified
-		want int
+		want float64
 	}{
 		{
 			name: "not set should return default",
@@ -85,18 +85,23 @@ func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
 		},
 		{
 			name: "bad value should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(-100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(-100.0)}},
 			want: -1,
 		},
 		{
 			name: "set 0 should return 0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(0)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(0.0)}},
 			want: 0,
 		},
 		{
 			name: "set non-0 should return non-0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(100)}},
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(100.0)}},
 			want: 100,
+		},
+		{
+			name: "set fractional should return fractional",
+			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(0.5)}},
+			want: 0.5,
 		},
 	}
 	for _, test := range tests {

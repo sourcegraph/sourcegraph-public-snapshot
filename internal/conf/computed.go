@@ -564,7 +564,7 @@ func GitLongCommandTimeout() time.Duration {
 // GitMaxCodehostRequestsPerSecond returns maximum number of remote code host
 // git operations to be run per second per gitserver. If not set, it returns the
 // default value -1.
-func GitMaxCodehostRequestsPerSecond() int {
+func GitMaxCodehostRequestsPerSecond() float64 {
 	val := Get().GitMaxCodehostRequestsPerSecond
 	if val == nil || *val < -1 {
 		return -1
@@ -970,7 +970,6 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 func anthropicDefaultMaxPromptTokens(model string) int {
 	if strings.HasSuffix(model, "-100k") {
 		return 100_000
-
 	}
 	if model == "claude-2" {
 		// TODO: Technically, v2 also uses a 100k window, but we should validate

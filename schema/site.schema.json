@@ -853,7 +853,7 @@
     },
     "gitMaxCodehostRequestsPerSecond": {
       "description": "Maximum number of remote code host git operations (e.g. clone or ls-remote) to be run per second per gitserver. Default is -1, which is unlimited.",
-      "type": "integer",
+      "type": "number",
       "!go": {
         "pointer": true
       },
