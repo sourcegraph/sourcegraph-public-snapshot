@@ -47,9 +47,9 @@ var (
 	}, []string{"user_agent"})
 )
 
-// NewGitserverAddressesFromConf fetches the current set of gitserver addresses
+// NewGitserverAddresses fetches the current set of gitserver addresses
 // and pinned repos for gitserver.
-func NewGitserverAddressesFromConf(db database.DB, cfg *conf.Unified) GitserverAddresses {
+func NewGitserverAddresses(db database.DB, cfg *conf.Unified) GitserverAddresses {
 	addrs := GitserverAddresses{
 		db:        db,
 		Addresses: cfg.ServiceConnectionConfig.GitServers,
@@ -426,7 +426,7 @@ func (a *atomicGitServerConns) initOnce() {
 func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	after := GitserverConns{
 		logger:             a.logger,
-		GitserverAddresses: NewGitserverAddressesFromConf(a.db, cfg),
+		GitserverAddresses: NewGitserverAddresses(a.db, cfg),
 		grpcConns:          nil, // to be filled in
 	}
 

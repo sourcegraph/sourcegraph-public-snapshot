@@ -509,7 +509,7 @@ func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 	}
 
 	for {
-		gitserverAddrs := gitserver.NewGitserverAddressesFromConf(s.DB, conf.Get())
+		gitserverAddrs := gitserver.NewGitserverAddresses(s.DB, conf.Get())
 		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
 		time.Sleep(interval)
 	}
@@ -523,7 +523,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	var previousAddrs string
 	var previousPinned string
 	for {
-		gitServerAddrs := gitserver.NewGitserverAddressesFromConf(s.DB, conf.Get())
+		gitServerAddrs := gitserver.NewGitserverAddresses(s.DB, conf.Get())
 		addrs := gitServerAddrs.Addresses
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
