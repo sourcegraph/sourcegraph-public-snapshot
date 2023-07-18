@@ -1,6 +1,5 @@
 package com.sourcegraph.cody;
 
-import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
@@ -14,7 +13,6 @@ import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.actionSystem.ShortcutSet;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
@@ -34,8 +32,6 @@ import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
-import com.sourcegraph.cody.chat.ChatUIConstants;
-import com.sourcegraph.cody.chat.ContentWithGradientBorder;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
@@ -63,14 +59,9 @@ import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.config.SettingsComponent.InstanceType;
-import com.sourcegraph.config.SettingsConfigurable;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.GridLayout;
+import java.awt.*;
 import java.awt.event.AdjustmentListener;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -83,7 +74,6 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
 import org.apache.commons.lang3.StringUtils;
@@ -293,15 +283,12 @@ class CodyToolWindowContent implements UpdatableChat {
 
   @NotNull
   private JPanel createAppNotInstalledPanel() {
-    JPanel appNotInstalledPanel =
-        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
     JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
     jEditorPane.setText(
         "<html><body><h2>Get Started</h2>"
             + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code."
             + " Download and run the Cody desktop app to Configure your local code graph.</p><"
             + "/body></html>");
-    appNotInstalledPanel.add(jEditorPane);
     JButton downloadCodyAppButton = createMainButton("Download Cody App");
     downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
     downloadCodyAppButton.addActionListener(
@@ -309,66 +296,25 @@ class CodyToolWindowContent implements UpdatableChat {
           BrowserUtil.browse("https://about.sourcegraph.com/app");
           updateVisibilityOfContentPanels();
         });
-    Border margin = JBUI.Borders.empty(TEXT_MARGIN);
-    jEditorPane.setBorder(margin);
-    appNotInstalledPanel.add(downloadCodyAppButton);
-    JPanel blankPanel = new JPanel();
-    blankPanel.setBorder(margin);
-    blankPanel.setOpaque(false);
-    appNotInstalledPanel.add(blankPanel);
-    JPanel wrapperAppNotInstalledPanel =
-        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
-    wrapperAppNotInstalledPanel.setBorder(margin);
-    wrapperAppNotInstalledPanel.add(appNotInstalledPanel);
-    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
-    wrapperAppNotInstalledPanel.add(goToSettingsPanel);
-    return wrapperAppNotInstalledPanel;
+    return new CodyOnboardingPanel(project, jEditorPane, downloadCodyAppButton);
   }
 
   @NotNull
   private JPanel createAppNotRunningPanel() {
-    JPanel appNotRunningPanel =
-        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+
     JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
     jEditorPane.setText(
         "<html><body><h2>Cody App Not Running</h2>"
             + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code.</p><"
             + "/body></html>");
-    appNotRunningPanel.add(jEditorPane);
-    JButton downloadCodyAppButton = createMainButton("Open Cody App");
-    downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
-    downloadCodyAppButton.addActionListener(
+    JButton runCodyAppButton = createMainButton("Open Cody App");
+    runCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
+    runCodyAppButton.addActionListener(
         e -> {
           LocalAppManager.runLocalApp();
           updateVisibilityOfContentPanels();
         });
-    Border margin = JBUI.Borders.empty(TEXT_MARGIN);
-    jEditorPane.setBorder(margin);
-    appNotRunningPanel.add(downloadCodyAppButton);
-    JPanel blankPanel = new JPanel();
-    blankPanel.setBorder(margin);
-    blankPanel.setOpaque(false);
-    appNotRunningPanel.add(blankPanel);
-    JPanel wrapperAppNotRunningPanel =
-        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
-    wrapperAppNotRunningPanel.setBorder(margin);
-    wrapperAppNotRunningPanel.add(appNotRunningPanel);
-    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
-    wrapperAppNotRunningPanel.add(goToSettingsPanel);
-    return wrapperAppNotRunningPanel;
-  }
-
-  private JPanel createPanelWithGoToSettingsButton() {
-    JButton goToSettingsButton = new JButton("Sign in with an enterprise account");
-    goToSettingsButton.addActionListener(
-        e ->
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class));
-    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(goToSettingsButton);
-    goToSettingsButton.setUI(buttonUI);
-    JPanel panelWithSettingsButton = new JPanel(new BorderLayout());
-    panelWithSettingsButton.setBorder(JBUI.Borders.empty(TEXT_MARGIN, 0));
-    panelWithSettingsButton.add(goToSettingsButton, BorderLayout.CENTER);
-    return panelWithSettingsButton;
+    return new CodyOnboardingPanel(project, jEditorPane, runCodyAppButton);
   }
 
   @NotNull
@@ -384,6 +330,7 @@ class CodyToolWindowContent implements UpdatableChat {
   @NotNull
   private static JButton createMainButton(@NotNull String text) {
     JButton button = new JButton(text);
+    button.setMaximumSize(new Dimension(Short.MAX_VALUE, button.getPreferredSize().height));
     button.setAlignmentX(Component.CENTER_ALIGNMENT);
     ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
     button.setUI(buttonUI);
