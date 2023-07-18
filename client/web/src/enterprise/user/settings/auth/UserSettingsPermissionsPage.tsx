@@ -119,7 +119,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                             <tr>
                                 <th>
                                     Last partial sync{' '}
-                                    <Tooltip content="Syncs repository permissions from the code host. If the repository-centric sync returns this user as accessor, it is noted here as partial sync. Partial syncs do not show in the list of permission sync jobs below.">
+                                    <Tooltip content="Syncs repository permissions from the code host. If a repository-centric sync returns this user as accessor, it is noted here as partial sync. Partial syncs do not show in the list of permission sync jobs below.">
                                         <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
                                     </Tooltip>
                                 </th>
