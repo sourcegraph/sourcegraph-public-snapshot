@@ -265,7 +265,7 @@ public class ConfigUtil {
 
   @NotNull
   private static CodyProjectService getProjectLevelConfig(@NotNull Project project) {
-    return Objects.requireNonNull(CodyService.getInstance(project));
+    return Objects.requireNonNull(CodyProjectService.getInstance(project));
   }
 
   @Nullable
@@ -293,15 +293,37 @@ public class ConfigUtil {
 
   @Nullable
   public static String getEnterpriseAccessToken(Project project) {
-    // Project level → application level
+    // project level → application level secure storage -> application level
     return Optional.ofNullable(getProjectLevelConfig(project).getEnterpriseAccessToken())
-        .orElse(getApplicationLevelConfig().getEnterpriseAccessToken());
+        .or(AccessTokenStorage::getEnterpriseAccessToken)
+        .orElseGet(
+            () -> {
+              // Save the application level access token to the secure storage
+              String unsafeApplicationLevelAccessToken =
+                  getApplicationLevelConfig().getEnterpriseAccessToken();
+              if (unsafeApplicationLevelAccessToken != null) {
+                AccessTokenStorage.setApplicationEnterpriseAccessToken(
+                    unsafeApplicationLevelAccessToken);
+              }
+              return unsafeApplicationLevelAccessToken;
+            });
   }
 
   @Nullable
   public static String getDotComAccessToken(@NotNull Project project) {
-    // Project level → application level
+    // project level → application level secure storage -> application level
     return Optional.ofNullable(getProjectLevelConfig(project).getDotComAccessToken())
-        .orElse(getApplicationLevelConfig().getDotComAccessToken());
+        .or(AccessTokenStorage::getDotComAccessToken)
+        .orElseGet(
+            () -> {
+              // Save the application level access token to the secure storage
+              String unsafeApplicationLevelAccessToken =
+                  getApplicationLevelConfig().getDotComAccessToken();
+              if (unsafeApplicationLevelAccessToken != null) {
+                AccessTokenStorage.setApplicationDotComAccessToken(
+                    unsafeApplicationLevelAccessToken);
+              }
+              return unsafeApplicationLevelAccessToken;
+            });
   }
 }

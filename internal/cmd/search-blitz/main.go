@@ -72,8 +72,16 @@ func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 		defer ticker.Stop()
 
 		for {
-
-			m, err := c.search(ctx, qc.Query, qc.Name)
+			var m *metrics
+			var err error
+			if qc.Query != "" {
+				m, err = c.search(ctx, qc.Query, qc.Name)
+			} else if qc.Snippet != "" {
+				m, err = c.attribution(ctx, qc.Snippet, qc.Name)
+			} else {
+				log.Error("snippet and query unset")
+				return
+			}
 			if err != nil {
 				log.Error(err.Error())
 			} else {
@@ -120,6 +128,7 @@ func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 
 type genericClient interface {
 	search(ctx context.Context, query, queryName string) (*metrics, error)
+	attribution(ctx context.Context, snippet, queryName string) (*metrics, error)
 	clientType() string
 }
 

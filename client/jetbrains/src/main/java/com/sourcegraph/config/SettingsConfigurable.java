@@ -1,6 +1,5 @@
 package com.sourcegraph.config;
 
-import com.intellij.openapi.Disposable;
 import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
@@ -10,7 +9,7 @@ import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
 
 /** Provides controller functionality for application settings. */
-public class SettingsConfigurable implements Configurable, Disposable {
+public class SettingsConfigurable implements Configurable {
   private final Project project;
   private SettingsComponent mySettingsComponent;
 
@@ -33,7 +32,7 @@ public class SettingsConfigurable implements Configurable, Disposable {
   @Override
   public JComponent createComponent() {
     mySettingsComponent = new SettingsComponent();
-    Disposer.register(this, mySettingsComponent);
+    Disposer.register(project, mySettingsComponent);
     return mySettingsComponent.getPanel();
   }
 
@@ -74,7 +73,7 @@ public class SettingsConfigurable implements Configurable, Disposable {
         bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
 
     CodyApplicationService aSettings = CodyApplicationService.getInstance();
-    CodyProjectService pSettings = CodyService.getInstance(project);
+    CodyProjectService pSettings = CodyProjectService.getInstance(project);
 
     boolean oldCodyEnabled = ConfigUtil.isCodyEnabled();
     boolean oldCodyAutoCompleteEnabled = ConfigUtil.isCodyAutoCompleteEnabled();
@@ -116,12 +115,12 @@ public class SettingsConfigurable implements Configurable, Disposable {
     if (pSettings.dotComAccessToken != null) {
       pSettings.dotComAccessToken = newDotComAccessToken;
     } else {
-      aSettings.dotComAccessToken = newDotComAccessToken;
+      aSettings.setSafeDotComAccessToken(newDotComAccessToken);
     }
     if (pSettings.enterpriseAccessToken != null) {
       pSettings.enterpriseAccessToken = newEnterpriseAccessToken;
     } else {
-      aSettings.enterpriseAccessToken = newEnterpriseAccessToken;
+      aSettings.setSafeEnterpriseAccessToken(newEnterpriseAccessToken);
     }
     if (pSettings.customRequestHeaders != null) {
       pSettings.customRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
@@ -168,7 +167,4 @@ public class SettingsConfigurable implements Configurable, Disposable {
   public void disposeUIResources() {
     mySettingsComponent = null;
   }
-
-  @Override
-  public void dispose() {}
 }

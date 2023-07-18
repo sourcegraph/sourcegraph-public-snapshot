@@ -11,6 +11,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/lib/api"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const oneReleaseCycle = 35 * 24 * time.Hour
@@ -122,12 +124,12 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 		return compatibility.ToGraphQL(), nil
 	}
 
-	s, err := semver.NewVersion(sv)
+	s, err := getSemVer("sourcegraph", sv)
 	if err != nil {
 		return nil, err
 	}
 
-	e, err := semver.NewVersion(ev)
+	e, err := getSemVer("executor", ev)
 	if err != nil {
 		return nil, err
 	}
@@ -144,4 +146,25 @@ func calculateExecutorCompatibility(ev string) (*string, error) {
 	}
 
 	return compatibility.ToGraphQL(), nil
+}
+
+func getSemVer(source string, version string) (*semver.Version, error) {
+	v, err := semver.NewVersion(version)
+	if err != nil {
+		// Maybe the version is a daily build and need to extract the version from there.
+		// We don't care about the error from getDailyBuildVersion because we already have the error.
+		v, _ = getDailyBuildVersion(version)
+		if v == nil {
+			return nil, errors.Wrapf(err, "failed to parse %s version %q", source, version)
+		}
+	}
+	return v, nil
+}
+
+func getDailyBuildVersion(version string) (*semver.Version, error) {
+	matches := api.BuildDateRegex.FindStringSubmatch(version)
+	if len(matches) > 2 {
+		return semver.NewVersion(matches[2])
+	}
+	return nil, nil
 }
