@@ -15,8 +15,9 @@ interface Extension {
     name: string
     status: ExtensionStatus
     iconURL: string
-    docLink: string | null
-    extensionDeepLink: string | null
+    docLink?: string
+    installHref?: string
+    installLabel?: string
 }
 
 enum ExtensionStatus {
@@ -29,25 +30,23 @@ enum ExtensionStatus {
 
 const EXTENSIONS: Extension[] = [
     {
-        name: 'Cody for VS Code',
+        name: 'Visual Studio Code',
         status: ExtensionStatus.GA,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/vscode-icon.png',
-        docLink: null,
-        extensionDeepLink: 'vscode:extension/sourcegraph.cody-ai',
+        installHref: 'vscode:extension/sourcegraph.cody-ai',
+        installLabel: 'Install extension'
     },
     {
-        name: 'Cody for IntelliJ Idea',
+        name: 'IntelliJ Idea',
         status: ExtensionStatus.Experimental,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/idea-icon.png',
-        docLink: null,
-        extensionDeepLink: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph',
+        installHref: 'https://plugins.jetbrains.com/plugin/9682-sourcegraph',
+        installLabel: 'Install plugin'
     },
     {
-        name: 'Cody for NeoVim',
+        name: 'NeoVim',
         status: ExtensionStatus.ComingSoon,
         iconURL: 'https://storage.googleapis.com/sourcegraph-assets/setup/neovim-icon.png',
-        docLink: null,
-        extensionDeepLink: null,
     },
 ]
 
@@ -55,8 +54,8 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
     const { onNextStep } = useContext(SetupStepsContext)
 
     const handleInstallExtensionClick = (extension: Extension): void => {
-        if (extension.extensionDeepLink) {
-            tauriShellOpen(extension.extensionDeepLink)
+        if (extension.installHref) {
+            tauriShellOpen(extension.installHref)
         }
     }
 
@@ -84,14 +83,16 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
                             </Badge>
                         </div>
 
-                        {extension.extensionDeepLink && (
+                        {extension.installHref && (
                             <Button
                                 variant="secondary"
                                 outline={true}
                                 size="sm"
                                 onClick={() => handleInstallExtensionClick(extension)}
                             >
-                                <Icon svgPath={mdiDownload} aria-hidden={true} /> Install
+                                <Icon svgPath={mdiDownload} aria-hidden={true} />
+                                {' '}
+                                {extension.installLabel}
                             </Button>
                         )}
 
