@@ -125,27 +125,31 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 }
 
 const updatePoolRepoIDQueryFmtStr = `
+-- find the repo that matches the poolRepoName
+WITH pool AS (
+	SELECT
+		id
+	FROM
+		repo
+	WHERE
+		name = %s::citext
+),
+-- find the repo that matches repoName
+repo AS (
+	SELECT
+		id
+	FROM
+		repo
+	WHERE
+		name = %s::citext
+)
+-- now update the pool_repo_id of repo with the repo.id of the pool
 UPDATE
 	gitserver_repos
 SET
-    -- set pool_repo_id of the repo that matches repoName with the repo id of the pool repo obtained in the nested query below
-	pool_repo_id = (
-		SELECT
-			id
-		FROM
-			repo
-			JOIN gitserver_repos ON id = repo_id
-		WHERE
-			name = %s::citext)
+	pool_repo_id = (SELECT id FROM pool)
 WHERE
-    -- find the repo that matches the poolRepoName
-	repo_id = (
-		SELECT
-			id
-		FROM
-			repo
-		WHERE
-			name = %s::citext)
+	repo_id = (SELECT id FROM repo)
 `
 
 // UpdatePoolRepoID updates the repo matching `repoName` with the repo ID of the repo matching
@@ -156,21 +160,26 @@ func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, poolRepoName,
 }
 
 const getPoolRepoQueryFmtStr = `
+WITH gs AS (
+	SELECT
+		pool_repo_id
+	FROM
+		gitserver_repos
+		JOIN repo AS r ON repo_id = r.id
+	WHERE
+		name = %s::citext
+)
 SELECT
 	name,
 	uri
 FROM
 	repo
-	JOIN gitserver_repos AS gs ON id = gs.repo_id
 WHERE
-	gs.repo_id = (
+	id = (
 		SELECT
-			pool_repo_id
+			pooL_repo_id
 		FROM
-			repo
-			JOIN gitserver_repos AS gs ON id = gs.repo_id
-		WHERE
-			name = %s);
+			gs)
 `
 
 func (s *gitserverRepoStore) GetPoolRepo(ctx context.Context, repoURI api.RepoName) (*types.PoolRepo, error) {
