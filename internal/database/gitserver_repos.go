@@ -524,7 +524,6 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 	err := scanner.Scan(
 		&gr.RepoID,
 		&repoName,
-		// &gr.Fork,
 		&cloneStatus,
 		&gr.CloningProgress,
 		&gr.ShardID,

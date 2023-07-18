@@ -550,7 +550,6 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-// TODO: Get rid of this one liner in a follow up PR.
 func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
 	return gitServerAddrs.AddrForRepo(ctx, s.Logger, filepath.Base(os.Args[0]), repoName)
 }
