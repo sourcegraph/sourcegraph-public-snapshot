@@ -222,7 +222,9 @@ type GitserverAddresses struct {
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-// TODO: Insert link to doc with decision tree.
+
+// TODO: Insert link to doc with decision tree once the PR is merged. For the time being see
+// decision tree in the PR description.
 func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger, userAgent string, repoName api.RepoName) string {
 	if logger == nil {
 		logger = log.Scoped("GitserverAddresses.AddrForRepo", "a logger scoped to GitserverAddresses.AddrForRepo")
