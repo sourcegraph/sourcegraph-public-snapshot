@@ -6671,6 +6671,9 @@ ALTER TABLE ONLY permission_sync_jobs
 ALTER TABLE ONLY permission_sync_jobs
     ADD CONSTRAINT permission_sync_jobs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE;
 
+ALTER TABLE ONLY gitserver_repos
+    ADD CONSTRAINT pool_repo_id_fkey FOREIGN KEY (pool_repo_id) REFERENCES repo(id);
+
 ALTER TABLE ONLY product_licenses
     ADD CONSTRAINT product_licenses_product_subscription_id_fkey FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id);
 
