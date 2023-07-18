@@ -2246,14 +2246,22 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		s.setCloneStatusNonFatal(context.Background(), repo, cloneStatus(repoCloned(dir), false))
 	}()
 
-	cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
-	if err != nil {
-		return errors.Wrap(err, "get clone command")
+	var cmd *exec.Cmd
+	if initer, ok := syncer.(Initer); ok {
+		var todoProgressWriter io.Writer
+		initer.Init(ctx, remoteURL, tmpPath)
+		initer.Fetch2(ctx, remoteURL, common.GitDir(tmpPath), "", todoProgressWriter)
+		cmd = exec.Command("echo", "TODO")
+	} else {
+		cmd, err = syncer.CloneCommand(ctx, remoteURL, tmpPath)
+		if err != nil {
+			return errors.Wrap(err, "get clone command")
+		}
 	}
+
 	if cmd.Env == nil {
 		cmd.Env = os.Environ()
 	}
-
 	// see issue #7322: skip LFS content in repositories with Git LFS configured
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))

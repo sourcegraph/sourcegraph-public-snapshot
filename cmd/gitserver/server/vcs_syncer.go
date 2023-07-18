@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"os/exec"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
@@ -28,6 +29,11 @@ type VCSSyncer interface {
 	Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error)
 	// RemoteShowCommand returns the command to be executed for showing remote.
 	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
+}
+
+type Initer interface {
+	Init(ctx context.Context, remoteURL *vcs.URL, tmpPath string) error
+	Fetch2(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string, output io.Writer) error
 }
 
 type notFoundError struct{ error }

@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"io"
 	"os"
 	"os/exec"
 
@@ -69,6 +70,36 @@ func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 	cmd.Dir = tmpPath
 	return cmd, nil
 }
+
+// TODO
+func (s *gitRepoSyncer) Init(ctx context.Context, remoteURL *vcs.URL, tmpPath string) error {
+	if err := os.MkdirAll(tmpPath, os.ModePerm); err != nil {
+		return errors.Wrapf(err, "init failed to create tmp dir")
+	}
+
+	cmd := exec.CommandContext(ctx, "git", "init", "--bare", ".")
+	cmd.Dir = tmpPath
+	if err := cmd.Run(); err != nil {
+		return errors.Wrapf(&common.GitCommandError{Err: err}, "init setup failed")
+	}
+
+	return nil
+}
+
+// TODO
+func (s *gitRepoSyncer) Fetch2(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string, output io.Writer) error {
+	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
+	dir.Set(cmd)
+	cmd.Stdout = output
+	cmd.Stderr = output
+	if configRemoteOpts {
+		configureRemoteGitCommand(cmd, tlsExternal())
+	}
+	// TODO lots of things
+	return cmd.Run()
+}
+
+var _ Initer = &gitRepoSyncer{}
 
 // Fetch tries to fetch updates of a Git repository.
 func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
