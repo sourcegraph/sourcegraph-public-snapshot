@@ -55,7 +55,7 @@ interface BreadcrumbsProps {
 export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
     const { filename, className, children, getSegmentLink } = props
 
-    const [hidedSegments, setHidedSegments] = useState<number[]>([])
+    const [hiddenSegments, setHiddenSegments] = useState<Set<number>>(() => new Set())
     const rootElementRef = useRef<HTMLUListElement>(null)
     const segments = useMemo(() => filename.split('/'), [filename])
 
@@ -116,18 +116,16 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
                     }
                 }
 
-                setHidedSegments(segmentsToHide)
+                setHiddenSegments(new Set(segmentsToHide))
             } else {
-                setHidedSegments([])
+                setHiddenSegments(new Set([]))
             }
         }
 
         // Force initial fix item appearance synchronously to avoid flashes
         fixItemsAppearance(rootElementRef.current.getBoundingClientRect().width ?? 0)
 
-        const resizeObserver = new ResizeObserver(entries => {
-            const entry = entries[0]
-
+        const resizeObserver = new ResizeObserver(([entry]) => {
             fixItemsAppearance(entry.contentRect.width)
         })
 
@@ -137,31 +135,11 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
     }, [filename])
 
     const fixedSegments = useMemo<Segment[]>(() => {
-        if (hidedSegments.length === 0) {
-            return segments.map((segment, index) => ({
-                id: index,
-                type: SegmentType.Common,
-                value: segment,
-            }))
-        }
-
-        const result: Segment[] = []
-
-        for (const [index, segment] of segments.entries()) {
-            if (hidedSegments.includes(index)) {
-                result.push({
-                    id: index,
-                    type: SegmentType.Invisible,
-                    value: segment,
-                })
-            } else {
-                result.push({
-                    id: index,
-                    type: SegmentType.Common,
-                    value: segment,
-                })
-            }
-        }
+        const result = segments.map<Segment>((segment, index) => ({
+            id: index,
+            type: hiddenSegments.has(index) ? SegmentType.Invisible : SegmentType.Common,
+            value: segment,
+        }))
 
         const firstInvisibleElement = result.findIndex(item => item.type === SegmentType.Invisible)
 
@@ -173,7 +151,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
         }
 
         return result
-    }, [segments, hidedSegments])
+    }, [segments, hiddenSegments])
 
     const isOnlyFileNameVisible = fixedSegments.filter(isCommonSegment).length === 1
 
