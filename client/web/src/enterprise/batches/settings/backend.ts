@@ -175,7 +175,7 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePagination
         },
         options: {
             useURL: true,
-            fetchPolicy: 'network-only'
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { batchChangesCodeHosts } = dataOrThrowErrors(result)
