@@ -105,8 +105,8 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 
 	// Bulk insert the content of the tree / descriptor-no-suffix map
 	symbolNamePartInserter := func(ctx context.Context, symbolLookupInserter *batch.Inserter) error {
-		visit := func(segmentType, name string, id int, parentID *int) error {
-			return symbolLookupInserter.Insert(ctx, segmentType, name, id, parentID)
+		visit := func(segmentType string, segmentQuality *string, name string, id int, parentID *int) error {
+			return symbolLookupInserter.Insert(ctx, segmentType, segmentQuality, name, id, parentID)
 		}
 		return traverser(visit)
 	}
@@ -276,6 +276,7 @@ func withSymbolLookupInserter(ctx context.Context, tx *basestore.Store, uploadID
 			name text NOT NULL,
 			id integer NOT NULL,
 			segment_type SymbolNameSegmentType NOT NULL,
+			segment_quality SymbolNameSegmentQuality,
 			parent_id integer
 		) ON COMMIT DROP
 	`)); err != nil {
@@ -288,6 +289,7 @@ func withSymbolLookupInserter(ctx context.Context, tx *basestore.Store, uploadID
 		"t_codeintel_scip_symbols_lookup",
 		batch.MaxNumPostgresParameters,
 		"segment_type",
+		"segment_quality",
 		"name",
 		"id",
 		"parent_id",
@@ -301,8 +303,8 @@ func withSymbolLookupInserter(ctx context.Context, tx *basestore.Store, uploadID
 	}
 
 	return tx.Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO codeintel_scip_symbols_lookup (id, upload_id, name, segment_type, parent_id)
-		SELECT id, %s, name, segment_type, parent_id
+		INSERT INTO codeintel_scip_symbols_lookup (id, upload_id, name, segment_type, segment_quality, parent_id)
+		SELECT id, %s, name, segment_type, segment_quality, parent_id
 		FROM t_codeintel_scip_symbols_lookup
 	`,
 		uploadID,
@@ -378,20 +380,29 @@ type explodedIDs struct {
 	fuzzyDescriptorSuffixID int
 }
 
-type visitFunc func(segmentType, name string, id int, parentID *int) error
+type visitFunc func(segmentType string, segmentQuality *string, name string, id int, parentID *int) error
 
 func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error, error) {
+	cache := map[string]explodedIDs{}     // Tracks symbol name -> identifiers in the scheme tree
+	schemeTree := map[string]SchemeNode{} // Tracks scheme -> manager -> name -> version -> descriptor namespace -> descriptor suffix
+	qualityMap := map[int]string{}        // Tracks descriptor node ids -> quality (PRECISE, FUZZY, BOTH)
+
 	// Create helpers to create new tree nodes with (upload-)unique identifiers
 	createSchemeNode := func() SchemeNode { return SchemeNode(newNodeWithID[PackageManagerNode](id())) }
 	createPackageManagerNode := func() PackageManagerNode { return PackageManagerNode(newNodeWithID[PackageNameNode](id())) }
 	createPackageNameNode := func() PackageNameNode { return PackageNameNode(newNodeWithID[PackageVersionNode](id())) }
 	createPackageVersionNode := func() PackageVersionNode { return PackageVersionNode(newNodeWithID[NamespaceNode](id())) }
 	createNamespaceNode := func() NamespaceNode { return NamespaceNode(newNodeWithID[DescriptorNode](id())) }
-	createDescriptor := func() DescriptorNode { return DescriptorNode(newNodeWithID[descriptor](id())) }
-
-	cache := map[string]explodedIDs{}                // Tracks symbol name -> identifiers in the scheme tree
-	schemeTree := map[string]SchemeNode{}            // Tracks scheme -> manager -> name -> version -> descriptor (namespace, suffix)
-	fuzzyDescriptorSuffixMap := make(map[string]int) // Tracks fuzzy descriptor
+	createDescriptorWithQuality := func(quality string) func() DescriptorNode {
+		return func() DescriptorNode {
+			id := id()
+			qualityMap[id] = quality
+			return DescriptorNode(newNodeWithID[descriptor](id))
+		}
+	}
+	createPreciseDescriptor := createDescriptorWithQuality("PRECISE")
+	createFuzzyDescriptor := createDescriptorWithQuality("FUZZY")
+	createUnionDescriptor := createDescriptorWithQuality("BOTH")
 
 	for _, symbolName := range symbolNames {
 		symbol, err := symbols.NewExplodedSymbol(symbolName)
@@ -399,22 +410,25 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 			return nil, nil, err
 		}
 
-		// Assign the parts of the exploded symbol into the scheme tree. If a prefix of
-		// the exploded symbol is already in the tree then existing nodes will be re-used.
-		// Laying out the exploded in a tree structure will allow us to trace parentage
-		// (required for fast lookups) when we insert these into the database.
+		// Assign the parts of the exploded symbol into the scheme tree. If a prefix of the exploded symbol
+		// is already in the tree then existing nodes will be re-used. Laying out the exploded in a tree
+		// structure will allow us to trace parentage (required for fast lookups) when we insert these into
+		// the database.
 
 		schemeNode := getOrCreate(schemeTree, symbol.Scheme, createSchemeNode)                                       // depth 0
 		packageManagerNode := getOrCreate(schemeNode.children, symbol.PackageManager, createPackageManagerNode)      // depth 1
 		packageNameNode := getOrCreate(packageManagerNode.children, symbol.PackageName, createPackageNameNode)       // depth 2
 		packageVersionNode := getOrCreate(packageNameNode.children, symbol.PackageVersion, createPackageVersionNode) // depth 3
 		namespace := getOrCreate(packageVersionNode.children, symbol.DescriptorNamespace, createNamespaceNode)       // depth 4
-		descriptor := getOrCreate(namespace.children, symbol.DescriptorSuffix, createDescriptor)                     // depth 5
-		fuzzyDescriptorsSuffixID := getOrCreate(fuzzyDescriptorSuffixMap, symbol.FuzzyDescriptorSuffix, id)          // map insertion
+		descriptorSuffixID, fuzzyDescriptorSuffixID := getOrCreateLeafIDs(                                           // depth 5
+			namespace,
+			symbol.DescriptorSuffix, symbol.FuzzyDescriptorSuffix,
+			createPreciseDescriptor, createFuzzyDescriptor, createUnionDescriptor,
+		)
 
 		cache[symbolName] = explodedIDs{
-			descriptorSuffixID:      descriptor.id,
-			fuzzyDescriptorSuffixID: fuzzyDescriptorsSuffixID,
+			descriptorSuffixID:      descriptorSuffixID,
+			fuzzyDescriptorSuffixID: fuzzyDescriptorSuffixID,
 		}
 	}
 
@@ -427,24 +441,40 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 		"DESCRIPTOR_SUFFIX",    // depth 5
 		/*                   */ // depth PANIC
 	}
-
-	traverser := func(visit visitFunc) error {
-		// Call visit on each node of the tree
-		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
-			return visit(segmentTypeByDepth[depth], name, id, parentID)
-		}); err != nil {
-			return err
+	segmentQualityForID := func(id int) *string {
+		if quality, ok := qualityMap[id]; ok {
+			return &quality
 		}
 
-		// Call visit on each element in the descriptor-no-suffix map
-		for name, id := range fuzzyDescriptorSuffixMap {
-			if err := visit("DESCRIPTOR_SUFFIX_FUZZY", name, id, nil); err != nil {
-				return err
-			}
+		return nil
+	}
+
+	traverser := func(visit visitFunc) error {
+		if err := traverse(schemeTree, func(name string, id, depth int, parentID *int) error {
+			return visit(segmentTypeByDepth[depth], segmentQualityForID(id), name, id, parentID)
+		}); err != nil {
+			return err
 		}
 
 		return nil
 	}
 
 	return cache, traverser, nil
+}
+
+func getOrCreateLeafIDs(
+	namespace treeNode[treeNode[descriptor]],
+	descriptorSuffix, fuzzyDescriptorSuffix string,
+	createPreciseDescriptor, createFuzzyDescriptor, createUnionDescriptor func() treeNode[descriptor],
+) (int, int) {
+	if descriptorSuffix == fuzzyDescriptorSuffix {
+		// Common case: no difference - create a single leaf node
+		descriptor := getOrCreate(namespace.children, descriptorSuffix, createUnionDescriptor)
+		return descriptor.id, descriptor.id
+	}
+
+	// General case: unique fuzzy descriptor - create two leaf nodes
+	descriptor := getOrCreate(namespace.children, descriptorSuffix, createPreciseDescriptor)
+	fuzzyDescriptor := getOrCreate(namespace.children, fuzzyDescriptorSuffix, createFuzzyDescriptor)
+	return descriptor.id, fuzzyDescriptor.id
 }

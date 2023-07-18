@@ -6,6 +6,14 @@
   ],
   "Enums": [
     {
+      "Name": "symbolnamesegmentquality",
+      "Labels": [
+        "FUZZY",
+        "PRECISE",
+        "BOTH"
+      ]
+    },
+    {
       "Name": "symbolnamesegmenttype",
       "Labels": [
         "SCHEME",
@@ -13,8 +21,7 @@
         "PACKAGE_NAME",
         "PACKAGE_VERSION",
         "DESCRIPTOR_NAMESPACE",
-        "DESCRIPTOR_SUFFIX",
-        "DESCRIPTOR_SUFFIX_FUZZY"
+        "DESCRIPTOR_SUFFIX"
       ]
     }
   ],
@@ -864,7 +871,7 @@
       "Columns": [
         {
           "Name": "id",
-          "Index": 4,
+          "Index": 5,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "",
@@ -877,7 +884,7 @@
         },
         {
           "Name": "name",
-          "Index": 3,
+          "Index": 4,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "",
@@ -890,8 +897,21 @@
         },
         {
           "Name": "parent_id",
-          "Index": 5,
+          "Index": 6,
           "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "segment_quality",
+          "Index": 3,
+          "TypeName": "symbolnamesegmentquality",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
@@ -945,7 +965,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, name) WHERE segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype",
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, name) WHERE segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype AND segment_quality \u003c\u003e 'FUZZY'::symbolnamesegmentquality",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
@@ -955,7 +975,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, reverse(name) text_pattern_ops) WHERE segment_type = 'DESCRIPTOR_SUFFIX_FUZZY'::symbolnamesegmenttype",
+          "IndexDefinition": "CREATE INDEX codeintel_scip_symbols_lookup_fuzzy_descriptor_suffix ON codeintel_scip_symbols_lookup USING btree (upload_id, reverse(name) text_pattern_ops) WHERE segment_type = 'DESCRIPTOR_SUFFIX'::symbolnamesegmenttype AND segment_quality \u003c\u003e 'PRECISE'::symbolnamesegmentquality",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }

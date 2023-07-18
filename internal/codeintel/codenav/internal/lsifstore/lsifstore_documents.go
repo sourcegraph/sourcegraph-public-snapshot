@@ -78,7 +78,7 @@ SELECT DISTINCT
 -- Initially fuzzy search (see WHERE clause)
 FROM codeintel_scip_symbols_lookup l7
 
--- Join to symbols table, which will bridge DESCRIPTOR_SUFFIX_FUZZY (syntect) and DESCRIPTOR_SUFFIX (precise)
+-- Join to symbols table, which will bridge DESCRIPTOR_SUFFIX+FUZZY (syntect) and DESCRIPTOR_SUFFIX+PRECISE (indexed)
 JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l7.upload_id AND ll.fuzzy_descriptor_suffix_id = l7.id
 
 -- Follow parent path from descriptor l6->l5->l4->l3->l2->l1
@@ -90,7 +90,8 @@ JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = l6.upload_id AND l2.id =
 JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id = l2.parent_id            -- SCHEME
 WHERE
 	l7.upload_id = ANY(%s) AND
-	l7.segment_type = 'DESCRIPTOR_SUFFIX_FUZZY' AND
+	l7.segment_type = 'DESCRIPTOR_SUFFIX' AND
+	l7.segment_quality != 'PRECISE' AND
 	reverse(l7.name) ILIKE ANY(%s)
 `
 
