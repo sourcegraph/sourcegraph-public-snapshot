@@ -45,5 +45,3 @@ buf_lint_test(
     config = "//internal:buf.yaml",
     targets = [":v1_proto"],
 )
-
-
