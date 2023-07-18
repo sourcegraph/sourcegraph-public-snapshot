@@ -23,6 +23,7 @@ import {
     CollapsePanel,
     Label,
     H4,
+    H5,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../components/LogOutput'
@@ -48,6 +49,7 @@ import { DirectImportRepoAlert } from '../DirectImportRepoAlert'
 
 import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from './backend'
 import { ActionContainer, BaseActionContainer } from './components/ActionContainer'
+import { mockLastGitCommandOutput } from './mock'
 
 import styles from './RepoSettingsMirrorPage.module.scss'
 
@@ -300,6 +302,54 @@ const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
     )
 }
 
+interface LastGitCommandsOutputContainerProps {
+    repo: SettingsAreaRepositoryFields
+}
+
+const LastGitCommandsOutputContainer: FC<LastGitCommandsOutputContainerProps> = props => (
+    <BaseActionContainer
+        title="Last git commands"
+        titleAs="h3"
+        description={<H5>Output from this repository's most recent sync</H5>}
+        details={
+            <div className="mt-2 w-100">
+                {mockLastGitCommandOutput.map((command, idx) => (
+                    <LastGitCommandNode command={command} name={`Command ${idx + 1}`} key={`${idx}-${command.path}`} />
+                ))}
+            </div>
+        }
+    />
+)
+
+interface LastGitCommandNodeProps {
+    command: typeof mockLastGitCommandOutput[0]
+    name: string
+}
+
+const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command, name }) => {
+    const [isOpened, setIsOpened] = useState(false)
+    return (
+        <Collapse isOpen={isOpened} onOpenChange={setIsOpened}>
+            <CollapseHeader
+                as={Button}
+                outline={true}
+                focusLocked={true}
+                variant="secondary"
+                className="w-100 my-2 text-left"
+            >
+                <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronUp : mdiChevronDown} className="mr-1" />
+                {name} (Ran for {command.duration_seconds.toFixed(2)}s)
+            </CollapseHeader>
+            <CollapsePanel>
+                <LogOutput text={command.args.join(' ')} logDescription="Command output:" />
+                <Button variant="primary" className="mt-2">
+                    Rerun
+                </Button>
+            </CollapsePanel>
+        </Collapse>
+    )
+}
+
 interface RepoSettingsMirrorPageProps {
     repo: SettingsAreaRepositoryFields
 }
@@ -429,6 +479,7 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                 )}
                 <CorruptionLogsContainer repo={repo} />
                 <LastSyncOutputContainer repo={repo} />
+                <LastGitCommandsOutputContainer repo={repo} />
             </Container>
         </>
     )
