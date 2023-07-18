@@ -2,18 +2,18 @@ package types
 
 import (
 	"sync"
-)
 
-type repoURIIndex map[string]struct{}
+	"github.com/sourcegraph/sourcegraph/internal/collections"
+)
 
 type RepoURICache struct {
 	mu    sync.RWMutex
-	index repoURIIndex
+	index collections.Set[string]
 }
 
-func NewRepoURICache(index repoURIIndex) *RepoURICache {
+func NewRepoURICache(index collections.Set[string]) *RepoURICache {
 	if index == nil {
-		index = make(repoURIIndex)
+		index = make(collections.Set[string])
 	}
 
 	return &RepoURICache{
@@ -29,12 +29,12 @@ func (c *RepoURICache) Contains(name string) bool {
 	return ok
 }
 
-func (c *RepoURICache) Overwrite(index repoURIIndex) {
+func (c *RepoURICache) Overwrite(index collections.Set[string]) {
 	c.mu.Lock()
 	c.index = index
 	c.mu.Unlock()
 }
 
-func (c *RepoURICache) Index() repoURIIndex {
+func (c *RepoURICache) Index() collections.Set[string] {
 	return c.index
 }
