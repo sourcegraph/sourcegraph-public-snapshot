@@ -63,10 +63,9 @@ export const AppInstallExtensionsSetupStep: FC<StepComponentProps> = ({ classNam
     return (
         <div className={classNames(styles.root, className)}>
             <div className={styles.description}>
-                <H1 className={styles.descriptionHeading}>Install the extension</H1>
+                <H1 className={styles.descriptionHeading}>Install an extension</H1>
                 <Text className={styles.descriptionText}>
-                    Ask Cody questions right within your editor. The Cody extension also has a fixup code feature,
-                    recipes, and experimental autocomplete.
+                    Use Cody from within your editor, using one of the Cody extensions.
                 </Text>
 
                 <Button size="lg" variant="primary" className={styles.descriptionNext} onClick={() => onNextStep()}>
