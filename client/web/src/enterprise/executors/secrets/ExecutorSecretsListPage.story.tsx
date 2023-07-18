@@ -45,7 +45,12 @@ const EXECUTOR_SECRET_LIST_MOCK: MockedResponse<UserExecutorSecretsResult> = {
             node: {
                 __typename: 'User',
                 executorSecrets: {
-                    pageInfo: { hasNextPage: false, endCursor: null },
+                    __typename: 'ExecutorSecretConnection',
+                    pageInfo: {
+                        hasNextPage: false,
+                        endCursor: null,
+                        __typename: 'PageInfo',
+                    },
                     totalCount: 5,
                     nodes: [
                         // Global secret.
@@ -178,7 +183,12 @@ const EMPTY_EXECUTOR_SECRET_LIST_MOCK: MockedResponse<GlobalExecutorSecretsResul
     result: {
         data: {
             executorSecrets: {
-                pageInfo: { hasNextPage: false, endCursor: null },
+                __typename: 'ExecutorSecretConnection',
+                pageInfo: {
+                    hasNextPage: false,
+                    endCursor: null,
+                    __typename: 'PageInfo',
+                },
                 totalCount: 0,
                 nodes: [],
             },

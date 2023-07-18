@@ -131,7 +131,7 @@ export const userExecutorSecretsConnectionFactory = (
             first: 15,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -177,7 +177,7 @@ export const orgExecutorSecretsConnectionFactory = (
             first: 15,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -217,6 +217,7 @@ export const globalExecutorSecretsConnectionFactory = (
         },
         options: {
             useURL: true,
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { executorSecrets } = dataOrThrowErrors(result)
@@ -276,7 +277,7 @@ export const useExecutorSecretAccessLogsConnection = (
             after: null,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
