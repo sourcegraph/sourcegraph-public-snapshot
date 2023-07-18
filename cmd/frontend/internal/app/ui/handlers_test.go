@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/sourcegraph/sourcegraph/ui/assets"
@@ -479,5 +478,4 @@ func init() {
 
 	db := database.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)
-	siteid.Init(db)
 }

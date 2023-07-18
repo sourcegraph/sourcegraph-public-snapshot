@@ -45,7 +45,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -201,8 +200,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
 		return err
 	}
-
-	siteid.Init(db)
 
 	globals.WatchBranding()
 	globals.WatchExternalURL()

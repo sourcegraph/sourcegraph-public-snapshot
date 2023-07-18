@@ -24,11 +24,10 @@ var (
 	fatalln = log.Fatalln // overridden in tests
 )
 
-// Init reads (or generates) the site ID. This func must be called exactly once before
-// Get can be called.
-func Init(db database.DB) {
+// initialize reads (or generates) the site ID.
+func initialize(db database.DB) {
 	if inited {
-		panic("siteid: already initialized")
+		return
 	}
 
 	if v := os.Getenv("TRACKING_APP_ID"); v != "" {
@@ -52,11 +51,9 @@ func Init(db database.DB) {
 }
 
 // Get returns the site ID.
-//
-// Get may only be called after Init has been called.
-func Get() string {
+func Get(db database.DB) string {
 	if !inited {
-		panic("siteid: not yet initialized")
+		initialize(db)
 	}
 	return siteID
 }

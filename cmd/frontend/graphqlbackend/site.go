@@ -90,7 +90,7 @@ type siteResolver struct {
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 
-func (r *siteResolver) SiteID() string { return siteid.Get() }
+func (r *siteResolver) SiteID() string { return siteid.Get(r.db) }
 
 type SiteConfigurationArgs struct {
 	ReturnSafeConfigsOnly *bool

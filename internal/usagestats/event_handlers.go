@@ -79,7 +79,7 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 	}
 
 	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()
-	connectedSiteID := siteid.Get()
+	connectedSiteID := siteid.Get(db)
 
 	return LogEvent(context.Background(), db, Event{
 		EventName:        eventName,

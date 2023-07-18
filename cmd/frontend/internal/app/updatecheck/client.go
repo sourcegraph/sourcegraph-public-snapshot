@@ -448,7 +448,7 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 	logFunc := logger.Debug
 
 	r := &pingRequest{
-		ClientSiteID:        siteid.Get(),
+		ClientSiteID:        siteid.Get(db),
 		DeployType:          deploy.Type(),
 		ClientVersionString: version.Version(),
 	}
@@ -507,7 +507,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	logFuncWarn := scopedLog.Warn
 
 	r := &pingRequest{
-		ClientSiteID:                  siteid.Get(),
+		ClientSiteID:                  siteid.Get(db),
 		DeployType:                    deploy.Type(),
 		ClientVersionString:           version.Version(),
 		LicenseKey:                    conf.Get().LicenseKey,
