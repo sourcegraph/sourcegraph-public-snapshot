@@ -4,26 +4,27 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
+import com.intellij.util.xmlb.annotations.Transient;
 import com.sourcegraph.find.Search;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
-public class CodyApplicationService
-    implements PersistentStateComponent<CodyApplicationService>, CodyService {
+public class CodyApplicationService implements PersistentStateComponent<CodyApplicationService> {
   @Nullable public String instanceType;
   @Nullable public String url;
 
+  @Deprecated(since = "3.0.6", forRemoval = true)
   @Nullable
-  @Deprecated(since = "3.0.0-alpha.2", forRemoval = true)
-  public String accessToken; // kept for backwards compatibility
+  public String dotComAccessToken;
 
-  @Nullable public String dotComAccessToken;
-  @Nullable public String enterpriseAccessToken;
+  @Deprecated(since = "3.0.6", forRemoval = true)
+  @Nullable
+  public String enterpriseAccessToken;
+
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
   @Nullable public String remoteUrlReplacements;
@@ -35,6 +36,7 @@ public class CodyApplicationService
   @Nullable
   public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
 
+  @Nullable public Boolean isCodyEnabled;
   @Nullable public Boolean isCodyAutoCompleteEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
@@ -60,9 +62,15 @@ public class CodyApplicationService
     return url;
   }
 
+  @Deprecated(since = "3.0.6", forRemoval = true)
   @Nullable
   public String getDotComAccessToken() {
     return dotComAccessToken;
+  }
+
+  @Transient
+  public void setSafeDotComAccessToken(@NotNull String accessToken) {
+    AccessTokenStorage.setApplicationDotComAccessToken(accessToken);
   }
 
   @Nullable
@@ -81,33 +89,33 @@ public class CodyApplicationService
     return remoteUrlReplacements;
   }
 
-  @Override
   @Nullable
   public Search getLastSearch() {
     // TODO
     return null;
   }
 
-  @Override
   @Nullable
+  @Deprecated(since = "3.0.6", forRemoval = true)
   public String getEnterpriseAccessToken() {
-    // configuring enterpriseAccessToken overrides the deprecated accessToken field
-    return StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
+    return enterpriseAccessToken;
   }
 
-  @Override
+  @Transient
+  public void setSafeEnterpriseAccessToken(@NotNull String accessToken) {
+    AccessTokenStorage.setApplicationEnterpriseAccessToken(accessToken);
+  }
+
   public boolean areChatPredictionsEnabled() {
     // TODO
     return false;
   }
 
-  @Override
   public String getCodebase() {
     // TODO
     return null;
   }
 
-  @Nullable
   public String getAnonymousUserId() {
     return anonymousUserId;
   }
@@ -118,6 +126,10 @@ public class CodyApplicationService
 
   public boolean isUrlNotificationDismissed() {
     return isUrlNotificationDismissed;
+  }
+
+  public boolean isCodyEnabled() {
+    return Optional.ofNullable(isCodyEnabled).orElse(false);
   }
 
   public boolean isCodyAutoCompleteEnabled() {
@@ -149,7 +161,6 @@ public class CodyApplicationService
   public void loadState(@NotNull CodyApplicationService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
-    this.accessToken = settings.accessToken;
     this.dotComAccessToken = settings.dotComAccessToken;
     this.enterpriseAccessToken = settings.enterpriseAccessToken;
     this.customRequestHeaders = settings.customRequestHeaders;
@@ -158,6 +169,7 @@ public class CodyApplicationService
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
     this.areCodyCompletionsEnabled = settings.areCodyCompletionsEnabled;
+    this.isCodyEnabled = settings.isCodyEnabled;
     this.isCodyAutoCompleteEnabled = settings.isCodyAutoCompleteEnabled;
     this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;

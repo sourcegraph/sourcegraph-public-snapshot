@@ -197,7 +197,7 @@
         </group>
 
         <group id="CodyEditorActions" icon="/icons/codyLogoSm.svg" popup="true" text="Cody"
-               searchable="false">
+               searchable="false" class="com.sourcegraph.cody.CodyActionGroup">
             <reference ref="cody.downloadAndInstallCodyAction"/>
             <reference ref="cody.runCodyAppAction"/>
             <reference ref="cody.recipe.explainCodeDetailed"/>

@@ -1,8 +1,8 @@
 package com.sourcegraph.config;
 
+import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
-import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
@@ -25,7 +25,12 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javax.swing.*;
+import javax.swing.AbstractButton;
+import javax.swing.ButtonGroup;
+import javax.swing.JComponent;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JRadioButton;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
@@ -33,8 +38,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Supports creating and managing a {@link JPanel} for the Settings Dialog. */
-public class SettingsComponent {
-  private final Project project;
+public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
   private JBTextField urlTextField;
@@ -46,10 +50,9 @@ public class SettingsComponent {
   private JBTextField defaultBranchNameTextField;
   private JBTextField remoteUrlReplacementsTextField;
   private JBCheckBox isUrlNotificationDismissedCheckBox;
+  private JBCheckBox isCodyEnabledCheckBox;
   private JBCheckBox isCodyAutoCompleteEnabledCheckBox;
 
-  private JButton testCodyAppConnectionButton;
-  private JLabel testCodyAppConnectionLabel;
   private ActionLink installLocalAppLink;
   private JLabel installLocalAppComment;
   private ActionLink runLocalAppLink;
@@ -62,8 +65,7 @@ public class SettingsComponent {
     return defaultBranchNameTextField;
   }
 
-  public SettingsComponent(@NotNull Project project) {
-    this.project = project;
+  public SettingsComponent() {
     JPanel userAuthenticationPanel = createAuthenticationPanel();
     JPanel navigationSettingsPanel = createNavigationSettingsPanel();
     JPanel codySettingsPanel = createCodySettingsPanel();
@@ -202,6 +204,7 @@ public class SettingsComponent {
     // Assemble the three main panels String platformName =
     String platformName =
         Optional.ofNullable(System.getProperty("os.name")).orElse("Your platform");
+    @SuppressWarnings("DialogTitleCapitalization")
     String codyAppCommentText =
         isLocalAppPlatformSupported
             ? "Use Sourcegraph through Cody App."
@@ -402,6 +405,17 @@ public class SettingsComponent {
     isUrlNotificationDismissedCheckBox.setSelected(value);
   }
 
+  public boolean isCodyEnabled() {
+    return isCodyEnabledCheckBox.isSelected();
+  }
+
+  public void setCodyEnabled(boolean value) {
+    isCodyEnabledCheckBox.setSelected(value);
+    if (!value) {
+      setCodyAutoCompleteEnabled(false);
+    }
+  }
+
   public boolean isCodyAutoCompleteEnabled() {
     return isCodyAutoCompleteEnabledCheckBox.isSelected();
   }
@@ -442,7 +456,7 @@ public class SettingsComponent {
 
   private void addValidation(
       @NotNull JTextComponent component, @NotNull Supplier<ValidationInfo> validator) {
-    new ComponentValidator(project).withValidator(validator).installOn(component);
+    new ComponentValidator(this).withValidator(validator).installOn(component);
     addDocumentListener(
         component,
         e -> ComponentValidator.getInstance(component).ifPresent(ComponentValidator::revalidate));
@@ -534,13 +548,31 @@ public class SettingsComponent {
 
   @NotNull
   private JPanel createCodySettingsPanel() {
+    //noinspection DialogTitleCapitalization
+    isCodyEnabledCheckBox = new JBCheckBox("Enable Cody");
     isCodyAutoCompleteEnabledCheckBox = new JBCheckBox("Enable Cody autocomplete");
     JPanel codySettingsPanel =
         FormBuilder.createFormBuilder()
-            .addComponent(isCodyAutoCompleteEnabledCheckBox, 10)
+            .addComponent(isCodyEnabledCheckBox, 10)
+            .addTooltip(
+                "Disable this to turn off all AI-based functionality of the plugin, including the Cody chat sidebar and autocomplete")
+            .addComponent(isCodyAutoCompleteEnabledCheckBox, 5)
             .getPanel();
     codySettingsPanel.setBorder(
         IdeBorderFactory.createTitledBorder("Cody Settings", true, JBUI.insetsTop(8)));
+
+    // Disable isCodyAutoCompleteEnabledCheckBox if isCodyEnabledCheckBox is not selected
+    isCodyEnabledCheckBox.addActionListener(
+        e -> {
+          if (!isCodyEnabledCheckBox.isSelected()) {
+            isCodyAutoCompleteEnabledCheckBox.setSelected(false);
+          }
+          isCodyAutoCompleteEnabledCheckBox.setEnabled(isCodyEnabledCheckBox.isSelected());
+        });
+
     return codySettingsPanel;
   }
+
+  @Override
+  public void dispose() {}
 }

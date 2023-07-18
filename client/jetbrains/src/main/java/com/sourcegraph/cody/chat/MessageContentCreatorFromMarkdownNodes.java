@@ -25,7 +25,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
   private final HtmlRenderer htmlRenderer =
-      HtmlRenderer.builder().extensions(List.of(TablesExtension.create())).build();
+      HtmlRenderer.builder()
+          .softbreak("<br />")
+          .extensions(List.of(TablesExtension.create()))
+          .build();
   private final Project project;
   private final JPanel messagePanel;
   private final JPanel parentPanel;

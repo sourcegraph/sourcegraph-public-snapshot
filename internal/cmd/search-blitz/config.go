@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"embed"
 	_ "embed"
+	"io/fs"
 	"strings"
 	"time"
 
@@ -12,6 +13,9 @@ import (
 
 //go:embed queries*.txt
 var queriesFS embed.FS
+
+//go:embed attribution/*.txt
+var attributionFS embed.FS
 
 type Config struct {
 	Groups []*QueryGroupConfig
@@ -23,8 +27,9 @@ type QueryGroupConfig struct {
 }
 
 type QueryConfig struct {
-	Query string
-	Name  string
+	Query   string
+	Snippet string
+	Name    string
 
 	// An unset interval defaults to 1m
 	Interval time.Duration
@@ -63,6 +68,12 @@ func loadQueries(env string) (_ *Config, err error) {
 	}
 
 	var queries []*QueryConfig
+	attributions, err := loadAttributions()
+	if err != nil {
+		return nil, err
+	}
+	queries = append(queries, attributions...)
+
 	var current QueryConfig
 	add := func() {
 		q := &QueryConfig{
@@ -98,4 +109,30 @@ func loadQueries(env string) (_ *Config, err error) {
 			Queries: queries,
 		}},
 	}, err
+}
+
+func loadAttributions() ([]*QueryConfig, error) {
+	var qs []*QueryConfig
+	err := fs.WalkDir(attributionFS, ".", func(path string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+
+		b, err := fs.ReadFile(attributionFS, path)
+		if err != nil {
+			return err
+		}
+
+		// Remove extension and prefix with attr_
+		name := "attr_" + strings.Split(d.Name(), ".")[0]
+
+		qs = append(qs, &QueryConfig{
+			Snippet:   string(b),
+			Name:      name,
+			Protocols: []Protocol{Batch}, // only support batch for attribution
+		})
+
+		return nil
+	})
+	return qs, err
 }

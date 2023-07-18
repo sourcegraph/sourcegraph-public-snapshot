@@ -1,6 +1,6 @@
 import React, { FC, useEffect, useState, useCallback } from 'react'
 
-import { mdiChevronDown } from '@mdi/js'
+import { mdiChevronDown, mdiInformationOutline } from '@mdi/js'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { UserAvatar } from '@sourcegraph/shared/src/components/UserAvatar'
@@ -24,6 +24,7 @@ import {
     Popover,
     Position,
     PopoverOpenEvent,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -120,7 +121,12 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                         <table className="table">
                             <tbody>
                                 <tr>
-                                    <th>Last complete sync</th>
+                                    <th>
+                                        Last complete sync{' '}
+                                        <Tooltip content="Syncs repository permissions from the code host. All users that have access to the repository on the code host will have access on Sourcegraph as well.">
+                                            <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
+                                        </Tooltip>
+                                    </th>
                                     <td>
                                         {permissionsInfo.syncedAt ? (
                                             <Timestamp date={permissionsInfo.syncedAt} />
@@ -128,10 +134,15 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                                             'Never'
                                         )}
                                     </td>
-                                    <td className="text-muted">Updated by repository permissions syncing</td>
+                                    <td className="text-muted">Updated by repository-centric permission sync.</td>
                                 </tr>
                                 <tr>
-                                    <th>Last incremental sync</th>
+                                    <th>
+                                        Last partial sync{' '}
+                                        <Tooltip content="Syncs user permissions from the code host. If a user-centric sync returns this repository as accessible, it is noted here as partial sync. Partial syncs do not show in the list of permission sync jobs below.">
+                                            <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
+                                        </Tooltip>
+                                    </th>
                                     <td>
                                         {permissionsInfo.updatedAt === null ? (
                                             'Never'
@@ -139,7 +150,7 @@ export const RepoSettingsPermissionsPage: FC<RepoSettingsPermissionsPageProps> =
                                             <Timestamp date={permissionsInfo.updatedAt} />
                                         )}
                                     </td>
-                                    <td className="text-muted">Updated by user permissions syncing</td>
+                                    <td className="text-muted">Partial update done by user-centric permission sync.</td>
                                 </tr>
                             </tbody>
                         </table>

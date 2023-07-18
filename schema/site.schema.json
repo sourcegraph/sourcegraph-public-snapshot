@@ -1013,7 +1013,7 @@
     },
     "scim.authToken": {
       "type": "string",
-      "description": "DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "description": "The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
       "default": "",
       "group": "External services"
     },
@@ -2960,6 +2960,11 @@
           "type": "string",
           "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
           "default": "https://gitlab.com/"
+        },
+        "ssoURL": {
+          "type": "string",
+          "description": "An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx",
+          "default": ""
         },
         "clientID": {
           "type": "string",

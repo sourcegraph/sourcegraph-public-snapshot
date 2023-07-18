@@ -4,19 +4,29 @@
 
 ### Added
 
-- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
-- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
-- Auto-growing prompt input [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
-- Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
-- Copy code block button added to editor in the chat message to copy the text to clipboard [#54783](https://github.com/sourcegraph/sourcegraph/pull/54783)
-- Insert at Cursor button added to editor in the chat message to insert the text form the editor to main editor [#54815](https://github.com/sourcegraph/sourcegraph/pull/54815)
-- Added support for multiline autocomplete [#54848](https://github.com/sourcegraph/sourcegraph/pull/54848)
+### Changed
+
+- Store global access token in a safe place [#55052](https://github.com/sourcegraph/sourcegraph/pull/55052)
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [3.0.6]
+
+### Added
+
 - Automatic detection of Cody app status in the settings window [#54955](https://github.com/sourcegraph/sourcegraph/pull/54955)
+- Add "Enable Cody" option to settings [#55004](https://github.com/sourcegraph/sourcegraph/pull/55004)
 
 ### Changed
 
-- Disable summarize recent code changes button if git repository is not available [#54859](https://github.com/sourcegraph/sourcegraph/pull/54859)
-- Get the chat model max tokens value from the instance when able [#54954](https://github.com/sourcegraph/sourcegraph/pull/54954)
+- Disable "summarize recent code changes" button if git repository is not available [#54859](https://github.com/sourcegraph/sourcegraph/pull/54859)
+- Get the chat model max tokens value from the instance when available [#54954](https://github.com/sourcegraph/sourcegraph/pull/54954)
 
 ### Deprecated
 
@@ -25,10 +35,27 @@
 ### Fixed
 
 - Downgraded connection errors for invalid or inaccessible enterprise instances to warnings [#54916](https://github.com/sourcegraph/sourcegraph/pull/54916)
-- Try to log error stacktraces and recover from them, rather than re-throw the exception [#54917](https://github.com/sourcegraph/sourcegraph/pull/54917)
+- Try to log error stack traces and recover from them, rather than re-throw the exception [#54917](https://github.com/sourcegraph/sourcegraph/pull/54917)
 - Show only one informative message in case of invalid access token [#54951](https://github.com/sourcegraph/sourcegraph/pull/54951)
+- Don't display `<br />` tag in the chat message when trying to insert new line in the code block [#55007](https://github.com/sourcegraph/sourcegraph/pull/55007)
 
 ### Security
+
+## [3.0.5]
+
+### Added
+
+- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
+- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
+- Auto-growing prompt input [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
+- Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
+- Copy code block button added to editor in the chat message to copy the text to clipboard [#54783](https://github.com/sourcegraph/sourcegraph/pull/54783)
+- Insert at Cursor button added to editor in the chat message to insert the text form the editor to main editor [#54815](https://github.com/sourcegraph/sourcegraph/pull/54815)
+- Added support for multiline autocomplete [#54848](https://github.com/sourcegraph/sourcegraph/pull/54848)
+
+### Fixed
+
+- Fixed telemetry for Sourcegraph.com [#54885](https://github.com/sourcegraph/sourcegraph/pull/54885)
 
 ## [3.0.4]
 
