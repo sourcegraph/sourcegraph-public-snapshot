@@ -247,32 +247,34 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 	}
 
 	repoConf := conf.Get().Repositories
-	if repoConf != nil && len(repoConf.DeduplicateForks) != 0 {
-		if addr := g.getCachedRepoAddress(repoName); addr != "" {
-			addrForRepoCacheHit.WithLabelValues(userAgent).Inc()
-			return addr
-		}
+	if repoConf == nil || (repoConf != nil && len(repoConf.DeduplicateForks) == 0) {
+		return getRepoAddress(repoName)
+	}
 
-		addrForRepoCacheMiss.WithLabelValues(userAgent).Inc()
+	if addr := g.getCachedRepoAddress(repoName); addr != "" {
+		addrForRepoCacheHit.WithLabelValues(userAgent).Inc()
+		return addr
+	}
 
-		repo, err := g.db.Repos().GetByName(ctx, repoName)
-		// Either the repo was not found or the repo is not a fork. The repo is also not in the
-		// deduplicateforks list, so we do not need to look up a pool repo for this.
-		//
-		// Fallback to regular name based hashing.
-		if err != nil || (repo != nil && !repo.Fork) {
-			return g.withUpdateCache(repoName, getRepoAddress(repoName))
-		}
+	addrForRepoCacheMiss.WithLabelValues(userAgent).Inc()
 
-		poolRepo, err := g.db.GitserverRepos().GetPoolRepo(ctx, repo.Name)
-		if err != nil {
-			logger.Warn("failed to get pool repo (if fork deduplication is enabled this repo may not be colocated on the same shard as the parent / other forks)", log.Error(err))
-			return g.withUpdateCache(repoName, getRepoAddress(repoName))
-		}
+	repo, err := g.db.Repos().GetByName(ctx, repoName)
+	// Either the repo was not found or the repo is not a fork. The repo is also not in the
+	// deduplicateforks list, so we do not need to look up a pool repo for this.
+	//
+	// Fallback to regular name based hashing.
+	if err != nil || (repo != nil && !repo.Fork) {
+		return g.withUpdateCache(repoName, getRepoAddress(repoName))
+	}
 
-		if poolRepo != nil {
-			return g.withUpdateCache(poolRepo.RepoName, getRepoAddress(poolRepo.RepoName))
-		}
+	poolRepo, err := g.db.GitserverRepos().GetPoolRepo(ctx, repo.Name)
+	if err != nil {
+		logger.Warn("failed to get pool repo (if fork deduplication is enabled this repo may not be colocated on the same shard as the parent / other forks)", log.Error(err))
+		return g.withUpdateCache(repoName, getRepoAddress(repoName))
+	}
+
+	if poolRepo != nil {
+		return g.withUpdateCache(poolRepo.RepoName, getRepoAddress(poolRepo.RepoName))
 	}
 
 	return getRepoAddress(repoName)
