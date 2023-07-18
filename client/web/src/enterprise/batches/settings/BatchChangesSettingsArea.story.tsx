@@ -29,8 +29,13 @@ const codeHostsResult = (...hosts: BatchChangesCodeHostFields[]): UserBatchChang
     node: {
         __typename: 'User',
         batchChangesCodeHosts: {
+            __typename: 'BatchChangesCodeHostConnection',
             totalCount: hosts.length,
-            pageInfo: { endCursor: null, hasNextPage: false },
+            pageInfo: {
+                endCursor: null,
+                hasNextPage: false,
+                __typename: 'PageInfo',
+            },
             nodes: hosts,
         },
     },
@@ -60,6 +65,7 @@ export const Overview: Story = () => (
                         result: {
                             data: codeHostsResult(
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: null,
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.com/',
@@ -77,6 +83,7 @@ export const Overview: Story = () => (
                                     },
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: null,
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.mycompany.com/',
@@ -86,6 +93,7 @@ export const Overview: Story = () => (
                                     commitSigningConfiguration: null,
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: null,
                                     externalServiceKind: ExternalServiceKind.GITLAB,
                                     externalServiceURL: 'https://gitlab.com/',
@@ -95,6 +103,7 @@ export const Overview: Story = () => (
                                     commitSigningConfiguration: null,
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(true),
                                     externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                     externalServiceURL: 'https://bitbucket.sgdev.org/',
@@ -104,6 +113,7 @@ export const Overview: Story = () => (
                                     commitSigningConfiguration: null,
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: null,
                                     externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
                                     externalServiceURL: 'https://bitbucket.org/',
@@ -146,6 +156,7 @@ export const ConfigAdded: Story = () => (
                         result: {
                             data: codeHostsResult(
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.com/',
@@ -163,6 +174,7 @@ export const ConfigAdded: Story = () => (
                                     },
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.GITLAB,
                                     externalServiceURL: 'https://gitlab.com/',
@@ -172,6 +184,7 @@ export const ConfigAdded: Story = () => (
                                     commitSigningConfiguration: null,
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                     externalServiceURL: 'https://bitbucket.sgdev.org/',
@@ -181,6 +194,7 @@ export const ConfigAdded: Story = () => (
                                     commitSigningConfiguration: null,
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
                                     externalServiceURL: 'https://bitbucket.org/',
@@ -225,6 +239,7 @@ export const RolloutWindowsConfigurationStory: Story = () => (
                         result: {
                             data: codeHostsResult(
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.com/',
@@ -242,6 +257,7 @@ export const RolloutWindowsConfigurationStory: Story = () => (
                                     },
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.GITLAB,
                                     externalServiceURL: 'https://gitlab.com/',
@@ -251,6 +267,7 @@ export const RolloutWindowsConfigurationStory: Story = () => (
                                     commitSigningConfiguration: null,
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
                                     externalServiceURL: 'https://bitbucket.sgdev.org/',
@@ -260,6 +277,7 @@ export const RolloutWindowsConfigurationStory: Story = () => (
                                     commitSigningConfiguration: null,
                                 },
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     credential: sshCredential(false),
                                     externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
                                     externalServiceURL: 'https://bitbucket.org/',

@@ -130,6 +130,16 @@ export const Overview: Story = () => (
     </WebStory>
 )
 
+export const NoItems: Story = () => (
+    <WebStory>
+        {() => (
+            <MockedTestProvider link={new WildcardMockLink([ROLLOUT_WINDOWS_CONFIGURATION_MOCK, createMock()])}>
+                <BatchChangesSiteConfigSettingsPage />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+
 export const ConfigAdded: Story = () => (
     <WebStory>
         {() => (
