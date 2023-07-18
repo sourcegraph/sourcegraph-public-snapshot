@@ -37,8 +37,13 @@ const createMock = (...hosts: BatchChangesCodeHostFields[]): WildcardMockedRespo
     result: {
         data: {
             batchChangesCodeHosts: {
+                __typename: 'BatchChangesCodeHostConnection',
                 totalCount: hosts.length,
-                pageInfo: { endCursor: null, hasNextPage: false },
+                pageInfo: {
+                    endCursor: null,
+                    hasNextPage: false,
+                    __typename: 'PageInfo',
+                },
                 nodes: hosts,
             },
         },
@@ -51,64 +56,72 @@ export const Overview: Story = () => (
         {() => (
             <MockedTestProvider
                 link={
-                    new WildcardMockLink([
-                        ROLLOUT_WINDOWS_CONFIGURATION_MOCK,
-                        createMock(
-                            {
-                                credential: null,
-                                externalServiceKind: ExternalServiceKind.GITHUB,
-                                externalServiceURL: 'https://github.com/',
-                                requiresSSH: false,
-                                requiresUsername: false,
-                                supportsCommitSigning: true,
-                                commitSigningConfiguration: {
-                                    __typename: 'GitHubApp',
-                                    id: '123',
-                                    appID: 123,
-                                    name: 'Sourcegraph Commit Signing',
-                                    appURL: 'https://github.com/apps/sourcegraph-commit-signing',
-                                    baseURL: 'https://github.com/',
-                                    logo: 'https://github.com/identicons/app/app/commit-testing-local',
+                    new WildcardMockLink(
+                        [
+                            ROLLOUT_WINDOWS_CONFIGURATION_MOCK,
+                            createMock(
+                                {
+                                    __typename: 'BatchChangesCodeHost',
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.GITHUB,
+                                    externalServiceURL: 'https://github.com/',
+                                    requiresSSH: false,
+                                    requiresUsername: false,
+                                    supportsCommitSigning: true,
+                                    commitSigningConfiguration: {
+                                        __typename: 'GitHubApp',
+                                        id: '123',
+                                        appID: 123,
+                                        name: 'Sourcegraph Commit Signing',
+                                        appURL: 'https://github.com/apps/sourcegraph-commit-signing',
+                                        baseURL: 'https://github.com/',
+                                        logo: 'https://github.com/identicons/app/app/commit-testing-local',
+                                    },
                                 },
-                            },
-                            {
-                                credential: null,
-                                externalServiceKind: ExternalServiceKind.GITHUB,
-                                externalServiceURL: 'https://github.mycompany.com/',
-                                requiresSSH: false,
-                                requiresUsername: false,
-                                supportsCommitSigning: true,
-                                commitSigningConfiguration: null,
-                            },
-                            {
-                                credential: null,
-                                externalServiceKind: ExternalServiceKind.GITLAB,
-                                externalServiceURL: 'https://gitlab.com/',
-                                requiresSSH: false,
-                                requiresUsername: false,
-                                supportsCommitSigning: false,
-                                commitSigningConfiguration: null,
-                            },
-                            {
-                                credential: null,
-                                externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
-                                externalServiceURL: 'https://bitbucket.sgdev.org/',
-                                requiresSSH: true,
-                                requiresUsername: false,
-                                supportsCommitSigning: false,
-                                commitSigningConfiguration: null,
-                            },
-                            {
-                                credential: null,
-                                externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
-                                externalServiceURL: 'https://bitbucket.org/',
-                                requiresSSH: false,
-                                requiresUsername: true,
-                                supportsCommitSigning: false,
-                                commitSigningConfiguration: null,
-                            }
-                        ),
-                    ])
+                                {
+                                    __typename: 'BatchChangesCodeHost',
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.GITHUB,
+                                    externalServiceURL: 'https://github.mycompany.com/',
+                                    requiresSSH: false,
+                                    requiresUsername: false,
+                                    supportsCommitSigning: true,
+                                    commitSigningConfiguration: null,
+                                },
+                                {
+                                    __typename: 'BatchChangesCodeHost',
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.GITLAB,
+                                    externalServiceURL: 'https://gitlab.com/',
+                                    requiresSSH: false,
+                                    requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
+                                },
+                                {
+                                    __typename: 'BatchChangesCodeHost',
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETSERVER,
+                                    externalServiceURL: 'https://bitbucket.sgdev.org/',
+                                    requiresSSH: true,
+                                    requiresUsername: false,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
+                                },
+                                {
+                                    __typename: 'BatchChangesCodeHost',
+                                    credential: null,
+                                    externalServiceKind: ExternalServiceKind.BITBUCKETCLOUD,
+                                    externalServiceURL: 'https://bitbucket.org/',
+                                    requiresSSH: false,
+                                    requiresUsername: true,
+                                    supportsCommitSigning: false,
+                                    commitSigningConfiguration: null,
+                                }
+                            ),
+                        ],
+                        { addTypename: true }
+                    )
                 }
             >
                 <BatchChangesSiteConfigSettingsPage />
@@ -126,6 +139,7 @@ export const ConfigAdded: Story = () => (
                         ROLLOUT_WINDOWS_CONFIGURATION_MOCK,
                         createMock(
                             {
+                                __typename: 'BatchChangesCodeHost',
                                 credential: {
                                     id: '123',
                                     isSiteCredential: true,
@@ -148,6 +162,7 @@ export const ConfigAdded: Story = () => (
                                 },
                             },
                             {
+                                __typename: 'BatchChangesCodeHost',
                                 credential: {
                                     id: '123',
                                     isSiteCredential: true,
@@ -162,6 +177,7 @@ export const ConfigAdded: Story = () => (
                                 commitSigningConfiguration: null,
                             },
                             {
+                                __typename: 'BatchChangesCodeHost',
                                 credential: {
                                     id: '123',
                                     isSiteCredential: true,
@@ -176,6 +192,7 @@ export const ConfigAdded: Story = () => (
                                 commitSigningConfiguration: null,
                             },
                             {
+                                __typename: 'BatchChangesCodeHost',
                                 credential: {
                                     id: '123',
                                     isSiteCredential: true,
