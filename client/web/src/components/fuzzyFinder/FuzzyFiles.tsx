@@ -186,7 +186,7 @@ export class FuzzyFiles extends FuzzyQuery {
         private readonly repoRevision: React.MutableRefObject<FuzzyRepoRevision>,
         private readonly userHistory: UserHistory
     ) {
-        super(onNamesChanged, emptyFuzzyCache)
+        super(onNamesChanged, emptyFuzzyCache, { transformer: lineNumberTransformer })
     }
 
     /* override */ protected searchValues(): SearchValue[] {
@@ -202,7 +202,7 @@ export class FuzzyFiles extends FuzzyQuery {
 
     /* override */ protected rawQuery(query: string): string {
         const repoFilter = this.isGlobalFiles ? '' : fuzzyRepoRevisionSearchFilter(this.repoRevision.current)
-        return `${repoFilter}type:path count:100 ${query}`
+        return `${repoFilter}type:path count:100 ${parseFuzzyFileQuery(query).filename}`
     }
 
     /* override */ protected async handleRawQueryPromise(query: string): Promise<PersistableQueryResult[]> {
