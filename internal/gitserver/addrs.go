@@ -174,9 +174,9 @@ var currentTime = func() time.Time { return time.Now() }
 
 type repoAddressCachedItem struct {
 	address string
-	// lastAccessed is the time when this item was last read and is used by the consumer of the cached
-	// item to decide whether they would like to treat it as an expired item or not.
-	lastAccessed time.Time
+	// createdAt is the time when this item written to the cache and can be used by the consumer of
+	// the cached item to decide whether they would like to treat it as an expired item or not.
+	createdAt time.Time
 }
 
 // repoAddressCache is is used to cache the gitserver shard address of a repo. It is safe for
@@ -189,26 +189,12 @@ type repoAddressCache struct {
 	cache map[api.RepoName]repoAddressCachedItem
 }
 
-// Read returns the item from cache or else returns nil if it does not exist. If it exists, it also
-// updates the value of lastRead to the current time. This means, that if the item is already stored
-// in the cache it may look like (T is the timestamp):
-//
-// {address: "127.0.0.1:8080", lastRead: T}
-//
-// A call to Read at T+1 second will return the above item but also update the item in the cache to
-// then look like:
-//
-// {address: "127.0.0.1:8080", lastRead: T+1}
+// Read returns the item from cache or else returns nil if it does not exist.
 func (rc *repoAddressCache) Read(name api.RepoName) *repoAddressCachedItem {
-	rc.mu.Lock()
-	defer rc.mu.Unlock()
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
 
 	if item, ok := rc.cache[name]; ok {
-		rc.cache[name] = repoAddressCachedItem{
-			address:      item.address,
-			lastAccessed: currentTime(),
-		}
-
 		return &item
 	}
 
@@ -219,12 +205,13 @@ func (rc *repoAddressCache) Read(name api.RepoName) *repoAddressCachedItem {
 // the cache if an entry already exists in the cache.
 func (rc *repoAddressCache) Write(name api.RepoName, address string) {
 	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
 	if rc.cache == nil {
 		rc.cache = make(map[api.RepoName]repoAddressCachedItem)
 	}
 
-	rc.cache[name] = repoAddressCachedItem{address: address, lastAccessed: currentTime()}
-	rc.mu.Unlock()
+	rc.cache[name] = repoAddressCachedItem{address: address, createdAt: currentTime()}
 }
 
 type GitserverAddresses struct {
@@ -315,7 +302,7 @@ func (g *GitserverAddresses) getCachedRepoAddress(repoName api.RepoName) string 
 		return ""
 	}
 
-	if time.Since(item.lastAccessed) > time.Duration(15*time.Minute) {
+	if time.Since(item.createdAt) > time.Duration(15*time.Minute) {
 		return ""
 	}
 

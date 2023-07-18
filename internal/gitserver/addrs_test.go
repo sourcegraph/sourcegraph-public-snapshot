@@ -3,7 +3,6 @@ package gitserver
 import (
 	"context"
 	"testing"
-	"time"
 
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -154,33 +153,23 @@ func TestRepoAddressCache(t *testing.T) {
 	item := repoAddrCache.Read("foo")
 	require.Nil(t, item)
 
-	originalCurrentTime := currentTime
-	t.Cleanup(func() { currentTime = originalCurrentTime })
-
-	// Mock currentTime. Expect this when the value is read.
-	expectedFirstWrite := time.Date(2023, 01, 01, 23, 00, 00, 0, time.UTC)
-	currentTime = func() time.Time {
-		return expectedFirstWrite
-	}
-
 	// Now insert an item to the cache.
 	repoName := api.RepoName("github.com/foo/bar")
 	addr := "127.0.0.1:3080"
 	repoAddrCache.Write(repoName, addr)
 
-	// Increment the clock for a subsequent read.
-	currentTime = func() time.Time {
-		return time.Date(2023, 01, 01, 23, 30, 00, 1, time.UTC)
-	}
+	cachedItem := repoAddrCache.cache[repoName]
 
 	item = repoAddrCache.Read(repoName)
 	require.NotNil(t, item)
 	require.Equal(t, addr, item.address)
-	require.Equal(t, expectedFirstWrite, item.lastAccessed)
+	require.Equal(t, cachedItem.createdAt, item.createdAt)
 
-	// No verify that the item in the cache has the updated timestamp after we Read the item.
+	// Now verify that the item in the cache when read again is the same.
 	item2 := repoAddrCache.cache[repoName]
-	require.Greater(t, item2.lastAccessed, item.lastAccessed)
+	require.NotNil(t, item2)
+	require.Equal(t, item.address, item2.address)
+	require.Equal(t, item.createdAt, item2.createdAt)
 }
 
 func TestWithUpdateCache(t *testing.T) {
