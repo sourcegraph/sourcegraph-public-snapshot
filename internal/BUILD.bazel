@@ -13,5 +13,6 @@ buf_breaking_test(
         "//internal/searcher/v1:v1_proto",
         "//internal/symbols/v1:v1_proto",
         "//internal/gitserver/v1:v1_proto",
+        "//internal/grpc/testprotos/news/v1:news_proto",
     ],  # The Protobuf library
 )
