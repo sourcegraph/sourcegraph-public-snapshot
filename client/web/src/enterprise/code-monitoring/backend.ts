@@ -226,6 +226,7 @@ export const fetchCodeMonitor = (id: string): Observable<FetchCodeMonitorResult>
                     owner {
                         id
                         namespaceName
+                        url
                     }
                     enabled
                     actions {

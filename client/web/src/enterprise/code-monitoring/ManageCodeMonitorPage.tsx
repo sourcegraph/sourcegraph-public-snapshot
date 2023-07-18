@@ -54,6 +54,11 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
         enabled: true,
         trigger: { id: '', query: '' },
         actions: { nodes: [] },
+        owner: {
+            id: '',
+            namespaceName: '',
+            url: '',
+        },
     })
 
     const codeMonitorOrError = useObservable(
