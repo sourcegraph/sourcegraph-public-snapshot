@@ -1199,7 +1199,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 }
 
-func TestGetPoolRepo(t *testing.T) {
+func TestGitserverRepos_GetPoolRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
