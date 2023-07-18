@@ -166,12 +166,6 @@ func (t *testConnAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
 var _ ClientSource = &testGitserverConns{}
 var _ AddressWithClient = &testConnAndErr{}
 
-// curentTime returns the current time and exists as a function to mock time.Now() in tests.
-//
-// If you're using it to mock the current time in tests, make sure to restore it as part of test
-// cleanup.
-var currentTime = func() time.Time { return time.Now() }
-
 type repoAddressCachedItem struct {
 	address string
 	// createdAt is the time when this item written to the cache and can be used by the consumer of
@@ -211,7 +205,7 @@ func (rc *repoAddressCache) Write(name api.RepoName, address string) {
 		rc.cache = make(map[api.RepoName]repoAddressCachedItem)
 	}
 
-	rc.cache[name] = repoAddressCachedItem{address: address, createdAt: currentTime()}
+	rc.cache[name] = repoAddressCachedItem{address: address, createdAt: time.Now()}
 }
 
 type GitserverAddresses struct {
@@ -230,10 +224,10 @@ type GitserverAddresses struct {
 // AddrForRepo returns the gitserver address to use for the given repo name.
 // TODO: Insert link to doc with decision tree.
 func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger, userAgent string, repoName api.RepoName) string {
-	// TODO: Check if this can be passed down as an arg instead.
-	// logger := log.Scoped("GitserverAddresses.AddrForRepo", "logger to scoped to ").With(
-	// 	log.String("repoName", string(repoName)),
-	// )
+	if logger == nil {
+		logger = log.Scoped("GitserverAddresses.AddrForRepo", "a logger scoped to GitserverAddresses.AddrForRepo")
+		logger.Warn("a nil logger being passed in the args, but handled gracefully, please investigate source of nil logger")
+	}
 
 	logger = logger.With(log.String("repoName", string(repoName)))
 
@@ -411,6 +405,7 @@ func (a *atomicGitServerConns) initOnce() {
 
 func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	after := GitserverConns{
+		logger:             a.logger,
 		GitserverAddresses: NewGitserverAddressesFromConf(a.db, cfg),
 		grpcConns:          nil, // to be filled in
 	}
