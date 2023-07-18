@@ -539,7 +539,7 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtyp
 }
 
 func newGitHubClient() (httpcli.Doer, error) {
-	cf := httpcli.ExternalClientFactory
+	cf := httpcli.UncachedExternalClientFactory
 
 	var certs []string
 	tlsExternalConfig := httpcli.TLSExternalConfig()
