@@ -13,8 +13,6 @@ type GetPreciseContextInput struct {
 }
 
 type PreciseContextInput struct {
-	// The symbol names to search for
-	Symbols *[]string
 	// The repository the user is in
 	Repository string
 	// The commit of the repository the user is in

@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -54,9 +56,17 @@ func newService(
 const (
 	maximumIndexesPerMonikerSearch = 500
 	hunkCacheSize                  = 1000
+	serviceObserverThreshold       = time.Second
 )
 
-func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) ([]*types.PreciseContext, error) {
+func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) (_ []*types.PreciseContext, err error) {
+	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getPreciseContext, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.String("filename", args.Input.Repository),
+		attribute.String("content", args.Input.ActiveFileContent),
+		attribute.String("commitID", args.Input.CommitID),
+	}})
+	defer endObservation()
+
 	// TODO: s.operations.getPreciseContext.With(ctx, ...)
 
 	filename := args.Input.ActiveFile
@@ -72,6 +82,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	if err != nil {
 		return nil, err
 	}
+	trace.AddEvent("codenavSvc.GetClosestDumpsForBlob", attribute.Int("numDumps", len(uploads)))
 	if len(uploads) == 0 {
 		return nil, nil
 	}
@@ -106,12 +117,14 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		return nil, err
 	}
 
+	trace.AddEvent("contextSvc.getSCIPDocumentByContent", attribute.String("filename", filename))
 	symbolNameMap := map[string]struct{}{}
 	for _, occurrence := range syntectDocument.Occurrences {
 		symbolNameMap[occurrence.Symbol] = struct{}{}
 	}
 	symbolNames := make([]string, 0, len(symbolNameMap))
 	for symbolName := range symbolNameMap {
+		trace.AddEvent("symbolNameMap", attribute.String("symbolName", symbolName))
 		symbolNames = append(symbolNames, symbolName)
 	}
 	sort.Strings(symbolNames)
@@ -146,12 +159,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				if !strings.HasSuffix(ex.DescriptorSuffix, scipName.DescriptorSuffix) {
 					continue
 				}
+				trace.AddEvent(
+					"scipNames DescriptorSuffix or DescriptorSuffix",
+					attribute.String("DescriptorSuffix", ex.DescriptorSuffix),
+					attribute.String("DescriptorSuffix", scipName.DescriptorSuffix),
+				)
 
 				symbolNames = append(symbolNames, scipName)
 			}
 
 			if len(symbolNames) > 20 {
 				fmt.Printf("TOO MANY RESULTS FOR %q\n", syntectName)
+				trace.AddEvent("TOO MANY RESULTS", attribute.String("syntectName", syntectName))
 				symbolNames = nil
 			}
 
@@ -205,7 +224,13 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				symbolName:  ident,
 				location:    ul,
 			})
-			// }
+
+			trace.AddEvent(
+				"preciseDataList",
+				attribute.String("syntectName", syntectName),
+				attribute.String("symbolName", ident),
+			)
+
 		}
 	}
 
@@ -289,6 +314,14 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 						Text:              snippet,
 						FilePath:          l.Path,
 					})
+
+					trace.AddEvent(
+						"preciseResponse",
+						attribute.String("symbolName", pd.symbolName),
+						attribute.String("syntectDescriptor", pd.syntectName),
+						attribute.String("repository", l.Dump.RepositoryName),
+						attribute.String("filePath", l.Path),
+					)
 				}
 			}
 		}

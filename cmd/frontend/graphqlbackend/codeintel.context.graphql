@@ -10,10 +10,6 @@ The input required to fetch the most relevant SCIP symbols.
 """
 input PreciseContextInput {
     """
-    The list of symbols to consider.
-    """
-    symbols: [String!]
-    """
     The repository name.
     """
     repository: String!
