@@ -146,7 +146,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 			recordingCommandFactory.Disable()
 			return
 		}
-		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos), recordingConf.Size)
+		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos, recordingConf.IgnoredGitCommands), recordingConf.Size)
 	})
 
 	gitserver := server.Server{
@@ -615,9 +615,17 @@ func methodSpecificUnaryInterceptor(method string, next grpc.UnaryServerIntercep
 	}
 }
 
+var defaultIgnoredGitCommands = []string{
+	"show",
+	"rev-parse",
+	"log",
+	"diff",
+	"ls-tree",
+}
+
 // recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
 // for a particular repository.
-func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
+func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.ShouldRecordFunc {
 	// empty repos, means we should never record since there is nothing to match on
 	if len(repos) == 0 {
 		return func(ctx context.Context, c *exec.Cmd) bool {
@@ -625,14 +633,16 @@ func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
 		}
 	}
 
-	// we won't record any git commands with these commands since they are considered to be not destructive
-	ignoredGitCommands := map[string]struct{}{
-		"show":      {},
-		"rev-parse": {},
-		"log":       {},
-		"diff":      {},
-		"ls-tree":   {},
+	if len(ignoredGitCommands) == 0 {
+		ignoredGitCommands = append(ignoredGitCommands, defaultIgnoredGitCommands...)
 	}
+
+	// we won't record any git commands with these commands since they are considered to be not destructive
+	var ignoredGitCommandsMap = make(map[string]struct{}, len(ignoredGitCommands))
+	for _, command := range ignoredGitCommands {
+		ignoredGitCommandsMap[command] = struct{}{}
+	}
+
 	return func(ctx context.Context, cmd *exec.Cmd) bool {
 		base := filepath.Base(cmd.Path)
 		if base != "git" {
@@ -654,7 +664,7 @@ func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
 		// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
 		// git -c "protocol.version=2" remote show
 		for _, arg := range cmd.Args {
-			if _, ok := ignoredGitCommands[arg]; ok {
+			if _, ok := ignoredGitCommandsMap[arg]; ok {
 				return false
 			}
 		}
