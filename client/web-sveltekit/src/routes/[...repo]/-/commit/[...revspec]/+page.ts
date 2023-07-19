@@ -1,5 +1,5 @@
 import { isErrorLike } from '$lib/common'
-import { fetchRepoCommit, queryRepositoryComparisonFileDiffs } from '$lib/loader/commits'
+import { fetchRepoCommit, queryRepositoryComparisonFileDiffs } from '$lib/repo/api/commits'
 
 import type { PageLoad } from './$types'
 
@@ -19,11 +19,9 @@ export const load: PageLoad = ({ parent, params }) => {
     })
 
     return {
-        commit: {
-            deferred: commit.then(result => result?.commit ?? null),
-        },
-        diff: {
-            deferred: commit.then(result => {
+        deferred: {
+            commit: commit.then(result => result?.commit ?? null),
+            diff: commit.then(result => {
                 if (!result?.commit?.oid || !result?.commit.parents[0]?.oid) {
                     return null
                 }

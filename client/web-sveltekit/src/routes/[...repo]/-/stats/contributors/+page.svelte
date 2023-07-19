@@ -19,7 +19,7 @@
         ['All time', ''],
     ]
 
-    const { pending, latestValue: contributors, set } = createPromiseStore<typeof data.deferred.contributors>()
+    const { pending, latestValue: contributors, set } = createPromiseStore<PageData['deferred']['contributors']>()
     $: set(data.deferred.contributors)
 
     // We want to show stale contributors data when the user navigates to
