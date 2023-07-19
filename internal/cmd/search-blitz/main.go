@@ -52,12 +52,12 @@ func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 		return nil
 	}
 
-	loopSearch := func(ctx context.Context, c genericClient, group string, qc *QueryConfig) {
+	loopSearch := func(ctx context.Context, c genericClient, qc *QueryConfig) {
 		if qc.Interval == 0 {
 			qc.Interval = time.Minute
 		}
 
-		log := log15.New("group", group, "name", qc.Name, "query", qc.Query, "type", c.clientType())
+		log := log15.New("name", qc.Name, "query", qc.Query, "type", c.clientType())
 
 		// Randomize start to a random time in the initial interval so our
 		// queries aren't all scheduled at the same time.
@@ -90,10 +90,10 @@ func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 
 				tookSeconds, firstResultSeconds := m.took.Seconds(), m.firstResult.Seconds()
 
-				tsv.Log(group, qc.Name, c.clientType(), m.trace, m.matchCount, tookSeconds, firstResultSeconds)
-				durationSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(tookSeconds)
-				firstResultSearchSeconds.WithLabelValues(group, qc.Name, c.clientType()).Observe(firstResultSeconds)
-				matchCount.WithLabelValues(group, qc.Name, c.clientType()).Set(float64(m.matchCount))
+				tsv.Log(qc.Name, c.clientType(), m.trace, m.matchCount, tookSeconds, firstResultSeconds)
+				durationSearchSeconds.WithLabelValues(qc.Name, c.clientType()).Observe(tookSeconds)
+				firstResultSearchSeconds.WithLabelValues(qc.Name, c.clientType()).Observe(firstResultSeconds)
+				matchCount.WithLabelValues(qc.Name, c.clientType()).Set(float64(m.matchCount))
 			}
 
 			select {
@@ -104,7 +104,7 @@ func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 		}
 	}
 
-	scheduleQuery := func(ctx context.Context, group string, qc *QueryConfig) {
+	scheduleQuery := func(ctx context.Context, qc *QueryConfig) {
 		if len(qc.Protocols) == 0 {
 			qc.Protocols = allProtocols
 		}
@@ -114,15 +114,13 @@ func run(ctx context.Context, wg *sync.WaitGroup, env string) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				loopSearch(ctx, client, group, qc)
+				loopSearch(ctx, client, qc)
 			}()
 		}
 	}
 
-	for _, group := range config.Groups {
-		for _, qc := range group.Queries {
-			scheduleQuery(ctx, group.Name, qc)
-		}
+	for _, qc := range config.Queries {
+		scheduleQuery(ctx, qc)
 	}
 }
 

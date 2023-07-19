@@ -1,39 +1,40 @@
 <script lang="ts">
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: branches = asStore(data.branches.deferred)
-    $: defaultBranch = !$branches.loading && $branches.data ? $branches.data.defaultBranch : null
-    $: activeBranches = !$branches.loading && $branches.data ? $branches.data.activeBranches : null
+    const { pending, value: branches, set } = createPromiseStore<typeof data.branches.deferred>()
+    $: set(data.branches.deferred)
+    $: defaultBranch = $branches?.defaultBranch
+    $: activeBranches = $branches?.activeBranches
 </script>
 
-{#if $branches.loading}
+{#if $pending}
     <LoadingSpinner />
-{:else if $branches.data}
-    {#if defaultBranch}
-        <table class="mb-3">
-            <thead><tr><th colspan="3">Default branch</th></tr></thead>
-            <tbody>
-                <GitReference ref={defaultBranch} />
-            </tbody>
-        </table>
-    {/if}
+{/if}
 
-    {#if activeBranches && activeBranches.length > 0}
-        <table>
-            <thead><tr><th colspan="3">Active branches</th></tr></thead>
-            <tbody>
-                {#each activeBranches as branch (branch.id)}
-                    <GitReference ref={branch} />
-                {/each}
-            </tbody>
-        </table>
-    {/if}
+{#if defaultBranch}
+    <table class="mb-3">
+        <thead><tr><th colspan="3">Default branch</th></tr></thead>
+        <tbody>
+            <GitReference ref={defaultBranch} />
+        </tbody>
+    </table>
+{/if}
+
+{#if activeBranches && activeBranches.length > 0}
+    <table>
+        <thead><tr><th colspan="3">Active branches</th></tr></thead>
+        <tbody>
+            {#each activeBranches as branch (branch.id)}
+                <GitReference ref={branch} />
+            {/each}
+        </tbody>
+    </table>
 {/if}
 
 <style lang="scss">

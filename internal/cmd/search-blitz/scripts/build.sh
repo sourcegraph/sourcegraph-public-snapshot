@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-pushd "$(dirname "${BASH_SOURCE[0]}")/../../../.." >/dev/null
+pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 if [ -z "$1" ]; then
   echo "USAGE $0 VERSION"
@@ -11,8 +11,9 @@ fi
 
 set -x
 
+CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o searchblitz .
+
 docker build \
-  -f ./internal/cmd/search-blitz/Dockerfile \
   --platform linux/amd64 \
   --build-arg COMMIT_SHA="$(git rev-parse HEAD)" \
   -t "us.gcr.io/sourcegraph-dev/search-blitz:$1" \

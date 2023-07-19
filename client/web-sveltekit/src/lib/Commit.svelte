@@ -3,9 +3,9 @@
 
     import type { GitCommitFields } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
-    import { getRelativeTime } from '$lib/relativeTime'
     import { currentDate as now } from '$lib/stores'
     import UserAvatar from '$lib/UserAvatar.svelte'
+    import { getRelativeTime } from '$lib/utils'
 
     export let commit: GitCommitFields
     export let alwaysExpanded: boolean = false

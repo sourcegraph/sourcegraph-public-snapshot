@@ -226,7 +226,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 
 		// Record the number and disk usage used of repos that should
 		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr := s.addrForRepo(name, gitServerAddrs)
+		addr := s.addrForRepo(ctx, name, gitServerAddrs)
 
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++

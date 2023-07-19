@@ -11,11 +11,12 @@ exports_files(srcs = ["eslint-report-test.sh"])
 write_source_files(
     name = "write_all_generated",
     additional_update_targets = [
-        "//lib/codeintel/lsif/protocol:write_symbol_kind",
-        "//lib/codeintel/lsif/protocol:write_symbol_tag",
-        "//internal/batches/search/syntax:write_token_type",
+        "//cmd/cody-gateway/internal/dotcom:write_genql_yaml",
+        "//doc/admin/observability:write_monitoring_docs",
         "//doc/cli/references:write_doc_files",
         "//enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
-        "//cmd/cody-gateway/internal/dotcom:write_genql_yaml",
+        "//internal/batches/search/syntax:write_token_type",
+        "//lib/codeintel/lsif/protocol:write_symbol_kind",
+        "//lib/codeintel/lsif/protocol:write_symbol_tag",
     ],
 )
