@@ -8,14 +8,20 @@
     import { NODE_LIMIT } from '$lib/repo/api/tree'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: treeEntries = asStore(data.fileTree.deferred.then(({ values }) => values))
-    $: commits = asStore(data.commits.deferred)
+    const { value: treeOrError, set: setTree } = createPromiseStore<typeof data.fileTree.deferred>()
+    const {
+        pending: loadingCommits,
+        value: commits,
+        set: setCommits,
+    } = createPromiseStore<typeof data.commits.deferred>()
+    $: setTree(data.fileTree.deferred)
+    $: setCommits(data.commits.deferred)
 </script>
 
 {#if !$sidebarOpen}
@@ -32,10 +38,10 @@
         </p>
     {/if}
 
-    {#if !$treeEntries.loading && $treeEntries.data}
+    {#if $treeOrError && !isErrorLike($treeOrError)}
         <h3>Files and directories</h3>
         <ul class="files">
-            {#each $treeEntries.data as entry}
+            {#each $treeOrError.values as entry}
                 <li>
                     {#if entry !== NODE_LIMIT}
                         <a
@@ -53,10 +59,10 @@
 
     <h3 class="mt-3">Changes</h3>
     <ul class="commits">
-        {#if $commits.loading}
+        {#if $loadingCommits}
             <LoadingSpinner />
-        {:else if $commits.data}
-            {#each $commits.data as commit (commit.url)}
+        {:else if $commits}
+            {#each $commits as commit (commit.url)}
                 <li><Commit {commit} /></li>
             {/each}
         {/if}
