@@ -826,6 +826,12 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                         </li>
                         <li>
                             <strong>Repositories</strong>: Read
+                            <ul>
+                                <li>
+                                    To enable repository permissions syncing, <strong>Repositories</strong>: Admin is
+                                    required.
+                                </li>
+                            </ul>
                         </li>
                     </ul>
                 </li>
