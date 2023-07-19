@@ -329,13 +329,6 @@ func addrForKey(key string, addrs []string) string {
 }
 
 type GitserverConns struct {
-	// TODO: The embedding here makes it confusing while reading this code. I see little benefit in
-	// embedding it instead of declaring it as an attribute apart from a minor syntactic benefit at
-	// the cost of code navigability.
-	//
-	// Let's convert this into an attribute in a follow up PR.
-	//
-	// https://github.com/sourcegraph/sourcegraph/issues/55077
 	GitserverAddresses
 
 	logger log.Logger

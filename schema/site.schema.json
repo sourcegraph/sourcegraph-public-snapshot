@@ -866,7 +866,7 @@
       "properties": {
         "deduplicateForks": {
           "type": "array",
-          "description": "A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver",
+          "description": "EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver",
           "items": {
             "type": "string"
           },
