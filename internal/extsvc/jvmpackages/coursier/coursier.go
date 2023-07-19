@@ -166,13 +166,16 @@ func (c *CoursierHandle) runCoursierCommand(ctx context.Context, config *schema.
 	}})
 	defer endObservation(1, observation.Args{})
 
-	cmd := exec.CommandContext(ctx, CoursierBinary, args...)
+	arguments := args
+
 	if config.Maven.Credentials != "" {
 		lines := strings.Split(config.Maven.Credentials, "\n")
 		for _, line := range lines {
-			cmd.Args = append(cmd.Args, "--credentials", strings.TrimSpace(line))
+			arguments = append(arguments, "--credentials", strings.TrimSpace(line))
 		}
 	}
+	cmd := exec.CommandContext(ctx, CoursierBinary, arguments...)
+
 	if len(config.Maven.Repositories) > 0 {
 		cmd.Env = append(
 			cmd.Env,
