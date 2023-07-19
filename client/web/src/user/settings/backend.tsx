@@ -198,5 +198,8 @@ function createEvent(event: string, eventProperties?: unknown, publicArgument?: 
         deviceID: eventLogger.getDeviceID(),
         eventID: eventLogger.getEventID(),
         insertID: eventLogger.getInsertID(),
+        client: eventLogger.getClient(),
+        connectedSiteID: window.context?.siteID,
+        hashedLicenseKey: window.context?.hashedLicenseKey,
     }
 }
