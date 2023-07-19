@@ -1,8 +1,6 @@
 package conf
 
-import (
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-)
+import "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 
 func HasExternalAuthProvider(c conftypes.SiteConfigQuerier) bool {
 	for _, p := range c.SiteConfig().AuthProviders {
