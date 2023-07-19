@@ -1,7 +1,6 @@
 package conf
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
@@ -12,16 +11,4 @@ func HasExternalAuthProvider(c conftypes.SiteConfigQuerier) bool {
 		}
 	}
 	return false
-}
-
-func GetDeduplicatedForksIndex() collections.Set[string] {
-	index := collections.NewSet[string]()
-
-	repoConf := Get().Repositories
-	if repoConf == nil {
-		return index
-	}
-
-	index.Add(repoConf.DeduplicateForks...)
-	return index
 }
