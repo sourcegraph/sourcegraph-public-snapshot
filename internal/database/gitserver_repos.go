@@ -413,7 +413,7 @@ func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types
 	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByIDQueryFmtstr, id)))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &errGitserverRepoNotFound{}
+			return nil, &ErrGitserverRepoNotFound{}
 		}
 		return nil, err
 	}
@@ -446,7 +446,7 @@ func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (
 	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByNameQueryFmtstr, name)))
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &errGitserverRepoNotFound{}
+			return nil, &ErrGitserverRepoNotFound{}
 		}
 		return nil, err
 	}
@@ -476,10 +476,10 @@ LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
 WHERE r.name = %s
 `
 
-type errGitserverRepoNotFound struct{}
+type ErrGitserverRepoNotFound struct{}
 
-func (err *errGitserverRepoNotFound) Error() string { return "gitserver repo not found" }
-func (errGitserverRepoNotFound) NotFound() bool     { return true }
+func (err *ErrGitserverRepoNotFound) Error() string { return "gitserver repo not found" }
+func (ErrGitserverRepoNotFound) NotFound() bool     { return true }
 
 const getByNamesQueryTemplate = `
 SELECT

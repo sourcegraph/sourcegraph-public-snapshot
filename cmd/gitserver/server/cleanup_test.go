@@ -504,7 +504,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		if strings.Contains(string(name), "repo-exists") {
 			return &types.GitserverRepo{}, nil
 		} else {
-			return nil, errors.Newf("gitserver repo not found")
+			return nil, &database.ErrGitserverRepoNotFound{}
 		}
 	})
 	mockRepos := database.NewMockRepoStore()
