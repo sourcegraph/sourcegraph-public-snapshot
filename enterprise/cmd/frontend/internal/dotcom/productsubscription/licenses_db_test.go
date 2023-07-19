@@ -398,8 +398,8 @@ func TestUserCountAlertSentAt(t *testing.T) {
 
 	license := insertLicense(t, ctx, db, u, "key")
 	t.Run("should be null, initially", func(t *testing.T) {
-		if license.UserCountAlertSentAt != nil {
-			t.Errorf("wanted a nil value for UserCountAlertSentAt but got %v", license.UserCountAlertSentAt)
+		if !license.UserCountAlertSentAt.IsZero() {
+			t.Errorf("wanted a zero value for UserCountAlertSentAt but got %v", license.UserCountAlertSentAt)
 		}
 	})
 

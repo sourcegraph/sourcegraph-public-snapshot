@@ -34,7 +34,7 @@ type dbLicense struct {
 	RevokeReason             *string
 	SalesforceSubscriptionID *string
 	SalesforceOpportunityID  *string
-	UserCountAlertSentAt     *time.Time
+	UserCountAlertSentAt     time.Time
 }
 
 func NewDbLicense(db database.DB) dbLicenses {
@@ -159,13 +159,7 @@ type dbLicensesListOptions struct {
 }
 
 func DbLicencesListNoOpt() dbLicensesListOptions {
-	return dbLicensesListOptions{
-		LicenseKeySubstring:   "",
-		ProductSubscriptionID: "",
-		WithSiteIDsOnly:       false,
-		Revoked:               nil,
-		Expired:               nil,
-	}
+	return dbLicensesListOptions{}
 }
 
 func (o dbLicensesListOptions) sqlConditions() []*sqlf.Query {
@@ -287,7 +281,7 @@ ORDER BY created_at DESC
 			&v.RevokeReason,
 			&v.SalesforceSubscriptionID,
 			&v.SalesforceOpportunityID,
-			&v.UserCountAlertSentAt,
+			&dbutil.NullTime{Time: &v.UserCountAlertSentAt},
 		); err != nil {
 			return nil, err
 		}
@@ -326,24 +320,20 @@ func (s dbLicenses) Revoke(ctx context.Context, id, reason string) error {
 	return err
 }
 
-type UserCountAlertSentAt struct {
-	Val *time.Time `json:"user_count_alert_sent_at"`
-}
-
-func (s dbLicenses) GetUserCountAlertSentAt(ctx context.Context, id string) (*time.Time, error) {
+func (s dbLicenses) GetUserCountAlertSentAt(ctx context.Context, id string) (time.Time, error) {
 	q := sqlf.Sprintf(
 		"SELECT user_count_alert_sent_at FROM product_licenses WHERE id = %s",
 		id,
 	)
 
-	var userCountAlertSentAt UserCountAlertSentAt
+	var userCountAlertSentAt time.Time
 	err := s.db.QueryRowContext(
 		ctx,
 		q.Query(sqlf.PostgresBindVar),
 		q.Args()...,
-	).Scan(&userCountAlertSentAt.Val)
+	).Scan(&dbutil.NullTime{Time: &userCountAlertSentAt})
 
-	return userCountAlertSentAt.Val, err
+	return userCountAlertSentAt, err
 }
 
 func (s dbLicenses) UpdateUserCountAlertSentAt(ctx context.Context, id string) error {

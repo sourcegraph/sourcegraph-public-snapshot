@@ -3261,23 +3261,24 @@ Indexes:
 
 # Table "public.product_licenses"
 ```
-         Column          |           Type           | Collation | Nullable | Default 
--------------------------+--------------------------+-----------+----------+---------
- id                      | uuid                     |           | not null | 
- product_subscription_id | uuid                     |           | not null | 
- license_key             | text                     |           | not null | 
- created_at              | timestamp with time zone |           | not null | now()
- license_version         | integer                  |           |          | 
- license_tags            | text[]                   |           |          | 
- license_user_count      | integer                  |           |          | 
- license_expires_at      | timestamp with time zone |           |          | 
- access_token_enabled    | boolean                  |           | not null | true
- site_id                 | uuid                     |           |          | 
- license_check_token     | bytea                    |           |          | 
- revoked_at              | timestamp with time zone |           |          | 
- salesforce_sub_id       | text                     |           |          | 
- salesforce_opp_id       | text                     |           |          | 
- revoke_reason           | text                     |           |          | 
+          Column          |           Type           | Collation | Nullable | Default 
+--------------------------+--------------------------+-----------+----------+---------
+ id                       | uuid                     |           | not null | 
+ product_subscription_id  | uuid                     |           | not null | 
+ license_key              | text                     |           | not null | 
+ created_at               | timestamp with time zone |           | not null | now()
+ license_version          | integer                  |           |          | 
+ license_tags             | text[]                   |           |          | 
+ license_user_count       | integer                  |           |          | 
+ license_expires_at       | timestamp with time zone |           |          | 
+ access_token_enabled     | boolean                  |           | not null | true
+ site_id                  | uuid                     |           |          | 
+ license_check_token      | bytea                    |           |          | 
+ revoked_at               | timestamp with time zone |           |          | 
+ salesforce_sub_id        | text                     |           |          | 
+ salesforce_opp_id        | text                     |           |          | 
+ revoke_reason            | text                     |           |          | 
+ user_count_alert_sent_at | timestamp with time zone |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
     "product_licenses_license_check_token_idx" UNIQUE, btree (license_check_token)

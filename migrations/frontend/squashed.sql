@@ -4021,7 +4021,8 @@ CREATE TABLE product_licenses (
     revoked_at timestamp with time zone,
     salesforce_sub_id text,
     salesforce_opp_id text,
-    revoke_reason text
+    revoke_reason text,
+    user_count_alert_sent_at timestamp with time zone
 );
 
 COMMENT ON COLUMN product_licenses.access_token_enabled IS 'Whether this license key can be used as an access token to authenticate API requests';
