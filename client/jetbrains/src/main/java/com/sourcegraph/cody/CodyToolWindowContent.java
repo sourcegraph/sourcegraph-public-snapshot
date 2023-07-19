@@ -76,13 +76,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import javax.swing.BorderFactory;
-import javax.swing.BoxLayout;
-import javax.swing.JButton;
-import javax.swing.JComponent;
-import javax.swing.JEditorPane;
-import javax.swing.JLayeredPane;
-import javax.swing.JPanel;
+import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
@@ -105,6 +99,7 @@ class CodyToolWindowContent implements UpdatableChat {
   private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
+  private final JBScrollPane chatPanel;
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -154,7 +149,7 @@ class CodyToolWindowContent implements UpdatableChat {
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
-    JBScrollPane chatPanel =
+    chatPanel =
         new JBScrollPane(
             messagesPanel,
             JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
@@ -503,9 +498,32 @@ class CodyToolWindowContent implements UpdatableChat {
                 Component component = lastBubblePanel.getComponent(0);
                 if (component instanceof ChatBubble) {
                   ChatBubble lastBubble = (ChatBubble) component;
-                  lastBubble.updateText(message, messagesPanel);
-                  messagesPanel.revalidate();
-                  messagesPanel.repaint();
+                  // -----
+                  String lastMessage = lastBubble.getLastMessage();
+                  String newMessage = message.getDisplayText();
+                  String toAppend =
+                      newMessage.startsWith(lastMessage)
+                          ? newMessage.replace(lastMessage, "")
+                          : newMessage;
+                  for (int i = 1; i <= toAppend.length(); i++) {
+                    String currentToAppend = toAppend.substring(0, i);
+                    ChatMessage messageToPass =
+                        ChatMessage.createAssistantMessage(lastMessage + currentToAppend);
+                    Timer timer =
+                        new Timer(
+                            20 * i,
+                            e -> {
+                              lastBubble.updateText(messageToPass, messagesPanel);
+                              JScrollBar verticalScrollBar = chatPanel.getVerticalScrollBar();
+                              verticalScrollBar.setValue(verticalScrollBar.getMaximum());
+                              messagesPanel.revalidate();
+                              messagesPanel.repaint();
+                              chatPanel.revalidate();
+                              chatPanel.repaint();
+                            });
+                    timer.setRepeats(false);
+                    timer.start();
+                  }
                 }
               }
             });

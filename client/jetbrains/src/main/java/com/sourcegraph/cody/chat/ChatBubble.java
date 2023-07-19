@@ -11,7 +11,7 @@ import org.commonmark.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 
 public class ChatBubble extends JPanel {
-  private AtomicReference<String> lastMessage = new AtomicReference<>("");
+  private final AtomicReference<String> lastMessage = new AtomicReference<>("");
 
   private final @NotNull Project project;
 
@@ -57,9 +57,16 @@ public class ChatBubble extends JPanel {
       return;
     } else lastMessage.set(message.getDisplayText());
     JPanel newMessage = buildMessagePanel(message, this.project, parentPanel);
+    this.setIgnoreRepaint(true);
     this.remove(0);
     this.add(newMessage, BorderLayout.CENTER, 0);
+    this.setIgnoreRepaint(false);
     this.revalidate();
     this.repaint();
+  }
+
+  @NotNull
+  public String getLastMessage() {
+    return lastMessage.get();
   }
 }

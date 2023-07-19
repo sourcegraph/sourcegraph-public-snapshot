@@ -73,26 +73,16 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
           .ifPresent(
               d -> {
                 String newMessage = reformatBotMessage(d, prefix);
-                if (lastMessageReceived.get().length() < newMessage.length()) {
+                if (lastMessageReceived.get().length() < newMessage.length()
+                    && lastMessagePassedToChat.get().length() < newMessage.length()) {
                   lastMessageReceived.set(newMessage);
-                  String previousMessage = lastMessagePassedToChat.get();
-                  String toAppend =
-                      newMessage.startsWith(previousMessage)
-                          ? newMessage.replace(previousMessage, "")
-                          : newMessage;
-                  for (int i = 1; i <= toAppend.length(); i++) {
-                    String currentToAppend = toAppend.substring(0, i);
-                    String messageToPass = previousMessage + currentToAppend;
-                    if (messageToPass.length() > lastMessagePassedToChat.get().length())
-                      if (!queue.offer(messageToPass)) {
-                        synchronized (queue) {
-                          queue.clear();
-                          if (!queue.offer(messageToPass))
-                            logger.warn(
-                                "Failed to queue Cody message of length: "
-                                    + messageToPass.length());
-                        }
-                      }
+                  if (!queue.offer(newMessage)) {
+                    synchronized (queue) {
+                      queue.clear();
+                      if (!queue.offer(newMessage))
+                        logger.warn(
+                            "Failed to queue Cody message of length: " + newMessage.length());
+                    }
                   }
                 }
               });
