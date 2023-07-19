@@ -94,6 +94,7 @@ type RepoStore interface {
 	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
 	RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error)
+	GetWithMaybePoolMinimalRepo(ctx context.Context, repoName api.RepoName) (repo *types.MinimalRepo, poolRepo *types.MinimalRepo, err error)
 }
 
 var _ RepoStore = (*repoStore)(nil)
@@ -372,6 +373,92 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 	}
 
 	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
+}
+
+const getWithMaybePoolMinimalRepo = `
+-- get the repo that matches the input reop name
+WITH input_repo AS (
+	SELECT
+		r.id,
+		r.fork,
+		r.name,
+		r.stars,
+		gr.repo_id,
+		gr.pool_repo_id
+	FROM
+		repo r
+	JOIN gitserver_repos gr ON r.id = gr.repo_id
+	WHERE
+		r.name = %s::citext
+)
+SELECT
+	id,
+	fork,
+	name,
+	stars
+FROM
+	input_repo
+UNION ALL
+-- for repos that are forks, we update the value of gitserver_repos.pool_repo_id with the repo.id of the source repo in the repository syncer code (see usage of GitserverRepos.UpdatePoolRepoID), this means that:
+-- if the input_repo has a pool_repo_id in the gitserver_repos table it is a fork, so use the value of input_repo.pool_repo_id to also retrieve the source repo 
+SELECT
+	r.id AS repo_id,
+	r.fork AS repo_fork,
+	r.name AS repo_name,
+	r.stars
+FROM
+	repo r
+	JOIN input_repo ON input_repo.pool_repo_id = r.id
+`
+
+func (r *repoStore) GetWithMaybePoolMinimalRepo(ctx context.Context, repoName api.RepoName) (*types.MinimalRepo, *types.MinimalRepo, error) {
+	rows, err := r.Query(ctx, sqlf.Sprintf(getWithMaybePoolMinimalRepo, repoName))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil, nil
+		}
+
+		return nil, nil, errors.Wrap(err, "failed to execute query")
+	}
+	defer rows.Close()
+
+	res := []*types.MinimalRepo{}
+	for rows.Next() {
+		r, err := scanMinimalRepo(rows)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "scanMinimalRepo failed")
+		}
+
+		res = append(res, r)
+	}
+
+	if len(res) == 0 {
+		return nil, nil, nil
+	}
+
+	if len(res) == 1 {
+		return res[0], nil, nil
+	}
+
+	if len(res) == 2 {
+		return res[0], res[1], nil
+	}
+
+	var msg string
+	for _, r := range res {
+		msg += fmt.Sprintf("id: %d, name: %q\n", r.ID, r.Name)
+	}
+
+	return nil, nil, errors.Newf("unexpected number of rows returned: %d, should not be more than 2; rows returned were:\n%s", len(res), msg)
+}
+
+func scanMinimalRepo(scanner dbutil.Scanner) (*types.MinimalRepo, error) {
+	var m types.MinimalRepo
+	if err := scanner.Scan(&m.ID, &m.Fork, &m.Name, &m.Stars); err != nil {
+		return nil, err
+	}
+
+	return &m, nil
 }
 
 type repoKVPs struct {
@@ -873,6 +960,8 @@ func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) 
 		results = append(results, *r)
 	})
 }
+
+// func (s *repoStore)
 
 func (s *repoStore) listRepos(ctx context.Context, tr trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
 	var privateIDs []api.RepoID
