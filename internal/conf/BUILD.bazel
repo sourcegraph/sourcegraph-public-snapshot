@@ -58,7 +58,6 @@ go_test(
         "client_test.go",
         "computed_test.go",
         "diff_test.go",
-        "helpers_test.go",
         "mocks_test.go",
         "validate_test.go",
     ],
