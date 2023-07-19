@@ -1,23 +1,24 @@
 <script lang="ts">
     import Commit from '$lib/Commit.svelte'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: commits = asStore(data.commits.deferred)
+    const { pending, value: commits, set } = createPromiseStore<typeof data.commits.deferred>()
+    $: set(data.commits.deferred)
 </script>
 
 <section>
     <div>
         <h2>View commits from this repsitory</h2>
         <h3>Changes</h3>
-        {#if $commits.loading}
+        {#if $pending}
             Loading...
-        {:else if $commits.data}
+        {:else if $commits}
             <ul>
-                {#each $commits.data as commit (commit.url)}
+                {#each $commits as commit (commit.url)}
                     <li><Commit {commit} /></li>
                 {/each}
             </ul>

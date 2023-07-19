@@ -2266,17 +2266,15 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	redactor := newURLRedactor(remoteURL)
-
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
-
-	// best-effort update the output of the clone
-	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
+	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
+    // best-effort update the output of the clone
+	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
-		return errors.Wrapf(err, "clone failed. Output: %s", redactor.redact(string(output)))
+		return errors.Wrapf(err, "clone failed. Output: %s", redactedOutput)
 	}
 
 	if testRepoCorrupter != nil {
@@ -2663,16 +2661,14 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	redactor := newURLRedactor(remoteURL)
-
 	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
-
-	// best-effort update the output of the fetch
-	go s.setLastOutput(context.Background(), repo, redactor.redact(string(output)))
+	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
+    // best-effort update the output of the fetch
+	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
 		if output != nil {
-			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactor.redact(string(output)))
+			return errors.Wrapf(err, "failed to fetch repo %q with output %q", repo, redactedOutput)
 		} else {
 			return errors.Wrapf(err, "failed to fetch repo %q", repo)
 		}

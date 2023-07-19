@@ -1311,6 +1311,8 @@ type GitLabWebhook struct {
 
 // GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
 type GitRecorder struct {
+	// IgnoredGitCommands description: List of git commands that should be ignored and not recorded.
+	IgnoredGitCommands []string `json:"ignoredGitCommands,omitempty"`
 	// Repos description: List of repositories whose git operations should be recorded.
 	Repos []string `json:"repos,omitempty"`
 	// Size description: Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.

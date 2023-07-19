@@ -71,13 +71,14 @@ func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
+func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, _ string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
-	if output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
+	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil)
+	if err != nil {
 		return nil, &common.GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
 	}
-	return nil, nil
+	return output, nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote of a Git repository.

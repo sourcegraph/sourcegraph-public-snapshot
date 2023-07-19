@@ -18,11 +18,6 @@ var queriesFS embed.FS
 var attributionFS embed.FS
 
 type Config struct {
-	Groups []*QueryGroupConfig
-}
-
-type QueryGroupConfig struct {
-	Name    string
 	Queries []*QueryConfig
 }
 
@@ -104,10 +99,7 @@ func loadQueries(env string) (_ *Config, err error) {
 	add()
 
 	return &Config{
-		Groups: []*QueryGroupConfig{{
-			Name:    "monitoring_queries",
-			Queries: queries,
-		}},
+		Queries: queries,
 	}, err
 }
 

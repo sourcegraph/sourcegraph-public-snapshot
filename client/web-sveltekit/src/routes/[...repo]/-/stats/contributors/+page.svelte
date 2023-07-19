@@ -3,10 +3,9 @@
     import { page } from '$app/stores'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Paginator from '$lib/Paginator.svelte'
-    import { getRelativeTime } from '$lib/relativeTime'
     import { currentDate } from '$lib/stores'
     import UserAvatar from '$lib/UserAvatar.svelte'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore, getRelativeTime } from '$lib/utils'
     import { Button, ButtonGroup } from '$lib/wildcard'
 
     import type { PageData } from './$types'
@@ -20,20 +19,26 @@
         ['All time', ''],
     ]
 
-    $: timePeriod = data.after
-    $: contributorsLoader = asStore(data.deferred.contributors)
-    $: loading = $contributorsLoader.loading
-    let connection: Extract<typeof $contributorsLoader, { loading: false }>['data']
-    $: if (!$contributorsLoader.loading && $contributorsLoader.data) {
-        connection = $contributorsLoader.data
+    const { pending, latestValue: contributors, set } = createPromiseStore<typeof data.deferred.contributors>()
+    $: set(data.deferred.contributors)
+
+    // We want to show stale contributors data when the user navigates to
+    // the next or previous page for the current time period. When the user
+    // changes the time period we want to show a loading indicator instead.
+    let currentContributors = $contributors
+    $: if (!$pending && $contributors) {
+        currentContributors = $contributors
     }
+
+    $: timePeriod = data.after
 
     async function setTimePeriod(event: MouseEvent) {
         const element = event.target as HTMLButtonElement
         timePeriod = element.dataset.value ?? ''
         const newURL = new URL($page.url)
         newURL.search = timePeriod ? `after=${timePeriod}` : ''
-        connection = null
+        // Don't show stale contributors when switching the time period
+        currentContributors = null
         await goto(newURL)
     }
 </script>
@@ -58,12 +63,12 @@
                 {/each}
             </ButtonGroup>
         </form>
-        {#if !connection && loading}
+        {#if !currentContributors && $pending}
             <div class="mt-3">
                 <LoadingSpinner />
             </div>
-        {:else if connection}
-            {@const nodes = connection.nodes}
+        {:else if currentContributors}
+            {@const nodes = currentContributors.nodes}
             <table class="mt-3">
                 <tbody>
                     {#each nodes as contributor}
@@ -84,9 +89,9 @@
                 </tbody>
             </table>
             <div class="d-flex flex-column align-items-center">
-                <Paginator disabled={loading} pageInfo={connection.pageInfo} />
+                <Paginator disabled={$pending} pageInfo={currentContributors.pageInfo} />
                 <p class="mt-1 text-muted">
-                    <small>Total contributors: {connection.totalCount}</small>
+                    <small>Total contributors: {currentContributors.totalCount}</small>
                 </p>
             </div>
         {/if}
