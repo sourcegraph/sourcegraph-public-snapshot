@@ -7,6 +7,7 @@
 ### Changed
 
 - Store global access token in a safe place [#55052](https://github.com/sourcegraph/sourcegraph/pull/55052)
+- Improved UI of the onboarding widgets [#55090](https://github.com/sourcegraph/sourcegraph/pull/55090)
 
 ### Deprecated
 
