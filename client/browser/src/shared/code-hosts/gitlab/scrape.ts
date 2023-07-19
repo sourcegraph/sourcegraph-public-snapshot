@@ -49,7 +49,7 @@ export const getPageKindFromPathName = (owner: string, projectName: string, path
  * Gets information about the page.
  */
 export function getPageInfo(): GitLabInfo {
-    const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a')
+    const projectLink = document.querySelector<HTMLAnchorElement>('.context-header a, .shortcuts-project')
     if (!projectLink) {
         throw new Error('Unable to determine project name')
     }
