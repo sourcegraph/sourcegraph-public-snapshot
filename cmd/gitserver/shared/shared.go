@@ -165,11 +165,11 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
-		DeduplicatedForksIndex:  types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
+		DeduplicatedForksSet:    types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
 	}
 
 	conf.Watch(func() {
-		gitserver.DeduplicatedForksIndex.Overwrite(conf.GetDeduplicatedForksIndex())
+		gitserver.DeduplicatedForksSet.Overwrite(conf.GetDeduplicatedForksIndex())
 
 		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
 		// to determine whether a command should be recorded or not.

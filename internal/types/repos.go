@@ -6,22 +6,22 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 )
 
-type RepoURICache struct {
+type RepoURISet struct {
 	mu    sync.RWMutex
 	index collections.Set[string]
 }
 
-func NewRepoURICache(index collections.Set[string]) *RepoURICache {
+func NewRepoURICache(index collections.Set[string]) *RepoURISet {
 	if index == nil {
 		index = make(collections.Set[string])
 	}
 
-	return &RepoURICache{
+	return &RepoURISet{
 		index: index,
 	}
 }
 
-func (c *RepoURICache) Contains(name string) bool {
+func (c *RepoURISet) Contains(name string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
@@ -29,12 +29,8 @@ func (c *RepoURICache) Contains(name string) bool {
 	return ok
 }
 
-func (c *RepoURICache) Overwrite(index collections.Set[string]) {
+func (c *RepoURISet) Overwrite(index collections.Set[string]) {
 	c.mu.Lock()
 	c.index = index
 	c.mu.Unlock()
-}
-
-func (c *RepoURICache) Index() collections.Set[string] {
-	return c.index
 }

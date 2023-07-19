@@ -13,9 +13,9 @@ func TestRepoURICache(t *testing.T) {
 
 	require.True(t, cache.Contains("abc"))
 	require.False(t, cache.Contains("ghi"))
-	require.Equal(t, index, cache.Index())
+	require.Equal(t, index, cache.index)
 
 	index2 := collections.NewSet[string]("xyz", "pqr")
 	cache.Overwrite(index2)
-	require.Equal(t, index2, cache.Index())
+	require.Equal(t, index2, cache.index)
 }

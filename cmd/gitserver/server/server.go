@@ -298,7 +298,10 @@ type Server struct {
 	// Perforce is a plugin-like service attached to Server for all things Perforce.
 	Perforce *perforce.Service
 
-	DeduplicatedForksIndex *types.RepoURICache
+	// DeduplicatedForksSet is a set of all repos added to the deduplicateForks site config
+	// property. It exists only to aid in fast lookups instead of having to iterate through the list
+	// each time.
+	DeduplicatedForksSet *types.RepoURISet
 }
 
 type locks struct {
