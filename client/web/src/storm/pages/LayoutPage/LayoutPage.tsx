@@ -76,6 +76,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
     const isCodySearchPage = routeMatches.some(routeMatch =>
         routeMatch.pathname.startsWith(EnterprisePageRoutes.CodySearch)
     )
+    const isSearchEnabled = !!window.context?.codeSearchEnabled
 
     // eslint-disable-next-line no-restricted-syntax
     const [wasSetupWizardSkipped] = useLocalStorage('setup.skipped', false)
@@ -207,6 +208,7 @@ export const Layout: React.FC<LegacyLayoutProps> = props => {
                     {...props}
                     routes={[]}
                     showSearchBox={
+                        isSearchEnabled &&
                         isSearchRelatedPage &&
                         !isSearchHomepage &&
                         !isCommunitySearchContextPage &&

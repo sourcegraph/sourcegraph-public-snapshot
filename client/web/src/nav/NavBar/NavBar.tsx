@@ -55,7 +55,7 @@ export const NavBar = forwardRef(function NavBar({ children, logo }, reference):
             {logo && (
                 <>
                     <H1 className={navBarStyles.logo}>
-                        <RouterNavLink className="d-flex align-items-center" to={PageRoutes.Search}>
+                        <RouterNavLink className="d-flex align-items-center" to={PageRoutes.Index}>
                             {logo}
                         </RouterNavLink>
                     </H1>

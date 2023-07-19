@@ -40,6 +40,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
@@ -346,8 +347,16 @@ func serveHome(db database.DB) handlerFunc {
 			return nil
 		}
 
-		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
-		r.URL.Path = "/search"
+		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to appropriate page.
+		if err := licensing.Check(licensing.FeatureCody); err == nil {
+			r.URL.Path = "/cody"
+		} else {
+			if err = licensing.Check(licensing.FeatureCodeSearch); err == nil {
+				r.URL.Path = "/search"
+			} else {
+				return errors.Errorf("Instance does not have Cody nor Code Search enabled, no home page available")
+			}
+		}
 		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
 		return nil
 	}

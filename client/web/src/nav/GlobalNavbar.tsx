@@ -139,6 +139,9 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
 
     const location = useLocation()
 
+    const codeSearchEnabled = !!window.context?.codeSearchEnabled
+    const codyEnabled = !!window.context?.codyEnabled
+
     const routeMatch = useRoutesMatch(props.routes)
 
     const onNavbarQueryChange = useNavbarQueryState(state => state.setQueryState)
@@ -210,6 +213,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
             >
                 <NavGroup>
                     {!isSourcegraphApp &&
+                        codeSearchEnabled &&
                         (searchNavBarItems.length > 0 ? (
                             <NavDropdown
                                 toggleItem={{
@@ -231,11 +235,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 </NavLink>
                             </NavItem>
                         ))}
-                    <NavItem icon={CodyLogo}>
-                        <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
-                            Cody AI
-                        </NavLink>
-                    </NavItem>
+                    {codyEnabled && (
+                        <NavItem icon={CodyLogo}>
+                            <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Cody}>
+                                Cody AI
+                            </NavLink>
+                        </NavItem>
+                    )}
                     {showSearchNotebook && (
                         <NavItem icon={BookOutlineIcon}>
                             <NavLink variant={navLinkVariant} to={EnterprisePageRoutes.Notebooks}>

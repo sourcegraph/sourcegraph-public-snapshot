@@ -47,6 +47,7 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/lazyregexp",
+        "//internal/licensing",
         "//internal/randstring",
         "//internal/repoupdater",
         "//internal/search/result",

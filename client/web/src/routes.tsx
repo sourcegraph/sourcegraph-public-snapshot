@@ -50,10 +50,13 @@ const PassThroughToServer: React.FC = () => {
  *
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
+
+const defaultPath = !!window.context?.codeSearchEnabled ? '/search' : '/cody'
+
 export const routes: RouteObject[] = [
     {
         path: PageRoutes.Index,
-        element: <Navigate replace={true} to={PageRoutes.Search} />,
+        element: <Navigate replace={true} to={defaultPath} />,
     },
     {
         path: PageRoutes.Search,

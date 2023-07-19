@@ -28,6 +28,9 @@ const (
 
 	// PlanAirGappedEnterprise is the same PlanEnterprise1 but with FeatureAllowAirGapped, and works starting from 5.1.
 	PlanAirGappedEnterprise Plan = "enterprise-air-gap-0"
+
+	// PlanCodyOnly is the same as enterprise but without Code Search. Starting from 5.1+.
+	PlanCodyOnly Plan = "enterprise-cody-only-0"
 )
 
 var AllPlans = []Plan{
@@ -42,6 +45,7 @@ var AllPlans = []Plan{
 	PlanFree0,
 	PlanFree1,
 	PlanAirGappedEnterprise,
+	PlanCodyOnly,
 }
 
 // The list of features. For each feature, add a new const here and the checking logic in
@@ -95,6 +99,9 @@ const (
 
 	// FeatureAllowAirGapped is whether or not air gapped mode is allowed on this instance.
 	FeatureAllowAirGapped BasicFeature = "allow-air-gapped"
+
+	// FeatureCodeSearch is whether or not code search has been purchased on this instance.
+	FeatureCodeSearch BasicFeature = "code-search"
 )
 
 var AllFeatures = []Feature{
@@ -111,6 +118,8 @@ var AllFeatures = []Feature{
 	&FeatureBatchChanges{},
 	FeatureSCIM,
 	FeatureAllowAirGapped,
+	FeatureCody,
+	FeatureCodeSearch,
 }
 
 type PlanDetails struct {
@@ -125,10 +134,12 @@ var planDetails = map[Plan]PlanDetails{
 		Features: []Feature{
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeSearch,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
 			FeatureSSO,
+			FeatureCodeSearch,
 		},
 	},
 	PlanOldEnterprise: {
@@ -147,10 +158,12 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCodeInsights,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeSearch,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
 			FeatureSSO,
+			FeatureCodeSearch,
 		},
 	},
 	PlanTeam0: {
@@ -160,10 +173,12 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeSearch,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
 			FeatureSSO,
+			FeatureCodeSearch,
 		},
 	},
 	PlanEnterprise0: {
@@ -175,10 +190,12 @@ var planDetails = map[Plan]PlanDetails{
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeSearch,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
 			FeatureSSO,
+			FeatureCodeSearch,
 		},
 	},
 
@@ -192,10 +209,12 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeSearch,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
 			FeatureSSO,
+			FeatureCodeSearch,
 		},
 	},
 	PlanEnterprise1: {
@@ -204,6 +223,23 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureCampaigns,
 			FeatureCodeInsights,
 			&FeatureBatchChanges{Unrestricted: true},
+			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureExplicitPermissionsAPI,
+			FeatureSSO,
+			FeatureSCIM,
+			FeatureCody,
+			FeatureCodeSearch,
+		},
+		ExpiredFeatures: []Feature{
+			FeatureACLs,
+			FeatureSSO,
+			FeatureCodeSearch,
+		},
+	},
+	PlanCodyOnly: {
+		Features: []Feature{
+			FeatureACLs,
+			FeatureCampaigns,
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,
@@ -226,10 +262,12 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeSearch,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
 			FeatureSSO,
+			FeatureCodeSearch,
 		},
 	},
 	PlanFree0: {
@@ -238,12 +276,14 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeSearch,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureSSO,
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{Unrestricted: true},
+			FeatureCodeSearch,
 		},
 	},
 	PlanFree1: {
@@ -251,11 +291,13 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+			FeatureCodeSearch,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureMonitoring,
 			&FeatureBatchChanges{MaxNumChangesets: 10},
 			&FeaturePrivateRepositories{MaxNumPrivateRepos: 1},
+			FeatureCodeSearch,
 		},
 	},
 	PlanAirGappedEnterprise: {
@@ -269,11 +311,13 @@ var planDetails = map[Plan]PlanDetails{
 			FeatureSSO,
 			FeatureSCIM,
 			FeatureCody,
+			FeatureCodeSearch,
 			FeatureAllowAirGapped,
 		},
 		ExpiredFeatures: []Feature{
 			FeatureACLs,
 			FeatureSSO,
+			FeatureCodeSearch,
 		},
 	},
 }

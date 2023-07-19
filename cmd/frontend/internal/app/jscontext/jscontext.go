@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -196,6 +197,7 @@ type JSContext struct {
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
 
 	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
+	CodeSearchEnabled   bool `json:"codeSearchEnabled"`
 
 	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
 
@@ -372,7 +374,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodyEnabled:               conf.CodyEnabled(),
+		CodyEnabled:               conf.CodyEnabled() && licensing.Check(licensing.FeatureCody) == nil,
 		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
@@ -381,6 +383,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
 		CodeInsightsEnabled: insights.IsEnabled(),
+		CodeSearchEnabled:   licensing.Check(licensing.FeatureCodeSearch) == nil,
 
 		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
 
