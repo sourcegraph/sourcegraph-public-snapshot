@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"regexp"
 	"testing"
 	"time"
 
@@ -21,8 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
-
-const timestampPattern = `\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d{6} \+0000 UTC`
 
 func TestProductLicenses_Create(t *testing.T) {
 	logger := logtest.Scoped(t)
@@ -388,8 +385,8 @@ func TestRevokeLicense(t *testing.T) {
 
 func TestUserCountAlertSentAt(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := dbLicenses{db: db}
 
@@ -404,14 +401,26 @@ func TestUserCountAlertSentAt(t *testing.T) {
 	})
 
 	t.Run("should set user_count_alert_sent_at", func(t *testing.T) {
-		err := store.UpdateUserCountAlertSentAt(ctx, license.ID)
+		err := store.UpdateUserCountAlertSentAt(ctx, license.ID, time.Now().UTC())
 		if err != nil {
 			t.Errorf("could not update user_count_alert_sent_at: %s", err)
 		}
 	})
 
 	t.Run("should get user_count_alert_sent_at", func(t *testing.T) {
-		err := store.UpdateUserCountAlertSentAt(ctx, license.ID)
+		dateString := "2023-07-20 16:13:11.29789 +0000 UTC"
+		layout := "2006-01-02 15:04:05.99999 -0700 MST"
+
+		tme, err := time.Parse(layout, dateString)
+		if err != nil {
+			t.Errorf("could not create time.Time object from string: %s", err)
+		}
+
+		err = store.UpdateUserCountAlertSentAt(
+			ctx,
+			license.ID,
+			tme,
+		)
 		if err != nil {
 			t.Errorf("could not update user_count_alert_sent_at: %s", err)
 		}
@@ -421,13 +430,7 @@ func TestUserCountAlertSentAt(t *testing.T) {
 			t.Errorf("could not retrieve user_count_alert_sent_at: %s", err)
 		}
 
-		match, err := regexp.MatchString(timestampPattern, sentAtTime.String())
-		if err != nil {
-			t.Errorf("could not get regexp: %s", err)
-		}
-
-		if !match {
-			t.Errorf("sentAtTime %q does not match expected timestamp format %q", sentAtTime, timestampPattern)
-		}
+		// compare to this: "2023-07-20 16:13:11.29789 +0000 UTC"
+		assert.Equal(t, "2023-07-20 16:13:11.29789 +0000 UTC", sentAtTime.String())
 	})
 }

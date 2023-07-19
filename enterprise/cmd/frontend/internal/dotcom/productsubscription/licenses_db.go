@@ -336,10 +336,30 @@ func (s dbLicenses) GetUserCountAlertSentAt(ctx context.Context, id string) (tim
 	return userCountAlertSentAt, err
 }
 
-func (s dbLicenses) UpdateUserCountAlertSentAt(ctx context.Context, id string) error {
+func (s dbLicenses) UpdateUserCountAlertSentAt(ctx context.Context, id string, t time.Time) error {
 	q := sqlf.Sprintf(
 		"UPDATE product_licenses SET user_count_alert_sent_at = %s WHERE id = %s",
-		time.Now().UTC(),
+		t,
+		id,
+	)
+	res, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return errors.Wrap(err, "could not execContext")
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errLicenseNotFound
+	}
+	return nil
+}
+
+func (s dbLicenses) UpdateUserCount(ctx context.Context, id string, newUserCount string) error {
+	q := sqlf.Sprintf(
+		"UPDATE product_licenses SET license_user_count = %s WHERE id = %s",
+		newUserCount,
 		id,
 	)
 	res, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)

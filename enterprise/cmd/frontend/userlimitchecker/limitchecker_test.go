@@ -4,7 +4,6 @@ import (
 	"context"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"testing"
 	"time"
 
@@ -20,13 +19,32 @@ import (
 
 func TestSendApproachingUserLimitAlert(t *testing.T) {
 	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
+	// create user to satisfy product_subscription foreign key constraint
 	userStore := db.Users()
 	user, err := userStore.Create(ctx, users[0])
 	if err != nil {
 		t.Errorf("could not create user: %s", err)
+	}
+
+	// create product_subscription to satisfy product_license foreign key constraint
+	subStore := ps.NewDbSubscription(db)
+	subId, err := subStore.Create(ctx, user.ID, user.Username)
+	if err != nil {
+		t.Errorf("could not create subscription: %s", err)
+	}
+
+	// license can now be created
+	licensesStore := ps.NewDbLicense(db)
+	id, err := licensesStore.Create(ctx, subId, "12345", 5, license.Info{
+		UserCount: 2,
+		ExpiresAt: time.Now().Add(14 * 24 * time.Hour),
+	})
+
+	if err != nil {
+		t.Errorf("could not create new license: %s", err)
 	}
 
 	t.Run("sends correctly formatted email", func(t *testing.T) {
@@ -50,7 +68,7 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 			MessageID: &messageId,
 			ReplyTo:   &replyTo,
 			Data: SetApproachingUserLimitTemplateData{
-				RemainingUsers: 4,
+				RemainingUsers: 1,
 			},
 		}
 
@@ -60,74 +78,99 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		assert.Equal(t, want.ReplyTo, gotEmail.ReplyTo)
 		assert.Equal(t, want.MessageID, gotEmail.MessageID)
 		gotEmailData := want.Data.(SetApproachingUserLimitTemplateData)
-		assert.Equal(t, 4, gotEmailData.RemainingUsers)
+		assert.Equal(t, 1, gotEmailData.RemainingUsers)
 	})
 
-	t.Run("does not run function if email sent within 7 days of current time", func(t *testing.T) {
-		subStore := ps.NewDbSubscription(db)
-		subId, err := subStore.Create(ctx, user.ID, user.Username)
+	t.Run("does not send email if user count is not approaching user limit", func(t *testing.T) {
+		err := licensesStore.UpdateUserCount(ctx, id, "15")
 		if err != nil {
-			t.Errorf("could not create subscription: %s", err)
+			t.Errorf("could not update user count: %s", err)
 		}
-
-		licensesStore := ps.NewDbLicense(db)
-		licensesStore.Create(ctx, subId, "12345", 5, license.Info{})
 
 		old := os.Stdout
 		r, w, _ := os.Pipe()
 		os.Stdout = w
 
 		err = sendApproachingUserLimitAlert(ctx, db)
+		if err != nil {
+			t.Errorf("could not run sendApproachingUserLimitAlert function: %s", err)
+		}
 
 		w.Close()
 		out, _ := ioutil.ReadAll(r)
 		os.Stdout = old
 
-		if string(out) != "email recently sent\n" {
-			t.Errorf("Expected 'email recently sent' to be printed, got %q", string(out))
+		assert.Equal(t, "user count on license within limit\n", string(out))
+	})
+
+	t.Run("does not send email if email sent within 7 days of current time", func(t *testing.T) {
+		err := licensesStore.UpdateUserCount(ctx, id, "2")
+		if err != nil {
+			t.Errorf("could not update user count: %s", err)
 		}
+
+		err = licensesStore.UpdateUserCountAlertSentAt(ctx, id, time.Now().UTC())
+		if err != nil {
+			t.Errorf("could not update_user_count_alert_sent_at: %s", err)
+
+		}
+
+		old := os.Stdout
+		r, w, _ := os.Pipe()
+		os.Stdout = w
+
+		err = sendApproachingUserLimitAlert(ctx, db)
+		if err != nil {
+			t.Errorf("could not run sendApproachingUserLimitAlert function: %s", err)
+		}
+
+		w.Close()
+		out, _ := ioutil.ReadAll(r)
+		os.Stdout = old
+
+		assert.Equal(t, "email recently sent\n", string(out))
 	})
 }
 
 func TestGetPercentOfLimit(t *testing.T) {
 	cases := []struct {
-		want      int
+		expected  int
 		userCount int
 		userLimit int
 	}{
-		{want: 0, userCount: 0, userLimit: 100},
-		{want: 84, userCount: 211, userLimit: 250},
-		{want: 61, userCount: 348, userLimit: 567},
-		{want: 46, userCount: 583, userLimit: 1264},
-		{want: 110, userCount: 10, userLimit: 0},
-		{want: 112, userCount: 45, userLimit: 40},
-		{want: 95, userCount: 19, userLimit: 20},
-		{want: 96, userCount: 87, userLimit: 90},
-		{want: 95, userCount: 95, userLimit: 100},
-		{want: 95, userCount: 3350, userLimit: 3500},
+		{expected: 0, userCount: 0, userLimit: 100},
+		{expected: 84, userCount: 211, userLimit: 250},
+		{expected: 61, userCount: 348, userLimit: 567},
+		{expected: 46, userCount: 583, userLimit: 1264},
+		{expected: 110, userCount: 10, userLimit: 0},
+		{expected: 112, userCount: 45, userLimit: 40},
+		{expected: 95, userCount: 19, userLimit: 20},
+		{expected: 96, userCount: 87, userLimit: 90},
+		{expected: 95, userCount: 95, userLimit: 100},
+		{expected: 95, userCount: 3350, userLimit: 3500},
 	}
 
 	for _, tc := range cases {
-		gotPercent := getPercentOfLimit(tc.userCount, tc.userLimit)
-		if gotPercent != tc.want {
-			t.Errorf("got %v want %v", gotPercent, tc.want)
-		}
+		t.Run("should calculate correct percentage", func(t *testing.T) {
+			actual := getPercentOfLimit(tc.userCount, tc.userLimit)
+			assert.Equal(t, tc.expected, actual)
+		})
 	}
 }
 
 func TestGetLicenseUserLimit(t *testing.T) {
 	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	// need a user to satisfy product_subscription foreign key constraint
+	// create user to satisfy product_subscription foreign key constraint
 	userStore := db.Users()
 	user, err := userStore.Create(ctx, users[0])
 	if err != nil {
 		t.Errorf("could not create user: %s", err)
 	}
 
-	// need a product_subscription to satisfy product_license foreign key constraint
+	// create product_subscription to satisfy product_license foreign key constraint
 	subStore := ps.NewDbSubscription(db)
 	subId, err := subStore.Create(ctx, user.ID, user.Username)
 	if err != nil {
@@ -148,52 +191,45 @@ func TestGetLicenseUserLimit(t *testing.T) {
 		}
 	}
 
-	got, err := getLicenseUserLimit(ctx, db)
+	actual, err := getLicenseUserLimit(ctx, db)
 	if err != nil {
 		t.Errorf("could not get user limit: %s", err)
 	}
 
-	want := 30
-	if got != want {
-		t.Errorf("got %d want %d", got, want)
-	}
+	expected := 30
+	assert.Equal(t, expected, actual)
 }
 
 func TestGetUserCount(t *testing.T) {
 	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	userStore := db.Users()
 
-	var createdUsers []*types.User
-	for i, user := range users {
-		newUser, err := userStore.Create(ctx, user)
+	// create users state in db
+	for _, user := range users {
+		_, err := userStore.Create(ctx, user)
 		if err != nil {
 			t.Errorf("could not create new user %s", err)
 		}
-		createdUsers = append(createdUsers, newUser)
-		if i == 0 {
-			createdUsers[i].SiteAdmin = true
-		}
 	}
 
-	got, err := getUserCount(ctx, db)
+	actual, err := getUserCount(ctx, db)
 	if err != nil {
 		t.Errorf("could not get user count: %s", err)
 	}
 
-	want := 4
-	if got != want {
-		t.Errorf("got %d want %d", got, want)
-	}
+	expected := 4
+	assert.Equal(t, expected, actual)
 }
 
 func TestGetSiteAdminEmails(t *testing.T) {
 	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	userStore := db.Users()
 
+	// Create users state in db
 	var createdUsers []*types.User
 	for i, user := range users {
 		newUser, err := userStore.Create(ctx, user)
@@ -202,60 +238,65 @@ func TestGetSiteAdminEmails(t *testing.T) {
 		}
 		createdUsers = append(createdUsers, newUser)
 
+		// first and third created users are site admins
 		if i == 0 || i == 2 {
 			userStore.SetIsSiteAdmin(ctx, createdUsers[i].ID, true)
 		}
 	}
 
-	got, _ := getSiteAdminEmails(ctx, db)
-	want := []string{"test@test.com", "test3@test.com"}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %v want %v", got, want)
-	}
+	expected, _ := getSiteAdminEmails(ctx, db)
+	actual := []string{"test@test.com", "test3@test.com"}
+
+	assert.Equal(t, expected, actual)
 }
 
 func TestGetUserEmail(t *testing.T) {
 	logger := log.NoOp()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	userStore := db.Users()
 
 	cases := []struct {
-		want string
-		user database.NewUser
+		name     string
+		expected string
+		user     database.NewUser
 	}{
 		{
-			want: "test@test.com",
-			user: users[0],
+			name:     "should return email test@test.com",
+			expected: "test@test.com",
+			user:     users[0],
 		},
 		{
-			want: "test2@test.com",
-			user: users[1],
+			name:     "should return email test2@test.com",
+			expected: "test2@test.com",
+			user:     users[1],
 		},
 		{
-			want: "test3@test.com",
-			user: users[2],
+			name:     "should return email test3@test.com",
+			expected: "test3@test.com",
+			user:     users[2],
 		},
 		{
-			want: "test4@test.com",
-			user: users[3],
+			name:     "should return email test4@test.com",
+			expected: "test4@test.com",
+			user:     users[3],
 		},
 	}
 
 	for _, tc := range cases {
-		newUser, err := userStore.Create(ctx, tc.user)
-		if err != nil {
-			t.Errorf("could not create new user: %s", err)
-		}
+		t.Run(tc.name, func(t *testing.T) {
+			newUser, err := userStore.Create(ctx, tc.user)
+			if err != nil {
+				t.Errorf("could not create new user: %s", err)
+			}
 
-		got, _, err := getUserEmail(ctx, db, newUser)
-		if err != nil {
-			t.Errorf("got an unexpected error: %s", err)
-		}
+			actual, _, err := getUserEmail(ctx, db, newUser)
+			if err != nil {
+				t.Errorf("got an unexpected error: %s", err)
+			}
 
-		if got != tc.want {
-			t.Errorf("got %s want %s", got, tc.want)
-		}
+			assert.Equal(t, tc.expected, actual)
+		})
 	}
 }
 
