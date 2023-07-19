@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 type GitserverRepoStore interface {
@@ -553,7 +552,7 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 	gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
 
 	if poolRepoID != 0 {
-		gr.PoolRepoID = pointers.Ptr(api.RepoID(poolRepoID))
+		gr.PoolRepoID = api.RepoID(poolRepoID)
 	}
 
 	err = json.Unmarshal(rawLogs, &gr.CorruptionLogs)

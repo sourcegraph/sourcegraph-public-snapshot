@@ -603,7 +603,9 @@ type GitserverRepo struct {
 
 	// PoolRepoID is the repo_id of the parent repo of which this repo is a fork. This is referenced
 	// for deduplicated storage of the repo itself on disk.
-	PoolRepoID *api.RepoID
+	//
+	// It is an optional value so consumers must check for non-zero value before using it.
+	PoolRepoID api.RepoID
 }
 
 // PoolRepo is used for using deduplicated storage for a repository and all its forks. If a
