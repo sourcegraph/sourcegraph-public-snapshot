@@ -28,14 +28,13 @@ func TestGet(t *testing.T) {
 		defer func() { fatalln = origFatalln }()
 	}
 
-	tryInit := func(db database.DB) (err error) {
+	tryGet := func(db database.DB) (_ string, err error) {
 		defer func() {
 			if e := recover(); e != nil {
 				err = errors.Errorf("panic: %v", e)
 			}
 		}()
-		Init(db)
-		return nil
+		return Get(db), nil
 	}
 
 	t.Run("from DB", func(t *testing.T) {
@@ -45,14 +44,13 @@ func TestGet(t *testing.T) {
 
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
-
-		if err := tryInit(db); err != nil {
+		
+		got, err := tryGet(db)
+		if err != nil {
 			t.Fatal(err)
 		}
-		if !inited {
-			t.Error("!inited")
-		}
-		if got, want := Get(), "a"; got != want {
+		want := "a"
+		if got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
@@ -66,13 +64,14 @@ func TestGet(t *testing.T) {
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		want := errors.Errorf("panic: [Error initializing global state: x]")
-		if err := tryInit(db); fmt.Sprint(err) != fmt.Sprint(want) {
+		got, err := tryGet(db)
+		if fmt.Sprint(err) != fmt.Sprint(want) {
 			t.Errorf("got error %q, want %q", err, want)
 		}
 		if inited {
 			t.Error("inited")
 		}
-		if siteID != "" {
+		if got != "" {
 			t.Error("siteID is set")
 		}
 	})
@@ -83,13 +82,12 @@ func TestGet(t *testing.T) {
 
 		db := database.NewMockDB()
 
-		if err := tryInit(db); err != nil {
+		got, err  := tryGet(db)
+		if err != nil {
 			t.Fatal(err)
 		}
-		if !inited {
-			t.Error("!inited")
-		}
-		if got, want := Get(), "a"; got != want {
+		want := "a"
+		if got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
@@ -104,13 +102,12 @@ func TestGet(t *testing.T) {
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
-		if err := tryInit(db); err != nil {
+		got, err := tryGet(db)
+		if err != nil {
 			t.Fatal(err)
 		}
-		if !inited {
-			t.Error("!inited")
-		}
-		if got, want := Get(), "a"; got != want {
+		want := "a"
+		if got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
