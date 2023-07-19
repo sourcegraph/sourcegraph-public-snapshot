@@ -860,6 +860,21 @@
       "default": -1,
       "group": "External services"
     },
+    "repositories": {
+      "description": "Top level configuration key for all things repositories.",
+      "type": "object",
+      "properties": {
+        "deduplicateForks": {
+          "type": "array",
+          "description": "EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["github.com/sourcegraph/sourcegraph"]],
+          "uniqueItems": true
+        }
+      }
+    },
     "syntaxHighlighting": {
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",

@@ -297,6 +297,11 @@ type Server struct {
 
 	// Perforce is a plugin-like service attached to Server for all things Perforce.
 	Perforce *perforce.Service
+
+	// DeduplicatedForksSet is a set of all repos added to the deduplicateForks site config
+	// property. It exists only to aid in fast lookups instead of having to iterate through the list
+	// each time.
+	DeduplicatedForksSet *types.RepoURISet
 }
 
 type locks struct {
@@ -507,7 +512,7 @@ func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 	}
 
 	for {
-		gitserverAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
+		gitserverAddrs := gitserver.NewGitserverAddresses(s.DB, conf.Get())
 		s.cleanupRepos(actor.WithInternalActor(ctx), gitserverAddrs)
 		time.Sleep(interval)
 	}
@@ -521,7 +526,7 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	var previousAddrs string
 	var previousPinned string
 	for {
-		gitServerAddrs := gitserver.NewGitserverAddressesFromConf(conf.Get())
+		gitServerAddrs := gitserver.NewGitserverAddresses(s.DB, conf.Get())
 		addrs := gitServerAddrs.Addresses
 		// We turn addrs into a string here for easy comparison and storage of previous
 		// addresses since we'd need to take a copy of the slice anyway.
@@ -548,8 +553,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
-func (s *Server) addrForRepo(repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
-	return gitServerAddrs.AddrForRepo(filepath.Base(os.Args[0]), repoName)
+func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
+	return gitServerAddrs.AddrForRepo(ctx, s.Logger, filepath.Base(os.Args[0]), repoName)
 }
 
 // StartClonePipeline clones repos asynchronously. It creates a producer-consumer
@@ -760,7 +765,7 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 			repo.Name = api.UndeletedRepoName(repo.Name)
 
 			// Ensure we're only dealing with repos we are responsible for.
-			addr := s.addrForRepo(repo.Name, gitServerAddrs)
+			addr := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
 			if !s.hostnameMatch(addr) {
 				repoSyncStateCounter.WithLabelValues("other_shard").Inc()
 				continue

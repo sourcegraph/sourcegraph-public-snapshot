@@ -1,6 +1,7 @@
 package executorqueue
 
 import (
+	"context"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -17,7 +18,7 @@ import (
 
 type GitserverClient interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
-	AddrForRepo(api.RepoName) string
+	AddrForRepo(context.Context, api.RepoName) string
 }
 
 // gitserverProxy creates an HTTP handler that will proxy requests to the correct
@@ -26,7 +27,7 @@ func gitserverProxy(logger log.Logger, gitserverClient GitserverClient, gitPath 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		repo := getRepoName(r)
 
-		addrForRepo := gitserverClient.AddrForRepo(api.RepoName(repo))
+		addrForRepo := gitserverClient.AddrForRepo(r.Context(), api.RepoName(repo))
 
 		p := httputil.ReverseProxy{
 			Director: func(r *http.Request) {
