@@ -5,7 +5,7 @@ You can use Sourcegraph with Git repositories hosted on [Bitbucket Cloud](https:
 Feature | Supported?
 ------- | ----------
 [Repository syncing](../admin/external_service/bitbucket_cloud.md) | ✅
-Repository permissions | Coming soon
+[Repository permissions](../admin/external_service/bitbucket_cloud.md#repository-permissions) | ✅
 Browser extension | ✅
 Native extension | ❌ Not supported on Bitbucket.org
 
