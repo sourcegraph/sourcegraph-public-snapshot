@@ -3,8 +3,6 @@ package partitions
 import (
 	"fmt"
 	"time"
-
-	"github.com/keegancsmith/sqlf"
 )
 
 type rangePartitionStrategy[T RangeBound] struct{}
@@ -13,8 +11,8 @@ func NewRangePartitionStrategy[T RangeBound]() PartitionStrategy[RangePartitionK
 	return &rangePartitionStrategy[T]{}
 }
 
-func (m *rangePartitionStrategy[T]) FormatValuesClause(partitionKey RangePartitionKey[T]) *sqlf.Query {
-	return sqlf.Sprintf(`FROM (%s) TO (%s)`, partitionKey.LowerBound, partitionKey.UpperBound)
+func (m *rangePartitionStrategy[T]) FormatValuesClause(partitionKey RangePartitionKey[T]) string {
+	return fmt.Sprintf(`FROM (%s) TO (%s)`, partitionKey.LowerBound.String(), partitionKey.UpperBound.String())
 }
 
 type RangeBound = interface {

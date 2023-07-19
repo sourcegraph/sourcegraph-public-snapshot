@@ -2,8 +2,6 @@ package partitions
 
 import (
 	"fmt"
-
-	"github.com/keegancsmith/sqlf"
 )
 
 type hashPartitionStrategy struct{}
@@ -12,8 +10,8 @@ func NewHashPartitionStrategy() PartitionStrategy[HashPartitionKey] {
 	return &hashPartitionStrategy{}
 }
 
-func (m *hashPartitionStrategy) FormatValuesClause(partitionKey HashPartitionKey) *sqlf.Query {
-	return sqlf.Sprintf(`WITH (MODULUS X, REMAINDER Y)`, partitionKey.Modulus, partitionKey.Remainder)
+func (m *hashPartitionStrategy) FormatValuesClause(partitionKey HashPartitionKey) string {
+	return fmt.Sprintf(`WITH (MODULUS %d, REMAINDER %d)`, partitionKey.Modulus, partitionKey.Remainder)
 }
 
 type HashPartitionKey struct {

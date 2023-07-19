@@ -2,8 +2,6 @@ package partitions
 
 import (
 	"fmt"
-
-	"github.com/keegancsmith/sqlf"
 )
 
 type listPartitionStrategy[T ListBound] struct{}
@@ -12,19 +10,26 @@ func NewListPartitionStrategy[T ListBound]() PartitionStrategy[ListPartitionKey[
 	return &listPartitionStrategy[T]{}
 }
 
-func (m *listPartitionStrategy[T]) FormatValuesClause(partitionKey ListPartitionKey[T]) *sqlf.Query {
-	return sqlf.Sprintf(`IN (%s)`, partitionKey.Value)
-}
-
-type ListBound interface {
-	fmt.Stringer
+func (m *listPartitionStrategy[T]) FormatValuesClause(partitionKey ListPartitionKey[T]) string {
+	return fmt.Sprintf(`IN ('%s')`, partitionKey.Value.String())
 }
 
 type ListPartitionKey[T ListBound] struct {
 	Value T
 }
 
+type ListBound interface {
+	fmt.Stringer
+}
+
 func (k ListPartitionKey[T]) Name() string {
 	// TODO - sanitize
 	return fmt.Sprintf("%s", k.Value)
 }
+
+//
+//
+
+type String string
+
+func (s String) String() string { return string(s) }

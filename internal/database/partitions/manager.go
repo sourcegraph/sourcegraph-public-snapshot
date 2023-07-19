@@ -16,7 +16,7 @@ type PartitionManager[T PartitionKey] struct {
 }
 
 type PartitionStrategy[T PartitionKey] interface {
-	FormatValuesClause(partitionKey T) *sqlf.Query
+	FormatValuesClause(partitionKey T) string
 }
 
 type PartitionKey interface {
@@ -32,39 +32,39 @@ func NewPartitionManager[T PartitionKey](db dbutil.DB, sourceTable string, strat
 }
 
 func (m *PartitionManager[T]) EnsurePartition(ctx context.Context, partitionKey T) error {
-	return m.exec(ctx, sqlf.Sprintf(
+	return m.exec(ctx, sqlf.Sprintf(fmt.Sprintf(
 		`CREATE TABLE IF NOT EXISTS %s PARTITION OF %s FOR VALUES %s`,
-		quote(m.partitionTableNameFrom(partitionKey)),
-		quote(m.sourceTable),
+		m.PartitionTableNameFor(partitionKey),
+		m.sourceTable,
 		m.strategy.FormatValuesClause(partitionKey),
-	))
+	)))
 }
 
 func (m *PartitionManager[T]) DeletePartition(ctx context.Context, partitionKey T) error {
-	return m.exec(ctx, sqlf.Sprintf(
+	return m.exec(ctx, sqlf.Sprintf(fmt.Sprintf(
 		`DROP TABLE IF EXISTS %s`,
-		quote(m.partitionTableNameFrom(partitionKey)),
-	))
+		m.PartitionTableNameFor(partitionKey),
+	)))
 }
 
 func (m *PartitionManager[T]) AttachPartition(ctx context.Context, partitionKey T) error {
-	return m.exec(ctx, sqlf.Sprintf(
+	return m.exec(ctx, sqlf.Sprintf(fmt.Sprintf(
 		`ALTER TABLE %s ATTACH PARTITION %s FOR VALUES %s`,
-		quote(m.sourceTable),
-		quote(m.partitionTableNameFrom(partitionKey)),
+		m.sourceTable,
+		m.PartitionTableNameFor(partitionKey),
 		m.strategy.FormatValuesClause(partitionKey),
-	))
+	)))
 }
 
 func (m *PartitionManager[T]) DetachPartition(ctx context.Context, partitionKey T) error {
-	return m.exec(ctx, sqlf.Sprintf(
+	return m.exec(ctx, sqlf.Sprintf(fmt.Sprintf(
 		`ALTER TABLE %s DETACH PARTITION %s`,
-		quote(m.sourceTable),
-		quote(m.partitionTableNameFrom(partitionKey)),
-	))
+		m.sourceTable,
+		m.PartitionTableNameFor(partitionKey),
+	)))
 }
 
-func (m *PartitionManager[T]) partitionTableNameFrom(partitionKey T) string {
+func (m *PartitionManager[T]) PartitionTableNameFor(partitionKey T) string {
 	return fmt.Sprintf("%s_%s", m.sourceTable, partitionKey.Name())
 }
 
@@ -72,5 +72,3 @@ func (m *PartitionManager[T]) exec(ctx context.Context, query *sqlf.Query) error
 	_, err := m.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 	return err
 }
-
-var quote = sqlf.Sprintf
