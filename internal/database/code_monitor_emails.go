@@ -37,7 +37,7 @@ WHERE
 	AND EXISTS (
 		SELECT 1 FROM cm_monitors
 		WHERE cm_monitors.id = cm_emails.monitor
-			AND cm_monitors.namespace_user_id = %s
+			AND %s
 	)
 RETURNING %s;
 `
@@ -51,6 +51,17 @@ type EmailActionArgs struct {
 
 func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args *EmailActionArgs) (*EmailAction, error) {
 	a := actor.FromContext(ctx)
+
+	user, err := a.User(ctx, s.userStore)
+	if err != nil {
+		return nil, err
+	}
+
+	namespaceScope := sqlf.Sprintf("cm_monitors.namespace_user_id = %s", a.UID)
+	if user.SiteAdmin {
+		namespaceScope = sqlf.Sprintf("TRUE")
+	}
+
 	q := sqlf.Sprintf(
 		updateActionEmailFmtStr,
 		args.Enabled,
@@ -60,7 +71,7 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args
 		a.UID,
 		s.Now(),
 		id,
-		a.UID,
+		namespaceScope,
 		sqlf.Join(emailsColumns, ", "),
 	)
 

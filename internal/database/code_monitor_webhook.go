@@ -36,13 +36,24 @@ WHERE
 	AND EXISTS (
 		SELECT 1 FROM cm_monitors
 		WHERE cm_monitors.id = cm_webhooks.monitor
-			AND cm_monitors.namespace_user_id = %s
+			AND %s
 	)
 RETURNING %s;
 `
 
 func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, enabled, includeResults bool, url string) (*WebhookAction, error) {
 	a := actor.FromContext(ctx)
+
+	user, err := a.User(ctx, s.userStore)
+	if err != nil {
+		return nil, err
+	}
+
+	namespaceScope := sqlf.Sprintf("cm_monitors.namespace_user_id = %s", a.UID)
+	if user.SiteAdmin {
+		namespaceScope = sqlf.Sprintf("TRUE")
+	}
+
 	q := sqlf.Sprintf(
 		updateWebhookActionQuery,
 		enabled,
@@ -51,7 +62,7 @@ func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, en
 		a.UID,
 		s.Now(),
 		id,
-		a.UID,
+		namespaceScope,
 		sqlf.Join(webhookActionColumns, ","),
 	)
 

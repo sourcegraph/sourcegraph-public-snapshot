@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -95,7 +96,8 @@ type CodeMonitorStore interface {
 // from persistent storage.
 type codeMonitorStore struct {
 	*basestore.Store
-	now func() time.Time
+	userStore UserStore
+	now       func() time.Time
 }
 
 var _ CodeMonitorStore = (*codeMonitorStore)(nil)
@@ -108,7 +110,8 @@ func CodeMonitorsWith(other basestore.ShareableStore) *codeMonitorStore {
 // CodeMonitorsWithClock returns a new Store backed by the given database and
 // clock for timestamps.
 func CodeMonitorsWithClock(other basestore.ShareableStore, clock func() time.Time) *codeMonitorStore {
-	return &codeMonitorStore{Store: basestore.NewWithHandle(other.Handle()), now: clock}
+	handle := basestore.NewWithHandle(other.Handle())
+	return &codeMonitorStore{Store: handle, userStore: UsersWith(log.Scoped("codemonitors", ""), handle), now: clock}
 }
 
 // Clock returns the clock of the underlying store.

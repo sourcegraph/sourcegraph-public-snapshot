@@ -84,7 +84,7 @@ const AuthenticatedManageCodeMonitorPage: React.FunctionComponent<
                 {
                     id: id!,
                     update: {
-                        namespace: authenticatedUser.id,
+                        namespace: codeMonitor.owner.id,
                         description: codeMonitor.description,
                         enabled: codeMonitor.enabled,
                     },

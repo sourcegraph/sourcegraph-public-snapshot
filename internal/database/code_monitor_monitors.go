@@ -95,7 +95,7 @@ func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, id int64, args Mon
 		a.UID,
 		s.Now(),
 		id,
-		a.UID,
+		args.NamespaceUserID,
 		sqlf.Join(monitorColumns, ", "),
 	)
 
