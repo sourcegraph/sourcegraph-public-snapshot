@@ -3,11 +3,13 @@ package wrexec
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"os/exec"
 	"sync"
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 )
 
@@ -68,7 +70,7 @@ func RecordingWrap(ctx context.Context, logger log.Logger, shouldRecord ShouldRe
 	return rc
 }
 
-func (rc *RecordingCmd) before(ctx context.Context, logger log.Logger, cmd *exec.Cmd) error {
+func (rc *RecordingCmd) before(ctx context.Context, _ log.Logger, cmd *exec.Cmd) error {
 	// Do not run the hook again if the caller calls let's say Start() twice. Instead, we just
 	// let the exec.Cmd.Start() function returns its error.
 	if rc.done {
@@ -82,7 +84,7 @@ func (rc *RecordingCmd) before(ctx context.Context, logger log.Logger, cmd *exec
 	return nil
 }
 
-func (rc *RecordingCmd) after(ctx context.Context, logger log.Logger, cmd *exec.Cmd) {
+func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cmd) {
 	// ensure we don't record ourselves twice if the caller calls Wait() twice for example.
 	defer func() { rc.done = true }()
 	if rc.done {
@@ -142,15 +144,23 @@ func (rf *RecordingCommandFactory) Disable() {
 }
 
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
-func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, name string, args ...string) *RecordingCmd {
-	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
-	return RecordingCommand(ctx, logger, rf.shouldRecord, store, name, args...)
+func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, repoName, cmdName string, args ...string) *RecordingCmd {
+	store := rcache.NewFIFOList(KeyPrefix+fmt.Sprintf("-%s", repoName), rf.maxSize)
+	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, args...)
 }
 
 // Wrap constructs a new RecordingCommand based of an existing os/exec.Cmd, while also setting up the ShouldRecordFunc
 // currently set in the factory.
 func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *RecordingCmd {
 	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
+	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
+}
+
+// WrapWithRepoName constructs a new RecordingCommand based of an existing
+// os/exec.Cmd, while also setting up the ShouldRecordFunc currently set in the
+// factory. It uses repoName to create a new Redis list using it.
+func (rf *RecordingCommandFactory) WrapWithRepoName(ctx context.Context, logger log.Logger, repoName api.RepoName, cmd *exec.Cmd) *RecordingCmd {
+	store := rcache.NewFIFOList(KeyPrefix+fmt.Sprintf("-%s", repoName), rf.maxSize)
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
 }
 
