@@ -1905,7 +1905,9 @@
         "size": {
           "description": "Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.",
           "type": "integer",
-          "default": 100000
+          "default": 10000,
+          "minimum": 1,
+          "maximum": 10000
         },
         "repos": {
           "description": "List of repositories whose git operations should be recorded.",
@@ -1913,12 +1915,21 @@
           "items": {
             "type": "string"
           }
+        },
+        "ignoredGitCommands": {
+          "description": "List of git commands that should be ignored and not recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["show", "rev-parse", "log", "diff", "ls-tree"]
         }
       },
       "examples": [
         {
           "size": 1000,
-          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"]
+          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"],
+          "ignoredGitCommands": ["show", "rev-parse", "log", "diff", "ls-tree"]
         }
       ]
     },
