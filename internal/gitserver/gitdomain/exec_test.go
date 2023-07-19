@@ -53,6 +53,10 @@ func TestIsAllowedDiffGitCmd(t *testing.T) {
 		{args: []string{"diff", "/etc/hosts", "/etc/passwd"}, pass: false},
 		{args: []string{"diff", "/dev/null", "/etc/passwd"}, pass: false},
 		{args: []string{"diff", "/etc/hosts", "/etc/passwd"}, pass: false},
+		{args: []string{"diff", "--", "/etc/hosts", "/etc/passwd"}, pass: false},
+		{args: []string{"diff", "--", "/etc/ees", "/etc/ee"}, pass: true},
+		{args: []string{"diff", "--find-renames"}, pass: true},
+		{args: []string{"diff", "a1c0f7d19f6e9eb76facc67c1c22c07bb2ad39c4...c70f79c26526ba74f38ecff2e1e686fc3e2bdcdd"}, pass: true},
 	}
 
 	logger := logtest.Scoped(t)
