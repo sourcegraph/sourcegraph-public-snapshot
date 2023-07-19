@@ -80,6 +80,10 @@ func TestGenerateRedirectURL(t *testing.T) {
 }
 
 func TestGithubAppAuthMiddleware(t *testing.T) {
+	t.Cleanup(func() {
+		MockCreateGitHubApp = nil
+	})
+
 	webhookUUID := uuid.New()
 
 	mockUserStore := database.NewMockUserStore()
