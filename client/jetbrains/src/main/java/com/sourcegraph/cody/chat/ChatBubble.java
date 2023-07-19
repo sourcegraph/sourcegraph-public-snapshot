@@ -3,6 +3,7 @@ package com.sourcegraph.cody.chat;
 import com.intellij.openapi.project.Project;
 import java.awt.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.*;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
@@ -10,6 +11,7 @@ import org.commonmark.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 
 public class ChatBubble extends JPanel {
+  private AtomicReference<String> lastMessage = new AtomicReference<>("");
 
   private final @NotNull Project project;
 
@@ -17,6 +19,7 @@ public class ChatBubble extends JPanel {
       @NotNull ChatMessage message, @NotNull Project project, @NotNull JPanel parentPanel) {
     super();
     this.setLayout(new BorderLayout());
+    lastMessage.set(message.getDisplayText());
 
     this.project = project;
     JPanel messagePanel = buildMessagePanel(message, this.project, parentPanel);
@@ -50,6 +53,9 @@ public class ChatBubble extends JPanel {
    * message and adds the updated one.
    */
   public void updateText(@NotNull ChatMessage message, @NotNull JPanel parentPanel) {
+    if (message.getDisplayText().length() < lastMessage.get().length()) {
+      return;
+    } else lastMessage.set(message.getDisplayText());
     JPanel newMessage = buildMessagePanel(message, this.project, parentPanel);
     this.remove(0);
     this.add(newMessage, BorderLayout.CENTER, 0);

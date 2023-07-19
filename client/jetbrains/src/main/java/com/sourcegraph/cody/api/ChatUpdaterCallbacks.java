@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -67,9 +68,17 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
       Optional.ofNullable(data)
           .ifPresent(
               d -> {
-                String msg = reformatBotMessage(d, prefix);
-                if (msg.length() > lastMessage.get().length())
-                  queue.offer(reformatBotMessage(d, prefix));
+                String newMessage = reformatBotMessage(d, prefix);
+                String previousMessage = lastMessage.get();
+                String toAppend =
+                    newMessage.startsWith(previousMessage)
+                        ? StringUtils.stripStart(newMessage, previousMessage)
+                        : newMessage;
+                for (int i = 1; i <= toAppend.length(); i++) {
+                  String messageToPass = previousMessage + toAppend.substring(0, i);
+                  if (messageToPass.length() > lastMessage.get().length())
+                    queue.offer(messageToPass);
+                }
               });
   }
 
