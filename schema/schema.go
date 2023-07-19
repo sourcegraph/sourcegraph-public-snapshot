@@ -1912,7 +1912,7 @@ type Repos struct {
 
 // Repositories description: Top level configuration key for all things repositories.
 type Repositories struct {
-	// DeduplicateForks description: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver
+	// DeduplicateForks description: EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver
 	DeduplicateForks []string `json:"deduplicateForks,omitempty"`
 }
 
