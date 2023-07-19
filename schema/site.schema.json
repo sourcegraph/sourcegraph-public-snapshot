@@ -2151,6 +2151,20 @@
           "items": {
             "type": "string"
           }
+        },
+        "ignoredGitCommands": {
+          "description": "List of git commands that should be ignored and not recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [
+            "show",
+            "rev-parse",
+            "log",
+            "diff",
+            "ls-tree"
+          ]
         }
       },
       "examples": [
@@ -2159,6 +2173,13 @@
           "repos": [
             "github.com/sourcegraph/sourcegraph",
             "github.com/gorilla/mux"
+          ],
+          "ignoredGitCommands": [
+            "show",
+            "rev-parse",
+            "log",
+            "diff",
+            "ls-tree"
           ]
         }
       ]
