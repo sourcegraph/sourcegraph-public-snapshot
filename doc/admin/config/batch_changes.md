@@ -284,6 +284,8 @@ Installation access tokens are short-lived, non-refreshable tokens that give Sou
 
 ### Custom Certificates
 
+<span class="badge badge-note">Sourcegraph 5.1.5+</span>
+
 If you are using a self-signed certificate for your GitHub Enterprise instance, configure `tls.external` under `experimentalFeatures` 
 in the **Site configuration** with your certificate(s).
 
