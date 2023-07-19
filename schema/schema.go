@@ -1220,6 +1220,8 @@ type GitLabAuthProvider struct {
 	DisplayPrefix *string `json:"displayPrefix,omitempty"`
 	Hidden        bool    `json:"hidden,omitempty"`
 	Order         int     `json:"order,omitempty"`
+	// SsoURL description: An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx
+	SsoURL string `json:"ssoURL,omitempty"`
 	// TokenRefreshWindowMinutes description: Time in minutes before token expiry when we should attempt to refresh it
 	TokenRefreshWindowMinutes int    `json:"tokenRefreshWindowMinutes,omitempty"`
 	Type                      string `json:"type"`
@@ -1309,6 +1311,8 @@ type GitLabWebhook struct {
 
 // GitRecorder description: Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.
 type GitRecorder struct {
+	// IgnoredGitCommands description: List of git commands that should be ignored and not recorded.
+	IgnoredGitCommands []string `json:"ignoredGitCommands,omitempty"`
 	// Repos description: List of repositories whose git operations should be recorded.
 	Repos []string `json:"repos,omitempty"`
 	// Size description: Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.
@@ -1906,6 +1910,12 @@ type Repos struct {
 	Callsign string `json:"callsign"`
 	// Path description: Display path for the url e.g. gitolite/my/repo
 	Path string `json:"path"`
+}
+
+// Repositories description: Top level configuration key for all things repositories.
+type Repositories struct {
+	// DeduplicateForks description: EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver
+	DeduplicateForks []string `json:"deduplicateForks,omitempty"`
 }
 
 // Repository description: The repository to get the latest version of.
@@ -2635,7 +2645,9 @@ type SiteConfiguration struct {
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
 	// RepoPurgeWorker description: Configuration for repository purge worker.
 	RepoPurgeWorker *RepoPurgeWorker `json:"repoPurgeWorker,omitempty"`
-	// ScimAuthToken description: DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
+	// Repositories description: Top level configuration key for all things repositories.
+	Repositories *Repositories `json:"repositories,omitempty"`
+	// ScimAuthToken description: The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.
 	ScimAuthToken string `json:"scim.authToken,omitempty"`
 	// ScimIdentityProvider description: Identity provider used for SCIM support.  "STANDARD" should be used unless a more specific value is available
 	ScimIdentityProvider string `json:"scim.identityProvider,omitempty"`
@@ -2805,6 +2817,7 @@ func (v *SiteConfiguration) UnmarshalJSON(data []byte) error {
 	delete(m, "repoConcurrentExternalServiceSyncers")
 	delete(m, "repoListUpdateInterval")
 	delete(m, "repoPurgeWorker")
+	delete(m, "repositories")
 	delete(m, "scim.authToken")
 	delete(m, "scim.identityProvider")
 	delete(m, "search.index.symbols.enabled")

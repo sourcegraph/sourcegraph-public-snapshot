@@ -72,6 +72,7 @@ container_structure_test(
     image = ":image",
     tags = [
         "exclusive",
+        "manual",  # avoid building the oss frontend
         "requires-network",
     ],
 )

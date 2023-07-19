@@ -1,40 +1,43 @@
 <script lang="ts">
     import Commit from '$lib/Commit.svelte'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
     import FileDiff from './FileDiff.svelte'
 
     export let data: PageData
 
-    $: commit = asStore(data.commit.deferred)
-    $: diff = asStore(data.diff.deferred)
+    const { pending: commitPending, value: commit, set: setCommit } = createPromiseStore<typeof data.commit.deferred>()
+    $: setCommit(data.commit.deferred)
+    const { pending: diffPending, value: diff, set: setDiff } = createPromiseStore<typeof data.diff.deferred>()
+    $: setDiff(data.diff.deferred)
+    $: pending = $diffPending || $commitPending
 </script>
 
 <section>
-    {#if !$commit.loading && $commit.data}
+    {#if $commit}
         <div class="header">
-            <div class="info"><Commit commit={$commit.data} alwaysExpanded /></div>
+            <div class="info"><Commit commit={$commit} alwaysExpanded /></div>
             <div>
-                <span>Commit:&nbsp;{$commit.data.abbreviatedOID}</span>
+                <span>Commit:&nbsp;{$commit.abbreviatedOID}</span>
                 <span class="parents">
-                    {$commit.data.parents.length} parents:
-                    {#each $commit.data.parents as parent}
+                    {$commit.parents.length} parents:
+                    {#each $commit.parents as parent}
                         <a href={parent.url}>{parent.abbreviatedOID}</a>{' '}
                     {/each}
                 </span>
             </div>
         </div>
-        {#if !$diff.loading && $diff.data}
+        {#if $diff}
             <ul>
-                {#each $diff.data.nodes as node}
+                {#each $diff.nodes as node}
                     <li><FileDiff fileDiff={node} /></li>
                 {/each}
             </ul>
         {/if}
     {/if}
-    {#if $commit.loading || $diff.loading}
+    {#if pending}
         <LoadingSpinner />
     {/if}
 </section>

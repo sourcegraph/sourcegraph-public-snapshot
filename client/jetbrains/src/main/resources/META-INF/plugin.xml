@@ -196,7 +196,7 @@
             <reference ref="cody.refreshCodyAppDetection"/>
         </group>
 
-        <group id="CodyEditorActions" icon="/icons/codyLogoSm.svg" popup="true" text="Cody"
+        <group id="CodyEditorActions" popup="true" text="Cody"
                searchable="false" class="com.sourcegraph.cody.CodyActionGroup">
             <reference ref="cody.downloadAndInstallCodyAction"/>
             <reference ref="cody.runCodyAppAction"/>
@@ -210,7 +210,7 @@
             <add-to-group anchor="last" group-id="EditorPopupMenu"/>
         </group>
 
-        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
+        <group id="SourcegraphEditor" popup="true" text="Sourcegraph"
                searchable="false">
             <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>

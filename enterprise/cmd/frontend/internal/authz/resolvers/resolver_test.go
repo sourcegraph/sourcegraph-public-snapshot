@@ -1434,9 +1434,8 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
 		return []authz.Permission{{RepoID: repoID, UserID: 42, UpdatedAt: clock()}}, nil
 	})
-	perms.IsRepoUnrestrictedFunc.SetDefaultHook(func(_ context.Context, _ api.RepoID) (bool, error) {
-		return false, nil
-	})
+	perms.IsRepoUnrestrictedFunc.SetDefaultReturn(false, nil)
+	perms.ListRepoPermissionsFunc.SetDefaultReturn([]*database.RepoPermission{{User: &types.User{ID: 42}}}, nil)
 
 	syncJobs := database.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
@@ -1464,6 +1463,11 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 							syncedAt
 							updatedAt
 							unrestricted
+							users(first: 1) {
+								nodes {
+									id
+								}
+							}
 						}
 					}
 				}
@@ -1475,7 +1479,14 @@ func TestResolver_RepositoryPermissionsInfo(t *testing.T) {
 							"permissions": ["READ"],
 							"syncedAt": "%[1]s",
 							"updatedAt": "%[1]s",
-							"unrestricted": false
+							"unrestricted": false,
+							"users": {
+								"nodes": [
+									{
+										"id": "VXNlcjo0Mg=="
+									}
+								]
+							}
 						}
     				}
 				}
@@ -1548,9 +1559,8 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 	})
 
 	perms := database.NewStrictMockPermsStore()
-	perms.LoadUserPermissionsFunc.SetDefaultHook(func(context.Context, int32) ([]authz.Permission, error) {
-		return []authz.Permission{{UpdatedAt: clock()}}, nil
-	})
+	perms.LoadUserPermissionsFunc.SetDefaultReturn([]authz.Permission{{UpdatedAt: clock()}}, nil)
+	perms.ListUserPermissionsFunc.SetDefaultReturn([]*database.UserPermission{{Repo: &types.Repo{ID: 42}}}, nil)
 
 	syncJobs := database.NewStrictMockPermissionSyncJobStore()
 	syncJobs.GetLatestFinishedSyncJobFunc.SetDefaultReturn(&database.PermissionSyncJob{FinishedAt: clock()}, nil)
@@ -1583,6 +1593,11 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 							permissions
 							syncedAt
 							updatedAt
+							repositories(first: 1) {
+								nodes {
+									id
+								}
+							}
 						}
 					}
 				}
@@ -1593,7 +1608,14 @@ func TestResolver_UserPermissionsInfo(t *testing.T) {
 						"permissionsInfo": {
 							"permissions": ["READ"],
 							"syncedAt": "%[1]s",
-							"updatedAt": "%[1]s"
+							"updatedAt": "%[1]s",
+							"repositories": {
+								"nodes": [
+									{
+										"id": "UmVwb3NpdG9yeTo0Mg=="
+									}
+								]
+							}
 						}
     				}
 				}
@@ -1617,9 +1639,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 
 		subrepos := database.NewStrictMockSubRepoPermsStore()
-		subrepos.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
-			return nil
-		})
+		subrepos.UpsertFunc.SetDefaultReturn(nil)
 
 		db := database.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
@@ -1641,31 +1661,14 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 			ID:        1,
 			SiteAdmin: true,
 		}, nil)
-		usersStore.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, s string) (*types.User, error) {
-			return &types.User{
-				ID:       1,
-				Username: "foo",
-			}, nil
-		})
-		usersStore.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, s string) (*types.User, error) {
-			return &types.User{
-				ID:       1,
-				Username: "foo",
-			}, nil
-		})
+		usersStore.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1, Username: "foo"}, nil)
+		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(&types.User{ID: 1, Username: "foo"}, nil)
 
 		subReposStore := database.NewStrictMockSubRepoPermsStore()
-		subReposStore.UpsertFunc.SetDefaultHook(func(ctx context.Context, i int32, id api.RepoID, permissions authz.SubRepoPermissions) error {
-			return nil
-		})
+		subReposStore.UpsertFunc.SetDefaultReturn(nil)
 
 		reposStore := database.NewStrictMockRepoStore()
-		reposStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
-			return &types.Repo{
-				ID:   1,
-				Name: "foo",
-			}, nil
-		})
+		reposStore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "foo"}, nil)
 
 		db := database.NewStrictMockDB()
 		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
@@ -1678,11 +1681,7 @@ func TestResolver_SetSubRepositoryPermissionsForUsers(t *testing.T) {
 		perms := database.NewStrictMockPermsStore()
 		perms.TransactFunc.SetDefaultReturn(perms, nil)
 		perms.DoneFunc.SetDefaultReturn(nil)
-		perms.MapUsersFunc.SetDefaultHook(func(ctx context.Context, s []string, pum *schema.PermissionsUserMapping) (map[string]int32, error) {
-			return map[string]int32{
-				"alice": 1,
-			}, nil
-		})
+		perms.MapUsersFunc.SetDefaultReturn(map[string]int32{"alice": 1}, nil)
 		db.PermsFunc.SetDefaultReturn(perms)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})

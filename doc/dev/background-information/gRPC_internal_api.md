@@ -5,11 +5,11 @@ REST implementation should use
 the [canonical JSON representation of the generated protobuf structs](https://protobuf.dev/programming-guides/proto3/#json)
 in the HTTP body for arguments and responses.
 
-> _Note: An "internal" API is one that's solely used for intra-service communication/RPCs (think `searcher` fetching an archive from `gitserver`). Internal APIs don't include things like the graphQL API that external people can use (including our web interface)._
+> NOTE: An "internal" API is one that's solely used for intra-service communication/RPCs (think `searcher` fetching an archive from `gitserver`). Internal APIs don't include things like the graphQL API that external people can use (including our web interface).
 
 We expect only to maintain both implementations for the `5.1.X` release in June. Afterward, we'll only use the gRPC API and can delete the redundant REST implementations.
 
-> _Note: Even after the `5.1.X` release, we can't translate some endpoints into gRPC in the first place. Examples include endpoints used by the git protocol directly and services we have no control over that don't support gRPC (such as Postgres). See the [gRPC June 2023 milestone issue](https://github.com/sourcegraph/sourcegraph/issues/51069) for more details._
+> NOTE: Even after the `5.1.X` release, we can't translate some endpoints into gRPC in the first place. Examples include endpoints used by the git protocol directly and services we have no control over that don't support gRPC (such as Postgres). See the [gRPC June 2023 milestone issue](https://github.com/sourcegraph/sourcegraph/issues/51069) for more details.
 
 ## simple example
 
@@ -47,9 +47,9 @@ message HelloReply {
 
 ### generate the Go protobuf structs
 
-> _Note: Unless you're adding an entirely new service to sourcegraph/sourcegraph, you should be able to reuse
+> NOTE: Unless you're adding an entirely new service to sourcegraph/sourcegraph, you should be able to reuse
 the `buf.gen.yaml` files that have already been written for you. For the purposes of this example, we'll write a new
-one._
+one.
 
 Create the following buf configuration file:
 

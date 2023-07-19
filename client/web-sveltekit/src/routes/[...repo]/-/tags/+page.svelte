@@ -1,20 +1,22 @@
 <script lang="ts">
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import GitReference from '$lib/repo/GitReference.svelte'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: tags = asStore(data.tags.deferred)
-    $: nodes = !$tags.loading && $tags.data ? $tags.data.nodes : null
-    $: total = !$tags.loading && $tags.data ? $tags.data.totalCount : null
+    const { pending, value: tags, set } = createPromiseStore<typeof data.tags.deferred>()
+    $: set(data.tags.deferred)
+
+    $: nodes = $tags?.nodes
+    $: total = $tags?.totalCount
 </script>
 
 <section>
     <div>
-        {#if $tags.loading}
+        {#if $pending}
             <LoadingSpinner />
         {:else if nodes}
             <!-- TODO: Search input to filter tags by name -->

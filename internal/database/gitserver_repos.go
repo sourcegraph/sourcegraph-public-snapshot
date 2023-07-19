@@ -70,6 +70,12 @@ type GitserverRepoStore interface {
 	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (int, error)
 	// SetCloningProgress updates a piece of text description from how cloning proceeds.
 	SetCloningProgress(context.Context, api.RepoName, string) error
+
+	// UpdatePoolRepoID updates the pool_repo_id column of a gitserver_repo.
+	UpdatePoolRepoID(context.Context, api.RepoName, api.RepoName) error
+
+	// GetPoolRepo will return the PoolRepo of a repository matching the repo name if it exists.
+	GetPoolRepo(context.Context, api.RepoName) (*types.PoolRepo, error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -115,6 +121,83 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 	err := s.Exec(ctx, sqlf.Sprintf(updateGitserverReposQueryFmtstr, sqlf.Join(values, ",")))
 
 	return errors.Wrap(err, "updating GitserverRepo")
+}
+
+const updatePoolRepoIDQueryFmtStr = `
+-- find the repo that matches the poolRepoName
+WITH pool AS (
+	SELECT
+		id
+	FROM
+		repo
+	WHERE
+		name = %s::citext
+),
+-- find the repo that matches repoName
+repo AS (
+	SELECT
+		id
+	FROM
+		repo
+	WHERE
+		name = %s::citext
+)
+-- now update the pool_repo_id of repo with the repo.id of the pool
+UPDATE
+	gitserver_repos
+SET
+	pool_repo_id = (SELECT id FROM pool)
+WHERE
+	repo_id = (SELECT id FROM repo)
+`
+
+// UpdatePoolRepoID updates the repo matching `repoName` with the repo ID of the repo matching
+// `poolRepoName`.
+func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) error {
+	err := s.Exec(ctx, sqlf.Sprintf(updatePoolRepoIDQueryFmtStr, poolRepoName, repoName))
+	return errors.Wrap(err, "UpdatePoolRepoID: failed to add pool_repo_id to gitserver_repos row")
+}
+
+const getPoolRepoQueryFmtStr = `
+WITH gs AS (
+	SELECT
+		gitserver_repos.pool_repo_id
+	FROM
+		gitserver_repos
+	JOIN repo AS r ON repo_id = r.id
+	WHERE
+		name = %s::citext
+)
+SELECT
+	name,
+	uri
+FROM
+	repo
+WHERE
+	id = (SELECT pool_repo_id FROM gs)
+`
+
+func (s *gitserverRepoStore) GetPoolRepo(ctx context.Context, repoURI api.RepoName) (*types.PoolRepo, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoURI))
+
+	poolRepo, err := scanPoolRepo(row)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, errors.Wrap(err, "GetPoolRepoURI failed")
+	}
+
+	return poolRepo, nil
+}
+
+func scanPoolRepo(scanner dbutil.Scanner) (*types.PoolRepo, error) {
+	var poolRepo types.PoolRepo
+	err := scanner.Scan(&poolRepo.RepoName, &poolRepo.RepoURI)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to scan poolRepo")
+	}
+	return &poolRepo, nil
 }
 
 const updateGitserverReposQueryFmtstr = `
@@ -316,6 +399,7 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
+	gr.pool_repo_id,
 	go.last_output
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
@@ -351,6 +435,7 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
+	gr.pool_repo_id,
 	go.last_output
 FROM gitserver_repos gr
 LEFT OUTER JOIN gitserver_repos_sync_output go ON gr.repo_id = go.repo_id
@@ -383,6 +468,7 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
+	gr.pool_repo_id,
 	go.last_output
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
@@ -409,6 +495,7 @@ SELECT
 	gr.updated_at,
 	gr.corrupted_at,
 	gr.corruption_logs,
+	gr.pool_repo_id,
 	go.last_output
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
@@ -441,6 +528,7 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 	var rawLogs []byte
 	var cloneStatus string
 	var repoName api.RepoName
+	var poolRepoID int32
 	err := scanner.Scan(
 		&gr.RepoID,
 		&repoName,
@@ -454,12 +542,18 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 		&gr.UpdatedAt,
 		&dbutil.NullTime{Time: &gr.CorruptedAt},
 		&rawLogs,
+		&dbutil.NullInt32{N: &poolRepoID},
 		&dbutil.NullString{S: &gr.LastSyncOutput},
 	)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "scanning GitserverRepo")
 	}
+
 	gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
+
+	if poolRepoID != 0 {
+		gr.PoolRepoID = api.RepoID(poolRepoID)
+	}
 
 	err = json.Unmarshal(rawLogs, &gr.CorruptionLogs)
 	if err != nil {

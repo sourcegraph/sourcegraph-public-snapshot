@@ -1,11 +1,14 @@
 package gitserver
 
 import (
+	"context"
 	"crypto/md5"
 	"encoding/binary"
+	"math/rand"
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -17,6 +20,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
@@ -26,15 +30,28 @@ import (
 
 const maxMessageSizeBytes = 64 * 1024 * 1024 // 64MiB
 
-var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_gitserver_addr_for_repo_invoked",
-	Help: "Number of times gitserver.AddrForRepo was invoked",
-}, []string{"user_agent"})
+var (
+	addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_addr_for_repo_invoked",
+		Help: "Number of times gitserver.AddrForRepo was invoked",
+	}, []string{"user_agent"})
 
-// NewGitserverAddressesFromConf fetches the current set of gitserver addresses
+	addrForRepoCacheHit = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_addr_for_repo_cache_hit",
+		Help: "Number of cache hits of the repoAddressCache managed by GitserverAddresses",
+	}, []string{"user_agent"})
+
+	addrForRepoCacheMiss = promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_gitserver_addr_for_repo_cache_miss",
+		Help: "Number of cache misses of the repoAddressCache managed by GitserverAddresses",
+	}, []string{"user_agent"})
+)
+
+// NewGitserverAddresses fetches the current set of gitserver addresses
 // and pinned repos for gitserver.
-func NewGitserverAddressesFromConf(cfg *conf.Unified) GitserverAddresses {
+func NewGitserverAddresses(db database.DB, cfg *conf.Unified) GitserverAddresses {
 	addrs := GitserverAddresses{
+		db:        db,
 		Addresses: cfg.ServiceConnectionConfig.GitServers,
 	}
 	if cfg.ExperimentalFeatures != nil {
@@ -53,7 +70,7 @@ type TestClientSourceOptions struct {
 	Logger log.Logger
 }
 
-func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
+func NewTestClientSource(t *testing.T, db database.DB, addrs []string, options ...func(o *TestClientSourceOptions)) ClientSource {
 	logger := logtest.Scoped(t)
 	opts := TestClientSourceOptions{
 		ClientFunc: func(conn *grpc.ClientConn) proto.GitserverServiceClient {
@@ -81,8 +98,11 @@ func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestCl
 	}
 
 	source := testGitserverConns{
+		logger: logger,
 		conns: &GitserverConns{
+			logger: logger,
 			GitserverAddresses: GitserverAddresses{
+				db:        db,
 				Addresses: addrs,
 			},
 			grpcConns: conns,
@@ -96,6 +116,7 @@ func NewTestClientSource(t *testing.T, addrs []string, options ...func(o *TestCl
 }
 
 type testGitserverConns struct {
+	logger        log.Logger
 	conns         *GitserverConns
 	testAddresses []AddressWithClient
 
@@ -103,8 +124,8 @@ type testGitserverConns struct {
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (c *testGitserverConns) AddrForRepo(userAgent string, repo api.RepoName) string {
-	return c.conns.AddrForRepo(userAgent, repo)
+func (c *testGitserverConns) AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string {
+	return c.conns.AddrForRepo(ctx, c.logger, userAgent, repo)
 }
 
 // Addresses returns the current list of gitserver addresses.
@@ -113,8 +134,8 @@ func (c *testGitserverConns) Addresses() []AddressWithClient {
 }
 
 // ClientForRepo returns a client or host for the given repo name.
-func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conn, err := c.conns.ConnForRepo(userAgent, repo)
+func (c *testGitserverConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := c.conns.ConnForRepo(ctx, userAgent, repo)
 	if err != nil {
 		return nil, err
 	}
@@ -122,8 +143,8 @@ func (c *testGitserverConns) ClientForRepo(userAgent string, repo api.RepoName) 
 	return c.clientFunc(conn), nil
 }
 
-func (c *testGitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.conns.ConnForRepo(userAgent, repo)
+func (c *testGitserverConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
+	return c.conns.ConnForRepo(ctx, userAgent, repo)
 }
 
 type testConnAndErr struct {
@@ -146,7 +167,66 @@ func (t *testConnAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
 var _ ClientSource = &testGitserverConns{}
 var _ AddressWithClient = &testConnAndErr{}
 
+const repoAddressCacheTTL = 15 * time.Minute
+
+var ttlJitterGenerator = rand.New(rand.NewSource(time.Now().UnixNano()))
+
+type repoAddressCachedItem struct {
+	// address is the gitserver address of the repository.
+	address string
+
+	// expiresAt is the time beyond which this item is considered stale.
+	expiresAt time.Time
+}
+
+// repoAddressCache is used to cache the gitserver shard address of a repo. It is safe for
+// concurrent access.
+//
+// but ultimately leaves the decision of invalidating the cache to the consumer.
+type repoAddressCache struct {
+	mu    sync.RWMutex
+	cache map[api.RepoName]repoAddressCachedItem
+}
+
+// Read returns the item from cache or else returns nil if it does not exist.
+func (rc *repoAddressCache) Read(name api.RepoName) *repoAddressCachedItem {
+	// We might have to wait for the lock, so get the current timestamp first.
+	now := time.Now()
+
+	rc.mu.RLock()
+	defer rc.mu.RUnlock()
+
+	item, ok := rc.cache[name]
+	if !ok {
+		return nil
+	}
+
+	if now.After(item.expiresAt) {
+		return nil
+	}
+
+	return &item
+}
+
+// Write inserts a new repoAddressCachedItem in the cache for the given repo name. It will overwrite
+// the cache if an entry already exists in the cache.
+func (rc *repoAddressCache) Write(name api.RepoName, address string) {
+	rc.mu.Lock()
+	defer rc.mu.Unlock()
+
+	if rc.cache == nil {
+		rc.cache = make(map[api.RepoName]repoAddressCachedItem)
+	}
+
+	// Add a jitter of ± 30 seconds around the repoAddressCacheTTL to avoid a spike of DB reads when
+	// the cache expires for workload types that process repositories in bulk.
+	jitter := time.Duration(ttlJitterGenerator.Int63n(2*30) - 30)
+	expiresAt := time.Now().Add(repoAddressCacheTTL + (jitter * time.Second))
+	rc.cache[name] = repoAddressCachedItem{address: address, expiresAt: expiresAt}
+}
+
 type GitserverAddresses struct {
+	db database.DB
 	// The current list of gitserver addresses
 	Addresses []string
 
@@ -154,20 +234,91 @@ type GitserverAddresses struct {
 	// ensures that, even if the number of gitservers changes, these repos will
 	// not be moved.
 	PinnedServers map[string]string
+
+	repoAddressCache *repoAddressCache
 }
 
 // AddrForRepo returns the gitserver address to use for the given repo name.
-func (g GitserverAddresses) AddrForRepo(userAgent string, repo api.RepoName) string {
-	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
 
-	repo = protocol.NormalizeRepo(repo) // in case the caller didn't already normalize it
-	rs := string(repo)
-
-	if pinnedAddr, ok := g.PinnedServers[rs]; ok {
-		return pinnedAddr
+// TODO: Insert link to doc with decision tree once the PR is merged. For the time being see
+// decision tree in the PR description.
+func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger, userAgent string, repoName api.RepoName) string {
+	if logger == nil {
+		logger = log.Scoped("GitserverAddresses.AddrForRepo", "a logger scoped to GitserverAddresses.AddrForRepo")
+		logger.Warn("a nil logger being passed in the args, but handled gracefully, please investigate source of nil logger")
 	}
 
-	return addrForKey(rs, g.Addresses)
+	logger = logger.With(log.String("repoName", string(repoName)))
+
+	addrForRepoInvoked.WithLabelValues(userAgent).Inc()
+
+	getRepoAddress := func(repoName api.RepoName) string {
+		// Normalizing the name in case the caller didn't.
+		name := string(protocol.NormalizeRepo(repoName))
+
+		if pinnedAddr, ok := g.PinnedServers[name]; ok {
+			return pinnedAddr
+		}
+
+		return addrForKey(name, g.Addresses)
+	}
+
+	repoConf := conf.Get().Repositories
+	if repoConf == nil || len(repoConf.DeduplicateForks) == 0 {
+		return getRepoAddress(repoName)
+	}
+
+	if addr := g.getCachedRepoAddress(repoName); addr != "" {
+		addrForRepoCacheHit.WithLabelValues(userAgent).Inc()
+		return addr
+	}
+
+	addrForRepoCacheMiss.WithLabelValues(userAgent).Inc()
+
+	repo, err := g.db.Repos().GetByName(ctx, repoName)
+	// Maybe the repo was not found or the repo is not a fork. The repo is also not in the
+	// deduplicateforks list, so we do not need to look up a pool repo for this.
+	//
+	// Or in the worst case a SQL error occurred while looking up the repo. Either way, fallback to
+	// regular name based hashing.
+	if err != nil || (repo != nil && !repo.Fork) {
+		return g.withUpdateCache(repoName, getRepoAddress(repoName))
+	}
+
+	poolRepo, err := g.db.GitserverRepos().GetPoolRepo(ctx, repo.Name)
+	if err != nil {
+		logger.Warn("failed to get pool repo (if fork deduplication is enabled this repo may not be colocated on the same shard as the parent/other forks)", log.Error(err))
+		return g.withUpdateCache(repoName, getRepoAddress(repoName))
+	}
+
+	if poolRepo != nil {
+		return g.withUpdateCache(poolRepo.RepoName, getRepoAddress(poolRepo.RepoName))
+	}
+
+	return getRepoAddress(repoName)
+}
+
+func (g *GitserverAddresses) withUpdateCache(repoName api.RepoName, address string) string {
+	if g.repoAddressCache == nil {
+		g.repoAddressCache = &repoAddressCache{cache: make(map[api.RepoName]repoAddressCachedItem)}
+	}
+
+	g.repoAddressCache.Write(repoName, address)
+	return address
+}
+
+func (g *GitserverAddresses) getCachedRepoAddress(repoName api.RepoName) string {
+	if g.repoAddressCache == nil {
+		g.repoAddressCache = &repoAddressCache{cache: make(map[api.RepoName]repoAddressCachedItem)}
+		return ""
+	}
+
+	item := g.repoAddressCache.Read(repoName)
+	if item == nil {
+		return ""
+	}
+
+	return item.address
 }
 
 // addrForKey returns the gitserver address to use for the given string key,
@@ -180,12 +331,14 @@ func addrForKey(key string, addrs []string) string {
 
 type GitserverConns struct {
 	GitserverAddresses
+
+	logger log.Logger
 	// invariant: there is one conn for every gitserver address
 	grpcConns map[string]connAndErr
 }
 
-func (g *GitserverConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	addr := g.AddrForRepo(userAgent, repo)
+func (g *GitserverConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
+	addr := g.AddrForRepo(ctx, g.logger, userAgent, repo)
 	ce, ok := g.grpcConns[addr]
 	if !ok {
 		return nil, errors.Newf("no gRPC connection found for address %q", addr)
@@ -214,24 +367,26 @@ func (c *connAndErr) GRPCClient() (proto.GitserverServiceClient, error) {
 }
 
 type atomicGitServerConns struct {
+	db        database.DB
+	logger    log.Logger
 	conns     atomic.Pointer[GitserverConns]
 	watchOnce sync.Once
 }
 
-func (a *atomicGitServerConns) AddrForRepo(userAgent string, repo api.RepoName) string {
-	return a.get().AddrForRepo(userAgent, repo)
+func (a *atomicGitServerConns) AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string {
+	return a.get().AddrForRepo(ctx, a.logger, userAgent, repo)
 }
 
-func (a *atomicGitServerConns) ClientForRepo(userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
-	conn, err := a.get().ConnForRepo(userAgent, repo)
+func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error) {
+	conn, err := a.get().ConnForRepo(ctx, userAgent, repo)
 	if err != nil {
 		return nil, err
 	}
 	return proto.NewGitserverServiceClient(conn), nil
 }
 
-func (a *atomicGitServerConns) ConnForRepo(userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	return a.get().ConnForRepo(userAgent, repo)
+func (a *atomicGitServerConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
+	return a.get().ConnForRepo(ctx, userAgent, repo)
 }
 
 func (a *atomicGitServerConns) Addresses() []AddressWithClient {
@@ -263,7 +418,8 @@ func (a *atomicGitServerConns) initOnce() {
 
 func (a *atomicGitServerConns) update(cfg *conf.Unified) {
 	after := GitserverConns{
-		GitserverAddresses: NewGitserverAddressesFromConf(cfg),
+		logger:             a.logger,
+		GitserverAddresses: NewGitserverAddresses(a.db, cfg),
 		grpcConns:          nil, // to be filled in
 	}
 

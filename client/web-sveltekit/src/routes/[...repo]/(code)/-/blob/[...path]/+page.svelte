@@ -3,10 +3,9 @@
 
     import { page } from '$app/stores'
     import CodeMirrorBlob from '$lib/CodeMirrorBlob.svelte'
-    import type { BlobFileFields } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
     import FormatAction from './FormatAction.svelte'
@@ -14,14 +13,13 @@
 
     export let data: PageData
 
-    $: blob = asStore(data.blob.deferred)
-    $: highlights = asStore(data.highlights.deferred)
-    $: loading = $blob.loading
-    let blobData: BlobFileFields
-    $: if (!$blob.loading && $blob.data) {
-        blobData = $blob.data
-    }
-    $: formatted = !!blobData?.richHTML
+    // We use the latest value here because we want to keep showing the old document while loading
+    // the new one.
+    const { pending: loading, latestValue: blobData, set: setBlob } = createPromiseStore<typeof data.blob.deferred>()
+    const { value: highlights, set: setHighlights } = createPromiseStore<typeof data.highlights.deferred>()
+    $: setBlob(data.blob.deferred)
+    $: setHighlights(data.highlights.deferred)
+    $: formatted = !!$blobData?.richHTML
     $: showRaw = $page.url.searchParams.get('view') === 'raw'
 </script>
 
@@ -37,18 +35,15 @@
     </svelte:fragment>
 </FileHeader>
 
-<div class="content" class:loading>
-    {#if blobData}
-        {#if blobData.richHTML && !showRaw}
+<div class="content" class:loading={$loading}>
+    {#if $blobData}
+        {#if $blobData.richHTML && !showRaw}
             <div class="rich">
-                {@html blobData.richHTML}
+                {@html $blobData.richHTML}
             </div>
         {:else}
-            <CodeMirrorBlob
-                blob={blobData}
-                highlights={($highlights && !$highlights.loading && $highlights.data) || ''}
-                wrapLines={$lineWrap}
-            />
+            <!-- TODO: ensure that only the highlights for the currently loaded blob data are used -->
+            <CodeMirrorBlob blob={$blobData} highlights={$highlights || ''} wrapLines={$lineWrap} />
         {/if}
     {/if}
 </div>

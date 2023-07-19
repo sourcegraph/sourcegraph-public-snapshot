@@ -73,7 +73,7 @@ public class SettingsConfigurable implements Configurable {
         bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
 
     CodyApplicationService aSettings = CodyApplicationService.getInstance();
-    CodyProjectService pSettings = CodyService.getInstance(project);
+    CodyProjectService pSettings = CodyProjectService.getInstance(project);
 
     boolean oldCodyEnabled = ConfigUtil.isCodyEnabled();
     boolean oldCodyAutoCompleteEnabled = ConfigUtil.isCodyAutoCompleteEnabled();
@@ -115,12 +115,12 @@ public class SettingsConfigurable implements Configurable {
     if (pSettings.dotComAccessToken != null) {
       pSettings.dotComAccessToken = newDotComAccessToken;
     } else {
-      aSettings.dotComAccessToken = newDotComAccessToken;
+      aSettings.setSafeDotComAccessToken(newDotComAccessToken);
     }
     if (pSettings.enterpriseAccessToken != null) {
       pSettings.enterpriseAccessToken = newEnterpriseAccessToken;
     } else {
-      aSettings.enterpriseAccessToken = newEnterpriseAccessToken;
+      aSettings.setSafeEnterpriseAccessToken(newEnterpriseAccessToken);
     }
     if (pSettings.customRequestHeaders != null) {
       pSettings.customRequestHeaders = mySettingsComponent.getCustomRequestHeaders();

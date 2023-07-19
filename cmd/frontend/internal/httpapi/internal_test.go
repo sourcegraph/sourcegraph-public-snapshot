@@ -59,7 +59,7 @@ func TestGitServiceHandlers(t *testing.T) {
 
 type mockAddrForRepo struct{}
 
-func (mockAddrForRepo) AddrForRepo(name api.RepoName) string {
+func (mockAddrForRepo) AddrForRepo(ctx context.Context, name api.RepoName) string {
 	return strings.ReplaceAll(string(name), "/", ".") + ".gitserver"
 }
 

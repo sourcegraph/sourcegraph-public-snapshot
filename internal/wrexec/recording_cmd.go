@@ -36,7 +36,7 @@ type RecordingCmd struct {
 	done         bool
 }
 
-// ShouldRecordFunc is a predicate to signifiy if a command should be recorded or just pass through.
+// ShouldRecordFunc is a predicate to signify if a command should be recorded or just pass through.
 type ShouldRecordFunc func(context.Context, *exec.Cmd) bool
 
 // RecordingCommand contructs a RecordingCommand that implements Cmder. The predicate shouldRecord can be passed to decide on whether

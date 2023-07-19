@@ -53,7 +53,7 @@
     $: ({ repoName, revision, parentPath, resolvedRevision } = data)
     $: commitID = isErrorLike(resolvedRevision) ? '' : resolvedRevision.commitID
     // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
-    // changes
+    // update
     $: updateFileTreeProvider(repoName, revision, commitID, parentPath)
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)

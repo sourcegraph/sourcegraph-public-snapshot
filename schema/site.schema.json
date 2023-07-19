@@ -860,6 +860,21 @@
       "default": -1,
       "group": "External services"
     },
+    "repositories": {
+      "description": "Top level configuration key for all things repositories.",
+      "type": "object",
+      "properties": {
+        "deduplicateForks": {
+          "type": "array",
+          "description": "EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["github.com/sourcegraph/sourcegraph"]],
+          "uniqueItems": true
+        }
+      }
+    },
     "syntaxHighlighting": {
       "title": "SyntaxHighlighting",
       "description": "Syntax highlighting configuration",
@@ -998,7 +1013,7 @@
     },
     "scim.authToken": {
       "type": "string",
-      "description": "DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "description": "The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
       "default": "",
       "group": "External services"
     },
@@ -1905,7 +1920,9 @@
         "size": {
           "description": "Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.",
           "type": "integer",
-          "default": 100000
+          "default": 10000,
+          "minimum": 1,
+          "maximum": 10000
         },
         "repos": {
           "description": "List of repositories whose git operations should be recorded.",
@@ -1913,12 +1930,21 @@
           "items": {
             "type": "string"
           }
+        },
+        "ignoredGitCommands": {
+          "description": "List of git commands that should be ignored and not recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["show", "rev-parse", "log", "diff", "ls-tree"]
         }
       },
       "examples": [
         {
           "size": 1000,
-          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"]
+          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"],
+          "ignoredGitCommands": ["show", "rev-parse", "log", "diff", "ls-tree"]
         }
       ]
     },
@@ -2945,6 +2971,11 @@
           "type": "string",
           "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
           "default": "https://gitlab.com/"
+        },
+        "ssoURL": {
+          "type": "string",
+          "description": "An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx",
+          "default": ""
         },
         "clientID": {
           "type": "string",
