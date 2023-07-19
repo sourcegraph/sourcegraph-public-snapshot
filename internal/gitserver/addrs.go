@@ -276,10 +276,11 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 	addrForRepoCacheMiss.WithLabelValues(userAgent).Inc()
 
 	repo, err := g.db.Repos().GetByName(ctx, repoName)
-	// Either the repo was not found or the repo is not a fork. The repo is also not in the
+	// Maybe the repo was not found or the repo is not a fork. The repo is also not in the
 	// deduplicateforks list, so we do not need to look up a pool repo for this.
 	//
-	// Fallback to regular name based hashing.
+	// Or in the worst case a SQL error occurred while looking up the repo. Either way, fallback to
+	// regular name based hashing.
 	if err != nil || (repo != nil && !repo.Fork) {
 		return g.withUpdateCache(repoName, getRepoAddress(repoName))
 	}
