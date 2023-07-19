@@ -493,12 +493,13 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtyp
 	if MockCreateGitHubApp != nil {
 		return MockCreateGitHubApp(conversionURL, domain)
 	}
-	r, err := http.NewRequest("POST", conversionURL, http.NoBody)
+	r, err := http.NewRequest(http.MethodPost, conversionURL, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
 
-	client, err := newGitHubClient()
+	cf := httpcli.UncachedExternalClientFactory
+	client, err := cf.Doer()
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create GitHub client")
 	}
@@ -507,7 +508,7 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtyp
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusCreated {
 		return nil, errors.Newf("expected 201 statusCode, got: %d", resp.StatusCode)
 	}
 
@@ -536,23 +537,4 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtyp
 		Domain:        domain,
 		Logo:          fmt.Sprintf("%s://%s/identicons/app/app/%s", htmlURL.Scheme, htmlURL.Host, response.Slug),
 	}, nil
-}
-
-func newGitHubClient() (httpcli.Doer, error) {
-	cf := httpcli.UncachedExternalClientFactory
-
-	var certs []string
-	tlsExternalConfig := httpcli.TLSExternalConfig()
-	if tlsExternalConfig != nil && len(tlsExternalConfig.Certificates) > 0 {
-		certs = tlsExternalConfig.Certificates
-	}
-
-	opts := []httpcli.Opt{
-		// Use a 30s timeout to avoid running into EOF errors, because GitHub
-		// closes idle connections after 60s
-		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
-		httpcli.NewCertPoolOpt(certs...),
-	}
-
-	return cf.Doer(opts...)
 }
