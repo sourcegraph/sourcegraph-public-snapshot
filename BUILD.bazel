@@ -11,6 +11,7 @@ load("//dev/linters/staticcheck:analyzers.bzl", "STATIC_CHECK_ANALYZERS")
 load("@npm//:eslint/package_json.bzl", eslint_bin = "bin")
 load("//:stamp_tags.bzl", "stamp_tags")
 load("//dev:eslint.bzl", "eslint_test_with_types")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # Gazelle config
 #
@@ -328,8 +329,3 @@ exports_files([
     # under certain conditions. See //ui/assets/...
     "CONTRIBUTING.md",
 ])
-
-# stamp_tags(
-#     name = "tags",
-#     remote_tags = ["""($stamp.STABLE_VERSION // "0.0.0")"""],
-# )
