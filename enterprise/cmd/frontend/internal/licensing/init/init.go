@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/licensing/resolvers"
 	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/registry"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel"
+	confLib "github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -139,12 +140,14 @@ func Init(
 		if info == nil || err != nil {
 			return nil, err
 		}
+		hashedKeyValue := confLib.HashedCurrentLicenseKeyForAnalytics()
 		return &graphqlbackend.ProductLicenseInfo{
 			TagsValue:                    info.Tags,
 			UserCountValue:               info.UserCount,
 			ExpiresAtValue:               info.ExpiresAt,
 			IsValidValue:                 licensing.IsLicenseValid(),
 			LicenseInvalidityReasonValue: pointers.NonZeroPtr(licensing.GetLicenseInvalidReason()),
+			HashedKeyValue:               &hashedKeyValue,
 		}, nil
 	}
 
