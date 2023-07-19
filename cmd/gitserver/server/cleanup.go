@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -274,17 +275,24 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 			return false, nil
 		}
 
-		repo, _ := s.DB.GitserverRepos().GetByName(bCtx, s.name(dir))
-		if repo == nil {
-			err := s.removeRepoDirectory(dir, logger, false)
-			if err == nil {
-				nonExistingReposRemoved.Inc()
-			} else {
-				logger.Warn("failed removing repo that is not in DB", log.String("repo", string(dir)))
-			}
-			return true, err
+		_, err := s.DB.GitserverRepos().GetByName(bCtx, s.name(dir))
+		// Repo still exists, nothing to do.
+		if err == nil {
+			return false, nil
 		}
-		return false, nil
+
+		// Failed to talk to DB, skip this repo.
+		if !errcode.IsNotFound(err) {
+			logger.Warn("failed to look up repo", log.Error(err), log.String("repo", string(dir)))
+			return false, nil
+		}
+
+		// The repo does not exist in the DB (or is soft-deleted), continue deleting it.
+		err = s.removeRepoDirectory(dir, logger, false)
+		if err == nil {
+			nonExistingReposRemoved.Inc()
+		}
+		return true, err
 	}
 
 	ensureGitAttributes := func(dir common.GitDir) (done bool, err error) {
