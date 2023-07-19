@@ -2,7 +2,6 @@ package partitions
 
 import (
 	"fmt"
-	"time"
 )
 
 type rangePartitionStrategy[T RangeBound] struct{}
@@ -12,12 +11,11 @@ func NewRangePartitionStrategy[T RangeBound]() PartitionStrategy[RangePartitionK
 }
 
 func (m *rangePartitionStrategy[T]) FormatValuesClause(partitionKey RangePartitionKey[T]) string {
-	return fmt.Sprintf(`FROM (%s) TO (%s)`, partitionKey.LowerBound.String(), partitionKey.UpperBound.String())
+	return fmt.Sprintf(`FROM ('%s') TO ('%s')`, partitionKey.LowerBound.String(), partitionKey.UpperBound.String()) // TODO - sanitize
 }
 
-type RangeBound = interface {
+type RangeBound interface {
 	fmt.Stringer
-	time.Time | string | int
 }
 
 type RangePartitionKey[T RangeBound] struct {

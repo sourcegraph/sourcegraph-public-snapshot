@@ -11,7 +11,7 @@ func NewListPartitionStrategy[T ListBound]() PartitionStrategy[ListPartitionKey[
 }
 
 func (m *listPartitionStrategy[T]) FormatValuesClause(partitionKey ListPartitionKey[T]) string {
-	return fmt.Sprintf(`IN ('%s')`, partitionKey.Value.String())
+	return fmt.Sprintf(`IN ('%s')`, partitionKey.Value.String()) // TODO - sanitize
 }
 
 type ListPartitionKey[T ListBound] struct {
