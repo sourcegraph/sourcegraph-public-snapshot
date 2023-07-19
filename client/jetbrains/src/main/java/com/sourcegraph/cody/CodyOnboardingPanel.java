@@ -1,6 +1,5 @@
 package com.sourcegraph.cody;
 
-import com.intellij.ide.ui.laf.darcula.ui.DarculaButtonUI;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.options.ShowSettingsUtil;
@@ -15,7 +14,6 @@ import com.sourcegraph.config.SettingsConfigurable;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.border.Border;
-import javax.swing.plaf.ButtonUI;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyOnboardingPanel extends JPanel {
@@ -60,9 +58,6 @@ public class CodyOnboardingPanel extends JPanel {
             });
     goToSettingsLink.setForeground(Colors.SECONDARY_LINK_COLOR);
     goToSettingsLink.setAlignmentX(Component.CENTER_ALIGNMENT);
-    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(goToSettingsLink);
-    goToSettingsLink.setUI(buttonUI);
-    goToSettingsLink.updateUI();
     JPanel panelWithSettingsLink = new JPanel(new BorderLayout());
     panelWithSettingsLink.setBorder(JBUI.Borders.empty(PADDING, 0));
     JPanel linkPanel = new JPanel(new GridBagLayout());
