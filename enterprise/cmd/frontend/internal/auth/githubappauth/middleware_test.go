@@ -416,7 +416,6 @@ func TestCreateGitHubApp(t *testing.T) {
 	tests := []struct {
 		name          string
 		domain        types.GitHubAppDomain
-		setup         func()
 		handlerAssert func(t *testing.T) http.HandlerFunc
 		expected      *ghtypes.GitHubApp
 		expectedErr   error
