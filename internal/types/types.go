@@ -617,7 +617,7 @@ type GitserverRepo struct {
 //
 // github.com/forked/sourcegraph with ID: 2
 //
-// Then the PoolReo for github.com/forked/sourcegraph will be:
+// Then the PoolRepo for github.com/forked/sourcegraph will be:
 //
 //	PoolRepo{
 //	    RepoName: "github.com/sourcegraph/sourcegraph",
