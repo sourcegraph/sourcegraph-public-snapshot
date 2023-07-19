@@ -8,7 +8,6 @@ import com.sourcegraph.config.UserLevelConfig;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -33,7 +32,6 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
   private final History history;
   private final int charsPerToken;
   private final int responseTokens;
-  private static final Pattern precedingLineMidWordPattern = Pattern.compile(".*[A-Za-z]$");
 
   public CodyAutoCompleteItemProvider(
       WebviewErrorMessenger webviewErrorMessenger,
@@ -129,8 +127,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
     //    int waitMs;
     List<AutoCompleteProvider> completers = new ArrayList<>();
 
-    if (context.selectedAutoCompleteSuggestionInfo != null
-        || precedingLineMidWordPattern.matcher(precedingLine).matches()) {
+    if (context.selectedAutoCompleteSuggestionInfo != null) {
       return emptyResult();
     }
 
