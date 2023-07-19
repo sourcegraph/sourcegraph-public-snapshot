@@ -2657,9 +2657,8 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	defer s.cleanTmpFiles(dir)
 
 	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
-	// best-effort update the output of the fetch
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
-    // best-effort update the output of the clone
+    // best-effort update the output of the fetch
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
