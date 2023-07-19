@@ -12,7 +12,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,8 +26,10 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   @NotNull private final String prefix;
   private final AtomicBoolean gotFirstMessage = new AtomicBoolean(false);
   private final AtomicBoolean isCompleted = new AtomicBoolean(false);
-  private final AtomicReference<String> lastMessage = new AtomicReference<>("");
-  private final BlockingQueue<String> queue = new LinkedBlockingQueue<>();
+  private final AtomicReference<String> lastMessageReceived = new AtomicReference<>("");
+  private final AtomicReference<String> lastMessagePassedToChat = new AtomicReference<>("");
+  private final BlockingQueue<String> queue = new LinkedBlockingQueue<>(20);
+  private final AtomicReference<ScheduledFuture<?>> queueHandlingTask = new AtomicReference<>();
 
   public ChatUpdaterCallbacks(
       @NotNull UpdatableChat chat,
@@ -43,22 +44,25 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   public void onSubscribed() {
     logger.info("Subscribed to completions.");
     if (!cancellationToken.isCancelled()) {
-      scheduler.schedule(
-          () -> {
-            while (!Thread.currentThread().isInterrupted()
-                && !cancellationToken.isCancelled()
-                && (!queue.isEmpty() || !isCompleted.get())) {
-              try {
-                Optional.ofNullable(queue.poll(5, TimeUnit.MILLISECONDS))
-                    .ifPresent(this::passMessageToChat);
-              } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-              }
-            }
-            chat.finishMessageProcessing();
-          },
-          20,
-          TimeUnit.MILLISECONDS);
+      Optional.ofNullable(queueHandlingTask.get()).ifPresent(t -> t.cancel(true));
+      ScheduledFuture<?> newQueueHandlingTask =
+          scheduler.schedule(
+              () -> {
+                while (!Thread.currentThread().isInterrupted()
+                    && !cancellationToken.isCancelled()
+                    && (!queue.isEmpty() || !isCompleted.get())) {
+                  try {
+                    Optional.ofNullable(queue.poll(2, TimeUnit.MILLISECONDS))
+                        .ifPresent(this::passMessageToChat);
+                  } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                  }
+                }
+                chat.finishMessageProcessing();
+              },
+              20,
+              TimeUnit.MILLISECONDS);
+      queueHandlingTask.set(newQueueHandlingTask);
     }
   }
 
@@ -69,29 +73,44 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
           .ifPresent(
               d -> {
                 String newMessage = reformatBotMessage(d, prefix);
-                String previousMessage = lastMessage.get();
-                String toAppend =
-                    newMessage.startsWith(previousMessage)
-                        ? StringUtils.stripStart(newMessage, previousMessage)
-                        : newMessage;
-                for (int i = 1; i <= toAppend.length(); i++) {
-                  String messageToPass = previousMessage + toAppend.substring(0, i);
-                  if (messageToPass.length() > lastMessage.get().length())
-                    queue.offer(messageToPass);
+                if (lastMessageReceived.get().length() < newMessage.length()) {
+                  lastMessageReceived.set(newMessage);
+                  String previousMessage = lastMessagePassedToChat.get();
+                  String toAppend =
+                      newMessage.startsWith(previousMessage)
+                          ? newMessage.replace(previousMessage, "")
+                          : newMessage;
+                  for (int i = 1; i <= toAppend.length(); i++) {
+                    String currentToAppend = toAppend.substring(0, i);
+                    String messageToPass = previousMessage + currentToAppend;
+                    if (messageToPass.length() > lastMessagePassedToChat.get().length())
+                      if (!queue.offer(messageToPass)) {
+                        synchronized (queue) {
+                          queue.clear();
+                          if (!queue.offer(messageToPass))
+                            logger.warn(
+                                "Failed to queue Cody message of length: "
+                                    + messageToPass.length());
+                        }
+                      }
+                  }
                 }
               });
   }
 
   private void passMessageToChat(@NotNull String messageText) {
-    lastMessage.set(messageText);
-    ChatMessage chatMessage = ChatMessage.createAssistantMessage(messageText);
-    if (!gotFirstMessage.getAndSet(true)) chat.addMessageToChat(chatMessage);
-    else chat.updateLastMessage(chatMessage);
+    if (lastMessagePassedToChat.get().length() < messageText.length()) {
+      lastMessagePassedToChat.set(messageText);
+      ChatMessage chatMessage = ChatMessage.createAssistantMessage(messageText);
+      if (!gotFirstMessage.getAndSet(true)) chat.addMessageToChat(chatMessage);
+      else chat.updateLastMessage(chatMessage);
+    }
   }
 
   @Override
   public void onError(@NotNull Throwable error) {
     isCompleted.set(true);
+    Optional.ofNullable(queueHandlingTask.get()).ifPresent(t -> t.cancel(true));
     if (!cancellationToken.isCancelled()) {
       String message = error.getMessage();
       chat.respondToErrorFromServer(message != null ? message : "");
@@ -109,6 +128,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   @Override
   public void onCancelled() {
     isCompleted.set(true);
+    Optional.ofNullable(queueHandlingTask.get()).ifPresent(t -> t.cancel(true));
     if (!cancellationToken.isCancelled()) {
       chat.finishMessageProcessing();
     }
