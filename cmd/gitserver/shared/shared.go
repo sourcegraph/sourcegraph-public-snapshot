@@ -641,7 +641,11 @@ func recordCommandsOnRepos(repos []string) wrexec.ShouldRecordFunc {
 
 		repoMatch := false
 		for _, repo := range repos {
-			if strings.Contains(cmd.Dir, repo) {
+			// We need to check the suffix, because we can have some common parts in
+			// different repo names. E.g. "sourcegraph/sourcegraph" and
+			// "sourcegraph/sourcegraph-code-ownership" will both be allowed even if only the
+			// first name is included in the config.
+			if strings.HasSuffix(cmd.Dir, repo+"/.git") {
 				repoMatch = true
 				break
 			}
