@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -638,10 +639,7 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 	}
 
 	// we won't record any git commands with these commands since they are considered to be not destructive
-	var ignoredGitCommandsMap = make(map[string]struct{}, len(ignoredGitCommands))
-	for _, command := range ignoredGitCommands {
-		ignoredGitCommandsMap[command] = struct{}{}
-	}
+	var ignoredGitCommandsMap = collections.NewSet(ignoredGitCommands...)
 
 	return func(ctx context.Context, cmd *exec.Cmd) bool {
 		base := filepath.Base(cmd.Path)
@@ -664,7 +662,7 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 		// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
 		// git -c "protocol.version=2" remote show
 		for _, arg := range cmd.Args {
-			if _, ok := ignoredGitCommandsMap[arg]; ok {
+			if ok := ignoredGitCommandsMap.Has(arg); ok {
 				return false
 			}
 		}
