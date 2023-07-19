@@ -2186,8 +2186,16 @@ webpack_devserver(
 build_test(
     name = "webpack_test",
     size = "enormous",
+    tags = ["manual"],  # avoid building the oss bundle
     targets = [
         ":bundle",
+    ],
+)
+
+build_test(
+    name = "webpack_test_enterprise",
+    size = "enormous",
+    targets = [
         ":bundle-enterprise",
     ],
 )
