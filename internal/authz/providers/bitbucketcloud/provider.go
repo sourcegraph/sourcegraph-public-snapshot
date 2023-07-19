@@ -60,7 +60,12 @@ func NewProvider(db database.DB, conn *types.BitbucketCloudConnection, opts Prov
 
 // ValidateConnection validates that the Provider has access to the Bitbucket Cloud API
 // with the credentials it was configured with.
+//
+// Credentials are verified by querying the "/2.0/repositories" endpoint.
+// This validates that the credentials have the `repository` scope.
+// See: https://developer.atlassian.com/cloud/bitbucket/rest/api-group-repositories/#api-repositories-get
 func (p *Provider) ValidateConnection(ctx context.Context) error {
+	// We don't care about the contents returned, only whether or not an error occurred
 	_, _, err := p.client.Repos(ctx, nil, "", nil)
 	return err
 }
