@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 @SuppressWarnings({"unused", "FieldCanBeLocal", "CommentedOutCode"})
 public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider {
   private static final Logger logger = Logger.getInstance(CodyAutoCompleteItemProvider.class);
-  public static final int nThreads = 3; // up to 3 completion API calls to run in parallel
+  public static final int nThreads = 1; // The number of API calls to run in parallel
   // should we reuse the scheduler from CodyCompletionsManager here later on?
   private final ExecutorService executor = Executors.newFixedThreadPool(nThreads);
   private final int promptTokens;
