@@ -821,13 +821,16 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     </Link>
                     ) with the following scopes:
                     <ul>
-                        <li><strong>Workspace membership</strong>: Read</li>
-                        <li><strong>Repositories</strong>: Read</li>
+                        <li>
+                            <strong>Workspace membership</strong>: Read
+                        </li>
+                        <li>
+                            <strong>Repositories</strong>: Read
+                        </li>
                     </ul>
                 </li>
                 <li>
-                    Paste your app password in the{' '}
-                    <Field>appPassword</Field> field in the configuration below.
+                    Paste your app password in the <Field>appPassword</Field> field in the configuration below.
                 </li>
                 <li>
                     Set the <Field>username</Field> field to be the username corresponding to <Field>appPassword</Field>
