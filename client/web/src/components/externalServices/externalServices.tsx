@@ -819,7 +819,14 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     >
                         instructions
                     </Link>
-                    ) with <b>read</b> scope over your repositories and teams. Set it to be the value of the{' '}
+                    ) with the following scopes:
+                    <ul>
+                        <li><strong>Workspace membership</strong>: Read</li>
+                        <li><strong>Repositories</strong>: Read</li>
+                    </ul>
+                </li>
+                <li>
+                    Paste your app password in the{' '}
                     <Field>appPassword</Field> field in the configuration below.
                 </li>
                 <li>
