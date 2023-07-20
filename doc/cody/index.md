@@ -1,26 +1,31 @@
 # <picture title="Cody"><img class="theme-dark-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-white.png" width="200"><img class="theme-light-only" src="https://storage.googleapis.com/sourcegraph-assets/cody/20230417/logomark-default-text-black.png" width="200"><div style="display:none">Cody</div></picture>
 
-<span class="badge badge-beta">Beta</span> Cody is an AI coding assistant that writes code and answers questions for you by reading your entire codebase and the code graph.
+<aside class="beta">
+<p>
+<span class="badge badge-beta">Beta</span>
+Cody is currently available in beta, and we value your feedback! You can <a href="https://about.sourcegraph.com/contact">contact us</a> directly, file an  <a href="https://github.com/sourcegraph/sourcegraph">issue</a>, or <a href="https://twitter.com/sourcegraph">tweet</a>.
+</p>
+</aside>
 
-Cody uses a combination of Sourcegraph's code graph and Large Language Models (LLMs) to eliminate toil and keep human devs in flow. You can think of Cody as your coding assistant who has read through all the code in open source, all the questions on StackOverflow, and your own entire codebase, and is always there to answer questions you might have or suggest ways of doing something based on prior knowledge.
+Cody is an AI coding assistant tool that utilizes Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context"> code graph</a> and Large Language Models (LLMs) to write code and provide answers based on your codebase and code graph.
 
-## Get Cody
+Think of Cody as your personal coding assistant with a comprehensive understanding of your open source code, StackOverflow questions, and entire codebase.
 
-- **Cody enterprise:** Contact your Sourcegraph technical advisor or [request enterprise access](https://about.sourcegraph.com/cody#cody-for-work) to use Cody on your existing Sourcegraph instance or try Cody with your team.
-- **Cody app:** Download the app to try Cody with the code you have locally for free. [Learn more.](../app/index.md)
+Cody helps you answer questions, write code, and offer suggestions for code improvement.
 
-Cody is also available as an editor extension that can be connected to a Sourcegraph enterprise instance, the Cody app, or Sourcegraph.com (for open source code only):
-  - [VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
-  - [JetBrains extension (Experimental)](https://plugins.jetbrains.com/plugin/9682-sourcegraph)
-
-[Read more about the Cody clients, extensions, and plugins](explanations/cody_clients.md), including a full breakdown of features available by client. 
+## Get Started
 
 <div class="getting-started">
-  <a class="btn btn-primary text-center" href="quickstart">★ Cody quickstart</a>
-  <a class="btn text-center" href="explanations/use_cases">Cody use cases</a>
-  <a class="btn text-center" href="faq">FAQ</a>
-  <a class="btn text-center" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord</a>
+  <a class="btn btn-primary text-left" href="https://about.sourcegraph.com/cody/pricing"><b>Cody Enterprise!</b><p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p></a>
+  <a class="btn btn-primary text-left" href="https://sourcegraph.com/get-cody"><b>Cody App!</b><p>Install the free desktop app to try Cody with your local codebase.</p></a>
 </div>
+
+<div class="getting-started">
+  <a class="btn btn-primary text-left" href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai"><b>VS Code Extension</b><p>Install Cody's free IDE extension for VS Code.</p></a>
+    <a class="btn btn-primary text-left" href="https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph"><b>JetBrains Extension (experimental)</b><p>Install Cody's free IDE extension for JetBrains.</p></a>
+</div>
+
+[Read more about the Cody clients, extensions, and plugins](explanations/cody_clients.md), including a full breakdown of features available by client.
 
 ## Features
 
@@ -76,7 +81,7 @@ In your editor, select the recipes tab or  right-click on a selection of code an
 
 ### Autocomplete
 
-Cody provides real-time code autocompletion as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files and file history to predict what you're trying to implement and provide autocomplete. 
+Cody provides real-time code autocompletion as you're typing. As you start coding, or after you type a comment, Cody will look at the context around your open files and file history to predict what you're trying to implement and provide autocomplete.
 
 ## Troubleshooting
 
@@ -92,3 +97,16 @@ See [Cody troubleshooting guide](troubleshooting.md).
 - [Installing the Jetbrains extension (experimental)](explanations/installing_jetbrains.md)
 - [Configuring code graph context](explanations/code_graph_context.md)
 - [Sourcegraph Cody Gateway](explanations/cody_gateway.md)
+
+## More resources
+
+For more information on what to do next, we recommend the following resources:
+
+<div class="getting-started">
+  <a class="btn btn-primary text-center" href="quickstart">Cody Quickstart</a>
+  <a class="btn text-center" href="explanations/use_cases">Cody Use Cases</a>
+</div>
+<div class="getting-started">
+  <a class="btn text-center" href="faq">FAQs</a>
+  <a class="btn text-center" href="https://discord.com/servers/sourcegraph-969688426372825169">Join our Discord!</a>
+</div>
