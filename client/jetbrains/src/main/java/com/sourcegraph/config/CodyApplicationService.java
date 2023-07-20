@@ -36,7 +36,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable
   public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
 
-  @Nullable public Boolean isCodyEnabled;
+  public boolean isCodyEnabled = true;
   @Nullable public Boolean isCodyAutoCompleteEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
@@ -129,7 +129,11 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   }
 
   public boolean isCodyEnabled() {
-    return Optional.ofNullable(isCodyEnabled).orElse(false);
+    return isCodyEnabled;
+  }
+
+  public void setCodyEnabled(boolean enabled) {
+    isCodyEnabled = enabled;
   }
 
   public boolean isCodyAutoCompleteEnabled() {

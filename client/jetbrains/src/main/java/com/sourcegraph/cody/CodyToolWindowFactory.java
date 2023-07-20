@@ -14,17 +14,12 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
-  @Override
-  public boolean isApplicable(@NotNull Project project) {
-    return ConfigUtil.isCodyEnabled() && ToolWindowFactory.super.isApplicable(project);
-  }
+
+  public static final String TOOL_WINDOW_ID = "Cody";
 
   @Override
   public void createToolWindowContent(@NotNull Project project, @NotNull ToolWindow toolWindow) {
-    CodyToolWindowContent toolWindowContent = new CodyToolWindowContent(project);
-    UpdatableChatHolderService projectService =
-        project.getService(UpdatableChatHolderService.class);
-    projectService.setUpdatableChat(toolWindowContent);
+    CodyToolWindowContent toolWindowContent = CodyToolWindowContent.getInstance(project);
     Content content =
         ContentFactory.SERVICE
             .getInstance()
@@ -43,5 +38,10 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
     if (action != null) {
       titleActions.add(action);
     }
+  }
+
+  @Override
+  public boolean shouldBeAvailable(@NotNull Project project) {
+    return ConfigUtil.isCodyEnabled();
   }
 }
