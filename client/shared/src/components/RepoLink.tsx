@@ -8,7 +8,7 @@ import { LinkOrSpan } from '@sourcegraph/wildcard'
 export function displayRepoName(repoName: string): string {
     let parts = repoName.split('/')
     if (parts.length > 0 && parts[0].includes('.')) {
-        parts = parts.slice(1)
+        parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
     }
     return parts.join('/')
 }
