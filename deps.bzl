@@ -3215,6 +3215,15 @@ def go_dependencies():
         importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric",
         sum = "h1:VahL5SjDdCas8mMKARolw2vvBsuLc5oV7XNSbxeMQP8=",
         version = "v0.41.0",
+        build_directives = [
+            # @go_googleapis is the modern version of @org_golang_google_genproto
+            # use @go_googleapis to avoid dependency conflicts between the two
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/metric @go_googleapis//google/api:metric_go_proto",  # keep
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api @go_googleapis//google/api:api_go_proto",  # keep
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/label @go_googleapis//google/api:label_go_proto",  # keep
+            "gazelle:resolve go google.golang.org/genproto/googleapis/api/monitoredres @go_googleapis//google/api:monitoredres_go_proto",  # keep
+        ],
     )
 
     go_repository(
