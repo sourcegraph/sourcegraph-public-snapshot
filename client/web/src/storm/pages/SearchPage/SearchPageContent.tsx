@@ -7,6 +7,7 @@ import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/Que
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
 import { Label, Tooltip } from '@sourcegraph/wildcard'
 
@@ -22,7 +23,6 @@ import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
-import {useTemporarySetting} from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting';
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
