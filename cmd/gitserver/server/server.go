@@ -1419,7 +1419,7 @@ func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCo
 		return "", true, errors.New("commit ID starting with - is not allowed")
 	}
 
-	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, string(repoCommit.Repo), "git", "log", "-n", "1", "--name-only", format, commitId)
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = &buf
 
@@ -1614,6 +1614,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	ensureRevisionStatus := "noop"
 
 	req.Repo = protocol.NormalizeRepo(req.Repo)
+	repoName := req.Repo
 
 	// Instrumentation
 	{
@@ -1624,7 +1625,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		args := strings.Join(req.Args, " ")
 
 		var tr trace.Trace
-		tr, ctx = trace.New(ctx, "exec."+cmd, req.Repo.Attr())
+		tr, ctx = trace.New(ctx, "exec."+cmd, repoName.Attr())
 		tr.SetAttributes(
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
@@ -1660,7 +1661,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-exec")
 				ev.SetSampleRate(honeySampleRate(cmd, act))
-				ev.AddField("repo", req.Repo)
+				ev.AddField("repo", repoName)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
 				ev.AddField("actor", act.UIDString())
@@ -1703,7 +1704,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		}()
 	}
 
-	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, req.Repo); !cloned {
+	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, repoName); !cloned {
 		if notFoundPayload.CloneInProgress {
 			status = "clone-in-progress"
 		} else {
@@ -1713,8 +1714,8 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		return execStatus{}, &NotFoundError{notFoundPayload}
 	}
 
-	dir := s.dir(req.Repo)
-	if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
+	dir := s.dir(repoName)
+	if s.ensureRevision(ctx, repoName, req.EnsureRevision, dir) {
 		ensureRevisionStatus = "fetched"
 	}
 
@@ -1743,7 +1744,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
 
 	cmdStart = time.Now()
-	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, "git", req.Args...)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, string(repoName), "git", req.Args...)
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = stdoutW
 	cmd.Unwrap().Stderr = stderrW
@@ -1756,7 +1757,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
+	s.logIfCorrupt(ctx, repoName, dir, stderr)
 
 	return execStatus{
 		Err:        execErr,
@@ -2268,7 +2269,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
+	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
     // best-effort update the output of the clone
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
@@ -2283,7 +2284,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	removeBadRefs(ctx, tmp)
 
-	if err := setHEAD(ctx, logger, s.RecordingCommandFactory, tmp, syncer, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, repo, s.RecordingCommandFactory, tmp, syncer, remoteURL); err != nil {
 		logger.Warn("Failed to ensure HEAD exists", log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
@@ -2661,7 +2662,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
+	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
     // best-effort update the output of the fetch
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
@@ -2676,7 +2677,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	removeBadRefs(ctx, dir)
 
-	if err := setHEAD(ctx, logger, s.RecordingCommandFactory, dir, syncer, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, repo, s.RecordingCommandFactory, dir, syncer, remoteURL); err != nil {
 		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
@@ -2752,7 +2753,7 @@ func ensureHEAD(dir common.GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommandFactory, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, repoName api.RepoName, rf *wrexec.RecordingCommandFactory, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
@@ -2766,7 +2767,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runRemoteGitCommand(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
+	output, err := runRemoteGitCommand(ctx, rf.WrapWithRepoName(ctx, logger, repoName, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

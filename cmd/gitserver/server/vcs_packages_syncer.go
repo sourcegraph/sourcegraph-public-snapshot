@@ -91,7 +91,7 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	}
 
 	// The Fetch method is responsible for cleaning up temporary directories.
-	if _, err := s.Fetch(ctx, remoteURL, common.GitDir(bareGitDirectory), ""); err != nil {
+	if _, err := s.Fetch(ctx, remoteURL, "", common.GitDir(bareGitDirectory), ""); err != nil {
 		return nil, errors.Wrapf(err, "failed to fetch repo for %s", remoteURL)
 	}
 
@@ -99,7 +99,7 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
+func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ api.RepoName, dir common.GitDir, revspec string) ([]byte, error) {
 	var pkg reposource.Package
 	pkg, err := s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
 	if err != nil {
