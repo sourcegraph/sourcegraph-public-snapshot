@@ -10,21 +10,39 @@ import { RepoSearchSimpleSearch } from './RepoSearchSimpleSearch'
 
 import styles from './SimpleSearch.module.scss'
 
+const EVENT_PREFIX = 'SIMPLE_SEARCH_'
+
+function eventName(name: string): string {
+    return EVENT_PREFIX+name
+}
+
 export const SimpleSearch: FC<SimpleSearchProps> = props => {
     const [showState, setShowState] = useState<string>('default')
 
+    function onSubmitWithTelemetry(): void {
+        props.telemetryService.log(eventName('SUBMIT_SEARCH'), {'type': showState})
+        props.onSubmit()
+    }
+
     function pickRender(): JSX.Element {
+        const changeState = (nextState: string): void => {
+            props.telemetryService.log(eventName('SELECT_JOB'), {'next': nextState})
+            setShowState(nextState)
+        }
+
+        const searchProps: SimpleSearchProps = {...props, onSubmit: onSubmitWithTelemetry}
+
         switch (showState) {
             case 'default':
-                return <SearchPicker setShowState={setShowState} />
+                return <SearchPicker setShowState={changeState} />
             case 'code':
-                return <CodeSearchSimpleSearch {...props} />
+                return <CodeSearchSimpleSearch {...searchProps} />
             case 'repo':
-                return <RepoSearchSimpleSearch {...props} />
+                return <RepoSearchSimpleSearch {...searchProps} />
             case 'changes':
-                return <FindChangesSimpleSearch {...props} />
+                return <FindChangesSimpleSearch {...searchProps} />
             default:
-                return <SearchPicker setShowState={setShowState} />
+                return <SearchPicker setShowState={changeState} />
         }
     }
 
