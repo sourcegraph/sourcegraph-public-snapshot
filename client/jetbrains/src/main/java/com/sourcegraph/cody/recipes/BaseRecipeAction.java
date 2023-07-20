@@ -3,8 +3,6 @@ package com.sourcegraph.cody.recipes;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.cody.UpdatableChat;
-import com.sourcegraph.cody.UpdatableChatHolderService;
 import com.sourcegraph.cody.localapp.LocalAppManager;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
@@ -19,11 +17,8 @@ public abstract class BaseRecipeAction extends DumbAwareAction {
       disableAction(e);
       return;
     }
-    UpdatableChatHolderService updatableChatHolderService =
-        project.getService(UpdatableChatHolderService.class);
-    UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    if (updatableChat == null) {
-      disableAction(e);
+    if (!ConfigUtil.isCodyEnabled()) {
+      disableAndHide(e);
       return;
     }
     if (LocalAppManager.isPlatformSupported()
@@ -36,11 +31,15 @@ public abstract class BaseRecipeAction extends DumbAwareAction {
         return;
       }
     }
-    enableAction(e);
+    enableAndShow(e);
   }
 
-  private static void enableAction(@NotNull AnActionEvent e) {
-    e.getPresentation().setEnabled(true);
+  private static void disableAndHide(@NotNull AnActionEvent e) {
+    e.getPresentation().setEnabledAndVisible(false);
+  }
+
+  private static void enableAndShow(@NotNull AnActionEvent e) {
+    e.getPresentation().setEnabledAndVisible(true);
   }
 
   private static void disableAction(@NotNull AnActionEvent e) {

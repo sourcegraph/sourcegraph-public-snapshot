@@ -1,8 +1,6 @@
 <script lang="ts">
     import { page } from '$app/stores'
 
-    import Permalink from '../../routes/[...repo]/Permalink.svelte'
-
     import SidebarToggleButton from './SidebarToggleButton.svelte'
     import { sidebarOpen } from './stores'
     import { navFromPath } from './utils'
@@ -35,7 +33,6 @@
     </h2>
     <div class="actions">
         <slot name="actions" />
-        <Permalink />
     </div>
 </div>
 

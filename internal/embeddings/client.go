@@ -45,7 +45,6 @@ func NewClient(endpoints *endpoint.Map, doer httpcli.Doer) Client {
 
 type Client interface {
 	Search(context.Context, EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error)
-	IsContextRequiredForChatQuery(context.Context, IsContextRequiredForChatQueryParameters) (bool, error)
 }
 
 type client struct {
@@ -74,14 +73,6 @@ func (p *EmbeddingsSearchParameters) Attrs() []attribute.KeyValue {
 		attribute.Int("textResultsCount", p.TextResultsCount),
 		attribute.Bool("useDocumentRanks", p.UseDocumentRanks),
 	}
-}
-
-type IsContextRequiredForChatQueryParameters struct {
-	Query string `json:"query"`
-}
-
-type IsContextRequiredForChatQueryResult struct {
-	IsRequired bool `json:"isRequired"`
 }
 
 func (c *client) Search(ctx context.Context, args EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
@@ -142,36 +133,6 @@ func (c *client) searchPartition(ctx context.Context, endpoint string, args Embe
 		return nil, err
 	}
 	return &response, nil
-}
-
-func (c *client) IsContextRequiredForChatQuery(ctx context.Context, args IsContextRequiredForChatQueryParameters) (bool, error) {
-	endpoint, err := c.url("")
-	if err != nil {
-		return false, err
-	}
-
-	resp, err := c.httpPost(ctx, "isContextRequiredForChatQuery", endpoint, args)
-	if err != nil {
-		return false, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return false, errors.Errorf(
-			"Embeddings.IsContextRequiredForChatQuery http status %d: %s",
-			resp.StatusCode,
-			string(body),
-		)
-	}
-
-	var response IsContextRequiredForChatQueryResult
-	err = json.NewDecoder(resp.Body).Decode(&response)
-	if err != nil {
-		return false, err
-	}
-	return response.IsRequired, nil
 }
 
 func (c *client) url(repo api.RepoName) (string, error) {

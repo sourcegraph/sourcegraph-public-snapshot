@@ -10,6 +10,7 @@ import (
 
 	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -578,6 +579,18 @@ func GitMaxConcurrentClones() int {
 		return 5
 	}
 	return v
+}
+
+func GetDeduplicatedForksIndex() collections.Set[string] {
+	index := collections.NewSet[string]()
+
+	repoConf := Get().Repositories
+	if repoConf == nil {
+		return index
+	}
+
+	index.Add(repoConf.DeduplicateForks...)
+	return index
 }
 
 // GetCompletionsConfig evaluates a complete completions configuration based on

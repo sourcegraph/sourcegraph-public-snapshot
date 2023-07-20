@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -151,7 +152,7 @@ func (s *PerforceDepotSyncer) buildP4FusionCmd(ctx context.Context, depot, usern
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, _ string) ([]byte, error) {
+func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
 	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "decompose")

@@ -1873,6 +1873,7 @@ ts_project(
         "src/components/diff/DiffStat.test.tsx",
         "src/components/externalServices/ExternalServiceForm.test.tsx",
         "src/components/externalServices/externalServices.test.tsx",
+        "src/components/fuzzyFinder/FuzzyFiles.test.ts",
         "src/components/fuzzyFinder/FuzzyFinder.mocks.tsx",
         "src/components/fuzzyFinder/FuzzyFinder.test.tsx",
         "src/components/legacyLayoutRouteContext.mock.ts",
@@ -2186,8 +2187,16 @@ webpack_devserver(
 build_test(
     name = "webpack_test",
     size = "enormous",
+    tags = ["manual"],  # avoid building the oss bundle
     targets = [
         ":bundle",
+    ],
+)
+
+build_test(
+    name = "webpack_test_enterprise",
+    size = "enormous",
+    targets = [
         ":bundle-enterprise",
     ],
 )

@@ -10,6 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -1198,10 +1199,78 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 }
 
+func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepo(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create one test poolRepo
+	poolRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "internal.github.com/sourcegraph/repo",
+		URI:           "github.com/sourcegraph/repo",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
+	})
+
+	// Create one test repo
+	forkedRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:          "internal.github.com/forked/repo",
+		URI:           "github.com/forked/repo",
+		CloneStatus:   types.CloneStatusNotCloned,
+		RepoSizeBytes: 100,
+	})
+
+	t.Run("pool repo does not exist", func(t *testing.T) {
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, api.RepoName("foo"), forkedRepo.Name)
+		require.NoError(t, err)
+
+		gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, forkedRepo.Name)
+		require.NoError(t, err)
+		require.Nil(t, gotPoolRepo)
+
+	})
+
+	t.Run("forked repo does not exist", func(t *testing.T) {
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, poolRepo.Name, api.RepoName("foo"))
+		require.NoError(t, err)
+
+		gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, api.RepoName("foo"))
+		require.NoError(t, err)
+		require.Nil(t, gotPoolRepo)
+	})
+
+	t.Run("both pool and forked repo do not exist", func(t *testing.T) {
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, api.RepoName("foo"), api.RepoName("bar"))
+		require.NoError(t, err)
+
+		gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, api.RepoName("bar"))
+		require.NoError(t, err)
+		require.Nil(t, gotPoolRepo)
+	})
+
+	t.Run("both pool and forked repo exist", func(t *testing.T) {
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, poolRepo.Name, forkedRepo.Name)
+		require.NoError(t, err)
+		gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, forkedRepo.Name)
+
+		require.NoError(t, err)
+		require.NotNil(t, gotPoolRepo)
+
+		wantPoolRepo := types.PoolRepo{RepoName: poolRepo.Name, RepoURI: poolRepo.URI}
+		if diff := cmp.Diff(wantPoolRepo, *gotPoolRepo); diff != "" {
+			t.Fatalf("mismatched pool repo got, (-want, +got):\n%s", diff)
+		}
+	})
+}
+
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
-	repo := &types.Repo{Name: payload.Name}
+	repo := &types.Repo{Name: payload.Name, URI: payload.URI}
 
 	// Create Repo
 	err := db.Repos().Create(ctx, repo)
@@ -1236,6 +1305,8 @@ type createTestRepoPayload struct {
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
+
+	URI string
 
 	// Gitserver related properties
 
