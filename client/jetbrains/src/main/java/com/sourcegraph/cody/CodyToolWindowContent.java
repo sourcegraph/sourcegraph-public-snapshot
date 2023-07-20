@@ -62,11 +62,12 @@ import com.sourcegraph.config.SettingsComponent.InstanceType;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.*;
-import java.awt.event.AdjustmentListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import javax.swing.*;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -74,9 +75,6 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import java.util.Optional;
-import javax.swing.*;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
 import org.apache.commons.lang3.StringUtils;
@@ -445,20 +443,20 @@ public class CodyToolWindowContent implements UpdatableChat {
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {
     ApplicationManager.getApplication()
         .invokeLater(
-            () -> {
-              transcript.addAssistantResponse(message);
-              if (messagesPanel.getComponentCount() > 0) {
-                JPanel lastBubblePanel =
-                    (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
-                Component component = lastBubblePanel.getComponent(0);
-                if (component instanceof ChatBubble) {
-                  ChatBubble lastBubble = (ChatBubble) component;
-                  lastBubble.updateText(message, messagesPanel);
-                  messagesPanel.revalidate();
-                  messagesPanel.repaint();
-                }
-              }
-            });
+            () ->
+                Optional.of(messagesPanel)
+                    .filter(mp -> mp.getComponentCount() > 0)
+                    .map(mp -> mp.getComponent(mp.getComponentCount() - 1))
+                    .filter(component -> component instanceof JPanel)
+                    .map(component -> (JPanel) component)
+                    .map(lastBubblePanel -> lastBubblePanel.getComponent(0))
+                    .filter(component -> component instanceof ChatBubble)
+                    .map(component -> (ChatBubble) component)
+                    .ifPresent(
+                        lastBubble -> {
+                          transcript.addAssistantResponse(message);
+                          lastBubble.incrementallyUpdateText(message, messagesPanel);
+                        }));
   }
 
   private void startMessageProcessing() {
