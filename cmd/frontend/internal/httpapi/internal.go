@@ -20,9 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type frontendServer struct {
+	db database.DB
+}
+
 // serveExternalServiceConfigs serves a JSON response that is an array of all
 // external service configs that match the requested kind.
-func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
+func (fs *frontendServer) serveExternalServiceConfigs() func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var req api.ExternalServiceConfigsRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -40,7 +44,7 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 			}
 		}
 
-		services, err := db.ExternalServices().List(r.Context(), options)
+		services, err := fs.db.ExternalServices().List(r.Context(), options)
 		if err != nil {
 			return err
 		}

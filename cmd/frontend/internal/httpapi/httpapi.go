@@ -26,6 +26,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
+	v1 "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/v1"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
@@ -216,7 +217,9 @@ func RegisterInternalServices(
 		WriteErrBody: true,
 	})
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
+	fs := &frontendServer{db: db}
+
+	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(fs.serveExternalServiceConfigs())))
 
 	// zoekt-indexserver endpoints
 	gsClient := gitserver.NewClient(db)
@@ -239,6 +242,7 @@ func RegisterInternalServices(
 	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
 
 	proto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
+	v1.RegisterFrontendServiceServer(s, &GRPCService{Server: fs})
 
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
