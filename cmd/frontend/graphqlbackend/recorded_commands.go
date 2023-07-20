@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"errors"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -11,23 +10,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
-type RecordedCommandsArgs struct {
-	RepoName string
-}
-
-func (r *schemaResolver) RecordedCommands(ctx context.Context, args RecordedCommandsArgs) ([]RecordedCommandResolver, error) {
-	repoName := args.RepoName
-	if strings.TrimSpace(repoName) == "" {
-		return nil, errors.New("empty string provided as repository name")
-	}
+func (r *RepositoryResolver) RecordedCommands(ctx context.Context) ([]RecordedCommandResolver, error) {
 	recordingConf := conf.Get().SiteConfig().GitRecorder
-	store := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), recordingConf.Size)
+	store := rcache.NewFIFOList(wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
 	empty, err := store.IsEmpty()
 	if err != nil {
 		return nil, err
 	}
 	if empty {
-		return nil, nil
+		return []RecordedCommandResolver{}, nil
 	}
 	raws, err := store.All(ctx)
 	if err != nil {

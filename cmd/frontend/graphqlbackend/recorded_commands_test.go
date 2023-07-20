@@ -1,14 +1,17 @@
 package graphqlbackend
 
 import (
+	"context"
 	"encoding/json"
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/errors"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
@@ -43,31 +46,47 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		Path:     "/opt/homebrew/bin/git",
 	}
 
-	db := database.NewMockDB()
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
 	t.Cleanup(func() { conf.Mock(nil) })
+	db := database.NewMockDB()
+
+	repoName := "github.com/sourcegraph/sourcegraph"
+	backend.Mocks.Repos.GetByName = func(context.Context, api.RepoName) (*types.Repo, error) {
+		return &types.Repo{Name: api.RepoName(repoName)}, nil
+	}
+	t.Cleanup(func() {
+		backend.Mocks = backend.MockServices{}
+	})
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
 		Query: `
 				{
-					recordedCommands(repoName: "github.com/sourcegraph/sourcegraph") {
-						start
-						duration
-						command
-						dir
-						path
+					repository(name: "github.com/sourcegraph/sourcegraph") {
+						recordedCommands {
+							start
+							duration
+							command
+							dir
+							path
+						}
 					}
 				}
 			`,
 		ExpectedResult: `
 				{
-					"recordedCommands": []
+					"repository": {
+						"recordedCommands": []
+					}
 				}
 			`,
 	})
 
-	r := rcache.NewFIFOList(wrexec.GetFIFOListKey("github.com/sourcegraph/sourcegraph"), 3)
+	r := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), 3)
 	err = r.Insert(marshalCmd(t, cmd1))
 	require.NoError(t, err)
 
@@ -75,26 +94,30 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		Schema: mustParseGraphQLSchema(t, db),
 		Query: `
 				{
-					recordedCommands(repoName: "github.com/sourcegraph/sourcegraph") {
-						start
-						duration
-						command
-						dir
-						path
+					repository(name: "github.com/sourcegraph/sourcegraph") {
+						recordedCommands {
+							start
+							duration
+							command
+							dir
+							path
+						}
 					}
 				}
 			`,
 		ExpectedResult: `
 				{
-					"recordedCommands": [
-						{
-							"command": "git fetch",
-							"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-							"duration": 100,
-							"path": "/opt/homebrew/bin/git",
-							"start": "2023-07-20T15:04:05Z"
-						}
-					]
+					"repository": {
+						"recordedCommands": [
+							{
+								"command": "git fetch",
+								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+								"duration": 100,
+								"path": "/opt/homebrew/bin/git",
+								"start": "2023-07-20T15:04:05Z"
+							}
+						]
+					}
 				}
 			`,
 	})
@@ -108,66 +131,46 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		Schema: mustParseGraphQLSchema(t, db),
 		Query: `
 				{
-					recordedCommands(repoName: "github.com/sourcegraph/sourcegraph") {
-						start
-						duration
-						command
-						dir
-						path
+					repository(name: "github.com/sourcegraph/sourcegraph") {
+						recordedCommands {
+							start
+							duration
+							command
+							dir
+							path
+						}
 					}
 				}
 			`,
 		ExpectedResult: `
 				{
-					"recordedCommands": [
-						{
-							"command": "git ls-files",
-							"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-							"duration": 5,
-							"path": "/opt/homebrew/bin/git",
-							"start": "2023-07-20T15:04:05Z"
-						},
-						{
-							"command": "git clone",
-							"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-							"duration": 10,
-							"path": "/opt/homebrew/bin/git",
-							"start": "2023-07-20T15:04:05Z"
-						},
-						{
-							"command": "git fetch",
-							"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-							"duration": 100,
-							"path": "/opt/homebrew/bin/git",
-							"start": "2023-07-20T15:04:05Z"
-						}
-					]
-				}
-			`,
-	})
-}
-
-func TestRecordedCommandsResolver_EmptyRepoName(t *testing.T) {
-	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, database.NewMockDB()),
-		Query: `
-				{
-					recordedCommands(repoName: "  ") {
-						start
-						duration
-						command
-						dir
-						path
+					"repository": {
+						"recordedCommands": [
+							{
+								"command": "git ls-files",
+								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+								"duration": 5,
+								"path": "/opt/homebrew/bin/git",
+								"start": "2023-07-20T15:04:05Z"
+							},
+							{
+								"command": "git clone",
+								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+								"duration": 10,
+								"path": "/opt/homebrew/bin/git",
+								"start": "2023-07-20T15:04:05Z"
+							},
+							{
+								"command": "git fetch",
+								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+								"duration": 100,
+								"path": "/opt/homebrew/bin/git",
+								"start": "2023-07-20T15:04:05Z"
+							}
+						]
 					}
 				}
 			`,
-		ExpectedResult: "null",
-		ExpectedErrors: []*errors.QueryError{
-			{
-				Message: "empty string provided as repository name",
-				Path:    []any{"recordedCommands"},
-			},
-		},
 	})
 }
 
