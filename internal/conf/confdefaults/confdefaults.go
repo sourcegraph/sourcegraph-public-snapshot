@@ -45,9 +45,7 @@ var DockerContainer = conftypes.RawUnified{
 			"type": "builtin",
 			"allowSignup": true
 		}
-	],
-
-	"disablePublicRepoRedirects": true,
+	]
 }`,
 }
 
@@ -89,7 +87,7 @@ var App = conftypes.RawUnified{
 	"codeIntelAutoIndexing.enabled": true,
 	"codeIntelAutoIndexing.allowGlobalPolicies": true,
 	"executors.frontendURL": "http://host.docker.internal:3080",
-	"experimentalFeatures": {		
+	"experimentalFeatures": {
 		"structuralSearch": "disabled"
 	},
 	"cody.enabled": true,
@@ -100,7 +98,7 @@ var App = conftypes.RawUnified{
 	},
 	"embeddings": {
 		"enabled": true,
-		"provider": "sourcegraph"		
+		"provider": "sourcegraph"
 	}
 }`,
 }

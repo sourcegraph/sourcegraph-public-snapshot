@@ -46,7 +46,6 @@ var requireRestart = []string{
 	"git.cloneURLToRepositoryName",
 	"searchScopes",
 	"extensions",
-	"disablePublicRepoRedirects",
 	"auth.userOrgMap",
 	"auth.providers",
 	"externalURL",
