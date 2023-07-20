@@ -21,11 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 )
 
-const (
-	oneHundredMegabytes = 100 * 1024 * 1024
-	oneKilobyte         = 1024
-)
-
 var (
 	logScope       = "gRPC.internal.error.reporter"
 	logDescription = "logs gRPC errors that appear to come from the go-grpc implementation"
@@ -34,8 +29,8 @@ var (
 	envLogStackTracesEnabled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", false, "Enables including stack traces in logs of gRPC internal errors")
 
 	envLogMessagesEnabled                   = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED", false, "Enables inclusion of raw protobuf messages in the gRPC internal error logs")
-	envLogMessagesHandleMaxMessageSizeBytes = env.MustGetInt("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES", oneHundredMegabytes, "Maximum size of protobuf messages that can be included in gRPC internal error logs, in bytes. The purpose of this is to avoid excessive allocations. Negative values mean no limit.")
-	envLogMessagesMaxJSONSizeBytes          = env.MustGetInt("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES", oneKilobyte, "Maximum size of the JSON representation of protobuf messages to log, in bytes. JSON representations larger than this value will be truncated. Negative values disable truncation.")
+	envLogMessagesHandleMaxMessageSizeBytes = env.MustGetBytes("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES", "100MB", "Maximum size of protobuf messages that can be included in gRPC internal error logs. The purpose of this is to avoid excessive allocations. 0 bytes mean no limit.")
+	envLogMessagesMaxJSONSizeBytes          = env.MustGetBytes("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES", "1KB", "Maximum size of the JSON representation of protobuf messages to log. JSON representations larger than this value will be truncated. 0 bytes disables truncation.")
 )
 
 // LoggingUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that logs
@@ -234,7 +229,7 @@ func doLog(logger log.Logger, serviceName, methodName string, initialRequest *pr
 		if ok {
 			allFields = append(allFields, nonUTF8StringLogFields(m)...)
 
-			if envLoggingEnabled { // Log the latest message as well for non-utf8 errors
+			if envLogMessagesEnabled { // Log the latest message as well for non-utf8 errors
 				fs := messageJSONFields(&m, "messageJSON", envLogMessagesHandleMaxMessageSizeBytes, envLogMessagesMaxJSONSizeBytes)
 				allFields = append(allFields, fs...)
 			}
@@ -249,18 +244,18 @@ func doLog(logger log.Logger, serviceName, methodName string, initialRequest *pr
 //
 // If the size of the original protobuf message exceeds maxMessageSizeBytes or any serialization errors are encountered, log fields
 // describing the error are returned instead.
-func messageJSONFields(m *proto.Message, key string, maxMessageSizeBytes, maxJSONSizeBytes int) []log.Field {
+func messageJSONFields(m *proto.Message, key string, maxMessageSizeBytes, maxJSONSizeBytes uint64) []log.Field {
 	if m == nil || *m == nil {
 		return nil
 	}
 
-	if maxMessageSizeBytes >= 0 {
-		size := proto.Size(*m)
+	if maxMessageSizeBytes > 0 {
+		size := uint64(proto.Size(*m))
 		if size > maxMessageSizeBytes {
 			err := errors.Newf(
-				"failed to marshal protobuf message (key: %q) to to string: message too large (size %q, limit %q)",
+				"failed to marshal protobuf message (key: %q) to string: message too large (size %q, limit %q)",
 				key,
-				humanize.Bytes(uint64(size)), humanize.Bytes(uint64(maxMessageSizeBytes)),
+				humanize.Bytes(size), humanize.Bytes(maxMessageSizeBytes),
 			)
 
 			return []log.Field{log.Error(err)}
@@ -280,13 +275,13 @@ func messageJSONFields(m *proto.Message, key string, maxMessageSizeBytes, maxJSO
 
 // truncate shortens the string be to at most maxBytes bytes, appending a message indicating that the string was truncated if necessary.
 //
-// If maxBytes is negative, then the string is not truncated.
-func truncate(s string, maxBytes int) string {
-	if maxBytes < 0 {
+// If maxBytes is 0, then the string is not truncated.
+func truncate(s string, maxBytes uint64) string {
+	if maxBytes <= 0 {
 		return s
 	}
 
-	bytesToTruncate := len(s) - maxBytes
+	bytesToTruncate := len(s) - int(maxBytes)
 	if bytesToTruncate > 0 {
 		s = s[:maxBytes]
 		s = fmt.Sprintf("%s...(truncated %d bytes)", s, bytesToTruncate)
