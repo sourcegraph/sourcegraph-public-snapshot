@@ -28,6 +28,7 @@ go_library(
         "//internal/metrics",
         "//internal/observation",
         "@com_github_sourcegraph_scip//bindings/go/scip",
+        "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_protobuf//proto",
     ],
 )

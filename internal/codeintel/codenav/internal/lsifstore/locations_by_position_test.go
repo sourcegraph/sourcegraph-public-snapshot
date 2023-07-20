@@ -21,7 +21,7 @@ import (
 
 const (
 	testSCIPUploadID1 = 2408562
-	testSCIPUploadID2 = 2431101
+	testSCIPUploadID2 = 2431118
 )
 
 func TestExtractDefinitionLocationsFromPosition(t *testing.T) {

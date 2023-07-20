@@ -36,7 +36,7 @@ type LsifStore interface {
 	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shared.Diagnostic, int, error)
 	SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error)
 
-	// Fetch document by symbol name
+	// Fetch symbol names by fuzzy input
 	GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*symbols.ExplodedSymbol, err error)
 
 	// Extraction methods

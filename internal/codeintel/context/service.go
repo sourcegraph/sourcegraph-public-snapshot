@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
@@ -56,16 +55,15 @@ func newService(
 const (
 	maximumIndexesPerMonikerSearch = 500
 	hunkCacheSize                  = 1000
-	serviceObserverThreshold       = time.Second
 )
 
 func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) (_ []*types.PreciseContext, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getPreciseContext, serviceObserverThreshold, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, trace, endObservation := s.operations.getPreciseContext.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("filename", args.Input.Repository),
 		attribute.String("content", args.Input.ActiveFileContent),
 		attribute.String("commitID", args.Input.CommitID),
 	}})
-	defer endObservation()
+	defer endObservation(1, observation.Args{})
 
 	// TODO: s.operations.getPreciseContext.With(ctx, ...)
 
