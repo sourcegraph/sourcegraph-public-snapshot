@@ -1338,7 +1338,8 @@
       "description": "The name to use in the \"from\" address for emails sent by this server.",
       "type": "string",
       "group": "Email",
-      "examples": ["Sourcegraph"]
+      "default": "Sourcegraph",
+      "examples": ["Our Company Sourcegraph", "Example Inc Sourcegraph"]
     },
     "email.templates": {
       "description": "Configurable templates for some email types sent by Sourcegraph.",
