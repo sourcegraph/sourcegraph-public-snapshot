@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSendApproachingUserLimitAlert(t *testing.T) {
@@ -25,16 +26,12 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 	// create user to satisfy product_subscription foreign key constraint
 	userStore := db.Users()
 	user, err := userStore.Create(ctx, users[0])
-	if err != nil {
-		t.Errorf("could not create user: %s", err)
-	}
+	require.NoError(t, err)
 
 	// create product_subscription to satisfy product_license foreign key constraint
 	subStore := ps.NewDbSubscription(db)
 	subId, err := subStore.Create(ctx, user.ID, user.Username)
-	if err != nil {
-		t.Errorf("could not create subscription: %s", err)
-	}
+	require.NoError(t, err)
 
 	// license can now be created
 	licensesStore := ps.NewDbLicense(db)
@@ -42,10 +39,7 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		UserCount: 2,
 		ExpiresAt: time.Now().Add(14 * 24 * time.Hour),
 	})
-
-	if err != nil {
-		t.Errorf("could not create new license: %s", err)
-	}
+	require.NoError(t, err)
 
 	t.Run("sends correctly formatted email", func(t *testing.T) {
 		var gotEmail txemail.Message
@@ -56,9 +50,7 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		t.Cleanup(func() { txemail.MockSend = nil })
 
 		err = sendApproachingUserLimitAlert(ctx, db)
-		if err != nil {
-			t.Errorf("could not send email: %s", err)
-		}
+		require.NoError(t, err)
 
 		replyTo := "support@sourcegraph.com"
 		messageId := "approaching_user_limit"
@@ -83,12 +75,11 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 
 	t.Run("does not send email if user count is not approaching user limit", func(t *testing.T) {
 		err := licensesStore.UpdateUserCount(ctx, id, "15")
-		if err != nil {
-			t.Errorf("could not update user count: %s", err)
-		}
+		require.NoError(t, err)
 
 		old := os.Stdout
-		r, w, _ := os.Pipe()
+		r, w, err := os.Pipe()
+		require.NoError(t, err)
 		os.Stdout = w
 
 		err = sendApproachingUserLimitAlert(ctx, db)
@@ -97,7 +88,8 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		}
 
 		w.Close()
-		out, _ := ioutil.ReadAll(r)
+		out, err := ioutil.ReadAll(r)
+		require.NoError(t, err)
 		os.Stdout = old
 
 		assert.Equal(t, "user count on license within limit\n", string(out))
@@ -105,27 +97,22 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 
 	t.Run("does not send email if email sent within 7 days of current time", func(t *testing.T) {
 		err := licensesStore.UpdateUserCount(ctx, id, "2")
-		if err != nil {
-			t.Errorf("could not update user count: %s", err)
-		}
+		require.NoError(t, err)
 
 		err = licensesStore.UpdateUserCountAlertSentAt(ctx, id, time.Now().UTC())
-		if err != nil {
-			t.Errorf("could not update_user_count_alert_sent_at: %s", err)
-
-		}
+		require.NoError(t, err)
 
 		old := os.Stdout
-		r, w, _ := os.Pipe()
+		r, w, err := os.Pipe()
+		require.NoError(t, err)
 		os.Stdout = w
 
 		err = sendApproachingUserLimitAlert(ctx, db)
-		if err != nil {
-			t.Errorf("could not run sendApproachingUserLimitAlert function: %s", err)
-		}
+		require.NoError(t, err)
 
 		w.Close()
-		out, _ := ioutil.ReadAll(r)
+		out, err := ioutil.ReadAll(r)
+		require.NoError(t, err)
 		os.Stdout = old
 
 		assert.Equal(t, "email recently sent\n", string(out))
@@ -166,16 +153,12 @@ func TestGetLicenseUserLimit(t *testing.T) {
 	// create user to satisfy product_subscription foreign key constraint
 	userStore := db.Users()
 	user, err := userStore.Create(ctx, users[0])
-	if err != nil {
-		t.Errorf("could not create user: %s", err)
-	}
+	require.NoError(t, err)
 
 	// create product_subscription to satisfy product_license foreign key constraint
 	subStore := ps.NewDbSubscription(db)
 	subId, err := subStore.Create(ctx, user.ID, user.Username)
-	if err != nil {
-		t.Errorf("could not create subscription: %s", err)
-	}
+	require.NoError(t, err)
 
 	licensesStore := ps.NewDbLicense(db)
 	for _, license := range licensesToCreate {
@@ -186,15 +169,11 @@ func TestGetLicenseUserLimit(t *testing.T) {
 			license.version,
 			license.licenseInfo,
 		)
-		if err != nil {
-			t.Errorf("could not create license:, %s", err)
-		}
+		require.NoError(t, err)
 	}
 
 	actual, err := getLicenseUserLimit(ctx, db)
-	if err != nil {
-		t.Errorf("could not get user limit: %s", err)
-	}
+	require.NoError(t, err)
 
 	expected := 30
 	assert.Equal(t, expected, actual)
@@ -209,15 +188,11 @@ func TestGetUserCount(t *testing.T) {
 	// create users state in db
 	for _, user := range users {
 		_, err := userStore.Create(ctx, user)
-		if err != nil {
-			t.Errorf("could not create new user %s", err)
-		}
+		require.NoError(t, err)
 	}
 
 	actual, err := getUserCount(ctx, db)
-	if err != nil {
-		t.Errorf("could not get user count: %s", err)
-	}
+	require.NoError(t, err)
 
 	expected := 4
 	assert.Equal(t, expected, actual)
@@ -233,9 +208,7 @@ func TestGetSiteAdminEmails(t *testing.T) {
 	var createdUsers []*types.User
 	for i, user := range users {
 		newUser, err := userStore.Create(ctx, user)
-		if err != nil {
-			t.Errorf("could not create new user %s", err)
-		}
+		require.NoError(t, err)
 		createdUsers = append(createdUsers, newUser)
 
 		// first and third created users are site admins
@@ -244,7 +217,8 @@ func TestGetSiteAdminEmails(t *testing.T) {
 		}
 	}
 
-	expected, _ := getSiteAdminEmails(ctx, db)
+	expected, err := getSiteAdminEmails(ctx, db)
+	require.NoError(t, err)
 	actual := []string{"test@test.com", "test3@test.com"}
 
 	assert.Equal(t, expected, actual)
@@ -286,14 +260,10 @@ func TestGetUserEmail(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			newUser, err := userStore.Create(ctx, tc.user)
-			if err != nil {
-				t.Errorf("could not create new user: %s", err)
-			}
+			require.NoError(t, err)
 
 			actual, _, err := getUserEmail(ctx, db, newUser)
-			if err != nil {
-				t.Errorf("got an unexpected error: %s", err)
-			}
+			require.NoError(t, err)
 
 			assert.Equal(t, tc.expected, actual)
 		})
