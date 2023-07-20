@@ -110,7 +110,6 @@ server_integration_test(
         "manual",
     ],
 )
-)
 
 server_integration_test(
     name = "codeintel_integration_test",
