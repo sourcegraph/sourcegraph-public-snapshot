@@ -304,6 +304,8 @@ commands:
       CODY_GATEWAY_ALLOW_ANONYMOUS: true
       CODY_GATEWAY_DIAGNOSTICS_SECRET: sekret
       SRC_LOG_LEVEL: info
+      # Enables metrics in dev via debugserver
+      SRC_PROF_HTTP: "127.0.0.1:6098"
     watch:
       - lib
       - internal

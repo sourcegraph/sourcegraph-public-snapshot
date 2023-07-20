@@ -71,7 +71,8 @@ require (
 	cloud.google.com/go/pubsub v1.32.0
 	cloud.google.com/go/secretmanager v1.11.1
 	cloud.google.com/go/storage v1.30.1
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.16.1
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric v0.41.0
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace v1.17.0
 	github.com/Khan/genqlient v0.5.0
 	github.com/Masterminds/semver v1.5.0
 	github.com/NYTimes/gziphandler v1.1.1
@@ -248,8 +249,8 @@ require (
 	golang.org/x/time v0.3.0
 	golang.org/x/tools v0.10.0
 	gonum.org/v1/gonum v0.13.0
-	google.golang.org/api v0.131.0
-	google.golang.org/genproto v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/api v0.132.0
+	google.golang.org/genproto v0.0.0-20230717213848-3f92550aa753 // indirect
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v2 v2.4.0
@@ -276,14 +277,15 @@ require (
 	go.opentelemetry.io/collector/config/confighttp v0.81.0
 	go.opentelemetry.io/collector/config/configtelemetry v0.81.0
 	go.opentelemetry.io/collector/config/configtls v0.81.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20230711160842-782d3b101e98
+	go.opentelemetry.io/otel/exporters/prometheus v0.39.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20230717213848-3f92550aa753
 )
 
 require (
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/trace v1.10.1 // indirect
 	github.com/GoogleCloudPlatform/opentelemetry-operations-go/detectors/gcp v1.16.1 // indirect
-	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.40.1 // indirect
+	github.com/GoogleCloudPlatform/opentelemetry-operations-go/internal/resourcemapping v0.41.0 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/alexflint/go-arg v1.4.2 // indirect
 	github.com/alexflint/go-scalar v1.0.0 // indirect
@@ -352,13 +354,13 @@ require (
 	go.opentelemetry.io/collector/featuregate v1.0.0-rcv0013 // indirect
 	go.opentelemetry.io/collector/processor v0.81.0 // indirect
 	go.uber.org/goleak v1.2.1 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20230711160842-782d3b101e98 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20230717213848-3f92550aa753 // indirect
 )
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.110.4 // indirect
-	cloud.google.com/go/compute v1.21.0 // indirect
+	cloud.google.com/go/compute v1.22.0 // indirect
 	cloud.google.com/go/iam v1.1.1 // indirect
 	code.gitea.io/gitea v1.18.0
 	cuelang.org/go v0.4.3

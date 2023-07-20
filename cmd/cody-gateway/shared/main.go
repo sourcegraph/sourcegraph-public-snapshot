@@ -12,8 +12,12 @@ import (
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
 	"github.com/slack-go/slack"
+	"github.com/sourcegraph/conc"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/sdk/resource"
+	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -28,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
@@ -39,15 +44,11 @@ import (
 )
 
 func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
-	// Enable tracing, at this point tracing wouldn't have been enabled yet because
-	// we run Cody Gateway without conf which means Sourcegraph tracing is not enabled.
-	shutdownTracing, err := maybeEnableTracing(ctx,
-		obctx.Logger.Scoped("tracing", "tracing configuration"),
-		config.Trace)
+	shutdownOtel, err := initOpenTelemetry(ctx, obctx.Logger, config.OpenTelemetry)
 	if err != nil {
-		return errors.Wrap(err, "maybeEnableTracing")
+		return errors.Wrap(err, "initOpenTelemetry")
 	}
-	defer shutdownTracing()
+	defer shutdownOtel()
 
 	var eventLogger events.Logger
 	if config.BigQuery.ProjectID != "" {
@@ -138,7 +139,7 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 
 	// Set up our handler chain, which is run from the bottom up. Application handlers
 	// come last.
-	handler := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr, &httpapi.Config{
+	handler, err := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr, &httpapi.Config{
 		RateLimitNotifier:          rateLimitNotifier,
 		AnthropicAccessToken:       config.Anthropic.AccessToken,
 		AnthropicAllowedModels:     config.Anthropic.AllowedModels,
@@ -148,6 +149,9 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 		OpenAIAllowedModels:        config.OpenAI.AllowedModels,
 		EmbeddingsAllowedModels:    config.AllowedEmbeddingsModels,
 	})
+	if err != nil {
+		return errors.Wrap(err, "httpapi.NewHandler")
+	}
 
 	// Diagnostic layers
 	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret, sources)
@@ -228,4 +232,49 @@ func (s *redisStore) TTL(key string) (int, error) {
 
 func (s *redisStore) Expire(key string, ttlSeconds int) error {
 	return s.store.Expire(key, ttlSeconds)
+}
+
+func initOpenTelemetry(ctx context.Context, logger log.Logger, config OpenTelemetryConfig) (func(), error) {
+	res, err := getOpenTelemetryResource(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	// Enable tracing, at this point tracing wouldn't have been enabled yet because
+	// we run Cody Gateway without conf which means Sourcegraph tracing is not enabled.
+	shutdownTracing, err := maybeEnableTracing(ctx,
+		logger.Scoped("tracing", "OpenTelemetry tracing"),
+		config, res)
+	if err != nil {
+		return nil, errors.Wrap(err, "maybeEnableTracing")
+	}
+
+	shutdownMetrics, err := maybeEnableMetrics(ctx,
+		logger.Scoped("metrics", "OpenTelemetry metrics"),
+		config, res)
+	if err != nil {
+		return nil, errors.Wrap(err, "maybeEnableMetrics")
+	}
+
+	return func() {
+		var wg conc.WaitGroup
+		wg.Go(shutdownTracing)
+		wg.Go(shutdownMetrics)
+		wg.Wait()
+	}, nil
+}
+
+func getOpenTelemetryResource(ctx context.Context) (*resource.Resource, error) {
+	// Identify your application using resource detection
+	return resource.New(ctx,
+		// Use the GCP resource detector to detect information about the GCP platform
+		resource.WithDetectors(gcp.NewDetector()),
+		// Keep the default detectors
+		resource.WithTelemetrySDK(),
+		// Add your own custom attributes to identify your application
+		resource.WithAttributes(
+			semconv.ServiceNameKey.String("cody-gateway"),
+			semconv.ServiceVersionKey.String(version.Version()),
+		),
+	)
 }
