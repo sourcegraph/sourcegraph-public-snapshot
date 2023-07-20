@@ -7,6 +7,7 @@ import * as jsonc from 'jsonc-parser'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { logger } from '@sourcegraph/common'
 import { SiteConfiguration } from '@sourcegraph/shared/src/schema/site.schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -31,6 +32,7 @@ import { refreshSiteFlags } from '../site/backend'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
+import { SiteAdminConfigurationUI } from './SiteAdminConfigurationUI'
 import { SiteConfigurationChangeList } from './SiteConfigurationChangeList'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
@@ -227,6 +229,7 @@ interface State {
     restartToApply: boolean
     reloadStartedAt?: number
     enabledCompletions?: boolean
+    displaySiteConfigUI: boolean
 }
 
 const EXPECTED_RELOAD_WAIT = 7 * 1000 // 7 seconds
@@ -243,6 +246,7 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
     public state: State = {
         loading: true,
         restartToApply: window.context.needServerRestart,
+        displaySiteConfigUI: false,
     }
 
     private remoteRefreshes = new Subject<void>()
@@ -426,27 +430,42 @@ class SiteAdminConfigurationContent extends React.Component<Props, State> {
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.site?.configuration && (
                         <div>
-                            <DynamicallyImportedMonacoSettingsEditor
-                                value={contents || ''}
-                                jsonSchema={siteSchemaJSON}
-                                canEdit={true}
-                                saving={this.state.saving}
-                                loading={isReloading || this.state.saving}
-                                height={600}
-                                isLightTheme={this.props.isLightTheme}
-                                onSave={this.onSave}
-                                actions={this.props.isSourcegraphApp ? [] : quickConfigureActions}
-                                telemetryService={this.props.telemetryService}
-                                explanation={
-                                    <Text className="form-text text-muted">
-                                        <small>
-                                            Use Ctrl+Space for completion, and hover over JSON properties for
-                                            documentation. For more information, see the{' '}
-                                            <Link to="/help/admin/config/site_config">documentation</Link>.
-                                        </small>
-                                    </Text>
-                                }
-                            />
+                            <div className="d-flex flex-row-reverse">
+                                <Toggle
+                                    title="Toggle Site-Admin Config display"
+                                    value={this.state.displaySiteConfigUI}
+                                    onToggle={isToggled => this.setState({ displaySiteConfigUI: isToggled })}
+                                />
+                            </div>
+                            {this.state.displaySiteConfigUI ? (
+                                <SiteAdminConfigurationUI
+                                    loading={isReloading || this.state.saving}
+                                    telemetryService={this.props.telemetryService}
+                                    siteConfig={contents || ''}
+                                />
+                            ) : (
+                                <DynamicallyImportedMonacoSettingsEditor
+                                    value={contents || ''}
+                                    jsonSchema={siteSchemaJSON}
+                                    canEdit={true}
+                                    saving={this.state.saving}
+                                    loading={isReloading || this.state.saving}
+                                    height={600}
+                                    isLightTheme={this.props.isLightTheme}
+                                    onSave={this.onSave}
+                                    actions={this.props.isSourcegraphApp ? [] : quickConfigureActions}
+                                    telemetryService={this.props.telemetryService}
+                                    explanation={
+                                        <Text className="form-text text-muted">
+                                            <small>
+                                                Use Ctrl+Space for completion, and hover over JSON properties for
+                                                documentation. For more information, see the{' '}
+                                                <Link to="/help/admin/config/site_config">documentation</Link>.
+                                            </small>
+                                        </Text>
+                                    }
+                                />
+                            )}
                         </div>
                     )}
                 </Container>
