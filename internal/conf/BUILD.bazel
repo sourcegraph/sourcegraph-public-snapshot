@@ -68,7 +68,7 @@ go_test(
         "//internal/collections",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
-        "//internal/licensing",
+        "//internal/license",
         "//lib/errors",
         "//lib/pointers",
         "//schema",
