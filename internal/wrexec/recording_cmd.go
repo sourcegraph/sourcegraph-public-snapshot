@@ -180,5 +180,5 @@ func NewNoOpRecordingCommandFactory() *RecordingCommandFactory {
 
 // GetFIFOListKey returns the name of FIFO list in Redis for a given repo name.
 func GetFIFOListKey(repoName string) string {
-	return KeyPrefix + fmt.Sprintf("-%s", repoName)
+	return fmt.Sprintf("%s-%s", KeyPrefix, repoName)
 }
