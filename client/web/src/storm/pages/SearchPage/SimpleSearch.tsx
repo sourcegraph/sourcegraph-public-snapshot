@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import React, { FC, useState } from 'react'
 
 import { mdiArrowLeft, mdiHelpCircleOutline } from '@mdi/js'
 
@@ -19,9 +19,9 @@ function eventName(name: string): string {
 export const SimpleSearch: FC<SimpleSearchProps> = props => {
     const [showState, setShowState] = useState<string>('default')
 
-    function onSubmitWithTelemetry(): void {
+    function onSubmitWithTelemetry(event?: React.FormEvent): void {
         props.telemetryService.log(eventName('SUBMIT_SEARCH'), {'type': showState})
-        props.onSubmit()
+        props.onSubmit(event)
     }
 
     function pickRender(): JSX.Element {
