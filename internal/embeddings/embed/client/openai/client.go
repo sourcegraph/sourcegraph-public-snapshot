@@ -17,20 +17,22 @@ import (
 
 func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 	return &openaiEmbeddingsClient{
-		httpClient:  httpClient,
-		dimensions:  config.Dimensions,
-		accessToken: config.AccessToken,
-		model:       config.Model,
-		endpoint:    config.Endpoint,
+		httpClient:   httpClient,
+		dimensions:   config.Dimensions,
+		accessToken:  config.AccessToken,
+		model:        config.Model,
+		endpoint:     config.Endpoint,
+		excludeFiles: config.ExcludeFileOnError,
 	}
 }
 
 type openaiEmbeddingsClient struct {
-	httpClient  *http.Client
-	model       string
-	dimensions  int
-	endpoint    string
-	accessToken string
+	httpClient   *http.Client
+	model        string
+	dimensions   int
+	endpoint     string
+	accessToken  string
+	excludeFiles bool
 }
 
 func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
@@ -45,7 +47,7 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 }
 
 // GetEmbeddings tries to embed the given texts using the external service specified in the config.
-func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -80,6 +82,7 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 
 	dimensionality := len(response.Data[0].Embedding)
 	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
+	failed := make([]int, 0, len(response.Data))
 	for _, embedding := range response.Data {
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
@@ -89,13 +92,22 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 			// response. Try it again a few times and hope for the best.
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
 			if err != nil {
+				// if exclude files is enabled then do not return error and fail the entire repo embed job
+				if c.excludeFiles {
+					failed = append(failed, embedding.Index)
+
+					// caller expects one vector per text input so append zero values
+					placeholder := make([]float32, dimensionality)
+					embeddings = append(embeddings, placeholder...)
+					continue
+				}
 				return nil, client.PartialError{Err: err, Index: embedding.Index}
 			}
 			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}
 	}
 
-	return embeddings, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: dimensionality}, nil
 }
 
 var modelsWithoutNewlines = map[string]struct{}{

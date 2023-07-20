@@ -8,12 +8,25 @@ import (
 
 type EmbeddingsClient interface {
 	// GetEmbeddings returns embeddings for the given texts.
-	GetEmbeddings(ctx context.Context, texts []string) ([]float32, error)
+	GetEmbeddings(ctx context.Context, texts []string) (*EmbeddingsResults, error)
 	// GetDimensions returns the dimensionality of the embedding space.
 	GetDimensions() (int, error)
 	// GetModelIdentifier returns the identifier of the model used to generate embeddings. The format is
 	// "provider/name", for example "openai/text-embedding-ada-002".
 	GetModelIdentifier() string
+}
+
+type EmbeddingsResults struct {
+	Embeddings []float32
+
+	// return indices of input texts that fail to get embeddings.
+	Failed []int
+
+	Dimensions int
+}
+
+func (er *EmbeddingsResults) Row(n int) []float32 {
+	return er.Embeddings[n*er.Dimensions : (n+1)*er.Dimensions]
 }
 
 func NewRateLimitExceededError(retryAfter time.Time) error {

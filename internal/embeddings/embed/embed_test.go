@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -131,6 +132,7 @@ func TestEmbedRepo(t *testing.T) {
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: 100000,
 		MaxTextEmbeddings: 100000,
+		BatchSize:         512,
 	}
 
 	logger := log.NoOp()
@@ -339,12 +341,211 @@ func TestEmbedRepo(t *testing.T) {
 	})
 }
 
+func TestEmbedRepo_ExcludeFileOnError(t *testing.T) {
+	ctx := context.Background()
+	repoName := api.RepoName("repo/name")
+	revision := api.CommitID("deadbeef")
+	embeddingsClient := NewMockEmbeddingsClient()
+	contextService := NewMockContextService()
+	contextService.SplitIntoEmbeddableChunksFunc.SetDefaultHook(defaultSplitter)
+	splitOptions := codeintelContext.SplitOptions{ChunkTokensThreshold: 8}
+	mockFiles := map[string][]byte{
+		// 3 embedding chunks (based on split options above)
+		"a.go": mockFile(
+			strings.Repeat("a", 32),
+			"",
+			strings.Repeat("b", 32),
+			"",
+			strings.Repeat("c", 32),
+		),
+		// 3 embedding chunks
+		"c.java": mockFile(
+			strings.Repeat("a", 32),
+			"",
+			strings.Repeat("b", 32),
+			"",
+			strings.Repeat("c", 32),
+		),
+		// 6 embedding chunks
+		"f.go": mockFile(
+			strings.Repeat("a", 32),
+			"",
+			strings.Repeat("b", 32),
+			"",
+			strings.Repeat("c", 32),
+			"",
+			strings.Repeat("d", 32),
+			"",
+			strings.Repeat("e", 32),
+			"",
+			strings.Repeat("f", 32),
+		),
+	}
+
+	mockRanks := map[string]float64{
+		"a.go":             0.1,
+		"b.md":             0.2,
+		"c.java":           0.3,
+		"autogen.py":       0.4,
+		"lines_too_long.c": 0.5,
+		"empty.rb":         0.6,
+		"binary.bin":       0.7,
+	}
+	mockRepoPathRanks := types.RepoPathRanks{
+		MeanRank: 0,
+		Paths:    mockRanks,
+	}
+
+	reader := funcReader(func(_ context.Context, fileName string) ([]byte, error) {
+		content, ok := mockFiles[fileName]
+		if !ok {
+			return nil, errors.Newf("file %s not found", fileName)
+		}
+		return content, nil
+	})
+	newReadLister := func(fileNames ...string) FileReadLister {
+		fileEntries := make([]FileEntry, len(fileNames))
+		for i, fileName := range fileNames {
+			fileEntries[i] = FileEntry{Name: fileName, Size: 350}
+		}
+		return listReader{
+			FileReader: reader,
+			FileLister: staticLister(fileEntries),
+		}
+	}
+
+	opts := EmbedRepoOpts{
+		RepoName: repoName,
+		Revision: revision,
+		FileFilters: FileFilters{
+			ExcludePatterns:  nil,
+			IncludePatterns:  nil,
+			MaxFileSizeBytes: 100000,
+		},
+		SplitOptions:       splitOptions,
+		MaxCodeEmbeddings:  100000,
+		MaxTextEmbeddings:  100000,
+		ExcludeFileOnError: true,
+	}
+
+	logger := log.NoOp()
+	noopReport := func(*bgrepo.EmbedRepoStats) {}
+
+	t.Run("no files", func(t *testing.T) {
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, newReadLister(), mockRepoPathRanks, opts, logger, noopReport)
+		require.NoError(t, err)
+		require.Len(t, index.CodeIndex.Embeddings, 0)
+		require.Len(t, index.TextIndex.Embeddings, 0)
+
+		expectedStats := &bgrepo.EmbedRepoStats{
+			CodeIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
+			},
+			TextIndexStats: bgrepo.EmbedFilesStats{
+				FilesSkipped: map[string]int{},
+			},
+		}
+		require.Equal(t, expectedStats, stats)
+	})
+
+	t.Run("Exclude files with partial failures", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.BatchSize = 512
+		rl := newReadLister("a.go", "c.java", "f.go")
+		// fail on second chunk of the first file
+		failed := make(map[int]struct{})
+		failed[1] = struct{}{}
+
+		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
+		index, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+
+		require.NoError(t, err)
+		require.Len(t, index.TextIndex.Embeddings, 0)
+		require.Len(t, index.CodeIndex.Embeddings, 27)
+		require.Len(t, index.CodeIndex.RowMetadata, 9)
+		require.Len(t, index.CodeIndex.Ranks, 9)
+		require.True(t, validateSigns(index))
+	})
+	t.Run("Exclude file and truncate index", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.BatchSize = 2
+		rl := newReadLister("a.go", "c.java", "f.go")
+		// fail on third chunk of the first file during the second batch
+		failed := make(map[int]struct{})
+		failed[2] = struct{}{}
+
+		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
+		index, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+
+		require.NoError(t, err)
+		require.Len(t, index.TextIndex.Embeddings, 0)
+		require.Len(t, index.CodeIndex.Embeddings, 27)
+		require.Len(t, index.CodeIndex.RowMetadata, 9)
+		require.Len(t, index.CodeIndex.Ranks, 9)
+		require.True(t, validateSigns(index))
+	})
+	t.Run("Exclude file and skip subsequent chunks", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.BatchSize = 2
+		rl := newReadLister("a.go", "c.java", "f.go")
+		// fail on first chunk of the second file during the second batch
+		failed := make(map[int]struct{})
+		failed[3] = struct{}{}
+
+		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
+		index, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+
+		require.NoError(t, err)
+		require.Len(t, index.TextIndex.Embeddings, 0)
+		require.Len(t, index.CodeIndex.Embeddings, 27)
+		require.Len(t, index.CodeIndex.RowMetadata, 9)
+		require.Len(t, index.CodeIndex.Ranks, 9)
+		require.True(t, validateSigns(index))
+	})
+	t.Run("Exclude file across three batches", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.BatchSize = 2
+		rl := newReadLister("a.go", "f.go", "c.java")
+		// fail on second to last chunk of the second file during the second batch
+		failed := make(map[int]struct{})
+		failed[6] = struct{}{}
+
+		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
+		index, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+
+		require.NoError(t, err)
+		require.Len(t, index.TextIndex.Embeddings, 0)
+		require.Len(t, index.CodeIndex.Embeddings, 18)
+		require.Len(t, index.CodeIndex.RowMetadata, 6)
+		require.Len(t, index.CodeIndex.Ranks, 6)
+		require.True(t, validateSigns(index))
+	})
+	t.Run("Exclude file on final flush", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.BatchSize = 2
+		rl := newReadLister("a.go", "f.go")
+		// fail on first chunk of the second file during the second batch
+		failed := make(map[int]struct{})
+		failed[8] = struct{}{}
+
+		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
+		index, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+
+		require.NoError(t, err)
+		require.Len(t, index.TextIndex.Embeddings, 0)
+		require.Len(t, index.CodeIndex.Embeddings, 9)
+		require.Len(t, index.CodeIndex.RowMetadata, 3)
+		require.Len(t, index.CodeIndex.Ranks, 3)
+		require.True(t, validateSigns(index))
+	})
+}
+
 type erroringEmbeddingsClient struct {
 	client.EmbeddingsClient
 	err error
 }
 
-func (c *erroringEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) ([]float32, error) {
+func (c *erroringEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	return nil, c.err
 }
 
@@ -353,8 +554,8 @@ type misbehavingEmbeddingsClient struct {
 	returnedDimsPerInput int
 }
 
-func (c *misbehavingEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) ([]float32, error) {
-	return make([]float32, len(texts)*c.returnedDimsPerInput), nil
+func (c *misbehavingEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
+	return &client.EmbeddingsResults{Embeddings: make([]float32, len(texts)*c.returnedDimsPerInput), Dimensions: c.returnedDimsPerInput}, nil
 }
 
 func NewMockEmbeddingsClient() client.EmbeddingsClient {
@@ -371,12 +572,53 @@ func (c *mockEmbeddingsClient) GetModelIdentifier() string {
 	return "mock/some-model"
 }
 
-func (c *mockEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) ([]float32, error) {
+func (c *mockEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err
 	}
-	return make([]float32, len(texts)*dimensions), nil
+	return &client.EmbeddingsResults{Embeddings: make([]float32, len(texts)*dimensions), Dimensions: dimensions}, nil
+}
+
+type partialFailureEmbeddingsClient struct {
+	client.EmbeddingsClient
+	counter        int
+	failedAttempts map[int]struct{}
+}
+
+func (c *partialFailureEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
+	dimensions, err := c.GetDimensions()
+	if err != nil {
+		return nil, err
+	}
+
+	failed := make([]int, 0, len(texts)*dimensions)
+	embeddings := make([]float32, len(texts)*dimensions)
+	for i := 0; i < len(texts); i++ {
+		sign := 1
+
+		if _, ok := c.failedAttempts[c.counter]; ok {
+			sign = -1 // later we'll assert that negatives are not indexed
+			failed = append(failed, i)
+		}
+
+		for j := 0; j < dimensions; j++ {
+			idx := (i * dimensions) + j
+			embeddings[idx] = float32(sign)
+		}
+		c.counter++
+	}
+
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: dimensions}, nil
+}
+
+func validateSigns(index *embeddings.RepoEmbeddingIndex) bool {
+	for _, quantity := range index.CodeIndex.Embeddings {
+		if quantity < 0 {
+			return false
+		}
+	}
+	return true
 }
 
 type funcReader func(ctx context.Context, fileName string) ([]byte, error)

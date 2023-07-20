@@ -39,6 +39,7 @@ type EmbeddingsConfig struct {
 	MaxCodeEmbeddingsPerRepo   int
 	MaxTextEmbeddingsPerRepo   int
 	PolicyRepositoryMatchLimit *int
+	ExcludeFileOnError         bool
 }
 
 type EmbeddingsProviderName string
