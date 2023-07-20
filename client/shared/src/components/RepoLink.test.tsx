@@ -29,4 +29,9 @@ describe('displayRepoName', () => {
         const name = displayRepoName('gerrit.sgdev.org/sourcegraph')
         expect(name).toEqual('sourcegraph')
     })
+
+    test('returns repo name when code host information is unavailable', () => {
+        const name = displayRepoName('sourcegraph')
+        expect(name).toEqual('sourcegraph')
+    })
 })
