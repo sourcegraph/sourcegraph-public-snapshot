@@ -2043,7 +2043,7 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 }
 
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, stderr string) {
-	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
+	if checkMaybeCorruptRepo(s.Logger, s, repo, dir, stderr) {
 		reason := stderr
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
@@ -2271,7 +2271,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
-    // best-effort update the output of the clone
+	// best-effort update the output of the clone
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
@@ -2289,7 +2289,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
-	if err := setRepositoryType(tmp, syncer.Type()); err != nil {
+	if err := setRepositoryType(tmp, s, syncer.Type()); err != nil {
 		return errors.Wrap(err, `git config set "sourcegraph.type"`)
 	}
 
@@ -2304,7 +2304,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	}
 
 	// Set gc.auto depending on gitGCMode.
-	if err := gitSetAutoGC(tmp); err != nil {
+	if err := gitSetAutoGC(tmp, s); err != nil {
 		return err
 	}
 
@@ -2664,7 +2664,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
-    // best-effort update the output of the fetch
+	// best-effort update the output of the fetch
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
@@ -2681,7 +2681,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
-	if err := setRepositoryType(dir, syncer.Type()); err != nil {
+	if err := setRepositoryType(dir, s, syncer.Type()); err != nil {
 		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
 	}
 
