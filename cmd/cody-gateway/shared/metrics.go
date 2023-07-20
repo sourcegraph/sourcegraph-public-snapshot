@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func maybeEnableMetrics(ctx context.Context, logger log.Logger, config OpenTelemetryConfig, otelResource *resource.Resource) (func(), error) {
+func maybeEnableMetrics(_ context.Context, logger log.Logger, config OpenTelemetryConfig, otelResource *resource.Resource) (func(), error) {
 	var reader sdkmetric.Reader
 	if config.GCPProjectID != "" {
 		logger.Info("initializing GCP trace exporter", log.String("projectID", config.GCPProjectID))
