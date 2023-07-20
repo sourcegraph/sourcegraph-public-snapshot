@@ -321,6 +321,7 @@ func embedFiles(
 
 	addToBatch := func(chunk codeintelContext.EmbeddableChunk) (bool, error) {
 		batch = append(batch, chunk)
+		currentFileBatchedCount++
 		if len(batch) >= batchSize {
 			// Flush if we've hit batch size
 			return flush()
@@ -331,7 +332,6 @@ func embedFiles(
 fileLoop:
 	for _, file := range files {
 		currentFileBatchedCount = 0
-		partiallyIndexedFileCount = 0
 
 		if ctx.Err() != nil {
 			return bgrepo.EmbedFilesStats{}, ctx.Err()
@@ -383,7 +383,6 @@ fileLoop:
 			}
 
 			size += len(chunk.Content)
-			currentFileBatchedCount++
 		}
 
 		stats.AddChunks(len(chunks), size)
