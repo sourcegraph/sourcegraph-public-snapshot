@@ -265,7 +265,7 @@ public class ConfigUtil {
 
   @NotNull
   private static CodyProjectService getProjectLevelConfig(@NotNull Project project) {
-    return Objects.requireNonNull(CodyProjectService.getInstance(project));
+    return Objects.requireNonNull(CodyService.getInstance(project));
   }
 
   @Nullable
@@ -293,37 +293,15 @@ public class ConfigUtil {
 
   @Nullable
   public static String getEnterpriseAccessToken(Project project) {
-    // project level → application level secure storage -> application level
+    // Project level → application level
     return Optional.ofNullable(getProjectLevelConfig(project).getEnterpriseAccessToken())
-        .or(AccessTokenStorage::getEnterpriseAccessToken)
-        .orElseGet(
-            () -> {
-              // Save the application level access token to the secure storage
-              String unsafeApplicationLevelAccessToken =
-                  getApplicationLevelConfig().getEnterpriseAccessToken();
-              if (unsafeApplicationLevelAccessToken != null) {
-                AccessTokenStorage.setApplicationEnterpriseAccessToken(
-                    unsafeApplicationLevelAccessToken);
-              }
-              return unsafeApplicationLevelAccessToken;
-            });
+        .orElse(getApplicationLevelConfig().getEnterpriseAccessToken());
   }
 
   @Nullable
   public static String getDotComAccessToken(@NotNull Project project) {
-    // project level → application level secure storage -> application level
+    // Project level → application level
     return Optional.ofNullable(getProjectLevelConfig(project).getDotComAccessToken())
-        .or(AccessTokenStorage::getDotComAccessToken)
-        .orElseGet(
-            () -> {
-              // Save the application level access token to the secure storage
-              String unsafeApplicationLevelAccessToken =
-                  getApplicationLevelConfig().getDotComAccessToken();
-              if (unsafeApplicationLevelAccessToken != null) {
-                AccessTokenStorage.setApplicationDotComAccessToken(
-                    unsafeApplicationLevelAccessToken);
-              }
-              return unsafeApplicationLevelAccessToken;
-            });
+        .orElse(getApplicationLevelConfig().getDotComAccessToken());
   }
 }

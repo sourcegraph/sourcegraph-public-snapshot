@@ -4,27 +4,26 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.util.xmlb.annotations.Transient;
 import com.sourcegraph.find.Search;
 import java.util.Optional;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @State(
     name = "ApplicationConfig",
     storages = {@Storage("sourcegraph.xml")})
-public class CodyApplicationService implements PersistentStateComponent<CodyApplicationService> {
+public class CodyApplicationService
+    implements PersistentStateComponent<CodyApplicationService>, CodyService {
   @Nullable public String instanceType;
   @Nullable public String url;
 
-  @Deprecated(since = "3.0.6", forRemoval = true)
   @Nullable
-  public String dotComAccessToken;
+  @Deprecated(since = "3.0.0-alpha.2", forRemoval = true)
+  public String accessToken; // kept for backwards compatibility
 
-  @Deprecated(since = "3.0.6", forRemoval = true)
-  @Nullable
-  public String enterpriseAccessToken;
-
+  @Nullable public String dotComAccessToken;
+  @Nullable public String enterpriseAccessToken;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
   @Nullable public String remoteUrlReplacements;
@@ -62,15 +61,9 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return url;
   }
 
-  @Deprecated(since = "3.0.6", forRemoval = true)
   @Nullable
   public String getDotComAccessToken() {
     return dotComAccessToken;
-  }
-
-  @Transient
-  public void setSafeDotComAccessToken(@NotNull String accessToken) {
-    AccessTokenStorage.setApplicationDotComAccessToken(accessToken);
   }
 
   @Nullable
@@ -89,33 +82,33 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return remoteUrlReplacements;
   }
 
+  @Override
   @Nullable
   public Search getLastSearch() {
     // TODO
     return null;
   }
 
+  @Override
   @Nullable
-  @Deprecated(since = "3.0.6", forRemoval = true)
   public String getEnterpriseAccessToken() {
-    return enterpriseAccessToken;
+    // configuring enterpriseAccessToken overrides the deprecated accessToken field
+    return StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
   }
 
-  @Transient
-  public void setSafeEnterpriseAccessToken(@NotNull String accessToken) {
-    AccessTokenStorage.setApplicationEnterpriseAccessToken(accessToken);
-  }
-
+  @Override
   public boolean areChatPredictionsEnabled() {
     // TODO
     return false;
   }
 
+  @Override
   public String getCodebase() {
     // TODO
     return null;
   }
 
+  @Nullable
   public String getAnonymousUserId() {
     return anonymousUserId;
   }
@@ -165,6 +158,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   public void loadState(@NotNull CodyApplicationService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
+    this.accessToken = settings.accessToken;
     this.dotComAccessToken = settings.dotComAccessToken;
     this.enterpriseAccessToken = settings.enterpriseAccessToken;
     this.customRequestHeaders = settings.customRequestHeaders;
