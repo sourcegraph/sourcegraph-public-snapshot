@@ -164,7 +164,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Event level data usage pipeline](background-information/data-usage-pipeline.md)
 - [Adding, changing and debugging user event data](background-information/adding_event_level_data.md)
 - [Deploy Sourcegraph with Helm chart (BETA)](../../../admin/deploy/kubernetes/helm.md)
-- [GitHub API oddities](github-api-oddities.md)
+- [GitHub API oddities](background-information/github-api-oddities.md)
 
 ## [How-to guides](how-to/index.md)
 
