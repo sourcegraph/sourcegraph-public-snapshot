@@ -50,7 +50,10 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
         <div>
             {showState !== 'default' && (
                 <div>
-                    <Button className="mb-2" onClick={() => setShowState('default')}>
+                    <Button className="mb-2" onClick={() => {
+                        props.telemetryService.log(eventName('BACK_BUTTON_CLICK'))
+                        setShowState('default')
+                    }}>
                         <Icon aria-label="hover icon for help tooltip" svgPath={mdiArrowLeft} />
                         Back
                     </Button>
