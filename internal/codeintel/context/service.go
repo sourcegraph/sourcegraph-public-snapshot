@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
@@ -80,7 +81,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("codenavSvc.GetClosestDumpsForBlob", attribute.Int("numDumps", len(uploads)))
+	trace.AddEvent("codenavSvc.GetClosestDumpsForBlob",
+		attribute.Int("numDumps", len(uploads)),
+	)
 	if len(uploads) == 0 {
 		return nil, nil
 	}
@@ -107,27 +110,42 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		hunkCache,
 	)
 
-	fmt.Printf("PHASE 1\n")
+	// DEBUGGING
+	start := time.Now()
+	phaseStart := start
+	lap := func(format string, args ...any) {
+		n := time.Now()
+		delta := n.Sub(phaseStart)
+		phaseStart = n
+		fmt.Printf("\t[%s]: %s\n", delta, fmt.Sprintf(format, args...))
+	}
+	fmt.Printf("> CONTEXT API\n")
+	defer func() { fmt.Printf("< CONTEXT API done in %s (%s)\n", time.Since(start), err) }()
+
 	// PHASE 1: Run current scope through treesitter
 
 	syntectDocument, err := s.getSCIPDocumentByContent(ctx, content, filename)
 	if err != nil {
 		return nil, err
 	}
+	trace.AddEvent("contextSvc.getSCIPDocumentByContent",
+		attribute.String("filename", filename),
+	)
 
-	trace.AddEvent("contextSvc.getSCIPDocumentByContent", attribute.String("filename", filename))
 	symbolNameMap := map[string]struct{}{}
 	for _, occurrence := range syntectDocument.Occurrences {
 		symbolNameMap[occurrence.Symbol] = struct{}{}
 	}
 	symbolNames := make([]string, 0, len(symbolNameMap))
 	for symbolName := range symbolNameMap {
-		trace.AddEvent("symbolNameMap", attribute.String("symbolName", symbolName))
+		trace.AddEvent("symbolNameMap", attribute.String("symbolName", symbolName)) // TODO - batch
 		symbolNames = append(symbolNames, symbolName)
 	}
 	sort.Strings(symbolNames)
 
-	fmt.Printf("PHASE 2\n")
+	// DEBUGGING
+	lap("PHASE 1: %d symbols from %s: %v\n", len(symbolNames), filename, symbolNames)
+
 	// PHASE 2: Run treesitter output through a translation layer so we can do
 	// the graph navigation in "SCIP-world" using proper identifiers. The following
 	// code is pretty sloppy right now since we haven't consolidated on a single way
@@ -148,15 +166,30 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			return nil, err
 		}
 
+		// DEBUGGING
+		for _, scipName := range scipNames {
+			if strings.Contains(scipName.DescriptorSuffix, "Runner") {
+				fmt.Printf("\tSCIP:%q\n", scipName.DescriptorSuffix)
+			}
+		}
+		for _, syntectName := range symbolNames {
+			if strings.Contains(syntectName, "Runner") {
+				ex, _ := symbols.NewExplodedSymbol(syntectName)
+				fmt.Printf("\tSYNTECT: %q -> %q\n", syntectName, ex.DescriptorSuffix)
+			}
+		}
+		fmt.Printf("\n\n")
+
 		scipNamesBySyntectName := map[string][]*symbols.ExplodedSymbol{}
 		for _, syntectName := range symbolNames {
 			ex, _ := symbols.NewExplodedSymbol(syntectName)
 			var symbolNames []*symbols.ExplodedSymbol
 			for _, scipName := range scipNames {
 				// N.B. this matches what we search against in formatSymbolNamesToLikeClause
-				if !strings.HasSuffix(ex.DescriptorSuffix, scipName.DescriptorSuffix) {
+				if !strings.HasSuffix(scipName.DescriptorSuffix, ex.DescriptorSuffix) {
 					continue
 				}
+				// TODO - batch
 				trace.AddEvent(
 					"scipNames DescriptorSuffix or DescriptorSuffix",
 					attribute.String("DescriptorSuffix", ex.DescriptorSuffix),
@@ -166,7 +199,16 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				symbolNames = append(symbolNames, scipName)
 			}
 
+			// DEBUGGING
+			if len(symbolNames) == 0 {
+				ex, _ := symbols.NewExplodedSymbol(syntectName)
+				if strings.Contains(syntectName, "Runner") {
+					fmt.Printf("> NO MATCHES FOR %q (%q)??\n", syntectName, ex.DescriptorSuffix)
+				}
+			}
+
 			if len(symbolNames) > 20 {
+				// DEBUGGING
 				fmt.Printf("TOO MANY RESULTS FOR %q\n", syntectName)
 				trace.AddEvent("TOO MANY RESULTS", attribute.String("syntectName", syntectName))
 				symbolNames = nil
@@ -176,6 +218,8 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				scipNamesBySyntectName[syntectName] = symbolNames
 			}
 		}
+		// DEBUGGING
+		fmt.Printf("\n\n")
 
 		return scipNamesBySyntectName, nil
 	}()
@@ -195,7 +239,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
-	fmt.Printf("PHASE 3\n")
+	// DEBUGGING
+	lap("PHASE 2: %d matching precise symbols\n", len(syntectNameSetBySymbol))
+
 	// PHASE 3: Gather definitions for each relevant SCIP symbol
 
 	type preciseData struct {
@@ -222,17 +268,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				symbolName:  ident,
 				location:    ul,
 			})
-
+			// TODO - batch
 			trace.AddEvent(
 				"preciseDataList",
 				attribute.String("syntectName", syntectName),
 				attribute.String("symbolName", ident),
 			)
-
 		}
 	}
 
-	fmt.Printf("PHASE 4\n")
+	// DEBUGGING
+	lap("PHASE 3: %d matching precise symbols\n", len(syntectNameSetBySymbol))
+
 	// PHASE 4: Read the files that contain a definition
 
 	type DocumentAndText struct {
@@ -275,7 +322,9 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
-	fmt.Printf("PHASE 5\n")
+	// DEBUGGING
+	lap("PHASE 4: read %d files\n", len(cache))
+
 	// PHASE 5: Extract the definitions for each of the relevant syntect symbols
 	// we originally requested.
 	//
@@ -313,6 +362,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 						FilePath:          l.Path,
 					})
 
+					// TODO - batch?
 					trace.AddEvent(
 						"preciseResponse",
 						attribute.String("symbolName", pd.symbolName),
@@ -325,7 +375,8 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 	}
 
-	fmt.Printf("DONE\n")
+	// DEBUGGING
+	lap("PHASE 5: generated %s context items\n", len(preciseResponse))
 	return preciseResponse, nil
 }
 
