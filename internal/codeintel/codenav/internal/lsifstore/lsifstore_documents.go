@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"sort"
-	"strings"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -56,18 +55,51 @@ WHERE
 	sid.document_path = %s
 `
 
-func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*symbols.ExplodedSymbol, err error) {
+func (s *store) GetFullSCIPNameByDescriptor(ctx context.Context, uploadIDs []int, symbolNames []string) (names []*symbols.ExplodedSymbol, err error) {
 	ctx, _, endObservation := s.operations.getFullSCIPNameByDescriptor.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{}})
 	defer endObservation(1, observation.Args{})
 
+	if len(uploadIDs) == 0 || len(symbolNames) == 0 {
+		return nil, nil
+	}
+
 	return scanExplodedSymbols(s.db.Query(ctx, sqlf.Sprintf(
 		getFullSCIPNameByDescriptorQuery,
-		pq.Array(uploadID),
-		pq.Array(formatSymbolNamesToLikeClause(symbolNames)),
+		pq.Array(uploadIDs),
+		sqlf.Join(fuzzyDescriptorSuffixConditions(symbolNames), "OR"),
 	)))
 }
 
 const getFullSCIPNameByDescriptorQuery = `
+WITH
+
+-- Perform search for matching descriptors
+fuzzy_descriptor_suffix_ids AS (
+	SELECT ssl.upload_id, ssl.id
+	FROM codeintel_scip_symbols_lookup ssl
+	WHERE
+		-- Index conditions for "codeintel_scip_symbols_lookup_reversed_descriptor_suffix_name"
+		ssl.upload_id = ANY(%s) AND ssl.segment_type = 'DESCRIPTOR_SUFFIX' AND (%s) AND
+		-- Post-index filter condition to ensure we haven't precise descriptors when we have an explicit fuzzy one
+		ssl.segment_quality != 'PRECISE'
+),
+
+-- Translate fuzzy descriptor identifier into a precise identifier
+-- We express this as a union in a CTE to take advantage of the partial indexes on the
+-- descriptor and fuzzy descriptor suffixes. When we had inlined these expressions, Postgres
+-- generated a parallel seq scan over the entire lookup_leaves table.
+descriptor_suffix_ids AS (
+	(
+		SELECT ll.upload_id, ll.descriptor_suffix_id FROM fuzzy_descriptor_suffix_ids dsi
+		JOIN codeintel_scip_symbols_lookup_leaves ll ON (ll.upload_id = dsi.upload_id AND ll.fuzzy_descriptor_suffix_id = dsi.id)
+	) UNION (
+		SELECT ll.upload_id, ll.descriptor_suffix_id FROM fuzzy_descriptor_suffix_ids dsi
+		JOIN codeintel_scip_symbols_lookup_leaves ll ON (ll.upload_id = dsi.upload_id AND ll.fuzzy_descriptor_suffix_id IS NULL AND ll.descriptor_suffix_id = dsi.id)
+	)
+)
+
+--
+-- Follow parent path from descriptor l6->l5->l4->l3->l2->l1
 SELECT DISTINCT
     l1.name AS scheme,
     l2.name AS package_manager,
@@ -75,24 +107,13 @@ SELECT DISTINCT
     l4.name AS package_version,
     l5.name AS descriptor_namespace,
     l6.name AS descriptor_suffix
--- Initially fuzzy search (see WHERE clause)
-FROM codeintel_scip_symbols_lookup l7
-
--- Join to symbols table, which will bridge DESCRIPTOR_SUFFIX+FUZZY (syntect) and DESCRIPTOR_SUFFIX+PRECISE (indexed)
-JOIN codeintel_scip_symbols_lookup_leaves ll ON ll.upload_id = l7.upload_id AND ll.fuzzy_descriptor_suffix_id = l7.id
-
--- Follow parent path from descriptor l6->l5->l4->l3->l2->l1
-JOIN codeintel_scip_symbols_lookup l6 ON l6.upload_id = l6.upload_id AND l6.id = ll.descriptor_suffix_id -- DESCRIPTOR_SUFFIX
-JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = l6.upload_id AND l5.id = l6.parent_id            -- DESCRIPTOR_NAMESPACE
-JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = l6.upload_id AND l4.id = l5.parent_id            -- PACKAGE_VERSION
-JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = l6.upload_id AND l3.id = l4.parent_id            -- PACKAGE_NAME
-JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = l6.upload_id AND l2.id = l3.parent_id            -- PACKAGE_MANAGER
-JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = l6.upload_id AND l1.id = l2.parent_id            -- SCHEME
-WHERE
-	l7.upload_id = ANY(%s) AND
-	l7.segment_type = 'DESCRIPTOR_SUFFIX' AND
-	l7.segment_quality != 'PRECISE' AND
-	reverse(l7.name) ILIKE ANY(%s)
+FROM descriptor_suffix_ids dsi
+JOIN codeintel_scip_symbols_lookup l6 ON l6.upload_id = dsi.upload_id AND l6.id = dsi.descriptor_suffix_id -- DESCRIPTOR_SUFFIX
+JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = dsi.upload_id AND l5.id = l6.parent_id             -- DESCRIPTOR_NAMESPACE
+JOIN codeintel_scip_symbols_lookup l4 ON l4.upload_id = dsi.upload_id AND l4.id = l5.parent_id             -- PACKAGE_VERSION
+JOIN codeintel_scip_symbols_lookup l3 ON l3.upload_id = dsi.upload_id AND l3.id = l4.parent_id             -- PACKAGE_NAME
+JOIN codeintel_scip_symbols_lookup l2 ON l2.upload_id = dsi.upload_id AND l2.id = l3.parent_id             -- PACKAGE_MANAGER
+JOIN codeintel_scip_symbols_lookup l1 ON l1.upload_id = dsi.upload_id AND l1.id = l2.parent_id             -- SCHEME
 `
 
 var scanExplodedSymbols = basestore.NewSliceScanner(func(s dbutil.Scanner) (*symbols.ExplodedSymbol, error) {
@@ -101,34 +122,30 @@ var scanExplodedSymbols = basestore.NewSliceScanner(func(s dbutil.Scanner) (*sym
 	return &n, err
 })
 
-func formatSymbolNamesToLikeClause(symbolNames []string) []string {
-	trimmedDescriptorMap := make(map[string]struct{}, len(symbolNames))
+func fuzzyDescriptorSuffixConditions(symbolNames []string) []*sqlf.Query {
+	fuzzyDescriptorSuffixMap := make(map[string]struct{}, len(symbolNames))
 	for _, symbolName := range symbolNames {
 		ex, err := symbols.NewExplodedSymbol(symbolName)
 		if err != nil {
 			continue
 		}
+		symbol := ex.FuzzyDescriptorSuffix
 
-		trimmedDescriptorMap[ex.FuzzyDescriptorSuffix] = struct{}{}
-	}
-
-	descriptorWildcards := make([]string, 0, len(trimmedDescriptorMap))
-	for symbol := range trimmedDescriptorMap {
 		if symbol != "" {
-			// TODO - too lenient?
-			descriptorWildcards = append(descriptorWildcards, reverse(symbol)+"%")
+			fuzzyDescriptorSuffixMap[symbol] = struct{}{}
 		}
 	}
-	sort.Strings(descriptorWildcards)
 
-	return descriptorWildcards
-}
+	fuzzyDescriptorSuffixes := make([]string, 0, len(fuzzyDescriptorSuffixMap))
+	for symbol := range fuzzyDescriptorSuffixMap {
+		fuzzyDescriptorSuffixes = append(fuzzyDescriptorSuffixes, symbol)
+	}
+	sort.Strings(fuzzyDescriptorSuffixes)
 
-func reverse(s string) string {
-	b := strings.Builder{}
-	for i := len(s) - 1; i >= 0; i-- {
-		b.WriteByte(s[i])
+	conds := make([]*sqlf.Query, 0, len(fuzzyDescriptorSuffixes))
+	for _, descriptorSuffix := range fuzzyDescriptorSuffixes {
+		conds = append(conds, sqlf.Sprintf("reverse(ssl.name) LIKE reverse('%%' || %s)", descriptorSuffix))
 	}
 
-	return b.String()
+	return conds
 }
