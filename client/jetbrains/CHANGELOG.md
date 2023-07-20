@@ -15,6 +15,8 @@
 
 ### Fixed
 
+- Enable/disable Cody automatically based on the settings [#55138](https://github.com/sourcegraph/sourcegraph/pull/55138)
+
 ### Security
 
 ## [3.0.6]
