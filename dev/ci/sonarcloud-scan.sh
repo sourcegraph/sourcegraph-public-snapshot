@@ -15,12 +15,12 @@ set -x
 
 echo "--- :arrow_down: verifying Sonarcloud binary"
 echo ""
-/usr/local/bin/sonar-scanner --version
+/usr/local/bin/sonar-scanner/bin/sonar-scanner --version
 echo ""
 
 echo "--- :lock: running Sonarcloud scan"
 echo ""
-/usr/local/bin/sonar-scanner \
+/usr/local/bin/sonar-scanner/bin/sonar-scanner \
   -Dsonar.organization=test-shiva-surya \
   -Dsonar.projectKey=test-shiva-surya_sourcegraph \
   -Dsonar.sources=. \
