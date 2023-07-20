@@ -6,10 +6,15 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 )
 
 func (s *schemaResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
+		return nil, err
+	}
+
 	return s.CodeMonitorsResolver.Monitors(ctx, nil, args)
 }
 
