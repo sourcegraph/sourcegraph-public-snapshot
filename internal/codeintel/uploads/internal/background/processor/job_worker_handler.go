@@ -393,7 +393,9 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, git
 // The code intel worker sometimes has as little as 2GB of RAM, so 1/4-th of
 // that is 512MiB. There is no simple portable API to determine the
 // max available memory to the process, so use a constant for now.
-const uncompressedSizeLimitBytes = 512 * 1024 * 1024
+//
+// Marked as a 'var' only for testing.
+var uncompressedSizeLimitBytes int64 = 512 * 1024 * 1024
 
 type gzipReadSeeker struct {
 	inner      io.ReadSeeker
@@ -456,7 +458,7 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 				// See NOTE(scip-index-size-stats).
 				compressedSize := len(buf)
 				uncompressedSizeEstimate := compressedSize * 5
-				shouldWriteToDisk = uncompressedSizeEstimate > uncompressedSizeLimitBytes
+				shouldWriteToDisk = int64(uncompressedSizeEstimate) > uncompressedSizeLimitBytes
 			}
 
 			if !shouldWriteToDisk {

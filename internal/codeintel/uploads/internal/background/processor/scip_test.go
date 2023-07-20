@@ -16,10 +16,30 @@ import (
 )
 
 func TestCorrelateSCIP(t *testing.T) {
+	testIndexPath := "./testdata/index1.scip.gz"
+	fileInfo, err := os.Stat(testIndexPath)
+	require.NoError(t, err)
+
+	var smallLimit int64 = 1024
+	require.Greater(t, fileInfo.Size(), smallLimit)
+	implCorrelateSCIP(t, testIndexPath, smallLimit)
+
+	var largeLimit int64 = 100 * 1024 * 1024
+	require.Less(t, fileInfo.Size(), largeLimit)
+	implCorrelateSCIP(t, testIndexPath, largeLimit)
+}
+
+func implCorrelateSCIP(t *testing.T, testIndexPath string, indexSizeLimit int64) {
 	ctx := context.Background()
 
+	oldValue := uncompressedSizeLimitBytes
+	uncompressedSizeLimitBytes = indexSizeLimit
+	t.Cleanup(func() {
+		uncompressedSizeLimitBytes = oldValue
+	})
+
 	testReader := func() gzipReadSeeker {
-		gzipped, err := os.Open("./testdata/index1.scip.gz")
+		gzipped, err := os.Open(testIndexPath)
 		if err != nil {
 			t.Fatalf("unexpected error reading test file: %s", err)
 		}
