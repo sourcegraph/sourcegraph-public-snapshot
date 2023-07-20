@@ -31,15 +31,19 @@ To use Amazon SES with Sourcegraph, first [follow these steps to create an SES a
 
 Navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
-```json
-  "email.address": "from@domain.com",
+```jsonc
+{
+  // [...]
+  "email.senderName": "Example Sourcegraph Instance", // Default: Sourcegraph
+  "email.address": "from@example.com",
   "email.smtp": {
     "authentication": "PLAIN",
     "username": "<SES SMTP username>",
     "password": "<SES SMTP password>",
     "host": "email-smtp.us-west-2.amazonaws.com",
     "port": 587
-  },
+  }
+}
 ```
 
 Please note that the configured `email.address` (the from address) must be a verified address with SES, see [this page for details](https://docs.aws.amazon.com/ses/latest/dg/verify-addresses-and-domains.html).
@@ -52,19 +56,23 @@ To use Google Workspace with Sourcegraph, you will need to [create an SMTP Relay
 
 Navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
-```json
-  "email.address": "test@domain.com",
+```jsonc
+{
+  // [...]
+  "email.senderName": "Example Sourcegraph Instance", // Default: Sourcegraph
+  "email.address": "test@example.com",
   "email.smtp": {
     "authentication": "PLAIN",
-    "username": "test@domain.com",
+    "username": "test@example.com",
     "password": "<YOUR SECRET>",
     "host": "smtp-relay.gmail.com",
     "port": 587,
-    "domain": "domain.com"
-  },
+    "domain": "example.com"
+  }
+}
 ```
 
-Make sure that `test@domain.com` in both places of the configuration matches the email address of the account you created, and that `<YOUR SECRET>` is replaced with the account password or app password when 2FA enabled.
+Make sure that `test@example.com` in both places of the configuration matches the email address of the account you created, and that `<YOUR SECRET>` is replaced with the account password or app password when 2FA enabled.
 
 [Send a test email](#sending-a-test-email) to verify it is configured properly.
 
@@ -77,15 +85,19 @@ Other providers such as Mailchimp and Sendgrid may also be used with Sourcegraph
 
 Once you have an SMTP account, simply navigate to your site configuration (e.g. `https://sourcegraph.com/site-admin/configuration`) and fill in the configuration:
 
-```json
-  "email.address": "from@domain.com",
+```jsonc
+{
+  // [...]
+  "email.senderName": "Example Sourcegraph Instance", // Default: Sourcegraph
+  "email.address": "from@example.com",
   "email.smtp": {
     "authentication": "PLAIN",
-    "username": "test@domain.com",
+    "username": "test@example.com",
     "password": "<YOUR SECRET>",
     "host": "smtp-server.example.com",
     "port": 587
-  },
+  }
+}
 ```
 
 A few helpful tips:

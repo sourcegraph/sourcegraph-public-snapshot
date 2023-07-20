@@ -12,6 +12,7 @@ import (
 	"sync"
 
 	common "github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	api "github.com/sourcegraph/sourcegraph/internal/api"
 	vcs "github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -46,7 +47,7 @@ func NewMockVCSSyncer() *MockVCSSyncer {
 			},
 		},
 		FetchFunc: &VCSSyncerFetchFunc{
-			defaultHook: func(context.Context, *vcs.URL, common.GitDir, string) (r0 []byte, r1 error) {
+			defaultHook: func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) (r0 []byte, r1 error) {
 				return
 			},
 		},
@@ -78,7 +79,7 @@ func NewStrictMockVCSSyncer() *MockVCSSyncer {
 			},
 		},
 		FetchFunc: &VCSSyncerFetchFunc{
-			defaultHook: func(context.Context, *vcs.URL, common.GitDir, string) ([]byte, error) {
+			defaultHook: func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error) {
 				panic("unexpected invocation of MockVCSSyncer.Fetch")
 			},
 		},
@@ -236,23 +237,23 @@ func (c VCSSyncerCloneCommandFuncCall) Results() []interface{} {
 // VCSSyncerFetchFunc describes the behavior when the Fetch method of the
 // parent MockVCSSyncer instance is invoked.
 type VCSSyncerFetchFunc struct {
-	defaultHook func(context.Context, *vcs.URL, common.GitDir, string) ([]byte, error)
-	hooks       []func(context.Context, *vcs.URL, common.GitDir, string) ([]byte, error)
+	defaultHook func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error)
+	hooks       []func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error)
 	history     []VCSSyncerFetchFuncCall
 	mutex       sync.Mutex
 }
 
 // Fetch delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockVCSSyncer) Fetch(v0 context.Context, v1 *vcs.URL, v2 common.GitDir, v3 string) ([]byte, error) {
-	r0, r1 := m.FetchFunc.nextHook()(v0, v1, v2, v3)
-	m.FetchFunc.appendCall(VCSSyncerFetchFuncCall{v0, v1, v2, v3, r0, r1})
+func (m *MockVCSSyncer) Fetch(v0 context.Context, v1 *vcs.URL, v2 api.RepoName, v3 common.GitDir, v4 string) ([]byte, error) {
+	r0, r1 := m.FetchFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.FetchFunc.appendCall(VCSSyncerFetchFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Fetch method of the
 // parent MockVCSSyncer instance is invoked and the hook queue is empty.
-func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, *vcs.URL, common.GitDir, string) ([]byte, error)) {
+func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error)) {
 	f.defaultHook = hook
 }
 
@@ -260,7 +261,7 @@ func (f *VCSSyncerFetchFunc) SetDefaultHook(hook func(context.Context, *vcs.URL,
 // Fetch method of the parent MockVCSSyncer instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, *vcs.URL, common.GitDir, string) ([]byte, error)) {
+func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -269,19 +270,19 @@ func (f *VCSSyncerFetchFunc) PushHook(hook func(context.Context, *vcs.URL, commo
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *VCSSyncerFetchFunc) SetDefaultReturn(r0 []byte, r1 error) {
-	f.SetDefaultHook(func(context.Context, *vcs.URL, common.GitDir, string) ([]byte, error) {
+	f.SetDefaultHook(func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *VCSSyncerFetchFunc) PushReturn(r0 []byte, r1 error) {
-	f.PushHook(func(context.Context, *vcs.URL, common.GitDir, string) ([]byte, error) {
+	f.PushHook(func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error) {
 		return r0, r1
 	})
 }
 
-func (f *VCSSyncerFetchFunc) nextHook() func(context.Context, *vcs.URL, common.GitDir, string) ([]byte, error) {
+func (f *VCSSyncerFetchFunc) nextHook() func(context.Context, *vcs.URL, api.RepoName, common.GitDir, string) ([]byte, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -322,10 +323,13 @@ type VCSSyncerFetchFuncCall struct {
 	Arg1 *vcs.URL
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 common.GitDir
+	Arg2 api.RepoName
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 string
+	Arg3 common.GitDir
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []byte
@@ -337,7 +341,7 @@ type VCSSyncerFetchFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c VCSSyncerFetchFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this

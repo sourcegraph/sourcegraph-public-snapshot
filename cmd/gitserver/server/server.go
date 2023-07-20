@@ -99,87 +99,6 @@ func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
 
-// runCommandGraceful runs the command and returns the exit status. If the
-// supplied context is cancelled we attempt to send SIGINT to the command to
-// allow it to gracefully shutdown. All clients of this function should pass in a
-// command *without* a context.
-func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder) (exitCode int, err error) {
-	c := cmd.Unwrap()
-	tr, ctx := trace.New(ctx, "runCommandGraceful",
-		attribute.String("path", c.Path),
-		attribute.StringSlice("args", c.Args),
-		attribute.String("dir", c.Dir))
-	defer func() {
-		if err != nil {
-			tr.SetAttributes(attribute.Int("exitCode", exitCode))
-		}
-		tr.EndWithErr(&err)
-	}()
-
-	exitCode = unsetExitStatus
-	err = cmd.Start()
-	if err != nil {
-		return exitCode, err
-	}
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		err = cmd.Wait()
-		if err != nil {
-			logger.Error("running command", log.Error(err))
-		}
-	}()
-
-	// Wait for command to exit or context to be done
-	select {
-	case <-ctx.Done():
-		logger.Debug("context cancelled, sending SIGINT")
-		// Attempt to send SIGINT
-		if err := cmd.Unwrap().Process.Signal(syscall.SIGINT); err != nil {
-			logger.Warn("Sending SIGINT to command", log.Error(err))
-			if err := cmd.Unwrap().Process.Kill(); err != nil {
-				logger.Warn("killing process", log.Error(err))
-			}
-			return exitCode, err
-		}
-		// Now, continue waiting for command for up to two seconds before killing it
-		timer := time.NewTimer(2 * time.Second)
-		select {
-		case <-done:
-			logger.Debug("process exited after SIGINT sent")
-			timer.Stop()
-			if err == nil {
-				exitCode = 0
-			}
-		case <-timer.C:
-			logger.Debug("timed out, killing process")
-			if err := cmd.Unwrap().Process.Kill(); err != nil {
-				logger.Warn("killing process", log.Error(err))
-			}
-			logger.Debug("process killed, waiting for done")
-			// Wait again to ensure we can access cmd.ProcessState below
-			<-done
-		}
-
-		if exitError, ok := err.(*exec.ExitError); ok {
-			exitCode = exitError.ExitCode()
-		}
-		err = ctx.Err()
-		return exitCode, err
-	case <-done:
-		// Happy path, command exits
-	}
-
-	if exitError, ok := err.(*exec.ExitError); ok {
-		exitCode = exitError.ExitCode()
-	}
-	if err == nil {
-		exitCode = 0
-	}
-	return exitCode, err
-}
-
 // cloneJob abstracts away a repo and necessary metadata to clone it. In the future it may be
 // possible to simplify this, but to do that, doClone will need to do a lot less than it does at the
 // moment.
@@ -1419,7 +1338,7 @@ func (s *Server) performGitLogCommand(ctx context.Context, repoCommit api.RepoCo
 		return "", true, errors.New("commit ID starting with - is not allowed")
 	}
 
-	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, "git", "log", "-n", "1", "--name-only", format, commitId)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, string(repoCommit.Repo), "git", "log", "-n", "1", "--name-only", format, commitId)
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = &buf
 
@@ -1614,6 +1533,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	ensureRevisionStatus := "noop"
 
 	req.Repo = protocol.NormalizeRepo(req.Repo)
+	repoName := req.Repo
 
 	// Instrumentation
 	{
@@ -1624,7 +1544,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		args := strings.Join(req.Args, " ")
 
 		var tr trace.Trace
-		tr, ctx = trace.New(ctx, "exec."+cmd, req.Repo.Attr())
+		tr, ctx = trace.New(ctx, "exec."+cmd, repoName.Attr())
 		tr.SetAttributes(
 			attribute.String("args", args),
 			attribute.String("ensure_revision", req.EnsureRevision),
@@ -1660,7 +1580,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 				act := actor.FromContext(ctx)
 				ev := honey.NewEvent("gitserver-exec")
 				ev.SetSampleRate(honeySampleRate(cmd, act))
-				ev.AddField("repo", req.Repo)
+				ev.AddField("repo", repoName)
 				ev.AddField("cmd", cmd)
 				ev.AddField("args", args)
 				ev.AddField("actor", act.UIDString())
@@ -1703,7 +1623,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		}()
 	}
 
-	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, req.Repo); !cloned {
+	if notFoundPayload, cloned := s.maybeStartClone(ctx, logger, repoName); !cloned {
 		if notFoundPayload.CloneInProgress {
 			status = "clone-in-progress"
 		} else {
@@ -1713,8 +1633,8 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 		return execStatus{}, &NotFoundError{notFoundPayload}
 	}
 
-	dir := s.dir(req.Repo)
-	if s.ensureRevision(ctx, req.Repo, req.EnsureRevision, dir) {
+	dir := s.dir(repoName)
+	if s.ensureRevision(ctx, repoName, req.EnsureRevision, dir) {
 		ensureRevisionStatus = "fetched"
 	}
 
@@ -1743,7 +1663,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderrW := &writeCounter{w: &limitWriter{W: &stderrBuf, N: 1024}}
 
 	cmdStart = time.Now()
-	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, "git", req.Args...)
+	cmd := s.RecordingCommandFactory.Command(ctx, s.Logger, string(repoName), "git", req.Args...)
 	dir.Set(cmd.Unwrap())
 	cmd.Unwrap().Stdout = stdoutW
 	cmd.Unwrap().Stderr = stderrW
@@ -1756,7 +1676,7 @@ func (s *Server) exec(ctx context.Context, logger log.Logger, req *protocol.Exec
 	stderrN = stderrW.n
 
 	stderr := stderrBuf.String()
-	s.logIfCorrupt(ctx, req.Repo, dir, stderr)
+	s.logIfCorrupt(ctx, repoName, dir, stderr)
 
 	return execStatus{
 		Err:        execErr,
@@ -2042,7 +1962,7 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 }
 
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, stderr string) {
-	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
+	if checkMaybeCorruptRepo(s.Logger, s, repo, dir, stderr) {
 		reason := stderr
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
@@ -2268,9 +2188,9 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
-	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, pw)
+	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
-    // best-effort update the output of the clone
+	// best-effort update the output of the clone
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
@@ -2283,12 +2203,12 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	removeBadRefs(ctx, tmp)
 
-	if err := setHEAD(ctx, logger, s.RecordingCommandFactory, tmp, syncer, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, repo, s.RecordingCommandFactory, tmp, syncer, remoteURL); err != nil {
 		logger.Warn("Failed to ensure HEAD exists", log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
-	if err := setRepositoryType(tmp, syncer.Type()); err != nil {
+	if err := setRepositoryType(tmp, s, syncer.Type()); err != nil {
 		return errors.Wrap(err, `git config set "sourcegraph.type"`)
 	}
 
@@ -2303,7 +2223,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	}
 
 	// Set gc.auto depending on gitGCMode.
-	if err := gitSetAutoGC(tmp); err != nil {
+	if err := gitSetAutoGC(tmp, s); err != nil {
 		return err
 	}
 
@@ -2661,9 +2581,9 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	output, err := syncer.Fetch(ctx, remoteURL, dir, revspec)
+	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
-    // best-effort update the output of the fetch
+	// best-effort update the output of the fetch
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
@@ -2676,11 +2596,11 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	removeBadRefs(ctx, dir)
 
-	if err := setHEAD(ctx, logger, s.RecordingCommandFactory, dir, syncer, remoteURL); err != nil {
+	if err := setHEAD(ctx, logger, repo, s.RecordingCommandFactory, dir, syncer, remoteURL); err != nil {
 		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
-	if err := setRepositoryType(dir, syncer.Type()); err != nil {
+	if err := setRepositoryType(dir, s, syncer.Type()); err != nil {
 		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
 	}
 
@@ -2752,7 +2672,7 @@ func ensureHEAD(dir common.GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommandFactory, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
+func setHEAD(ctx context.Context, logger log.Logger, repoName api.RepoName, rf *wrexec.RecordingCommandFactory, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
@@ -2766,7 +2686,7 @@ func setHEAD(ctx context.Context, logger log.Logger, rf *wrexec.RecordingCommand
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runRemoteGitCommand(ctx, rf.Wrap(ctx, logger, cmd), true, nil)
+	output, err := runRemoteGitCommand(ctx, rf.WrapWithRepoName(ctx, logger, repoName, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

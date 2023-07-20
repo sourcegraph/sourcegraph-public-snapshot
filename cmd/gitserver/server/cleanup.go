@@ -21,7 +21,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/ricochet2200/go-disk-usage/du"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
@@ -219,7 +218,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		}
 	}()
 
-	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
+	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir, _ *Server) (done bool, err error) {
 		size := dirSize(dir.Path("."))
 		stats.GitDirBytes += size
 		name := s.name(dir)
@@ -250,8 +249,8 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return false, nil
 	}
 
-	maybeRemoveCorrupt := func(dir common.GitDir) (done bool, _ error) {
-		corrupt, reason, err := checkRepoDirCorrupt(dir)
+	maybeRemoveCorrupt := func(dir common.GitDir, s *Server) (done bool, _ error) {
+		corrupt, reason, err := checkRepoDirCorrupt(dir, s)
 		if !corrupt || err != nil {
 			return false, err
 		}
@@ -270,7 +269,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return true, nil
 	}
 
-	maybeRemoveNonExisting := func(dir common.GitDir) (bool, error) {
+	maybeRemoveNonExisting := func(dir common.GitDir, _ *Server) (bool, error) {
 		if !removeNonExistingRepos {
 			return false, nil
 		}
@@ -295,21 +294,21 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return true, err
 	}
 
-	ensureGitAttributes := func(dir common.GitDir) (done bool, err error) {
+	ensureGitAttributes := func(dir common.GitDir, _ *Server) (done bool, err error) {
 		return false, setGitAttributes(dir)
 	}
 
-	ensureAutoGC := func(dir common.GitDir) (done bool, err error) {
-		return false, gitSetAutoGC(dir)
+	ensureAutoGC := func(dir common.GitDir, s *Server) (done bool, err error) {
+		return false, gitSetAutoGC(dir, s)
 	}
 
-	maybeReclone := func(dir common.GitDir) (done bool, err error) {
-		repoType, err := getRepositoryType(dir)
+	maybeReclone := func(dir common.GitDir, s *Server) (done bool, err error) {
+		repoType, err := getRepositoryType(dir, s)
 		if err != nil {
 			return false, err
 		}
 
-		recloneTime, err := getRecloneTime(dir)
+		recloneTime, err := getRecloneTime(dir, s)
 		if err != nil {
 			return false, err
 		}
@@ -317,7 +316,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		// Add a jitter to spread out re-cloning of repos cloned at the same time.
 		var reason string
 		const maybeCorrupt = "maybeCorrupt"
-		if maybeCorrupt, _ := gitConfigGet(dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
+		if maybeCorrupt, _ := gitConfigGet(dir, s, gitConfigMaybeCorrupt); maybeCorrupt != "" {
 			// Set the reason so that the repo cleaned up
 			reason = maybeCorrupt
 			// We don't log the corruption here, since the corruption *should* have already been
@@ -326,7 +325,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 			// the repo is not considered corrupted anymore.
 			//
 			// unset flag to stop constantly re-cloning if it fails.
-			_ = gitConfigUnset(dir, gitConfigMaybeCorrupt)
+			_ = gitConfigUnset(dir, s, gitConfigMaybeCorrupt)
 		}
 		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
 			reason = "old"
@@ -370,7 +369,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		// update the re-clone time so that we don't constantly re-clone if cloning fails.
 		// For example if a repo fails to clone due to being large, we will constantly be
 		// doing a clone which uses up lots of resources.
-		if err := setRecloneTime(dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
+		if err := setRecloneTime(dir, s, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
 			recloneLogger.Warn("setting backed off re-clone time failed", log.Error(err))
 		}
 
@@ -381,7 +380,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return true, nil
 	}
 
-	removeStaleLocks := func(gitDir common.GitDir) (done bool, err error) {
+	removeStaleLocks := func(gitDir common.GitDir, _ *Server) (done bool, err error) {
 		// if removing a lock fails, we still want to try the other locks.
 		var multi error
 
@@ -433,21 +432,21 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 		return false, multi
 	}
 
-	performGC := func(dir common.GitDir) (done bool, err error) {
-		return false, gitGC(dir)
+	performGC := func(dir common.GitDir, s *Server) (done bool, err error) {
+		return false, gitGC(dir, s)
 	}
 
-	performSGMaintenance := func(dir common.GitDir) (done bool, err error) {
+	performSGMaintenance := func(dir common.GitDir, _ *Server) (done bool, err error) {
 		return false, sgMaintenance(logger, dir)
 	}
 
-	performGitPrune := func(dir common.GitDir) (done bool, err error) {
-		return false, pruneIfNeeded(dir, looseObjectsLimit)
+	performGitPrune := func(dir common.GitDir, s *Server) (done bool, err error) {
+		return false, pruneIfNeeded(dir, s, looseObjectsLimit)
 	}
 
 	type cleanupFn struct {
 		Name string
-		Do   func(common.GitDir) (bool, error)
+		Do   func(common.GitDir, *Server) (bool, error)
 	}
 	cleanups := []cleanupFn{
 		// Compute the amount of space used by the repo
@@ -515,7 +514,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 
 		for _, cfn := range cleanups {
 			start := time.Now()
-			done, err := cfn.Do(gitDir)
+			done, err := cfn.Do(gitDir, s)
 			if err != nil {
 				logger.Error("error running cleanup command",
 					log.String("name", cfn.Name),
@@ -556,7 +555,7 @@ func (s *Server) cleanupRepos(ctx context.Context, gitServerAddrs gitserver.Gits
 	}
 }
 
-func checkRepoDirCorrupt(dir common.GitDir) (bool, string, error) {
+func checkRepoDirCorrupt(dir common.GitDir, s *Server) (bool, string, error) {
 	// We treat repositories missing HEAD to be corrupt. Both our cloning
 	// and fetching ensure there is a HEAD file.
 	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
@@ -571,7 +570,7 @@ func checkRepoDirCorrupt(dir common.GitDir) (bool, string, error) {
 	// repos as corrupt. Since we often fetch with ensureRevision, this
 	// leads to most commands failing against the repository. It is safer
 	// to remove now than try a safe reclone.
-	if gitIsNonBareBestEffort(dir) {
+	if gitIsNonBareBestEffort(dir, s) {
 		return true, "non-bare", nil
 	}
 
@@ -936,13 +935,13 @@ func (s *Server) SetupAndClearTmp() (string, error) {
 }
 
 // setRepositoryType sets the type of the repository.
-func setRepositoryType(dir common.GitDir, typ string) error {
-	return gitConfigSet(dir, "sourcegraph.type", typ)
+func setRepositoryType(dir common.GitDir, s *Server, typ string) error {
+	return gitConfigSet(dir, s, "sourcegraph.type", typ)
 }
 
 // getRepositoryType returns the type of the repository.
-func getRepositoryType(dir common.GitDir) (string, error) {
-	val, err := gitConfigGet(dir, "sourcegraph.type")
+func getRepositoryType(dir common.GitDir, s *Server) (string, error) {
+	val, err := gitConfigGet(dir, s, "sourcegraph.type")
 	if err != nil {
 		return "", err
 	}
@@ -950,8 +949,8 @@ func getRepositoryType(dir common.GitDir) (string, error) {
 }
 
 // setRecloneTime sets the time a repository is cloned.
-func setRecloneTime(dir common.GitDir, now time.Time) error {
-	err := gitConfigSet(dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+func setRecloneTime(dir common.GitDir, s *Server, now time.Time) error {
+	err := gitConfigSet(dir, s, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
 	if err != nil {
 		ensureHEAD(dir)
 		return errors.Wrap(err, "failed to update recloneTimestamp")
@@ -962,16 +961,16 @@ func setRecloneTime(dir common.GitDir, now time.Time) error {
 // getRecloneTime returns an approximate time a repository is cloned. If the
 // value is not stored in the repository, the re-clone time for the repository is
 // set to now.
-func getRecloneTime(dir common.GitDir) (time.Time, error) {
+func getRecloneTime(dir common.GitDir, s *Server) (time.Time, error) {
 	// We store the time we re-cloned the repository. If the value is missing,
 	// we store the current time. This decouples this timestamp from the
 	// different ways a clone can appear in gitserver.
 	update := func() (time.Time, error) {
 		now := time.Now()
-		return now, setRecloneTime(dir, now)
+		return now, setRecloneTime(dir, s, now)
 	}
 
-	value, err := gitConfigGet(dir, "sourcegraph.recloneTimestamp")
+	value, err := gitConfigGet(dir, s, "sourcegraph.recloneTimestamp")
 	if err != nil {
 		return time.Unix(0, 0), errors.Wrap(err, "failed to determine clone timestamp")
 	}
@@ -992,7 +991,7 @@ func getRecloneTime(dir common.GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir common.GitDir, stderr string) bool {
+func checkMaybeCorruptRepo(logger log.Logger, s *Server, repo api.RepoName, dir common.GitDir, stderr string) bool {
 	if !stdErrIndicatesCorruption(stderr) {
 		return false
 	}
@@ -1003,7 +1002,7 @@ func checkMaybeCorruptRepo(logger log.Logger, repo api.RepoName, dir common.GitD
 
 	// We set a flag in the config for the cleanup janitor job to fix. The janitor
 	// runs every minute.
-	err := gitConfigSet(dir, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
+	err := gitConfigSet(dir, s, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
 	if err != nil {
 		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
@@ -1039,10 +1038,11 @@ var (
 // Note: it is not always possible to check if a repository is bare since a
 // lock file may prevent the check from succeeding. We only want bare
 // repositories and want to avoid transient false positives.
-func gitIsNonBareBestEffort(dir common.GitDir) bool {
+func gitIsNonBareBestEffort(dir common.GitDir, s *Server) bool {
 	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
 	dir.Set(cmd)
-	b, _ := cmd.Output()
+	wrappedCmd := s.RecordingCommandFactory.WrapWithRepoName(context.Background(), log.NoOp(), s.name(dir), cmd)
+	b, _ := wrappedCmd.Output()
 	b = bytes.TrimSpace(b)
 	return bytes.Equal(b, []byte("false"))
 }
@@ -1050,10 +1050,11 @@ func gitIsNonBareBestEffort(dir common.GitDir) bool {
 // gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
 // operate synchronously and be aggressive with its internal heuristics when
 // deciding to act (meaning it will act now at lower thresholds).
-func gitGC(dir common.GitDir) error {
+func gitGC(dir common.GitDir, s *Server) error {
 	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
 	dir.Set(cmd)
-	err := cmd.Run()
+	wrappedCmd := s.RecordingCommandFactory.WrapWithRepoName(context.Background(), log.NoOp(), s.name(dir), cmd)
+	err := wrappedCmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
 	}
@@ -1200,7 +1201,7 @@ func lockRepoForGC(dir common.GitDir) (error, func() error) {
 
 // We run git-prune only if there are enough loose objects. This approach is
 // adapted from https://gitlab.com/gitlab-org/gitaly.
-func pruneIfNeeded(dir common.GitDir, limit int) (err error) {
+func pruneIfNeeded(dir common.GitDir, s *Server, limit int) (err error) {
 	needed, err := tooManyLooseObjects(dir, limit)
 	defer func() {
 		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed)).Inc()
@@ -1219,7 +1220,8 @@ func pruneIfNeeded(dir common.GitDir, limit int) (err error) {
 	// continuously trigger repacks until the loose objects expire.
 	cmd := exec.Command("git", "prune", "--expire", "now")
 	dir.Set(cmd)
-	err = cmd.Run()
+	wrappedCmd := s.RecordingCommandFactory.WrapWithRepoName(context.Background(), log.NoOp(), s.name(dir), cmd)
+	err = wrappedCmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-prune")
 	}
@@ -1345,13 +1347,13 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 //
 // The purpose is to avoid repository corruption which can happen if several
 // git-gc operations are running at the same time.
-func gitSetAutoGC(dir common.GitDir) error {
+func gitSetAutoGC(dir common.GitDir, s *Server) error {
 	switch gitGCMode {
 	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
-		return gitConfigUnset(dir, "gc.auto")
+		return gitConfigUnset(dir, s, "gc.auto")
 
 	case gitGCModeMaintenance:
-		return gitConfigSet(dir, "gc.auto", "0")
+		return gitConfigSet(dir, s, "gc.auto", "0")
 
 	default:
 		// should not happen
@@ -1359,10 +1361,11 @@ func gitSetAutoGC(dir common.GitDir) error {
 	}
 }
 
-func gitConfigGet(dir common.GitDir, key string) (string, error) {
+func gitConfigGet(dir common.GitDir, s *Server, key string) (string, error) {
 	cmd := exec.Command("git", "config", "--get", key)
 	dir.Set(cmd)
-	out, err := cmd.Output()
+	wrappedCmd := s.RecordingCommandFactory.WrapWithRepoName(context.Background(), log.NoOp(), s.name(dir), cmd)
+	out, err := wrappedCmd.Output()
 	if err != nil {
 		// Exit code 1 means the key is not set.
 		var e *exec.ExitError
@@ -1374,20 +1377,22 @@ func gitConfigGet(dir common.GitDir, key string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
-func gitConfigSet(dir common.GitDir, key, value string) error {
+func gitConfigSet(dir common.GitDir, s *Server, key, value string) error {
 	cmd := exec.Command("git", "config", key, value)
 	dir.Set(cmd)
-	err := cmd.Run()
+	wrappedCmd := s.RecordingCommandFactory.WrapWithRepoName(context.Background(), log.NoOp(), s.name(dir), cmd)
+	err := wrappedCmd.Run()
 	if err != nil {
 		return errors.Wrapf(wrapCmdError(cmd, err), "failed to set git config %s", key)
 	}
 	return nil
 }
 
-func gitConfigUnset(dir common.GitDir, key string) error {
+func gitConfigUnset(dir common.GitDir, s *Server, key string) error {
 	cmd := exec.Command("git", "config", "--unset-all", key)
 	dir.Set(cmd)
-	err := cmd.Run()
+	wrappedCmd := s.RecordingCommandFactory.WrapWithRepoName(context.Background(), log.NoOp(), s.name(dir), cmd)
+	err := wrappedCmd.Run()
 	if err != nil {
 		// Exit code 5 means the key is not set.
 		var e *exec.ExitError
