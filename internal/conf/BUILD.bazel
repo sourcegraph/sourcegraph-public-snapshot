@@ -35,7 +35,7 @@ go_library(
         "//internal/hashutil",
         "//internal/httpcli",
         "//internal/jsonc",
-        "//internal/licensing",
+        "//internal/license",
         "//internal/src-cli",
         "//internal/version",
         "//lib/errors",

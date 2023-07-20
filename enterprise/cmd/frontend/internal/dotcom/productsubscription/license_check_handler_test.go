@@ -21,7 +21,7 @@ import (
 
 func TestNewLicenseCheckHandler(t *testing.T) {
 	makeToken := func(licenseKey string) []byte {
-		token := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+		token := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 		return []byte(token)
 	}
 	now := time.Now()

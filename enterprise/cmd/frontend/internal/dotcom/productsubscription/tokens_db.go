@@ -7,9 +7,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	 "github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 )
 
@@ -45,7 +45,7 @@ func (t dbTokens) LookupProductSubscriptionIDByAccessToken(ctx context.Context, 
 	// much, we only track 'license_key' and check the that the raw token value
 	// matches the license key. Note that all prefixes have the same length.
 	//
-	// TODO(@bobheadxi): Migrate to licensing.ExtractLicenseKeyBasedAccessTokenContents(token)
+	// TODO(@bobheadxi): Migrate to license.GenerateLicenseKeyBasedAccessToken(token)
 	// after back-compat with productsubscription.AccessTokenPrefix is no longer
 	// needed
 	decoded, err := hex.DecodeString(token[len(licensing.LicenseKeyBasedAccessTokenPrefix):])
