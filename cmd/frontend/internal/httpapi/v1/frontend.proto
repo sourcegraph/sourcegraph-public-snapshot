@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package frontend.v1;
+
+option go_package = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/v1";
+
+service FrontendService {
+  rpc ExternalServiceConfigs(ExternalServiceConfigsRequest) returns (ExternalServiceConfigsResponse) {}
+}
+
+
+message ExternalServiceConfigsRequest {
+    string kind = 1;
+    int64 limit = 2;
+    int64 after_id = 3;
+}
+
+message ExternalServiceConfigsResponse {
+  string github_token = 1;
+  string github_url = 2;
+  string github_user = 3;
+  string github_password = 4;
+
+  int64 user_count = 5;
+  int64 team_count = 6;
+  int64 sub_org_count = 7;
+
+  string repos_source_org = 8;
+  string action = 9;
+  string resume = 10;
+
+  bool generate_tokens = 11;
+}
