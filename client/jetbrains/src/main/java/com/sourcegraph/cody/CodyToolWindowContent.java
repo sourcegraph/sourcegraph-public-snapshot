@@ -74,6 +74,9 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
+import java.util.Optional;
+import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
 import org.apache.commons.lang3.StringUtils;
@@ -92,7 +95,6 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull Project project;
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private final JPanel stopGeneratingButtonPanel;
-  private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
 
@@ -152,14 +154,20 @@ public class CodyToolWindowContent implements UpdatableChat {
     chatPanel.setBorder(BorderFactory.createEmptyBorder());
 
     // Scroll all the way down after each message
-    AdjustmentListener scrollAdjustmentListener =
-        e -> {
-          if (needScrollingDown) {
-            e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-            needScrollingDown = false;
-          }
-        };
-    chatPanel.getVerticalScrollBar().addAdjustmentListener(scrollAdjustmentListener);
+    chatPanel
+        .getVerticalScrollBar()
+        .addAdjustmentListener(
+            e ->
+                Optional.ofNullable(e.getSource())
+                    .filter(source -> source instanceof JScrollBar)
+                    .map(source -> (JScrollBar) source)
+                    .flatMap(scrollBar -> Optional.ofNullable(scrollBar.getModel()))
+                    // don't adjust if the user is himself scrolling
+                    .filter(brm -> !brm.getValueIsAdjusting())
+                    // only adjust if the scroll isn't at the bottom already
+                    .filter(brm -> brm.getValue() + brm.getExtent() != brm.getMaximum())
+                    // if all the above conditions are met, adjust the scroll to the bottom
+                    .ifPresent(brm -> brm.setValue(brm.getMaximum())));
 
     // Controls panel
     JPanel controlsPanel = new JPanel();
@@ -392,15 +400,6 @@ public class CodyToolWindowContent implements UpdatableChat {
     messagesPanel.add(bubblePanel);
     messagesPanel.revalidate();
     messagesPanel.repaint();
-
-    // Need this hacky solution to scroll all the way down after each message
-    ApplicationManager.getApplication()
-        .invokeLater(
-            () -> {
-              needScrollingDown = true;
-              messagesPanel.revalidate();
-              messagesPanel.repaint();
-            });
   }
 
   @Override
