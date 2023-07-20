@@ -9,6 +9,7 @@
 ### Changed
 
 - Improved UI of the onboarding widgets [#55090](https://github.com/sourcegraph/sourcegraph/pull/55090)
+- Improved perceived autocomplete performance [#55098](https://github.com/sourcegraph/sourcegraph/pull/55098)
 
 ### Fixed
 
