@@ -546,8 +546,8 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 				// Record on span itself as well for ease of querying, updates
 				// will overwrite previous values.
 				tr.SetAttributes(
-					attribute.Bool("httpcli.retry", retry),
-					attribute.Int("httpcli.retryAttempts", a.Index))
+					attribute.Bool("httpcli.retried", true),
+					attribute.Int("httpcli.retriedAttempts", a.Index))
 			}
 
 			// Update request context with latest retry for logging middleware
