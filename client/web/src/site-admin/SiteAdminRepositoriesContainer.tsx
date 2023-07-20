@@ -392,14 +392,22 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                     }),
             })
         }
-        if (loading && !error) {
-            items.splice(0, 1, {
-                value: <LoadingSpinner />,
-                description: 'Repositories',
-            })
-        }
         return items
-    }, [data, setFilterValues, loading, error])
+    }, [data, setFilterValues])
+
+    const [showSpinner, setShowSpinner] = useState(false)
+
+    useEffect(() => {
+        if (loading) {
+            const timeout = setTimeout(() => {
+                setShowSpinner(true)
+            }, 300)
+
+            return () => clearTimeout(timeout)
+        }
+
+        return setShowSpinner(false)
+    }, [loading])
 
     return (
         <>
@@ -436,6 +444,11 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                             variant="regular"
                         />
                     </div>
+                    {showSpinner && !error && (
+                        <div className="d-flex justify-content-center align-items-center ">
+                            <LoadingSpinner />
+                        </div>
+                    )}
                     <ul className="list-group list-group-flush mt-4">
                         {(connection?.nodes || []).map(node => (
                             <RepositoryNode key={node.id} node={node} />
