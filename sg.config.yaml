@@ -1032,7 +1032,7 @@ commandsets:
       # additional connections.
       EXTSVC_CONFIG_FILE: ""
 
-    dotcom:
+  dotcom:
     # This is 95% the enterprise runset, with the addition of Cody Gateway.
     requiresDevPrivate: true
     checks:
