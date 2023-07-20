@@ -204,10 +204,10 @@ matching_symbol_names AS (
 
 		-- Initially match descriptor scoped to an upload
 		JOIN codeintel_scip_symbols_lookup l6 ON
-			l6.upload_id = ANY(%s) AND
-			l6.segment_type = 'DESCRIPTOR_SUFFIX' AND
-			l6.segment_quality != 'FUZZY' AND
-			l6.name = p.descriptor_suffix
+			-- Index conditions for "codeintel_scip_symbols_lookup_reversed_descriptor_suffix_name"
+			l6.upload_id = ANY(%s) AND l6.segment_type = 'DESCRIPTOR_SUFFIX' AND reverse(l6.name) = reverse(p.descriptor_suffix) AND
+			-- Post-index filter condition to ensure we haven't matched stripped descriptors
+			l6.segment_quality != 'FUZZY'
 
 		-- Follow parent path l6->l5->l4->l3->l2->l1, filter out anything that doesn't match exploded symbol parts
 		JOIN codeintel_scip_symbols_lookup l5 ON l5.upload_id = l6.upload_id AND l5.id = l6.parent_id AND l5.name = p.descriptor_namespace
