@@ -49,11 +49,6 @@ func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, en
 		return nil, err
 	}
 
-	namespaceScope := sqlf.Sprintf("cm_monitors.namespace_user_id = %s", a.UID)
-	if user.SiteAdmin {
-		namespaceScope = sqlf.Sprintf("TRUE")
-	}
-
 	q := sqlf.Sprintf(
 		updateWebhookActionQuery,
 		enabled,
@@ -62,7 +57,7 @@ func (s *codeMonitorStore) UpdateWebhookAction(ctx context.Context, id int64, en
 		a.UID,
 		s.Now(),
 		id,
-		namespaceScope,
+		namespaceScopeQuery(user),
 		sqlf.Join(webhookActionColumns, ","),
 	)
 

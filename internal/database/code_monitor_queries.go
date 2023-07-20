@@ -87,11 +87,6 @@ func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, id int64, que
 		return err
 	}
 
-	namespaceScope := sqlf.Sprintf("cm_monitors.namespace_user_id = %s", a.UID)
-	if user.SiteAdmin {
-		namespaceScope = sqlf.Sprintf("TRUE")
-	}
-
 	q := sqlf.Sprintf(
 		updateTriggerQueryFmtStr,
 		query,
@@ -99,7 +94,7 @@ func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, id int64, que
 		now,
 		now,
 		id,
-		namespaceScope,
+		namespaceScopeQuery(user),
 		sqlf.Join(queryColumns, ", "),
 	)
 	row := s.QueryRow(ctx, q)

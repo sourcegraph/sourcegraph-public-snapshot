@@ -49,11 +49,6 @@ func (s *codeMonitorStore) UpdateSlackWebhookAction(ctx context.Context, id int6
 		return nil, err
 	}
 
-	namespaceScope := sqlf.Sprintf("cm_monitors.namespace_user_id = %s", a.UID)
-	if user.SiteAdmin {
-		namespaceScope = sqlf.Sprintf("TRUE")
-	}
-
 	q := sqlf.Sprintf(
 		updateSlackWebhookActionQuery,
 		enabled,
@@ -62,7 +57,7 @@ func (s *codeMonitorStore) UpdateSlackWebhookAction(ctx context.Context, id int6
 		a.UID,
 		s.Now(),
 		id,
-		namespaceScope,
+		namespaceScopeQuery(user),
 		sqlf.Join(slackWebhookActionColumns, ","),
 	)
 

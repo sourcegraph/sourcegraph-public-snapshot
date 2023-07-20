@@ -46,7 +46,7 @@ const insertCodeMonitorFmtStr = `
 INSERT INTO cm_monitors
 (created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id)
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
-RETURNING %s; -- monitorColumns
+RETURNING %s -- monitorColumns
 `
 
 func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args MonitorArgs) (*Monitor, error) {
@@ -205,7 +205,7 @@ func (s *codeMonitorStore) GetMonitor(ctx context.Context, monitorID int64) (*Mo
 const totalCountMonitorsFmtStr = `
 SELECT COUNT(*)
 FROM cm_monitors
-%s;
+%s
 `
 
 func (s *codeMonitorStore) CountMonitors(ctx context.Context, userID *int32) (int32, error) {

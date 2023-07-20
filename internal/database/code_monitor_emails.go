@@ -57,11 +57,6 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args
 		return nil, err
 	}
 
-	namespaceScope := sqlf.Sprintf("cm_monitors.namespace_user_id = %s", a.UID)
-	if user.SiteAdmin {
-		namespaceScope = sqlf.Sprintf("TRUE")
-	}
-
 	q := sqlf.Sprintf(
 		updateActionEmailFmtStr,
 		args.Enabled,
@@ -71,7 +66,7 @@ func (s *codeMonitorStore) UpdateEmailAction(ctx context.Context, id int64, args
 		a.UID,
 		s.Now(),
 		id,
-		namespaceScope,
+		namespaceScopeQuery(user),
 		sqlf.Join(emailsColumns, ", "),
 	)
 

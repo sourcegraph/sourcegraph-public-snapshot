@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // CodeMonitorStore is an interface for interacting with the code monitor tables in the database
@@ -222,6 +223,14 @@ func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monit
 		// TODO(camdencheek): add other action types (webhooks) here
 	}
 	return m, nil
+}
+
+func namespaceScopeQuery(user *types.User) *sqlf.Query {
+	namespaceScope := sqlf.Sprintf("cm_monitors.namespace_user_id = %s", user.ID)
+	if user.SiteAdmin {
+		namespaceScope = sqlf.Sprintf("TRUE")
+	}
+	return namespaceScope
 }
 
 func NewTestStore(t *testing.T, db DB) (context.Context, *TestStore) {
