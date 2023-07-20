@@ -7,7 +7,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	 "github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"

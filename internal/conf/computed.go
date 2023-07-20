@@ -8,7 +8,7 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
+	 "github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"

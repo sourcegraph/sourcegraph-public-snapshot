@@ -9,7 +9,6 @@ go_library(
     deps = [
         "//cmd/cody-gateway/internal/actor",
         "//cmd/cody-gateway/internal/dotcom",
-        "//internal/accesstoken",
         "//internal/codygateway",
         "//internal/licensing",
         "//internal/productsubscription",
