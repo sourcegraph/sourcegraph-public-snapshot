@@ -406,7 +406,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
             return () => clearTimeout(timeout)
         }
 
-        return setShowSpinner(false)
+        setShowSpinner(false)
+        return
     }, [loading])
 
     return (
