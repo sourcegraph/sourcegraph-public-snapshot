@@ -26,6 +26,14 @@ type RecordedCommand struct {
 	Path     string    `json:"path"`
 }
 
+func UnmarshalCommand(rawCommand []byte) (RecordedCommand, error) {
+	var command RecordedCommand
+	if err := json.Unmarshal(rawCommand, &command); err != nil {
+		return RecordedCommand{}, err
+	}
+	return command, nil
+}
+
 // RecordingCmd is a Cmder that allows one to record the executed commands with their arguments when
 // the given ShouldRecordFunc predicate is true.
 type RecordingCmd struct {
@@ -41,8 +49,9 @@ type RecordingCmd struct {
 // ShouldRecordFunc is a predicate to signify if a command should be recorded or just pass through.
 type ShouldRecordFunc func(context.Context, *exec.Cmd) bool
 
-// RecordingCommand contructs a RecordingCommand that implements Cmder. The predicate shouldRecord can be passed to decide on whether
-// or not the command should be recorded.
+// RecordingCommand constructs a RecordingCommand that implements Cmder. The
+// predicate shouldRecord can be passed to decide on whether the command should
+// be recorded.
 //
 // The recording is only done after the commands is considered finished (.ie after Wait, Run, ...).
 func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, store *rcache.FIFOList, name string, args ...string) *RecordingCmd {
@@ -111,7 +120,7 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 		return
 	}
 
-	rc.store.Insert(data)
+	_ = rc.store.Insert(data)
 }
 
 // RecordingCommandFactory stores a ShouldRecord that will be used to create a new RecordingCommand
@@ -145,7 +154,7 @@ func (rf *RecordingCommandFactory) Disable() {
 
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
 func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, repoName, cmdName string, args ...string) *RecordingCmd {
-	store := rcache.NewFIFOList(KeyPrefix+fmt.Sprintf("-%s", repoName), rf.maxSize)
+	store := rcache.NewFIFOList(GetFIFOListKey(repoName), rf.maxSize)
 	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, args...)
 }
 
@@ -160,11 +169,16 @@ func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, 
 // os/exec.Cmd, while also setting up the ShouldRecordFunc currently set in the
 // factory. It uses repoName to create a new Redis list using it.
 func (rf *RecordingCommandFactory) WrapWithRepoName(ctx context.Context, logger log.Logger, repoName api.RepoName, cmd *exec.Cmd) *RecordingCmd {
-	store := rcache.NewFIFOList(KeyPrefix+fmt.Sprintf("-%s", repoName), rf.maxSize)
+	store := rcache.NewFIFOList(GetFIFOListKey(string(repoName)), rf.maxSize)
 	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
 }
 
 // NewNoOpRecordingCommandFactory is a recording command factory that is intialised with a nil shouldRecord and maxSize 0. This is a helper for use in tests.
 func NewNoOpRecordingCommandFactory() *RecordingCommandFactory {
 	return &RecordingCommandFactory{shouldRecord: nil, maxSize: 0}
+}
+
+// GetFIFOListKey returns the name of FIFO list in Redis for a given repo name.
+func GetFIFOListKey(repoName string) string {
+	return fmt.Sprintf("%s-%s", KeyPrefix, repoName)
 }
