@@ -11,6 +11,7 @@ import { AuthenticatedUser } from '../auth'
 import { HeroPage } from '../components/HeroPage'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
+import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { CloudSignUpPage, ShowEmailFormQueryParameter } from './CloudSignUpPage'
@@ -81,7 +82,8 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
                 return response.text().then(text => Promise.reject(new Error(text)))
             }
 
-            window.location.replace(returnTo)
+            // Redirects to the /post-sign-up after successful signup on sourcegraphDotCom.
+            window.location.replace(context.sourcegraphDotComMode ? PageRoutes.PostSignUp : returnTo)
 
             return Promise.resolve()
         })
