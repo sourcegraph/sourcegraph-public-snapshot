@@ -4,6 +4,8 @@
 
 ### Added
 
+- New menu item in the toolbar cogwheel menu to open the Cody app settings [#55146](https://github.com/sourcegraph/sourcegraph/pull/55146)
+
 ### Changed
 
 - Store global access token in a safe place [#55052](https://github.com/sourcegraph/sourcegraph/pull/55052)
