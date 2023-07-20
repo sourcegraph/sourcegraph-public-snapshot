@@ -10,15 +10,9 @@
 
 - Improved UI of the onboarding widgets [#55090](https://github.com/sourcegraph/sourcegraph/pull/55090)
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Enable/disable Cody automatically based on the settings [#55138](https://github.com/sourcegraph/sourcegraph/pull/55138)
-
-### Security
 
 ## [3.0.6]
 
@@ -32,18 +26,12 @@
 - Disable "summarize recent code changes" button if git repository is not available [#54859](https://github.com/sourcegraph/sourcegraph/pull/54859)
 - Get the chat model max tokens value from the instance when available [#54954](https://github.com/sourcegraph/sourcegraph/pull/54954)
 
-### Deprecated
-
-### Removed
-
 ### Fixed
 
 - Downgraded connection errors for invalid or inaccessible enterprise instances to warnings [#54916](https://github.com/sourcegraph/sourcegraph/pull/54916)
 - Try to log error stack traces and recover from them, rather than re-throw the exception [#54917](https://github.com/sourcegraph/sourcegraph/pull/54917)
 - Show only one informative message in case of invalid access token [#54951](https://github.com/sourcegraph/sourcegraph/pull/54951)
 - Don't display `<br />` tag in the chat message when trying to insert new line in the code block [#55007](https://github.com/sourcegraph/sourcegraph/pull/55007)
-
-### Security
 
 ## [3.0.5]
 
