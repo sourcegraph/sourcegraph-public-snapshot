@@ -23,10 +23,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
+	frontendproto "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/frontend/v1"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/releasecache"
 	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	v1 "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/v1"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/webhookhandlers"
 	frontendsearch "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
 	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
@@ -242,7 +242,7 @@ func RegisterInternalServices(
 	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
 
 	proto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
-	v1.RegisterFrontendServiceServer(s, &GRPCService{Server: fs})
+	frontendproto.RegisterFrontendServiceServer(s, &GRPCService{Server: fs})
 
 	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
