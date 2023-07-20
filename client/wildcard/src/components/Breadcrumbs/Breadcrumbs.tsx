@@ -162,7 +162,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
                     key={segment.id}
                     data-index={segment.id}
                     data-type={isMoreButtonSegment(segment) ? 'internal' : 'common'}
-                    className={classNames(styles.item, {
+                    className={classNames({
                         [styles.itemHidden]: isInvisibleSegment(segment),
                         [styles.itemWithButton]: isMoreButtonSegment(segment),
                         [styles.itemLast]: isOnlyFileNameVisible && index === fixedSegments.length - 1,
@@ -189,11 +189,7 @@ export const Breadcrumbs: FC<BreadcrumbsProps> = props => {
                     )}
                 </li>
             ))}
-            {children && (
-                <li data-type="extra-content" className={styles.item}>
-                    {children}
-                </li>
-            )}
+            {children && <li data-type="extra-content">{children}</li>}
         </ul>
     )
 }
