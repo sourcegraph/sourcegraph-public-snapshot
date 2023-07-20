@@ -52,33 +52,33 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	}
 
 	percentOfLimit := getPercentOfLimit(userCount, userLimit)
-	if percentOfLimit >= 90 || userCount >= userLimit-2 {
-		siteAdminEmails, err := getSiteAdminEmails(ctx, db)
-		if err != nil {
-			return errors.Wrap(err, "could not get site admins")
-		}
-
-		messageId := "approaching_user_limit"
-		replyTo := "support@sourcegraph.com"
-
-		if err := txemail.Send(ctx, "approaching_user_limit", txemail.Message{
-			To:        siteAdminEmails,
-			Template:  approachingUserLimitEmailTemplate,
-			MessageID: &messageId,
-			ReplyTo:   &replyTo,
-			Data: struct {
-				RemainingUsers int
-				Percent        int
-			}{
-				RemainingUsers: userLimit - userCount,
-				Percent:        percentOfLimit,
-			},
-		}); err != nil {
-			return errors.Wrap(err, "could not send email")
-		}
-	} else {
+	if percentOfLimit < 90 && userCount < userLimit-2 {
 		fmt.Println("user count on license within limit")
 		return nil
+	}
+
+	siteAdminEmails, err := getSiteAdminEmails(ctx, db)
+	if err != nil {
+		return errors.Wrap(err, "could not get site admins")
+	}
+
+	messageId := "approaching_user_limit"
+	replyTo := "support@sourcegraph.com"
+
+	if err := txemail.Send(ctx, "approaching_user_limit", txemail.Message{
+		To:        siteAdminEmails,
+		Template:  approachingUserLimitEmailTemplate,
+		MessageID: &messageId,
+		ReplyTo:   &replyTo,
+		Data: struct {
+			RemainingUsers int
+			Percent        int
+		}{
+			RemainingUsers: userLimit - userCount,
+			Percent:        percentOfLimit,
+		},
+	}); err != nil {
+		return errors.Wrap(err, "could not send email")
 	}
 
 	return nil
