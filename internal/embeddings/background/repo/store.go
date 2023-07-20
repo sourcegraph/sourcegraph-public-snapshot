@@ -548,14 +548,9 @@ WHERE
 `
 
 const countRepoEmbeddingsQuery = `
-SELECT COUNT(*) as count
-FROM (
-    SELECT DISTINCT ON (repo_id) repo_id
-    FROM repo_embedding_jobs
-    WHERE state = 'completed'
-    ORDER BY repo_id, finished_at DESC
-) subquery;
-
+SELECT COUNT(DISTINCT repo_id) AS count
+FROM repo_embedding_jobs
+WHERE state = 'completed';
 `
 
 func (s *repoEmbeddingJobsStore) CountRepoEmbeddings(ctx context.Context) (int, error) {
