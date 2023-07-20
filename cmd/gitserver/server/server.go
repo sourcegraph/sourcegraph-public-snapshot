@@ -2271,7 +2271,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
-    // best-effort update the output of the clone
+	// best-effort update the output of the clone
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
@@ -2664,7 +2664,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
-    // best-effort update the output of the fetch
+	// best-effort update the output of the fetch
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
 	if err != nil {
