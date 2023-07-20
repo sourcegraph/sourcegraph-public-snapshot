@@ -8,11 +8,10 @@ service FrontendService {
   rpc ExternalServiceConfigs(ExternalServiceConfigsRequest) returns (ExternalServiceConfigsResponse) {}
 }
 
-
 message ExternalServiceConfigsRequest {
-    string kind = 1;
-    int64 limit = 2;
-    int64 after_id = 3;
+  string kind = 1;
+  int64 limit = 2;
+  int64 after_id = 3;
 }
 
 message ExternalServiceConfigsResponse {
