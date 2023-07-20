@@ -422,39 +422,6 @@ func TestRepos_GetByIDs(t *testing.T) {
 	}
 }
 
-// TODO: Move to separate PR.
-func TestRepos_GetByName(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
-
-	want := mustCreate(ctx, t, db, &types.Repo{
-		Name: "r",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "a",
-			ServiceType: "b",
-			ServiceID:   "c",
-		},
-	})
-
-	repo, err := db.Repos().GetByName(ctx, want.Name)
-	require.NoError(t, err)
-	require.Equal(t, repo.Name, want.Name)
-
-	// TODO: Add blocked repo test.
-
-	err = db.Repos().Delete(ctx, want.ID)
-	require.NoError(t, err)
-
-	repo, err = db.Repos().GetByName(ctx, want.Name)
-	require.Error(t, err, &RepoNotFoundErr{Name: want.Name})
-}
-
 func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
