@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
 
 set -e
-export SONAR_SCANNER_VERSION=4.7.0.2747
-export SONAR_SCANNER_HOME=/tmp/sonar/sonar-scanner-$SONAR_SCANNER_VERSION-linux
 export SONAR_SCANNER_OPTS="-server"
 
 export SONAR_TOKEN="${SONAR_TOKEN}"
@@ -15,16 +13,19 @@ fi
 
 set -x
 
-echo "--- :arrow_down: downloading Sonarcloud binary"
+echo "--- :arrow_down: verifying Sonarcloud binary"
 echo ""
-curl --fail --create-dirs -sSLo /tmp/sonar-scanner.zip https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-$SONAR_SCANNER_VERSION-linux.zip
-unzip -o /tmp/sonar-scanner.zip -d /tmp/sonar/
+sonar-scanner --version
+echo ""
 
 echo "--- :lock: running Sonarcloud scan"
 echo ""
-$SONAR_SCANNER_HOME/bin/sonar-scanner \
+sonar-scanner \
   -Dsonar.organization=test-shiva-surya \
   -Dsonar.projectKey=test-shiva-surya_sourcegraph \
   -Dsonar.sources=. \
   -Dsonar.host.url=https://sonarcloud.io \
-  -Dsonar.sourceEncoding=UTF-8
+  -Dsonar.sourceEncoding=UTF-8 \
+  -Dsonar.pullrequest.key=$BUILDKITE_PULL_REQUEST \
+  -Dsonar.pullrequest.branch=$BUILDKITE_BRANCH \
+  -Dsonar.pullrequest.base=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
