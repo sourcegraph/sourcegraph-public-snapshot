@@ -1019,6 +1019,7 @@ func TestEmailSenderName(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			Mock(&Unified{SiteConfiguration: tc.siteConfig})
+			t.Cleanup(func() { Mock(nil) })
 
 			if got, want := EmailSenderName(), tc.want; got != want {
 				t.Fatalf("EmailSenderName() = %v, want %v", got, want)
