@@ -1032,36 +1032,6 @@ commandsets:
       # additional connections.
       EXTSVC_CONFIG_FILE: ""
 
-  dotcom-nosymbols:
-    # This is 95% the enterprise runset, with the addition of Cody Gateway.
-    requiresDevPrivate: true
-    checks:
-      - docker
-      - redis
-      - postgres
-      - git
-    commands:
-      - frontend
-      - worker
-      - repo-updater
-      - web
-      - gitserver-0
-      - gitserver-1
-      - searcher
-      - caddy
-      - docsite
-      - syntax-highlighter
-      - github-proxy
-      - zoekt-index-0
-      - zoekt-index-1
-      - zoekt-web-0
-      - zoekt-web-1
-      - blobstore
-      - cody-gateway
-      - embeddings
-    env:
-      SOURCEGRAPHDOTCOM_MODE: true
-
     dotcom:
     # This is 95% the enterprise runset, with the addition of Cody Gateway.
     requiresDevPrivate: true
@@ -1078,6 +1048,7 @@ commandsets:
       - gitserver-0
       - gitserver-1
       - searcher
+      - symbols
       - caddy
       - docsite
       - syntax-highlighter
