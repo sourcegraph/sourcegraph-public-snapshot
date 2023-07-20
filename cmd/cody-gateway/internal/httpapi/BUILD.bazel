@@ -30,5 +30,9 @@ go_library(
         "@com_github_sourcegraph_log//hook",
         "@com_github_sourcegraph_log//output",
         "@io_opentelemetry_go_contrib_instrumentation_net_http_otelhttp//:otelhttp",
+        "@io_opentelemetry_go_otel//:otel",
+        "@io_opentelemetry_go_otel//attribute",
+        "@io_opentelemetry_go_otel_metric//:metric",
+        "@org_uber_go_atomic//:atomic",
     ],
 )
