@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -114,7 +113,7 @@ func (s dbLicenses) GetByAccessToken(ctx context.Context, accessToken string) (*
 		return mocks.licenses.GetByToken(accessToken)
 	}
 
-	contents, err := license.GenerateLicenseKeyBasedAccessToken(accessToken)
+	contents, err := license.ExtractLicenseKeyBasedAccessTokenContents(accessToken)
 	if err != nil {
 		return nil, errTokenInvalid
 	}

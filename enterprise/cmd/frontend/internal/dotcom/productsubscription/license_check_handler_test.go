@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -184,7 +185,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			require.Equal(t, "application/json", res.Header().Get("Content-Type"))
 
 			var got licensing.LicenseCheckResponse
-			_ = json.Unmarshal([]byte(res.Body.String()), &got)
+			_ = json.Unmarshal(res.Body.Bytes(), &got)
 			require.Equal(t, test.want, got)
 		})
 	}

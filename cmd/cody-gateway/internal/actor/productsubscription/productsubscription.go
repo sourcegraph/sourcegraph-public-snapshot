@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
@@ -75,8 +76,8 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// NOTE: For back-compat, we support both the old and new token prefixes.
 	// However, as we use the token as part of the cache key, we need to be
 	// consistent with the prefix we use.
-	token = strings.Replace(token, productsubscription.AccessTokenPrefix, licensing.LicenseKeyBasedAccessTokenPrefix, 1)
-	if !strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
+	token = strings.Replace(token, productsubscription.AccessTokenPrefix, license.LicenseKeyBasedAccessTokenPrefix, 1)
+	if !strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
 		return nil, actor.ErrNotFromSource{Reason: "unknown token prefix"}
 	}
 
