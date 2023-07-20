@@ -16,9 +16,10 @@ import styles from './UserAreaHeader.module.scss'
 interface Props extends UserAreaRouteContext {
     navItems: readonly UserAreaHeaderNavItem[]
     className?: string
+    codeSearchEnabled: boolean
 }
 
-export interface UserAreaHeaderContext extends BatchChangesProps, Pick<Props, 'user'> {
+export interface UserAreaHeaderContext extends BatchChangesProps, Pick<Props, 'user' | 'codeSearchEnabled'> {
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
 }

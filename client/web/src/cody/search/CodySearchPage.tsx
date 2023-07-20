@@ -155,8 +155,25 @@ const SearchInput: React.FunctionComponent<{
     )
 
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
+    const codeSearchEnabled = window.context?.codeSearchEnabled
 
-    return codySearchEnabled ? (
+    if (!codeSearchEnabled) {
+        return (
+            <Alert variant="info" className="mt-5">
+                Code search is not enabled on this Sourcegraph instance.
+            </Alert>
+        )
+    }
+
+    if (!codySearchEnabled) {
+        return (
+            <Alert variant="info" className="mt-5">
+                Cody is not enabled on this Sourcegraph instance.
+            </Alert>
+        )
+    }
+
+    return (
         <Form onSubmit={onSubmit} className={className}>
             {isEmailVerificationNeededForCody() && (
                 <Alert variant="warning">
@@ -192,9 +209,5 @@ const SearchInput: React.FunctionComponent<{
                 <LoadingSpinner className="mt-2 d-block mx-auto" />
             ) : null}
         </Form>
-    ) : (
-        <Alert variant="info" className="mt-5">
-            Cody is not enabled on this Sourcegraph instance.
-        </Alert>
     )
 }

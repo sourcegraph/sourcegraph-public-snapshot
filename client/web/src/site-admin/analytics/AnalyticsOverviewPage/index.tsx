@@ -134,6 +134,9 @@ export const AnalyticsOverviewPage: React.FunctionComponent<Props> = () => {
                             <DevTimeSaved
                                 showAnnualProjection={data.users.totalCount > 1}
                                 dateRange={dateRange.value}
+                                codeSearchEnabled={window.context.codeSearchEnabled}
+                                codeInsightsEnabled={window.context.codeInsightsEnabled}
+                                batchChangesEnabled={window.context.batchChangesEnabled}
                             />
                         </ErrorBoundary>
                     </div>

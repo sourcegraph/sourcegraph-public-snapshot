@@ -47,6 +47,7 @@ export interface UserNavItemProps extends TelemetryProps {
     menuButtonRef?: React.Ref<HTMLButtonElement>
     showFeedbackModal: () => void
     showKeyboardShortcutsHelp: () => void
+    codeSearchEnabled?: boolean
 }
 
 /**
@@ -62,6 +63,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
         showFeedbackModal,
         showKeyboardShortcutsHelp,
         telemetryService,
+        codeSearchEnabled,
     } = props
 
     const { themeSetting, setThemeSetting } = useTheme()
@@ -143,7 +145,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                             >
                                 Settings
                             </MenuLink>
-                            {!isSourcegraphApp && (
+                            {!isSourcegraphApp && codeSearchEnabled && (
                                 <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                     Saved searches
                                 </MenuLink>
@@ -187,7 +189,7 @@ export const UserNavItem: FC<UserNavItemProps> = props => {
                                     </div>
                                 )}
                             </div>
-                            {!isSourcegraphApp && searchQueryInputFeature === 'experimental' && (
+                            {!isSourcegraphApp && searchQueryInputFeature === 'experimental' && codeSearchEnabled && (
                                 <div className="px-2 py-1">
                                     <div className="d-flex align-items-center justify-content-between">
                                         <div className="mr-2">

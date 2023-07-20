@@ -150,6 +150,8 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
+                    codeInsightsEnabled={window.context.codeInsightsEnabled}
+                    codeSearchEnabled={window.context.codeSearchEnabled}
                 />
                 <div className="flex-bounded">
                     <React.Suspense fallback={<LoadingSpinner className="m-2" />}>

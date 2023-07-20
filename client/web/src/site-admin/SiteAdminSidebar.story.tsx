@@ -25,6 +25,8 @@ export const AdminSidebarItems: Story = () => (
                 batchChangesEnabled={false}
                 batchChangesExecutionEnabled={false}
                 batchChangesWebhookLogsEnabled={false}
+                codeInsightsEnabled={true}
+                codeSearchEnabled={true}
             />
         )}
     </WebStory>

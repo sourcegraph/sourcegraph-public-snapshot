@@ -370,11 +370,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		Branding: globals.Branding(),
 
-		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
+		// todo: check if this is ok
+		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil && licensing.Check(&licensing.FeatureBatchChanges{}) == nil,
 		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
 		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
 
-		CodyEnabled:               conf.CodyEnabled() && licensing.Check(licensing.FeatureCody) == nil,
+		// todo: check if this doesn't break Cody or App?
+		CodyEnabled: conf.CodyEnabled() && licensing.Check(licensing.FeatureCody) == nil,
+		// todo: should this be also dependent on license?
 		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
 		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
 
@@ -382,7 +385,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
 
-		CodeInsightsEnabled: insights.IsEnabled(),
+		// todo: check if this ok
+		CodeInsightsEnabled: insights.IsEnabled() && licensing.Check(licensing.FeatureCodeInsights) == nil,
 		CodeSearchEnabled:   licensing.Check(licensing.FeatureCodeSearch) == nil,
 
 		EmbeddingsEnabled: conf.EmbeddingsEnabled(),

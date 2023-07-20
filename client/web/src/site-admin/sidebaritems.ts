@@ -25,6 +25,7 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Search',
             to: '/site-admin/analytics/search',
+            condition: ({ codeSearchEnabled }) => codeSearchEnabled,
         },
         {
             label: 'Code navigation',
@@ -37,14 +38,17 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Insights',
             to: '/site-admin/analytics/code-insights',
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
         },
         {
             label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
+            condition: ({ codeSearchEnabled }) => codeSearchEnabled,
         },
         {
             label: 'Extensions',

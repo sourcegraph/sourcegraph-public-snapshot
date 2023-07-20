@@ -45,13 +45,6 @@ func (p Plan) HasFeature(target Feature, isExpired bool) bool {
 	return false
 }
 
-func (p Plan) Features(isExpired bool) []Feature {
-	if isExpired {
-		return planDetails[p].ExpiredFeatures
-	}
-	return planDetails[p].Features
-}
-
 const planTagPrefix = "plan:"
 
 // tag is the representation of the plan as a tag in a license key.

@@ -213,6 +213,7 @@ export const UserArea: FC<UserAreaProps> = ({
                                     ) : (
                                         <Page>
                                             <UserAreaHeader
+                                                codeSearchEnabled={window.context.codeSearchEnabled}
                                                 {...props}
                                                 {...context}
                                                 className="mb-3"

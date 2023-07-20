@@ -348,11 +348,11 @@ func serveHome(db database.DB) handlerFunc {
 		}
 
 		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to appropriate page.
-		if err := licensing.Check(licensing.FeatureCody); err == nil {
-			r.URL.Path = "/cody"
+		if err = licensing.Check(licensing.FeatureCodeSearch); err == nil {
+			r.URL.Path = "/search"
 		} else {
-			if err = licensing.Check(licensing.FeatureCodeSearch); err == nil {
-				r.URL.Path = "/search"
+			if err := licensing.Check(licensing.FeatureCody); err == nil {
+				r.URL.Path = "/cody"
 			} else {
 				return errors.Errorf("Instance does not have Cody nor Code Search enabled, no home page available")
 			}

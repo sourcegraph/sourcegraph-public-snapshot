@@ -7,7 +7,7 @@ import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { LegacyLayoutRouteContext, LegacyRoute } from './LegacyRouteContext'
-import { PageRoutes } from './routes.constants'
+import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
@@ -51,7 +51,8 @@ const PassThroughToServer: React.FC = () => {
  * See https://reacttraining.com/react-router/web/example/sidebar
  */
 
-const defaultPath = !!window.context?.codeSearchEnabled ? '/search' : '/cody'
+const defaultPath =
+    window.context?.codyEnabled && !window.context?.codeSearchEnabled ? EnterprisePageRoutes.Cody : PageRoutes.Search
 
 export const routes: RouteObject[] = [
     {

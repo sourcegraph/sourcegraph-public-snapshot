@@ -22,8 +22,17 @@ import styles from './index.module.scss'
 interface DevTimeSavedProps {
     showAnnualProjection?: boolean
     dateRange: AnalyticsDateRange
+    codeSearchEnabled: boolean
+    batchChangesEnabled: boolean
+    codeInsightsEnabled: boolean
 }
-export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showAnnualProjection, dateRange }) => {
+export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({
+    showAnnualProjection,
+    dateRange,
+    codeSearchEnabled,
+    batchChangesEnabled,
+    codeInsightsEnabled,
+}) => {
     const { data, error, loading } = useQuery<OverviewDevTimeSavedResult, OverviewDevTimeSavedVariables>(
         OVERVIEW_DEV_TIME_SAVED,
         {
@@ -47,16 +56,18 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
 
     const { search, codeIntel, batchChanges, notebooks, extensions, users } = data.site.analytics
 
-    const totalSearchEvents = search.searches.summary.totalCount + search.fileViews.summary.totalCount
-
-    const totalSearchHoursSaved =
-        (totalSearchEvents * 0.75 * 0.5 + totalSearchEvents * 0.22 * 5 + totalSearchEvents * 0.03 * 120) / 60
+    // code search events
+    const totalSearchEvents = codeSearchEnabled
+        ? search.searches.summary.totalCount + search.fileViews.summary.totalCount
+        : 0
+    const totalSearchHoursSaved = codeSearchEnabled
+        ? (totalSearchEvents * 0.75 * 0.5 + totalSearchEvents * 0.22 * 5 + totalSearchEvents * 0.03 * 120) / 60
+        : 0
 
     const totalCodeIntelEvents =
         codeIntel.definitionClicks.summary.totalCount + codeIntel.referenceClicks.summary.totalCount
     const totalCodeIntelHoverEvents =
         codeIntel.searchBasedEvents.summary.totalCount + codeIntel.preciseEvents.summary.totalCount
-
     const totalCodeIntelHoursSaved =
         (codeIntel.inAppEvents.summary.totalCount * 0.5 +
             codeIntel.codeHostEvents.summary.totalCount * 1.5 +
@@ -69,17 +80,19 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
             )) /
         60
 
-    const totalBatchChangesEvents = batchChanges.changesetsMerged.summary.totalCount
-    const totalBatchChangesHoursSaved = (totalBatchChangesEvents * 15) / 60
+    // batch changes events
+    const totalBatchChangesEvents = batchChangesEnabled ? batchChanges.changesetsMerged.summary.totalCount : 0
+    const totalBatchChangesHoursSaved = batchChangesEnabled ? (totalBatchChangesEvents * 15) / 60 : 0
 
-    const totalNotebooksEvents = notebooks.views.summary.totalCount
-    const totalNotebooksHoursSaved = (totalNotebooksEvents * 5) / 60
+    // notebooks events
+    const totalNotebooksEvents = codeSearchEnabled ? notebooks.views.summary.totalCount : 0
+    const totalNotebooksHoursSaved = codeSearchEnabled ? (totalNotebooksEvents * 5) / 60 : 0
 
+    // extensions events
     const totalExtensionsEvents =
         extensions.vscode.summary.totalCount +
         extensions.jetbrains.summary.totalCount +
         extensions.browser.summary.totalCount
-
     const totalExtensionsHoursSaved =
         (extensions.vscode.summary.totalCount * 3 +
             extensions.jetbrains.summary.totalCount * 1.5 +
@@ -174,22 +187,29 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
                     </tr>
                 </thead>
                 <tbody>
-                    <tr>
-                        <td className="text-left">
-                            <Link to="/site-admin/analytics/search">
-                                <Text as="span" className="d-flex align-items-center">
-                                    <Icon svgPath={mdiMagnify} size="md" aria-label="Code Search" className="mr-1" />
-                                    Search
-                                </Text>
-                            </Link>
-                        </td>
-                        <Text as="td" weight="bold">
-                            {formatNumber(totalSearchEvents)}
-                        </Text>
-                        <Text as="td" weight="bold">
-                            {formatNumber(totalSearchHoursSaved)}
-                        </Text>
-                    </tr>
+                    {codeSearchEnabled && (
+                        <tr>
+                            <td className="text-left">
+                                <Link to="/site-admin/analytics/search">
+                                    <Text as="span" className="d-flex align-items-center">
+                                        <Icon
+                                            svgPath={mdiMagnify}
+                                            size="md"
+                                            aria-label="Code Search"
+                                            className="mr-1"
+                                        />
+                                        Search
+                                    </Text>
+                                </Link>
+                            </td>
+                            <Text as="td" weight="bold">
+                                {formatNumber(totalSearchEvents)}
+                            </Text>
+                            <Text as="td" weight="bold">
+                                {formatNumber(totalSearchHoursSaved)}
+                            </Text>
+                        </tr>
+                    )}
                     <tr>
                         <td className="text-left">
                             <Link to="/site-admin/analytics/code-intel">
@@ -211,38 +231,47 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
                             {formatNumber(totalCodeIntelHoursSaved)}
                         </Text>
                     </tr>
-                    <tr>
-                        <td className="text-left">
-                            <Link to="/site-admin/analytics/batch-changes">
-                                <Text as="span" className="d-flex align-items-center">
-                                    <BatchChangesIconNav className="mr-1" />
-                                    Batch Changes
-                                </Text>
-                            </Link>
-                        </td>
-                        <Text as="td" weight="bold">
-                            {formatNumber(totalBatchChangesEvents)}
-                        </Text>
-                        <Text as="td" weight="bold">
-                            {formatNumber(totalBatchChangesHoursSaved)}
-                        </Text>
-                    </tr>
-                    <tr>
-                        <td className="text-left">
-                            <Link to="/site-admin/analytics/notebooks">
-                                <Text as="span" className="d-flex align-items-center">
-                                    <Icon svgPath={mdiBookOutline} size="md" aria-label="Notebooks" className="mr-1" />
-                                    Notebooks
-                                </Text>
-                            </Link>
-                        </td>
-                        <Text as="td" weight="bold">
-                            {formatNumber(totalNotebooksEvents)}
-                        </Text>
-                        <Text as="td" weight="bold">
-                            {formatNumber(totalNotebooksHoursSaved)}
-                        </Text>
-                    </tr>
+                    {batchChangesEnabled && (
+                        <tr>
+                            <td className="text-left">
+                                <Link to="/site-admin/analytics/batch-changes">
+                                    <Text as="span" className="d-flex align-items-center">
+                                        <BatchChangesIconNav className="mr-1" />
+                                        Batch Changes
+                                    </Text>
+                                </Link>
+                            </td>
+                            <Text as="td" weight="bold">
+                                {formatNumber(totalBatchChangesEvents)}
+                            </Text>
+                            <Text as="td" weight="bold">
+                                {formatNumber(totalBatchChangesHoursSaved)}
+                            </Text>
+                        </tr>
+                    )}
+                    {codeSearchEnabled && (
+                        <tr>
+                            <td className="text-left">
+                                <Link to="/site-admin/analytics/notebooks">
+                                    <Text as="span" className="d-flex align-items-center">
+                                        <Icon
+                                            svgPath={mdiBookOutline}
+                                            size="md"
+                                            aria-label="Notebooks"
+                                            className="mr-1"
+                                        />
+                                        Notebooks
+                                    </Text>
+                                </Link>
+                            </td>
+                            <Text as="td" weight="bold">
+                                {formatNumber(totalNotebooksEvents)}
+                            </Text>
+                            <Text as="td" weight="bold">
+                                {formatNumber(totalNotebooksHoursSaved)}
+                            </Text>
+                        </tr>
+                    )}
                     <tr>
                         <td className="text-left">
                             <Link to="/site-admin/analytics/extensions">
@@ -264,26 +293,28 @@ export const DevTimeSaved: React.FunctionComponent<DevTimeSavedProps> = ({ showA
                             {formatNumber(totalExtensionsHoursSaved)}
                         </Text>
                     </tr>
-                    <tr>
-                        <td className="text-left">
-                            <Link to="/site-admin/analytics/code-insights">
-                                <Text as="span" className="d-flex align-items-center">
-                                    <Icon svgPath={mdiPoll} size="md" aria-label="Extensions" className="mr-1" />
-                                    Code insights
+                    {codeInsightsEnabled && (
+                        <tr>
+                            <td className="text-left">
+                                <Link to="/site-admin/analytics/code-insights">
+                                    <Text as="span" className="d-flex align-items-center">
+                                        <Icon svgPath={mdiPoll} size="md" aria-label="Extensions" className="mr-1" />
+                                        Code insights
+                                    </Text>
+                                </Link>
+                            </td>
+                            <Tooltip content="Coming soon">
+                                <Text className="cursor-pointer" as="td" weight="bold">
+                                    ...*
                                 </Text>
-                            </Link>
-                        </td>
-                        <Tooltip content="Coming soon">
-                            <Text className="cursor-pointer" as="td" weight="bold">
-                                ...*
-                            </Text>
-                        </Tooltip>
-                        <Tooltip content="Coming soon">
-                            <Text className="cursor-pointer" as="td" weight="bold">
-                                ...*
-                            </Text>
-                        </Tooltip>
-                    </tr>
+                            </Tooltip>
+                            <Tooltip content="Coming soon">
+                                <Text className="cursor-pointer" as="td" weight="bold">
+                                    ...*
+                                </Text>
+                            </Tooltip>
+                        </tr>
+                    )}
                 </tbody>
             </table>
         </div>

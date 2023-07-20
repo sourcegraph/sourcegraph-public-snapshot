@@ -239,7 +239,6 @@ var planDetails = map[Plan]PlanDetails{
 	PlanCodyOnly: {
 		Features: []Feature{
 			FeatureACLs,
-			FeatureCampaigns,
 			&FeaturePrivateRepositories{Unrestricted: true},
 			FeatureExplicitPermissionsAPI,
 			FeatureSSO,

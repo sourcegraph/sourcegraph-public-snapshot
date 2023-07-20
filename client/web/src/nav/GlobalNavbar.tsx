@@ -149,8 +149,8 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     // but should not show in the navbar. Users can still
     // access this feature via the context dropdown.
     const showSearchContext = searchContextsEnabled && !isSourcegraphDotCom
-    const showCodeMonitoring = codeMonitoringEnabled && !isSourcegraphApp && !isSourcegraphDotCom
-    const showSearchNotebook = notebooksEnabled && !isSourcegraphApp && !isSourcegraphDotCom
+    const showCodeMonitoring = codeSearchEnabled && codeMonitoringEnabled && !isSourcegraphApp && !isSourcegraphDotCom
+    const showSearchNotebook = codeSearchEnabled && notebooksEnabled && !isSourcegraphApp && !isSourcegraphDotCom
     const isLicensed = !!window.context?.licenseInfo || isSourcegraphApp // Assume licensed when running as a native app
     const showBatchChanges = props.batchChangesEnabled && isLicensed && !isSourcegraphApp && !isSourcegraphDotCom
     const [codySearchEnabled] = useFeatureFlag('cody-web-search')
@@ -174,20 +174,21 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
     const navLinkVariant = useCalculatedNavLinkVariant(navbarReference, props.authenticatedUser)
 
     // CodeInsightsEnabled props controls insights appearance over OSS and Enterprise version
-    const codeInsights = codeInsightsEnabled && !isSourcegraphApp && !isSourcegraphDotCom
+    const codeInsights = codeSearchEnabled && codeInsightsEnabled && !isSourcegraphApp && !isSourcegraphDotCom
 
     const searchNavBarItems = useMemo(() => {
         const items: (NavDropdownItem | false)[] = [
             !!showSearchContext && { path: EnterprisePageRoutes.Contexts, content: 'Contexts' },
             ownEnabled && { path: EnterprisePageRoutes.Own, content: 'Code ownership' },
-            codySearchEnabled && {
-                path: EnterprisePageRoutes.CodySearch,
-                content: (
-                    <>
-                        Natural language search <ProductStatusBadge status="experimental" />
-                    </>
-                ),
-            },
+            codySearchEnabled &&
+                codeSearchEnabled && {
+                    path: EnterprisePageRoutes.CodySearch,
+                    content: (
+                        <>
+                            Natural language search <ProductStatusBadge status="experimental" />
+                        </>
+                    ),
+                },
         ]
         return items.filter<NavDropdownItem>((item): item is NavDropdownItem => !!item)
     }, [ownEnabled, showSearchContext, codySearchEnabled])
@@ -359,6 +360,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Globa
                                 isSourcegraphDotCom={isSourcegraphDotCom}
                                 isSourcegraphApp={isSourcegraphApp}
                                 showFeedbackModal={showFeedbackModal}
+                                codeSearchEnabled={codeSearchEnabled}
                             />
                         </NavAction>
                     )}

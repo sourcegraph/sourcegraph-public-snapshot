@@ -59,7 +59,6 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
     const routeMatch = route?.path
 
     const isSearchEnabled = !!window.context?.codeSearchEnabled
-    console.log('IS SEARCH ENABLED', isSearchEnabled)
     const isSearchRelatedPage = (routeMatch === PageRoutes.RepoContainer || routeMatch?.startsWith('/search')) ?? false
     const isSearchHomepage = location.pathname === '/search' && !parseSearchURLQuery(location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
