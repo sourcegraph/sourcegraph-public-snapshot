@@ -4,6 +4,8 @@
 
 ### Added
 
+- New menu item in the toolbar cogwheel menu to open the Cody app settings [#55146](https://github.com/sourcegraph/sourcegraph/pull/55146)
+
 ### Changed
 
 - Improved UI of the onboarding widgets [#55090](https://github.com/sourcegraph/sourcegraph/pull/55090)
