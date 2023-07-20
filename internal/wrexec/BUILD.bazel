@@ -10,6 +10,7 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/internal/wrexec",
     visibility = ["//:__subpackages__"],
     deps = [
+        "//internal/api",
         "//internal/rcache",
         "@com_github_sourcegraph_log//:log",
     ],

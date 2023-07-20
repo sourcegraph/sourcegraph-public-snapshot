@@ -189,5 +189,5 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 func replyWithJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }

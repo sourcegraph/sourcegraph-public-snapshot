@@ -10,13 +10,13 @@
 root="$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 TARGET=$("$root/dev/ctags-install.sh" which)
 
-if [ ! -f "${TARGET}" ]; then 
+if [ ! -f "${TARGET}" ]; then
   exec docker run --rm -i \
     -a stdin -a stdout -a stderr \
     --user guest \
     --name=universal-ctags-$$ \
     --entrypoint /usr/local/bin/universal-ctags \
     ctags "$@"
-else 
+else
   ${TARGET} "$@"
 fi

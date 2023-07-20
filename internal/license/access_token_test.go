@@ -1,4 +1,4 @@
-package licensing
+package license
 
 import (
 	"testing"

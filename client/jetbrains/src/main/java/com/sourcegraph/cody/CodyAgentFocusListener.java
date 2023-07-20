@@ -7,11 +7,15 @@ import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
+import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class CodyAgentFocusListener implements FocusChangeListener {
   @Override
   public void focusGained(@NotNull Editor editor) {
+    if (!ConfigUtil.isCodyEnabled()) {
+      return;
+    }
     if (editor.getProject() == null) {
       return;
     }

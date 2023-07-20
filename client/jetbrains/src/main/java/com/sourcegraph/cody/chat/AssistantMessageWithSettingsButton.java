@@ -2,7 +2,6 @@ package com.sourcegraph.cody.chat;
 
 import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
 
-import com.intellij.openapi.project.Project;
 import com.intellij.ui.BrowserHyperlinkListener;
 import com.intellij.util.ui.JBInsets;
 import com.intellij.util.ui.SwingHelper;
@@ -14,8 +13,7 @@ import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
 public class AssistantMessageWithSettingsButton extends MessagePanel {
-  public AssistantMessageWithSettingsButton(
-      @NotNull Project project, @NotNull String htmlTextContent) {
+  public AssistantMessageWithSettingsButton(@NotNull String htmlTextContent) {
     super(Speaker.ASSISTANT, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
     this.setLayout(new BorderLayout());
     JEditorPane jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null);
@@ -25,7 +23,6 @@ public class AssistantMessageWithSettingsButton extends MessagePanel {
         JBInsets.create(new Insets(TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN, TEXT_MARGIN)));
     SwingHelper.setHtml(jEditorPane, htmlTextContent, UIUtil.getActiveTextColor());
     this.add(jEditorPane, BorderLayout.CENTER);
-    this.add(
-        GoToPluginSettingsButtonFactory.createGoToPluginSettingsButton(project), BorderLayout.EAST);
+    this.add(GoToPluginSettingsButtonFactory.createGoToPluginSettingsButton(), BorderLayout.EAST);
   }
 }

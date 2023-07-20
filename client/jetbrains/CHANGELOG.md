@@ -4,9 +4,10 @@
 
 ### Added
 
+- New menu item in the toolbar cogwheel menu to open the Cody app settings [#55146](https://github.com/sourcegraph/sourcegraph/pull/55146)
+
 ### Changed
 
-- Store global access token in a safe place [#55052](https://github.com/sourcegraph/sourcegraph/pull/55052)
 - Improved UI of the onboarding widgets [#55090](https://github.com/sourcegraph/sourcegraph/pull/55090)
 
 ### Deprecated
@@ -14,6 +15,8 @@
 ### Removed
 
 ### Fixed
+
+- Enable/disable Cody automatically based on the settings [#55138](https://github.com/sourcegraph/sourcegraph/pull/55138)
 
 ### Security
 
