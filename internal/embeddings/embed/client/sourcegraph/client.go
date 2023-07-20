@@ -20,20 +20,22 @@ import (
 
 func NewClient(client *http.Client, config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient {
 	return &sourcegraphEmbeddingsClient{
-		httpClient:  client,
-		model:       config.Model,
-		dimensions:  config.Dimensions,
-		endpoint:    config.Endpoint,
-		accessToken: config.AccessToken,
+		httpClient:   client,
+		model:        config.Model,
+		dimensions:   config.Dimensions,
+		endpoint:     config.Endpoint,
+		accessToken:  config.AccessToken,
+		excludeFiles: config.ExcludeFileOnError,
 	}
 }
 
 type sourcegraphEmbeddingsClient struct {
-	httpClient  *http.Client
-	model       string
-	dimensions  int
-	endpoint    string
-	accessToken string
+	httpClient   *http.Client
+	model        string
+	dimensions   int
+	endpoint     string
+	accessToken  string
+	excludeFiles bool
 }
 
 func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
@@ -58,7 +60,7 @@ func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
 }
 
 // GetEmbeddings tries to embed the given texts using the external service specified in the config.
-func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	_, replaceNewlines := modelsWithoutNewlines[c.model]
 	augmentedTexts := texts
 	if replaceNewlines {
@@ -85,19 +87,29 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 	})
 
 	embeddings := make([]float32, 0, len(response.Embeddings)*response.ModelDimensions)
+	failed := make([]int, 0, len(response.Embeddings))
 	for _, embedding := range response.Embeddings {
 		if len(embedding.Data) > 0 {
 			embeddings = append(embeddings, embedding.Data...)
 		} else {
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, c.model, augmentedTexts[embedding.Index], 3)
 			if err != nil {
-				return nil, client.PartialError{err, embedding.Index}
+				// if exclude files is enabled then do not return error and fail the entire repo embed job
+				if c.excludeFiles {
+					failed = append(failed, embedding.Index)
+
+					// caller expects one vector per text input so append zero values
+					placeholder := make([]float32, response.ModelDimensions)
+					embeddings = append(embeddings, placeholder...)
+					continue
+				}
+				return nil, client.PartialError{Err: err, Index: embedding.Index}
 			}
 			embeddings = append(embeddings, resp...)
 		}
 	}
 
-	return embeddings, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: response.ModelDimensions}, nil
 }
 
 func (c *sourcegraphEmbeddingsClient) do(ctx context.Context, request codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, error) {

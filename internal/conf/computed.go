@@ -800,6 +800,11 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		embeddingsConfig.Incremental = pointers.Ptr(true)
 	}
 
+	// The default value for ExcludeFileOnError is false.
+	if embeddingsConfig.ExcludeFileOnError == nil {
+		embeddingsConfig.ExcludeFileOnError = pointers.Ptr(false)
+	}
+
 	// Set default values for max embeddings counts.
 	embeddingsConfig.MaxCodeEmbeddingsPerRepo = defaultTo(embeddingsConfig.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo)
 	embeddingsConfig.MaxTextEmbeddingsPerRepo = defaultTo(embeddingsConfig.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo)
@@ -902,6 +907,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
+		ExcludeFileOnError:         *embeddingsConfig.ExcludeFileOnError,
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {

@@ -94,8 +94,8 @@ func (e *EmbedFilesStats) Skip(reason string, size int) {
 	e.FilesSkipped[reason] += 1
 }
 
-func (e *EmbedFilesStats) AddChunk(size int) {
-	e.ChunksEmbedded += 1
+func (e *EmbedFilesStats) AddChunks(chunks, size int) {
+	e.ChunksEmbedded += chunks
 	e.BytesEmbedded += size
 }
 
