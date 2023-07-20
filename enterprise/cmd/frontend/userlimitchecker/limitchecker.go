@@ -20,7 +20,6 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 		return errors.Wrap(err, "could not get list of db licenses")
 	}
 
-	// find current license
 	var licenseID string
 	for _, license := range licenses {
 		if license.RevokedAt == nil {
@@ -29,13 +28,11 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 		}
 	}
 
-	// get last time alert was sent
 	userCountAlertSent, err := licenseDb.GetUserCountAlertSentAt(ctx, licenseID)
 	if err != nil {
 		return errors.Wrap(err, "could not get last time user account alert was sent")
 	}
 
-	// return if the time right now is at least 7 days after userCountAlertSent
 	if !time.Now().UTC().After(userCountAlertSent.UTC().Add(7 * 24 * time.Hour)) {
 		fmt.Println("email recently sent")
 		return nil
@@ -89,7 +86,6 @@ func getPercentOfLimit(userCount, userLimit int) int {
 		return 0
 	}
 
-	// RESEARCH: will this ever be the case?
 	if userLimit == 0 {
 		return userCount + 100
 	}
@@ -114,10 +110,13 @@ func getLicenseUserLimit(ctx context.Context, db database.DB) (int, error) {
 
 	for _, item := range items {
 		if item.LicenseExpiresAt.UTC().After(time.Now().UTC()) {
-			return *item.LicenseUserCount, nil
+			if item.LicenseUserCount != nil {
+				return *item.LicenseUserCount, nil
+			} else {
+				return 0, nil
+			}
 		}
 	}
-
 	return 0, nil
 }
 
