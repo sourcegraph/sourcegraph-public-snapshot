@@ -13,24 +13,24 @@ import styles from './SimpleSearch.module.scss'
 const EVENT_PREFIX = 'SIMPLE_SEARCH_'
 
 function eventName(name: string): string {
-    return EVENT_PREFIX+name
+    return EVENT_PREFIX + name
 }
 
 export const SimpleSearch: FC<SimpleSearchProps> = props => {
     const [showState, setShowState] = useState<string>('default')
 
     function onSubmitWithTelemetry(event?: React.FormEvent): void {
-        props.telemetryService.log(eventName('SUBMIT_SEARCH'), {'type': showState})
+        props.telemetryService.log(eventName('SUBMIT_SEARCH'), { type: showState })
         props.onSubmit(event)
     }
 
     function pickRender(): JSX.Element {
         const changeState = (nextState: string): void => {
-            props.telemetryService.log(eventName('SELECT_JOB'), {'next': nextState})
+            props.telemetryService.log(eventName('SELECT_JOB'), { next: nextState })
             setShowState(nextState)
         }
 
-        const searchProps: SimpleSearchProps = {...props, onSubmit: onSubmitWithTelemetry}
+        const searchProps: SimpleSearchProps = { ...props, onSubmit: onSubmitWithTelemetry }
 
         switch (showState) {
             case 'default':
@@ -50,10 +50,13 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
         <div>
             {showState !== 'default' && (
                 <div>
-                    <Button className="mb-2" onClick={() => {
-                        props.telemetryService.log(eventName('BACK_BUTTON_CLICK'))
-                        setShowState('default')
-                    }}>
+                    <Button
+                        className="mb-2"
+                        onClick={() => {
+                            props.telemetryService.log(eventName('BACK_BUTTON_CLICK'))
+                            setShowState('default')
+                        }}
+                    >
                         <Icon aria-label="hover icon for help tooltip" svgPath={mdiArrowLeft} />
                         Back
                     </Button>
