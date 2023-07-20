@@ -232,14 +232,6 @@ func TestEmbeddingsSearch(t *testing.T) {
 			}},
 		}, results)
 	}
-
-	t.Run("IsContextRequiredForChatQuery", func(t *testing.T) {
-		res, err := client.IsContextRequiredForChatQuery(context.Background(), embeddings.IsContextRequiredForChatQueryParameters{
-			Query: "context detection",
-		})
-		require.NoError(t, err)
-		require.True(t, res)
-	})
 }
 
 func TestEmbeddingModelMismatch(t *testing.T) {

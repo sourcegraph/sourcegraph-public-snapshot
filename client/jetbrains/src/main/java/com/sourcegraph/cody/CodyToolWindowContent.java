@@ -79,7 +79,7 @@ import javax.swing.plaf.ButtonUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-class CodyToolWindowContent implements UpdatableChat {
+public class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
   private static final int CHAT_TAB_INDEX = 0;
   private static final int RECIPES_TAB_INDEX = 1;
@@ -230,6 +230,10 @@ class CodyToolWindowContent implements UpdatableChat {
     CodyLLMConfiguration.getInstance(project).refreshCache();
   }
 
+  public static CodyToolWindowContent getInstance(@NotNull Project project) {
+    return project.getService(CodyToolWindowContent.class);
+  }
+
   private static void enableAutoUpdateAvailabilityOfSummarizeRecentCodeChangesRecipe(
       @NotNull Project project, @NotNull JButton gitHistoryButton) {
     updateAvailabilityOfTheSummarizeRecentCodeChangesRecipe(project, gitHistoryButton);
@@ -347,7 +351,7 @@ class CodyToolWindowContent implements UpdatableChat {
           "<p>It looks like you don't have Sourcegraph Access Token configured.</p>"
               + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
       AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-          new AssistantMessageWithSettingsButton(project, noAccessTokenText);
+          new AssistantMessageWithSettingsButton(noAccessTokenText);
       var messageContentPanel = new JPanel(new BorderLayout());
       messageContentPanel.add(assistantMessageWithSettingsButton);
       ApplicationManager.getApplication()
@@ -432,7 +436,7 @@ class CodyToolWindowContent implements UpdatableChat {
         "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
             + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
     AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-        new AssistantMessageWithSettingsButton(project, invalidAccessTokenText);
+        new AssistantMessageWithSettingsButton(invalidAccessTokenText);
     var messageContentPanel = new JPanel(new BorderLayout());
     messageContentPanel.add(assistantMessageWithSettingsButton);
     ApplicationManager.getApplication()

@@ -5,6 +5,7 @@ import (
 	"os/exec"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
@@ -25,7 +26,7 @@ type VCSSyncer interface {
 	// to lazily fetch package versions. More details at
 	// https://github.com/sourcegraph/sourcegraph/issues/37921#issuecomment-1184301885
 	// Beware that the revspec parameter can be any random user-provided string.
-	Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error)
+	Fetch(ctx context.Context, remoteURL *vcs.URL, repoName api.RepoName, dir common.GitDir, revspec string) ([]byte, error)
 	// RemoteShowCommand returns the command to be executed for showing remote.
 	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
 }

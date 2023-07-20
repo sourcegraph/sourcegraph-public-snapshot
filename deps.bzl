@@ -1961,13 +1961,6 @@ def go_dependencies():
         sum = "h1:c0g45+xCJhdgFGw7a5QAfdS4byAbud7miNWJ1WwEVf8=",
         version = "v0.10.1",
     )
-    go_repository(
-        name = "com_github_etcd_io_bbolt",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/etcd-io/bbolt",
-        sum = "h1:gSJmxrs37LgTqR/oyJBWok6k6SvXEUerFTbltIhXkBM=",
-        version = "v1.3.3",
-    )
 
     go_repository(
         name = "com_github_ethantkoenig_rupture",
@@ -4991,14 +4984,6 @@ def go_dependencies():
     )
 
     go_repository(
-        name = "com_github_moul_http2curl",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/moul/http2curl",
-        sum = "h1:dRMWoAtb+ePxMlLkrCbAqh4TlPHXvoGUSQ323/9Zahs=",
-        version = "v1.0.0",
-    )
-
-    go_repository(
         name = "com_github_mpvl_unique",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/mpvl/unique",
@@ -6264,8 +6249,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:qe+Dljxb86MCoUNRM2yAHNBfQ5jj4A9ti+jsy94BaQM=",
-        version = "v0.0.0-20230717094711-2632acf42d27",
+        sum = "h1:TJsG99aZ8wBa4yQ7znUrhi2QpbgEDPrfSmwlMohGt+8=",
+        version = "v0.0.0-20230719140114-b7e5070bfb56",
     )
 
     go_repository(
@@ -7179,12 +7164,12 @@ def go_dependencies():
     )
     go_repository(
         name = "com_google_cloud_go_bigquery",
-        build_file_proto_mode = "disable_global",
-        importpath = "cloud.google.com/go/bigquery",
-        sum = "h1:JKLNdxI0N+TIUWD6t9KN646X27N5dQWq9dZbbTWZ8hc=",
         build_directives = [
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/annotations @go_googleapis//google/api:annotations_go_proto",  # keep
         ],
+        build_file_proto_mode = "disable_global",
+        importpath = "cloud.google.com/go/bigquery",
+        sum = "h1:JKLNdxI0N+TIUWD6t9KN646X27N5dQWq9dZbbTWZ8hc=",
         version = "v1.52.0",
     )
     go_repository(
@@ -7426,13 +7411,6 @@ def go_dependencies():
         importpath = "cloud.google.com/go/functions",
         sum = "h1:LtAyqvO1TFmNLcROzHZhV0agEJfBi+zfMZsF4RT/a7U=",
         version = "v1.15.1",
-    )
-    go_repository(
-        name = "com_google_cloud_go_gaming",
-        build_file_proto_mode = "disable_global",
-        importpath = "cloud.google.com/go/gaming",
-        sum = "h1:5qZmZEWzMf8GEFgm9NeC3bjFRpt7x4S6U7oLbxaf7N8=",
-        version = "v1.10.1",
     )
 
     go_repository(

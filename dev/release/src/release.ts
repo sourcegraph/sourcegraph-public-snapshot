@@ -82,6 +82,7 @@ import {
     validateNoReleaseBlockers,
     verifyWithInput,
     ReleaseTag,
+    updateMigratorBazelOuts,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -727,6 +728,7 @@ cc @${release.captainGitHubUsername}
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
                             `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] v${release.version.version})' cmd/migrator/generate.sh`,
+                            updateMigratorBazelOuts(release.version.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {

@@ -1,4 +1,4 @@
-package shared
+package embeddings
 
 import (
 	"testing"
@@ -57,7 +57,7 @@ func TestIsContextRequiredForChatQuery(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.query, func(t *testing.T) {
-			got := isContextRequiredForChatQuery(tt.query)
+			got := IsContextRequiredForChatQuery(tt.query)
 			if got != tt.want {
 				t.Fatalf("expected context required to be %t but was %t", tt.want, got)
 			}

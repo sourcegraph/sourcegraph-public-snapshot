@@ -23,6 +23,13 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"golang.org/x/sync/semaphore"
+	"golang.org/x/time/rate"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
+
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -40,12 +47,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/semaphore"
-	"golang.org/x/time/rate"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type Test struct {
@@ -1755,55 +1756,6 @@ func TestHandleBatchLog(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestRunCommandGraceful(t *testing.T) {
-	t.Parallel()
-
-	t.Run("no timeout", func(t *testing.T) {
-		t.Parallel()
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		cmd := exec.Command("sleep", "0.1")
-		exitStatus, err := runCommandGraceful(ctx, logger, wrexec.Wrap(ctx, logger, cmd))
-		if err != nil {
-			t.Fatal(err)
-		}
-		assert.Equal(t, 0, exitStatus)
-	})
-
-	t.Run("context cancel", func(t *testing.T) {
-		t.Skip() // flake https://github.com/sourcegraph/sourcegraph/issues/40431
-		t.Parallel()
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-		t.Cleanup(cancel)
-
-		cmd := exec.Command("testdata/signaltest.sh")
-		var stdOut bytes.Buffer
-		cmd.Stdout = &stdOut
-
-		exitStatus, err := runCommandGraceful(ctx, logger, wrexec.Wrap(ctx, logger, cmd))
-		assert.ErrorIs(t, err, context.DeadlineExceeded)
-		assert.Equal(t, 0, exitStatus)
-		assert.Equal(t, "trapped the INT signal\n", stdOut.String())
-	})
-
-	t.Run("context cancel, command doesn't exit", func(t *testing.T) {
-		t.Parallel()
-		logger := logtest.Scoped(t)
-		ctx := context.Background()
-		ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
-		t.Cleanup(cancel)
-
-		cmd := exec.Command("testdata/signaltest_noexit.sh")
-
-		exitStatus, err := runCommandGraceful(ctx, logger, wrexec.Wrap(ctx, logger, cmd))
-
-		assert.ErrorIs(t, err, context.DeadlineExceeded)
-		assert.Equal(t, -1, exitStatus)
-	})
 }
 
 func TestHeaderXRequestedWithMiddleware(t *testing.T) {

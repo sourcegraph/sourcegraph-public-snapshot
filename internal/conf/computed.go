@@ -126,6 +126,16 @@ func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
 }
 
+// EmailSenderName returns `email.senderName`. If that's not set, it returns
+// the default value "Sourcegraph".
+func EmailSenderName() string {
+	sender := Get().EmailSenderName
+	if sender != "" {
+		return sender
+	}
+	return "Sourcegraph"
+}
+
 // UpdateChannel tells the update channel. Default is "release".
 func UpdateChannel() string {
 	channel := Get().UpdateChannel

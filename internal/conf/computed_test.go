@@ -995,3 +995,35 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		})
 	}
 }
+
+func TestEmailSenderName(t *testing.T) {
+	testCases := []struct {
+		name       string
+		siteConfig schema.SiteConfiguration
+		want       string
+	}{
+		{
+			name:       "nothing set",
+			siteConfig: schema.SiteConfiguration{},
+			want:       "Sourcegraph",
+		},
+		{
+			name: "value set",
+			siteConfig: schema.SiteConfiguration{
+				EmailSenderName: "Horsegraph",
+			},
+			want: "Horsegraph",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			Mock(&Unified{SiteConfiguration: tc.siteConfig})
+			t.Cleanup(func() { Mock(nil) })
+
+			if got, want := EmailSenderName(), tc.want; got != want {
+				t.Fatalf("EmailSenderName() = %v, want %v", got, want)
+			}
+		})
+	}
+}

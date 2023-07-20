@@ -45,6 +45,7 @@ func (s *Server) testSetup(t *testing.T) {
 	db := dbtest.NewDB(s.Logger, t)
 	s.DB = database.NewDB(s.Logger, db)
 	s.Hostname = "gitserver-0"
+	s.RecordingCommandFactory = wrexec.NewNoOpRecordingCommandFactory()
 }
 
 func TestCleanup_computeStats(t *testing.T) {
@@ -368,6 +369,18 @@ func TestCleanupExpired(t *testing.T) {
 		return remote, nil
 	}
 
+	s := &Server{
+		Logger:           logtest.Scoped(t),
+		ObservationCtx:   observation.TestContextTB(t),
+		ReposDir:         root,
+		GetRemoteURLFunc: getRemoteURL,
+		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		},
+		DB: database.NewMockDB(),
+	}
+	s.testSetup(t)
+
 	modTime := func(path string) time.Time {
 		t.Helper()
 		fi, err := os.Stat(filepath.Join(path, "HEAD"))
@@ -378,7 +391,7 @@ func TestCleanupExpired(t *testing.T) {
 	}
 	recloneTime := func(path string) time.Time {
 		t.Helper()
-		ts, err := getRecloneTime(common.GitDir(path))
+		ts, err := getRecloneTime(common.GitDir(path), s)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -397,20 +410,20 @@ func TestCleanupExpired(t *testing.T) {
 		repoPerforceGCOld: 2 * repoTTLGC,
 	} {
 		ts := time.Now().Add(-delta)
-		if err := setRecloneTime(common.GitDir(gitDirPath), ts); err != nil {
+		if err := setRecloneTime(common.GitDir(gitDirPath), s, ts); err != nil {
 			t.Fatal(err)
 		}
 		if err := os.Chtimes(filepath.Join(gitDirPath, "HEAD"), ts, ts); err != nil {
 			t.Fatal(err)
 		}
 	}
-	if err := gitConfigSet(common.GitDir(repoCorrupt), gitConfigMaybeCorrupt, "1"); err != nil {
+	if err := gitConfigSet(common.GitDir(repoCorrupt), s, gitConfigMaybeCorrupt, "1"); err != nil {
 		t.Fatal(err)
 	}
-	if err := setRepositoryType(common.GitDir(repoPerforce), "perforce"); err != nil {
+	if err := setRepositoryType(common.GitDir(repoPerforce), s, "perforce"); err != nil {
 		t.Fatal(err)
 	}
-	if err := setRepositoryType(common.GitDir(repoPerforceGCOld), "perforce"); err != nil {
+	if err := setRepositoryType(common.GitDir(repoPerforceGCOld), s, "perforce"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -429,18 +442,6 @@ func TestCleanupExpired(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	s := &Server{
-		Logger:           logtest.Scoped(t),
-		ObservationCtx:   observation.TestContextTB(t),
-		ReposDir:         root,
-		GetRemoteURLFunc: getRemoteURL,
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
-		},
-		DB:                      database.NewMockDB(),
-		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
-	}
-	s.testSetup(t)
 	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
 	// repos that shouldn't be re-cloned
@@ -1524,8 +1525,16 @@ func TestPruneIfNeeded(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	s := &Server{
+		ReposDir:       "",
+		Logger:         logtest.NoOp(t),
+		ObservationCtx: observation.TestContextTB(t),
+		DB:             database.NewMockDB(),
+	}
+	s.testSetup(t)
+
 	limit := -1 // always run prune
-	if err := pruneIfNeeded(gitDir, limit); err != nil {
+	if err := pruneIfNeeded(gitDir, s, limit); err != nil {
 		t.Fatal(err)
 	}
 }
