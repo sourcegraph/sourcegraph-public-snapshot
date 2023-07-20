@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
@@ -29,7 +30,8 @@ var rulesNarrow = []rule{
 	},
 	{
 		description: "apply search type for pattern",
-		transform:   []transform{typePatterns},
+
+		transform: []transform{typePatterns},
 	},
 	{
 		description: "apply language filter for pattern",
@@ -57,6 +59,10 @@ var rulesWiden = []rule{
 	{
 		description: "AND patterns together",
 		transform:   []transform{unorderedPatterns},
+	},
+	{
+		description: "split fully qualified symbol pattern",
+		transform:   []transform{fullyQualifiedSymbolPattern},
 	},
 }
 
@@ -705,4 +711,53 @@ func patternsToCodeHostFilters(b query.Basic) *query.Basic {
 	}
 
 	return &newBasic
+}
+
+func fullyQualifiedSymbolPattern(b query.Basic) *query.Basic {
+	for _, parameter := range b.Parameters {
+		if !parameter.Negated && parameter.Field == "type" && parameter.Value == "symbol" {
+			patternString := b.PatternString()
+			if strings.Contains(patternString, " ") {
+				return nil
+			}
+			if !strings.Contains(patternString, "\\.") {
+				return nil
+			}
+			rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
+			if err != nil {
+				return nil
+			}
+			newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+				fullyQualifiedParts := strings.Split(value, ".")
+				containerName := strings.Join(fullyQualifiedParts[0:len(fullyQualifiedParts)-1], ".")
+				symbolName := fullyQualifiedParts[len(fullyQualifiedParts)-1]
+				newValue := containerName + " " + symbolName
+
+				fmt.Printf("PATTERN %v\n", newValue)
+				return query.Pattern{
+					Value:      newValue,
+					Negated:    negated,
+					Annotation: annotation,
+				}
+			})
+
+			var pattern query.Node
+			if len(newPattern) > 0 {
+				// Process concat nodes
+				nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newPattern)
+				if err != nil {
+					return nil
+				}
+				pattern = nodes[0] // guaranteed root at first node
+			}
+			result := query.Basic{
+				Parameters: b.Parameters,
+				Pattern:    pattern,
+			}
+			return &result
+		}
+	}
+
+	// Query didn't match `type:symbol fully.qualified.name` pattern
+	return nil
 }

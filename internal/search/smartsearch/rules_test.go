@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/hexops/autogold/v2"
+
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
@@ -185,6 +186,25 @@ func Test_rewriteRepoFilter(t *testing.T) {
 
 	for _, c := range cases {
 		t.Run("rewrite repo filter", func(t *testing.T) {
+			autogold.ExpectFile(t, autogold.Raw(test(c)))
+		})
+	}
+}
+
+func Test_fullyQualifiedSymbolPattern(t *testing.T) {
+	rule := []transform{fullyQualifiedSymbolPattern}
+	test := func(input string) string {
+		return apply(input, rule)
+	}
+
+	cases := []string{
+		`type:symbol com.example.Main`,
+		`type:symbol com.example Main`,
+		`type:symbol Main`,
+	}
+
+	for _, c := range cases {
+		t.Run("fully qualified symbol pattern", func(t *testing.T) {
 			autogold.ExpectFile(t, autogold.Raw(test(c)))
 		})
 	}
