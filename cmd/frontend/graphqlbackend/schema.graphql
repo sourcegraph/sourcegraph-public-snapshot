@@ -3796,6 +3796,9 @@ type Repository implements Node & GenericSearchResultInterface {
     recordedCommands: [RecordedCommand!]!
 }
 
+"""
+Recorded command is a Git command and its metadata which was run for particular repo.
+"""
 type RecordedCommand {
     """
     When the command started its execution.
