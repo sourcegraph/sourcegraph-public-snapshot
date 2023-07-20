@@ -23,6 +23,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Removed
 
 - indexed-search has removed the deprecated environment variable ZOEKT_ENABLE_LAZY_DOC_SECTIONS [zoekt#620](https://github.com/sourcegraph/zoekt/pull/620)
+- The federation feature that could redirect users from their own Sourcegraph instance to public repositories on Sourcegraph.com has been removed. [#55161](https://github.com/sourcegraph/sourcegraph/pull/55161)
 
 ## 5.1.4
 
