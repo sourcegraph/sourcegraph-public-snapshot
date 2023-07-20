@@ -79,7 +79,7 @@ import javax.swing.plaf.ButtonUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-class CodyToolWindowContent implements UpdatableChat {
+public class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
   private static final int CHAT_TAB_INDEX = 0;
   private static final int RECIPES_TAB_INDEX = 1;
@@ -228,6 +228,10 @@ class CodyToolWindowContent implements UpdatableChat {
     addWelcomeMessage();
     // Refresh the LLM Configuration for the project for the incoming prompts
     CodyLLMConfiguration.getInstance(project).refreshCache();
+  }
+
+  public static CodyToolWindowContent getInstance(@NotNull Project project) {
+    return project.getService(CodyToolWindowContent.class);
   }
 
   private static void enableAutoUpdateAvailabilityOfSummarizeRecentCodeChangesRecipe(

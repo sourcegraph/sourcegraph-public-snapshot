@@ -265,7 +265,7 @@ func TestGerritCloneURL(t *testing.T) {
 	}
 
 	got := gerritCloneURL(logtest.Scoped(t), project, &cfg)
-	want := "https://admin:pa$$word@gerrit.com/test-project"
+	want := "https://admin:pa$$word@gerrit.com/a/test-project"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
 	}

@@ -1,4 +1,4 @@
-package shared
+package embeddings
 
 import (
 	"strings"
@@ -6,7 +6,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 )
 
-var NO_CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
+var noContextMessagesRegexps = []*lazyregexp.Regexp{
 	// Common greetings
 	lazyregexp.New(`^(hello|hey|hi|what['’]s up|how's it going)( Cody)?[!\.\?]?$`),
 
@@ -39,10 +39,10 @@ var NO_CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
 	lazyregexp.New("```"),
 }
 
-func isContextRequiredForChatQuery(query string) bool {
+func IsContextRequiredForChatQuery(query string) bool {
 	queryTrimmed := strings.TrimSpace(query)
 	queryLower := strings.ToLower(queryTrimmed)
-	for _, regexp := range NO_CONTEXT_MESSAGES_REGEXPS {
+	for _, regexp := range noContextMessagesRegexps {
 		if regexp.MatchString(queryLower) {
 			return false
 		}
