@@ -2,7 +2,14 @@ import { BloomFilter } from 'bloomfilter'
 
 import { HighlightedLinkProps, offsetSum, RangePosition } from '../components/fuzzyFinder/HighlightedLink'
 
-import { FuzzySearch, IndexingFSM, FuzzySearchParameters, FuzzySearchResult } from './FuzzySearch'
+import {
+    FuzzySearch,
+    IndexingFSM,
+    FuzzySearchParameters,
+    FuzzySearchResult,
+    createUrlFunction,
+    FuzzySearchConstructorParameters,
+} from './FuzzySearch'
 import { Hasher } from './Hasher'
 import { SearchValue } from './SearchValue'
 
@@ -71,11 +78,11 @@ export class WordSensitiveFuzzySearch extends FuzzySearch {
 
     public static fromSearchValuesAsync(
         files: SearchValue[],
-        createUrl: createUrlFunction,
+        params?: FuzzySearchConstructorParameters,
         bucketSize: number = DEFAULT_BUCKET_SIZE
     ): IndexingFSM {
         files.sort((a, b) => a.text.length - b.text.length)
-        const indexer = new Indexer(files, bucketSize, createUrl)
+        const indexer = new Indexer(files, bucketSize, params)
         function loop(): IndexingFSM {
             if (indexer.isDone()) {
                 return { key: 'ready', value: indexer.complete() }
@@ -101,10 +108,10 @@ export class WordSensitiveFuzzySearch extends FuzzySearch {
 
     public static fromSearchValues(
         files: SearchValue[],
-        createUrl?: createUrlFunction,
+        params?: FuzzySearchConstructorParameters,
         bucketSize: number = DEFAULT_BUCKET_SIZE
     ): WordSensitiveFuzzySearch {
-        const indexer = new Indexer(files, bucketSize, createUrl)
+        const indexer = new Indexer(files, bucketSize, params)
         while (!indexer.isDone()) {
             indexer.processBuckets(bucketSize)
         }
@@ -405,7 +412,6 @@ interface BucketResult {
     value: HighlightedLinkProps[]
 }
 
-export type createUrlFunction = undefined | ((value: string) => string)
 export function mergedHandler(
     firstHandler: undefined | (() => void),
     secondHandler: undefined | (() => void)
@@ -468,7 +474,7 @@ class Indexer {
     constructor(
         private readonly files: SearchValue[],
         private readonly bucketSize: number,
-        private readonly createUrl: createUrlFunction
+        private readonly params?: FuzzySearchConstructorParameters
     ) {
         this.files.sort((a, b) => a.text.length - b.text.length)
     }
@@ -495,7 +501,7 @@ class Indexer {
                 this.index++
             }
             if (this.buffer) {
-                this.buckets.push(Bucket.fromSearchValues(this.buffer, this.createUrl))
+                this.buckets.push(Bucket.fromSearchValues(this.buffer, this?.params?.createURL))
                 this.buffer = []
             }
             bucketCount--
