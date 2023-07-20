@@ -515,7 +515,6 @@ type RepoIDName struct {
 type MinimalRepo struct {
 	ID    api.RepoID
 	Name  api.RepoName
-	Fork  bool
 	Stars int
 }
 
@@ -523,7 +522,6 @@ func (r *MinimalRepo) ToRepo() *Repo {
 	return &Repo{
 		ID:    r.ID,
 		Name:  r.Name,
-		Fork:  r.Fork,
 		Stars: r.Stars,
 	}
 }

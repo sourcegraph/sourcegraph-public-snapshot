@@ -2956,8 +2956,8 @@ func TestRepoStore_Metadata(t *testing.T) {
 			Description: "bar 2",
 			Fork:        true,
 			Archived:    true,
-			Stars:       20,
 			Private:     true,
+			Stars:       20,
 			LastFetched: &d2,
 		},
 	}
@@ -2965,81 +2965,4 @@ func TestRepoStore_Metadata(t *testing.T) {
 	md, err := r.Metadata(ctx, 1, 2)
 	require.NoError(t, err)
 	require.ElementsMatch(t, expected, md)
-}
-
-func TestRepoStore_GetWithmaybePoolMinimalRepo(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
-
-	parentRepo := mustCreate(ctx, t, db, &types.Repo{
-		Name: "github.com/sourcegraph/sourcegraph",
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "a1",
-			ServiceType: "b",
-			ServiceID:   "c",
-		},
-	})
-	expectedParent := types.MinimalRepo{
-		ID:    1,
-		Name:  parentRepo.Name,
-		Fork:  false,
-		Stars: 0,
-	}
-
-	forkedRepo := mustCreate(ctx, t, db, &types.Repo{
-		Name: "github.com/forked/sourcegraph",
-		Fork: true,
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "a2",
-			ServiceType: "b",
-			ServiceID:   "c",
-		},
-	})
-	expectedForked := types.MinimalRepo{
-		ID:    2,
-		Name:  forkedRepo.Name,
-		Fork:  true,
-		Stars: 0,
-	}
-
-	// Although both parent and forked repo exist in the DB, there is no relationship established
-	// between them via pool_repo_id yet.
-	//
-	// Let us first try to get the parentRepo and then the forkedRepo.
-	gotRepo, gotPoolRepo, err := db.Repos().GetWithMaybePoolMinimalRepo(ctx, parentRepo.Name)
-	require.NoError(t, err)
-	require.NotNil(t, gotRepo)
-	require.Equal(t, gotRepo.Name, parentRepo.Name)
-	require.Nil(t, gotPoolRepo)
-
-	gotRepo, gotPoolRepo, err = db.Repos().GetWithMaybePoolMinimalRepo(ctx, forkedRepo.Name)
-	require.NoError(t, err)
-	require.NotNil(t, gotRepo)
-	require.Equal(t, gotRepo.Name, forkedRepo.Name)
-	require.Nil(t, gotPoolRepo)
-
-	// Now establish a relationshsip between parentRepo and forkedRepo.
-	err = db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
-	require.NoError(t, err)
-
-	// Expecting the same as before result when queried for parentRepo.
-	gotRepo, gotPoolRepo, err = db.Repos().GetWithMaybePoolMinimalRepo(ctx, parentRepo.Name)
-	require.NoError(t, err)
-	require.NotNil(t, gotRepo)
-	require.Equal(t, gotRepo.Name, parentRepo.Name)
-	require.Nil(t, gotPoolRepo)
-
-	// Expecting both repo and poolRepo when querid for forkedRepo.
-	gotRepo, gotPoolRepo, err = db.Repos().GetWithMaybePoolMinimalRepo(ctx, forkedRepo.Name)
-	require.NoError(t, err)
-	require.NotNil(t, gotRepo)
-	require.Equal(t, *gotRepo, expectedForked)
-	require.NotNil(t, gotPoolRepo)
-	require.Equal(t, *gotPoolRepo, expectedParent)
 }
