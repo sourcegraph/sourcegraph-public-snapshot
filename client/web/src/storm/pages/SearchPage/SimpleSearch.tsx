@@ -10,7 +10,7 @@ import { RepoSearchSimpleSearch } from './RepoSearchSimpleSearch'
 
 import styles from './SimpleSearch.module.scss'
 
-const EVENT_PREFIX = 'SIMPLE_SEARCH_'
+const EVENT_PREFIX = 'SimpleSearch'
 
 function eventName(name: string): string {
     return EVENT_PREFIX + name
@@ -20,13 +20,13 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
     const [showState, setShowState] = useState<string>('default')
 
     function onSubmitWithTelemetry(event?: React.FormEvent): void {
-        props.telemetryService.log(eventName('SUBMIT_SEARCH'), { type: showState })
+        props.telemetryService.log(eventName('SubmitSearch'), { type: showState })
         props.onSubmit(event)
     }
 
     function pickRender(): JSX.Element {
         const changeState = (nextState: string): void => {
-            props.telemetryService.log(eventName('SELECT_JOB'), { next: nextState })
+            props.telemetryService.log(eventName('SelectJob'), { next: nextState })
             setShowState(nextState)
         }
 
@@ -53,7 +53,7 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
                     <Button
                         className="mb-2"
                         onClick={() => {
-                            props.telemetryService.log(eventName('BACK_BUTTON_CLICK'))
+                            props.telemetryService.log(eventName('BackButtonClick'))
                             setShowState('default')
                         }}
                     >

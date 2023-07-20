@@ -8,7 +8,7 @@ import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
+import { Label, Tooltip } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
@@ -22,6 +22,7 @@ import { TryCodyCtaSection } from './TryCodyCtaSection'
 import { TryCodySignUpCtaSection } from './TryCodySignUpCtaSection'
 
 import styles from './SearchPageContent.module.scss'
+import {useTemporarySetting} from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting';
 
 interface SearchPageContentProps {
     shouldShowAddCodeHostWidget?: boolean
@@ -60,15 +61,9 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         }
     }, [experimentalQueryInput, selectedSearchContextSpec])
 
-    // const [simpleSearch, setSimpleSearch] = useState<boolean>(true)
-    const [simpleSearch, setSimpleSearch] = useLocalStorage<boolean>('simple.search.toggle', true)
-
+    // const [simpleSearch, setSimpleSearch] = useLocalStorage<boolean>('simple.search.toggle', true)
+    const [simpleSearch, setSimpleSearch] = useTemporarySetting<boolean>('simple.search.toggle', true)
     const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
-    useEffect(() => {
-        if (simpleSearch && simpleSearchEnabled) {
-            telemetryService.logViewEvent('SIMPLE_SEARCH_HOME')
-        }
-    }, [telemetryService, simpleSearch, simpleSearchEnabled])
 
     return (
         <div className={classNames('d-flex flex-column align-items-center px-3', styles.searchPage)}>
@@ -89,7 +84,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             id="simpleSearchToggle"
                             value={simpleSearch}
                             onToggle={val => {
-                                telemetryService.log('SIMPLE_SEARCH_TOGGLE', { state: val })
+                                telemetryService.log('SimpleSearchToggle', { state: val })
                                 setSimpleSearch(val)
                             }}
                         />
