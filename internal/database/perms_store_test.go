@@ -1005,9 +1005,6 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 		require.NoErrorf(t, err, "loading permissions for %d", id)
 
 		unrestricted := len(p) == 1 && p[0].UserID == 0
-
-		fmt.Printf("P: %v %v\n", p, unrestricted)
-
 		if unrestricted != want {
 			t.Fatalf("Want %v, got %v for %d", want, unrestricted, id)
 		}
@@ -1015,9 +1012,8 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 
 	assertUnrestricted := func(t *testing.T, id int32, want bool) {
 		t.Helper()
-		fmt.Printf("before legacyUnrestricted\n")
+		
 		legacyUnrestricted(t, id, want)
-		fmt.Printf("after legacyUnrestricted\n")
 
 		type unrestrictedResult struct {
 			id     int32
@@ -1030,11 +1026,8 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 			return r, err
 		})
 
-		fmt.Printf("before scanResults\n")
 		q := sqlf.Sprintf("SELECT repo_id, source FROM user_repo_permissions WHERE repo_id = %d AND user_id IS NULL", id)
 		results, err := scanResults(s.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...))
-
-		fmt.Printf("after scanResults\n")
 		if err != nil {
 			t.Fatalf("loading user repo permissions for %d: %v", id, err)
 		}
@@ -1045,7 +1038,6 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 			t.Fatalf("Want restricted, but found results for %d: %v", id, results)
 		}
 
-		fmt.Printf("Results: %v\n", results)
 		if want {
 			for _, r := range results {
 				require.Equal(t, authz.SourceAPI, r.source)
