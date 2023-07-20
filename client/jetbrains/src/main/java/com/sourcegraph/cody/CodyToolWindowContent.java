@@ -351,7 +351,7 @@ public class CodyToolWindowContent implements UpdatableChat {
           "<p>It looks like you don't have Sourcegraph Access Token configured.</p>"
               + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
       AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-          new AssistantMessageWithSettingsButton(project, noAccessTokenText);
+          new AssistantMessageWithSettingsButton(noAccessTokenText);
       var messageContentPanel = new JPanel(new BorderLayout());
       messageContentPanel.add(assistantMessageWithSettingsButton);
       ApplicationManager.getApplication()
@@ -436,7 +436,7 @@ public class CodyToolWindowContent implements UpdatableChat {
         "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
             + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
     AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-        new AssistantMessageWithSettingsButton(project, invalidAccessTokenText);
+        new AssistantMessageWithSettingsButton(invalidAccessTokenText);
     var messageContentPanel = new JPanel(new BorderLayout());
     messageContentPanel.add(assistantMessageWithSettingsButton);
     ApplicationManager.getApplication()
