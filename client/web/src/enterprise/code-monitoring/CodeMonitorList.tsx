@@ -104,7 +104,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                             nodeComponentProps={{
                                 location,
                                 toggleCodeMonitorEnabled,
-                                authenticatedUser,
+                                showOwner: authenticatedUser?.siteAdmin ?? false,
                             }}
                             noun="code monitor"
                             pluralNoun="code monitors"
@@ -137,7 +137,7 @@ export const CodeMonitorList: React.FunctionComponent<React.PropsWithChildren<Co
                                     nodeComponentProps={{
                                         location,
                                         toggleCodeMonitorEnabled,
-                                        authenticatedUser,
+                                        showOwner: authenticatedUser?.siteAdmin ?? false,
                                     }}
                                     noun="code monitor"
                                     pluralNoun="code monitors"
