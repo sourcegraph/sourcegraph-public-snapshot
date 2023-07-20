@@ -1024,6 +1024,9 @@ commandsets:
       - zoekt-web-1
       - blobstore
       - embeddings
+    env:
+      DISABLE_CODE_INSIGHTS_HISTORICAL: false
+      DISABLE_CODE_INSIGHTS: false
 
   enterprise-e2e:
     <<: *enterprise_set
