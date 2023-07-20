@@ -1339,7 +1339,7 @@
       "type": "string",
       "group": "Email",
       "default": "Sourcegraph",
-      "examples": ["FooCorp Sourcegraph", "Horsegraph Code AI Platform"]
+      "examples": ["Our Company Sourcegraph", "Example Inc Sourcegraph"]
     },
     "email.templates": {
       "description": "Configurable templates for some email types sent by Sourcegraph.",
