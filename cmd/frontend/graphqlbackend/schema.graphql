@@ -10346,3 +10346,38 @@ type PerforceChangelist {
     """
     commit: GitCommit!
 }
+
+extend type Query {
+    """
+    Returns a list of all recorded commands for a given repository name.
+    """
+    recordedCommands(
+        """
+        Repository name, for which recorded commands are being fetched.
+        """
+        repoName: String!
+    ): [RecordedCommand!]!
+}
+
+type RecordedCommand {
+    """
+    When the command started its execution.
+    """
+    start: DateTime!
+    """
+    Command run time in seconds.
+    """
+    duration: Float!
+    """
+    The command itself (e.g. "git fetch").
+    """
+    command: String!
+    """
+    Directory in which the command has been run.
+    """
+    dir: String!
+    """
+    Path to command executable (git executable in most cases).
+    """
+    path: String!
+}
