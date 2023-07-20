@@ -68,7 +68,8 @@
     "@sourcegraph/wildcard": "workspace:*",
     "highlight.js": "^10.0.0",
     "lodash-es": "^4.17.21",
-    "prismjs": "^1.29.0"
+    "prismjs": "^1.29.0",
+    "ts-key-enum": "^2.0.12"
   },
   "msw": {
     "workerDirectory": "static"
