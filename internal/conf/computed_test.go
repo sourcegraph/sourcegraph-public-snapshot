@@ -524,6 +524,32 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "Azure OpenAI completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:        "azure-openai",
+					AccessToken:     "asdf",
+					Endpoint:        "https://acmecorp.openai.azure.com",
+					ChatModel:       "gpt4-deployment",
+					FastChatModel:   "gpt35-turbo-deployment",
+					CompletionModel: "gpt35-turbo-deployment",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "gpt4-deployment",
+				ChatModelMaxTokens:       8000,
+				FastChatModel:            "gpt35-turbo-deployment",
+				FastChatModelMaxTokens:   8000,
+				CompletionModel:          "gpt35-turbo-deployment",
+				CompletionModelMaxTokens: 8000,
+				AccessToken:              "asdf",
+				Provider:                 "azure-openai",
+				Endpoint:                 "https://acmecorp.openai.azure.com",
+			},
+		},
+		{
 			name: "zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
@@ -867,6 +893,35 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				},
 			},
 			wantDisabled: true,
+		},
+		{
+			name: "Azure OpenAI provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider:    "azure-openai",
+					AccessToken: "asdf",
+					Endpoint:    "https://acmecorp.openai.azure.com",
+					Dimensions:  1536,
+					Model:       "the-model",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "azure-openai",
+				AccessToken:                "asdf",
+				Model:                      "the-model",
+				Endpoint:                   "https://acmecorp.openai.azure.com",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+			},
 		},
 		{
 			name:       "App default config",
