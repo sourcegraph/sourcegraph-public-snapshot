@@ -362,7 +362,7 @@ func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 	src := r.Sources[svc.URN()]
 	if src == nil {
-		return errors.New("CreateExternalServiceRepo: repo missing source info for external service")
+		return errors.Newf("CreateExternalServiceRepo: repo %q missing source info for external service", r.Name)
 	} else if src.CloneURL == "" {
 		return errors.Newf("CreateExternalServiceRepo: repo (ID=%q) missing CloneURL for external service", src.ID)
 	}
