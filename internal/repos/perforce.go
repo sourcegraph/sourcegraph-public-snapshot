@@ -74,7 +74,9 @@ func (s PerforceSource) ListRepos(ctx context.Context, results chan SourceResult
 			continue
 		}
 		syncer := server.PerforceDepotSyncer{}
-		if err := syncer.IsCloneable(ctx, p4Url); err == nil {
+		// We don't need to provide repo name and use "" instead because p4 commands are
+		// not recorded in the following `syncer.IsCloneable` call.
+		if err := syncer.IsCloneable(ctx, "", p4Url); err == nil {
 			results <- SourceResult{Source: s, Repo: s.makeRepo(depot)}
 		} else {
 			results <- SourceResult{Source: s, Err: err}

@@ -193,7 +193,8 @@ func (gs *GRPCServer) doExec(ctx context.Context, logger log.Logger, req *protoc
 
 func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest) (*proto.GetObjectResponse, error) {
 	gitAdapter := &adapters.Git{
-		ReposDir: gs.Server.ReposDir,
+		ReposDir:                gs.Server.ReposDir,
+		RecordingCommandFactory: gs.Server.RecordingCommandFactory,
 	}
 
 	getObjectService := gitdomain.GetObjectService{
@@ -203,7 +204,7 @@ func (gs *GRPCServer) GetObject(ctx context.Context, req *proto.GetObjectRequest
 
 	var internalReq protocol.GetObjectRequest
 	internalReq.FromProto(req)
-	accesslog.Record(ctx, string(req.Repo), log.String("objectname", internalReq.ObjectName))
+	accesslog.Record(ctx, req.Repo, log.String("objectname", internalReq.ObjectName))
 
 	obj, err := getObjectService.GetObject(ctx, internalReq.Repo, internalReq.ObjectName)
 	if err != nil {
@@ -349,7 +350,7 @@ func (gs *GRPCServer) RepoClone(ctx context.Context, in *proto.RepoCloneRequest)
 	return &proto.RepoCloneResponse{Error: ""}, nil
 }
 
-func (gs *GRPCServer) RepoCloneProgress(ctx context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
+func (gs *GRPCServer) RepoCloneProgress(_ context.Context, req *proto.RepoCloneProgressRequest) (*proto.RepoCloneProgressResponse, error) {
 	repositories := req.GetRepos()
 
 	resp := protocol.RepoCloneProgressResponse{
@@ -367,14 +368,14 @@ func (gs *GRPCServer) RepoDelete(ctx context.Context, req *proto.RepoDeleteReque
 	repo := req.GetRepo()
 
 	if err := gs.Server.deleteRepo(ctx, api.UndeletedRepoName(api.RepoName(repo))); err != nil {
-		gs.Server.Logger.Error("failed to delete repository", log.String("repo", string(repo)), log.Error(err))
+		gs.Server.Logger.Error("failed to delete repository", log.String("repo", repo), log.Error(err))
 		return &proto.RepoDeleteResponse{}, status.Errorf(codes.Internal, "failed to delete repository %s: %s", repo, err)
 	}
-	gs.Server.Logger.Info("deleted repository", log.String("repo", string(repo)))
+	gs.Server.Logger.Info("deleted repository", log.String("repo", repo))
 	return &proto.RepoDeleteResponse{}, nil
 }
 
-func (gs *GRPCServer) RepoUpdate(ctx context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
+func (gs *GRPCServer) RepoUpdate(_ context.Context, req *proto.RepoUpdateRequest) (*proto.RepoUpdateResponse, error) {
 	var in protocol.RepoUpdateRequest
 	in.FromProto(req)
 	grpcResp := gs.Server.repoUpdate(&in)
@@ -382,7 +383,7 @@ func (gs *GRPCServer) RepoUpdate(ctx context.Context, req *proto.RepoUpdateReque
 	return grpcResp.ToProto(), nil
 }
 
-func (gs *GRPCServer) ReposStats(ctx context.Context, req *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
+func (gs *GRPCServer) ReposStats(_ context.Context, _ *proto.ReposStatsRequest) (*proto.ReposStatsResponse, error) {
 	b, err := gs.Server.readReposStatsFile(filepath.Join(gs.Server.ReposDir, reposStatsName))
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to read %s: %s", reposStatsName, err.Error())
