@@ -13,7 +13,7 @@ import (
 )
 
 // send email to site admins if approaching user limit on active license
-func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
+func SendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	licenseDb := ps.NewDbLicense(db)
 	licenses, err := licenseDb.List(ctx, ps.DbLicencesListNoOpt())
 	if err != nil {
@@ -28,33 +28,34 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 		}
 	}
 
-	userCountAlertSent, err := licenseDb.GetUserCountAlertSentAt(ctx, licenseID)
+	lastAlertSentAt, err := licenseDb.GetUserCountAlertSentAt(ctx, licenseID)
 	if err != nil {
 		return errors.Wrap(err, "could not get last time user account alert was sent")
 	}
 
-	if !time.Now().UTC().After(userCountAlertSent.UTC().Add(7 * 24 * time.Hour)) {
+	// check if alert was recently sent
+	if !time.Now().After(lastAlertSentAt.Add(7 * 24 * time.Hour)) {
 		fmt.Println("email recently sent")
 		return nil
 	}
 
-	userCount, err := getUserCount(ctx, db)
+	currentUserCount, err := getUserCount(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, "could not get user count")
 	}
 
-	userLimit, err := getLicenseUserLimit(ctx, db)
+	currentUserLimit, err := getLicenseUserLimit(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, "could not get license user limit")
 	}
 
-	percentOfLimit := getPercentOfLimit(userCount, userLimit)
-	if percentOfLimit < 90 && userCount < userLimit-2 {
+	percentOfLimitUsed := getPercentOfLimit(currentUserCount, currentUserLimit)
+	if percentOfLimitUsed < 90 && currentUserCount < currentUserLimit-2 {
 		fmt.Println("user count on license within limit")
 		return nil
 	}
 
-	siteAdminEmails, err := getSiteAdminEmails(ctx, db)
+	siteAdminEmails, err := getVerifiedSiteAdminEmails(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, "could not get site admins")
 	}
@@ -71,8 +72,8 @@ func sendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 			RemainingUsers int
 			Percent        int
 		}{
-			RemainingUsers: userLimit - userCount,
-			Percent:        percentOfLimit,
+			RemainingUsers: currentUserLimit - currentUserCount,
+			Percent:        percentOfLimitUsed,
 		},
 	}); err != nil {
 		return errors.Wrap(err, "could not send email")
@@ -85,11 +86,9 @@ func getPercentOfLimit(userCount, userLimit int) int {
 	if userCount == 0 {
 		return 0
 	}
-
 	if userLimit == 0 {
 		return userCount + 100
 	}
-
 	return (userCount * 100) / userLimit
 }
 
@@ -109,7 +108,7 @@ func getLicenseUserLimit(ctx context.Context, db database.DB) (int, error) {
 	}
 
 	for _, item := range items {
-		if item.LicenseExpiresAt.UTC().After(time.Now().UTC()) {
+		if item.LicenseExpiresAt.After(time.Now()) {
 			if item.LicenseUserCount != nil {
 				return *item.LicenseUserCount, nil
 			} else {
@@ -120,7 +119,7 @@ func getLicenseUserLimit(ctx context.Context, db database.DB) (int, error) {
 	return 0, nil
 }
 
-func getSiteAdminEmails(ctx context.Context, db database.DB) ([]string, error) {
+func getVerifiedSiteAdminEmails(ctx context.Context, db database.DB) ([]string, error) {
 	var siteAdminEmails []string
 	users, err := db.Users().List(ctx, &database.UsersListOptions{})
 	if err != nil {
@@ -129,11 +128,13 @@ func getSiteAdminEmails(ctx context.Context, db database.DB) ([]string, error) {
 
 	for _, user := range users {
 		if user.SiteAdmin {
-			email, _, err := getUserEmail(ctx, db, user)
+			email, verified, err := getUserEmail(ctx, db, user)
 			if err != nil {
 				return nil, err
 			}
-			siteAdminEmails = append(siteAdminEmails, email)
+			if verified {
+				siteAdminEmails = append(siteAdminEmails, email)
+			}
 		}
 	}
 	return siteAdminEmails, nil

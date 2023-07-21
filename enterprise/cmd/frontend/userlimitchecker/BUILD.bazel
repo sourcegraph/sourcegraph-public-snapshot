@@ -11,6 +11,7 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//enterprise/cmd/frontend/internal/dotcom/productsubscription",
+        "//internal/api/internalapi",
         "//internal/database",
         "//internal/txemail",
         "//internal/txemail/txtypes",

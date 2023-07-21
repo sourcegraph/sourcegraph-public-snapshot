@@ -49,7 +49,7 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		}
 		t.Cleanup(func() { txemail.MockSend = nil })
 
-		err = sendApproachingUserLimitAlert(ctx, db)
+		err = SendApproachingUserLimitAlert(ctx, db)
 		require.NoError(t, err)
 
 		replyTo := "support@sourcegraph.com"
@@ -82,7 +82,7 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		require.NoError(t, err)
 		os.Stdout = w
 
-		err = sendApproachingUserLimitAlert(ctx, db)
+		err = SendApproachingUserLimitAlert(ctx, db)
 		if err != nil {
 			t.Errorf("could not run sendApproachingUserLimitAlert function: %s", err)
 		}
@@ -107,7 +107,7 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		require.NoError(t, err)
 		os.Stdout = w
 
-		err = sendApproachingUserLimitAlert(ctx, db)
+		err = SendApproachingUserLimitAlert(ctx, db)
 		require.NoError(t, err)
 
 		w.Close()
@@ -198,7 +198,7 @@ func TestGetUserCount(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestGetSiteAdminEmails(t *testing.T) {
+func TestGetVerifiedSiteAdminEmails(t *testing.T) {
 	logger := log.NoOp()
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -211,17 +211,18 @@ func TestGetSiteAdminEmails(t *testing.T) {
 		require.NoError(t, err)
 		createdUsers = append(createdUsers, newUser)
 
-		// first and third created users are site admins
-		if i == 0 || i == 2 {
+		// first, second and third created users are site admins
+		if i <= 2 {
 			userStore.SetIsSiteAdmin(ctx, createdUsers[i].ID, true)
 		}
 	}
 
-	expected, err := getSiteAdminEmails(ctx, db)
-	require.NoError(t, err)
-	actual := []string{"test@test.com", "test3@test.com"}
-
-	assert.Equal(t, expected, actual)
+	t.Run("should return slice of verified emails only", func(t *testing.T) {
+		expected, err := getVerifiedSiteAdminEmails(ctx, db)
+		require.NoError(t, err)
+		actual := []string{"test@test.com", "test3@test.com"}
+		assert.Equal(t, expected, actual)
+	})
 }
 
 func TestGetUserEmail(t *testing.T) {
@@ -278,7 +279,7 @@ var users = []database.NewUser{
 		Password:              "password",
 		AvatarURL:             "avatar.jpg",
 		EmailVerificationCode: "51235",
-		EmailIsVerified:       false,
+		EmailIsVerified:       true,
 		FailIfNotInitialUser:  false,
 		EnforcePasswordLength: false,
 		TosAccepted:           false,
@@ -302,7 +303,7 @@ var users = []database.NewUser{
 		Password:              "password",
 		AvatarURL:             "avatar.jpg",
 		EmailVerificationCode: "51235",
-		EmailIsVerified:       false,
+		EmailIsVerified:       true,
 		FailIfNotInitialUser:  false,
 		EnforcePasswordLength: false,
 		TosAccepted:           false,
