@@ -7,9 +7,8 @@ import { QueryExamples } from '@sourcegraph/branded/src/search-ui/components/Que
 import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import { Label, Tooltip } from '@sourcegraph/wildcard'
+import {Label, Tooltip, useLocalStorage} from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
@@ -61,7 +60,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         }
     }, [experimentalQueryInput, selectedSearchContextSpec])
 
-    const [simpleSearch, setSimpleSearch] = useTemporarySetting('simple.search.toggle', true)
+    const defaultSimpleSearchToggle = true
+    const [simpleSearch, setSimpleSearch] = useLocalStorage('simple.search.toggle', defaultSimpleSearchToggle)
     const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
 
     return (
