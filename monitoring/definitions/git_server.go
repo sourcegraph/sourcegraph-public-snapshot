@@ -45,18 +45,6 @@ func GitServer() *monitoring.Dashboard {
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "memory_working_set",
-							Description: "memory working set",
-							Query:       "sum by (container_label_io_kubernetes_pod_name) (container_memory_working_set_bytes{container_label_io_kubernetes_container_name=\"gitserver\", container_label_io_kubernetes_pod_name=~`${shard:regex}`})",
-							NoAlert:     true,
-							Panel: monitoring.Panel().LegendFormat("{{container_label_io_kubernetes_pod_name}}").
-								Unit(monitoring.Bytes).
-								With(monitoring.PanelOptions.LegendOnRight()),
-							Owner: monitoring.ObservableOwnerSource,
-							Interpretation: `
-						`,
-						},
-						{
 							Name:        "go_routines",
 							Description: "go routines",
 							Query:       "go_goroutines{app=\"gitserver\", instance=~`${shard:regex}`}",
