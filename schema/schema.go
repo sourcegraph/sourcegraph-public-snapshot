@@ -887,8 +887,10 @@ type ExperimentalFeatures struct {
 	StructuralSearch   string              `json:"structuralSearch,omitempty"`
 	SubRepoPermissions *SubRepoPermissions `json:"subRepoPermissions,omitempty"`
 	// TlsExternal description: Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.
-	TlsExternal *TlsExternal   `json:"tls.external,omitempty"`
-	Additional  map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
+	TlsExternal *TlsExternal `json:"tls.external,omitempty"`
+	// UseGitserverAddressLookupCache description: (Internal development only) Short lived experimental flag to test the effect of caching vs no caching of repo address lookup
+	UseGitserverAddressLookupCache *bool          `json:"useGitserverAddressLookupCache,omitempty"`
+	Additional                     map[string]any `json:"-"` // additionalProperties not explicitly defined in the schema
 }
 
 func (v ExperimentalFeatures) MarshalJSON() ([]byte, error) {
@@ -952,6 +954,7 @@ func (v *ExperimentalFeatures) UnmarshalJSON(data []byte) error {
 	delete(m, "structuralSearch")
 	delete(m, "subRepoPermissions")
 	delete(m, "tls.external")
+	delete(m, "useGitserverAddressLookupCache")
 	if len(m) > 0 {
 		v.Additional = make(map[string]any, len(m))
 	}
