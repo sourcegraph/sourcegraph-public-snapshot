@@ -171,7 +171,7 @@ func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, poolRepoName,
 // 3. The input repo has a relationship established with a parent repo via a non-null gitserver_repos.pool_repo_id, indicating that deduplication is enabled for this repo
 // 4. The parent repo has not been deleted
 //
-// This means that at the moment we do not handle the scneario with deleted repos at all and we have
+// This means that at the moment for deleted repos we return an empty pool repo name and we have
 // tests that validate this behaviour. In the near future we very likely want to revisit this and
 // handle the scenario where once a repository has already been "enlisted" for deduplication and
 // either or both of the parent and the fork repositories have been deleted.
