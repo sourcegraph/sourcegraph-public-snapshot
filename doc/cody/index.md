@@ -81,10 +81,10 @@ Select the recipes tab in your editor or right click on a code section, then cho
 - Generate unit test
 - Detect code smells
 - Generate `docstring`
-- Generate release notes
 - Improve variable names
-- Summarize recent code changes
+- Generate release notes
 - Translate to different language
+- Summarize recent code changes
 
 ### Autocomplete
 
