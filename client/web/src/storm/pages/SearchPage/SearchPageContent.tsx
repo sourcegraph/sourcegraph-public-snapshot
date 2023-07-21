@@ -61,7 +61,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
         }
     }, [experimentalQueryInput, selectedSearchContextSpec])
 
-    const [simpleSearch, setSimpleSearch] = useTemporarySetting<boolean>('simple.search.toggle', true)
+    const [simpleSearch, setSimpleSearch] = useTemporarySetting('simple.search.toggle', true)
     const [simpleSearchEnabled] = useFeatureFlag('enable-simple-search', false)
 
     return (
