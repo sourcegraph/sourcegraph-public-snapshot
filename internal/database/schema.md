@@ -3862,15 +3862,13 @@ Foreign-key constraints:
 
 # Table "public.sub_repo_permissions"
 ```
-    Column     |           Type           | Collation | Nullable | Default 
----------------+--------------------------+-----------+----------+---------
- repo_id       | integer                  |           | not null | 
- user_id       | integer                  |           | not null | 
- version       | integer                  |           | not null | 1
- path_includes | text[]                   |           |          | 
- path_excludes | text[]                   |           |          | 
- updated_at    | timestamp with time zone |           | not null | now()
- paths         | text[]                   |           |          | 
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ repo_id    | integer                  |           | not null | 
+ user_id    | integer                  |           | not null | 
+ version    | integer                  |           | not null | 1
+ updated_at | timestamp with time zone |           | not null | now()
+ paths      | text[]                   |           |          | 
 Indexes:
     "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
     "sub_repo_perms_user_id" btree (user_id)
