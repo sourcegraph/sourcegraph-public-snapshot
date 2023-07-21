@@ -8,7 +8,7 @@ import { QueryState } from '@sourcegraph/shared/src/search'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter, omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useIsLightTheme } from '@sourcegraph/shared/src/theme'
-import {Label, Tooltip, useLocalStorage} from '@sourcegraph/wildcard'
+import { Label, Tooltip, useLocalStorage } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../../components/branding/BrandLogo'
 import { useFeatureFlag } from '../../../featureFlags/useFeatureFlag'
