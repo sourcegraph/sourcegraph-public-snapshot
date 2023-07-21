@@ -36,7 +36,7 @@ else
     -Dsonar.sources=. \
     -Dsonar.host.url=https://sonarcloud.io \
     -Dsonar.sourceEncoding=UTF-8 \
-    -Dsonar.pullrequest.key=$BUILDKITE_PULL_REQUEST \
-    -Dsonar.pullrequest.branch=$BUILDKITE_BRANCH \
-    -Dsonar.pullrequest.base=$BUILDKITE_PULL_REQUEST_BASE_BRANCH
+    -Dsonar.pullrequest.key="$BUILDKITE_PULL_REQUEST" \
+    -Dsonar.pullrequest.branch="$BUILDKITE_BRANCH" \
+    -Dsonar.pullrequest.base="$BUILDKITE_PULL_REQUEST_BASE_BRANCH"
 fi
