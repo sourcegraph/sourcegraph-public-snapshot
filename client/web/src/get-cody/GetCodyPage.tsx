@@ -18,7 +18,6 @@ import { CodyLetsWorkIcon, CodyStartCoding } from '../cody/chat/CodyPageIcon'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import { SourcegraphContext } from '../jscontext'
-import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { EventName } from '../util/constants'
 
@@ -99,7 +98,7 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                         onClick={onClickCTAButton}
                                         ctaClassName={styles.authButton}
                                         iconClassName={styles.buttonIcon}
-                                        redirect={PageRoutes.PostSignUp}
+                                        redirect="/get-cody"
                                     />
                                 </div>
                                 <Link

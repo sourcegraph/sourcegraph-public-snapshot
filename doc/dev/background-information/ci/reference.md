@@ -19,6 +19,7 @@ The default run type.
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Client` changes:
   - Ensure buildfiles are up to date
@@ -26,6 +27,7 @@ The default run type.
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+  - **Security Scanning**: Sonarcloud Scan
   - **Pipeline setup**: Trigger async
 
 - Pipeline for `GraphQL` changes:
@@ -33,76 +35,90 @@ The default run type.
   - Tests
   - BackCompat Tests
   - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `DatabaseSchema` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Docs` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Dockerfiles` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `ExecutorVMImage` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `CIScripts` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Terraform` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `SVG` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Shell` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `DockerImages` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `WolfiPackages` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `WolfiBaseImages` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Protobuf` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 ### Wolfi Exp Branch
 
@@ -134,6 +150,7 @@ Base pipeline (more steps might be included based on branch changes):
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
@@ -195,6 +212,7 @@ Base pipeline (more steps might be included based on branch changes):
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
@@ -212,6 +230,7 @@ Base pipeline (more steps might be included based on branch changes):
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
@@ -252,6 +271,7 @@ Base pipeline (more steps might be included based on branch changes):
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
@@ -274,6 +294,7 @@ Base pipeline (more steps might be included based on branch changes):
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
@@ -335,6 +356,7 @@ Base pipeline (more steps might be included based on branch changes):
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
 - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
 - **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
