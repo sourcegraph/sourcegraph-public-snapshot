@@ -1015,6 +1015,7 @@ ts_project(
         "src/enterprise/repo/enterpriseRepoContainerRoutes.tsx",
         "src/enterprise/repo/enterpriseRepoRevisionContainerRoutes.tsx",
         "src/enterprise/repo/repoHeaderActionButtons.tsx",
+        "src/enterprise/repo/settings/RepoSettingsLogsPage.tsx",
         "src/enterprise/repo/settings/RepoSettingsPermissionsPage.tsx",
         "src/enterprise/repo/settings/backend.ts",
         "src/enterprise/repo/settings/routes.tsx",
