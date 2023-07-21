@@ -1229,51 +1229,44 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 		}
 	})
 
-	users := database.NewStrictMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	users.ListFunc.SetDefaultHook(func(_ context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
-		users := make([]*types.User, len(opt.UserIDs))
-		for i, id := range opt.UserIDs {
-			users[i] = &types.User{ID: id}
-		}
-		return users, nil
-	})
-
-	repos := database.NewStrictMockRepoStore()
-	repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.Repo, error) {
-		return &types.Repo{ID: 1, Name: repo}, nil
-	})
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: id}, nil
-	})
-
-	perms := database.NewStrictMockPermsStore()
-	perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
-		permissions := make([]authz.Permission, 5)
-		for i, userID := range []int32{1, 2, 3, 4, 5} {
-			permissions[i] = authz.Permission{
-				UserID: userID,
-				RepoID: repoID,
-			}
-		}
-
-		return permissions, nil
-	})
-
-	db := database.NewStrictMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.PermsFunc.SetDefaultReturn(perms)
-
 	tests := []struct {
-		name     string
-		gqlTests []*graphqlbackend.Test
+		name                   string
+		usersWithAuthorization []int32
+		gqlTests               []*graphqlbackend.Test
 	}{
 		{
-			name: "get authorized users",
+			name:                   "no authorized users",
+			usersWithAuthorization: []int32{},
 			gqlTests: []*graphqlbackend.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Query: `
+				{
+					repository(name: "github.com/owner/repo") {
+						authorizedUsers(first: 10) {
+							nodes {
+								id
+							}
+						}
+					}
+				}
+			`,
+					ExpectedResult: `
+				{
+					"repository": {
+						"authorizedUsers": {
+							"nodes":[]
+						}
+					}
+				}
+			`,
+				},
+			},
+		},
+		{
+			name:                   "get authorized users",
+			usersWithAuthorization: []int32{1, 2, 3, 4, 5},
+			gqlTests: []*graphqlbackend.Test{
+				{
 					Query: `
 				{
 					repository(name: "github.com/owner/repo") {
@@ -1300,10 +1293,10 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			},
 		},
 		{
-			name: "get authorized users with pagination, page 1",
+			name:                   "get authorized users with pagination, page 1",
+			usersWithAuthorization: []int32{1, 2, 3, 4, 5},
 			gqlTests: []*graphqlbackend.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
 					Query: fmt.Sprintf(`
 {
 					repository(name: "github.com/owner/repo") {
@@ -1332,10 +1325,10 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			},
 		},
 		{
-			name: "get authorized users with pagination, page 2",
+			name:                   "get authorized users with pagination, page 2",
+			usersWithAuthorization: []int32{1, 2, 3, 4, 5},
 			gqlTests: []*graphqlbackend.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
 					Query: fmt.Sprintf(`
 {
 					repository(name: "github.com/owner/repo") {
@@ -1364,10 +1357,10 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 			},
 		},
 		{
-			name: "get authorized users given no IDs after, after ID, return empty",
+			name:                   "get authorized users given no IDs after, after ID, return empty",
+			usersWithAuthorization: []int32{1, 2, 3, 4, 5},
 			gqlTests: []*graphqlbackend.Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
 					Query: fmt.Sprintf(`
 {
 					repository(name: "github.com/owner/repo") {
@@ -1396,6 +1389,45 @@ func TestResolver_AuthorizedUsers(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			users := database.NewStrictMockUserStore()
+			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+			users.ListFunc.SetDefaultHook(func(_ context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
+				users := make([]*types.User, len(opt.UserIDs))
+				for i, id := range opt.UserIDs {
+					users[i] = &types.User{ID: id}
+				}
+				return users, nil
+			})
+
+			repos := database.NewStrictMockRepoStore()
+			repos.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.Repo, error) {
+				return &types.Repo{ID: 1, Name: repo}, nil
+			})
+			repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+				return &types.Repo{ID: id}, nil
+			})
+
+			perms := database.NewStrictMockPermsStore()
+			perms.LoadRepoPermissionsFunc.SetDefaultHook(func(_ context.Context, repoID int32) ([]authz.Permission, error) {
+				permissions := make([]authz.Permission, len(test.usersWithAuthorization))
+				for i, userID := range test.usersWithAuthorization {
+					permissions[i] = authz.Permission{
+						UserID: userID,
+						RepoID: repoID,
+					}
+				}
+
+				return permissions, nil
+			})
+
+			db := database.NewStrictMockDB()
+			db.UsersFunc.SetDefaultReturn(users)
+			db.ReposFunc.SetDefaultReturn(repos)
+			db.PermsFunc.SetDefaultReturn(perms)
+
+			for _, gqlTest := range test.gqlTests {
+				gqlTest.Schema = mustParseGraphQLSchema(t, db)
+			}
 			graphqlbackend.RunTests(t, test.gqlTests)
 		})
 	}
