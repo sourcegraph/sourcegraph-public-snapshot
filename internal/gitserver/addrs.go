@@ -267,9 +267,17 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 		return getRepoAddress(repoName)
 	}
 
-	if addr := g.getCachedRepoAddress(repoName); addr != "" {
-		addrForRepoCacheHit.WithLabelValues(userAgent).Inc()
-		return addr
+	expConf := conf.ExperimentalFeatures()
+
+	// Always check the cache and only skip it if the config is explicitly set to false. While we may
+	// skip the cache lookup, our return path below always updates the cache. This ensures that when
+	// we enable the flag, the existing cache can be used immediately without waiting to prepopulate
+	// for repositories that may already have been looked up once in the TTL window of the cache.
+	if expConf.UseGitserverAddressLookupCache == nil || *expConf.UseGitserverAddressLookupCache {
+		if addr := g.getCachedRepoAddress(repoName); addr != "" {
+			addrForRepoCacheHit.WithLabelValues(userAgent).Inc()
+			return addr
+		}
 	}
 
 	addrForRepoCacheMiss.WithLabelValues(userAgent).Inc()
