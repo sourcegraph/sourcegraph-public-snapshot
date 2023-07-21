@@ -40,12 +40,46 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
 }
 
 describe('GlobalNavbar', () => {
-    test('default', () => {
+    const origContext = window.context
+    beforeEach(() => {
+        window.context = {} as any
+    })
+    afterEach(() => {
+        window.context = origContext
+    })
+
+    const renderPage = (): DocumentFragment => {
         const { asFragment } = renderWithBrandedContext(
             <MockedTestProvider>
                 <GlobalNavbar {...PROPS} />
             </MockedTestProvider>
         )
-        expect(asFragment()).toMatchSnapshot()
+        return asFragment()
+    }
+
+    test('no cody, no code search', () => {
+        expect(renderPage()).toMatchSnapshot()
+    })
+
+    test('with code search', () => {
+        window.context = {
+            codeSearchEnabled: true,
+        } as any
+        expect(renderPage()).toMatchSnapshot()
+    })
+
+    test('with cody', () => {
+        window.context = {
+            codyEnabled: true,
+        } as any
+        expect(renderPage()).toMatchSnapshot()
+    })
+
+    test('both code search and cody', () => {
+        window.context = {
+            codyEnabled: true,
+            codeSearchEnabled: true,
+        } as any
+        expect(renderPage()).toMatchSnapshot()
     })
 })
