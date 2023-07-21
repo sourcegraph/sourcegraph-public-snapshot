@@ -2,7 +2,7 @@ import React, { FC, useEffect, useState } from 'react'
 
 import { mdiHelpCircleOutline } from '@mdi/js'
 
-import { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
+import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Icon, Select, Tooltip, Input, Button, Label, Form } from '@sourcegraph/wildcard'
 
 export interface SimpleSearchProps {
