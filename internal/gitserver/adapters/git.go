@@ -29,7 +29,7 @@ type Git struct {
 func (g *Git) RevParse(ctx context.Context, repo api.RepoName, rev string) (string, error) {
 	cmd := exec.CommandContext(ctx, "git", "rev-parse", rev)
 	cmd.Dir = repoDir(repo, g.ReposDir)
-	wrappedCmd := g.RecordingCommandFactory.WrapWithRepoName(context.Background(), log.NoOp(), repo, cmd)
+	wrappedCmd := g.RecordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repo, cmd)
 	out, err := wrappedCmd.CombinedOutput()
 	if err != nil {
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", wrappedCmd.Args, out))
@@ -42,7 +42,7 @@ func (g *Git) RevParse(ctx context.Context, repo api.RepoName, rev string) (stri
 func (g *Git) GetObjectType(ctx context.Context, repo api.RepoName, objectID string) (gitdomain.ObjectType, error) {
 	cmd := exec.CommandContext(ctx, "git", "cat-file", "-t", "--", objectID)
 	cmd.Dir = repoDir(repo, g.ReposDir)
-	wrappedCmd := g.RecordingCommandFactory.WrapWithRepoName(context.Background(), log.NoOp(), repo, cmd)
+	wrappedCmd := g.RecordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repo, cmd)
 	out, err := wrappedCmd.CombinedOutput()
 	if err != nil {
 		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", wrappedCmd.Args, out))
