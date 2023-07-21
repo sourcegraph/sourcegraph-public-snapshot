@@ -2559,6 +2559,14 @@
             "pointer": true
           },
           "default": "5000"
+        },
+        "excludeFileOnError": {
+          "description": "Whether to skip indexing a file if an embedding request fails for it. If true, the file is not indexed and indexing the remainder of the repository proceeds.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": false
         }
       },
       "examples": [
