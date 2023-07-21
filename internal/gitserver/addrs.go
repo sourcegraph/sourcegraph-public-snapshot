@@ -274,13 +274,13 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 
 	addrForRepoCacheMiss.WithLabelValues(userAgent).Inc()
 
-	poolRepoName, err := g.db.GitserverRepos().GetPoolRepoName(ctx, repoName)
+	poolRepoName, ok, err := g.db.GitserverRepos().GetPoolRepoName(ctx, repoName)
 	if err != nil {
 		logger.Warn("failed to get pool repo (if fork deduplication is enabled this repo may not be colocated on the same shard as the parent/other forks)", log.Error(err))
 		return g.withUpdateCache(repoName, getRepoAddress(repoName))
 	}
 
-	if poolRepoName != "" {
+	if ok {
 		return g.withUpdateCache(poolRepoName, getRepoAddress(poolRepoName))
 	}
 

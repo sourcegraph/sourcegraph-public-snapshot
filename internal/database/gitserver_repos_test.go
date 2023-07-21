@@ -1204,8 +1204,9 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		t.Skip()
 	}
 
-	logger := logtest.Scoped(t)
+	t.Parallel()
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
 	setupRepos := func() (DB, *types.Repo, *types.Repo) {
@@ -1231,10 +1232,13 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		return db, parentRepo, forkedRepo
 	}
 
+	emptyPoolRepoName := api.RepoName("")
+
 	t.Run("no pool repo relation exists", func(t *testing.T) {
 		db, _, forkedRepo := setupRepos()
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
 		require.NoError(t, err)
+		require.False(t, ok)
 		require.Equal(t, api.RepoName(""), gotPoolRepoName)
 	})
 
@@ -1244,9 +1248,10 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err := db.GitserverRepos().UpdatePoolRepoID(ctx, api.RepoName("foo"), forkedRepo.Name)
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 
 	t.Run("forked repo does not exist", func(t *testing.T) {
@@ -1255,9 +1260,10 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, api.RepoName("foo"))
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, api.RepoName("foo"))
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, api.RepoName("foo"))
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 
 	t.Run("both pool and forked repo do not exist", func(t *testing.T) {
@@ -1267,9 +1273,10 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err := db.GitserverRepos().UpdatePoolRepoID(ctx, api.RepoName("foo"), api.RepoName("bar"))
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, api.RepoName("bar"))
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, api.RepoName("bar"))
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 
 	})
 
@@ -1279,9 +1286,10 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 
 	t.Run("pool relation exists lookup forked repo", func(t *testing.T) {
@@ -1290,8 +1298,9 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
 		require.NoError(t, err)
+		require.True(t, ok)
 		require.Equal(t, parentRepo.Name, gotPoolRepoName)
 	})
 
@@ -1304,9 +1313,10 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err = db.Repos().Delete(ctx, parentRepo.ID)
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 
 	t.Run("pool relation exists but parent repo is deleted, lookup forked repo", func(t *testing.T) {
@@ -1318,9 +1328,10 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err = db.Repos().Delete(ctx, parentRepo.ID)
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 
 	t.Run("pool relation exists but forked repo is deleted, lookup parent repo", func(t *testing.T) {
@@ -1332,9 +1343,10 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err = db.Repos().Delete(ctx, forkedRepo.ID)
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 
 	t.Run("pool relation exists but forked repo is deleted, lookup forked repo", func(t *testing.T) {
@@ -1346,9 +1358,10 @@ func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 		err = db.Repos().Delete(ctx, forkedRepo.ID)
 		require.NoError(t, err)
 
-		gotPoolRepoName, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName(""), gotPoolRepoName)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 }
 

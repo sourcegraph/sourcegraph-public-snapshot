@@ -75,7 +75,7 @@ type GitserverRepoStore interface {
 	UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) (err error)
 
 	// GetPoolRepoName will return the PoolRepo of a repository matching the repo name if it exists.
-	GetPoolRepoName(ctx context.Context, repoName api.RepoName) (api.RepoName, error)
+	GetPoolRepoName(ctx context.Context, repoName api.RepoName) (poolRepoName api.RepoName, ok bool, err error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -201,19 +201,9 @@ WHERE
 	AND r.deleted_at is NULL
 `
 
-func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.RepoName) (api.RepoName, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoName))
-
-	var poolRepoName string
-	err := row.Scan(&poolRepoName)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", nil
-		}
-		return "", errors.Wrap(err, "GetPoolRepoNameURI failed")
-	}
-
-	return api.RepoName(poolRepoName), nil
+func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.RepoName) (api.RepoName, bool, error) {
+	poolRepoName, ok, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoName)))
+	return api.RepoName(poolRepoName), ok, errors.Wrap(err, "GetPoolRepoName failed")
 }
 
 const updateGitserverReposQueryFmtstr = `
