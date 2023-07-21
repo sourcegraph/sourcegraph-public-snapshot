@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -155,7 +156,7 @@ func calcDurationSinceLastCalled(clock glock.Clock) (time.Duration, error) {
 // StartLicenseCheck starts a goroutine that periodically checks
 // license validity from dotcom and stores the result in redis.
 // It re-runs the check if the license key changes.
-func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID string) {
+func StartLicenseCheck(originalCtx context.Context, logger log.Logger, db database.DB) {
 
 	if licenseCheckStarted {
 		logger.Info("license check already started")
@@ -164,6 +165,7 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 	licenseCheckStarted = true
 
 	ctxWithCancel, cancel := context.WithCancel(originalCtx)
+	var siteID string
 
 	// The entire logic is dependent on config so we will
 	// wait for initial config to be loaded as well as
@@ -182,6 +184,16 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 
 		// continue running with new license key
 		store.Set(prevLicenseTokenKey, licenseToken)
+
+		// read site_id from global_state table if not done before
+		if siteID == "" {
+			gs, err := db.GlobalState().Get(ctxWithCancel)
+			if err != nil {
+				logger.Error("error reading global state from DB", log.Error(err))
+				return
+			}
+			siteID = gs.SiteID
+		}
 
 		routine := goroutine.NewPeriodicGoroutine(
 			ctxWithCancel,

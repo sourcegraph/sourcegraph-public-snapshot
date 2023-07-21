@@ -58,7 +58,7 @@ func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigra
 		"repo-statistics-compactor": repostatistics.NewCompactor(),
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
 		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
-		"license-check":             licensing.NewLicenseWorker(),
+		"license-check":             licensing.NewLicenseCheckWorker(),
 	}
 
 	var config Config

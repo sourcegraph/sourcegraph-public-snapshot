@@ -17,12 +17,12 @@ import (
 
 type licenseWorker struct{}
 
-func NewLicenseWorker() job.Job {
+func NewLicenseCheckWorker() job.Job {
 	return &licenseWorker{}
 }
 
 func (s *licenseWorker) Description() string {
-	return "Licensing jobs"
+	return "License check job"
 }
 
 func (*licenseWorker) Config() []env.Config {
@@ -35,14 +35,9 @@ func (s *licenseWorker) Routines(_ context.Context, observationCtx *observation.
 		return nil, err
 	}
 
-	gs, err := db.GlobalState().Get(context.Background())
-	if err != nil {
-		return nil, err
-	}
 	return []goroutine.BackgroundRoutine{
 		&licenseChecksWrapper{
 			logger: observationCtx.Logger,
-			siteID: gs.SiteID,
 			db:     db,
 		},
 	}, nil
@@ -50,7 +45,6 @@ func (s *licenseWorker) Routines(_ context.Context, observationCtx *observation.
 
 type licenseChecksWrapper struct {
 	logger log.Logger
-	siteID string
 	db     database.DB
 }
 
@@ -61,7 +55,7 @@ func (l *licenseChecksWrapper) Start() {
 		})
 	})
 	if !envvar.SourcegraphDotComMode() {
-		StartLicenseCheck(context.Background(), l.logger, l.siteID)
+		StartLicenseCheck(context.Background(), l.logger, l.db)
 	}
 }
 
