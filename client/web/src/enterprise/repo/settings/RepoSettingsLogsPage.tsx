@@ -40,7 +40,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
 
     return (
         <>
-            <PageTitle title="Logs and activities" />
+            <PageTitle title="Logs" />
             <PageHeader path={[{ text: 'Logs and activities' }]} headingElement="h2" className="mb-3" />
 
             <Container>
