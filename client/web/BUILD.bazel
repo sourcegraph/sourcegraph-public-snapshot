@@ -175,7 +175,6 @@ ts_project(
         "src/auth.ts",
         "src/auth/CloudSignUpPage.tsx",
         "src/auth/OrDivider.tsx",
-        "src/auth/PostSignUpPage.tsx",
         "src/auth/RequestAccessPage.tsx",
         "src/auth/ResetPasswordPage.tsx",
         "src/auth/SignInPage.tsx",
@@ -1855,7 +1854,6 @@ ts_project(
     testonly = True,
     srcs = [
         "src/__mocks__/zustand.ts",
-        "src/auth/PostSignUpPage.test.tsx",
         "src/auth/RequestAccessPage.test.tsx",
         "src/auth/SignInPage.test.tsx",
         "src/auth/SignUpPage.test.tsx",
