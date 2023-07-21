@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "clsp",
+    srcs = [
+        "gql.go",
+        "server.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/singleprogram/clsp",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf",
+        "//internal/httpcli",
+        "//lib/errors",
+        "@com_github_tliron_commonlog//:commonlog",
+        "@com_github_tliron_commonlog//simple",
+        "@com_github_tliron_glsp//:go_default_library",
+        "@com_github_tliron_glsp//protocol_3_16:go_default_library",
+        "@com_github_tliron_glsp//server:go_default_library",
+    ],
+)

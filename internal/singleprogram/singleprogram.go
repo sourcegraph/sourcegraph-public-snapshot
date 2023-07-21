@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/singleprogram/clsp"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -110,6 +111,15 @@ func Init(logger log.Logger) CleanupFunc {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "unable to set up PostgreSQL:", err)
 		os.Exit(1)
+	}
+
+	if deploy.IsApp() {
+		go func() {
+			err := clsp.Server()
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "CLSP server: exited:", err)
+			}
+		}()
 	}
 
 	writeFileIfNotExists := func(path string, data []byte) {
