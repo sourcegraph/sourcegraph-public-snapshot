@@ -59,29 +59,25 @@ body.theme-dark .markdown-body ul li:before {
   </a>
 </div>
 
-## [Background information](background-information/index.md)
+## Background information
 
 Clarification and discussion about key concepts, architecture, and development stack.
-
-### Overview
-
-- [Tech stack](background-information/tech_stack.md)
-- [Current Sourcegraph tech radar](https://radar.thoughtworks.com/?sheetId=https%3A%2F%2Fraw.githubusercontent.com%2Fsourcegraph%2Fsourcegraph%2Fmain%2Fdoc%2Fdev%2Fradar%2Ftech-radar.csv) (also see [how to maintain the radar](how-to/maintain-tech-radar.md))
 
 ### [Architecture](background-information/architecture/index.md)
 
 - [Overview](background-information/architecture/index.md)
 - [Introducing a new service](background-information/architecture/introducing_a_new_service.md)
 
-## Cody App
-
-- [Notes about signing the Cody App with Apple code signing](background-information/app/codesigning.md)
-- [Troubleshooting App not loading](background-information/app/troubleshooting.md)
-
 ### Development
 
 - [`sg` - the Sourcegraph developer tool](background-information/sg/index.md)
   - [Full `sg` reference](background-information/sg/reference.md)
+- [Using Bazel](background-information/bazel/index.md)
+  - [Bazel and Go code](background-information/bazel/go.md)
+  - [Bazel and client code](background-information/bazel/web.md)
+  - [Bazel and container images](background-information/bazel/containers.md)
+  - [Bazel FAQ](background-information/bazel/faq.md)
+  - [Writing a server integration test](background-information/bazel/server_integration_tests.md)
 - [Developing the web clients](background-information/web/index.md)
   - [Developing the web app](background-information/web/web_app.md)
   - [Developing the code host integrations](background-information/web/code_host_integrations.md)
@@ -91,10 +87,11 @@ Clarification and discussion about key concepts, architecture, and development s
   - [Accessibility](background-information/web/accessibility.md)
   - [Temporary settings](background-information/web/temporary_settings.md)
   - [Build process](background-information/web/build.md)
+- [Developing Cody App](background-information/app/index.md)
 - [Developing the GraphQL API](background-information/graphql_api.md)
 - [Developing the SCIM API](background-information/scim_api.md)
 - [Developing batch changes](background-information/batch_changes/index.md)
-- [Developing code navigation](background-information/codeintel/index.md)
+- [Developing code intelligence](background-information/codeintel/index.md)
 - [Developing code insights](background-information/insights/index.md)
 - [Developing code monitoring](background-information/codemonitoring/index.md)
 - [Developing observability](background-information/observability/index.md)
@@ -116,13 +113,15 @@ Clarification and discussion about key concepts, architecture, and development s
 - [The `gitserver` API](background-information/gitserver-api.md)
 - [Using gRPC alongside REST for internal APIs](background-information/gRPC_internal_api.md)
 
-## Git
+### Git
 
 - [`git gc` and its modes of operations in Sourcegraph](background-information/git_gc.md)
 
 ### [Languages](background-information/languages/index.md)
 
+- [Tech stack](background-information/tech_stack.md)
 - [Go](background-information/languages/go.md)
+  - [Error handling in Go](background-information/languages/go_errors.md)
 - [TypeScript](background-information/languages/typescript.md)
 - [Bash](background-information/languages/bash.md)
 - [Terraform](background-information/languages/terraform.md)
@@ -130,6 +129,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ### [SQL](background-information/sql/index.md)
 
 - [Using PostgreSQL](background-information/postgresql.md)
+- [Migrations overview](background-information/sql/migrations_overview.md)
 - [Migrations](background-information/sql/migrations.md)
 - High-performance guides
   - [Batch operations](background-information/sql/batch_operations.md)
@@ -137,27 +137,34 @@ Clarification and discussion about key concepts, architecture, and development s
 
 ### Security
 
-- [Security Patterns](background-information/security_patterns.md)
+- [Security patterns](background-information/security_patterns.md)
 - [Security policy](https://about.sourcegraph.com/security/)
 - [How to disclose vulnerabilities](https://about.sourcegraph.com/handbook/engineering/security/reporting-vulnerabilities).
 - [CSRF security model](security/csrf_security_model.md)
+
+### Testing
+
+- [Continuous integration](background-information/ci/index.md)
+- [Testing a pull request](background-information/testing_pr.md)
+- [Testing principles](background-information/testing_principles.md)
+- [Testing Go code](background-information/languages/testing_go_code.md)
+- [Testing web code](background-information/testing_web_code.md)
 
 ### Tools
 
 - [Renovate dependency updates](background-information/renovate.md)
 - [Honeycomb](background-information/honeycomb.md)
 - [GoLand](background-information/goland.md)
+- [Wolfi overview](background-information/wolfi/index.md)
 
 ### Other
 
 - [Telemetry](background-information/telemetry.md)
 - [Adding, changing and debugging pings](background-information/adding_ping_data.md)
-
-## Guidelines
-
-- [Code reviews](background-information/pull_request_reviews.md)
-- [Open source FAQ](https://about.sourcegraph.com/community/faq)
-- [Code of conduct](https://about.sourcegraph.com/community/code_of_conduct)
+- [Event level data usage pipeline](background-information/data-usage-pipeline.md)
+- [Adding, changing and debugging user event data](background-information/adding_event_level_data.md)
+- [Deploy Sourcegraph with Helm chart (BETA)](../../../admin/deploy/kubernetes/helm.md)
+- [GitHub API oddities](background-information/github-api-oddities.md)
 
 ## [How-to guides](how-to/index.md)
 
@@ -202,5 +209,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 
 ## [Contributing](./contributing/index.md)
 
-- [Project setup and CI checks for frontend issues](./contributing/frontend_contribution.md).
-- [Accepting an external contribution guide](./contributing/accepting_contribution.md).
+- [Open source FAQ](https://handbook.sourcegraph.com/company-info-and-process/community/faq/)
+- [Code of conduct](https://handbook.sourcegraph.com/company-info-and-process/community/code_of_conduct/)
+- [Project setup and CI checks for frontend issues](./contributing/frontend_contribution.md)
+- [Accepting an external contribution guide](./contributing/accepting_contribution.md)
