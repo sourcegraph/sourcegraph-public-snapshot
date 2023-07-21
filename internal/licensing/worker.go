@@ -17,6 +17,8 @@ import (
 
 type licenseWorker struct{}
 
+// NewLicenseCheckWorker is the set of background jobs used for licensing enforcement and gating.
+// Note: This job should only run once for a given Sourcegraph instance.
 func NewLicenseCheckWorker() job.Job {
 	return &licenseWorker{}
 }
