@@ -6,7 +6,7 @@ import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import com.sourcegraph.find.Search;
 import java.util.Optional;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +23,9 @@ public class CodyApplicationService
   public String accessToken; // kept for backwards compatibility
 
   @Nullable public String dotComAccessToken;
+  public boolean isDotComAccessTokenSet;
   @Nullable public String enterpriseAccessToken;
+  public boolean isEnterpriseAccessTokenSet;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
   @Nullable public String remoteUrlReplacements;
@@ -160,7 +162,13 @@ public class CodyApplicationService
     this.url = settings.url;
     this.accessToken = settings.accessToken;
     this.dotComAccessToken = settings.dotComAccessToken;
+    boolean loadedIsDotComAccessTokenSet = settings.isDotComAccessTokenSet;
+    this.isDotComAccessTokenSet =
+        loadedIsDotComAccessTokenSet || StringUtils.isNotEmpty(settings.dotComAccessToken);
     this.enterpriseAccessToken = settings.enterpriseAccessToken;
+    boolean loadedIsEnterpriseAccessTokenSet = settings.isEnterpriseAccessTokenSet;
+    this.isEnterpriseAccessTokenSet =
+        loadedIsEnterpriseAccessTokenSet || StringUtils.isNotEmpty(settings.enterpriseAccessToken);
     this.customRequestHeaders = settings.customRequestHeaders;
     this.defaultBranch = settings.defaultBranch;
     this.remoteUrlReplacements = settings.remoteUrlReplacements;

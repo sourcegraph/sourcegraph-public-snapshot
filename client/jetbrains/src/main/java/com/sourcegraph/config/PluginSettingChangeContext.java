@@ -1,18 +1,17 @@
 package com.sourcegraph.config;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class PluginSettingChangeContext {
-  @Nullable public final String oldUrl;
-
-  @Nullable public final String oldDotComAccessToken;
-  @Nullable public final String oldEnterpriseAccessToken;
+  @NotNull public final String oldUrl;
   public final boolean oldCodyEnabled;
   public final boolean oldCodyAutoCompleteEnabled;
 
-  @Nullable public final String newUrl;
-
+  @NotNull public final String newUrl;
+  public final boolean isDotComAccessTokenChanged;
   @Nullable public final String newDotComAccessToken;
+  public final boolean isEnterpriseAccessTokenChanged;
   @Nullable public final String newEnterpriseAccessToken;
 
   @Nullable public final String newCustomRequestHeaders;
@@ -20,24 +19,24 @@ public class PluginSettingChangeContext {
   public final boolean newCodyAutoCompleteEnabled;
 
   public PluginSettingChangeContext(
-      @Nullable String oldUrl,
-      @Nullable String oldDotComAccessToken,
-      @Nullable String oldEnterpriseAccessToken,
       boolean oldCodyEnabled,
       boolean oldCodyAutoCompleteEnabled,
-      @Nullable String newUrl,
+      @NotNull String oldUrl,
+      @NotNull String newUrl,
+      boolean isDotComAccessTokenChanged,
       @Nullable String newDotComAccessToken,
+      boolean isEnterpriseAccessTokenChanged,
       @Nullable String newEnterpriseAccessToken,
       @Nullable String newCustomRequestHeaders,
       boolean newCodyEnabled,
       boolean newCodyAutoCompleteEnabled) {
-    this.oldUrl = oldUrl;
-    this.oldDotComAccessToken = oldDotComAccessToken;
-    this.oldEnterpriseAccessToken = oldEnterpriseAccessToken;
     this.oldCodyEnabled = oldCodyEnabled;
     this.oldCodyAutoCompleteEnabled = oldCodyAutoCompleteEnabled;
+    this.oldUrl = oldUrl;
     this.newUrl = newUrl;
+    this.isDotComAccessTokenChanged = isDotComAccessTokenChanged;
     this.newDotComAccessToken = newDotComAccessToken;
+    this.isEnterpriseAccessTokenChanged = isEnterpriseAccessTokenChanged;
     this.newEnterpriseAccessToken = newEnterpriseAccessToken;
     this.newCustomRequestHeaders = newCustomRequestHeaders;
     this.newCodyEnabled = newCodyEnabled;

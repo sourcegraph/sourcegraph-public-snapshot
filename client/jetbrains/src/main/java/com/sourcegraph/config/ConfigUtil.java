@@ -304,4 +304,14 @@ public class ConfigUtil {
     return Optional.ofNullable(getProjectLevelConfig(project).getDotComAccessToken())
         .orElse(getApplicationLevelConfig().getDotComAccessToken());
   }
+
+  public static boolean isDotComAccessTokenSet(Project project) {
+    return getProjectLevelConfig(project).getDotComAccessToken() != null
+        || getApplicationLevelConfig().isDotComAccessTokenSet;
+  }
+
+  public static boolean isEnterpriseAccessTokenSet(Project project) {
+    return getProjectLevelConfig(project).getEnterpriseAccessToken() != null
+        || getApplicationLevelConfig().isEnterpriseAccessTokenSet;
+  }
 }
