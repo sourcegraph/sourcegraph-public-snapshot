@@ -15,23 +15,15 @@ describe('RepoLink', () => {
 })
 
 describe('displayRepoName', () => {
-    test('removes code host from repo name with >= 3 slashes', () => {
-        const name = displayRepoName('gerrit.sgdev.org/a/gabe/test')
-        expect(name).toEqual('a/gabe/test')
-    })
-
-    test('removes code host from repo name with 2 slashes', () => {
-        const name = displayRepoName('github.com/sourcegraph/sourcegraph')
-        expect(name).toEqual('sourcegraph/sourcegraph')
-    })
-
-    test('removes code host from repo name with one slash', () => {
-        const name = displayRepoName('gerrit.sgdev.org/sourcegraph')
-        expect(name).toEqual('sourcegraph')
-    })
-
-    test('returns repo name when code host information is unavailable', () => {
-        const name = displayRepoName('sourcegraph')
-        expect(name).toEqual('sourcegraph')
+    test.each([
+        ['gerrit.sgdev.org/a/gabe/test', 'a/gabe/test'],
+        ['github.com/sourcegraph/sourcegraph', 'sourcegraph/sourcegraph'],
+        ['gerrit.sgdev.org/sourcegraph', 'sourcegraph'],
+        ['sourcegraph', 'sourcegraph'],
+        ['sourcegraph/sourcegraph', 'sourcegraph/sourcegraph'],
+        ['sg.exe/sourcegraph', 'sourcegraph'],
+    ])('should return repo name correctly', (repoName: string, result: string) => {
+        const name = displayRepoName(repoName)
+        expect(name).toEqual(result)
     })
 })
