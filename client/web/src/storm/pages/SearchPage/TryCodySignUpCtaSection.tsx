@@ -104,7 +104,8 @@ export const TryCodySignUpCtaSection: React.FC<TelemetryProps & { className?: st
                         the Sourcegraph web application
                     </Text>
                     <Text as="li" size="small" className="mb-2">
-                        our JetBrains IDE plugin <ProductStatusBadge status="experimental" />
+                        our JetBrains IDE plugin{' '}
+                        <ProductStatusBadge status="experimental" className={styles.experimentalBadge} />
                     </Text>
                     <Text as="li" size="small" className="text-muted">
                         Neovim and other editors (Coming soon!)
