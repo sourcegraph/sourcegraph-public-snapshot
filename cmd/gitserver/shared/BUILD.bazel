@@ -46,6 +46,7 @@ go_library(
         "//internal/requestclient",
         "//internal/service",
         "//internal/trace",
+        "//internal/types",
         "//internal/wrexec",
         "//lib/errors",
         "//schema",

@@ -56,7 +56,7 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 	case extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource", "bitbucket cloud repo source"), svc, cf)
 	case extsvc.KindGitolite:
-		return NewGitoliteSource(ctx, svc, cf)
+		return NewGitoliteSource(ctx, db, svc, cf)
 	case extsvc.KindPhabricator:
 		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource", "phabricator repo source"), svc, cf)
 	case extsvc.KindAWSCodeCommit:

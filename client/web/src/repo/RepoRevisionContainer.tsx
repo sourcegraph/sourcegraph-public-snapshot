@@ -1,8 +1,8 @@
 import { FC, useCallback, useMemo, useState } from 'react'
 
-import { Route, Routes, useLocation } from 'react-router-dom'
+import { Route, Routes } from 'react-router-dom'
 
-import { StreamingSearchResultsListProps, CopyPathAction } from '@sourcegraph/branded'
+import { StreamingSearchResultsListProps } from '@sourcegraph/branded'
 import { isErrorLike } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -21,9 +21,7 @@ import { CodeInsightsProps } from '../insights/types'
 import { NotebookProps } from '../notebooks'
 import { OwnConfigProps } from '../own/OwnConfigProps'
 import { SearchStreamingProps } from '../search'
-import { eventLogger } from '../tracking/eventLogger'
 import { RouteV6Descriptor } from '../util/contributions'
-import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToPermalinkAction } from './actions/GoToPermalinkAction'
 import { ResolvedRevision } from './backend'
@@ -167,7 +165,6 @@ export const RepoRevisionContainerBreadcrumb: FC<RepoRevisionBreadcrumbProps> = 
  */
 export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
     const { useBreadcrumb, resolvedRevision, revision, repo, repoName, routes } = props
-    const location = useLocation()
 
     const breadcrumbSetters = useBreadcrumb(
         useMemo(() => {
@@ -201,8 +198,6 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
         resolvedRevision,
     }
 
-    const { filePath } = parseBrowserRepoURL(location.pathname)
-
     return (
         <RepoRevisionWrapper className="px-3">
             <Routes>
@@ -213,15 +208,6 @@ export const RepoRevisionContainer: FC<RepoRevisionContainerProps> = props => {
                         )
                 )}
             </Routes>
-            <RepoHeaderContributionPortal
-                position="left"
-                id="copy-path"
-                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
-            >
-                {() => (
-                    <CopyPathAction telemetryService={eventLogger} filePath={filePath || repoName} key="copy-path" />
-                )}
-            </RepoHeaderContributionPortal>
             {resolvedRevision && !isPackage && (
                 <RepoHeaderContributionPortal
                     position="right"

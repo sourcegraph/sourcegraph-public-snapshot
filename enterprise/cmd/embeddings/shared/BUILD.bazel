@@ -6,7 +6,6 @@ go_library(
     name = "shared",
     srcs = [
         "config.go",
-        "context_detection.go",
         "main.go",
         "repo_embedding_index_cache.go",
         "search.go",
@@ -37,7 +36,6 @@ go_library(
         "//internal/honey",
         "//internal/httpserver",
         "//internal/instrumentation",
-        "//internal/lazyregexp",
         "//internal/observation",
         "//internal/service",
         "//internal/trace",
@@ -77,7 +75,6 @@ go_test(
     name = "shared_test",
     timeout = "moderate",
     srcs = [
-        "context_detection_test.go",
         "context_qa_test.go",
         "main_test.go",
         "repo_embedding_index_cache_test.go",

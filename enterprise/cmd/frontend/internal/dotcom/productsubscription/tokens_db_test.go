@@ -9,7 +9,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/license"
@@ -38,10 +37,10 @@ func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("out-of-the-box token", func(t *testing.T) {
-		license, err := dbLicenses{db: db}.GetByID(ctx, pl)
+		lc, err := dbLicenses{db: db}.GetByID(ctx, pl)
 		require.NoError(t, err)
 
-		accessToken := licensing.GenerateLicenseKeyBasedAccessToken(license.LicenseKey)
+		accessToken := license.GenerateLicenseKeyBasedAccessToken(lc.LicenseKey)
 
 		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
 		require.NoError(t, err)
@@ -49,11 +48,11 @@ func TestLookupProductSubscriptionIDByAccessToken(t *testing.T) {
 	})
 
 	t.Run("legacy token prefix", func(t *testing.T) {
-		license, err := dbLicenses{db: db}.GetByID(ctx, pl)
+		lc, err := dbLicenses{db: db}.GetByID(ctx, pl)
 		require.NoError(t, err)
 
-		accessToken := licensing.GenerateLicenseKeyBasedAccessToken(license.LicenseKey)
-		accessToken = productsubscription.AccessTokenPrefix + accessToken[len(licensing.LicenseKeyBasedAccessTokenPrefix):]
+		accessToken := license.GenerateLicenseKeyBasedAccessToken(lc.LicenseKey)
+		accessToken = productsubscription.AccessTokenPrefix + accessToken[len(license.LicenseKeyBasedAccessTokenPrefix):]
 
 		gotPS, err := newDBTokens(db).LookupProductSubscriptionIDByAccessToken(ctx, accessToken)
 		require.NoError(t, err)

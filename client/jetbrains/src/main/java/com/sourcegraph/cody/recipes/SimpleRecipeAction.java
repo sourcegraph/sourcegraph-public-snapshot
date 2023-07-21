@@ -2,8 +2,11 @@ package com.sourcegraph.cody.recipes;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.wm.ToolWindow;
+import com.intellij.openapi.wm.ToolWindowManager;
+import com.sourcegraph.cody.CodyToolWindowContent;
+import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.UpdatableChat;
-import com.sourcegraph.cody.UpdatableChatHolderService;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,11 +17,17 @@ public abstract class SimpleRecipeAction extends BaseRecipeAction {
     if (project == null) {
       return;
     }
-    UpdatableChatHolderService updatableChatHolderService =
-        project.getService(UpdatableChatHolderService.class);
-    UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    if (updatableChat != null) {
-      executeRecipeWithPromptProvider(updatableChat, project);
+
+    ToolWindow toolWindow =
+        ToolWindowManager.getInstance(project).getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID);
+    CodyToolWindowContent codyToolWindowContent = CodyToolWindowContent.getInstance(project);
+    if (toolWindow != null) {
+      if (!toolWindow.isVisible()) {
+        toolWindow.show();
+      }
+    }
+    if (codyToolWindowContent != null) {
+      executeRecipeWithPromptProvider(codyToolWindowContent, project);
     }
   }
 
