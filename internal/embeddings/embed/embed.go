@@ -275,7 +275,7 @@ func embedFiles(
 			}
 		}
 
-		for fileName, _ := range excludedFileNames {
+		for fileName := range excludedFileNames {
 			logger.Debug("error getting embeddings for file",
 				log.String("file", fileName),
 			)
