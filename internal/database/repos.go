@@ -1292,7 +1292,7 @@ func containsOrderBySizeField(orderBy OrderBy) bool {
 }
 
 const embeddedReposQueryFmtstr = `
-	SELECT DISTINCT ON (repo_id) repo_id, true embedded FROM repo_embedding_jobs WHERE state = 'completed' ORDER BY repo_id, finished_at DESC
+	SELECT DISTINCT ON (repo_id) repo_id, true embedded FROM repo_embedding_jobs WHERE state = 'completed'
 `
 
 const userReposCTEFmtstr = `
