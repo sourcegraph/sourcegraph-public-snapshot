@@ -79,8 +79,8 @@ Select the recipes tab in your editor or right click on a code section, then cho
 
 - Explain code
 - Generate unit test
-- Generate `docstring`
 - Detect code smells
+- Generate `docstring`
 - Improve variable names
 - Generate release notes
 - Summarize recent code changes
