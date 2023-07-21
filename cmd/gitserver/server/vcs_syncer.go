@@ -16,7 +16,7 @@ type VCSSyncer interface {
 	Type() string
 	// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
 	// error indicates there is a problem.
-	IsCloneable(ctx context.Context, remoteURL *vcs.URL) error
+	IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error
 	// CloneCommand returns the command to be executed for cloning from remote.
 	CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error)
 	// Fetch tries to fetch updates from the remote to given directory.
