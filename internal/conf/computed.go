@@ -8,7 +8,6 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
@@ -16,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -952,7 +952,7 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 	if config.LicenseKey == "" {
 		return ""
 	}
-	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
+	return license.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
 }
 
 const (

@@ -9,7 +9,6 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
@@ -114,7 +113,7 @@ func (s dbLicenses) GetByAccessToken(ctx context.Context, accessToken string) (*
 		return mocks.licenses.GetByToken(accessToken)
 	}
 
-	contents, err := licensing.ExtractLicenseKeyBasedAccessTokenContents(accessToken)
+	contents, err := license.ExtractLicenseKeyBasedAccessTokenContents(accessToken)
 	if err != nil {
 		return nil, errTokenInvalid
 	}

@@ -188,7 +188,7 @@ type Server struct {
 
 	// cloneLimiter and cloneableLimiter limits the number of concurrent
 	// clones and ls-remotes respectively. Use s.acquireCloneLimiter() and
-	// s.acquireClonableLimiter() instead of using these directly.
+	// s.acquireCloneableLimiter() instead of using these directly.
 	cloneLimiter     *limiter.MutableLimiter
 	cloneableLimiter *limiter.MutableLimiter
 
@@ -206,7 +206,7 @@ type Server struct {
 	// operations provide uniform observability via internal/observation. This value is
 	// set by RegisterMetrics when compiled as part of the gitserver binary. The server
 	// method ensureOperations should be used in all references to avoid a nil pointer
-	// dereferencs.
+	// dereferences.
 	operations *operations
 
 	// RecordingCommandFactory is a factory that creates recordable commands by wrapping os/exec.Commands.
@@ -392,9 +392,9 @@ func (s *Server) Handler() http.Handler {
 	)))
 
 	// Migration to hexagonal architecture starting here:
-
 	gitAdapter := &adapters.Git{
-		ReposDir: s.ReposDir,
+		ReposDir:                s.ReposDir,
+		RecordingCommandFactory: s.RecordingCommandFactory,
 	}
 	getObjectService := gitdomain.GetObjectService{
 		RevParse:      gitAdapter.RevParse,
@@ -849,8 +849,7 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "no Repo given", http.StatusBadRequest)
 		return
 	}
-	repo := api.RepoName(req.Repo)
-	resp, err := s.IsRepoCloneable(r.Context(), repo)
+	resp, err := s.IsRepoCloneable(r.Context(), req.Repo)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -887,7 +886,7 @@ func (s *Server) IsRepoCloneable(ctx context.Context, repo api.RepoName) (protoc
 	resp := protocol.IsRepoCloneableResponse{
 		Cloned: repoCloned(s.dir(repo)),
 	}
-	if err := syncer.IsCloneable(ctx, remoteURL); err == nil {
+	if err := syncer.IsCloneable(ctx, repo, remoteURL); err == nil {
 		resp.Cloneable = true
 	} else {
 		resp.Reason = err.Error()
@@ -2074,7 +2073,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 		return "", err
 	}
 
-	if err := syncer.IsCloneable(ctx, remoteURL); err != nil {
+	if err := syncer.IsCloneable(ctx, repo, remoteURL); err != nil {
 		redactedErr := newURLRedactor(remoteURL).redact(err.Error())
 		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repo, redactedErr)
 	}
@@ -2203,7 +2202,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	removeBadRefs(ctx, tmp)
 
-	if err := setHEAD(ctx, logger, repo, s.RecordingCommandFactory, tmp, syncer, remoteURL); err != nil {
+	if err := s.setHEAD(ctx, logger, repo, tmp, syncer, remoteURL); err != nil {
 		logger.Warn("Failed to ensure HEAD exists", log.Error(err))
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
@@ -2596,7 +2595,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 
 	removeBadRefs(ctx, dir)
 
-	if err := setHEAD(ctx, logger, repo, s.RecordingCommandFactory, dir, syncer, remoteURL); err != nil {
+	if err := s.setHEAD(ctx, logger, repo, dir, syncer, remoteURL); err != nil {
 		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
@@ -2672,7 +2671,7 @@ func ensureHEAD(dir common.GitDir) {
 
 // setHEAD configures git repo defaults (such as what HEAD is) which are
 // needed for git commands to work.
-func setHEAD(ctx context.Context, logger log.Logger, repoName api.RepoName, rf *wrexec.RecordingCommandFactory, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
+func (s *Server) setHEAD(ctx context.Context, logger log.Logger, repoName api.RepoName, dir common.GitDir, syncer VCSSyncer, remoteURL *vcs.URL) error {
 	// Verify that there is a HEAD file within the repo, and that it is of
 	// non-zero length.
 	ensureHEAD(dir)
@@ -2686,7 +2685,7 @@ func setHEAD(ctx context.Context, logger log.Logger, repoName api.RepoName, rf *
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runRemoteGitCommand(ctx, rf.WrapWithRepoName(ctx, logger, repoName, cmd), true, nil)
+	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, logger, repoName, cmd), true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

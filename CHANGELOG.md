@@ -34,6 +34,8 @@ All notable changes to Sourcegraph are documented in this file.
 ### Changed
 
 - The UI for license keys now displays more information about license validity. [#54990](https://github.com/sourcegraph/sourcegraph/pull/54990)
+- Sourcegraph now supports more than one auth provider per URL. [#54289](https://github.com/sourcegraph/sourcegraph/pull/54289)
+- GitLab auth providers now support an `ssoURL` option that facilitates scenarios where a GitLab group requires SAML/SSO. [#54957](https://github.com/sourcegraph/sourcegraph/pull/54957)
 
 ## 5.1.3
 
@@ -41,8 +43,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Cody source code (for the VS Code extension, CLI, and client shared libraries) has been moved to the [sourcegraph/cody repository](https://github.com/sourcegraph/cody).
 - `golang.org/x/net/trace` instrumentation, previously available under `/debug/requests` and `/debug/events`, has been removed entirely from core Sourcegraph services. It remains available for Zoekt. [#53795](https://github.com/sourcegraph/sourcegraph/pull/53795)
-- Sourcegraph now supports more than one auth provider per URL. [#54289](https://github.com/sourcegraph/sourcegraph/pull/54289)
-- GitLab auth providers now support an `ssoURL` option that facilitates scenarios where a GitLab group requires SAML/SSO. [#54957](https://github.com/sourcegraph/sourcegraph/pull/54957)
 
 ### Fixed
 

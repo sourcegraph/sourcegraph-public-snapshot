@@ -28,7 +28,7 @@ func (s *gitRepoSyncer) Type() string {
 }
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
-func (s *gitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
+func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error {
 	if isAlwaysCloningTestRemoteURL(remoteURL) {
 		return nil
 	}
@@ -41,7 +41,7 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := runRemoteGitCommand(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), true, nil)
+	out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), true, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr

@@ -4499,8 +4499,6 @@ CREATE TABLE sub_repo_permissions (
     repo_id integer NOT NULL,
     user_id integer NOT NULL,
     version integer DEFAULT 1 NOT NULL,
-    path_includes text[],
-    path_excludes text[],
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     paths text[]
 );
