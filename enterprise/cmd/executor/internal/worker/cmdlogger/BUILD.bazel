@@ -7,8 +7,8 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/executor/internal/worker/cmdlogger",
     visibility = ["//enterprise/cmd/executor:__subpackages__"],
     deps = [
-        "//enterprise/internal/executor/types",
         "//internal/executor",
+        "//internal/executor/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//:log",
     ],
@@ -22,8 +22,8 @@ go_test(
     ],
     embed = [":cmdlogger"],
     deps = [
-        "//enterprise/internal/executor/types",
         "//internal/executor",
+        "//internal/executor/types",
         "//lib/errors",
         "@com_github_sourcegraph_log//logtest",
     ],

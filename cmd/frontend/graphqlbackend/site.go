@@ -380,7 +380,7 @@ func (r *upgradeReadinessResolver) init(ctx context.Context) (_ *runner.Runner, 
 		r.runner, r.version, r.schemaNames, r.initErr = func() (*runner.Runner, string, []string, error) {
 			schemaNames := []string{schemas.Frontend.Name, schemas.CodeIntel.Name}
 			schemaList := []*schemas.Schema{schemas.Frontend, schemas.CodeIntel}
-			if insights.IsCodeInsightsEnabled() {
+			if insights.IsEnabled() {
 				schemaNames = append(schemaNames, schemas.CodeInsights.Name)
 				schemaList = append(schemaList, schemas.CodeInsights)
 			}

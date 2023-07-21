@@ -15,10 +15,10 @@ go_library(
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/executorqueue",
     visibility = ["//enterprise/cmd/worker:__subpackages__"],
     deps = [
-        "//enterprise/internal/executor/types",
-        "//enterprise/internal/executor/util",
         "//internal/codeintel/uploads/shared",
         "//internal/env",
+        "//internal/executor/types",
+        "//internal/executor/util",
         "//internal/goroutine",
         "//internal/memo",
         "//internal/observation",

@@ -18,9 +18,11 @@ type treeEntryResolver struct {
 	path      string
 	isDir     bool
 	uriSuffix string
+
+	gitserverClient gitserver.Client
 }
 
-func NewGitTreeEntryResolver(commit resolvers.GitCommitResolver, path string, isDir bool) resolvers.GitTreeEntryResolver {
+func NewGitTreeEntryResolver(commit resolvers.GitCommitResolver, path string, isDir bool, gitserverClient gitserver.Client) resolvers.GitTreeEntryResolver {
 	uriSuffix := ""
 	if stdpath.Clean("/"+path) != "/" {
 		blobOrTree := "blob"
@@ -32,10 +34,11 @@ func NewGitTreeEntryResolver(commit resolvers.GitCommitResolver, path string, is
 	}
 
 	return &treeEntryResolver{
-		commit:    commit,
-		path:      path,
-		isDir:     isDir,
-		uriSuffix: uriSuffix,
+		commit:          commit,
+		path:            path,
+		isDir:           isDir,
+		uriSuffix:       uriSuffix,
+		gitserverClient: gitserverClient,
 	}
 }
 
@@ -52,7 +55,7 @@ func (r *treeEntryResolver) Content(ctx context.Context, args *resolvers.GitTree
 	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
 	defer cancel()
 
-	content, err := gitserver.NewClientDeprecatedNeedsDB().ReadFile(
+	content, err := r.gitserverClient.ReadFile(
 		ctx,
 		authz.DefaultSubRepoPermsChecker,
 		api.RepoName(r.commit.Repository().Name()), // repository name

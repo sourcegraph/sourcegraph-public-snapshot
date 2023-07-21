@@ -27,6 +27,7 @@ export interface AuthProvider {
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
+    clientID: string
 }
 
 /**
@@ -57,6 +58,7 @@ export type SourcegraphContextCurrentUser = Pick<
     | 'latestSettings'
     | 'permissions'
     | 'hasVerifiedEmail'
+    | 'completedPostSignup'
 >
 
 /**

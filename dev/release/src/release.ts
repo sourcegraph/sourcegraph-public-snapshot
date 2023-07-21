@@ -82,6 +82,7 @@ import {
     validateNoReleaseBlockers,
     verifyWithInput,
     ReleaseTag,
+    updateMigratorBazelOuts,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -726,7 +727,8 @@ cc @${release.captainGitHubUsername}
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
                             updateUpgradeGuides(release.previous.version, release.version.version),
-                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] v${release.version.version})' cmd/migrator/build.sh`,
+                            `comby -in-place 'git_versions=(:[1])' 'git_versions=(:[1] v${release.version.version})' cmd/migrator/generate.sh`,
+                            updateMigratorBazelOuts(release.version.version),
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
@@ -828,7 +830,7 @@ cc @${release.captainGitHubUsername}
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
                         edits: [
-                            `for i in charts/*; do sg ops update-images -kind helm -pin-tag ${release.version.version} $i/.; done`,
+                            `for i in charts/{sourcegraph,sourcegraph-executor/{dind,k8s},sourcegraph-migrator}; do sg ops update-images -kind helm -pin-tag ${release.version.version} $i/.; done`,
                             `${sed} -i 's/appVersion:.*/appVersion: "${release.version.version}"/g' charts/*/Chart.yaml`,
                             `${sed} -i 's/version:.*/version: "${release.version.version}"/g' charts/*/Chart.yaml`,
                             './scripts/helm-docs.sh',

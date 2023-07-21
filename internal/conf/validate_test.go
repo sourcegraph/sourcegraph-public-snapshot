@@ -517,7 +517,6 @@ func getTestSiteWithSecrets(testSecrets testSecrets, optionalEdit ...string) str
 		email = optionalEdit[0]
 	}
 	return fmt.Sprintf(`{
-  "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1,
   "email.address": "%s",
   "executors.accessToken": "%s",

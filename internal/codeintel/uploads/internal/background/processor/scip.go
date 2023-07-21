@@ -6,16 +6,54 @@ import (
 	"io"
 	"sort"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
+
+type firstPassResult struct {
+	metadata              *scip.Metadata
+	externalSymbolsByName map[string]*scip.SymbolInformation
+	relativePaths         []string
+	documentCountByPath   map[string]int
+}
+
+func aggregateExternalSymbolsAndPaths(indexReader *gzipReadSeeker) (firstPassResult, error) {
+	var metadata *scip.Metadata
+	var paths []string
+	externalSymbolsByName := make(map[string]*scip.SymbolInformation, 1024)
+	documentCountByPath := make(map[string]int, 1)
+	indexVisitor := scip.IndexVisitor{
+		VisitMetadata: func(m *scip.Metadata) {
+			metadata = m
+		},
+		// Assumption: Post-processing of documents is much more expensive than
+		// pure deserialization, so we don't optimize the visitation here to support
+		// only deserializing the RelativePath and skipping other fields.
+		VisitDocument: func(d *scip.Document) {
+			paths = append(paths, d.RelativePath)
+			documentCountByPath[d.RelativePath] = documentCountByPath[d.RelativePath] + 1
+		},
+		VisitExternalSymbol: func(s *scip.SymbolInformation) {
+			externalSymbolsByName[s.Symbol] = s
+		},
+	}
+	if err := indexVisitor.ParseStreaming(indexReader); err != nil {
+		return firstPassResult{}, err
+	}
+	if err := indexReader.seekToStart(); err != nil {
+		return firstPassResult{}, err
+	}
+	return firstPassResult{metadata, externalSymbolsByName, paths, documentCountByPath}, nil
+}
 
 // correlateSCIP reads the content of the given reader as a SCIP index object. The index is processed in
 // the background, and processed documents are emitted on a channel to be persisted to the database.
@@ -29,17 +67,17 @@ import (
 // package and package reference channels concurrently.
 func correlateSCIP(
 	ctx context.Context,
-	r io.Reader,
-	rSize int64,
+	logger log.Logger,
+	indexReader gzipReadSeeker,
 	root string,
 	getChildren pathexistence.GetChildrenFunc,
 ) (lsifstore.ProcessedSCIPData, error) {
-	index, err := readIndex(r, rSize)
+	indexSummary, err := aggregateExternalSymbolsAndPaths(&indexReader)
 	if err != nil {
 		return lsifstore.ProcessedSCIPData{}, err
 	}
 
-	ignorePaths, err := ignorePaths(ctx, index.Documents, root, getChildren)
+	ignorePaths, err := ignorePaths(ctx, indexSummary.relativePaths, root, getChildren)
 	if err != nil {
 		return lsifstore.ProcessedSCIPData{}, err
 	}
@@ -48,16 +86,43 @@ func correlateSCIP(
 		documents             = make(chan lsifstore.ProcessedSCIPDocument)
 		packages              = make(chan precise.Package)
 		packageReferences     = make(chan precise.PackageReference)
-		externalSymbolsByName = readExternalSymbols(index)
+		externalSymbolsByName = indexSummary.externalSymbolsByName
 	)
 
 	go func() {
 		defer close(documents)
 
+		repeatedDocumentsByPath := make(map[string][]*scip.Document, 1)
 		packageSet := map[precise.Package]bool{}
-		for _, document := range scip.SortDocuments(scip.FlattenDocuments(index.Documents)) {
-			if _, ok := ignorePaths[document.RelativePath]; ok {
-				continue
+
+		secondPassVisitor := scip.IndexVisitor{VisitDocument: func(currentDocument *scip.Document) {
+			path := currentDocument.RelativePath
+			if ignorePaths.Has(path) {
+				return
+			}
+			document := currentDocument
+			// Most indexers should emit a single SCIP Document for a single file.
+			// In the rare case of an indexer bug, if the indexer emits multiple
+			// Documents for a single path, we will aggregate those Documents in
+			// memory so that we can merge+normalize before processing them further.
+			if docCount := indexSummary.documentCountByPath[path]; docCount > 1 {
+				samePathDocs := append(repeatedDocumentsByPath[path], document)
+				repeatedDocumentsByPath[path] = samePathDocs
+				if len(samePathDocs) != docCount {
+					// The document will be processed later when all other Documents
+					// with the same path are seen.
+					return
+				}
+				flattenedDoc := scip.FlattenDocuments(samePathDocs)
+				delete(repeatedDocumentsByPath, path)
+				if len(flattenedDoc) != 1 {
+					logger.Warn("FlattenDocuments should return a single Document as input slice contains Documents"+
+						" with the same RelativePath",
+						log.String("path", path),
+						log.Int("obtainedCount", len(flattenedDoc)))
+					return
+				}
+				document = flattenedDoc[0]
 			}
 
 			select {
@@ -98,6 +163,11 @@ func correlateSCIP(
 					}
 				}
 			}
+		},
+		}
+		if err := secondPassVisitor.ParseStreaming(&indexReader); err != nil {
+			logger.Warn("error on second pass over SCIP index; should've hit it in the first pass",
+				log.Error(err))
 		}
 
 		go func() {
@@ -127,11 +197,11 @@ func correlateSCIP(
 	}()
 
 	metadata := lsifstore.ProcessedMetadata{
-		TextDocumentEncoding: index.Metadata.TextDocumentEncoding.String(),
-		ToolName:             index.Metadata.ToolInfo.Name,
-		ToolVersion:          index.Metadata.ToolInfo.Version,
-		ToolArguments:        index.Metadata.ToolInfo.Arguments,
-		ProtocolVersion:      int(index.Metadata.Version),
+		TextDocumentEncoding: indexSummary.metadata.TextDocumentEncoding.String(),
+		ToolName:             indexSummary.metadata.ToolInfo.Name,
+		ToolVersion:          indexSummary.metadata.ToolInfo.Version,
+		ToolArguments:        indexSummary.metadata.ToolInfo.Arguments,
+		ProtocolVersion:      int(indexSummary.metadata.Version),
 	}
 
 	return lsifstore.ProcessedSCIPData{
@@ -226,35 +296,20 @@ func readAllWithSizeHint(r io.Reader, n int64) ([]byte, error) {
 
 // ignorePaths returns a set consisting of the relative paths of documents in the give
 // slice that are not resolvable via Git.
-func ignorePaths(ctx context.Context, documents []*scip.Document, root string, getChildren pathexistence.GetChildrenFunc) (map[string]struct{}, error) {
-	paths := make([]string, 0, len(documents))
-	for _, document := range documents {
-		paths = append(paths, document.RelativePath)
-	}
-
-	checker, err := pathexistence.NewExistenceChecker(ctx, root, paths, getChildren)
+func ignorePaths(ctx context.Context, documentRelativePaths []string, root string, getChildren pathexistence.GetChildrenFunc) (collections.Set[string], error) {
+	checker, err := pathexistence.NewExistenceChecker(ctx, root, documentRelativePaths, getChildren)
 	if err != nil {
 		return nil, err
 	}
 
-	ignorePathMap := map[string]struct{}{}
-	for _, document := range documents {
-		if !checker.Exists(document.RelativePath) {
-			ignorePathMap[document.RelativePath] = struct{}{}
+	ignorePathSet := collections.NewSet[string]()
+	for _, documentRelativePath := range documentRelativePaths {
+		if !checker.Exists(documentRelativePath) {
+			ignorePathSet.Add(documentRelativePath)
 		}
 	}
 
-	return ignorePathMap, nil
-}
-
-// readExternalSymbols inverts the external symbols from the given index into a map keyed by name.
-func readExternalSymbols(index *scip.Index) map[string]*scip.SymbolInformation {
-	externalSymbolsByName := make(map[string]*scip.SymbolInformation, len(index.ExternalSymbols))
-	for _, symbol := range index.ExternalSymbols {
-		externalSymbolsByName[symbol.Symbol] = symbol
-	}
-
-	return externalSymbolsByName
+	return ignorePathSet, nil
 }
 
 // processDocument canonicalizes and serializes the given document for persistence.

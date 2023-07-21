@@ -993,13 +993,16 @@ describe('Batches', () => {
                     node: {
                         __typename: 'User',
                         batchChangesCodeHosts: {
+                            __typename: 'BatchChangesCodeHostConnection',
                             totalCount: 1,
                             pageInfo: {
                                 endCursor: null,
                                 hasNextPage: false,
+                                __typename: 'PageInfo',
                             },
                             nodes: [
                                 {
+                                    __typename: 'BatchChangesCodeHost',
                                     externalServiceKind: ExternalServiceKind.GITHUB,
                                     externalServiceURL: 'https://github.com/',
                                     credential: isCreated

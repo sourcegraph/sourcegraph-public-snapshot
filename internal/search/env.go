@@ -4,8 +4,6 @@ import (
 	"context"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/zoekt"
 	"github.com/sourcegraph/zoekt/query"
@@ -72,36 +70,28 @@ func Indexed() zoekt.Streamer {
 	return indexedSearch
 }
 
-var (
-	metricReposLen = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_temp_frontend_index_repos_len",
-		Help: "A temporary metric recording different ways to calculate the indexed number of repos.",
-	})
-	metricReposRepos = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_temp_frontend_index_repos_repos",
-		Help: "A temporary metric recording different ways to calculate the indexed number of repos.",
-	})
-	metricReposCrash = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_temp_frontend_index_repos_crash",
-		Help: "A temporary metric recording different ways to calculate the indexed number of repos.",
-	})
-)
+// ZoektAllIndexed is the subset of zoekt.RepoList that we set in
+// ListAllIndexed.
+type ZoektAllIndexed struct {
+	ReposMap zoekt.ReposMap
+	Crashes  int
+	Stats    zoekt.RepoStats
+}
 
-// ListAllIndexed lists all indexed repositories with `Minimal: true`.
-func ListAllIndexed(ctx context.Context) (*zoekt.RepoList, error) {
+// ListAllIndexed lists all indexed repositories.
+func ListAllIndexed(ctx context.Context) (*ZoektAllIndexed, error) {
 	q := &query.Const{Value: true}
-	opts := &zoekt.ListOptions{Minimal: true}
+	opts := &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap}
 
 	repos, err := Indexed().List(ctx, q, opts)
-
-	// TODO(keegan) remove this before 2023-08-01. Temporary metric collection.
-	if err == nil {
-		metricReposLen.Set(float64(len(repos.Minimal))) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-		metricReposRepos.Set(float64(repos.Stats.Repos))
-		metricReposCrash.Set(float64(repos.Crashes))
+	if err != nil {
+		return nil, err
 	}
-
-	return repos, err
+	return &ZoektAllIndexed{
+		ReposMap: repos.ReposMap,
+		Crashes:  repos.Crashes,
+		Stats:    repos.Stats,
+	}, nil
 }
 
 func Indexers() *backend.Indexers {
@@ -116,16 +106,16 @@ func Indexers() *backend.Indexers {
 	return indexers
 }
 
-func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) map[uint32]*zoekt.MinimalRepoListEntry {
-	return func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
+func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) zoekt.ReposMap {
+	return func(ctx context.Context, endpoint string) zoekt.ReposMap {
 		cl := dial(endpoint)
 
-		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
+		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
 		if err != nil {
-			return map[uint32]*zoekt.MinimalRepoListEntry{}
+			return zoekt.ReposMap{}
 		}
 
-		return resp.Minimal //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		return resp.ReposMap
 	}
 }
 

@@ -125,6 +125,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "useGitserverAddressLookupCache": {
+          "description": "(Internal development only) Short lived experimental flag to test the effect of caching vs no caching of repo address lookup",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",
@@ -804,10 +812,11 @@
       ]
     },
     "disablePublicRepoRedirects": {
-      "description": "Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
+      "description": "DEPRECATED! Disable redirects to sourcegraph.com when visiting public repositories that can't exist on this server.",
       "type": "boolean",
       "group": "External services",
-      "examples": [true]
+      "examples": [true],
+      "deprecationMessage": "Deprecated because it's no longer supported and hasn't been working for a while."
     },
     "git.cloneURLToRepositoryName": {
       "description": "JSON array of configuration that maps from Git clone URL to repository name. Sourcegraph automatically resolves remote clone URLs to their proper code host. However, there may be non-remote clone URLs (e.g., in submodule declarations) that Sourcegraph cannot automatically map to a code host. In this case, use this field to specify the mapping. The mappings are tried in the order they are specified and take precedence over automatic mappings.",
@@ -859,6 +868,21 @@
       },
       "default": -1,
       "group": "External services"
+    },
+    "repositories": {
+      "description": "Top level configuration key for all things repositories.",
+      "type": "object",
+      "properties": {
+        "deduplicateForks": {
+          "type": "array",
+          "description": "EXPERIMENTAL: A list of absolute paths of repositories whose forks will use deduplicated storage in gitserver",
+          "items": {
+            "type": "string"
+          },
+          "examples": [["github.com/sourcegraph/sourcegraph"]],
+          "uniqueItems": true
+        }
+      }
     },
     "syntaxHighlighting": {
       "title": "SyntaxHighlighting",
@@ -998,7 +1022,7 @@
     },
     "scim.authToken": {
       "type": "string",
-      "description": "DISCLAIMER: UNDER DEVELOPMENT. THE ENDPOINT DOES NOT COMPLY WITH THE SCIM STANDARD YET. The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
+      "description": "The SCIM auth token is used to authenticate SCIM requests. If not set, SCIM is disabled.",
       "default": "",
       "group": "External services"
     },
@@ -1323,7 +1347,8 @@
       "description": "The name to use in the \"from\" address for emails sent by this server.",
       "type": "string",
       "group": "Email",
-      "examples": ["Sourcegraph"]
+      "default": "Sourcegraph",
+      "examples": ["Our Company Sourcegraph", "Example Inc Sourcegraph"]
     },
     "email.templates": {
       "description": "Configurable templates for some email types sent by Sourcegraph.",
@@ -1905,7 +1930,9 @@
         "size": {
           "description": "Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.",
           "type": "integer",
-          "default": 100000
+          "default": 10000,
+          "minimum": 1,
+          "maximum": 10000
         },
         "repos": {
           "description": "List of repositories whose git operations should be recorded.",
@@ -1913,12 +1940,21 @@
           "items": {
             "type": "string"
           }
+        },
+        "ignoredGitCommands": {
+          "description": "List of git commands that should be ignored and not recorded.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": ["show", "rev-parse", "log", "diff", "ls-tree"]
         }
       },
       "examples": [
         {
           "size": 1000,
-          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"]
+          "repos": ["github.com/sourcegraph/sourcegraph", "github.com/gorilla/mux"],
+          "ignoredGitCommands": ["show", "rev-parse", "log", "diff", "ls-tree"]
         }
       ]
     },
@@ -2945,6 +2981,11 @@
           "type": "string",
           "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
           "default": "https://gitlab.com/"
+        },
+        "ssoURL": {
+          "type": "string",
+          "description": "An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx",
+          "default": ""
         },
         "clientID": {
           "type": "string",

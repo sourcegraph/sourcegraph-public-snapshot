@@ -5,7 +5,7 @@ Workers are the consumer side of a producer/consumer relationship.
 Examples:
 
 - [Precise code-intel worker that handles uploads](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/cmd/precise-code-intel-worker/internal/worker/worker.go)
-- [Insights query runner worker](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/internal/insights/background/queryrunner/worker.go?subtree=true#L29)
+- [Insights query runner worker](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/internal/insights/background/queryrunner/worker.go?subtree=true#L29)
 - [Batch Changes background worker that reconciles changesets](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b946a20362ee7dfedb3b1fbc7f8bb002135d7283/-/blob/enterprise/internal/batches/background/workers.go?subtree=true#L26)
 
 ## Overview

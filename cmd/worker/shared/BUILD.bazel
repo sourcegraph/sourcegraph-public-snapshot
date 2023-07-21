@@ -29,7 +29,7 @@ go_library(
         "//internal/licensing",
         "//internal/observation",
         "//internal/oobmigration",
-        "//internal/oobmigration/migrations",
+        "//internal/oobmigration/migrations/register",
         "//internal/service",
         "//internal/symbols",
         "//lib/errors",

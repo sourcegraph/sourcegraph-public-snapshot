@@ -13,11 +13,11 @@ import (
 	"github.com/kballard/go-shellquote"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
 )
 
 const (

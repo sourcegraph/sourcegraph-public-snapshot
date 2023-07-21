@@ -18,6 +18,7 @@ const (
 )
 
 type EmbeddingsClient interface {
+	ProviderName() string
 	GenerateEmbeddings(context.Context, codygateway.EmbeddingsRequest) (_ *codygateway.EmbeddingsResponse, consumedTokens int, _ error)
 }
 

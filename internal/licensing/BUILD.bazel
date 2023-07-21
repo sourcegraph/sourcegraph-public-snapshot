@@ -23,7 +23,6 @@ go_library(
         "//cmd/frontend/envvar",
         "//cmd/worker/job",
         "//cmd/worker/shared/init/db",
-        "//internal/accesstoken",
         "//internal/conf",
         "//internal/conf/conftypes",
         "//internal/database",

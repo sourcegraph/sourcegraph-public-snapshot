@@ -2693,12 +2693,15 @@ CREATE TABLE gitserver_repos (
     repo_size_bytes bigint,
     corrupted_at timestamp with time zone,
     corruption_logs jsonb DEFAULT '[]'::jsonb NOT NULL,
-    cloning_progress text DEFAULT ''::text
+    cloning_progress text DEFAULT ''::text,
+    pool_repo_id integer
 );
 
 COMMENT ON COLUMN gitserver_repos.corrupted_at IS 'Timestamp of when repo corruption was detected';
 
 COMMENT ON COLUMN gitserver_repos.corruption_logs IS 'Log output of repo corruptions that have been detected - encoded as json';
+
+COMMENT ON COLUMN gitserver_repos.pool_repo_id IS 'This is used to refer to the pool repository for deduplicated repos';
 
 CREATE TABLE gitserver_repos_statistics (
     shard_id text NOT NULL,
@@ -2760,7 +2763,7 @@ CREATE TABLE insights_query_runner_jobs (
     trace_id text
 );
 
-COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
+COMMENT ON TABLE insights_query_runner_jobs IS 'See [internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
 
 COMMENT ON COLUMN insights_query_runner_jobs.priority IS 'Integer representing a category of priority for this query. Priority in this context is ambiguously defined for consumers to decide an interpretation.';
 
@@ -6538,6 +6541,9 @@ ALTER TABLE ONLY github_app_installs
 
 ALTER TABLE ONLY github_apps
     ADD CONSTRAINT github_apps_webhook_id_fkey FOREIGN KEY (webhook_id) REFERENCES webhooks(id) ON DELETE SET NULL;
+
+ALTER TABLE ONLY gitserver_repos
+    ADD CONSTRAINT gitserver_repos_pool_repo_id_fkey FOREIGN KEY (pool_repo_id) REFERENCES repo(id);
 
 ALTER TABLE ONLY gitserver_repos
     ADD CONSTRAINT gitserver_repos_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

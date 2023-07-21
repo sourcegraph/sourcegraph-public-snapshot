@@ -37,7 +37,7 @@ func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitser
 			return
 		}
 		tr, ctx := trace.New(r.Context(), "blame.Stream")
-		defer tr.Finish()
+		defer tr.End()
 		r = r.WithContext(ctx)
 
 		if _, ok := mux.Vars(r)["Repo"]; !ok {

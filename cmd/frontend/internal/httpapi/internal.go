@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -106,7 +107,7 @@ func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
 // gitserver for the repo.
 type gitServiceHandler struct {
 	Gitserver interface {
-		AddrForRepo(api.RepoName) string
+		AddrForRepo(context.Context, api.RepoName) string
 	}
 }
 
@@ -125,7 +126,7 @@ func (s *gitServiceHandler) serveGitUploadPack() func(http.ResponseWriter, *http
 func (s *gitServiceHandler) redirectToGitServer(w http.ResponseWriter, r *http.Request, gitPath string) error {
 	repo := mux.Vars(r)["RepoName"]
 
-	addrForRepo := s.Gitserver.AddrForRepo(api.RepoName(repo))
+	addrForRepo := s.Gitserver.AddrForRepo(r.Context(), api.RepoName(repo))
 	u := &url.URL{
 		Scheme:   "http",
 		Host:     addrForRepo,

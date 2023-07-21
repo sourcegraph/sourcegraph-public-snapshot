@@ -3,7 +3,9 @@ package productsubscription
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -11,8 +13,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/slack"
 )
 
 var (
@@ -22,8 +26,9 @@ var (
 	ErrInvalidSiteIDMsg        = "invalid site ID, cannot parse UUID"
 	ErrFailedToAssignSiteIDMsg = "failed to assign site ID to license"
 
-	ReasonLicenseIsAlreadyInUseMsg = "license is already in use"
-	ReasonLicenseRevokedMsg        = "license revoked"
+	ReasonLicenseIsAlreadyInUseMsg = "license key is already in use by another instance"
+	ReasonLicenseRevokedMsg        = "license key was revoked"
+	ReasonLicenseExpired           = "license key is expired"
 
 	EventNameSuccess  = "license.check.api.success"
 	EventNameAssigned = "license.check.api.assigned"
@@ -51,6 +56,35 @@ func logEvent(ctx context.Context, db database.DB, name string, siteID string) {
 
 	// this is best effort, so ignore errors
 	_ = db.EventLogs().Insert(ctx, e)
+}
+
+const multipleInstancesSameKeySlackFmt = `
+The license key ID <%s/site-admin/dotcom/product/subscriptions/%s#%s|%s> is used on multiple customer instances with site IDs: ` + "`%s`" + ` and ` + "`%s`" + `.
+
+To fix it, <https://app.golinks.io/internal-licensing-faq-slack-multiple|follow the guide to update the siteID and license key for all customer instances>.
+`
+
+func sendSlackMessage(logger log.Logger, license *dbLicense, siteID string) {
+	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	if err != nil {
+		logger.Error("parsing external URL from site config", log.Error(err))
+		return
+	}
+
+	dotcom := conf.Get().Dotcom
+	if dotcom == nil {
+		logger.Error("cannot parse dotcom site settings")
+		return
+	}
+
+	client := slack.New(dotcom.SlackLicenseExpirationWebhook)
+	err = client.Post(context.Background(), &slack.Payload{
+		Text: fmt.Sprintf(multipleInstancesSameKeySlackFmt, externalURL.String(), url.QueryEscape(license.ProductSubscriptionID), url.QueryEscape(license.ID), license.ID, *license.SiteID, siteID),
+	})
+	if err != nil {
+		logger.Error("error sending Slack message", log.Error(err))
+		return
+	}
 }
 
 func NewLicenseCheckHandler(db database.DB) http.Handler {
@@ -98,7 +132,10 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		if license.LicenseExpiresAt != nil && license.LicenseExpiresAt.Before(now) {
 			logger.Warn("license is expired")
 			replyWithJSON(w, http.StatusForbidden, licensing.LicenseCheckResponse{
-				Error: ErrExpiredLicenseMsg,
+				Data: &licensing.LicenseCheckResponseData{
+					IsValid: false,
+					Reason:  ReasonLicenseExpired,
+				},
 			})
 			return
 		}
@@ -115,13 +152,16 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 		}
 
 		if license.SiteID != nil && !strings.EqualFold(*license.SiteID, siteID) {
-			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID))
+			logger.Warn("license being used with multiple site IDs", log.String("previousSiteID", *license.SiteID), log.String("licenseKeyID", license.ID), log.String("subscriptionID", license.ProductSubscriptionID))
 			replyWithJSON(w, http.StatusOK, licensing.LicenseCheckResponse{
+				// TODO: revert this to false again in the future, once most customers have a separate
+				// license key per instance
 				Data: &licensing.LicenseCheckResponseData{
-					IsValid: false,
+					IsValid: true,
 					Reason:  ReasonLicenseIsAlreadyInUseMsg,
 				},
 			})
+			sendSlackMessage(logger, license, siteID)
 			return
 		}
 
@@ -149,5 +189,5 @@ func NewLicenseCheckHandler(db database.DB) http.Handler {
 func replyWithJSON(w http.ResponseWriter, statusCode int, data interface{}) {
 	w.WriteHeader(statusCode)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(data)
+	_ = json.NewEncoder(w).Encode(data)
 }

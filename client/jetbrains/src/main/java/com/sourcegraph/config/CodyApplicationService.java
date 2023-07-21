@@ -35,6 +35,7 @@ public class CodyApplicationService
   @Nullable
   public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
 
+  public boolean isCodyEnabled = true;
   @Nullable public Boolean isCodyAutoCompleteEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
@@ -120,6 +121,14 @@ public class CodyApplicationService
     return isUrlNotificationDismissed;
   }
 
+  public boolean isCodyEnabled() {
+    return isCodyEnabled;
+  }
+
+  public void setCodyEnabled(boolean enabled) {
+    isCodyEnabled = enabled;
+  }
+
   public boolean isCodyAutoCompleteEnabled() {
     return Optional.ofNullable(isCodyAutoCompleteEnabled) // the current key takes priority
         .or(() -> Optional.ofNullable(areCodyCompletionsEnabled)) // fallback to the old key
@@ -158,6 +167,7 @@ public class CodyApplicationService
     this.anonymousUserId = settings.anonymousUserId;
     this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
     this.areCodyCompletionsEnabled = settings.areCodyCompletionsEnabled;
+    this.isCodyEnabled = settings.isCodyEnabled;
     this.isCodyAutoCompleteEnabled = settings.isCodyAutoCompleteEnabled;
     this.isAccessTokenNotificationDismissed = settings.isAccessTokenNotificationDismissed;
     this.authenticationFailedLastTime = settings.authenticationFailedLastTime;

@@ -1,0 +1,28 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "timeseries",
+    srcs = [
+        "interval.go",
+        "timeseries.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/timeseries",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/insights/types"],
+)
+
+go_test(
+    name = "timeseries_test",
+    timeout = "short",
+    srcs = [
+        "interval_test.go",
+        "timeseries_test.go",
+    ],
+    embed = [":timeseries"],
+    deps = [
+        "//internal/insights/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_hexops_autogold_v2//:autogold",
+    ],
+)

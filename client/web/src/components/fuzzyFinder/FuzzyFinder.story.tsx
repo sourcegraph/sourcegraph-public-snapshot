@@ -26,6 +26,17 @@ export const ReadyStory: Story = () => (
     </MockedTestProvider>
 )
 
+export const ReadyFileLineStory: Story = () => (
+    <MockedTestProvider mocks={[FUZZY_FILES_MOCK]}>
+        <FuzzyWrapper
+            url="/github.com/sourcegraph/sourcegraph@main"
+            experimentalFeatures={{}}
+            activeTab="files"
+            initialQuery="clientb:100"
+        />
+    </MockedTestProvider>
+)
+
 export const TabsStory: Story = () => (
     <MockedTestProvider mocks={[FUZZY_FILES_MOCK]}>
         <FuzzyWrapper

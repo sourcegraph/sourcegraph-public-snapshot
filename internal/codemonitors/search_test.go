@@ -74,7 +74,7 @@ func TestAddCodeMonitorHook(t *testing.T) {
 				Features:            &search.Features{},
 				OnSourcegraphDotCom: true,
 			}
-			j, err := jobutil.NewPlanJob(inputs, plan, jobutil.NewUnimplementedEnterpriseJobs())
+			j, err := jobutil.NewPlanJob(inputs, plan)
 			require.NoError(t, err)
 			addCodeMonitorHook(j, nil)
 		}

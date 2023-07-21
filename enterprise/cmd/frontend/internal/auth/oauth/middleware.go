@@ -41,7 +41,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		if !isAPIHandler && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
 			span.AddEvent("delegate to auth flow handler")
 			r = withOAuthExternalClient(r)
-			span.Finish()
+			span.End()
 			oauthFlowHandler.ServeHTTP(w, r)
 			return
 		}
@@ -50,7 +50,7 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 		// next.
 		if actor.FromContext(ctx).IsAuthenticated() {
 			span.AddEvent("authenticated, proceeding to next")
-			span.Finish()
+			span.End()
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -65,14 +65,14 @@ func NewMiddleware(db database.DB, serviceType, authPrefix string, isAPIHandler 
 			v := make(url.Values)
 			v.Set("redirect", auth.SafeRedirectURL(r.URL.String()))
 			v.Set("pc", pc.ConfigID().ID)
-			span.Finish()
+			span.End()
 			http.Redirect(w, r, authPrefix+"/login?"+v.Encode(), http.StatusFound)
 
 			return
 		}
 
 		span.AddEvent("proceeding to next")
-		span.Finish()
+		span.End()
 		next.ServeHTTP(w, r)
 	})
 }

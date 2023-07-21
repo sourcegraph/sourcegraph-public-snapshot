@@ -41,7 +41,7 @@ func (p *ReverseProxy) ServeHTTP(repo api.RepoName, method, op string, director 
 		repo.Attr(),
 		attribute.String("method", method),
 		attribute.String("op", op))
-	defer tr.Finish()
+	defer tr.End()
 
 	p.HTTPLimiter.Acquire()
 	defer p.HTTPLimiter.Release()

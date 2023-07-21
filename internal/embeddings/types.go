@@ -158,7 +158,7 @@ type OldEmbeddingIndex struct {
 
 func (o *OldEmbeddingIndex) ToNewIndex() EmbeddingIndex {
 	return EmbeddingIndex{
-		Embeddings:      Quantize(o.Embeddings),
+		Embeddings:      Quantize(o.Embeddings, nil),
 		ColumnDimension: o.ColumnDimension,
 		RowMetadata:     o.RowMetadata,
 		Ranks:           o.Ranks,

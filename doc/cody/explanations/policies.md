@@ -37,6 +37,10 @@ The pattern matches exactly, unless you use an asterisk _*_, which matches any s
 
 The policy will be applied to all repositories that match the pattern.
 If you choose not to define a pattern, the policy will be applied to up to [embeddings.policyRepositoryMatchLimit](./code_graph_context.md#configuring-the-global-policy-match-limit) repositories.
+
+We recommend embedding only repositories that are actively developed or highly relied upon,
+as embedding all repositories without discrimination can consume significant resources without necessarily providing better context for Cody.
+
 Finally, click on **Create policy**.
 The new policy will be shown in the list of policies.
 
