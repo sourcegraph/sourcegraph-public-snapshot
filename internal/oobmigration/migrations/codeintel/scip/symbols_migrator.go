@@ -136,8 +136,7 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 
 	if err := withSymbolLookupLeavesWithFuzzyInserter(ctx, tx, uploadID, func(ctx context.Context, withFuzzyInserter *batch.Inserter) error {
 		return withSymbolLookupLeavesWithoutFuzzyInserter(ctx, tx, uploadID, func(ctx context.Context, withoutFuzzyInserter *batch.Inserter) error {
-			for _, symbolInDocument := range symbolInDocuments {
-				symbolID := symbolInDocument.symbolID
+			for _, symbolID := range symbolIDs {
 				symbolName := symbolNamesByID[symbolID]
 				ids, ok := cache[symbolName]
 				if !ok {
