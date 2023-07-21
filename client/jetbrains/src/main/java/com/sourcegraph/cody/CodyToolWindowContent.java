@@ -18,7 +18,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.IconUtil;
@@ -32,6 +31,7 @@ import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.chat.ChatScrollPane;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
@@ -67,7 +67,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import javax.swing.*;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -144,28 +143,7 @@ public class CodyToolWindowContent implements UpdatableChat {
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
-    JBScrollPane chatPanel =
-        new JBScrollPane(
-            messagesPanel,
-            JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-            JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-    chatPanel.setBorder(BorderFactory.createEmptyBorder());
-
-    // Scroll all the way down after each message
-    chatPanel
-        .getVerticalScrollBar()
-        .addAdjustmentListener(
-            e ->
-                Optional.ofNullable(e.getSource())
-                    .filter(source -> source instanceof JScrollBar)
-                    .map(source -> (JScrollBar) source)
-                    .flatMap(scrollBar -> Optional.ofNullable(scrollBar.getModel()))
-                    // don't adjust if the user is himself scrolling
-                    .filter(brm -> !brm.getValueIsAdjusting())
-                    // only adjust if the scroll isn't at the bottom already
-                    .filter(brm -> brm.getValue() + brm.getExtent() != brm.getMaximum())
-                    // if all the above conditions are met, adjust the scroll to the bottom
-                    .ifPresent(brm -> brm.setValue(brm.getMaximum())));
+    ChatScrollPane chatPanel = new ChatScrollPane(messagesPanel);
 
     // Controls panel
     JPanel controlsPanel = new JPanel();
