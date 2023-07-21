@@ -1,4 +1,4 @@
-import { FC, useState } from 'react'
+import React, { FC, useState } from 'react'
 
 import { mdiArrowLeft, mdiHelpCircleOutline } from '@mdi/js'
 
@@ -10,21 +10,39 @@ import { RepoSearchSimpleSearch } from './RepoSearchSimpleSearch'
 
 import styles from './SimpleSearch.module.scss'
 
+const EVENT_PREFIX = 'SimpleSearch'
+
+function eventName(name: string): string {
+    return EVENT_PREFIX + name
+}
+
 export const SimpleSearch: FC<SimpleSearchProps> = props => {
     const [showState, setShowState] = useState<string>('default')
 
+    function onSubmitWithTelemetry(event?: React.FormEvent): void {
+        props.telemetryService.log(eventName('SubmitSearch'), { type: showState })
+        props.onSubmit(event)
+    }
+
     function pickRender(): JSX.Element {
+        const changeState = (nextState: string): void => {
+            props.telemetryService.log(eventName('SelectJob'), { next: nextState })
+            setShowState(nextState)
+        }
+
+        const searchProps: SimpleSearchProps = { ...props, onSubmit: onSubmitWithTelemetry }
+
         switch (showState) {
             case 'default':
-                return <SearchPicker setShowState={setShowState} />
+                return <SearchPicker setShowState={changeState} />
             case 'code':
-                return <CodeSearchSimpleSearch {...props} />
+                return <CodeSearchSimpleSearch {...searchProps} />
             case 'repo':
-                return <RepoSearchSimpleSearch {...props} />
+                return <RepoSearchSimpleSearch {...searchProps} />
             case 'changes':
-                return <FindChangesSimpleSearch {...props} />
+                return <FindChangesSimpleSearch {...searchProps} />
             default:
-                return <SearchPicker setShowState={setShowState} />
+                return <SearchPicker setShowState={changeState} />
         }
     }
 
@@ -32,7 +50,13 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
         <div>
             {showState !== 'default' && (
                 <div>
-                    <Button className="mb-2" onClick={() => setShowState('default')}>
+                    <Button
+                        className="mb-2"
+                        onClick={() => {
+                            props.telemetryService.log(eventName('BackButtonClick'))
+                            setShowState('default')
+                        }}
+                    >
                         <Icon aria-label="hover icon for help tooltip" svgPath={mdiArrowLeft} />
                         Back
                     </Button>
