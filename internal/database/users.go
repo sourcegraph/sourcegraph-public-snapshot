@@ -639,7 +639,7 @@ func (u *userStore) DeleteList(ctx context.Context, ids []int32) (err error) {
 	if err := tx.Exec(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s) AND deleted_at IS NULL", idsCond)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE user_external_accounts SET deleted_at=now() WHERE deleted_at IS NULL AND user_id IN (%s)", idsCond)); err != nil {
 		return err
 	}
 	if err := tx.Exec(ctx, sqlf.Sprintf("UPDATE org_invitations SET deleted_at=now() WHERE deleted_at IS NULL AND (sender_user_id IN (%s) OR recipient_user_id IN (%s))", idsCond, idsCond)); err != nil {

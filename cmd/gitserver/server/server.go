@@ -99,87 +99,6 @@ func init() {
 	traceLogs, _ = strconv.ParseBool(env.Get("SRC_GITSERVER_TRACE", "false", "Toggles trace logging to stderr"))
 }
 
-// runCommandGraceful runs the command and returns the exit status. If the
-// supplied context is cancelled we attempt to send SIGINT to the command to
-// allow it to gracefully shutdown. All clients of this function should pass in a
-// command *without* a context.
-func runCommandGraceful(ctx context.Context, logger log.Logger, cmd wrexec.Cmder) (exitCode int, err error) {
-	c := cmd.Unwrap()
-	tr, ctx := trace.New(ctx, "runCommandGraceful",
-		attribute.String("path", c.Path),
-		attribute.StringSlice("args", c.Args),
-		attribute.String("dir", c.Dir))
-	defer func() {
-		if err != nil {
-			tr.SetAttributes(attribute.Int("exitCode", exitCode))
-		}
-		tr.EndWithErr(&err)
-	}()
-
-	exitCode = unsetExitStatus
-	err = cmd.Start()
-	if err != nil {
-		return exitCode, err
-	}
-
-	done := make(chan struct{})
-	go func() {
-		defer close(done)
-		err = cmd.Wait()
-		if err != nil {
-			logger.Error("running command", log.Error(err))
-		}
-	}()
-
-	// Wait for command to exit or context to be done
-	select {
-	case <-ctx.Done():
-		logger.Debug("context cancelled, sending SIGINT")
-		// Attempt to send SIGINT
-		if err := cmd.Unwrap().Process.Signal(syscall.SIGINT); err != nil {
-			logger.Warn("Sending SIGINT to command", log.Error(err))
-			if err := cmd.Unwrap().Process.Kill(); err != nil {
-				logger.Warn("killing process", log.Error(err))
-			}
-			return exitCode, err
-		}
-		// Now, continue waiting for command for up to two seconds before killing it
-		timer := time.NewTimer(2 * time.Second)
-		select {
-		case <-done:
-			logger.Debug("process exited after SIGINT sent")
-			timer.Stop()
-			if err == nil {
-				exitCode = 0
-			}
-		case <-timer.C:
-			logger.Debug("timed out, killing process")
-			if err := cmd.Unwrap().Process.Kill(); err != nil {
-				logger.Warn("killing process", log.Error(err))
-			}
-			logger.Debug("process killed, waiting for done")
-			// Wait again to ensure we can access cmd.ProcessState below
-			<-done
-		}
-
-		if exitError, ok := err.(*exec.ExitError); ok {
-			exitCode = exitError.ExitCode()
-		}
-		err = ctx.Err()
-		return exitCode, err
-	case <-done:
-		// Happy path, command exits
-	}
-
-	if exitError, ok := err.(*exec.ExitError); ok {
-		exitCode = exitError.ExitCode()
-	}
-	if err == nil {
-		exitCode = 0
-	}
-	return exitCode, err
-}
-
 // cloneJob abstracts away a repo and necessary metadata to clone it. In the future it may be
 // possible to simplify this, but to do that, doClone will need to do a lot less than it does at the
 // moment.
@@ -2043,7 +1962,7 @@ func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
 }
 
 func (s *Server) logIfCorrupt(ctx context.Context, repo api.RepoName, dir common.GitDir, stderr string) {
-	if checkMaybeCorruptRepo(s.Logger, repo, dir, stderr) {
+	if checkMaybeCorruptRepo(s.Logger, s, repo, dir, stderr) {
 		reason := stderr
 		if err := s.DB.GitserverRepos().LogCorruption(ctx, repo, reason, s.Hostname); err != nil {
 			s.Logger.Warn("failed to log repo corruption", log.String("repo", string(repo)), log.Error(err))
@@ -2289,7 +2208,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		return errors.Wrap(err, "failed to ensure HEAD exists")
 	}
 
-	if err := setRepositoryType(tmp, syncer.Type()); err != nil {
+	if err := setRepositoryType(tmp, s, syncer.Type()); err != nil {
 		return errors.Wrap(err, `git config set "sourcegraph.type"`)
 	}
 
@@ -2304,7 +2223,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	}
 
 	// Set gc.auto depending on gitGCMode.
-	if err := gitSetAutoGC(tmp); err != nil {
+	if err := gitSetAutoGC(tmp, s); err != nil {
 		return err
 	}
 
@@ -2681,7 +2600,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 		return errors.Wrapf(err, "failed to ensure HEAD exists for repo %q", repo)
 	}
 
-	if err := setRepositoryType(dir, syncer.Type()); err != nil {
+	if err := setRepositoryType(dir, s, syncer.Type()); err != nil {
 		return errors.Wrapf(err, "failed to set repository type for repo %q", repo)
 	}
 

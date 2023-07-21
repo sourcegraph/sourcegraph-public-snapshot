@@ -3,18 +3,22 @@ package com.sourcegraph.config;
 import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
-import com.intellij.openapi.project.Project;
 import com.sourcegraph.find.Search;
+import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 @State(
     name = "Config",
     storages = {@Storage("sourcegraph.xml")})
-public class CodyProjectService implements PersistentStateComponent<CodyProjectService> {
-
+public class CodyProjectService
+    implements PersistentStateComponent<CodyProjectService>, CodyService {
   @Nullable public String instanceType;
   @Nullable public String url;
+
+  @Nullable
+  @Deprecated(since = "3.0.0-alpha.2", forRemoval = true)
+  public String accessToken; // kept for backwards compatibility
 
   @Nullable public String dotComAccessToken;
   @Nullable public String enterpriseAccessToken;
@@ -26,41 +30,43 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   @Nullable public String lastSearchPatternType;
   @Nullable public String lastSearchContextSpec;
 
-  @NotNull
-  static CodyProjectService getInstance(@NotNull Project project) {
-    return project.getService(CodyProjectService.class);
-  }
-
+  @Override
   @Nullable
   public String getInstanceType() {
     return instanceType;
   }
 
+  @Override
   @Nullable
   public String getSourcegraphUrl() {
     return url;
   }
 
+  @Override
   @Nullable
   public String getDotComAccessToken() {
     return dotComAccessToken;
   }
 
+  @Override
   @Nullable
   public String getCustomRequestHeaders() {
     return customRequestHeaders;
   }
 
+  @Override
   @Nullable
   public String getDefaultBranchName() {
     return defaultBranch;
   }
 
+  @Override
   @Nullable
   public String getRemoteUrlReplacements() {
     return remoteUrlReplacements;
   }
 
+  @Override
   @Nullable
   public Search getLastSearch() {
     if (lastSearchQuery == null) {
@@ -81,6 +87,7 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   public void loadState(@NotNull CodyProjectService settings) {
     this.instanceType = settings.instanceType;
     this.url = settings.url;
+    this.accessToken = settings.accessToken;
     this.dotComAccessToken = settings.dotComAccessToken;
     this.enterpriseAccessToken = settings.enterpriseAccessToken;
     this.customRequestHeaders = settings.customRequestHeaders;
@@ -94,16 +101,22 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
         settings.lastSearchContextSpec != null ? settings.lastSearchContextSpec : "global";
   }
 
+  @Override
   @Nullable
   public String getEnterpriseAccessToken() {
-    return enterpriseAccessToken;
+    // configuring enterpriseAccessToken overrides the deprecated accessToken field
+    String configuredEnterpriseAccessToken =
+        StringUtils.isEmpty(enterpriseAccessToken) ? accessToken : enterpriseAccessToken;
+    return configuredEnterpriseAccessToken;
   }
 
+  @Override
   public boolean areChatPredictionsEnabled() {
     // TODO: implement
     return false;
   }
 
+  @Override
   public String getCodebase() {
     // TODO: implement
     return null;

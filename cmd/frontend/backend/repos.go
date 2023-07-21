@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -15,8 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -105,25 +102,12 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 	}
 
 	newName, err := s.add(ctx, name)
-	if err == nil {
-		return s.store.GetByName(ctx, newName)
+	if err != nil {
+		return nil, err
 	}
 
-	if errcode.IsNotFound(err) && shouldRedirect(name) {
-		return nil, ErrRepoSeeOther{RedirectURL: (&url.URL{
-			Scheme:   "https",
-			Host:     "sourcegraph.com",
-			Path:     string(name),
-			RawQuery: url.Values{"utm_source": []string{deploy.Type()}}.Encode(),
-		}).String()}
-	}
+	return s.store.GetByName(ctx, newName)
 
-	return nil, err
-}
-
-func shouldRedirect(name api.RepoName) bool {
-	return !conf.Get().DisablePublicRepoRedirects &&
-		extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...) != nil
 }
 
 var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{

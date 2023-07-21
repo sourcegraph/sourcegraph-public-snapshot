@@ -2,13 +2,16 @@ package com.sourcegraph.cody;
 
 import com.intellij.openapi.actionSystem.ActionManager;
 import com.intellij.openapi.actionSystem.AnAction;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowFactory;
+import com.intellij.openapi.wm.ex.ToolWindowEx;
 import com.intellij.ui.content.Content;
 import com.intellij.ui.content.ContentFactory;
 import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.OpenPluginSettingsAction;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
@@ -26,6 +29,10 @@ public class CodyToolWindowFactory implements ToolWindowFactory, DumbAware {
             .createContent(toolWindowContent.getContentPanel(), "", false);
     content.setPreferredFocusableComponent(toolWindowContent.getPreferredFocusableComponent());
     toolWindow.getContentManager().addContent(content);
+    DefaultActionGroup customCodySettings = new DefaultActionGroup();
+    customCodySettings.add(new OpenPluginSettingsAction("Cody Settings..."));
+    customCodySettings.addSeparator();
+    ((ToolWindowEx) toolWindow).setAdditionalGearActions(customCodySettings);
     List<AnAction> titleActions = new ArrayList<>();
     createTitleActions(titleActions);
     if (!titleActions.isEmpty()) {

@@ -12,6 +12,7 @@ import { AuthenticatedUser } from '../../../auth'
 import { ExternalsAuth } from '../../../auth/components/ExternalsAuth'
 import { MarketingBlock } from '../../../components/MarketingBlock'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import { PageRoutes } from '../../../routes.constants'
 import { EventName } from '../../../util/constants'
 
 import { GlowingCodySVG, MeetCodySVG } from './WidgetIcons'
@@ -89,7 +90,7 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                         onClick={logEvent}
                         ctaClassName={styles.authButton}
                         iconClassName={styles.buttonIcon}
-                        redirect="/get-cody"
+                        redirect={PageRoutes.PostSignUp}
                     />
                     <Link
                         to="https://sourcegraph.com/sign-up?showEmail=true"
