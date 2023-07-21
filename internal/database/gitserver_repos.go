@@ -74,7 +74,9 @@ type GitserverRepoStore interface {
 	// UpdatePoolRepoID updates the pool_repo_id column of a gitserver_repo.
 	UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) (err error)
 
-	// GetPoolRepoName will return the PoolRepo of a repository matching the repo name if it exists.
+	// GetPoolRepoName will return the PoolRepo name of a repository matching the input repo name if
+	// it exists. If it does not exist or an error occurs, then the reutrned poolRepoName will be an
+	// empty api.RepoName, ok will be false and the err will contain the error if any.
 	GetPoolRepoName(ctx context.Context, repoName api.RepoName) (poolRepoName api.RepoName, ok bool, err error)
 }
 
