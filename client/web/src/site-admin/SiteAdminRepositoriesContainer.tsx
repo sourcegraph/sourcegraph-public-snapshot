@@ -4,7 +4,7 @@ import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher, useDebounce } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
@@ -218,10 +218,11 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
     const [searchQuery, setSearchQuery] = useState<string>(
         () => new URLSearchParams(location.search).get('query') || ''
     )
+    const debouncedSearchQuery = useDebounce<string>(searchQuery, 300)
 
     useEffect(() => {
         const searchFragment = getUrlQuery({
-            query: searchQuery,
+            query: debouncedSearchQuery,
             filters,
             filterValues,
             search: location.search,
@@ -245,14 +246,14 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                 }
             )
         }
-    }, [filters, filterValues, searchQuery, location, navigate])
+    }, [filters, filterValues, debouncedSearchQuery, location, navigate])
 
     const variables = useMemo<RepositoriesVariables>(() => {
         const args = buildFilterArgs(filterValues)
 
         return {
             ...args,
-            query: searchQuery,
+            query: debouncedSearchQuery,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             embedded: args.embedded ?? true,
@@ -263,7 +264,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
             externalService: args.externalService ?? null,
             displayCloneProgress,
         } as RepositoriesVariables
-    }, [searchQuery, filterValues, displayCloneProgress])
+    }, [debouncedSearchQuery, filterValues, displayCloneProgress])
 
     const {
         connection,
@@ -284,6 +285,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
 
     const error = repoStatsError || extSvcError || reposError
     const loading = repoStatsLoading || extSvcLoading || reposLoading
+    const debouncedLoading = useDebounce(loading, 300)
 
     const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
         if (!data) {
@@ -395,21 +397,6 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
         return items
     }, [data, setFilterValues])
 
-    const [showSpinner, setShowSpinner] = useState(false)
-
-    useEffect(() => {
-        if (loading) {
-            const timeout = setTimeout(() => {
-                setShowSpinner(true)
-            }, 300)
-
-            return () => clearTimeout(timeout)
-        }
-
-        setShowSpinner(false)
-        return
-    }, [loading])
-
     return (
         <>
             <Container className="py-3 mb-1">
@@ -445,7 +432,7 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                             variant="regular"
                         />
                     </div>
-                    {showSpinner && !error && (
+                    {debouncedLoading && !error && (
                         <div className="d-flex justify-content-center align-items-center ">
                             <LoadingSpinner />
                         </div>
