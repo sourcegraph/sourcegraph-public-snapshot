@@ -1,0 +1,12 @@
+.tab-container {
+    background-color: var(--color-bg-1);
+}
+
+.lastGitCommandNode {
+    display: grid;
+    grid-template-columns: auto auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+}

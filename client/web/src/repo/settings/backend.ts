@@ -58,6 +58,13 @@ export const settingsAreaRepositoryFragment = gql`
             key
             value
         }
+        recordedCommands {
+            path
+            start
+            duration
+            command
+            dir
+        }
     }
 `
 
