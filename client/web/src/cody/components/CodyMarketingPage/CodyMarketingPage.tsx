@@ -11,7 +11,6 @@ import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
 import { SourcegraphContext } from '../../../jscontext'
 import { MeetCodySVG } from '../../../repo/components/TryCodyWidget/WidgetIcons'
-import { PageRoutes } from '../../../routes.constants'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { EventName } from '../../../util/constants'
 import { CodyColorIcon, CodyHelpIcon, CodyWorkIcon } from '../../chat/CodyPageIcon'
@@ -165,7 +164,7 @@ export const CodyMarketingPage: React.FunctionComponent<CodyMarketingPageProps> 
                                 onClick={onClickCTAButton}
                                 ctaClassName={styles.authButton}
                                 iconClassName={styles.buttonIcon}
-                                redirect={PageRoutes.PostSignUp}
+                                redirect="/get-cody"
                             />
                         </div>
                         <Link to="https://sourcegraph.com/sign-up?showEmail=true">Or, continue with email</Link>
