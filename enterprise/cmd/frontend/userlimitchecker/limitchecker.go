@@ -6,6 +6,7 @@ import (
 	"time"
 
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -63,7 +64,7 @@ func SendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	messageId := "approaching_user_limit"
 	replyTo := "support@sourcegraph.com"
 
-	if err := txemail.Send(ctx, "approaching_user_limit", txemail.Message{
+	if err := internalapi.Client.SendEmail(ctx, "approaching_user_limit", txemail.Message{
 		To:        siteAdminEmails,
 		Template:  approachingUserLimitEmailTemplate,
 		MessageID: &messageId,

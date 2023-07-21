@@ -9,10 +9,12 @@ import (
 
 	"github.com/sourcegraph/log"
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
+	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -42,12 +44,12 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("sends correctly formatted email", func(t *testing.T) {
-		var gotEmail txemail.Message
-		txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
+		var gotEmail txtypes.Message
+		internalapi.MockSend = func(ctx context.Context, message txemail.Message) error {
 			gotEmail = message
 			return nil
 		}
-		t.Cleanup(func() { txemail.MockSend = nil })
+		t.Cleanup(func() { internalapi.MockSend = nil })
 
 		err = SendApproachingUserLimitAlert(ctx, db)
 		require.NoError(t, err)

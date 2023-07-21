@@ -26,10 +26,12 @@ go_test(
     embed = [":userlimitchecker"],
     deps = [
         "//enterprise/cmd/frontend/internal/dotcom/productsubscription",
+        "//internal/api/internalapi",
         "//internal/database",
         "//internal/database/dbtest",
         "//internal/license",
         "//internal/txemail",
+        "//internal/txemail/txtypes",
         "//internal/types",
         "@com_github_sourcegraph_log//:log",
         "@com_github_stretchr_testify//assert",

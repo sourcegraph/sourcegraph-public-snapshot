@@ -66,11 +66,17 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 // This helps reduce the chance that we damage email sender reputations when attempting to
 // send emails to nonexistent email addresses.
 func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
+	if MockSend != nil {
+		return MockSend(ctx, message)
+	}
 	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{
 		Source:  source,
 		Message: message,
 	}, nil)
 }
+
+// MockSend is used in tests to mock the Send func.
+var MockSend func(ctx context.Context, message txtypes.Message) error
 
 // MockClientConfiguration mocks (*internalClient).Configuration.
 var MockClientConfiguration func() (conftypes.RawUnified, error)
