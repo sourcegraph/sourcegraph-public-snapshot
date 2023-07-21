@@ -52,7 +52,7 @@ func NewMockVCSSyncer() *MockVCSSyncer {
 			},
 		},
 		IsCloneableFunc: &VCSSyncerIsCloneableFunc{
-			defaultHook: func(context.Context, *vcs.URL) (r0 error) {
+			defaultHook: func(context.Context, api.RepoName, *vcs.URL) (r0 error) {
 				return
 			},
 		},
@@ -84,7 +84,7 @@ func NewStrictMockVCSSyncer() *MockVCSSyncer {
 			},
 		},
 		IsCloneableFunc: &VCSSyncerIsCloneableFunc{
-			defaultHook: func(context.Context, *vcs.URL) error {
+			defaultHook: func(context.Context, api.RepoName, *vcs.URL) error {
 				panic("unexpected invocation of MockVCSSyncer.IsCloneable")
 			},
 		},
@@ -353,24 +353,24 @@ func (c VCSSyncerFetchFuncCall) Results() []interface{} {
 // VCSSyncerIsCloneableFunc describes the behavior when the IsCloneable
 // method of the parent MockVCSSyncer instance is invoked.
 type VCSSyncerIsCloneableFunc struct {
-	defaultHook func(context.Context, *vcs.URL) error
-	hooks       []func(context.Context, *vcs.URL) error
+	defaultHook func(context.Context, api.RepoName, *vcs.URL) error
+	hooks       []func(context.Context, api.RepoName, *vcs.URL) error
 	history     []VCSSyncerIsCloneableFuncCall
 	mutex       sync.Mutex
 }
 
 // IsCloneable delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockVCSSyncer) IsCloneable(v0 context.Context, v1 *vcs.URL) error {
-	r0 := m.IsCloneableFunc.nextHook()(v0, v1)
-	m.IsCloneableFunc.appendCall(VCSSyncerIsCloneableFuncCall{v0, v1, r0})
+func (m *MockVCSSyncer) IsCloneable(v0 context.Context, v1 api.RepoName, v2 *vcs.URL) error {
+	r0 := m.IsCloneableFunc.nextHook()(v0, v1, v2)
+	m.IsCloneableFunc.appendCall(VCSSyncerIsCloneableFuncCall{v0, v1, v2, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the IsCloneable method
 // of the parent MockVCSSyncer instance is invoked and the hook queue is
 // empty.
-func (f *VCSSyncerIsCloneableFunc) SetDefaultHook(hook func(context.Context, *vcs.URL) error) {
+func (f *VCSSyncerIsCloneableFunc) SetDefaultHook(hook func(context.Context, api.RepoName, *vcs.URL) error) {
 	f.defaultHook = hook
 }
 
@@ -378,7 +378,7 @@ func (f *VCSSyncerIsCloneableFunc) SetDefaultHook(hook func(context.Context, *vc
 // IsCloneable method of the parent MockVCSSyncer instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *VCSSyncerIsCloneableFunc) PushHook(hook func(context.Context, *vcs.URL) error) {
+func (f *VCSSyncerIsCloneableFunc) PushHook(hook func(context.Context, api.RepoName, *vcs.URL) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -387,19 +387,19 @@ func (f *VCSSyncerIsCloneableFunc) PushHook(hook func(context.Context, *vcs.URL)
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *VCSSyncerIsCloneableFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, *vcs.URL) error {
+	f.SetDefaultHook(func(context.Context, api.RepoName, *vcs.URL) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *VCSSyncerIsCloneableFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, *vcs.URL) error {
+	f.PushHook(func(context.Context, api.RepoName, *vcs.URL) error {
 		return r0
 	})
 }
 
-func (f *VCSSyncerIsCloneableFunc) nextHook() func(context.Context, *vcs.URL) error {
+func (f *VCSSyncerIsCloneableFunc) nextHook() func(context.Context, api.RepoName, *vcs.URL) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -437,7 +437,10 @@ type VCSSyncerIsCloneableFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *vcs.URL
+	Arg1 api.RepoName
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *vcs.URL
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -446,7 +449,7 @@ type VCSSyncerIsCloneableFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c VCSSyncerIsCloneableFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

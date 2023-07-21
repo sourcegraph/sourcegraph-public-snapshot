@@ -262,6 +262,7 @@ go_library(
         "//internal/database/migration/runner",
         "//internal/database/migration/schemas",
         "//internal/deviceid",
+        "//internal/embeddings/background/repo",
         "//internal/encryption",
         "//internal/encryption/keyring",
         "//internal/env",

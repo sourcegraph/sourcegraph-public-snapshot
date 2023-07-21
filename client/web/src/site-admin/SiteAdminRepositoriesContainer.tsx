@@ -82,6 +82,12 @@ const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
         tooltip: 'Show only repositories which are corrupt',
         args: { corrupted: true },
     },
+    Embedded: {
+        label: 'Embedded',
+        value: 'embedded',
+        tooltip: 'Show only repositories which are embedded',
+        args: { notEmbedded: false },
+    },
 }
 
 const FILTERS: FilteredConnectionFilter[] = [
@@ -249,6 +255,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
             query: searchQuery,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
+            embedded: args.embedded ?? true,
+            notEmbedded: args.notEmbedded ?? true,
             failedFetch: args.failedFetch ?? false,
             corrupted: args.corrupted ?? false,
             cloneStatus: args.cloneStatus ?? null,
@@ -351,6 +359,19 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                     setFilterValues(values => {
                         const newValues = new Map(values)
                         newValues.set('status', STATUS_FILTERS.FailedFetchOrClone)
+                        return newValues
+                    }),
+            },
+            {
+                value: data.repositoryStats.embedded,
+                description: 'Embedded',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been embedded for Cody.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.Embedded)
                         return newValues
                     }),
             },
