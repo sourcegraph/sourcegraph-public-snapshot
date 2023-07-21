@@ -70,7 +70,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 > **Note**: As of 5.1.0, the `rsa-sha` signature algorithm is no longer supported when connecting to code hosts over SSH. If you encounter the error `sign_and_send_pubkey: no mutual signature supported` when syncing repositories, see [Repository authentication](https://docs.sourcegraph.com/admin/repo/auth#error-sign_and_send_pubkey-no-mutual-signature-supported) for more information and steps to resolve the issue.
 
-### Known issues
+### [Known issues](KNOWN-ISSUES.md)
 
 - There is an issue with Sourcegraph instances configured to use explicit permissions using permissions.userMapping in Site configuration, where repository permissions are not enforced. Customers using the explicit permissions API are advised to upgrade to v5.1.1 directly.
 - There is an issue with creating and updating existing Bitbucket.org (Cloud) code host connections due to problem with JSON schema validation which prevents the JSON editor from loading and surfaces as an error in the UI.
