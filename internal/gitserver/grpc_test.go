@@ -26,7 +26,7 @@ func TestClientSource_AddrMatchesTarget(t *testing.T) {
 	repos.GetByNameFunc.SetDefaultReturn(nil, nil)
 
 	gs := database.NewMockGitserverRepoStore()
-	gs.GetPoolRepoNameFunc.SetDefaultReturn(api.RepoName(""), nil)
+	gs.GetPoolRepoNameFunc.SetDefaultReturn(api.RepoName(""), false, nil)
 
 	db.ReposFunc.SetDefaultReturn(repos)
 	db.GitserverReposFunc.SetDefaultReturn(gs)

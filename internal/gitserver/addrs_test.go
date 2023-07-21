@@ -93,25 +93,25 @@ func TestAddrForRepo(t *testing.T) {
 		emptyRepoName := api.RepoName("")
 		testCases := []struct {
 			name                         string
-			getPoolRepoFuncDefaultReturn func() (api.RepoName, error)
+			getPoolRepoFuncDefaultReturn func() (api.RepoName, bool, error)
 			expectedShardParentRepo      string
 			expectedShardForkedRepo      string
 		}{
 			{
 				name:                         "valid pool repo",
-				getPoolRepoFuncDefaultReturn: func() (api.RepoName, error) { return parentRepo, nil },
+				getPoolRepoFuncDefaultReturn: func() (api.RepoName, bool, error) { return parentRepo, true, nil },
 				expectedShardParentRepo:      shardParentRepo,
 				expectedShardForkedRepo:      shardParentRepo,
 			},
 			{
 				name:                         "no pool repo",
-				getPoolRepoFuncDefaultReturn: func() (api.RepoName, error) { return emptyRepoName, nil },
+				getPoolRepoFuncDefaultReturn: func() (api.RepoName, bool, error) { return emptyRepoName, false, nil },
 				expectedShardParentRepo:      shardParentRepo,
 				expectedShardForkedRepo:      shardForkedRepo,
 			},
 			{
 				name:                         "get pool repo returns an error",
-				getPoolRepoFuncDefaultReturn: func() (api.RepoName, error) { return emptyRepoName, errors.New("mocked error") },
+				getPoolRepoFuncDefaultReturn: func() (api.RepoName, bool, error) { return emptyRepoName, false, errors.New("mocked error") },
 				expectedShardParentRepo:      shardParentRepo,
 				expectedShardForkedRepo:      shardForkedRepo,
 			},
