@@ -36,7 +36,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
     const isLightTheme = useIsLightTheme()
     const [experimentalQueryInput] = useExperimentalQueryInput()
 
-    /** The value entered by the user in the query input */
+    /** The value entered by the user in the query input  */
     const [queryState, setQueryState] = useState<QueryState>({
         query: '',
     })
