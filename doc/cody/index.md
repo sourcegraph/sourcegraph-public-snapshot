@@ -25,8 +25,6 @@ Cody helps you answer questions, write code, and offer suggestions for code impr
   <a class="btn btn-primary text-left" href="https://about.sourcegraph.com/cody/pricing"><b>Cody Enterprise!</b><p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p></a>
 </div>
 
-[Read more about the Cody clients, extensions, and plugins](explanations/cody_clients.md), including a full breakdown of features available by client.
-
 ## Cody features
 
 <!-- NOTE: These should stay roughly in sync with client/cody/README.md, although these need to be not specific to VS Code. -->
