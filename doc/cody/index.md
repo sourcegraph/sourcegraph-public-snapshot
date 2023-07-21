@@ -21,8 +21,8 @@ Cody helps you answer questions, write code, and offer suggestions for code impr
 </div>
 
 <div class="getting-started">
-  <a class="btn btn-primary text-left" href="https://sourcegraph.com/get-cody"><b>Cody App!</b><p>Install the free desktop app to try Cody with your local codebase.</p></a>
-  <a class="btn btn-primary text-left" href="https://about.sourcegraph.com/cody/pricing"><b>Cody Enterprise!</b><p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p></a>
+  <a class="btn btn-primary text-left" href="https://sourcegraph.com/get-cody"><b>Cody App</b><p>Install the free desktop app to try Cody with your local codebase.</p></a>
+  <a class="btn btn-primary text-left" href="https://about.sourcegraph.com/cody/pricing"><b>Cody Enterprise</b><p>Get in touch with our team to try Cody for Sourcegraph Enterprise.</p></a>
 </div>
 
 ## Cody features
