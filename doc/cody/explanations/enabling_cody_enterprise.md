@@ -45,17 +45,15 @@ Cody is now fully set up on your instance!
 Now that Cody is turned on on your Sourcegraph instance, any user can configure and use the Cody VS Code extension. This does not require admin privilege.
 
 1. If you currently have a previous version of Cody installed, uninstall it and reload VS Code before proceeding to the next steps.
-1. Search for "Cody AI” in your VS Code extension marketplace, and install it.
+2. Search for "Cody AI” in your VS Code extension marketplace, and install it.
 
-![Cody AI in VS Code Extensions Marketplace](https://github.com/sourcegraph/sourcegraph/assets/53794254/54edc325-aeb8-4760-a5a7-37d7ca3597e9)
-
+  <img width="500" alt="Sourcegraph Cody in VS Code Marketplace" src="https://storage.googleapis.com/sourcegraph-assets/cody-in-marketplace.png">
 
 3. Reload VS Code, and open the Cody extension. <!-- Review and accept the terms. (this has been removed?) --> 
 
 4. Now you'll need to point the Cody extension to your Sourcegraph instance. Click on "Other Sign In Options..." and select your enterpise option depending on your sourcegraph version (to check your Sourcegraph version go to Sourcegraph => Settings and the version will be in the bottom left)
 
-![Other Sign In Options...](https://github.com/sourcegraph/sourcegraph/assets/53794254/1c474066-bee2-4e84-ab07-92d60a47d41a)
-
+  <img width="1369" alt="image" src="https://storage.googleapis.com/sourcegraph-assets/cody-sign-in-options.png">
 
 5. If you on version 5.1 and above you will just need to follow an authorization flow to give Cody access to your enterpise instance. 
 
