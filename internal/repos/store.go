@@ -527,7 +527,7 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 
 	src := r.Sources[svc.URN()]
 	if src == nil || src.CloneURL == "" {
-		return errors.New("UpdateExternalServiceRepo: repo missing source info for external service")
+		return errors.Newf("UpdateExternalServiceRepo: repo %q missing source info for external service", r.Name)
 	}
 
 	if !s.InTransaction() {
