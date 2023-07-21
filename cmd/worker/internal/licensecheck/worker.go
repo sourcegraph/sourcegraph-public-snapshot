@@ -1,4 +1,4 @@
-package licensing
+package licensecheck
 
 import (
 	"context"
@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -17,9 +18,9 @@ import (
 
 type licenseWorker struct{}
 
-// NewLicenseCheckWorker is the set of background jobs used for licensing enforcement and gating.
+// NewJob is the set of background jobs used for licensing enforcement and gating.
 // Note: This job should only run once for a given Sourcegraph instance.
-func NewLicenseCheckWorker() job.Job {
+func NewJob() job.Job {
 	return &licenseWorker{}
 }
 
@@ -52,7 +53,7 @@ type licenseChecksWrapper struct {
 
 func (l *licenseChecksWrapper) Start() {
 	goroutine.Go(func() {
-		StartMaxUserCount(l.logger, &usersStore{
+		licensing.StartMaxUserCount(l.logger, &usersStore{
 			db: l.db,
 		})
 	})
