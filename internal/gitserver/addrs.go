@@ -255,7 +255,6 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 	getRepoAddress := func(repoName api.RepoName) string {
 		// Normalizing the name in case the caller didn't.
 		name := string(protocol.NormalizeRepo(repoName))
-
 		if pinnedAddr, ok := g.PinnedServers[name]; ok {
 			return pinnedAddr
 		}
@@ -268,31 +267,29 @@ func (g *GitserverAddresses) AddrForRepo(ctx context.Context, logger log.Logger,
 		return getRepoAddress(repoName)
 	}
 
-	if addr := g.getCachedRepoAddress(repoName); addr != "" {
-		addrForRepoCacheHit.WithLabelValues(userAgent).Inc()
-		return addr
+	expConf := conf.ExperimentalFeatures()
+
+	// Always check the cache and only skip it if the config is explicitly set to false. While we may
+	// skip the cache lookup, our return path below always updates the cache. This ensures that when
+	// we enable the flag, the existing cache can be used immediately without waiting to prepopulate
+	// for repositories that may already have been looked up once in the TTL window of the cache.
+	if expConf.UseGitserverAddressLookupCache == nil || *expConf.UseGitserverAddressLookupCache {
+		if addr := g.getCachedRepoAddress(repoName); addr != "" {
+			addrForRepoCacheHit.WithLabelValues(userAgent).Inc()
+			return addr
+		}
 	}
 
 	addrForRepoCacheMiss.WithLabelValues(userAgent).Inc()
 
-	repo, err := g.db.Repos().GetByName(ctx, repoName)
-	// Maybe the repo was not found or the repo is not a fork. The repo is also not in the
-	// deduplicateforks list, so we do not need to look up a pool repo for this.
-	//
-	// Or in the worst case a SQL error occurred while looking up the repo. Either way, fallback to
-	// regular name based hashing.
-	if err != nil || (repo != nil && !repo.Fork) {
-		return g.withUpdateCache(repoName, getRepoAddress(repoName))
-	}
-
-	poolRepo, err := g.db.GitserverRepos().GetPoolRepo(ctx, repo.Name)
+	poolRepoName, ok, err := g.db.GitserverRepos().GetPoolRepoName(ctx, repoName)
 	if err != nil {
 		logger.Warn("failed to get pool repo (if fork deduplication is enabled this repo may not be colocated on the same shard as the parent/other forks)", log.Error(err))
 		return g.withUpdateCache(repoName, getRepoAddress(repoName))
 	}
 
-	if poolRepo != nil {
-		return g.withUpdateCache(poolRepo.RepoName, getRepoAddress(poolRepo.RepoName))
+	if ok {
+		return g.withUpdateCache(poolRepoName, getRepoAddress(poolRepoName))
 	}
 
 	return getRepoAddress(repoName)

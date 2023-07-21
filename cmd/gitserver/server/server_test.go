@@ -886,7 +886,7 @@ func TestCloneRepoRecordsFailures(t *testing.T) {
 			name: "Not cloneable",
 			getVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 				m := NewMockVCSSyncer()
-				m.IsCloneableFunc.SetDefaultHook(func(ctx context.Context, url *vcs.URL) error {
+				m.IsCloneableFunc.SetDefaultHook(func(context.Context, api.RepoName, *vcs.URL) error {
 					return errors.New("not_cloneable")
 				})
 				return m, nil

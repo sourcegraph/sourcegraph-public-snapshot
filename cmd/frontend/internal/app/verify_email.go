@@ -71,7 +71,7 @@ func serveVerifyEmail(db database.DB) http.HandlerFunc {
 			log15.Error("Failed to grant user pending permissions", "userID", usr.ID, "error", err)
 		}
 
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/user/settings/emails", http.StatusFound)
 	}
 }
 

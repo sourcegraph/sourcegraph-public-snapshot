@@ -72,10 +72,12 @@ type GitserverRepoStore interface {
 	SetCloningProgress(context.Context, api.RepoName, string) error
 
 	// UpdatePoolRepoID updates the pool_repo_id column of a gitserver_repo.
-	UpdatePoolRepoID(context.Context, api.RepoName, api.RepoName) error
+	UpdatePoolRepoID(ctx context.Context, poolRepoName, repoName api.RepoName) (err error)
 
-	// GetPoolRepo will return the PoolRepo of a repository matching the repo name if it exists.
-	GetPoolRepo(context.Context, api.RepoName) (*types.PoolRepo, error)
+	// GetPoolRepoName will return the PoolRepo name of a repository matching the input repo name if
+	// it exists. If it does not exist or an error occurs, then the reutrned poolRepoName will be an
+	// empty api.RepoName, ok will be false and the err will contain the error if any.
+	GetPoolRepoName(ctx context.Context, repoName api.RepoName) (poolRepoName api.RepoName, ok bool, err error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -158,46 +160,52 @@ func (s *gitserverRepoStore) UpdatePoolRepoID(ctx context.Context, poolRepoName,
 	return errors.Wrap(err, "UpdatePoolRepoID: failed to add pool_repo_id to gitserver_repos row")
 }
 
+// getPoolRepoQueryFmtStr looks up a repo by name and only returns a potential pool repo name if the
+// input repo is a fork and not deleted. Additionally it also checks if the parent repo (the repo
+// whose ID is used to establish the gitserver_repos.pool_repo_id relation) is deleted or not and
+// only returns the pool repo name if it is not deleted as well.
+//
+// Note: This means, to expect a non-null result the following conditions must be met:
+// 1. The input repo is a fork
+// 2. The input repo has not been deleted
+// 3. The input repo has a relationship established with a parent repo via a non-null gitserver_repos.pool_repo_id, indicating that deduplication is enabled for this repo
+// 4. The parent repo has not been deleted
+//
+// This means that at the moment for deleted repos we return an empty pool repo name and we have
+// tests that validate this behaviour. In the near future we very likely want to revisit this and
+// handle the scenario where once a repository has already been "enlisted" for deduplication and
+// either or both of the parent and the fork repositories have been deleted.
 const getPoolRepoQueryFmtStr = `
-WITH gs AS (
+WITH input_repo AS (
 	SELECT
-		gitserver_repos.pool_repo_id
+		id
 	FROM
-		gitserver_repos
-	JOIN repo AS r ON repo_id = r.id
+		repo
 	WHERE
 		name = %s::citext
+		AND fork = true
+		AND deleted_at IS null
 )
 SELECT
-	name,
-	uri
+	r.name
 FROM
-	repo
+	repo r
+JOIN gitserver_repos gr ON gr.repo_id = r.id
 WHERE
-	id = (SELECT pool_repo_id FROM gs)
+	r.id = (
+		SELECT
+			pool_repo_id
+		FROM
+			gitserver_repos
+		WHERE
+			repo_id = (SELECT id FROM input_repo)
+	)
+	AND r.deleted_at is NULL
 `
 
-func (s *gitserverRepoStore) GetPoolRepo(ctx context.Context, repoURI api.RepoName) (*types.PoolRepo, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoURI))
-
-	poolRepo, err := scanPoolRepo(row)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, errors.Wrap(err, "GetPoolRepoURI failed")
-	}
-
-	return poolRepo, nil
-}
-
-func scanPoolRepo(scanner dbutil.Scanner) (*types.PoolRepo, error) {
-	var poolRepo types.PoolRepo
-	err := scanner.Scan(&poolRepo.RepoName, &poolRepo.RepoURI)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to scan poolRepo")
-	}
-	return &poolRepo, nil
+func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.RepoName) (api.RepoName, bool, error) {
+	poolRepoName, ok, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoName)))
+	return api.RepoName(poolRepoName), ok, errors.Wrap(err, "GetPoolRepoName failed")
 }
 
 const updateGitserverReposQueryFmtstr = `

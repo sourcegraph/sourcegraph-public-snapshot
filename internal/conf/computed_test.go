@@ -7,10 +7,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -363,7 +363,7 @@ func TestGetDeduplicatedForksIndex(t *testing.T) {
 
 func TestGetCompletionsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
-	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
 		ChatModel:                "anthropic/claude-2",
 		ChatModelMaxTokens:       12000,
@@ -673,7 +673,7 @@ func TestGetCompletionsConfig(t *testing.T) {
 
 func TestGetEmbeddingsConfig(t *testing.T) {
 	licenseKey := "theasdfkey"
-	licenseAccessToken := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 	zeroConfigDefaultWithLicense := &conftypes.EmbeddingsConfig{
 		Provider:                   "sourcegraph",
 		AccessToken:                licenseAccessToken,

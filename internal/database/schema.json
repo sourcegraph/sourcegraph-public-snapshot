@@ -25013,32 +25013,6 @@
       "Comment": "Responsible for storing permissions at a finer granularity than repo",
       "Columns": [
         {
-          "Name": "path_excludes",
-          "Index": 5,
-          "TypeName": "text[]",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "path_includes",
-          "Index": 4,
-          "TypeName": "text[]",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
           "Name": "paths",
           "Index": 7,
           "TypeName": "text[]",

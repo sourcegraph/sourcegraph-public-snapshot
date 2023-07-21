@@ -514,5 +514,5 @@ Here are some additional resources to help you go further:
 
 - [`sg`, the Sourcegraph developer tool](../background-information/sg/index.md)
 - [Troubleshooting local development](troubleshooting.md)
-- [Background information](../background-information/index.md) for more context
+- [Background information](../index.md#background-information) for more context
 

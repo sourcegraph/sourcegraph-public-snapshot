@@ -1512,6 +1512,14 @@ type Query {
         """
         notIndexed: Boolean = true
         """
+        Include repositories that have embeddings.
+        """
+        embedded: Boolean = true
+        """
+        Include repositories that don't have embeddings.
+        """
+        notEmbedded: Boolean = true
+        """
         Include only repositories that have encountered errors when cloning or fetching
         """
         failedFetch: Boolean = false
@@ -8492,6 +8500,10 @@ type RepositoryStats {
     The number of repositories that are currently corrupt
     """
     corrupted: Int!
+    """
+    The number of repositories that have embeddings
+    """
+    embedded: Int!
 }
 
 """

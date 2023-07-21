@@ -67,7 +67,7 @@ type dependenciesService interface {
 	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
 }
 
-func (s *vcsPackagesSyncer) IsCloneable(ctx context.Context, repoUrl *vcs.URL) error {
+func (s *vcsPackagesSyncer) IsCloneable(_ context.Context, _ api.RepoName, _ *vcs.URL) error {
 	return nil
 }
 

@@ -35,7 +35,6 @@ const RepoContainer = lazyComponent(() => import('./repo/RepoContainer'), 'RepoC
 const TeamsArea = lazyComponent(() => import('./team/TeamsArea'), 'TeamsArea')
 const CodySidebarStoreProvider = lazyComponent(() => import('./cody/sidebar/Provider'), 'CodySidebarStoreProvider')
 const GetCodyPage = lazyComponent(() => import('./get-cody/GetCodyPage'), 'GetCodyPage')
-const PostSignUpPage = lazyComponent(() => import('./auth/PostSignUpPage'), 'PostSignUpPage')
 
 // Force a hard reload so that we delegate to the serverside HTTP handler for a route.
 const PassThroughToServer: React.FC = () => {
@@ -169,10 +168,6 @@ export const routes: RouteObject[] = [
     {
         path: PageRoutes.GetCody,
         element: <LegacyRoute render={props => <GetCodyPage {...props} context={window.context} />} />,
-    },
-    {
-        path: PageRoutes.PostSignUp,
-        element: <LegacyRoute render={props => <PostSignUpPage {...props} />} />,
     },
 ]
 
