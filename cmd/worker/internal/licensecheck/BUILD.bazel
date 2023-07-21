@@ -33,6 +33,9 @@ go_test(
     timeout = "short",
     srcs = ["check_test.go"],
     embed = [":licensecheck"],
+    tags = [
+        "requires-network",
+    ],
     deps = [
         "//internal/license",
         "//internal/licensing",
