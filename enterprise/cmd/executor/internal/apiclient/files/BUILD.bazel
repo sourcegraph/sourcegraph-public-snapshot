@@ -12,7 +12,7 @@ go_library(
     deps = [
         "//enterprise/cmd/executor/internal/apiclient",
         "//enterprise/cmd/executor/internal/worker/files",
-        "//enterprise/internal/executor/types",
+        "//internal/executor/types",
         "//internal/metrics",
         "//internal/observation",
         "//lib/errors",
@@ -28,7 +28,7 @@ go_test(
     deps = [
         ":files",
         "//enterprise/cmd/executor/internal/apiclient",
-        "//enterprise/internal/executor/types",
+        "//internal/executor/types",
         "//internal/observation",
         "//lib/errors",
         "@com_github_stretchr_testify//assert",

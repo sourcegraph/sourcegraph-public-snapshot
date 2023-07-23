@@ -66,8 +66,6 @@ ts_config(
         "//client/build-config:tsconfig",
         "//client/client-api:tsconfig",
         "//client/codeintellify:tsconfig",
-        "//client/cody-shared:tsconfig",
-        "//client/cody-ui:tsconfig",
         "//client/common:tsconfig",
         "//client/extension-api-types:tsconfig",
         "//client/http-client:tsconfig",
@@ -244,6 +242,13 @@ ts_project(
         "src/cody/sidebar/Provider.tsx",
         "src/cody/sidebar/index.tsx",
         "src/cody/sidebar/useSidebarSize.tsx",
+        "src/cody/update/AboutPageUpdate.tsx",
+        "src/cody/update/InstallModal.tsx",
+        "src/cody/update/ReviewAndInstallModal.tsx",
+        "src/cody/update/StartupUpdateChecker.tsx",
+        "src/cody/update/UpdateGlobalNav.tsx",
+        "src/cody/update/UpdateInfoContent.tsx",
+        "src/cody/update/updater.tsx",
         "src/cody/useCodyChat.tsx",
         "src/cody/useSizebarSize.tsx",
         "src/cody/widgets/CodyRecipesWidget.tsx",
@@ -390,6 +395,7 @@ ts_project(
         "src/enterprise/app/components/zero-states/AppZeroStates.tsx",
         "src/enterprise/app/routes.tsx",
         "src/enterprise/app/settings/AppSettingsArea.tsx",
+        "src/enterprise/app/settings/about/AboutPage.tsx",
         "src/enterprise/app/settings/local-repositories/LocalRepositoriesTab.tsx",
         "src/enterprise/app/settings/rate-limits/RateLimitsTab.tsx",
         "src/enterprise/app/setup/AppSetupWizard.tsx",
@@ -1605,11 +1611,15 @@ ts_project(
         "src/storm/pages/LayoutPage/LayoutPage.loader.ts",
         "src/storm/pages/LayoutPage/LayoutPage.tsx",
         "src/storm/pages/SearchPage/AddCodeHostWidget.tsx",
+        "src/storm/pages/SearchPage/CodeSearchSimpleSearch.tsx",
+        "src/storm/pages/SearchPage/FindChangesSimpleSearch.tsx",
+        "src/storm/pages/SearchPage/RepoSearchSimpleSearch.tsx",
         "src/storm/pages/SearchPage/SearchPage.loader.ts",
         "src/storm/pages/SearchPage/SearchPage.tsx",
         "src/storm/pages/SearchPage/SearchPageContent.tsx",
         "src/storm/pages/SearchPage/SearchPageFooter.tsx",
         "src/storm/pages/SearchPage/SearchPageInput.tsx",
+        "src/storm/pages/SearchPage/SimpleSearch.tsx",
         "src/storm/pages/SearchPage/TryCodyCtaSection.tsx",
         "src/storm/pages/SearchPage/TryCodySignUpCtaSection.tsx",
         "src/storm/pages/SearchPage/index.ts",
@@ -1863,6 +1873,7 @@ ts_project(
         "src/components/diff/DiffStat.test.tsx",
         "src/components/externalServices/ExternalServiceForm.test.tsx",
         "src/components/externalServices/externalServices.test.tsx",
+        "src/components/fuzzyFinder/FuzzyFiles.test.ts",
         "src/components/fuzzyFinder/FuzzyFinder.mocks.tsx",
         "src/components/fuzzyFinder/FuzzyFinder.test.tsx",
         "src/components/legacyLayoutRouteContext.mock.ts",
@@ -2072,9 +2083,6 @@ BUNDLE_DATA_DEPS = [
 ]
 
 ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
-    # static assets imported in .ts
-    "src/enterprise/productSubscription/ProductCertificate-background.png",
-
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",
@@ -2179,8 +2187,16 @@ webpack_devserver(
 build_test(
     name = "webpack_test",
     size = "enormous",
+    tags = ["manual"],  # avoid building the oss bundle
     targets = [
         ":bundle",
+    ],
+)
+
+build_test(
+    name = "webpack_test_enterprise",
+    size = "enormous",
+    targets = [
         ":bundle-enterprise",
     ],
 )

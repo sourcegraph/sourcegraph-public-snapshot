@@ -20,9 +20,9 @@ import {
     ChatUITextAreaProps,
     EditButtonProps,
     FeedbackButtonsProps,
-} from '@sourcegraph/cody-ui/src/Chat'
-import { FileLinkProps } from '@sourcegraph/cody-ui/src/chat/ContextFiles'
-import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/src/terms'
+} from '@sourcegraph/cody-ui/dist/Chat'
+import { FileLinkProps } from '@sourcegraph/cody-ui/dist/chat/ContextFiles'
+import { CODY_TERMS_MARKDOWN } from '@sourcegraph/cody-ui/dist/terms'
 import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'

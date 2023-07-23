@@ -2,22 +2,20 @@ package licensing
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
-	"time"
-
 	"net/http"
 	"net/url"
+	"time"
 
 	"github.com/derision-test/glock"
 	"github.com/sourcegraph/log"
 
-	"context"
-
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,6 +30,7 @@ const (
 	LicenseCheckInterval    = 12 * time.Hour
 	lastCalledAtStoreKey    = "licensing:last_called_at"
 	licenseValidityStoreKey = "licensing:is_license_valid"
+	licenseInvalidReason    = "licensing:license_invalid_reason"
 	prevLicenseTokenKey     = "licensing:prev_license_hash"
 )
 
@@ -117,9 +116,13 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return errors.New("No data returned from license check")
 	}
 
+	// best effort, ignore errors here
+	_ = store.Set(licenseInvalidReason, body.Data.Reason)
+
 	if err := store.Set(licenseValidityStoreKey, body.Data.IsValid); err != nil {
 		return err
 	}
+
 	l.logger.Debug("finished license check", log.String("siteID", l.siteID))
 	return nil
 }
@@ -171,7 +174,7 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 		ctxWithCancel, cancel = context.WithCancel(originalCtx)
 
 		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
-		licenseToken := licensing.GenerateLicenseKeyBasedAccessToken(conf.Get().LicenseKey)
+		licenseToken := license.GenerateLicenseKeyBasedAccessToken(conf.Get().LicenseKey)
 		var initialWaitInterval time.Duration = 0
 		if prevLicenseToken == licenseToken {
 			initialWaitInterval, _ = calcDurationSinceLastCalled(glock.NewRealClock())

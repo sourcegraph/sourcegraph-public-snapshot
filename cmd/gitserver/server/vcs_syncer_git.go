@@ -6,6 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -27,7 +28,7 @@ func (s *gitRepoSyncer) Type() string {
 }
 
 // IsCloneable checks to see if the Git remote URL is cloneable.
-func (s *gitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
+func (s *gitRepoSyncer) IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error {
 	if isAlwaysCloningTestRemoteURL(remoteURL) {
 		return nil
 	}
@@ -40,7 +41,7 @@ func (s *gitRepoSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) err
 	defer cancel()
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	out, err := runRemoteGitCommand(ctx, wrexec.Wrap(ctx, log.NoOp(), cmd), true, nil)
+	out, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), true, nil)
 	if err != nil {
 		if ctxerr := ctx.Err(); ctxerr != nil {
 			err = ctxerr
@@ -71,13 +72,14 @@ func (s *gitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir common.GitDir, revspec string) ([]byte, error) {
+func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName api.RepoName, dir common.GitDir, _ string) ([]byte, error) {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
-	if output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.Wrap(ctx, log.NoOp(), cmd), configRemoteOpts, nil); err != nil {
+	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), configRemoteOpts, nil)
+	if err != nil {
 		return nil, &common.GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
 	}
-	return nil, nil
+	return output, nil
 }
 
 // RemoteShowCommand returns the command to be executed for showing remote of a Git repository.

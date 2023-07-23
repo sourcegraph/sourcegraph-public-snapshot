@@ -8,18 +8,17 @@ import com.sourcegraph.config.UserLevelConfig;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Manually translated logic from <code>client/cody/src/completions/index.ts</code> in the VS Code
+ * Manually translated logic from <code>cody/vscode/src/completions/index.ts</code> in the VS Code
  * extension. Some code in this class is not used since we haven't translated all the logic yet.
  * Let's keep the unused code to make it easier to see the similarity between the two versions.
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal", "CommentedOutCode"})
 public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider {
   private static final Logger logger = Logger.getInstance(CodyAutoCompleteItemProvider.class);
-  public static final int nThreads = 3; // up to 3 completion API calls to run in parallel
+  public static final int nThreads = 1; // The number of API calls to run in parallel
   // should we reuse the scheduler from CodyCompletionsManager here later on?
   private final ExecutorService executor = Executors.newFixedThreadPool(nThreads);
   private final int promptTokens;
@@ -33,7 +32,6 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
   private final History history;
   private final int charsPerToken;
   private final int responseTokens;
-  private static final Pattern precedingLineMidWordPattern = Pattern.compile(".*[A-Za-z]$");
 
   public CodyAutoCompleteItemProvider(
       WebviewErrorMessenger webviewErrorMessenger,
@@ -129,8 +127,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
     //    int waitMs;
     List<AutoCompleteProvider> completers = new ArrayList<>();
 
-    if (context.selectedAutoCompleteSuggestionInfo != null
-        || precedingLineMidWordPattern.matcher(precedingLine).matches()) {
+    if (context.selectedAutoCompleteSuggestionInfo != null) {
       return emptyResult();
     }
 
@@ -200,7 +197,6 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
                 completions ->
                     completions.stream()
                         .flatMap(Collection::stream)
-                        .map(c -> PostProcess.postProcess(prefix, suffix, c))
                         .map(InlineAutoCompleteItem::fromCompletion)
                         .collect(Collectors.toList()));
 
@@ -283,7 +279,7 @@ public class CodyAutoCompleteItemProvider extends InlineAutoCompleteItemProvider
     Function<Optional<String>, AutoCompleteProvider> fallbackDefaultProvider =
         (maybeErrorToLog) -> {
           maybeErrorToLog.ifPresent(logger::error);
-          return new EndOfLineAutoCompleteProvider(
+          return new AnthropicAutoCompleteProvider(
               completionsClient,
               promptChars,
               responseTokens,

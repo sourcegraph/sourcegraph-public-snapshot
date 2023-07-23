@@ -1,8 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "lsif-visualize",
-    srcs = ["visualize.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/client/cody/test/fixtures/workspace/lib/codeintel/tools/lsif-visualize",
-    visibility = ["//visibility:public"],
-)

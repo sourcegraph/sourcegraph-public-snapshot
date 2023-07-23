@@ -40,7 +40,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_cadvisor_base",
-        digest = "sha256:42e9626596c7e3873f9ea66b87732273bc93f20d05499d410160468f40d585f5",
+        digest = "sha256:39f800ff006bbe579c71eaecc0157d5a57c7e2c0b11ba7a262eb8aec9fd848e0",
         image = "index.docker.io/sourcegraph/wolfi-cadvisor-base",
     )
 
@@ -154,6 +154,12 @@ def oci_deps():
     )
 
     oci_pull(
+        name = "wolfi_prometheus_gcp_base",
+        digest = "sha256:9981265b4e0132176bb3344913a1d5eda3f4fb77560028fe2e076a9d505a0a1f",
+        image = "index.docker.io/sourcegraph/wolfi-prometheus-gcp-base",
+    )
+
+    oci_pull(
         name = "wolfi_postgresql-12_base",
         digest = "sha256:e3272de2b6958aa64d7429aa2251470c4adab777496bb7290fa1a51d53193e7d",
         image = "index.docker.io/sourcegraph/wolfi-postgresql-12-base",
@@ -173,7 +179,7 @@ def oci_deps():
 
     oci_pull(
         name = "wolfi_opentelemetry_collector_base",
-        digest = "sha256:e6ebf3853f5ac70f7d63d35197a1e2ffb802c0229034e68b46c608d74e27dd44",
+        digest = "sha256:100b879c8a33d1f8aa640d1462165ce66f783e546c41d0e491dc7aa80a47a404",
         image = "index.docker.io/sourcegraph/wolfi-opentelemetry-collector-base",
     )
 

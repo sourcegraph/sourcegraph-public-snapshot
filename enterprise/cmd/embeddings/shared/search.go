@@ -18,7 +18,7 @@ const (
 )
 
 type (
-	getRepoEmbeddingIndexFn func(ctx context.Context, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
+	getRepoEmbeddingIndexFn func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error)
 	getQueryEmbeddingFn     func(ctx context.Context, model string) ([]float32, string, error)
 )
 
@@ -30,13 +30,13 @@ func searchRepoEmbeddingIndexes(
 	weaviate *weaviateClient,
 ) (_ *embeddings.EmbeddingCombinedSearchResults, err error) {
 	tr, ctx := trace.New(ctx, "searchRepoEmbeddingIndexes", params.Attrs()...)
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	floatQuery, queryModel, err := getQueryEmbedding(ctx, params.Query)
 	if err != nil {
 		return nil, err
 	}
-	embeddedQuery := embeddings.Quantize(floatQuery)
+	embeddedQuery := embeddings.Quantize(floatQuery, nil)
 
 	workerOpts := embeddings.WorkerOptions{
 		NumWorkers:     runtime.GOMAXPROCS(0),
@@ -51,13 +51,13 @@ func searchRepoEmbeddingIndexes(
 		tr, ctx := trace.New(ctx, "searchRepo",
 			attribute.String("repoName", string(repoName)),
 		)
-		defer tr.FinishWithErr(&err)
+		defer tr.EndWithErr(&err)
 
 		if weaviate.Use(ctx) {
 			return weaviate.Search(ctx, repoName, repoID, floatQuery, params.CodeResultsCount, params.TextResultsCount)
 		}
 
-		embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoName)
+		embeddingIndex, err := getRepoEmbeddingIndex(ctx, repoID, repoName)
 		if err != nil {
 			return nil, nil, errors.Wrapf(err, "getting repo embedding index for repo %q", repoName)
 		}

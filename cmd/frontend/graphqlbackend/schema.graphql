@@ -1365,10 +1365,10 @@ type Query {
         uri: String
     ): Repository
     """
-    Looks up a repository by either name or cloneURL or hashedName. When the repository does not exist on the server
-    and "disablePublicRepoRedirects" is "false" in the site configuration, it returns a Redirect to
-    an external Sourcegraph URL that may have this repository instead. Otherwise, this query returns
-    null.
+    Looks up a repository by either name or cloneURL or hashedName. When the
+    repository does not exist on the server, it returns a Redirect to an
+    external Sourcegraph URL that may have this repository instead. Otherwise,
+    this query returns null.
     """
     repositoryRedirect(
         """
@@ -1511,6 +1511,14 @@ type Query {
         Include repositories that do not have a text search index.
         """
         notIndexed: Boolean = true
+        """
+        Include repositories that have embeddings.
+        """
+        embedded: Boolean = true
+        """
+        Include repositories that don't have embeddings.
+        """
+        notEmbedded: Boolean = true
         """
         Include only repositories that have encountered errors when cloning or fetching
         """
@@ -3789,6 +3797,37 @@ type Repository implements Node & GenericSearchResultInterface {
     Returns true if embeddings for the repo are generated.
     """
     embeddingExists: Boolean!
+
+    """
+    Returns a list of all recorded commands for given repository.
+    """
+    recordedCommands: [RecordedCommand!]!
+}
+
+"""
+Recorded command is a Git command and its metadata which was run for particular repo.
+"""
+type RecordedCommand {
+    """
+    When the command started its execution.
+    """
+    start: DateTime!
+    """
+    Command run time in seconds.
+    """
+    duration: Float!
+    """
+    The command itself (e.g. "git fetch").
+    """
+    command: String!
+    """
+    Directory in which the command has been run.
+    """
+    dir: String!
+    """
+    Path to command executable (git executable in most cases).
+    """
+    path: String!
 }
 
 """
@@ -8316,6 +8355,17 @@ type ProductLicenseInfo {
     The Salesforce opportunity ID associated with this license.
     """
     salesforceOpportunityID: String
+    """
+    This indicates if the current license is valid. It will be false if:
+    - The license key has expired
+    - The license key is in use on another instance
+    - The license key was revoked
+    """
+    isValid: Boolean!
+    """
+    This indicates the reason the license is invalid. It'll be null if `isValid` is true.
+    """
+    licenseInvalidityReason: String
 }
 
 """
@@ -8450,6 +8500,10 @@ type RepositoryStats {
     The number of repositories that are currently corrupt
     """
     corrupted: Int!
+    """
+    The number of repositories that have embeddings
+    """
+    embedded: Int!
 }
 
 """

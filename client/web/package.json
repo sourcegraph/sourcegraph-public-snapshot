@@ -36,15 +36,15 @@
   "devDependencies": {
     "@sourcegraph/build-config": "workspace:*",
     "@sourcegraph/extension-api-types": "workspace:*",
-    "@sourcegraph/testing": "workspace:*",
-    "@sourcegraph/storybook": "workspace:*"
+    "@sourcegraph/storybook": "workspace:*",
+    "@sourcegraph/testing": "workspace:*"
   },
   "dependencies": {
     "@sourcegraph/branded": "workspace:*",
     "@sourcegraph/client-api": "workspace:*",
     "@sourcegraph/codeintellify": "workspace:*",
-    "@sourcegraph/cody-shared": "workspace:*",
-    "@sourcegraph/cody-ui": "workspace:*",
+    "@sourcegraph/cody-shared": "^0.0.4",
+    "@sourcegraph/cody-ui": "^0.0.6",
     "@sourcegraph/common": "workspace:*",
     "@sourcegraph/http-client": "workspace:*",
     "@sourcegraph/observability-client": "workspace:*",

@@ -153,7 +153,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
-	ui.InitRouter(db, enterpriseServices.EnterpriseSearchJobs)
+	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -219,8 +219,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	schema, err := graphqlbackend.NewSchema(
 		db,
-		gitserver.NewClient(),
-		enterpriseServices.EnterpriseSearchJobs,
+		gitserver.NewClient(db),
 		[]graphqlbackend.OptionalResolver{enterpriseServices.OptionalResolver},
 	)
 	if err != nil {
@@ -271,7 +270,6 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	// Create the external HTTP handler.
 	externalHandler := newExternalHTTPHandler(
 		db,
-		enterprise.EnterpriseSearchJobs,
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
@@ -333,7 +331,6 @@ func makeInternalAPI(
 		schema,
 		db,
 		grpcServer,
-		enterprise.EnterpriseSearchJobs,
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,
@@ -379,14 +376,14 @@ func isAllowedOrigin(origin string, allowedOrigins []string) bool {
 }
 
 func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
-	var store throttled.GCRAStore
+	var store throttled.GCRAStoreCtx
 	var err error
 	if pool, ok := redispool.Cache.Pool(); ok {
-		store, err = redigostore.New(pool, "gql:rl:", 0)
+		store, err = redigostore.NewCtx(pool, "gql:rl:", 0)
 	} else {
 		// If redis is disabled we are in Sourcegraph App and can rely on an
 		// in-memory store.
-		store, err = memstore.New(0)
+		store, err = memstore.NewCtx(0)
 	}
 	if err != nil {
 		return nil, err

@@ -4,7 +4,7 @@ import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/src/chat/transcript'
+import { Transcript, TranscriptJSON } from '@sourcegraph/cody-shared/dist/chat/transcript'
 import { Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { CodyChatStore, safeTimestampToDate } from '../../useCodyChat'

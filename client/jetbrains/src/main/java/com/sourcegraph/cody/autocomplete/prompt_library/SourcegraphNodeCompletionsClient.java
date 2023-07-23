@@ -35,8 +35,7 @@ public class SourcegraphNodeCompletionsClient {
             params.topK,
             params.topP),
         callbacks,
-        CompletionsService.Endpoint.Code,
-        this.token);
+        CompletionsService.Endpoint.Code);
     return callbacks.promise;
   }
 
@@ -61,8 +60,8 @@ public class SourcegraphNodeCompletionsClient {
 
     @Override
     public void onError(Throwable error) {
-      promise.completeExceptionally(error);
-      logger.error(error);
+      promise.complete(new CompletionResponse("", error.getMessage()));
+      logger.warn(error);
     }
 
     @Override

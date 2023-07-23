@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	executorutil "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/util"
+	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"

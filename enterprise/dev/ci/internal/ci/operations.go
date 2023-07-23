@@ -59,8 +59,6 @@ func CoreTestOperations(diff changed.Diff, opts CoreTestOperationsOptions) *oper
 			addWebAppEnterpriseBuild(opts),
 			addJetBrainsUnitTests, // ~2.5m
 			addVsceTests,          // ~3.0m
-			addCodyUnitIntegrationTests,
-			addCodyE2ETests,
 			addStylelint,
 		)
 		ops.Merge(clientChecks)
@@ -85,7 +83,6 @@ func addSgLints(targets []string) func(pipeline *bk.Pipeline) {
 			"BEXT_NIGHTLY":    os.Getenv("BEXT_NIGHTLY"),
 			"RELEASE_NIGHTLY": os.Getenv("RELEASE_NIGHTLY"),
 			"VSCE_NIGHTLY":    os.Getenv("VSCE_NIGHTLY"),
-			"CODY_NIGHTLY":    os.Getenv("CODY_NIGHTLY"),
 		})
 	)
 
@@ -198,31 +195,6 @@ func addVsceTests(pipeline *bk.Pipeline) {
 		// TODO: fix integrations tests and re-enable: https://github.com/sourcegraph/sourcegraph/issues/40891
 		// bk.Cmd("pnpm --filter @sourcegraph/vscode run test-integration --verbose"),
 		// bk.AutomaticRetry(1),
-	)
-}
-
-func addCodyUnitIntegrationTests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode::robot_face: Unit and integration tests for the Cody VS Code extension",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
-		bk.Cmd("pnpm --filter cody-ai run test:unit"),
-		bk.Cmd("pnpm --filter cody-shared run test"),
-		bk.Cmd("pnpm --filter cody-ai run test:integration"),
-	)
-}
-
-// Cody E2E tests are extracted into a separate step to auto-retry them on flaky failures.
-func addCodyE2ETests(pipeline *bk.Pipeline) {
-	pipeline.AddStep(
-		":vscode::robot_face: E2E tests for the Cody VS Code extension",
-		withPnpmCache(),
-		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-		bk.Cmd("client/cody/scripts/download-rg.sh x86_64-unknown-linux"),
-		bk.Cmd("pnpm --filter cody-ai run test:e2e"),
-		bk.ArtifactPaths("./playwright/**/*"),
-		bk.AutomaticRetry(3),
 	)
 }
 
@@ -373,75 +345,6 @@ func frontendTests(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
-// Adds the Go test step.
-func addGoTests(pipeline *bk.Pipeline) {
-	buildGoTests(func(description, testSuffix string, additionalOpts ...bk.StepOpt) {
-		opts := []bk.StepOpt{
-			// Max DB connections is set to 200: https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless/postgresql.conf
-			// Because we run tests concurrently, the following must hold to avoid connection issues:
-			//
-			//   GOMAXPROCS * TESTDB_MAXOPENCONNS < 200
-			//
-			// We aim a bit below the threshold to be safe.
-			bk.Env("GOMAXPROCS", "10"),
-			bk.Env("TESTDB_MAXOPENCONNS", "15"),
-			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
-				Annotations: &bk.AnnotationOpts{},
-			}),
-			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
-		}
-		opts = append(opts, additionalOpts...)
-
-		pipeline.AddStep(
-			fmt.Sprintf(":go: Test (%s)", description),
-			opts...,
-		)
-	})
-}
-
-// buildGoTests invokes the given function once for each subset of tests that should
-// be run as part of complete coverage. The description will be the specific test path
-// broken out to be run independently (or "all"), and the testSuffix will be the string
-// to pass to go test to filter test packaes (e.g., "only <pkg>" or "exclude <pkgs...>").
-func buildGoTests(f func(description, testSuffix string, additionalOpts ...bk.StepOpt)) {
-	// This is a bandage solution to speed up the go tests by running the slowest ones
-	// concurrently. As a results, the PR time affecting only Go code is divided by two.
-
-	// These are the slow packages that we do not want to run twice (once with gRPC, once without).
-	slowGoTestPackagesNonGRPC := []string{
-		"github.com/sourcegraph/sourcegraph/internal/database",            // 253s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/database", // 94s
-	}
-
-	// These are the slow packages that we _do_ want to run twice (once with gRPC, once without).
-	slowGoTestPackagesGRPC := []string{
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/insights",                       // 82+162s
-		"github.com/sourcegraph/sourcegraph/internal/repos",                                     // 106s
-		"github.com/sourcegraph/sourcegraph/enterprise/internal/batches",                        // 52 + 60
-		"github.com/sourcegraph/sourcegraph/cmd/frontend",                                       // 100s
-		"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers", // 152s
-		"github.com/sourcegraph/sourcegraph/dev/sg",                                             // small, but much more practical to have it in its own job
-	}
-
-	allSlowPackages := append(slowGoTestPackagesNonGRPC, slowGoTestPackagesGRPC...)
-	enableGRPCEnvOpt := bk.Env("SG_FEATURE_FLAG_GRPC", "true")
-
-	// Run all tests that aren't slow both with and without gRPC enabled
-	f("all", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")))
-	f("all (gRPC)", fmt.Sprintf("exclude %s", strings.Join(allSlowPackages, " ")), enableGRPCEnvOpt)
-
-	// Run most slow packages both with and without gRPC
-	for _, slowPkg := range slowGoTestPackagesGRPC {
-		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
-		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", "")+" (gRPC)", "only "+slowPkg, enableGRPCEnvOpt)
-	}
-
-	// These packages won't benefit from duplicating the tests with gRPC enabled, so only run them once.
-	for _, slowPkg := range slowGoTestPackagesNonGRPC {
-		f(strings.ReplaceAll(slowPkg, "github.com/sourcegraph/sourcegraph/", ""), "only "+slowPkg)
-	}
-}
-
 func addBrowserExtensionE2ESteps(pipeline *bk.Pipeline) {
 	for _, browser := range []string{"chrome"} {
 		// Run e2e tests
@@ -493,17 +396,6 @@ func addVsceReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
 		bk.Cmd("pnpm generate"),
 		bk.Cmd("pnpm --filter @sourcegraph/vscode run release"))
-}
-
-// Release the Cody extension.
-func addCodyReleaseSteps(releaseType string) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":vscode::robot_face: Cody release",
-			withPnpmCache(),
-			bk.Cmd("pnpm install --frozen-lockfile --fetch-timeout 60000"),
-			bk.Env("CODY_RELEASE_TYPE", releaseType),
-			bk.Cmd("pnpm --filter cody-ai run release"))
-	}
 }
 
 // Release a snapshot of App.
@@ -775,6 +667,17 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 		)
 		pipeline.AddStep(fmt.Sprintf(":docker: :construction: Build %s", app), cmds...)
 	}
+}
+
+// Run a Sonarcloud scanning step in Buildkite
+func sonarcloudScan() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(
+			"Sonarcloud Scan",
+			bk.Cmd("dev/ci/sonarcloud-scan.sh"),
+		)
+	}
+
 }
 
 // Ask trivy, a security scanning tool, to scan the candidate image

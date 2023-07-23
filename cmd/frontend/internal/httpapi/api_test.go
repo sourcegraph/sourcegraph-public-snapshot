@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
@@ -24,13 +23,12 @@ func init() {
 func newTest(t *testing.T) *httptestutil.Client {
 	logger := logtest.Scoped(t)
 	enterpriseServices := enterprise.DefaultServices()
-	rateLimitStore, _ := memstore.New(1024)
+	rateLimitStore, _ := memstore.NewCtx(1024)
 	rateLimiter := graphqlbackend.NewBasicLimitWatcher(logger, rateLimitStore)
 
 	db := database.NewMockDB()
 
 	return httptestutil.NewTest(NewHandler(db,
-		jobutil.NewUnimplementedEnterpriseJobs(),
 		router.New(mux.NewRouter()),
 		nil,
 		rateLimiter,

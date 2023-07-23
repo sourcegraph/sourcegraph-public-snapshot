@@ -19,90 +19,106 @@ The default run type.
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Client` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+  - **Security Scanning**: Sonarcloud Scan
   - **Pipeline setup**: Trigger async
 
 - Pipeline for `GraphQL` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
-  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+  - **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `DatabaseSchema` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Docs` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Dockerfiles` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `ExecutorVMImage` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `ExecutorDockerRegistryMirror` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `CIScripts` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Terraform` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `SVG` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Shell` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `DockerImages` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `WolfiPackages` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `WolfiBaseImages` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
+  - **Security Scanning**: Sonarcloud Scan
 
 - Pipeline for `Protobuf` changes:
   - Ensure buildfiles are up to date
   - Tests
   - BackCompat Tests
   - **Linters and static analysis**: Run sg lint
+  - **Security Scanning**: Sonarcloud Scan
 
 ### Wolfi Exp Branch
 
@@ -115,6 +131,29 @@ sg ci build wolfi
 
 Base pipeline (more steps might be included based on branch changes):
 
+
+### Manually Triggered External Build
+
+The run type for branches matching `_manually_triggered_external/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build _manually_triggered_external
+```
+
+Base pipeline (more steps might be included based on branch changes):
+
+- **Pipeline setup**: Trigger async
+- **Image builds**: Build Docker images
+- Ensure buildfiles are up to date
+- Tests
+- BackCompat Tests
+- **Linters and static analysis**: Run sg lint
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
+- **Publish candidate images**: Push candidate Images
+- **End-to-end tests**: Executors E2E
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Release branch nightly healthcheck build
 
@@ -144,16 +183,6 @@ Base pipeline (more steps might be included based on branch changes):
 
 - Tests for VS Code extension
 
-### Cody VS Code extension nightly release build
-
-The run type for environment including `{"CODY_NIGHTLY":"true"}`.
-
-Base pipeline (more steps might be included based on branch changes):
-
-- Unit and integration tests for the Cody VS Code extension
-- E2E tests for the Cody VS Code extension
-- Cody release
-
 ### App release build
 
 The run type for branches matching `app/release` (exact match).
@@ -182,10 +211,11 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
 
 ### Release branch
 
@@ -199,10 +229,11 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Browser extension release build
 
@@ -227,16 +258,6 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests for VS Code extension
 - Extension release
 
-### Cody VS Code extension release build
-
-The run type for branches matching `cody/release` (exact match).
-
-Base pipeline (more steps might be included based on branch changes):
-
-- Unit and integration tests for the Cody VS Code extension
-- E2E tests for the Cody VS Code extension
-- Cody release
-
 ### Main branch
 
 The run type for branches matching `main` (exact match).
@@ -249,10 +270,11 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Publish executor image, Publish executor binary, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
 
 ### Main dry run
 
@@ -271,10 +293,11 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Patch image
 
@@ -332,10 +355,11 @@ Base pipeline (more steps might be included based on branch changes):
 - Tests
 - BackCompat Tests
 - **Linters and static analysis**: Run sg lint
-- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Unit and integration tests for the Cody VS Code extension, E2E tests for the Cody VS Code extension, Stylelint (all)
+- **Client checks**: Upload Storybook to Chromatic, Enterprise build, Build (client/jetbrains), Tests for VS Code extension, Stylelint (all)
+- **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, prometheus-gcp, Push final images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Bazel command
 

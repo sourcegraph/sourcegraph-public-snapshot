@@ -1,0 +1,34 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dotcomuser",
+    srcs = ["dotcomuser.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/dotcomuser",
+    visibility = ["//cmd/cody-gateway:__subpackages__"],
+    deps = [
+        "//cmd/cody-gateway/internal/actor",
+        "//cmd/cody-gateway/internal/dotcom",
+        "//internal/codygateway",
+        "//internal/trace",
+        "//lib/errors",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_gregjones_httpcache//:httpcache",
+        "@com_github_khan_genqlient//graphql",
+        "@com_github_sourcegraph_log//:log",
+        "@com_github_vektah_gqlparser_v2//gqlerror",
+    ],
+)
+
+go_test(
+    name = "dotcomuser_test",
+    srcs = ["dotcomuser_test.go"],
+    embed = [":dotcomuser"],
+    deps = [
+        "//cmd/cody-gateway/internal/dotcom",
+        "//internal/codygateway",
+        "@com_github_graph_gophers_graphql_go//relay",
+        "@com_github_stretchr_testify//assert",
+    ],
+)

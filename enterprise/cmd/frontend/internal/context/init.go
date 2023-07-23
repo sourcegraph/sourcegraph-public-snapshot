@@ -23,11 +23,7 @@ func Init(
 	enterpriseServices *enterprise.Services,
 ) error {
 	embeddingsClient := embeddings.NewDefaultClient()
-	searchClient := client.New(
-		observationCtx.Logger,
-		db,
-		enterpriseServices.EnterpriseSearchJobs,
-	)
+	searchClient := client.New(observationCtx.Logger, db)
 	contextClient := codycontext.NewCodyContextClient(
 		observationCtx,
 		db,

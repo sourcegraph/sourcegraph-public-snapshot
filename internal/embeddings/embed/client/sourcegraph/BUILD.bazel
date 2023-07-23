@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -9,7 +10,17 @@ go_library(
         "//internal/codygateway",
         "//internal/conf/conftypes",
         "//internal/embeddings/embed/client",
-        "//internal/httpcli",
         "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "sourcegraph_test",
+    srcs = ["client_test.go"],
+    embed = [":sourcegraph"],
+    deps = [
+        "//internal/codygateway",
+        "//internal/conf/conftypes",
+        "@com_github_stretchr_testify//require",
     ],
 )

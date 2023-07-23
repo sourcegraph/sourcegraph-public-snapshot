@@ -45,6 +45,7 @@ go_test(
     embed = [":compute"],
     deps = [
         "//internal/comby",
+        "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/search/result",
         "//internal/types",

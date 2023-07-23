@@ -15,12 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func NewClient(config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient {
+func NewClient(client *http.Client, config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient {
 	return &sourcegraphEmbeddingsClient{
+		httpClient:  client,
 		model:       config.Model,
 		dimensions:  config.Dimensions,
 		endpoint:    config.Endpoint,
@@ -29,6 +29,7 @@ func NewClient(config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient 
 }
 
 type sourcegraphEmbeddingsClient struct {
+	httpClient  *http.Client
 	model       string
 	dimensions  int
 	endpoint    string
@@ -69,7 +70,37 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 	}
 
 	request := codygateway.EmbeddingsRequest{Model: c.model, Input: augmentedTexts}
+	response, err := c.do(ctx, request)
+	if err != nil {
+		return nil, err
+	}
 
+	if len(response.Embeddings) == 0 {
+		return nil, nil
+	}
+
+	// Ensure embedding responses are sorted in the original order.
+	sort.Slice(response.Embeddings, func(i, j int) bool {
+		return response.Embeddings[i].Index < response.Embeddings[j].Index
+	})
+
+	embeddings := make([]float32, 0, len(response.Embeddings)*response.ModelDimensions)
+	for _, embedding := range response.Embeddings {
+		if len(embedding.Data) > 0 {
+			embeddings = append(embeddings, embedding.Data...)
+		} else {
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, c.model, augmentedTexts[embedding.Index], 3)
+			if err != nil {
+				return nil, client.PartialError{err, embedding.Index}
+			}
+			embeddings = append(embeddings, resp...)
+		}
+	}
+
+	return embeddings, nil
+}
+
+func (c *sourcegraphEmbeddingsClient) do(ctx context.Context, request codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, error) {
 	bodyBytes, err := json.Marshal(request)
 	if err != nil {
 		return nil, err
@@ -81,10 +112,10 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
-	if len(texts) > 1 {
-		req.Header.Set("X-Cody-Embed-Batch-Size", strconv.Itoa(len(texts)))
+	if len(request.Input) > 1 {
+		req.Header.Set("X-Cody-Embed-Batch-Size", strconv.Itoa(len(request.Input)))
 	}
-	resp, err := httpcli.ExternalDoer.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -121,21 +152,24 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 		return nil, err
 	}
 
-	if len(response.Embeddings) == 0 {
-		return nil, nil
+	return &response, nil
+}
+
+func (c *sourcegraphEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, model string, input string, retries int) (resp []float32, err error) {
+	for i := 0; i < retries; i++ {
+		resp, err := c.do(ctx, codygateway.EmbeddingsRequest{
+			Model: model,
+			Input: []string{input},
+		})
+		if err != nil {
+			return nil, err
+		}
+		if len(resp.Embeddings) != 1 || len(resp.Embeddings[0].Data) != c.dimensions {
+			continue // retry
+		}
+		return resp.Embeddings[0].Data, err
 	}
-
-	// Ensure embedding responses are sorted in the original order.
-	sort.Slice(response.Embeddings, func(i, j int) bool {
-		return response.Embeddings[i].Index < response.Embeddings[j].Index
-	})
-
-	embeddings := make([]float32, 0, len(response.Embeddings)*response.ModelDimensions)
-	for _, embedding := range response.Embeddings {
-		embeddings = append(embeddings, embedding.Data...)
-	}
-
-	return embeddings, nil
+	return nil, errors.Newf("null response for embedding after %d retries", retries)
 }
 
 var modelsWithoutNewlines = map[string]struct{}{

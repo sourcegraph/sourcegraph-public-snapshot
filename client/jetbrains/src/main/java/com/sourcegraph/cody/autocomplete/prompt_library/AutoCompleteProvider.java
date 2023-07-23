@@ -1,5 +1,8 @@
 package com.sourcegraph.cody.autocomplete.prompt_library;
 
+import static com.sourcegraph.cody.autocomplete.prompt_library.TextProcessing.CLOSING_CODE_TAG;
+import static com.sourcegraph.cody.autocomplete.prompt_library.TextProcessing.OPENING_CODE_TAG;
+
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.api.Promises;
 import com.sourcegraph.cody.api.Speaker;
@@ -60,44 +63,17 @@ public abstract class AutoCompleteProvider {
 
     int remainingChars = promptChars - emptyPromptLength();
 
-    if (suffix.length() > 0) {
-      String suffix = "";
-      String[] suffixLines = suffix.split("\n");
-      if (suffixLines.length > 5) {
-        suffix = String.join("\n", Arrays.copyOfRange(suffixLines, 5, suffixLines.length));
-      }
-
-      if (suffix.length() > 0) {
-        List<Message> suffixContext =
-            List.of(
-                new Message(
-                    Speaker.HUMAN,
-                    "Add the following code snippet to your knowledge base:\n```\n"
-                        + suffix
-                        + "\n```"),
-                new Message(Speaker.ASSISTANT, "Okay, I have added it to my knowledge base."));
-
-        int numSnippetChars =
-            suffixContext.stream().map(Message::prompt).collect(Collectors.joining("")).length()
-                + 1;
-        if (numSnippetChars <= remainingChars) {
-          referenceSnippetMessages.addAll(suffixContext);
-          remainingChars -= numSnippetChars;
-        }
-      }
-    }
-
     for (ReferenceSnippet snippet : snippets) {
       List<Message> snippetMessages =
           List.of(
               new Message(
                   Speaker.HUMAN,
-                  "Add the following code snippet (from file "
-                      + snippet.filename
-                      + ") to your knowledge base:\n```\n"
+                  "Here is a reference snippet of code: "
+                      + OPENING_CODE_TAG
                       + snippet.jaccard.text
-                      + "\n```"),
-              new Message(Speaker.ASSISTANT, "Okay, I have added it to my knowledge base."));
+                      + CLOSING_CODE_TAG),
+              new Message(
+                  Speaker.ASSISTANT, "Okay, I have added the snippet to my knowledge base."));
       int numSnippetChars =
           snippetMessages.stream().map(Message::prompt).collect(Collectors.joining("")).length()
               + 1;

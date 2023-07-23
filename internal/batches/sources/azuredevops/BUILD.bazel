@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "azuredevops",
+    srcs = ["types.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/extsvc/azuredevops"],
+)

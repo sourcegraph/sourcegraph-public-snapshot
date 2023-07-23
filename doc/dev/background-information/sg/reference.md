@@ -78,8 +78,10 @@ Flags:
 * `--debug, -d="<value>"`: Services to set at debug log level.
 * `--describe`: Print details about the selected commandset
 * `--error, -e="<value>"`: Services to set at info error level.
+* `--except="<value>"`: List of services of the specified command set to NOT start
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--info, -i="<value>"`: Services to set at info log level.
+* `--only="<value>"`: List of services of the specified command set to start. Commands NOT in this list will NOT be started.
 * `--warn, -w="<value>"`: Services to set at warn log level.
 
 ## sg run
@@ -102,8 +104,6 @@ Available commands in `sg.config.yaml`:
 * codeintel-executor-kubernetes
 * codeintel-worker
 * cody-gateway
-* cody-slack-dev: Start Cody-Slack dev locally
-* cody-slack-docker: Start Cody-Slack locally prod in Docker
 * debug-env: Debug env vars
 * docsite: Docsite instance serving the docs
 * embeddings
@@ -261,6 +261,7 @@ This command is useful when:
 Supported run types when providing an argument for 'sg ci build [runtype]':
 
 * wolfi - Wolfi Exp Branch
+* _manually_triggered_external - Manually Triggered External Build
 * main-dry-run - Main dry run
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
@@ -363,9 +364,6 @@ Available testsuites in `sg.config.yaml`:
 * bext-e2e
 * bext-integration
 * client
-* cody-e2e
-* cody-integration
-* cody-unit
 * docsite
 * web-e2e
 * web-integration
@@ -1370,6 +1368,12 @@ $ sg rfc open 420
 
 # Open a specific private RFC
 $ sg rfc --private open 420
+
+# Create a new public RFC
+$ sg rfc create "title"
+
+# Create a new private RFC. Possible types: [solution]
+$ sg rfc --private create --type <type> "title"
 ```
 
 Flags:
@@ -1404,6 +1408,17 @@ Arguments: `[number]`
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg rfc create
+
+Create Sourcegraph RFCs.
+
+Arguments: `--type <type> <title...>`
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--type="<value>"`: the type of the RFC to create (valid: solution)
 
 ## sg adr
 

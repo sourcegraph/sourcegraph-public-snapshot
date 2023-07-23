@@ -27,6 +27,7 @@ export interface AuthProvider {
     isBuiltin: boolean
     authenticationURL: string
     serviceID: string
+    clientID: string
 }
 
 /**

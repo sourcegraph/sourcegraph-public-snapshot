@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"fmt"
 	"time"
 )
 
@@ -28,3 +29,12 @@ type RateLimitExceededError struct {
 func (e RateLimitExceededError) Error() string { return "rate limit exceeded" }
 
 func (e RateLimitExceededError) RetryAfter() time.Time { return e.retryAfter }
+
+type PartialError struct {
+	Err   error
+	Index int
+}
+
+func (p PartialError) Error() string {
+	return fmt.Sprintf("partial error: input %d: %s", p.Index, p.Err)
+}

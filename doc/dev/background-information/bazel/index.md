@@ -16,6 +16,7 @@ Sourcegraph uses [Bazel](https://bazel.build) as its build system. Reach out on 
 - **How-tos**
   - [Writing a server integration test](./server_integration_tests.md)
   - [Cookbook](./cookbook.md)
+  - [Porting `go:generate` directives to Bazel](./go_generate.md)
 
 ---
 
