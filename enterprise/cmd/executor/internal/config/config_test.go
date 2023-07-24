@@ -69,7 +69,7 @@ func TestConfig_Load(t *testing.T) {
 		case "KUBERNETES_SINGLE_JOB_STEP_IMAGE":
 			return "sourcegraph/step-image:latest"
 		case "KUBERNETES_JOB_ANNOTATIONS":
-			return `{"foo": "bar"}`
+			return `{"foo": "bar", "faz": "baz"}`
 		case "KUBERNETES_IMAGE_PULL_SECRETS":
 			return "foo,bar"
 		default:
@@ -172,7 +172,9 @@ func TestConfig_Load(t *testing.T) {
 		cfg.KubernetesAdditionalJobVolumeMounts,
 	)
 	assert.Equal(t, "sourcegraph/step-image:latest", cfg.KubernetesSingleJobStepImage)
-	assert.Equal(t, map[string]string{"foo": "bar"}, cfg.KubernetesJobAnnotations)
+	assert.Len(t, cfg.KubernetesJobAnnotations, 2)
+	assert.Equal(t, "bar", cfg.KubernetesJobAnnotations["foo"])
+	assert.Equal(t, "baz", cfg.KubernetesJobAnnotations["faz"])
 	assert.Equal(t, "foo,bar", cfg.KubernetesImagePullSecrets)
 }
 
