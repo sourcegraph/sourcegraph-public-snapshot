@@ -34,7 +34,6 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 			scipSymbolName:  c.ScipSymbolName,
 			fuzzySymbolName: c.FuzzySymbolName,
 			repositoryName:  c.RepositoryName,
-			symbolRole:      c.SymbolRole,
 			confidence:      c.Confidence,
 			text:            c.Text,
 			filepath:        c.FilePath,
@@ -55,7 +54,6 @@ type preciseDataResolver struct {
 	scipSymbolName  string
 	fuzzySymbolName string
 	repositoryName  string
-	symbolRole      int32
 	confidence      string
 	text            string
 	filepath        string
@@ -64,7 +62,6 @@ type preciseDataResolver struct {
 func (r *preciseDataResolver) ScipSymbolName() string  { return r.scipSymbolName }
 func (r *preciseDataResolver) FuzzySymbolName() string { return r.fuzzySymbolName }
 func (r *preciseDataResolver) RepositoryName() string  { return r.repositoryName }
-func (r *preciseDataResolver) SymbolRole() int32       { return r.symbolRole }
 func (r *preciseDataResolver) Confidence() string      { return r.confidence }
 func (r *preciseDataResolver) Text() string            { return r.text }
 func (r *preciseDataResolver) FilePath() string        { return r.filepath }

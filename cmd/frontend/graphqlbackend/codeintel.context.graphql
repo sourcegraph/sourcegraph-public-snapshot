@@ -54,10 +54,6 @@ type PreciseContextOutput {
     """
     repositoryName: String!
     """
-    The role of the symbol.
-    """
-    symbolRole: Int!
-    """
     The confidence of the context whether PRECISE or SEARCH based.
     """
     confidence: String!

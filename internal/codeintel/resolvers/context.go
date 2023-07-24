@@ -27,7 +27,6 @@ type PreciseContextOutputResolver interface {
 	ScipSymbolName() string
 	FuzzySymbolName() string
 	RepositoryName() string
-	SymbolRole() int32
 	Confidence() string
 	Text() string
 	FilePath() string

@@ -357,7 +357,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 						ScipSymbolName:  pd.scipSymbolName,
 						FuzzySymbolName: pd.fuzzyName,
 						RepositoryName:  l.Dump.RepositoryName,
-						SymbolRole:      0, // TODO
 						Confidence:      "PRECISE",
 						Text:            snippet,
 						FilePath:        l.Path,
