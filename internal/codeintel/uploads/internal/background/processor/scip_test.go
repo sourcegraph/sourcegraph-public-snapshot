@@ -50,17 +50,22 @@ func implCorrelateSCIP(t *testing.T, testIndexPath string, indexSizeLimit int64)
 	}
 
 	// Correlate and consume channels from returned object
-	correlatedSCIPData, err := correlateSCIP(ctx, log.NoOp(), testReader(), "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
+	scipDataStream, err := prepareSCIPDataStream(ctx, testReader(), "", func(ctx context.Context, dirnames []string) (map[string][]string, error) {
 		return scipDirectoryChildren, nil
 	})
 	if err != nil {
 		t.Fatalf("unexpected error processing SCIP: %s", err)
 	}
 	var documents []lsifstore.ProcessedSCIPDocument
-	for document := range correlatedSCIPData.Documents {
-		documents = append(documents, document)
-	}
-	packages, packageReferences, err := readPackageAndPackageReferences(ctx, correlatedSCIPData)
+	packageData := lsifstore.ProcessedPackageData{}
+	err = scipDataStream.DocumentIterator.VisitAllDocuments(ctx, log.NoOp(), &packageData, func(d lsifstore.ProcessedSCIPDocument) error {
+		documents = append(documents, d)
+		return nil
+	})
+	require.NoError(t, err)
+	packageData.Normalize()
+	packages := packageData.Packages
+	packageReferences := packageData.PackageReferences
 	if err != nil {
 		t.Fatalf("unexpected error reading processed SCIP: %s", err)
 	}
@@ -73,7 +78,7 @@ func implCorrelateSCIP(t *testing.T, testIndexPath string, indexSizeLimit int64)
 		ToolArguments:        nil,
 		ProtocolVersion:      0,
 	}
-	if diff := cmp.Diff(expectedMetadata, correlatedSCIPData.Metadata); diff != "" {
+	if diff := cmp.Diff(expectedMetadata, scipDataStream.Metadata); diff != "" {
 		t.Fatalf("unexpected metadata (-want +got):\n%s", diff)
 	}
 

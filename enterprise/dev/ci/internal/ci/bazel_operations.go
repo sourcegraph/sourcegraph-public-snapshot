@@ -19,7 +19,7 @@ func BazelOperations(isMain bool) []operations.Operation {
 	ops := []operations.Operation{}
 	ops = append(ops, bazelConfigure())
 	if isMain {
-		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test"))
+		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
 	} else {
 		ops = append(ops, bazelTest("//...", "//client/web:test"))
 	}
