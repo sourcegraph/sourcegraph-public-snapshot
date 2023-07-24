@@ -10,7 +10,6 @@ import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
-	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
@@ -53,21 +52,10 @@ func NewHandler(
 	config *Config,
 ) (http.Handler, error) {
 	// Initialize metrics
-	anthropicCompletionsRequests := atomic.NewInt64(0)
-	openaiCompletionsRequests := atomic.NewInt64(0)
-	openaiEmbeddingsRequests := atomic.NewInt64(0)
-	if _, err := meter.Int64ObservableGauge("concurrent_upstream_requests",
-		metric.WithDescription("number of concurrent active requests for upstream services"),
-		metric.WithInt64Callback(func(_ context.Context, o metric.Int64Observer) error {
-			o.Observe(anthropicCompletionsRequests.Load(),
-				metric.WithAttributeSet(attributesAnthropicCompletions))
-			o.Observe(openaiCompletionsRequests.Load(),
-				metric.WithAttributeSet(attributesOpenAICompletions))
-			o.Observe(openaiEmbeddingsRequests.Load(),
-				metric.WithAttributeSet(attributesOpenAIEmbeddings))
-			return nil
-		})); err != nil {
-		return nil, errors.Wrap(err, "init metric concurrent_upstream_requests")
+	counter, err := meter.Int64UpDownCounter("cody-gateway.concurrent_upstream_requests",
+		metric.WithDescription("number of concurrent active requests for upstream services"))
+	if err != nil {
+		return nil, errors.Wrap(err, "init metric 'concurrent_upstream_requests'")
 	}
 
 	// Add a prefix to the store for globally unique keys and simpler pruning.
@@ -81,7 +69,8 @@ func NewHandler(
 		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.anthropic",
 				gaugeHandler(
-					anthropicCompletionsRequests,
+					counter,
+					attributesAnthropicCompletions,
 					authr.Middleware(
 						requestlogger.Middleware(
 							logger,
@@ -106,7 +95,8 @@ func NewHandler(
 		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.completions.openai",
 				gaugeHandler(
-					openaiCompletionsRequests,
+					counter,
+					attributesOpenAICompletions,
 					authr.Middleware(
 						requestlogger.Middleware(
 							logger,
@@ -142,10 +132,12 @@ func NewHandler(
 		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
 			instrumentation.HTTPMiddleware("v1.embeddings",
 				gaugeHandler(
+					counter,
 					// TODO - if embeddings.ModelFactoryMap includes more than
 					// just OpenAI we might need to move how we count concurrent
-					// requests into the handler
-					openaiEmbeddingsRequests,
+					// requests into the handler, instead of assuming we are
+					// counting OpenAI requests
+					attributesOpenAIEmbeddings,
 					authr.Middleware(
 						requestlogger.Middleware(
 							logger,
@@ -191,10 +183,11 @@ func newMetricAttributes(provider string, feature string) attribute.Set {
 
 // gaugeHandler increments gauge when handling the request and decrements it
 // upon completion.
-func gaugeHandler(gauge *atomic.Int64, handler http.Handler) http.Handler {
+func gaugeHandler(counter metric.Int64UpDownCounter, attrs attribute.Set, handler http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		gauge.Inc()
+		counter.Add(r.Context(), 1, metric.WithAttributeSet(attrs))
 		handler.ServeHTTP(w, r)
-		gauge.Dec()
+		// Background context when done, since request may be cancelled.
+		counter.Add(context.Background(), -1, metric.WithAttributeSet(attrs))
 	})
 }

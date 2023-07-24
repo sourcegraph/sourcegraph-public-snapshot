@@ -22,7 +22,6 @@ export const mockUser: AuthenticatedUser = {
         nodes: [],
     },
     hasVerifiedEmail: true,
-    completedPostSignup: true,
     session: { __typename: 'Session', canSignOut: true },
     tosAccepted: true,
     searchable: true,
@@ -37,6 +36,11 @@ export const mockCodeMonitorFields: CodeMonitorFields = {
     description: 'Test code monitor',
     enabled: true,
     trigger: { id: 'test-0', query: 'test' },
+    owner: {
+        id: 'test-0',
+        namespaceName: 'bob',
+        url: 'bob/profile',
+    },
     actions: {
         nodes: [
             {
@@ -96,6 +100,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-0', query: 'test' },
+        owner: {
+            id: 'test-0',
+            namespaceName: 'bob',
+            url: 'bob/profile',
+        },
     },
     {
         id: 'foo1',
@@ -113,6 +122,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-1', query: 'test' },
+        owner: {
+            id: 'test-0',
+            namespaceName: 'bob',
+            url: 'bob/profile',
+        },
     },
     {
         id: 'foo2',
@@ -137,6 +151,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-2', query: 'test' },
+        owner: {
+            id: 'test-1',
+            namespaceName: 'jimbert',
+            url: 'jimbert/profile',
+        },
     },
     {
         id: 'foo3',
@@ -161,6 +180,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-3', query: 'test' },
+        owner: {
+            id: 'test-1',
+            namespaceName: 'jimbert',
+            url: 'jimbert/profile',
+        },
     },
     {
         id: 'foo4',
@@ -178,6 +202,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-4', query: 'test' },
+        owner: {
+            id: 'test-2',
+            namespaceName: 'evilcorp',
+            url: 'evilcorp/profile',
+        },
     },
     {
         id: 'foo5',
@@ -195,6 +224,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-5', query: 'test' },
+        owner: {
+            id: 'test-2',
+            namespaceName: 'evilcorp',
+            url: 'evilcorp/profile',
+        },
     },
     {
         id: 'foo6',
@@ -212,6 +246,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-6', query: 'test' },
+        owner: {
+            id: 'test-3',
+            namespaceName: 'silvat',
+            url: 'silvat/profile',
+        },
     },
     {
         id: 'foo7',
@@ -229,6 +268,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-7', query: 'test' },
+        owner: {
+            id: 'test-3',
+            namespaceName: 'silvat',
+            url: 'silvat/profile',
+        },
     },
     {
         id: 'foo9',
@@ -246,6 +290,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-9', query: 'test' },
+        owner: {
+            id: 'test-4',
+            namespaceName: 'mero',
+            url: 'mero/profile',
+        },
     },
     {
         id: 'foo10',
@@ -263,6 +312,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-0', query: 'test' },
+        owner: {
+            id: 'test-4',
+            namespaceName: 'mero',
+            url: 'mero/profile',
+        },
     },
     {
         id: 'foo11',
@@ -280,6 +334,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-1', query: 'test' },
+        owner: {
+            id: 'test-4',
+            namespaceName: 'mero',
+            url: 'mero/profile',
+        },
     },
     {
         id: 'foo12',
@@ -297,6 +356,11 @@ export const mockCodeMonitorNodes: ListCodeMonitors['nodes'] = [
             ],
         },
         trigger: { id: 'test-2', query: 'test' },
+        owner: {
+            id: 'test-5',
+            namespaceName: 'cantoid',
+            url: 'cantoid/profile',
+        },
     },
 ]
 

@@ -1,4 +1,4 @@
-package licensing
+package licensecheck
 
 import (
 	"bytes"
@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
@@ -29,7 +30,7 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 	})
 
 	cleanupStore := func() {
-		_ = store.Del(licenseValidityStoreKey)
+		_ = store.Del(licensing.LicenseValidityStoreKey)
 		_ = store.Del(lastCalledAtStoreKey)
 	}
 
@@ -57,19 +58,19 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 			want:         0,
 			wantErr:      true,
 		},
-		"returns 0 if last called at is before LicenseCheckInterval": {
-			lastCalledAt: now.Add(-LicenseCheckInterval - time.Minute).Format(time.RFC3339),
+		"returns 0 if last called at is before licensing.LicenseCheckInterval": {
+			lastCalledAt: now.Add(-licensing.LicenseCheckInterval - time.Minute).Format(time.RFC3339),
 			want:         0,
 			wantErr:      false,
 		},
-		"returns 0 if last called at is at LicenseCheckInterval": {
-			lastCalledAt: now.Add(-LicenseCheckInterval).Format(time.RFC3339),
+		"returns 0 if last called at is at licensing.LicenseCheckInterval": {
+			lastCalledAt: now.Add(-licensing.LicenseCheckInterval).Format(time.RFC3339),
 			want:         0,
 			wantErr:      false,
 		},
 		"returns diff between last called at and now": {
 			lastCalledAt: now.Add(-time.Hour).Format(time.RFC3339),
-			want:         LicenseCheckInterval - time.Hour,
+			want:         licensing.LicenseCheckInterval - time.Hour,
 			wantErr:      false,
 		},
 	}
@@ -112,7 +113,7 @@ func Test_licenseChecker(t *testing.T) {
 	})
 
 	cleanupStore := func() {
-		_ = store.Del(licenseValidityStoreKey)
+		_ = store.Del(licensing.LicenseValidityStoreKey)
 		_ = store.Del(lastCalledAtStoreKey)
 	}
 
@@ -121,15 +122,15 @@ func Test_licenseChecker(t *testing.T) {
 
 	t.Run("skips check if license is air-gapped", func(t *testing.T) {
 		cleanupStore()
-		var featureChecked Feature
-		defaultMock := MockCheckFeature
-		MockCheckFeature = func(feature Feature) error {
+		var featureChecked licensing.Feature
+		defaultMock := licensing.MockCheckFeature
+		licensing.MockCheckFeature = func(feature licensing.Feature) error {
 			featureChecked = feature
 			return nil
 		}
 
 		t.Cleanup(func() {
-			MockCheckFeature = defaultMock
+			licensing.MockCheckFeature = defaultMock
 		})
 
 		doer := &mockDoer{
@@ -147,13 +148,13 @@ func Test_licenseChecker(t *testing.T) {
 		require.NoError(t, err)
 
 		// check feature was checked
-		require.Equal(t, FeatureAllowAirGapped, featureChecked)
+		require.Equal(t, licensing.FeatureAllowAirGapped, featureChecked)
 
 		// check doer NOT called
 		require.False(t, doer.DoCalled)
 
 		// check result was set to true
-		valid, err := store.Get(licenseValidityStoreKey).Bool()
+		valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
 		require.NoError(t, err)
 		require.True(t, valid)
 
@@ -164,18 +165,18 @@ func Test_licenseChecker(t *testing.T) {
 	})
 
 	t.Run("skips check if license has dev tag", func(t *testing.T) {
-		defaultMockGetLicense := MockGetConfiguredProductLicenseInfo
-		MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
+		defaultMockGetLicense := licensing.MockGetConfiguredProductLicenseInfo
+		licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
 			return &license.Info{
 				Tags: []string{"dev"},
 			}, "", nil
 		}
 
 		t.Cleanup(func() {
-			MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
+			licensing.MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
 		})
 
-		_ = store.Del(licenseValidityStoreKey)
+		_ = store.Del(licensing.LicenseValidityStoreKey)
 		_ = store.Del(lastCalledAtStoreKey)
 
 		doer := &mockDoer{
@@ -196,7 +197,7 @@ func Test_licenseChecker(t *testing.T) {
 		require.False(t, doer.DoCalled)
 
 		// check result was set to true
-		valid, err := store.Get(licenseValidityStoreKey).Bool()
+		valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
 		require.NoError(t, err)
 		require.True(t, valid)
 
@@ -265,18 +266,18 @@ func Test_licenseChecker(t *testing.T) {
 				require.Error(t, err)
 
 				// check result was NOT set
-				require.True(t, store.Get(licenseValidityStoreKey).IsNil())
+				require.True(t, store.Get(licensing.LicenseValidityStoreKey).IsNil())
 			} else {
 				require.NoError(t, err)
 
 				// check result was set
-				got, err := store.Get(licenseValidityStoreKey).Bool()
+				got, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
 				require.NoError(t, err)
 				require.Equal(t, test.want, got)
 
 				// check result reason was set
 				if test.reason != nil {
-					got, err := store.Get(licenseInvalidReason).String()
+					got, err := store.Get(licensing.LicenseInvalidReason).String()
 					require.NoError(t, err)
 					require.Equal(t, *test.reason, got)
 				}

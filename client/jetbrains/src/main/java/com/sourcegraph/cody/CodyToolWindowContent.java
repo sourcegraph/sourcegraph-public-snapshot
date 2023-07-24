@@ -18,7 +18,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.IconUtil;
@@ -32,6 +31,7 @@ import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.chat.ChatScrollPane;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
@@ -62,11 +62,11 @@ import com.sourcegraph.config.SettingsComponent.InstanceType;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.*;
-import java.awt.event.AdjustmentListener;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -92,7 +92,6 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull Project project;
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private final JPanel stopGeneratingButtonPanel;
-  private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
 
@@ -144,22 +143,7 @@ public class CodyToolWindowContent implements UpdatableChat {
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
-    JBScrollPane chatPanel =
-        new JBScrollPane(
-            messagesPanel,
-            JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-            JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-    chatPanel.setBorder(BorderFactory.createEmptyBorder());
-
-    // Scroll all the way down after each message
-    AdjustmentListener scrollAdjustmentListener =
-        e -> {
-          if (needScrollingDown) {
-            e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-            needScrollingDown = false;
-          }
-        };
-    chatPanel.getVerticalScrollBar().addAdjustmentListener(scrollAdjustmentListener);
+    ChatScrollPane chatPanel = new ChatScrollPane(messagesPanel);
 
     // Controls panel
     JPanel controlsPanel = new JPanel();
@@ -392,15 +376,6 @@ public class CodyToolWindowContent implements UpdatableChat {
     messagesPanel.add(bubblePanel);
     messagesPanel.revalidate();
     messagesPanel.repaint();
-
-    // Need this hacky solution to scroll all the way down after each message
-    ApplicationManager.getApplication()
-        .invokeLater(
-            () -> {
-              needScrollingDown = true;
-              messagesPanel.revalidate();
-              messagesPanel.repaint();
-            });
   }
 
   @Override
@@ -446,20 +421,20 @@ public class CodyToolWindowContent implements UpdatableChat {
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {
     ApplicationManager.getApplication()
         .invokeLater(
-            () -> {
-              transcript.addAssistantResponse(message);
-              if (messagesPanel.getComponentCount() > 0) {
-                JPanel lastBubblePanel =
-                    (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
-                Component component = lastBubblePanel.getComponent(0);
-                if (component instanceof ChatBubble) {
-                  ChatBubble lastBubble = (ChatBubble) component;
-                  lastBubble.updateText(message, messagesPanel);
-                  messagesPanel.revalidate();
-                  messagesPanel.repaint();
-                }
-              }
-            });
+            () ->
+                Optional.of(messagesPanel)
+                    .filter(mp -> mp.getComponentCount() > 0)
+                    .map(mp -> mp.getComponent(mp.getComponentCount() - 1))
+                    .filter(component -> component instanceof JPanel)
+                    .map(component -> (JPanel) component)
+                    .map(lastBubblePanel -> lastBubblePanel.getComponent(0))
+                    .filter(component -> component instanceof ChatBubble)
+                    .map(component -> (ChatBubble) component)
+                    .ifPresent(
+                        lastBubble -> {
+                          transcript.addAssistantResponse(message);
+                          lastBubble.incrementallyUpdateText(message, messagesPanel);
+                        }));
   }
 
   private void startMessageProcessing() {

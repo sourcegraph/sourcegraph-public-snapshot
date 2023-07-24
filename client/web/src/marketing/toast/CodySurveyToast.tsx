@@ -2,23 +2,18 @@ import { useState, useCallback, useEffect } from 'react'
 
 import { mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate } from 'react-router-dom'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Checkbox, Form, H3, Modal, Text, Button, Icon } from '@sourcegraph/wildcard'
+import { Checkbox, Form, H3, Modal, Text, Button, Icon, useCookieStorage } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
+import { isEmailVerificationNeededForCody } from '../../cody/isCodyEnabled'
 import { LoaderButton } from '../../components/LoaderButton'
-import {
-    SubmitCodySurveyResult,
-    SubmitCodySurveyVariables,
-    SetCompletedPostSignupVariables,
-    SetCompletedPostSignupResult,
-} from '../../graphql-operations'
-import { PageRoutes } from '../../routes.constants'
+import { SubmitCodySurveyResult, SubmitCodySurveyVariables } from '../../graphql-operations'
 import { resendVerificationEmail } from '../../user/settings/emails/UserEmail'
 
 import styles from './CodySurveyToast.module.scss'
@@ -31,17 +26,10 @@ const SUBMIT_CODY_SURVEY = gql`
     }
 `
 
-const SET_COMPLETED_POST_SIGNUP = gql`
-    mutation SetCompletedPostSignup($userID: ID!) {
-        setCompletedPostSignup(userID: $userID) {
-            alwaysNil
-        }
-    }
-`
-
-const CodySurveyToastInner: React.FC<
-    { onSubmitEnd: () => void; userId: string; hasVerifiedEmail: boolean } & TelemetryProps
-> = ({ userId, onSubmitEnd, telemetryService, hasVerifiedEmail }) => {
+const CodySurveyToastInner: React.FC<{ onSubmitEnd: () => void } & TelemetryProps> = ({
+    onSubmitEnd,
+    telemetryService,
+}) => {
     const [isCodyForWork, setIsCodyForWork] = useState(false)
     const [isCodyForPersonalStuff, setIsCodyForPersonalStuff] = useState(false)
 
@@ -52,56 +40,25 @@ const CodySurveyToastInner: React.FC<
         setIsCodyForPersonalStuff(event.target.checked)
     }, [])
 
-    const [submitCodySurvey, { loading: loadingCodySurvey, error: submitSurveyError }] = useMutation<
-        SubmitCodySurveyResult,
-        SubmitCodySurveyVariables
-    >(SUBMIT_CODY_SURVEY, {
-        variables: {
-            isForWork: isCodyForWork,
-            isForPersonal: isCodyForPersonalStuff,
-        },
-    })
-
-    const [updatePostSignupCompletion, { loading: loadingPostSignup, error: setPostSignupError }] = useMutation<
-        SetCompletedPostSignupResult,
-        SetCompletedPostSignupVariables
-    >(SET_COMPLETED_POST_SIGNUP, {
-        variables: {
-            userID: userId,
-        },
-    })
-
-    const loading = loadingCodySurvey || loadingPostSignup
-    const error = !!submitSurveyError || !!setPostSignupError
+    const [submitCodySurvey, { loading }] = useMutation<SubmitCodySurveyResult, SubmitCodySurveyVariables>(
+        SUBMIT_CODY_SURVEY,
+        {
+            variables: {
+                isForWork: isCodyForWork,
+                isForPersonal: isCodyForPersonalStuff,
+            },
+        }
+    )
 
     const handleSubmit = useCallback(
-        async (event: React.FormEvent<HTMLFormElement>) => {
+        (event: React.FormEvent<HTMLFormElement>) => {
             const eventParams = { isCodyForPersonalStuff, isCodyForWork }
             telemetryService.log('CodyUsageToastSubmitted', eventParams, eventParams)
             event.preventDefault()
-
-            try {
-                await submitCodySurvey()
-
-                if (hasVerifiedEmail) {
-                    await updatePostSignupCompletion()
-                }
-
-                onSubmitEnd()
-            } catch (error) {
-                /* eslint-disable no-console */
-                console.error(error)
-            }
+            // eslint-disable-next-line no-console
+            submitCodySurvey().catch(console.error).finally(onSubmitEnd)
         },
-        [
-            hasVerifiedEmail,
-            isCodyForPersonalStuff,
-            isCodyForWork,
-            onSubmitEnd,
-            submitCodySurvey,
-            updatePostSignupCompletion,
-            telemetryService,
-        ]
+        [isCodyForPersonalStuff, isCodyForWork, onSubmitEnd, submitCodySurvey, telemetryService]
     )
 
     useEffect(() => {
@@ -134,19 +91,12 @@ const CodySurveyToastInner: React.FC<
                     onChange={handleCodyForPersonalStuffChange}
                     className={styles.modalCheckbox}
                 />
-                {error && (
-                    <Text size="small" className="text-danger mt-3 mb-2">
-                        An error occurred. Please reload the page and try again. If this persists, contact support at
-                        support@sourcegraph.com
-                    </Text>
-                )}
                 <div className="d-flex justify-content-end">
                     <LoaderButton
                         className={styles.codySurveyToastModalButton}
                         type="submit"
                         loading={loading}
                         label="Get started"
-                        disabled={!(isCodyForPersonalStuff || isCodyForWork)}
                     />
                 </div>
             </Form>
@@ -221,27 +171,53 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
     )
 }
 
+export const useCodySurveyToast = (): {
+    show: boolean
+    dismiss: () => void
+    setShouldShowCodySurvey: (show: boolean) => void
+} => {
+    // we specifically use cookie storage as we want consistent value between when user is logged out and logged in / signed up
+    // as well as cross-domain such about.sourcegraph.com
+    const [shouldShowCodySurvey, setShouldShowCodySurvey] = useCookieStorage<boolean>('cody.survey.show', false, {
+        expires: 365,
+    })
+    const [hasSubmitted, setHasSubmitted] = useTemporarySetting('cody.survey.submitted', false)
+    const dismiss = useCallback(() => {
+        setHasSubmitted(true)
+        setShouldShowCodySurvey(false)
+    }, [setHasSubmitted, setShouldShowCodySurvey])
+
+    useEffect(() => {
+        if (shouldShowCodySurvey && hasSubmitted) {
+            setShouldShowCodySurvey(false)
+        }
+    }, [shouldShowCodySurvey, hasSubmitted, setShouldShowCodySurvey])
+
+    return {
+        // we calculate "show" value based whether this a new signup and whether they already have submitted survey
+        show: !hasSubmitted && !!shouldShowCodySurvey,
+        dismiss,
+        setShouldShowCodySurvey,
+    }
+}
+
 export const CodySurveyToast: React.FC<
     {
-        authenticatedUser: AuthenticatedUser
+        authenticatedUser?: AuthenticatedUser
     } & TelemetryProps
 > = ({ authenticatedUser, telemetryService }) => {
-    const [showVerifyEmail, setShowVerifyEmail] = useState(!authenticatedUser.hasVerifiedEmail)
-
-    const handleSubmitEnd = (): void => {
-        window.location.replace(PageRoutes.GetCody)
-    }
-
+    const { show, dismiss } = useCodySurveyToast()
+    const [showVerifyEmail, setShowVerifyEmail] = useState(show && isEmailVerificationNeededForCody())
     const dismissVerifyEmail = useCallback(() => {
         telemetryService.log('VerifyEmailToastDismissed')
         setShowVerifyEmail(false)
     }, [telemetryService])
 
-    if (authenticatedUser.completedPostSignup) {
-        return <Navigate to={PageRoutes.GetCody} replace={true} />
+    if (!show) {
+        return null
     }
 
-    if (showVerifyEmail) {
+    if (showVerifyEmail && authenticatedUser) {
         return (
             <CodyVerifyEmailToast
                 onNext={dismissVerifyEmail}
@@ -251,12 +227,5 @@ export const CodySurveyToast: React.FC<
         )
     }
 
-    return (
-        <CodySurveyToastInner
-            telemetryService={telemetryService}
-            onSubmitEnd={handleSubmitEnd}
-            userId={authenticatedUser.id}
-            hasVerifiedEmail={authenticatedUser.hasVerifiedEmail}
-        />
-    )
+    return <CodySurveyToastInner onSubmitEnd={dismiss} telemetryService={telemetryService} />
 }
