@@ -2,8 +2,8 @@ import { FC, useEffect, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
-import { formatDistanceToNowStrict } from 'date-fns'
 
+import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
     Text,
     PageHeader,
@@ -110,15 +110,12 @@ const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command }) => {
                 className={classNames('w-100 my-2 text-left', styles.commandNode)}
             >
                 <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronUp : mdiChevronDown} className="mr-1" />
-                <Text className="mb-0">{formatDistanceToNowStrict(startDate)}</Text>
+                <Timestamp date={startDate} />
                 <Text className="mb-0">Janitor Run</Text>
                 <Text className="mb-0">{command.duration.toFixed(2)}s</Text>
             </CollapseHeader>
             <CollapsePanel>
-                <LogOutput text={command.command} logDescription="Command output:" />
-                <Button variant="primary" className="mt-2">
-                    Rerun
-                </Button>
+                <LogOutput text={command.command} logDescription="Command:" />
             </CollapsePanel>
         </Collapse>
     )
