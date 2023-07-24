@@ -162,8 +162,8 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 		_, err = s.UpdateWebhookAction(ctx2, wa.ID, true, true, "https://truer.com")
 		require.Error(t, err)
 
-		// User3 cannot update it
-		_, err = s.UpdateWebhookAction(ctx3, wa.ID, true, true, "https://truer.com")
+		// User3 can update it
+		_, err = s.UpdateWebhookAction(ctx3, wa.ID, true, true, "https://false.com")
 		require.NoError(t, err)
 
 		wa, err = s.GetWebhookAction(ctx1, wa.ID)
