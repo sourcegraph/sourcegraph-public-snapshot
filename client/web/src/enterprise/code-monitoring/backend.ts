@@ -12,6 +12,8 @@ import {
     DeleteCodeMonitorVariables,
     FetchCodeMonitorResult,
     FetchCodeMonitorVariables,
+    ListAllCodeMonitorsResult,
+    ListAllCodeMonitorsVariables,
     ListCodeMonitors,
     ListUserCodeMonitorsResult,
     ListUserCodeMonitorsVariables,
@@ -79,6 +81,11 @@ const CodeMonitorFragment = gql`
                 ...MonitorWebhookFields
                 ...MonitorSlackWebhookFields
             }
+        }
+        owner {
+            id
+            namespaceName
+            url
         }
     }
     ${MonitorEmailFragment}
@@ -166,6 +173,26 @@ export const fetchUserCodeMonitors = ({
     )
 }
 
+export const fetchCodeMonitors = ({ first, after }: ListAllCodeMonitorsVariables): Observable<ListCodeMonitors> => {
+    const query = gql`
+        query ListAllCodeMonitors($first: Int!, $after: String) {
+            monitors(first: $first, after: $after) {
+                ...ListCodeMonitors
+            }
+        }
+
+        ${ListCodeMonitorsFragment}
+    `
+
+    return requestGraphQL<ListAllCodeMonitorsResult, ListAllCodeMonitorsVariables>(query, {
+        first,
+        after,
+    }).pipe(
+        map(dataOrThrowErrors),
+        map(data => data.monitors)
+    )
+}
+
 export const toggleCodeMonitorEnabled = (
     id: string,
     enabled: boolean
@@ -199,6 +226,7 @@ export const fetchCodeMonitor = (id: string): Observable<FetchCodeMonitorResult>
                     owner {
                         id
                         namespaceName
+                        url
                     }
                     enabled
                     actions {
