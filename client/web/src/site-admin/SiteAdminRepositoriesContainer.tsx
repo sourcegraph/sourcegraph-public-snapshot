@@ -218,11 +218,10 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
     const [searchQuery, setSearchQuery] = useState<string>(
         () => new URLSearchParams(location.search).get('query') || ''
     )
-    const debouncedSearchQuery = useDebounce<string>(searchQuery, 300)
 
     useEffect(() => {
         const searchFragment = getUrlQuery({
-            query: debouncedSearchQuery,
+            query: searchQuery,
             filters,
             filterValues,
             search: location.search,
@@ -246,14 +245,14 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                 }
             )
         }
-    }, [filters, filterValues, debouncedSearchQuery, location, navigate])
+    }, [filters, filterValues, searchQuery, location, navigate])
 
     const variables = useMemo<RepositoriesVariables>(() => {
         const args = buildFilterArgs(filterValues)
 
         return {
             ...args,
-            query: debouncedSearchQuery,
+            query: searchQuery,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
             embedded: args.embedded ?? true,
@@ -264,7 +263,9 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
             externalService: args.externalService ?? null,
             displayCloneProgress,
         } as RepositoriesVariables
-    }, [debouncedSearchQuery, filterValues, displayCloneProgress])
+    }, [searchQuery, filterValues, displayCloneProgress])
+
+    const debouncedVariables = useDebounce(variables, 300)
 
     const {
         connection,
@@ -274,14 +275,14 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
         ...paginationProps
     } = usePageSwitcherPagination<RepositoriesResult, RepositoriesVariables, SiteAdminRepositoryFields>({
         query: REPOSITORIES_QUERY,
-        variables,
+        variables: debouncedVariables,
         getConnection: ({ data }) => data?.repositories || undefined,
         options: { pollInterval: 5000 },
     })
 
     useEffect(() => {
-        refetch(variables)
-    }, [refetch, variables])
+        refetch(debouncedVariables)
+    }, [refetch, debouncedVariables])
 
     const error = repoStatsError || extSvcError || reposError
     const loading = repoStatsLoading || extSvcLoading || reposLoading
