@@ -99,10 +99,7 @@ func (m *scipSymbolsMigrator) MigrateUp(ctx context.Context, uploadID int, tx *b
 	// data - everything is known up-front.
 
 	id := func() int { id := nextSymbolLookupID; nextSymbolLookupID++; return id }
-	cache, traverser, err := constructSymbolLookupTable(symbolNames, id)
-	if err != nil {
-		return nil, err
-	}
+	cache, traverser := constructSymbolLookupTable(symbolNames, id)
 
 	// Bulk insert the content of the tree
 	//
@@ -358,7 +355,7 @@ type explodedIDs struct {
 
 type visitFunc func(segmentType string, segmentQuality *string, name string, id int, parentID *int) error
 
-func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error, error) {
+func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error) {
 	cache := map[string]explodedIDs{}     // Tracks symbol name -> identifiers in the scheme tree
 	schemeTree := map[string]SchemeNode{} // Tracks scheme -> manager -> name -> version -> descriptor namespace -> descriptor suffix
 	qualityMap := map[int]string{}        // Tracks descriptor node ids -> quality (PRECISE, FUZZY, BOTH)
@@ -435,7 +432,7 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 		return nil
 	}
 
-	return cache, traverser, nil
+	return cache, traverser
 }
 
 func getOrCreateLeafIDs(

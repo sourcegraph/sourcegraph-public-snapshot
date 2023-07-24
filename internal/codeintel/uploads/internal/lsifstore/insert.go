@@ -352,10 +352,7 @@ func (s *scipWriter) flush(ctx context.Context) error {
 	// data - everything is known up-front.
 
 	id := func() int { id := s.nextSymbolLookupID; s.nextSymbolLookupID++; return id }
-	cache, traverser, err := constructSymbolLookupTable(symbolNames, id)
-	if err != nil {
-		return err
-	}
+	cache, traverser := constructSymbolLookupTable(symbolNames, id)
 
 	// Bulk insert the content of the tree / descriptor-no-suffix map
 	visit := func(segmentType string, segmentQuality *string, name string, id int, parentID *int) error {
@@ -537,7 +534,7 @@ type explodedIDs struct {
 
 type visitFunc func(segmentType string, segmentQuality *string, name string, id int, parentID *int) error
 
-func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error, error) {
+func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string]explodedIDs, func(visit visitFunc) error) {
 	cache := map[string]explodedIDs{}     // Tracks symbol name -> identifiers in the scheme tree
 	schemeTree := map[string]SchemeNode{} // Tracks scheme -> manager -> name -> version -> descriptor namespace -> descriptor suffix
 	qualityMap := map[int]string{}        // Tracks descriptor node ids -> quality (PRECISE, FUZZY, BOTH)
@@ -562,7 +559,7 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 	for _, symbolName := range symbolNames {
 		symbol, err := symbols.NewExplodedSymbol(symbolName)
 		if err != nil {
-			return nil, nil, err
+			return nil, nil
 		}
 
 		// Assign the parts of the exploded symbol into the scheme tree. If a prefix of the exploded symbol
@@ -614,7 +611,7 @@ func constructSymbolLookupTable(symbolNames []string, id func() int) (map[string
 		return nil
 	}
 
-	return cache, traverser, nil
+	return cache, traverser
 }
 
 func getOrCreateLeafIDs(

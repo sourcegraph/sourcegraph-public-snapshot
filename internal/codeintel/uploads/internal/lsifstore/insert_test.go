@@ -193,10 +193,7 @@ func TestConstructSymbolLookupTable(t *testing.T) {
 		symbolNames = append(symbolNames, testCase.symbolName)
 	}
 
-	cache, traverser, err := constructSymbolLookupTable(symbolNames, func() int { v := id; id++; return v })
-	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
-	}
+	cache, traverser := constructSymbolLookupTable(symbolNames, func() int { v := id; id++; return v })
 
 	type rowType struct {
 		segmentType    string
