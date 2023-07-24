@@ -33,7 +33,7 @@ go_test(
     embed = [":scip"],
     tags = [
         # Test requires localhost for database
-        "requires-network"
+        "requires-network",
     ],
     deps = [
         "//internal/codeintel/shared",

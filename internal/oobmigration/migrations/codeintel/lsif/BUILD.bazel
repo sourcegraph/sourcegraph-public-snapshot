@@ -49,7 +49,7 @@ go_test(
     embed = [":lsif"],
     tags = [
         # Test requires localhost for database
-        "requires-network"
+        "requires-network",
     ],
     deps = [
         "//internal/codeintel/shared",
