@@ -160,11 +160,6 @@ func Init(
 
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}
 
-	goroutine.Go(func() {
-		licensing.StartMaxUserCount(logger, &usersStore{
-			db: db,
-		})
-	})
 	if envvar.SourcegraphDotComMode() {
 		goroutine.Go(func() {
 			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
@@ -172,26 +167,7 @@ func Init(
 		goroutine.Go(func() {
 			productsubscription.StartCheckForAnomalousLicenseUsage(logger, db)
 		})
-	} else {
-		gs, err := db.GlobalState().Get(ctx)
-		if err != nil {
-			return err
-		}
-		licensing.StartLicenseCheck(context.Background(), logger, gs.SiteID)
 	}
 
 	return nil
-}
-
-type usersStore struct {
-	db database.DB
-}
-
-func (u *usersStore) Count(ctx context.Context) (int, error) {
-	return u.db.Users().Count(
-		ctx,
-		&database.UsersListOptions{
-			ExcludeSourcegraphOperators: true,
-		},
-	)
 }
