@@ -1333,25 +1333,28 @@ Referenced by:
 
 # Table "public.event_logs"
 ```
-      Column       |           Type           | Collation | Nullable |                Default                 
--------------------+--------------------------+-----------+----------+----------------------------------------
- id                | bigint                   |           | not null | nextval('event_logs_id_seq'::regclass)
- name              | text                     |           | not null | 
- url               | text                     |           | not null | 
- user_id           | integer                  |           | not null | 
- anonymous_user_id | text                     |           | not null | 
- source            | text                     |           | not null | 
- argument          | jsonb                    |           | not null | 
- version           | text                     |           | not null | 
- timestamp         | timestamp with time zone |           | not null | 
- feature_flags     | jsonb                    |           |          | 
- cohort_id         | date                     |           |          | 
- public_argument   | jsonb                    |           | not null | '{}'::jsonb
- first_source_url  | text                     |           |          | 
- last_source_url   | text                     |           |          | 
- referrer          | text                     |           |          | 
- device_id         | text                     |           |          | 
- insert_id         | text                     |           |          | 
+          Column          |           Type           | Collation | Nullable |                Default                 
+--------------------------+--------------------------+-----------+----------+----------------------------------------
+ id                       | bigint                   |           | not null | nextval('event_logs_id_seq'::regclass)
+ name                     | text                     |           | not null | 
+ url                      | text                     |           | not null | 
+ user_id                  | integer                  |           | not null | 
+ anonymous_user_id        | text                     |           | not null | 
+ source                   | text                     |           | not null | 
+ argument                 | jsonb                    |           | not null | 
+ version                  | text                     |           | not null | 
+ timestamp                | timestamp with time zone |           | not null | 
+ feature_flags            | jsonb                    |           |          | 
+ cohort_id                | date                     |           |          | 
+ public_argument          | jsonb                    |           | not null | '{}'::jsonb
+ first_source_url         | text                     |           |          | 
+ last_source_url          | text                     |           |          | 
+ referrer                 | text                     |           |          | 
+ device_id                | text                     |           |          | 
+ insert_id                | text                     |           |          | 
+ billing_product_category | text                     |           |          | 
+ billing_event_id         | text                     |           |          | 
+ client                   | text                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -3862,15 +3865,13 @@ Foreign-key constraints:
 
 # Table "public.sub_repo_permissions"
 ```
-    Column     |           Type           | Collation | Nullable | Default 
----------------+--------------------------+-----------+----------+---------
- repo_id       | integer                  |           | not null | 
- user_id       | integer                  |           | not null | 
- version       | integer                  |           | not null | 1
- path_includes | text[]                   |           |          | 
- path_excludes | text[]                   |           |          | 
- updated_at    | timestamp with time zone |           | not null | now()
- paths         | text[]                   |           |          | 
+   Column   |           Type           | Collation | Nullable | Default 
+------------+--------------------------+-----------+----------+---------
+ repo_id    | integer                  |           | not null | 
+ user_id    | integer                  |           | not null | 
+ version    | integer                  |           | not null | 1
+ updated_at | timestamp with time zone |           | not null | now()
+ paths      | text[]                   |           |          | 
 Indexes:
     "sub_repo_permissions_repo_id_user_id_version_uindex" UNIQUE, btree (repo_id, user_id, version)
     "sub_repo_perms_user_id" btree (user_id)

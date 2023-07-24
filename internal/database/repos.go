@@ -664,6 +664,12 @@ type ReposListOptions struct {
 	// OnlyIndexed excludes repositories that are not indexed by zoekt from the list.
 	OnlyIndexed bool
 
+	// NoEmbedded excludes repositories that are embedded from the list.
+	NoEmbedded bool
+
+	// OnlyEmbedded excludes repositories that are not embedded from the list.
+	OnlyEmbedded bool
+
 	// CloneStatus if set will only return repos of that clone status.
 	CloneStatus types.CloneStatus
 
@@ -1049,6 +1055,12 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 	if opt.OnlyIndexed {
 		where = append(where, sqlf.Sprintf("zr.index_status = 'indexed'"))
 	}
+	if opt.NoEmbedded {
+		where = append(where, sqlf.Sprintf("embedded IS NULL"))
+	}
+	if opt.OnlyEmbedded {
+		where = append(where, sqlf.Sprintf("embedded IS NOT NULL"))
+	}
 
 	if opt.FailedFetch {
 		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
@@ -1154,6 +1166,11 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 	}
 	if opt.OnlyIndexed || opt.NoIndexed {
 		joins = append(joins, sqlf.Sprintf("JOIN zoekt_repos zr ON zr.repo_id = repo.id"))
+	}
+
+	if opt.NoEmbedded || opt.OnlyEmbedded {
+		embeddedRepoQuery := sqlf.Sprintf(embeddedReposQueryFmtstr)
+		joins = append(joins, sqlf.Sprintf("LEFT JOIN (%s) embedded on embedded.repo_id = id", embeddedRepoQuery))
 	}
 
 	if len(opt.KVPFilters) > 0 {
@@ -1273,6 +1290,10 @@ func containsOrderBySizeField(orderBy OrderBy) bool {
 	}
 	return false
 }
+
+const embeddedReposQueryFmtstr = `
+	SELECT DISTINCT ON (repo_id) repo_id, true embedded FROM repo_embedding_jobs WHERE state = 'completed'
+`
 
 const userReposCTEFmtstr = `
 SELECT repo_id as id FROM external_service_repos WHERE user_id = %d

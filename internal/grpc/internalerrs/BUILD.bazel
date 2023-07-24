@@ -13,6 +13,7 @@ go_library(
     deps = [
         "//internal/env",
         "//lib/errors",
+        "@com_github_dustin_go_humanize//:go-humanize",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_prometheus_client_golang//prometheus/promauto",
         "@com_github_sourcegraph_log//:log",

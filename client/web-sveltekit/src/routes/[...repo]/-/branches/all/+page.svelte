@@ -7,8 +7,8 @@
 
     export let data: PageData
 
-    const { pending, value: branches, set } = createPromiseStore<typeof data.branches.deferred>()
-    $: set(data.branches.deferred)
+    const { pending, value: branches, set } = createPromiseStore<PageData['deferred']['branches']>()
+    $: set(data.deferred.branches)
     $: nodes = $branches?.nodes
     $: total = $branches?.totalCount
 </script>

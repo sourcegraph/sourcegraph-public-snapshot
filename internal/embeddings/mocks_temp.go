@@ -15,10 +15,6 @@ import (
 // package github.com/sourcegraph/sourcegraph/internal/embeddings) used for
 // unit testing.
 type MockClient struct {
-	// IsContextRequiredForChatQueryFunc is an instance of a mock function
-	// object controlling the behavior of the method
-	// IsContextRequiredForChatQuery.
-	IsContextRequiredForChatQueryFunc *ClientIsContextRequiredForChatQueryFunc
 	// SearchFunc is an instance of a mock function object controlling the
 	// behavior of the method Search.
 	SearchFunc *ClientSearchFunc
@@ -28,11 +24,6 @@ type MockClient struct {
 // return zero values for all results, unless overwritten.
 func NewMockClient() *MockClient {
 	return &MockClient{
-		IsContextRequiredForChatQueryFunc: &ClientIsContextRequiredForChatQueryFunc{
-			defaultHook: func(context.Context, IsContextRequiredForChatQueryParameters) (r0 bool, r1 error) {
-				return
-			},
-		},
 		SearchFunc: &ClientSearchFunc{
 			defaultHook: func(context.Context, EmbeddingsSearchParameters) (r0 *EmbeddingCombinedSearchResults, r1 error) {
 				return
@@ -45,11 +36,6 @@ func NewMockClient() *MockClient {
 // methods panic on invocation, unless overwritten.
 func NewStrictMockClient() *MockClient {
 	return &MockClient{
-		IsContextRequiredForChatQueryFunc: &ClientIsContextRequiredForChatQueryFunc{
-			defaultHook: func(context.Context, IsContextRequiredForChatQueryParameters) (bool, error) {
-				panic("unexpected invocation of MockClient.IsContextRequiredForChatQuery")
-			},
-		},
 		SearchFunc: &ClientSearchFunc{
 			defaultHook: func(context.Context, EmbeddingsSearchParameters) (*EmbeddingCombinedSearchResults, error) {
 				panic("unexpected invocation of MockClient.Search")
@@ -62,124 +48,10 @@ func NewStrictMockClient() *MockClient {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockClientFrom(i Client) *MockClient {
 	return &MockClient{
-		IsContextRequiredForChatQueryFunc: &ClientIsContextRequiredForChatQueryFunc{
-			defaultHook: i.IsContextRequiredForChatQuery,
-		},
 		SearchFunc: &ClientSearchFunc{
 			defaultHook: i.Search,
 		},
 	}
-}
-
-// ClientIsContextRequiredForChatQueryFunc describes the behavior when the
-// IsContextRequiredForChatQuery method of the parent MockClient instance is
-// invoked.
-type ClientIsContextRequiredForChatQueryFunc struct {
-	defaultHook func(context.Context, IsContextRequiredForChatQueryParameters) (bool, error)
-	hooks       []func(context.Context, IsContextRequiredForChatQueryParameters) (bool, error)
-	history     []ClientIsContextRequiredForChatQueryFuncCall
-	mutex       sync.Mutex
-}
-
-// IsContextRequiredForChatQuery delegates to the next hook function in the
-// queue and stores the parameter and result values of this invocation.
-func (m *MockClient) IsContextRequiredForChatQuery(v0 context.Context, v1 IsContextRequiredForChatQueryParameters) (bool, error) {
-	r0, r1 := m.IsContextRequiredForChatQueryFunc.nextHook()(v0, v1)
-	m.IsContextRequiredForChatQueryFunc.appendCall(ClientIsContextRequiredForChatQueryFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// IsContextRequiredForChatQuery method of the parent MockClient instance is
-// invoked and the hook queue is empty.
-func (f *ClientIsContextRequiredForChatQueryFunc) SetDefaultHook(hook func(context.Context, IsContextRequiredForChatQueryParameters) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// IsContextRequiredForChatQuery method of the parent MockClient instance
-// invokes the hook at the front of the queue and discards it. After the
-// queue is empty, the default hook function is invoked for any future
-// action.
-func (f *ClientIsContextRequiredForChatQueryFunc) PushHook(hook func(context.Context, IsContextRequiredForChatQueryParameters) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientIsContextRequiredForChatQueryFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, IsContextRequiredForChatQueryParameters) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientIsContextRequiredForChatQueryFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, IsContextRequiredForChatQueryParameters) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientIsContextRequiredForChatQueryFunc) nextHook() func(context.Context, IsContextRequiredForChatQueryParameters) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientIsContextRequiredForChatQueryFunc) appendCall(r0 ClientIsContextRequiredForChatQueryFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientIsContextRequiredForChatQueryFuncCall
-// objects describing the invocations of this function.
-func (f *ClientIsContextRequiredForChatQueryFunc) History() []ClientIsContextRequiredForChatQueryFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientIsContextRequiredForChatQueryFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientIsContextRequiredForChatQueryFuncCall is an object that describes
-// an invocation of method IsContextRequiredForChatQuery on an instance of
-// MockClient.
-type ClientIsContextRequiredForChatQueryFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 IsContextRequiredForChatQueryParameters
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientIsContextRequiredForChatQueryFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientIsContextRequiredForChatQueryFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // ClientSearchFunc describes the behavior when the Search method of the

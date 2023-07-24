@@ -55,14 +55,14 @@ type Config struct {
 		EventBufferWorkers int
 	}
 
-	Trace TraceConfig
+	OpenTelemetry OpenTelemetryConfig
 
 	ActorConcurrencyLimit codygateway.ActorConcurrencyLimitConfig
 	ActorRateLimitNotify  codygateway.ActorRateLimitNotifyConfig
 }
 
-type TraceConfig struct {
-	Policy       policy.TracePolicy
+type OpenTelemetryConfig struct {
+	TracePolicy  policy.TracePolicy
 	GCPProjectID string
 }
 
@@ -120,8 +120,8 @@ func (c *Config) Load() {
 	c.BigQuery.EventBufferWorkers = c.GetInt("CODY_GATEWAY_BIGQUERY_EVENT_BUFFER_WORKERS", "0",
 		"The number of workers to process events - set to 0 to use a default that scales off buffer size.")
 
-	c.Trace.Policy = policy.TracePolicy(c.Get("CODY_GATEWAY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
-	c.Trace.GCPProjectID = c.Get("CODY_GATEWAY_TRACE_GCP_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "Google Cloud Traces project ID.")
+	c.OpenTelemetry.TracePolicy = policy.TracePolicy(c.Get("CODY_GATEWAY_TRACE_POLICY", "all", "Trace policy, one of 'all', 'selective', 'none'."))
+	c.OpenTelemetry.GCPProjectID = c.Get("CODY_GATEWAY_OTEL_GCP_PROJECT_ID", os.Getenv("GOOGLE_CLOUD_PROJECT"), "Google Cloud Traces project ID.")
 
 	c.ActorConcurrencyLimit.Percentage = float32(c.GetPercent("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_PERCENTAGE", "50", "The percentage of daily rate limit to be allowed as concurrent requests limit from an actor.")) / 100
 	c.ActorConcurrencyLimit.Interval = c.GetInterval("CODY_GATEWAY_ACTOR_CONCURRENCY_LIMIT_INTERVAL", "10s", "The interval at which to check the concurrent requests limit from an actor.")

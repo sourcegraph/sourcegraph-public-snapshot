@@ -6,8 +6,8 @@
 
     export let data: PageData
 
-    const { pending, value: commits, set } = createPromiseStore<typeof data.commits.deferred>()
-    $: set(data.commits.deferred)
+    const { pending, value: commits, set } = createPromiseStore<PageData['deferred']['commits']>()
+    $: set(data.deferred.commits)
 </script>
 
 <section>

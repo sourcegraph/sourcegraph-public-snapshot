@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -207,6 +207,8 @@ type JSContext struct {
 
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 
+	HashedLicenseKey string `json:"hashedLicenseKey"`
+
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
@@ -239,7 +241,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		headers["Cache-Control"] = "no-cache"
 	}
 
-	siteID := siteid.Get()
+	siteID := siteid.Get(db)
 
 	// Show the site init screen?
 	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)
@@ -389,6 +391,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
 
 		LicenseInfo: licenseInfo,
+
+		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics(),
 
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 

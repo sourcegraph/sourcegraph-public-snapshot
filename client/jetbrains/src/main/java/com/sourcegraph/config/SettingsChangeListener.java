@@ -17,6 +17,7 @@ import com.intellij.openapi.wm.ToolWindow;
 import com.intellij.openapi.wm.ToolWindowManager;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
+import com.sourcegraph.cody.CodyToolWindowFactory;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.agent.CodyAgentServer;
 import com.sourcegraph.cody.api.CodyLLMConfiguration;
@@ -113,19 +114,23 @@ public class SettingsChangeListener implements Disposable {
             // Disable/enable the Cody tool window depending on the setting
             if (!context.newCodyEnabled && context.oldCodyEnabled) {
               ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-              ToolWindow toolWindow = toolWindowManager.getToolWindow("Cody");
+              ToolWindow toolWindow =
+                  toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID);
               if (toolWindow != null) {
                 toolWindow.setAvailable(false, null);
               }
             } else if (context.newCodyEnabled && !context.oldCodyEnabled) {
               ToolWindowManager toolWindowManager = ToolWindowManager.getInstance(project);
-              ToolWindow toolWindow = toolWindowManager.getToolWindow("Cody");
+              ToolWindow toolWindow =
+                  toolWindowManager.getToolWindow(CodyToolWindowFactory.TOOL_WINDOW_ID);
               if (toolWindow != null) {
                 toolWindow.setAvailable(true, null);
               }
             }
-            // refresh Cody LLM configuration
-            CodyLLMConfiguration.getInstance(project).refreshCache();
+            if (context.newCodyEnabled) {
+              // refresh Cody LLM configuration
+              CodyLLMConfiguration.getInstance(project).refreshCache();
+            }
           }
         });
   }

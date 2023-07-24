@@ -1,20 +1,10 @@
 import * as React from 'react'
 
+import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { parseRepoRevision } from '@sourcegraph/shared/src/util/url'
 import { Button, Tooltip, useIsTruncated } from '@sourcegraph/wildcard'
 
 import { useOpenSearchResultsContext } from '../MatchHandlersContext'
-
-/**
- * Returns the friendly display form of the repository name (e.g., removing "github.com/").
- */
-export function displayRepoName(repoName: string): string {
-    let parts = repoName.split('/')
-    if (parts.length >= 3 && parts[0].includes('.')) {
-        parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
-    }
-    return parts.join('/')
-}
 
 /**
  * Splits the repository name into the dir and base components.

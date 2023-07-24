@@ -2219,6 +2219,9 @@ CREATE TABLE event_logs (
     referrer text,
     device_id text,
     insert_id text,
+    billing_product_category text,
+    billing_event_id text,
+    client text,
     CONSTRAINT event_logs_check_has_user CHECK ((((user_id = 0) AND (anonymous_user_id <> ''::text)) OR ((user_id <> 0) AND (anonymous_user_id = ''::text)) OR ((user_id <> 0) AND (anonymous_user_id <> ''::text)))),
     CONSTRAINT event_logs_check_name_not_empty CHECK ((name <> ''::text)),
     CONSTRAINT event_logs_check_source_not_empty CHECK ((source <> ''::text)),
@@ -4499,8 +4502,6 @@ CREATE TABLE sub_repo_permissions (
     repo_id integer NOT NULL,
     user_id integer NOT NULL,
     version integer DEFAULT 1 NOT NULL,
-    path_includes text[],
-    path_excludes text[],
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     paths text[]
 );

@@ -669,6 +669,17 @@ func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) 
 	}
 }
 
+// Run a Sonarcloud scanning step in Buildkite
+func sonarcloudScan() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(
+			"Sonarcloud Scan",
+			bk.Cmd("dev/ci/sonarcloud-scan.sh"),
+		)
+	}
+
+}
+
 // Ask trivy, a security scanning tool, to scan the candidate image
 // specified by "app" and "tag".
 func trivyScanCandidateImage(app, tag string) operations.Operation {

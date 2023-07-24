@@ -6,15 +6,29 @@
     import { isErrorLike } from '$lib/common'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
+    import BottomPanel from '$lib/repo/BottomPanel.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { scrollAll } from '$lib/stores'
 
-    import type { PageData } from './$types'
+    import type { LayoutData, Snapshot } from './$types'
     import FileTree from './FileTree.svelte'
 
-    export let data: PageData
+    export let data: LayoutData
+
+    export const snapshot: Snapshot = {
+        capture() {
+            return {
+                bottomPanel: bottomPanel.capture(),
+            }
+        },
+        restore(data) {
+            bottomPanel.restore(data.bottomPanel)
+        },
+    }
+
+    let bottomPanel: BottomPanel
 
     const fileTreeLoader: FileTreeLoader = args =>
         fetchSidebarFileTree(args).then(
@@ -34,7 +48,12 @@
         commitID: string,
         parentPath: string
     ) {
-        const { root, values } = await data.fileTree.deferred
+        const result = await data.deferred.fileTree
+        if (!result) {
+            treeProvider = null
+            return
+        }
+        const { root, values } = result
 
         // Do nothing if update was called with new arguments in the meantime
         if (repoName !== data.repoName || revision !== data.revision || parentPath !== data.parentPath) {
@@ -85,8 +104,9 @@
     {#if $sidebarOpen}
         <Separator currentPosition={sidebarSize} />
     {/if}
-    <div class="content">
+    <div class="main">
         <slot />
+        <BottomPanel bind:this={bottomPanel} history={data.deferred.codeCommits} />
     </div>
 </section>
 
@@ -114,7 +134,7 @@
         max-height: 100vh;
     }
 
-    .content {
+    .main {
         flex: 1;
         display: flex;
         flex-direction: column;
