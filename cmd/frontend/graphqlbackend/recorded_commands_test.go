@@ -35,10 +35,6 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		backend.Mocks = backend.MockServices{}
 	})
 
-	repos := database.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
-	db.ReposFunc.SetDefaultReturn(repos)
-
 	// When gitRecorder isn't set, we return an empty list.
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
@@ -88,6 +84,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
 	t.Cleanup(func() { conf.Mock(nil) })
+
+	repos := database.NewMockRepoStore()
+	repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
+	db.ReposFunc.SetDefaultReturn(repos)
 
 	RunTest(t, &Test{
 		Schema: mustParseGraphQLSchema(t, db),
