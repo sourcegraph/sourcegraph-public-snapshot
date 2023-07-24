@@ -271,6 +271,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
         knownLicenseTags?: string[]
     }
 
+    /** sha256 hashed license key */
+    hashedLicenseKey?: string
+
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean
 
