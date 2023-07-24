@@ -77,7 +77,7 @@ const LastGitCommands: FC<LastGitCommandsProps> = props => {
     const { recordedCommands } = props
 
     if (recordedCommands.length === 0) {
-        return <Text className="my-2">No recorded command for repository.</Text>
+        return <Text className="my-2">No recorded commands for repository.</Text>
     }
 
     return (
