@@ -13,10 +13,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
+	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -40,17 +42,26 @@ type Event struct {
 	CohortID         *string
 	// Referrer is only logged for Cloud events; therefore, this only goes to the BigQuery database
 	// and does not go to the Postgres DB.
-	Referrer         *string
-	OriginalReferrer *string
-	SessionReferrer  *string
-	SessionFirstURL  *string
-	Argument         json.RawMessage
-	PublicArgument   json.RawMessage
-	UserProperties   json.RawMessage
-	DeviceID         *string
-	InsertID         *string
-	EventID          *int32
-	DeviceSessionID  *string
+	Referrer               *string
+	OriginalReferrer       *string
+	SessionReferrer        *string
+	SessionFirstURL        *string
+	Argument               json.RawMessage
+	PublicArgument         json.RawMessage
+	UserProperties         json.RawMessage
+	DeviceID               *string
+	InsertID               *string
+	EventID                *int32
+	DeviceSessionID        *string
+	Client                 *string
+	BillingProductCategory *string
+	BillingEventID         *string
+	// ConnectedSiteID is only logged for Cloud events; therefore, this only goes to the BigQuery database
+	// and does not go to the Postgres DB.
+	ConnectedSiteID *string
+	// HashedLicenseKey is only logged for Cloud events; therefore, this only goes to the BigQuery database
+	// and does not go to the Postgres DB.
+	HashedLicenseKey *string
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -58,6 +69,18 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 	insertID, _ := uuid.NewRandom()
 	insertIDFinal := insertID.String()
 	eventID := int32(rand.Int())
+
+	client := "SERVER_BACKEND"
+	if envvar.SourcegraphDotComMode() {
+		client = "DOTCOM_BACKEND"
+	}
+	if deploy.IsApp() {
+		client = "APP_BACKEND"
+	}
+
+	hashedLicenseKey := conf.HashedCurrentLicenseKeyForAnalytics()
+	connectedSiteID := siteid.Get(db)
+
 	return LogEvent(context.Background(), db, Event{
 		EventName:        eventName,
 		UserID:           userID,
@@ -72,6 +95,9 @@ func LogBackendEvent(db database.DB, userID int32, deviceID, eventName string, a
 		DeviceID:         &deviceID,
 		InsertID:         &insertIDFinal,
 		EventID:          &eventID,
+		Client:           &client,
+		ConnectedSiteID:  &connectedSiteID,
+		HashedLicenseKey: &hashedLicenseKey,
 	})
 }
 
@@ -102,25 +128,30 @@ func LogEvents(ctx context.Context, db database.DB, events []Event) error {
 }
 
 type bigQueryEvent struct {
-	EventName        string  `json:"name"`
-	URL              string  `json:"url"`
-	AnonymousUserID  string  `json:"anonymous_user_id"`
-	FirstSourceURL   string  `json:"first_source_url"`
-	LastSourceURL    string  `json:"last_source_url"`
-	UserID           int     `json:"user_id"`
-	Source           string  `json:"source"`
-	Timestamp        string  `json:"timestamp"`
-	Version          string  `json:"version"`
-	FeatureFlags     string  `json:"feature_flags"`
-	CohortID         *string `json:"cohort_id,omitempty"`
-	Referrer         string  `json:"referrer,omitempty"`
-	OriginalReferrer string  `json:"original_referrer"`
-	SessionReferrer  string  `json:"session_referrer"`
-	SessionFirstURL  string  `json:"session_first_url"`
-	PublicArgument   string  `json:"public_argument"`
-	DeviceID         *string `json:"device_id,omitempty"`
-	InsertID         *string `json:"insert_id,omitempty"`
-	DeviceSessionID  *string `json:"device_session_id,omitempty"`
+	EventName              string  `json:"name"`
+	URL                    string  `json:"url"`
+	AnonymousUserID        string  `json:"anonymous_user_id"`
+	FirstSourceURL         string  `json:"first_source_url"`
+	LastSourceURL          string  `json:"last_source_url"`
+	UserID                 int     `json:"user_id"`
+	Source                 string  `json:"source"`
+	Timestamp              string  `json:"timestamp"`
+	Version                string  `json:"version"`
+	FeatureFlags           string  `json:"feature_flags"`
+	CohortID               *string `json:"cohort_id,omitempty"`
+	Referrer               string  `json:"referrer,omitempty"`
+	OriginalReferrer       string  `json:"original_referrer"`
+	SessionReferrer        string  `json:"session_referrer"`
+	SessionFirstURL        string  `json:"session_first_url"`
+	PublicArgument         string  `json:"public_argument"`
+	DeviceID               *string `json:"device_id,omitempty"`
+	InsertID               *string `json:"insert_id,omitempty"`
+	DeviceSessionID        *string `json:"device_session_id,omitempty"`
+	Client                 *string `json:"client,omitempty"`
+	BillingProductCategory *string `json:"billing_product_category,omitempty"`
+	BillingEventID         *string `json:"billing_event_id,omitempty"`
+	ConnectedSiteID        *string `json:"connected_site_id,omitempty"`
+	HashedLicenseKey       *string `json:"hashed_license_key,omitempty"`
 }
 
 // publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
@@ -183,25 +214,30 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 		}
 
 		pubsubEvent, err := json.Marshal(bigQueryEvent{
-			EventName:        event.EventName,
-			UserID:           int(event.UserID),
-			AnonymousUserID:  event.UserCookieID,
-			URL:              saferUrl,
-			FirstSourceURL:   firstSourceURL,
-			LastSourceURL:    lastSourceURL,
-			Referrer:         referrer,
-			OriginalReferrer: originalReferrer,
-			SessionReferrer:  sessionReferrer,
-			SessionFirstURL:  sessionFirstURL,
-			Source:           event.Source,
-			Timestamp:        time.Now().UTC().Format(time.RFC3339),
-			Version:          version.Version(),
-			FeatureFlags:     string(featureFlagJSON),
-			CohortID:         event.CohortID,
-			PublicArgument:   string(event.PublicArgument),
-			DeviceID:         event.DeviceID,
-			InsertID:         event.InsertID,
-			DeviceSessionID:  event.DeviceSessionID,
+			EventName:              event.EventName,
+			UserID:                 int(event.UserID),
+			AnonymousUserID:        event.UserCookieID,
+			URL:                    saferUrl,
+			FirstSourceURL:         firstSourceURL,
+			LastSourceURL:          lastSourceURL,
+			Referrer:               referrer,
+			OriginalReferrer:       originalReferrer,
+			SessionReferrer:        sessionReferrer,
+			SessionFirstURL:        sessionFirstURL,
+			Source:                 event.Source,
+			Timestamp:              time.Now().UTC().Format(time.RFC3339),
+			Version:                version.Version(),
+			FeatureFlags:           string(featureFlagJSON),
+			CohortID:               event.CohortID,
+			PublicArgument:         string(event.PublicArgument),
+			DeviceID:               event.DeviceID,
+			InsertID:               event.InsertID,
+			DeviceSessionID:        event.DeviceSessionID,
+			Client:                 event.Client,
+			BillingProductCategory: event.BillingProductCategory,
+			BillingEventID:         event.BillingEventID,
+			ConnectedSiteID:        event.ConnectedSiteID,
+			HashedLicenseKey:       event.HashedLicenseKey,
 		})
 		if err != nil {
 			return nil, err
@@ -238,21 +274,24 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 		}
 
 		databaseEvents = append(databaseEvents, &database.Event{
-			Name:             event.EventName,
-			URL:              event.URL,
-			UserID:           uint32(event.UserID),
-			AnonymousUserID:  event.UserCookieID,
-			Source:           event.Source,
-			Argument:         event.Argument,
-			Timestamp:        timeNow().UTC(),
-			EvaluatedFlagSet: event.EvaluatedFlagSet,
-			CohortID:         event.CohortID,
-			PublicArgument:   event.PublicArgument,
-			FirstSourceURL:   event.FirstSourceURL,
-			LastSourceURL:    event.LastSourceURL,
-			Referrer:         event.Referrer,
-			DeviceID:         event.DeviceID,
-			InsertID:         event.InsertID,
+			Name:                   event.EventName,
+			URL:                    event.URL,
+			UserID:                 uint32(event.UserID),
+			AnonymousUserID:        event.UserCookieID,
+			Source:                 event.Source,
+			Argument:               event.Argument,
+			Timestamp:              timeNow().UTC(),
+			EvaluatedFlagSet:       event.EvaluatedFlagSet,
+			CohortID:               event.CohortID,
+			PublicArgument:         event.PublicArgument,
+			FirstSourceURL:         event.FirstSourceURL,
+			LastSourceURL:          event.LastSourceURL,
+			Referrer:               event.Referrer,
+			DeviceID:               event.DeviceID,
+			InsertID:               event.InsertID,
+			Client:                 event.Client,
+			BillingProductCategory: event.BillingProductCategory,
+			BillingEventID:         event.BillingEventID,
 		})
 	}
 

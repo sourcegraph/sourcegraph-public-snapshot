@@ -1029,6 +1029,26 @@ input Event {
     Used on Sourcegraph Cloud only.
     """
     insertID: String
+    """
+    The client that this event is being sent from.
+    """
+    client: String
+    """
+    The product category for the event, used for billing purposes.
+    """
+    billingProductCategory: String
+    """
+    The billing ID for the event, used for tagging user events for billing aggregation purposes.
+    """
+    billingEventID: String
+    """
+    The site ID that the client was connected to when the event was logged.
+    """
+    connectedSiteID: String
+    """
+    The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+    """
+    hashedLicenseKey: String
 }
 
 """
@@ -1091,7 +1111,79 @@ enum EventSource {
     BACKEND
     STATICWEB
     IDEEXTENSION
+    """
+    DEPRECATED
+    """
     CODY
+}
+
+"""
+The product client where events come from.
+
+Future additions include:
+- BITBUCKET_NATIVE_INTEGRATION
+- GITLAB_NATIVE_INTEGRATION
+- CHROME_SOURCEGRAPH_EXTENSION
+- FIREFOX_SOURCEGRAPH_EXTENSION
+- EDGE_SOURCEGRAPH_EXTENSION
+- VSCODE_SOURCEGRAPH_EXTENSION (for https://marketplace.visualstudio.com/items?itemName=sourcegraph.sourcegraph)
+- EMACS_CODY_EXTENSION
+"""
+enum EventClient {
+    SERVER_WEB
+    APP_WEB
+    DOTCOM_WEB
+    MARKETING_WEB
+    DOTCOM_BACKEND
+    APP_BACKEND
+    SERVER_BACKEND
+    VSCODE_CODY_EXTENSION
+    JETBRAINS_CODY_EXTENSION
+    NEOVIM_CODY_EXTENSION
+}
+
+"""
+The product categories for events, used for billing purposes.
+"""
+enum EventBillingProductCategory {
+    """
+    Used for all events related to non-billable, non-product usage (e.g. marketing, CTAs, signed out
+    events, etc.)
+    """
+    NOT_BILLABLE
+    """
+    Used for all billable but shared user interface events, such as administration, authentication, user
+    profile and settings, shared landing pages, etc.
+    """
+    SHARED
+    """
+    Used for all events primarily related to the Code Search product, including file and repo pageviews,
+    search actions, code navigation, batch changes, code insights, etc.
+    """
+    CODE_SEARCH
+    """
+    Used for all events primarily related to the Cody product, including chats, recipes, completions, web
+    chat views, etc.
+    """
+    CODY
+}
+
+"""
+Billing IDs for events, used for tagging user events for billing aggregation purposes.
+"""
+enum EventBillingID {
+    """
+    A billable Cody chat event, including manual chats, recipes, and more.
+    """
+    CodyChat
+    """
+    A billable Cody completion (aka suggestion or autocomplete) event.
+    """
+    CodyCompletion
+    """
+    A billable Cody embedding/code graph creation or search event.
+    """
+    CodyEmbedding
 }
 
 """
@@ -8366,6 +8458,10 @@ type ProductLicenseInfo {
     This indicates the reason the license is invalid. It'll be null if `isValid` is true.
     """
     licenseInvalidityReason: String
+    """
+    The license key, hashed using sha256.
+    """
+    hashedKey: String
 }
 
 """

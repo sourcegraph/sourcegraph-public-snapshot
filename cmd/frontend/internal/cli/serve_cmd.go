@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
@@ -201,8 +200,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err := checkSysReqs(context.Background(), os.Stderr); err != nil {
 		return err
 	}
-
-	siteid.Init(db)
 
 	globals.WatchBranding()
 	globals.WatchExternalURL()

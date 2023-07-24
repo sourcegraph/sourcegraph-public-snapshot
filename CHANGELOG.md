@@ -20,6 +20,10 @@ All notable changes to Sourcegraph are documented in this file.
 - OpenTelemetry Collector has been upgraded to v0.81, and OpenTelemetry packages have been upgraded to v1.16. [#54969](https://github.com/sourcegraph/sourcegraph/pull/54969), [#54999](https://github.com/sourcegraph/sourcegraph/pull/54999)
 - Bitbucket Cloud code host connections no longer automatically syncs the repository of the username used. The appropriate workspace name will have to be added to the `teams` list if repositories for that account need to be synced. [#55095](https://github.com/sourcegraph/sourcegraph/pull/55095)
 
+### Fixed
+
+- Creation of GitHub Apps will now respect system certificate authorities when specifying `certificates` for the `tls.external` site configuration. [#55084](https://github.com/sourcegraph/sourcegraph/pull/55084)
+
 ### Removed
 
 - indexed-search has removed the deprecated environment variable ZOEKT_ENABLE_LAZY_DOC_SECTIONS [zoekt#620](https://github.com/sourcegraph/zoekt/pull/620)
