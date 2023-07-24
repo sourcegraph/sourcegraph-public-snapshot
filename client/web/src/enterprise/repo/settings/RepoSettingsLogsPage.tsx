@@ -87,7 +87,7 @@ const LastGitCommands: FC<LastGitCommandsProps> = props => {
                 // of IDs and there's nothing really unique about each command.
                 //
                 // eslint-disable-next-line react/no-array-index-key
-                <LastGitCommandNode command={command} key={index} />
+                <LastGitCommandNode command={command} key={index} name={`Command ${index + 1}`} />
             ))}
         </div>
     )
@@ -95,9 +95,10 @@ const LastGitCommands: FC<LastGitCommandsProps> = props => {
 
 interface LastGitCommandNodeProps {
     command: SettingsAreaRepositoryFields['recordedCommands'][0]
+    name: string
 }
 
-const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command }) => {
+const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command, name }) => {
     const [isOpened, setIsOpened] = useState(false)
     const startDate = new Date(command.start)
 
@@ -114,13 +115,13 @@ const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command }) => {
             <CollapseHeader
                 as={Button}
                 outline={true}
-                focusLocked={true}
+                focusLocked={false}
                 variant="secondary"
                 className={classNames('w-100 my-2 text-left', styles.commandNode)}
             >
                 <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronUp : mdiChevronDown} className="mr-1" />
                 <Timestamp date={startDate} />
-                <Text className="mb-0">Janitor Run</Text>
+                <Text className="mb-0">{name}</Text>
                 <Text className="mb-0">{duration}</Text>
             </CollapseHeader>
             <CollapsePanel>
