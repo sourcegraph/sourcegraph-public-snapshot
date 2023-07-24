@@ -107,7 +107,7 @@ const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command }) => {
                 outline={true}
                 focusLocked={true}
                 variant="secondary"
-                className={classNames('w-100 my-2 text-left', styles.lastGitCommandNode)}
+                className={classNames('w-100 my-2 text-left', styles.commandNode)}
             >
                 <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronUp : mdiChevronDown} className="mr-1" />
                 <Text className="mb-0">{formatDistanceToNowStrict(startDate)}</Text>
