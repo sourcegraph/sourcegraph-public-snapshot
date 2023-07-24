@@ -63,6 +63,7 @@ func implCorrelateSCIP(t *testing.T, testIndexPath string, indexSizeLimit int64)
 		return nil
 	})
 	require.NoError(t, err)
+	packageData.Normalize()
 	packages := packageData.Packages
 	packageReferences := packageData.PackageReferences
 	if err != nil {
