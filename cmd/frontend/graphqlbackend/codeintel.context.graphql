@@ -44,11 +44,11 @@ type PreciseContextOutput {
     """
     The scip symbol name.
     """
-    symbol: String!
+    scipSymbolName: String!
     """
-    The descriptor created by Syntect.
+    The fuzzy symbol name created by Syntect and TreeSitter.
     """
-    syntectDescriptor: String!
+    fuzzySymbolName: String!
     """
     The repository name.
     """

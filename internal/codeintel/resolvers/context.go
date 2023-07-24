@@ -24,8 +24,8 @@ type PreciseContextInput struct {
 }
 
 type PreciseContextOutputResolver interface {
-	Symbol() string
-	SyntectDescriptor() string
+	ScipSymbolName() string
+	FuzzySymbolName() string
 	RepositoryName() string
 	SymbolRole() int32
 	Confidence() string
