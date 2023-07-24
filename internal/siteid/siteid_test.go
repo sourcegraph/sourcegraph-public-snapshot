@@ -2,6 +2,7 @@ package siteid
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -9,15 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestNotInited(t *testing.T) {
-	if inited {
-		t.Fatal("one of this test package's imports called Init, but these tests require that it has not yet been called")
-	}
-}
-
 func TestGet(t *testing.T) {
 	reset := func() {
-		inited = false
+		initOnce = sync.Once{}
 		siteID = ""
 		conf.Mock(nil)
 	}
@@ -44,7 +39,7 @@ func TestGet(t *testing.T) {
 
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
-		
+
 		got, err := tryGet(db)
 		if err != nil {
 			t.Fatal(err)
@@ -68,9 +63,6 @@ func TestGet(t *testing.T) {
 		if fmt.Sprint(err) != fmt.Sprint(want) {
 			t.Errorf("got error %q, want %q", err, want)
 		}
-		if inited {
-			t.Error("inited")
-		}
 		if got != "" {
 			t.Error("siteID is set")
 		}
@@ -82,7 +74,7 @@ func TestGet(t *testing.T) {
 
 		db := database.NewMockDB()
 
-		got, err  := tryGet(db)
+		got, err := tryGet(db)
 		if err != nil {
 			t.Fatal(err)
 		}
