@@ -9,6 +9,6 @@
   - [Generating Index to Enable Codebase-Aware Answers](indexing.md)
   - [Embeddings Policies](policies.md)
   - [Schedule one-off embeddings jobs](schedule_one_off_embeddings_jobs.md)
-- Extensions
+- IDE Extensions
   - [Installing the Cody VS Code Extension](installing_vs_code.md)
   - [Installing the Cody Jetbrains Extension](installing_jetbrains.md)
