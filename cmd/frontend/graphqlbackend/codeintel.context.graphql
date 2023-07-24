@@ -1,6 +1,6 @@
 extend type Query {
     """
-    Returns the most relevant SCIP symbol information based on a list and the current state of the editor.
+    EXPERIMENTAL: Returns the most relevant SCIP symbol information based on a list and the current state of the editor.
     """
     getPreciseContext(input: PreciseContextInput!): PreciseContext!
 }
