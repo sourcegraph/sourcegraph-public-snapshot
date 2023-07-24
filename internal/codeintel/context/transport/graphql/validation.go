@@ -13,8 +13,8 @@ func validateGetPreciseContextInput(input *resolverstubs.GetPreciseContextInput)
 	if input.Input.ActiveFileContent == "" {
 		return errors.New("active file content must be set")
 	}
-	if input.Input.CommitID == "" {
-		return errors.New("commit ID must be set")
+	if input.Input.ClosestRemoteCommitSHA == "" {
+		return errors.New("closest remote commit ID must be set")
 	}
 
 	return nil

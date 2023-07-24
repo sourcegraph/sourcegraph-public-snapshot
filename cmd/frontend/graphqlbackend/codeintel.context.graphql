@@ -14,9 +14,9 @@ input PreciseContextInput {
     """
     repository: String!
     """
-    The commit ID.
+    The closest ancestor commit ON REMOTE
     """
-    commitID: String!
+    closestRemoteCommitSHA: String!
     """
     The name of the active file.
     """

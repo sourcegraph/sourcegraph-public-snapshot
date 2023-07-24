@@ -62,7 +62,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	ctx, trace, endObservation := s.operations.getPreciseContext.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.String("filename", args.Input.Repository),
 		attribute.String("content", args.Input.ActiveFileContent),
-		attribute.String("commitID", args.Input.CommitID),
+		attribute.String("closestRemoteCommitSHA", args.Input.ClosestRemoteCommitSHA),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -70,14 +70,14 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	filename := args.Input.ActiveFile
 	content := args.Input.ActiveFileContent
-	commitID := args.Input.CommitID
+	closestRemoteCommitSHA := args.Input.ClosestRemoteCommitSHA
 
 	repo, err := s.repostore.GetByName(ctx, api.RepoName(args.Input.Repository))
 	if err != nil {
 		return nil, err
 	}
 
-	uploads, err := s.codenavSvc.GetClosestDumpsForBlob(ctx, int(repo.ID), commitID, filename, true, "")
+	uploads, err := s.codenavSvc.GetClosestDumpsForBlob(ctx, int(repo.ID), closestRemoteCommitSHA, filename, true, "")
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	requestArgs := codenavtypes.RequestArgs{
 		RepositoryID: int(repo.ID),
-		Commit:       commitID,
+		Commit:       closestRemoteCommitSHA,
 		Limit:        100, //! MAGIC NUMBER
 		RawCursor:    "",
 	}
@@ -104,7 +104,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		authz.DefaultSubRepoPermsChecker,
 		s.gitserverClient,
 		repo,
-		commitID,
+		closestRemoteCommitSHA,
 		"",
 		maximumIndexesPerMonikerSearch,
 		hunkCache,
