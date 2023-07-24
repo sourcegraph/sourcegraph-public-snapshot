@@ -3,13 +3,15 @@ package githubapp
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
 	"github.com/google/uuid"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -78,6 +80,10 @@ func TestGenerateRedirectURL(t *testing.T) {
 }
 
 func TestGithubAppAuthMiddleware(t *testing.T) {
+	t.Cleanup(func() {
+		MockCreateGitHubApp = nil
+	})
+
 	webhookUUID := uuid.New()
 
 	mockUserStore := database.NewMockUserStore()
@@ -408,4 +414,108 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 			}
 		})
 	})
+}
+
+func TestCreateGitHubApp(t *testing.T) {
+	tests := []struct {
+		name          string
+		domain        types.GitHubAppDomain
+		handlerAssert func(t *testing.T) http.HandlerFunc
+		expected      *ghtypes.GitHubApp
+		expectedErr   error
+	}{
+		{
+			name:   "success",
+			domain: types.BatchesGitHubAppDomain,
+			handlerAssert: func(t *testing.T) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					assert.Equal(t, http.MethodPost, r.Method)
+
+					w.WriteHeader(http.StatusCreated)
+
+					resp := GitHubAppResponse{
+						AppID:         1,
+						Slug:          "test/github-app",
+						Name:          "test",
+						HtmlURL:       "http://my-github-app.com/app",
+						ClientID:      "abc",
+						ClientSecret:  "password",
+						PEM:           "some-pem",
+						WebhookSecret: "secret",
+						Permissions: map[string]string{
+							"checks": "write",
+						},
+						Events: []string{
+							"check_run",
+						},
+					}
+					err := json.NewEncoder(w).Encode(resp)
+					require.NoError(t, err)
+				}
+			},
+			expected: &ghtypes.GitHubApp{
+				AppID:         1,
+				Name:          "test",
+				Slug:          "test/github-app",
+				ClientID:      "abc",
+				ClientSecret:  "password",
+				WebhookSecret: "secret",
+				PrivateKey:    "some-pem",
+				BaseURL:       "http://my-github-app.com",
+				AppURL:        "http://my-github-app.com/app",
+				Domain:        types.BatchesGitHubAppDomain,
+				Logo:          "http://my-github-app.com/identicons/app/app/test/github-app",
+			},
+		},
+		{
+			name:   "unexpected status code",
+			domain: types.BatchesGitHubAppDomain,
+			handlerAssert: func(t *testing.T) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusOK)
+				}
+			},
+			expectedErr: errors.New("expected 201 statusCode, got: 200"),
+		},
+		{
+			name:   "server error",
+			domain: types.BatchesGitHubAppDomain,
+			handlerAssert: func(t *testing.T) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusInternalServerError)
+				}
+			},
+			expectedErr: errors.New("expected 201 statusCode, got: 500"),
+		},
+		{
+			name:   "invalid html url",
+			domain: types.BatchesGitHubAppDomain,
+			handlerAssert: func(t *testing.T) http.HandlerFunc {
+				return func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHeader(http.StatusCreated)
+
+					resp := GitHubAppResponse{HtmlURL: ":"}
+					err := json.NewEncoder(w).Encode(resp)
+					require.NoError(t, err)
+				}
+			},
+			expectedErr: errors.New("parse \":\": missing protocol scheme"),
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			srv := httptest.NewServer(test.handlerAssert(t))
+			defer srv.Close()
+
+			app, err := createGitHubApp(srv.URL, test.domain)
+			if test.expectedErr != nil {
+				require.Error(t, err)
+				assert.EqualError(t, err, test.expectedErr.Error())
+				assert.Nil(t, app)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, test.expected, app)
+			}
+		})
+	}
 }
