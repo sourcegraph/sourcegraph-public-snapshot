@@ -88,7 +88,7 @@ fuzzy_descriptor_suffix_ids AS (
 -- We express this as a union in a CTE to take advantage of the partial indexes on the
 -- descriptor and fuzzy descriptor suffixes. When we had inlined these expressions, Postgres
 -- generated a parallel seq scan over the entire lookup_leaves table.
-descriptor_suffix_ids AS (
+raw_descriptor_suffix_ids AS (
 	(
 		SELECT ll.upload_id, ll.descriptor_suffix_id FROM fuzzy_descriptor_suffix_ids dsi
 		JOIN codeintel_scip_symbols_lookup_leaves ll ON (ll.upload_id = dsi.upload_id AND ll.fuzzy_descriptor_suffix_id = dsi.id)
@@ -96,6 +96,9 @@ descriptor_suffix_ids AS (
 		SELECT ll.upload_id, ll.descriptor_suffix_id FROM fuzzy_descriptor_suffix_ids dsi
 		JOIN codeintel_scip_symbols_lookup_leaves ll ON (ll.upload_id = dsi.upload_id AND ll.fuzzy_descriptor_suffix_id IS NULL AND ll.descriptor_suffix_id = dsi.id)
 	)
+),
+descriptor_suffix_ids AS (
+	SELECT DISTINCT dsi.upload_id, dsi.descriptor_suffix_id FROM raw_descriptor_suffix_ids dsi
 )
 
 --
