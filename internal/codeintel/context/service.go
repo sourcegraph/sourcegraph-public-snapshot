@@ -355,7 +355,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					preciseResponse = append(preciseResponse, &types.PreciseContext{
 						SymbolName:        pd.symbolName,
 						SyntectDescriptor: pd.syntectName,
-						Repository:        l.Dump.RepositoryName,
+						RepositoryName:    l.Dump.RepositoryName,
 						SymbolRole:        0, // TODO
 						Confidence:        "PRECISE",
 						Text:              snippet,

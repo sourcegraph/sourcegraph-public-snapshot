@@ -50,9 +50,9 @@ type PreciseContextOutput {
     """
     syntectDescriptor: String!
     """
-    The repository id.
+    The repository name.
     """
-    repository: String!
+    repositoryName: String!
     """
     The role of the symbol.
     """

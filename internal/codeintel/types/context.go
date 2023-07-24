@@ -3,7 +3,7 @@ package types
 type PreciseContext struct {
 	SymbolName        string
 	SyntectDescriptor string
-	Repository        string
+	RepositoryName    string
 	SymbolRole        int32
 	Confidence        string
 	Text              string

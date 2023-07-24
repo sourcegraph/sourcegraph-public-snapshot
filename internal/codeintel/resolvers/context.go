@@ -26,7 +26,7 @@ type PreciseContextInput struct {
 type PreciseContextOutputResolver interface {
 	Symbol() string
 	SyntectDescriptor() string
-	Repository() string
+	RepositoryName() string
 	SymbolRole() int32
 	Confidence() string
 	Text() string

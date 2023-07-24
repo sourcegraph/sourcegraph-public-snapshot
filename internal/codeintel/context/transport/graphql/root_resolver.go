@@ -33,7 +33,7 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 		resolvers = append(resolvers, &preciseDataResolver{
 			symbol:            c.SymbolName,
 			syntectDescriptor: c.SyntectDescriptor,
-			repository:        c.Repository,
+			repositoryName:    c.RepositoryName,
 			symbolRole:        c.SymbolRole,
 			confidence:        c.Confidence,
 			text:              c.Text,
@@ -54,7 +54,7 @@ func (r *preciseContextResolver) Context() []resolverstubs.PreciseContextOutputR
 type preciseDataResolver struct {
 	symbol            string
 	syntectDescriptor string
-	repository        string
+	repositoryName    string
 	symbolRole        int32
 	confidence        string
 	text              string
@@ -63,7 +63,7 @@ type preciseDataResolver struct {
 
 func (r *preciseDataResolver) Symbol() string            { return r.symbol }
 func (r *preciseDataResolver) SyntectDescriptor() string { return r.syntectDescriptor }
-func (r *preciseDataResolver) Repository() string        { return r.repository }
+func (r *preciseDataResolver) RepositoryName() string    { return r.repositoryName }
 func (r *preciseDataResolver) SymbolRole() int32         { return r.symbolRole }
 func (r *preciseDataResolver) Confidence() string        { return r.confidence }
 func (r *preciseDataResolver) Text() string              { return r.text }
