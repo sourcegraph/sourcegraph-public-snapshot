@@ -4,17 +4,7 @@
 
 ### Added
 
-- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
-- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
-- Auto-growing prompt input [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
-
 ### Changed
-
-- fix logging to use JetBrains api + other minor fixes [#54579](https://github.com/sourcegraph/sourcegraph/pull/54579)
-- Enable editor recipe context menu items when working with Cody app only when Cody app is running [#54583](https://github.com/sourcegraph/sourcegraph/pull/54583)
-- rename `completion` to `autocomplete` in both the UI and code [#54606](https://github.com/sourcegraph/sourcegraph/pull/54606)
-- Increased minimum rows of prompt input form 2 to 3 [#54733](https://github.com/sourcegraph/sourcegraph/pull/54733)
-- improved completion prompt with changes from the VS Code plugin [#54668](https://github.com/sourcegraph/sourcegraph/pull/54668)
 
 ### Deprecated
 
@@ -22,7 +12,82 @@
 
 ### Fixed
 
+- Improved the auto-scrolling of the Cody chat [#55150](https://github.com/sourcegraph/sourcegraph/pull/55150)
+- Fixed mouse wheel and mouse drag scrolling in the Cody chat [#55199](https://github.com/sourcegraph/sourcegraph/pull/55199)
+
 ### Security
+
+## [3.0.7]
+
+### Added
+
+- New menu item in the toolbar cogwheel menu to open the Cody app settings [#55146](https://github.com/sourcegraph/sourcegraph/pull/55146)
+
+### Changed
+
+- Improved UI of the onboarding widgets [#55090](https://github.com/sourcegraph/sourcegraph/pull/55090)
+- Improved perceived autocomplete performance [#55098](https://github.com/sourcegraph/sourcegraph/pull/55098)
+
+### Fixed
+
+- Enable/disable Cody automatically based on the settings [#55138](https://github.com/sourcegraph/sourcegraph/pull/55138)
+
+## [3.0.6]
+
+### Added
+
+- Automatic detection of Cody app status in the settings window [#54955](https://github.com/sourcegraph/sourcegraph/pull/54955)
+- Add "Enable Cody" option to settings [#55004](https://github.com/sourcegraph/sourcegraph/pull/55004)
+
+### Changed
+
+- Disable "summarize recent code changes" button if git repository is not available [#54859](https://github.com/sourcegraph/sourcegraph/pull/54859)
+- Get the chat model max tokens value from the instance when available [#54954](https://github.com/sourcegraph/sourcegraph/pull/54954)
+
+### Fixed
+
+- Downgraded connection errors for invalid or inaccessible enterprise instances to warnings [#54916](https://github.com/sourcegraph/sourcegraph/pull/54916)
+- Try to log error stack traces and recover from them, rather than re-throw the exception [#54917](https://github.com/sourcegraph/sourcegraph/pull/54917)
+- Show only one informative message in case of invalid access token [#54951](https://github.com/sourcegraph/sourcegraph/pull/54951)
+- Don't display `<br />` tag in the chat message when trying to insert new line in the code block [#55007](https://github.com/sourcegraph/sourcegraph/pull/55007)
+
+## [3.0.5]
+
+### Added
+
+- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
+- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
+- Auto-growing prompt input [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
+- Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
+- Copy code block button added to editor in the chat message to copy the text to clipboard [#54783](https://github.com/sourcegraph/sourcegraph/pull/54783)
+- Insert at Cursor button added to editor in the chat message to insert the text form the editor to main editor [#54815](https://github.com/sourcegraph/sourcegraph/pull/54815)
+- Added support for multiline autocomplete [#54848](https://github.com/sourcegraph/sourcegraph/pull/54848)
+
+### Fixed
+
+- Fixed telemetry for Sourcegraph.com [#54885](https://github.com/sourcegraph/sourcegraph/pull/54885)
+
+## [3.0.4]
+
+### Added
+
+- Added embeddings status in footer [#54575](https://github.com/sourcegraph/sourcegraph/pull/54575)
+- Added currently opened file name in footer [#54610](https://github.com/sourcegraph/sourcegraph/pull/54610)
+- Added "stop generating" button [#54710](https://github.com/sourcegraph/sourcegraph/pull/54710)
+- Made prompt input grow automatically [#53594](https://github.com/sourcegraph/sourcegraph/pull/53594)
+
+### Changed
+
+- Fixed logging to use JetBrains api + other minor fixes [#54579](https://github.com/sourcegraph/sourcegraph/pull/54579)
+- Enabled editor recipe context menu items when working with Cody app only when Cody app is running [#54583](https://github.com/sourcegraph/sourcegraph/pull/54583)
+- Renamed `completion` to `autocomplete` in both the UI and code [#54606](https://github.com/sourcegraph/sourcegraph/pull/54606)
+- Increased minimum rows of prompt input form 2 to 3 [#54733](https://github.com/sourcegraph/sourcegraph/pull/54733)
+- Improved completion prompt with changes from the VS Code plugin [#54668](https://github.com/sourcegraph/sourcegraph/pull/54668)
+- Displayed more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
+
+### Fixed
+
+- Now avoiding NullPointerException in an edge case when the chat doesn't exist [#54785](https://github.com/sourcegraph/sourcegraph/pull/54785)
 
 ## [3.0.3]
 
@@ -36,18 +101,11 @@
 
 - Use smaller Cody logo in toolbar and editor context menu [#54481](https://github.com/sourcegraph/sourcegraph/pull/54481)
 - Sourcegraph link sharing and opening file in browser actions are disabled when working with Cody app [#54473](https://github.com/sourcegraph/sourcegraph/pull/54473)
-- Display more informative message when no context has been found [#54480](https://github.com/sourcegraph/sourcegraph/pull/54480)
-
-### Deprecated
-
-### Removed
 
 ### Fixed
 
 - Preserve new lines in the human chat message [#54417](https://github.com/sourcegraph/sourcegraph/pull/54417)
 - JetBrains: Handle response == null case when checking for embeddings [#54492](https://github.com/sourcegraph/sourcegraph/pull/54492)
-
-### Security
 
 ## [3.0.2]
 

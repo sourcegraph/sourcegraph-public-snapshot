@@ -30,6 +30,9 @@ type repositoryArgs struct {
 	Indexed    bool
 	NotIndexed bool
 
+	Embedded    bool
+	NotEmbedded bool
+
 	CloneStatus *string
 	FailedFetch bool
 	Corrupted   bool
@@ -80,6 +83,16 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 		opt.OnlyIndexed = true
 	}
 
+	if !args.Embedded && !args.NotEmbedded {
+		return database.ReposListOptions{}, errors.New("excluding embedded and not embedded repos leaves an empty set")
+	}
+	if !args.Embedded {
+		opt.NoEmbedded = true
+	}
+	if !args.NotEmbedded {
+		opt.OnlyEmbedded = true
+	}
+
 	if args.ExternalService != nil {
 		extSvcID, err := UnmarshalExternalServiceID(*args.ExternalService)
 		if err != nil {
@@ -98,12 +111,10 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 	}
 
 	connectionStore := &repositoriesConnectionStore{
-		ctx:        ctx,
-		db:         r.db,
-		logger:     r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
-		opt:        opt,
-		indexed:    args.Indexed,
-		notIndexed: args.NotIndexed,
+		ctx:    ctx,
+		db:     r.db,
+		logger: r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
+		opt:    opt,
 	}
 
 	maxPageSize := 1000
@@ -124,12 +135,10 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 }
 
 type repositoriesConnectionStore struct {
-	ctx        context.Context
-	logger     log.Logger
-	db         database.DB
-	opt        database.ReposListOptions
-	indexed    bool
-	notIndexed bool
+	ctx    context.Context
+	logger log.Logger
+	db     database.DB
+	opt    database.ReposListOptions
 }
 
 func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, orderBy database.OrderBy) (*string, error) {
@@ -218,7 +227,7 @@ func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *da
 	opt := s.opt
 	opt.PaginationArgs = args
 
-	client := gitserver.NewClient()
+	client := gitserver.NewClient(s.db)
 	repos, err := backend.NewRepos(s.logger, s.db, client).List(ctx, opt)
 	if err != nil {
 		return nil, err
@@ -274,7 +283,7 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 		}
 
-		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient())
+		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient(r.db))
 		for {
 			// Cursor-based pagination requires that we fetch limit+1 records, so
 			// that we know whether or not there's an additional page (or more)
@@ -316,7 +325,7 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 		return nil, err
 	}
 	resolvers := make([]*RepositoryResolver, 0, len(repos))
-	client := gitserver.NewClient()
+	client := gitserver.NewClient(r.db)
 	for i, repo := range repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
 			break

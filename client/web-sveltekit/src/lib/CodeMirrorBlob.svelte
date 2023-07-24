@@ -20,6 +20,7 @@
 
     function createEditor(container: HTMLDivElement): EditorView {
         const extensions = [
+            EditorView.editable.of(false),
             lineNumbers(),
             miscSettingsCompartment.of(configureMiscSettings({ wrapLines })),
             shCompartment.of(configureSyntaxHighlighting(blob.content, highlights)),

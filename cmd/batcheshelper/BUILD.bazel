@@ -1,0 +1,80 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push", "oci_tarball")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@container_structure_test//:defs.bzl", "container_structure_test")
+load("//dev:oci_defs.bzl", "image_repository")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "batcheshelper_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/cmd/batcheshelper",
+    visibility = ["//visibility:private"],
+    deps = [
+        "//cmd/batcheshelper/log",
+        "//cmd/batcheshelper/run",
+        "//cmd/batcheshelper/util",
+        "//internal/sanitycheck",
+        "//lib/batches",
+        "//lib/batches/execution",
+        "//lib/errors",
+    ],
+)
+
+go_binary(
+    name = "batcheshelper",
+    embed = [":batcheshelper_lib"],
+    visibility = ["//visibility:public"],
+    x_defs = {
+        "github.com/sourcegraph/sourcegraph/internal/version.version": "{STABLE_VERSION}",
+        "github.com/sourcegraph/sourcegraph/internal/version.timestamp": "{VERSION_TIMESTAMP}",
+    },
+)
+
+go_test(
+    name = "batcheshelper_test",
+    srcs = ["main_test.go"],
+    embed = [":batcheshelper_lib"],
+    deps = [
+        "//lib/batches/execution",
+        "//lib/errors",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)
+
+pkg_tar(
+    name = "tar_batcheshelper",
+    srcs = [":batcheshelper"],
+    package_dir = "/usr/local/bin",
+)
+
+oci_image(
+    name = "image",
+    base = "@wolfi_batcheshelper_base",
+    tars = [":tar_batcheshelper"],
+)
+
+oci_tarball(
+    name = "image_tarball",
+    image = ":image",
+    repo_tags = ["batcheshelper:candidate"],
+)
+
+container_structure_test(
+    name = "image_test",
+    timeout = "short",
+    configs = ["image_test.yaml"],
+    driver = "docker",
+    image = ":image",
+    tags = [
+        "exclusive",
+        "requires-network",
+    ],
+)
+
+oci_push(
+    name = "candidate_push",
+    image = ":image",
+    repository = image_repository("batcheshelper"),
+)

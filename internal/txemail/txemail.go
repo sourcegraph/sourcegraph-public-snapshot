@@ -101,7 +101,7 @@ func Send(ctx context.Context, source string, message Message) (err error) {
 		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil), source).Inc()
 	}()
 
-	m, err := render(config.EmailAddress, config.EmailSenderName, message)
+	m, err := render(config.EmailAddress, conf.EmailSenderName(), message)
 	if err != nil {
 		return errors.Wrap(err, "render")
 	}

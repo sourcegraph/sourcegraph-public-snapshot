@@ -52,6 +52,9 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			conf: &schema.BitbucketCloudConnection{
 				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+				Teams: []string{
+					bbtest.GetenvTestBitbucketCloudUsername(),
+				},
 			},
 			err: "<nil>",
 		},
@@ -68,6 +71,7 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
 				Teams: []string{
 					"sglocal",
+					bbtest.GetenvTestBitbucketCloudUsername(),
 				},
 			},
 			err: "<nil>",

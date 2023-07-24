@@ -62,7 +62,7 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 	}
 
 	tr, ctx := trace.New(ctx, "resolveChunks")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	return iter.MapErr(fileChunks, func(fileChunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
 		return r.fileChunkToResolver(ctx, fileChunk)

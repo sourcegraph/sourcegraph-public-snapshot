@@ -8,13 +8,14 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -123,6 +124,16 @@ func EmailVerificationRequired() bool {
 // It's false for sites that do not have an email sending API key set up.
 func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
+}
+
+// EmailSenderName returns `email.senderName`. If that's not set, it returns
+// the default value "Sourcegraph".
+func EmailSenderName() string {
+	sender := Get().EmailSenderName
+	if sender != "" {
+		return sender
+	}
+	return "Sourcegraph"
 }
 
 // UpdateChannel tells the update channel. Default is "release".
@@ -580,6 +591,18 @@ func GitMaxConcurrentClones() int {
 	return v
 }
 
+func GetDeduplicatedForksIndex() collections.Set[string] {
+	index := collections.NewSet[string]()
+
+	repoConf := Get().Repositories
+	if repoConf == nil {
+		return index
+	}
+
+	index.Add(repoConf.DeduplicateForks...)
+	return index
+}
+
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
@@ -602,9 +625,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-v1",
-			FastChatModel:   "anthropic/claude-instant-v1",
-			CompletionModel: "anthropic/claude-instant-v1",
+			ChatModel:       "anthropic/claude-2",
+			FastChatModel:   "anthropic/claude-instant-1",
+			CompletionModel: "anthropic/claude-instant-1",
 		}
 	}
 
@@ -642,17 +665,17 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-v1"
+			completionsConfig.ChatModel = "anthropic/claude-2"
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic/claude-instant-v1"
+			completionsConfig.FastChatModel = "anthropic/claude-instant-1"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
+			completionsConfig.CompletionModel = "anthropic/claude-instant-1"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
@@ -692,17 +715,17 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-v1"
+			completionsConfig.ChatModel = "claude-2"
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "claude-instant-v1"
+			completionsConfig.FastChatModel = "claude-instant-1"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-v1"
+			completionsConfig.CompletionModel = "claude-instant-1"
 		}
 	}
 
@@ -929,7 +952,7 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 	if config.LicenseKey == "" {
 		return ""
 	}
-	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
+	return license.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
 }
 
 const (
@@ -971,6 +994,11 @@ func anthropicDefaultMaxPromptTokens(model string) int {
 	if strings.HasSuffix(model, "-100k") {
 		return 100_000
 
+	}
+	if model == "claude-2" {
+		// TODO: Technically, v2 also uses a 100k window, but we should validate
+		// that returning 100k here is the right thing to do.
+		return 12_000
 	}
 	// For now, all other claude models have a 9k token window.
 	return 9_000

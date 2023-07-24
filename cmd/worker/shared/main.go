@@ -16,6 +16,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck"
 	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
@@ -29,7 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -47,7 +48,7 @@ type namedBackgroundRoutine struct {
 func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
 	symbols.LoadConfig()
 
-	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(migrations.RegisterOSSMigrators, registerEnterpriseMigrators)
+	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(register.RegisterOSSMigrators, registerEnterpriseMigrators)
 
 	builtins := map[string]workerjob.Job{
 		"webhook-log-janitor":       webhooks.NewJanitor(),
@@ -57,6 +58,7 @@ func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigra
 		"repo-statistics-compactor": repostatistics.NewCompactor(),
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
 		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
+		"license-check":             licensecheck.NewJob(),
 	}
 
 	var config Config

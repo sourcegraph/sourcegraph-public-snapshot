@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 // TODO(efritz) - de-globalize assignments in this function
@@ -139,9 +140,11 @@ func Init(
 			return nil, err
 		}
 		return &graphqlbackend.ProductLicenseInfo{
-			TagsValue:      info.Tags,
-			UserCountValue: info.UserCount,
-			ExpiresAtValue: info.ExpiresAt,
+			TagsValue:                    info.Tags,
+			UserCountValue:               info.UserCount,
+			ExpiresAtValue:               info.ExpiresAt,
+			IsValidValue:                 licensing.IsLicenseValid(),
+			LicenseInvalidityReasonValue: pointers.NonZeroPtr(licensing.GetLicenseInvalidReason()),
 		}, nil
 	}
 
@@ -157,11 +160,6 @@ func Init(
 
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}
 
-	goroutine.Go(func() {
-		licensing.StartMaxUserCount(logger, &usersStore{
-			db: db,
-		})
-	})
 	if envvar.SourcegraphDotComMode() {
 		goroutine.Go(func() {
 			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
@@ -169,26 +167,7 @@ func Init(
 		goroutine.Go(func() {
 			productsubscription.StartCheckForAnomalousLicenseUsage(logger, db)
 		})
-	} else {
-		gs, err := db.GlobalState().Get(ctx)
-		if err != nil {
-			return err
-		}
-		licensing.StartLicenseCheck(context.Background(), logger, gs.SiteID)
 	}
 
 	return nil
-}
-
-type usersStore struct {
-	db database.DB
-}
-
-func (u *usersStore) Count(ctx context.Context) (int, error) {
-	return u.db.Users().Count(
-		ctx,
-		&database.UsersListOptions{
-			ExcludeSourcegraphOperators: true,
-		},
-	)
 }

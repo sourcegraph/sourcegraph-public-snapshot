@@ -14,8 +14,12 @@ go_library(
         "stream_client.go",
     ],
     embedsrcs = [
+        "attribution.graphql",
+        "attribution/many_lines.txt",
+        "attribution/one_line.txt",
         "queries.txt",
         "queries_dogfood.txt",
+        "search.graphql",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/cmd/search-blitz",
     visibility = ["//visibility:private"],

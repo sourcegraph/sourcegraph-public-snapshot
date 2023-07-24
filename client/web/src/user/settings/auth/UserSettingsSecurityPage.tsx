@@ -39,13 +39,13 @@ import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
 // pick only the fields we need
 export type UserExternalAccount = Pick<
     UserExternalAccountFields,
-    'id' | 'serviceID' | 'serviceType' | 'publicAccountData'
+    'id' | 'serviceID' | 'serviceType' | 'publicAccountData' | 'clientID'
 >
 type ServiceType = AuthProvider['serviceType']
 
 export type ExternalAccountsByType = Partial<Record<ServiceType, UserExternalAccount>>
 export type AuthProvidersByBaseURL = Partial<Record<string, AuthProvider>>
-export type AccountByServiceID = Partial<Record<string, UserExternalAccount>>
+export type AccountsByServiceID = Partial<Record<string, UserExternalAccount[]>>
 
 interface UserExternalAccountsResult {
     user: {
@@ -92,8 +92,11 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
     }
 
     // auth providers by service ID
-    const accountByServiceID = accounts.fetched?.reduce((accumulator: AccountByServiceID, account) => {
-        accumulator[account.serviceID] = account
+    const accountsByServiceID = accounts.fetched?.reduce((accumulator: AccountsByServiceID, account) => {
+        const accountArray = accumulator[account.serviceID] ?? []
+        accountArray.push(account)
+        accumulator[account.serviceID] = accountArray
+
         return accumulator
     }, {})
 
@@ -206,10 +209,10 @@ export const UserSettingsSecurityPage: React.FunctionComponent<React.PropsWithCh
             )}
 
             {/* fetched external accounts */}
-            {accountByServiceID && (
+            {accountsByServiceID && (
                 <Container>
                     <ExternalAccountsSignIn
-                        accounts={accountByServiceID}
+                        accounts={accountsByServiceID}
                         authProviders={props.context.authProviders}
                         onDidError={handleError}
                         onDidRemove={onAccountRemoval}

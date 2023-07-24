@@ -126,7 +126,7 @@ func (r permissionsInfoRepositoryResolver) ID() graphql.ID {
 }
 
 func (r permissionsInfoRepositoryResolver) Repository() *graphqlbackend.RepositoryResolver {
-	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), r.perm.Repo)
+	return graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(r.db), r.perm.Repo)
 }
 
 func (r permissionsInfoRepositoryResolver) Reason() string {

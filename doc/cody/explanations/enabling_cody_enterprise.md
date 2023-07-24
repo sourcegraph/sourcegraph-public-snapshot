@@ -149,7 +149,7 @@ You must create your own key with Anthropic [here](https://console.anthropic.com
   "cody.enabled": true,
   "completions": {
     "provider": "anthropic", // or "openai" if you use OpenAI
-    "model": "claude-v1", // or one of the models listed at https://platform.openai.com/docs/models if you use openAI
+    "model": "claude-2", // or one of the models listed at https://platform.openai.com/docs/models if you use openAI
     "accessToken": "<key>"
   }
 }

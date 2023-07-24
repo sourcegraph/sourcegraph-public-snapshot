@@ -65,7 +65,7 @@ public class RepoUtil {
       }
       ErrorNotification.show(project, message);
       Logger.getInstance(RepoUtil.class).warn(message);
-      logger.error(err);
+      logger.warn(err);
     }
     return new RepoInfo(
         vcsType,

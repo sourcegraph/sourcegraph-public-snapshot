@@ -29,7 +29,6 @@ auth.sessionExpiry
 git.cloneURLToRepositoryName
 searchScopes
 extensions
-disablePublicRepoRedirects
 ```
 
 ## Editing your site configuration if you cannot access the web UI

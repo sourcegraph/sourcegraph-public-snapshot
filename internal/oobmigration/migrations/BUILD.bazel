@@ -2,15 +2,8 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "migrations",
-    srcs = ["register.go"],
+    srcs = ["migrations.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations",
     visibility = ["//:__subpackages__"],
-    deps = [
-        "//internal/conf/conftypes",
-        "//internal/database",
-        "//internal/database/basestore",
-        "//internal/encryption/keyring",
-        "//internal/oobmigration",
-        "//internal/oobmigration/migrations/batches",
-    ],
+    deps = ["//internal/database/basestore"],
 )
