@@ -157,7 +157,5 @@ server_integration_test(
     flaky = True,
     port = "7083",
     runner_src = ":codeintel_integration_test.sh",
-    tags = [
-        "manual",
-    ],
+    tags = [],
 )
