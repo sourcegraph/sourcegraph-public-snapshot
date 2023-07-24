@@ -3,9 +3,11 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
+	"text/template"
 
 	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -33,41 +35,137 @@ sg deploy --values <path to values file>
 		return nil
 	}}
 
-type Envvar struct {
-	name  string
-	value string
+type Values struct {
+	Name    string ``
+	Envvars []struct {
+		Name  string
+		Value string
+	}
+	Image          string
+	Replicas       int
+	ContainerPorts []struct {
+		Name string
+		Port int
+	} `yaml:"containerPorts"`
+	ServicePorts []struct {
+		Name       string
+		Port       int
+		TargetPort interface{}
+	} `yaml:"servicePorts"`
+	Dns string
 }
 
-type Port struct {
-	name  string
-	value int
-}
-type Values struct {
-	Name    string
-	Envvars []struct {
-		Name  string `yaml:"name"`
-		Value string `yaml:"value"`
-	}
-	Image    string
-	Replicas int
-	Ports    []struct {
-		Name  string
-		Value int
-	}
-}
+var k8sTemplate = `
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{.Name}}
+spec:
+  replicas: {{.Replicas}}
+  selector:
+    matchLabels:
+      app: {{.Name}}
+  template:
+    metadata:
+      labels:
+        app: {{.Name}}
+    spec:
+      containers:
+      - name: {{.Name}}
+        image: {{.Image}}
+        imagePullPolicy: Always
+        env:
+          {{- range $i, $envvar := .Envvars }}
+        - name: {{ $envvar.Name }}
+          value: {{ $envvar.Value }}
+          {{- end }}
+        ports:
+          {{- range $i, $port := .ContainerPorts }}
+        - containerPort: {{ $port.Port }}
+          name: {{ $port.Name }}
+          {{- end }}
+{{ if .ServicePorts }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{.Name}}-service
+spec:
+  selector:
+    app: {{.Name}}
+  ports:
+    - protocol: TCP
+      port:
+      targetPort:
+{{- end}}
+{{ if .Dns }}
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{.Name}}-ingress
+  namespace: tooling
+  annotations:
+    kubernetes.io/ingress.class: 'nginx'
+spec:
+  rules:
+    - http:
+        paths:
+          - pathType: Prefix
+            path: /
+            backend:
+              service:
+                name: {{.Name}}
+                port:
+                  number: 80
+      host: {{.Dns}}
+{{- end }}
+`
 
 func generateManifest(configFile string) error {
+
+	// err := checkCurrentDir("infrastructure")
+	// if err != nil {
+	// 	return errors.Wrap(err, "check current directory")
+	// }
 
 	var values Values
 	v, err := os.ReadFile(configFile)
 	if err != nil {
-		return errors.Wrap(err, "read Values file")
+		return errors.Wrap(err, "read values file")
 	}
 
 	err = yaml.Unmarshal(v, &values)
 	if err != nil {
-		return errors.Wrap(err, "reading config file")
+		return errors.Wrap(err, "error rendering values")
 	}
-	fmt.Println(values.Envvars)
+	path := "dogfood/kubernetes/tooling/" + values.Name + "/"
+	file, err := os.Create(path + values.Name + ".yaml")
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+	t := template.Must(template.New("app").Parse(k8sTemplate))
+	err = t.Execute(file, &values)
+	if err != nil {
+		return errors.Wrap(err, "execute template")
+	}
+	return nil
+
+}
+
+func checkCurrentDir(expected string) error {
+
+	fmt.Println("Checking current directory")
+	cwd, err := os.Getwd()
+	if err != nil {
+		return errors.Wrap(err, "error getting current directory")
+	}
+
+	current := path.Base(cwd)
+	if current != expected {
+		return errors.Wrap(err, "incorrect directory detected")
+	}
+
 	return nil
 }
