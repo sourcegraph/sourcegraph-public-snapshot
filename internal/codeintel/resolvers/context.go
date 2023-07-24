@@ -23,7 +23,7 @@ type PreciseContextInput struct {
 	ActiveFileContent string
 }
 
-type PreciseContextDataResolver interface {
+type PreciseContextOutputResolver interface {
 	Symbol() string
 	SyntectDescriptor() string
 	Repository() string
@@ -34,5 +34,5 @@ type PreciseContextDataResolver interface {
 }
 
 type PreciseContextResolver interface {
-	Context() []PreciseContextDataResolver
+	Context() []PreciseContextOutputResolver
 }

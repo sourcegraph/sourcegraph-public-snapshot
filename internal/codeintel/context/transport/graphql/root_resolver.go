@@ -28,7 +28,7 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 		return nil, err
 	}
 
-	resolvers := make([]resolverstubs.PreciseContextDataResolver, 0, len(context))
+	resolvers := make([]resolverstubs.PreciseContextOutputResolver, 0, len(context))
 	for _, c := range context {
 		resolvers = append(resolvers, &preciseDataResolver{
 			symbol:            c.SymbolName,
@@ -44,10 +44,10 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 }
 
 type preciseContextResolver struct {
-	context []resolverstubs.PreciseContextDataResolver
+	context []resolverstubs.PreciseContextOutputResolver
 }
 
-func (r *preciseContextResolver) Context() []resolverstubs.PreciseContextDataResolver {
+func (r *preciseContextResolver) Context() []resolverstubs.PreciseContextOutputResolver {
 	return r.context
 }
 

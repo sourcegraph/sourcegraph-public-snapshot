@@ -34,13 +34,13 @@ type PreciseContext {
     """
     The precise context data.
     """
-    context: [PreciseContextData!]!
+    context: [PreciseContextOutput!]!
 }
 
 """
-PreciseContextData provides code intelligence information for a snippet of code.
+PreciseContextOutput provides code intelligence information for a snippet of code.
 """
-type PreciseContextData {
+type PreciseContextOutput {
     """
     The scip symbol name.
     """
