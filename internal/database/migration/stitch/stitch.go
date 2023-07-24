@@ -208,6 +208,22 @@ var allowedOverrideMap = map[int]struct{}{
 	1528395701: {}, // https://github.com/sourcegraph/sourcegraph/pull/16203 - rewritten to avoid * in select
 	1528395730: {}, // https://github.com/sourcegraph/sourcegraph/pull/15972 - drops/re-created view to avoid dependencies
 	1663871069: {}, // https://github.com/sourcegraph/sourcegraph/pull/43390 - fixes malformed published value
+	1648628900: {}, // magic
+	1652707934: {},
+	1655157509: {},
+	1667220626: {},
+	1670934184: {},
+	1674455760: {},
+	1675962678: {},
+	1677003167: {},
+	1676420496: {},
+	1677944752: {},
+	1678214530: {},
+	1678456448: {},
+	1665531314: {},
+	1670365552: {},
+	1659572248: {},
+	1672921606: {},
 
 	// codeintel
 	1000000020: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent
