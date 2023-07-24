@@ -12,7 +12,7 @@ input PreciseContextInput {
     """
     The repository name.
     """
-    repository: String!
+    repositoryName: String!
     """
     The closest ancestor commit ON REMOTE
     """

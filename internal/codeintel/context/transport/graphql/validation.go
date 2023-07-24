@@ -16,6 +16,9 @@ func validateGetPreciseContextInput(input *resolverstubs.GetPreciseContextInput)
 	if input.Input.ClosestRemoteCommitSHA == "" {
 		return errors.New("closest remote commit ID must be set")
 	}
+	if input.Input.RepositoryName == "" {
+		return errors.New("repository name must be set")
+	}
 
 	return nil
 }

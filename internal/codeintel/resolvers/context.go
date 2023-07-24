@@ -13,8 +13,8 @@ type GetPreciseContextInput struct {
 }
 
 type PreciseContextInput struct {
-	// The repository the user is in
-	Repository string
+	// The name of the repository
+	RepositoryName string
 	// Closest ancestor commit on remote branch
 	ClosestRemoteCommitSHA string
 	// The file that is currently open in the editor

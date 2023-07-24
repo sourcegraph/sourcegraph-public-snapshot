@@ -60,7 +60,7 @@ const (
 
 func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) (_ []*types.PreciseContext, err error) {
 	ctx, trace, endObservation := s.operations.getPreciseContext.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("filename", args.Input.Repository),
+		attribute.String("repositoryName", args.Input.RepositoryName),
 		attribute.String("content", args.Input.ActiveFileContent),
 		attribute.String("closestRemoteCommitSHA", args.Input.ClosestRemoteCommitSHA),
 	}})
@@ -72,7 +72,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	content := args.Input.ActiveFileContent
 	closestRemoteCommitSHA := args.Input.ClosestRemoteCommitSHA
 
-	repo, err := s.repostore.GetByName(ctx, api.RepoName(args.Input.Repository))
+	repo, err := s.repostore.GetByName(ctx, api.RepoName(args.Input.RepositoryName))
 	if err != nil {
 		return nil, err
 	}
@@ -81,9 +81,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("codenavSvc.GetClosestDumpsForBlob",
-		attribute.Int("numDumps", len(uploads)),
-	)
+	trace.AddEvent("codenavSvc.GetClosestDumpsForBlob", attribute.Int("numDumps", len(uploads)))
 	if len(uploads) == 0 {
 		return nil, nil
 	}
