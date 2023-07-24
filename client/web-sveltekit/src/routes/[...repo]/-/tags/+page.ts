@@ -5,8 +5,8 @@ import { queryGitReferences } from '$lib/loader/repo'
 import type { PageLoad } from './$types'
 
 export const load: PageLoad = ({ parent }) => ({
-    tags: {
-        deferred: parent().then(({ resolvedRevision }) =>
+    deferred: {
+        tags: parent().then(({ resolvedRevision }) =>
             isErrorLike(resolvedRevision)
                 ? null
                 : queryGitReferences({

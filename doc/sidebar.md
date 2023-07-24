@@ -76,7 +76,6 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 - [Development](dev/index.md)
   - [Setup](dev/setup/index.md)
   - [How-to guides](dev/how-to/index.md)
-  - [Background information](dev/background-information/index.md)
   - [Contributing](dev/contributing.md)
 - [Dotcom](dotcom/index.md)
 - [Code ownership (beta)](own/index.md)

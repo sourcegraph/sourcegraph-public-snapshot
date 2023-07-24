@@ -17,6 +17,8 @@ const config = {
     alias: {
       // Makes it easier to refer to files outside packages (such as images)
       $root: '../../',
+      // Makes it easier to refer to files outside packages (such as images)
+      $testdata: 'src/testdata.ts',
       // Somehow these aliases are necessary to make CSS imports work. Otherwise
       // Vite/postcss/whatever tries to the import these relative to the
       // importing file.

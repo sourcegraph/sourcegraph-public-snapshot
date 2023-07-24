@@ -10893,7 +10893,7 @@ type MockGitserverClient struct {
 func NewMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		AddrForRepoFunc: &GitserverClientAddrForRepoFunc{
-			defaultHook: func(api.RepoName) (r0 string) {
+			defaultHook: func(context.Context, api.RepoName) (r0 string) {
 				return
 			},
 		},
@@ -11160,7 +11160,7 @@ func NewMockGitserverClient() *MockGitserverClient {
 func NewStrictMockGitserverClient() *MockGitserverClient {
 	return &MockGitserverClient{
 		AddrForRepoFunc: &GitserverClientAddrForRepoFunc{
-			defaultHook: func(api.RepoName) string {
+			defaultHook: func(context.Context, api.RepoName) string {
 				panic("unexpected invocation of MockGitserverClient.AddrForRepo")
 			},
 		},
@@ -11589,24 +11589,24 @@ func NewMockGitserverClientFrom(i gitserver.Client) *MockGitserverClient {
 // GitserverClientAddrForRepoFunc describes the behavior when the
 // AddrForRepo method of the parent MockGitserverClient instance is invoked.
 type GitserverClientAddrForRepoFunc struct {
-	defaultHook func(api.RepoName) string
-	hooks       []func(api.RepoName) string
+	defaultHook func(context.Context, api.RepoName) string
+	hooks       []func(context.Context, api.RepoName) string
 	history     []GitserverClientAddrForRepoFuncCall
 	mutex       sync.Mutex
 }
 
 // AddrForRepo delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverClient) AddrForRepo(v0 api.RepoName) string {
-	r0 := m.AddrForRepoFunc.nextHook()(v0)
-	m.AddrForRepoFunc.appendCall(GitserverClientAddrForRepoFuncCall{v0, r0})
+func (m *MockGitserverClient) AddrForRepo(v0 context.Context, v1 api.RepoName) string {
+	r0 := m.AddrForRepoFunc.nextHook()(v0, v1)
+	m.AddrForRepoFunc.appendCall(GitserverClientAddrForRepoFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the AddrForRepo method
 // of the parent MockGitserverClient instance is invoked and the hook queue
 // is empty.
-func (f *GitserverClientAddrForRepoFunc) SetDefaultHook(hook func(api.RepoName) string) {
+func (f *GitserverClientAddrForRepoFunc) SetDefaultHook(hook func(context.Context, api.RepoName) string) {
 	f.defaultHook = hook
 }
 
@@ -11614,7 +11614,7 @@ func (f *GitserverClientAddrForRepoFunc) SetDefaultHook(hook func(api.RepoName) 
 // AddrForRepo method of the parent MockGitserverClient instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *GitserverClientAddrForRepoFunc) PushHook(hook func(api.RepoName) string) {
+func (f *GitserverClientAddrForRepoFunc) PushHook(hook func(context.Context, api.RepoName) string) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11623,19 +11623,19 @@ func (f *GitserverClientAddrForRepoFunc) PushHook(hook func(api.RepoName) string
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverClientAddrForRepoFunc) SetDefaultReturn(r0 string) {
-	f.SetDefaultHook(func(api.RepoName) string {
+	f.SetDefaultHook(func(context.Context, api.RepoName) string {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverClientAddrForRepoFunc) PushReturn(r0 string) {
-	f.PushHook(func(api.RepoName) string {
+	f.PushHook(func(context.Context, api.RepoName) string {
 		return r0
 	})
 }
 
-func (f *GitserverClientAddrForRepoFunc) nextHook() func(api.RepoName) string {
+func (f *GitserverClientAddrForRepoFunc) nextHook() func(context.Context, api.RepoName) string {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11670,7 +11670,10 @@ func (f *GitserverClientAddrForRepoFunc) History() []GitserverClientAddrForRepoF
 type GitserverClientAddrForRepoFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 api.RepoName
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 string
@@ -11679,7 +11682,7 @@ type GitserverClientAddrForRepoFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c GitserverClientAddrForRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

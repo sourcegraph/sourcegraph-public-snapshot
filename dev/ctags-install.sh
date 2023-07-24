@@ -39,7 +39,7 @@ trap 'rm -Rf \"$tmpdir\" &>/dev/null' EXIT
 
 function build_ctags {
   case "$OSTYPE" in
-    darwin*)  NUMCPUS=$(sysctl -n hw.ncpu);; 
+    darwin*)  NUMCPUS=$(sysctl -n hw.ncpu);;
     linux*)   NUMCPUS=$(grep -c '^processor' /proc/cpuinfo) ;;
     bsd*)     NUMCPUS=$(grep -c '^processor' /proc/cpuinfo) ;;
     *)        NUMCPUS="4" ;;
@@ -70,9 +70,9 @@ function build_ctags {
   cp ./ctags "$TARGET"
 }
 
-if [ ! -f "${TARGET}" ]; then 
+if [ ! -f "${TARGET}" ]; then
   echo "Installing universal-ctags $CTAGS_VERSION"
-  build_ctags 
+  build_ctags
 else
   echo "universal-ctags $CTAGS_VERSION is already available at $TARGET"
 fi

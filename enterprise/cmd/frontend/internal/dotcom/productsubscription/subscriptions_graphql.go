@@ -13,11 +13,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -152,7 +152,7 @@ func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context)
 		return nil, errors.New("active license has been disabled for access")
 	}
 
-	token := licensing.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
+	token := license.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
 	return &token, nil
 }
 
@@ -164,7 +164,7 @@ func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (toke
 
 	var mainToken string
 	if activeLicense != nil && activeLicense.AccessTokenEnabled {
-		mainToken = licensing.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
+		mainToken = license.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
 		tokens = append(tokens, mainToken)
 	}
 
@@ -176,7 +176,7 @@ func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (toke
 		if !l.AccessTokenEnabled {
 			continue
 		}
-		lt := licensing.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
+		lt := license.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
 		if mainToken == "" || lt != mainToken {
 			tokens = append(tokens, lt)
 		}

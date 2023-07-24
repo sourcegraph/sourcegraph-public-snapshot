@@ -2,13 +2,13 @@
 
 <script lang="ts">
     import { mdiFileCodeOutline, mdiFolderArrowUpOutline, mdiFolderOpenOutline, mdiFolderOutline } from '@mdi/js'
-    import { onMount, tick } from 'svelte'
+    import { onMount } from 'svelte'
 
     import type { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 
     import { afterNavigate, goto } from '$app/navigation'
     import Icon from '$lib/Icon.svelte'
-    import { type FileTreeProvider, NODE_LIMIT } from '$lib/repo/api/tree'
+    import { type FileTreeProvider, NODE_LIMIT, type FileTreeNodeValue } from '$lib/repo/api/tree'
     import { getSidebarFileTreeStateForRepo } from '$lib/repo/stores'
     import TreeView, { setTreeContext } from '$lib/TreeView.svelte'
     import { createForwardStore } from '$lib/utils'
@@ -82,7 +82,7 @@
         treeView.scrollSelectedItemIntoView()
     }
 
-    let treeView: TreeView<FileTreeProvider>
+    let treeView: TreeView<FileTreeNodeValue>
     let repoName = treeProvider.getRepoName()
     // Since context is only set once when the component is created
     // we need to dynamically sync any changes to the corresponding
