@@ -83,7 +83,7 @@ const LastGitCommands: FC<LastGitCommandsProps> = props => {
     return (
         <div className="mt-2">
             {recordedCommands.map((command, index) => (
-                // We use the index as key here because commands dont have the concept
+                // We use the index as key here because commands don't have the concept
                 // of IDs and there's nothing really unique about each command.
                 //
                 // eslint-disable-next-line react/no-array-index-key
