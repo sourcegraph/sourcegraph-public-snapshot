@@ -15,15 +15,18 @@ describe('RepoLink', () => {
 })
 
 describe('displayRepoName', () => {
-    test.each([
-        ['gerrit.sgdev.org/a/gabe/test', 'a/gabe/test'],
-        ['github.com/sourcegraph/sourcegraph', 'sourcegraph/sourcegraph'],
-        ['gerrit.sgdev.org/sourcegraph', 'sourcegraph'],
-        ['sourcegraph', 'sourcegraph'],
-        ['sourcegraph/sourcegraph', 'sourcegraph/sourcegraph'],
-        ['sg.exe/sourcegraph', 'sourcegraph'],
-    ])('should return repo name correctly', (repoName: string, result: string) => {
-        const name = displayRepoName(repoName)
-        expect(name).toEqual(result)
-    })
+    const testCases = [
+        { originalRepoName: 'gerrit.sgdev.org/a/gabe/test', repoDisplayName: 'a/gabe/test' },
+        { originalRepoName: 'github.com/sourcegraph/sourcegraph', repoDisplayName: 'sourcegraph/sourcegraph' },
+        { originalRepoName: 'gerrit.sgdev.org/sourcegraph', repoDisplayName: 'sourcegraph' },
+        { originalRepoName: 'sourcegraph', repoDisplayName: 'sourcegraph' },
+        { originalRepoName: 'sourcegraph/sourcegraph', repoDisplayName: 'sourcegraph/sourcegraph' },
+        { originalRepoName: 'sg.exe/sourcegraph', repoDisplayName: 'sourcegraph' },
+    ]
+
+    for (const { originalRepoName, repoDisplayName } of testCases) {
+        test(`displays ${repoDisplayName} for ${originalRepoName}`, () => {
+            expect(displayRepoName(originalRepoName)).toEqual(repoDisplayName)
+        })
+    }
 })
