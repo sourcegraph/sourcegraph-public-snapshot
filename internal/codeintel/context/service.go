@@ -185,15 +185,15 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			ex, _ := symbols.NewExplodedSymbol(fuzzyName)
 			var explodedScipSymbols []*symbols.ExplodedSymbol
 			for _, esn := range explodedScipNames {
-				// N.B. this matches what we search against in formatSymbolNamesToLikeClause
+				// N.B. this matches what we search against in fuzzyDescriptorSuffixConditions
 				if !strings.HasSuffix(esn.DescriptorSuffix, ex.DescriptorSuffix) {
 					continue
 				}
 				// TODO - batch
 				trace.AddEvent(
 					"scipNames DescriptorSuffix or DescriptorSuffix",
-					attribute.String("DescriptorSuffix", ex.DescriptorSuffix),
-					attribute.String("DescriptorSuffix", esn.DescriptorSuffix),
+					attribute.String("fuzzyName DescriptorSuffix", ex.DescriptorSuffix),
+					attribute.String("scipName DescriptorSuffix", esn.DescriptorSuffix),
 				)
 
 				explodedScipSymbols = append(explodedScipSymbols, esn)
