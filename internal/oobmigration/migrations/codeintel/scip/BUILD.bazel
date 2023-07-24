@@ -27,9 +27,14 @@ go_library(
 
 go_test(
     name = "scip_test",
+    timeout = "moderate",
     srcs = ["symbols_migrator_test.go"],
     data = glob(["testdata/**"]),
     embed = [":scip"],
+    tags = [
+        # Test requires localhost for database
+        "requires-network"
+    ],
     deps = [
         "//internal/codeintel/shared",
         "//internal/database/basestore",
