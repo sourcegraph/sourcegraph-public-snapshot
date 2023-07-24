@@ -1,4 +1,4 @@
-package licensing
+package licensecheck
 
 import (
 	"bytes"
@@ -12,10 +12,12 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,11 +29,8 @@ var (
 )
 
 const (
-	LicenseCheckInterval    = 12 * time.Hour
-	lastCalledAtStoreKey    = "licensing:last_called_at"
-	licenseValidityStoreKey = "licensing:is_license_valid"
-	licenseInvalidReason    = "licensing:license_invalid_reason"
-	prevLicenseTokenKey     = "licensing:prev_license_hash"
+	lastCalledAtStoreKey = "licensing:last_called_at"
+	prevLicenseTokenKey  = "licensing:prev_license_hash"
 )
 
 type licenseChecker struct {
@@ -48,21 +47,21 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	}
 
 	// skip if has explicitly allowed air-gapped feature
-	if err := Check(FeatureAllowAirGapped); err == nil {
+	if err := licensing.Check(licensing.FeatureAllowAirGapped); err == nil {
 		l.logger.Debug("license is air-gapped, skipping check", log.String("siteID", l.siteID))
-		if err := store.Set(licenseValidityStoreKey, true); err != nil {
+		if err := store.Set(licensing.LicenseValidityStoreKey, true); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	info, err := GetConfiguredProductLicenseInfo()
+	info, err := licensing.GetConfiguredProductLicenseInfo()
 	if err != nil {
 		return err
 	}
 	if info.HasTag("dev") || info.HasTag("internal") {
 		l.logger.Debug("internal or dev license, skipping license verification check")
-		if err := store.Set(licenseValidityStoreKey, true); err != nil {
+		if err := store.Set(licensing.LicenseValidityStoreKey, true); err != nil {
 			return err
 		}
 		return nil
@@ -100,7 +99,7 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return errors.Newf("Failed to check license, status code: %d", res.StatusCode)
 	}
 
-	var body LicenseCheckResponse
+	var body licensing.LicenseCheckResponse
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
 		l.logger.Warn("error while decoding license check response", log.Error(err), log.String("siteID", l.siteID))
 		return err
@@ -117,9 +116,9 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	}
 
 	// best effort, ignore errors here
-	_ = store.Set(licenseInvalidReason, body.Data.Reason)
+	_ = store.Set(licensing.LicenseInvalidReason, body.Data.Reason)
 
-	if err := store.Set(licenseValidityStoreKey, body.Data.IsValid); err != nil {
+	if err := store.Set(licensing.LicenseValidityStoreKey, body.Data.IsValid); err != nil {
 		return err
 	}
 
@@ -146,16 +145,16 @@ func calcDurationSinceLastCalled(clock glock.Clock) (time.Duration, error) {
 
 	elapsed := clock.Since(lastCalledAtTime)
 
-	if elapsed > LicenseCheckInterval {
+	if elapsed > licensing.LicenseCheckInterval {
 		return 0, nil
 	}
-	return LicenseCheckInterval - elapsed, nil
+	return licensing.LicenseCheckInterval - elapsed, nil
 }
 
 // StartLicenseCheck starts a goroutine that periodically checks
 // license validity from dotcom and stores the result in redis.
 // It re-runs the check if the license key changes.
-func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID string) {
+func StartLicenseCheck(originalCtx context.Context, logger log.Logger, db database.DB) {
 
 	if licenseCheckStarted {
 		logger.Info("license check already started")
@@ -164,6 +163,7 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 	licenseCheckStarted = true
 
 	ctxWithCancel, cancel := context.WithCancel(originalCtx)
+	var siteID string
 
 	// The entire logic is dependent on config so we will
 	// wait for initial config to be loaded as well as
@@ -183,12 +183,22 @@ func StartLicenseCheck(originalCtx context.Context, logger log.Logger, siteID st
 		// continue running with new license key
 		store.Set(prevLicenseTokenKey, licenseToken)
 
+		// read site_id from global_state table if not done before
+		if siteID == "" {
+			gs, err := db.GlobalState().Get(ctxWithCancel)
+			if err != nil {
+				logger.Error("error reading global state from DB", log.Error(err))
+				return
+			}
+			siteID = gs.SiteID
+		}
+
 		routine := goroutine.NewPeriodicGoroutine(
 			ctxWithCancel,
 			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer, logger: logger.Scoped("licenseChecker", "Periodically checks license validity")},
 			goroutine.WithName("licensing.check-license-validity"),
 			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
-			goroutine.WithInterval(LicenseCheckInterval),
+			goroutine.WithInterval(licensing.LicenseCheckInterval),
 			goroutine.WithInitialDelay(initialWaitInterval),
 		)
 		go goroutine.MonitorBackgroundRoutines(ctxWithCancel, routine)

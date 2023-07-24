@@ -275,14 +275,15 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		correlatedSCIPData, err := correlateSCIP(ctx, logger, indexReader, upload.Root, getChildren)
+		scipDataStream, err := prepareSCIPDataStream(ctx, indexReader, upload.Root, getChildren)
 		if err != nil {
-			return errors.Wrap(err, "conversion.Correlate")
+			return errors.Wrap(err, "prepareSCIPDataStream")
 		}
 
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
-		if err := writeSCIPData(ctx, h.lsifStore, upload, correlatedSCIPData, trace); err != nil {
+		pkgData, err := writeSCIPDocuments(ctx, logger, h.lsifStore, upload, scipDataStream, trace)
+		if err != nil {
 			if isUniqueConstraintViolation(err) {
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
@@ -307,18 +308,13 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
-			packages, packageReferences, err := readPackageAndPackageReferences(ctx, correlatedSCIPData)
-			if err != nil {
-				return err
-			}
-
-			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(packages)))
+			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(pkgData.Packages)))
 			// Update package and package reference data to support cross-repo queries.
-			if err := tx.UpdatePackages(ctx, upload.ID, packages); err != nil {
+			if err := tx.UpdatePackages(ctx, upload.ID, pkgData.Packages); err != nil {
 				return errors.Wrap(err, "store.UpdatePackages")
 			}
-			trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(packages)))
-			if err := tx.UpdatePackageReferences(ctx, upload.ID, packageReferences); err != nil {
+			trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(pkgData.PackageReferences)))
+			if err := tx.UpdatePackageReferences(ctx, upload.ID, pkgData.PackageReferences); err != nil {
 				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
 

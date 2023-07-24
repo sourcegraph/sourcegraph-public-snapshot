@@ -69,7 +69,6 @@ func TestCreateCodeMonitor(t *testing.T) {
 		require.NoError(t, err)
 		_, err = r.db.CodeMonitors().GetMonitor(ctx, got.(*monitor).Monitor.ID)
 		require.Error(t, err, "monitor should have been deleted")
-
 	})
 
 	t.Run("invalid slack webhook", func(t *testing.T) {
@@ -98,7 +97,7 @@ func TestCreateCodeMonitor(t *testing.T) {
 			}},
 		})
 		require.Error(t, err)
-		monitors, err := r.Monitors(ctx, user.ID, &graphqlbackend.ListMonitorsArgs{First: 10})
+		monitors, err := r.Monitors(ctx, &user.ID, &graphqlbackend.ListMonitorsArgs{First: 10})
 		require.NoError(t, err)
 		require.Len(t, monitors.Nodes(), 0) // the transaction should have been rolled back
 	})
@@ -120,7 +119,7 @@ func TestListCodeMonitors(t *testing.T) {
 	args := &graphqlbackend.ListMonitorsArgs{
 		First: 5,
 	}
-	r1, err := r.Monitors(ctx, user.ID, args)
+	r1, err := r.Monitors(ctx, &user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r1.Nodes(), 1, "unexpected node count")
@@ -132,7 +131,7 @@ func TestListCodeMonitors(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	r2, err := r.Monitors(ctx, user.ID, args)
+	r2, err := r.Monitors(ctx, &user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r2.Nodes(), 5, "unexpected node count")
@@ -144,7 +143,7 @@ func TestListCodeMonitors(t *testing.T) {
 		First: 10,
 		After: pi.EndCursor(),
 	}
-	r3, err := r.Monitors(ctx, user.ID, args)
+	r3, err := r.Monitors(ctx, &user.ID, args)
 	require.NoError(t, err)
 
 	require.Len(t, r3.Nodes(), 6, "unexpected node count")
