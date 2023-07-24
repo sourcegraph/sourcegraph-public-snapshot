@@ -18,7 +18,7 @@ spec:
       serviceAccountName: sg-executor-service-account
       containers:
         - name: sg-executor-codeintel
-          image: sourcegraph/executor-kubernetes:insiders
+          image: executor-kubernetes:candidate
           imagePullPolicy: IfNotPresent
           env:
             - name: EXECUTOR_FRONTEND_URL
