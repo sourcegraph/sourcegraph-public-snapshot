@@ -12,6 +12,7 @@ Sourcegraph uses [Bazel](https://bazel.build) as its build system. Reach out on 
 - **Context specific**
   - [Bazel and Go](./go.md)
   - [Bazel and client](./web.md)
+  - [Overview of the Bazel configuration for client](./web_overview.md)
   - [Bazel and container images](./containers.md)
 - **How-tos**
   - [Writing a server integration test](./server_integration_tests.md)
@@ -37,8 +38,8 @@ Sourcegraph uses [Bazel](https://bazel.build) as its build system. Reach out on 
   - Those new images are used by the new test targets under `//testing/...` that run the E2E tests and Backend Integration tests.
   - The new images are deployed on S2 (and only S2).
   - See [Slack thread](https://sourcegraph.slack.com/archives/C04MYFW01NV/p1685606796918859)
-- **2023-05-07 The new images are deployed on Dotcom.** 
-- 2023-05-14 After the release cut and the beginning of the code freeze, all operations that are now migrated to Bazel will have their legacy counterpart removed. 
+- **2023-05-07 The new images are deployed on Dotcom.**
+- 2023-05-14 After the release cut and the beginning of the code freeze, all operations that are now migrated to Bazel will have their legacy counterpart removed.
 
 ---
 
