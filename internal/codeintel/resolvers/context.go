@@ -21,6 +21,15 @@ type PreciseContextInput struct {
 	ActiveFile string
 	// The contents of the file that is currently open in the editor
 	ActiveFileContent string
+	// The selected content of the active file
+	ActiveFileSelectionRange *ActiveFileSelectionRangeInput
+}
+
+type ActiveFileSelectionRangeInput struct {
+	StartLine      int32
+	StartCharacter int32
+	EndLine        int32
+	EndCharacter   int32
 }
 
 type PreciseContextOutputResolver interface {

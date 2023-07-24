@@ -25,6 +25,29 @@ input PreciseContextInput {
     The content of the active file.
     """
     activeFileContent: String!
+    """
+    The selected content of the active file.
+    """
+    activeFileSelectionRange: ActiveFileSelectionRange
+}
+
+input ActiveFileSelectionRange {
+    """
+    The selection start line
+    """
+    startLine: Int!
+    """
+    The selection start character
+    """
+    startCharacter: Int!
+    """
+    The selection end line
+    """
+    endLine: Int!
+    """
+    The selection end line
+    """
+    endCharacter: Int!
 }
 
 """
