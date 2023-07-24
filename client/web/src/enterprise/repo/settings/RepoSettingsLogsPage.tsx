@@ -100,6 +100,15 @@ interface LastGitCommandNodeProps {
 const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command }) => {
     const [isOpened, setIsOpened] = useState(false)
     const startDate = new Date(command.start)
+
+    let duration: string
+    if (command.duration > 1) {
+        duration = `${command.duration.toFixed(2)}s`
+    } else {
+        const durationInMs = command.duration * 1000
+        duration = `${durationInMs.toFixed(2)}ms`
+    }
+
     return (
         <Collapse isOpen={isOpened} onOpenChange={setIsOpened}>
             <CollapseHeader
@@ -112,7 +121,7 @@ const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command }) => {
                 <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronUp : mdiChevronDown} className="mr-1" />
                 <Timestamp date={startDate} />
                 <Text className="mb-0">Janitor Run</Text>
-                <Text className="mb-0">{command.duration.toFixed(2)}s</Text>
+                <Text className="mb-0">{duration}</Text>
             </CollapseHeader>
             <CollapsePanel>
                 <LogOutput text={command.command} logDescription="Command:" />
