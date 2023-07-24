@@ -44,8 +44,10 @@ const (
 type KubernetesContainerOptions struct {
 	CloneOptions          KubernetesCloneOptions
 	Namespace             string
+	Annotations           map[string]string
 	NodeName              string
 	NodeSelector          map[string]string
+	ImagePullSecrets      []corev1.LocalObjectReference
 	RequiredNodeAffinity  KubernetesNodeAffinity
 	PodAffinity           []corev1.PodAffinityTerm
 	PodAntiAffinity       []corev1.PodAffinityTerm
@@ -436,7 +438,8 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:        name,
+			Annotations: options.Annotations,
 		},
 		Spec: batchv1.JobSpec{
 			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
@@ -444,8 +447,9 @@ func NewKubernetesJob(name string, image string, spec Spec, path string, options
 			BackoffLimit: pointer.Int32(0),
 			Template: corev1.PodTemplateSpec{
 				Spec: corev1.PodSpec{
-					NodeName:     options.NodeName,
-					NodeSelector: options.NodeSelector,
+					NodeName:         options.NodeName,
+					NodeSelector:     options.NodeSelector,
+					ImagePullSecrets: options.ImagePullSecrets,
 					SecurityContext: &corev1.PodSecurityContext{
 						RunAsUser:  options.SecurityContext.RunAsUser,
 						RunAsGroup: options.SecurityContext.RunAsGroup,
@@ -653,7 +657,8 @@ func NewKubernetesSingleJob(
 
 	return &batchv1.Job{
 		ObjectMeta: metav1.ObjectMeta{
-			Name: name,
+			Name:        name,
+			Annotations: options.Annotations,
 		},
 		Spec: batchv1.JobSpec{
 			// Prevent K8s from retrying. This will lead to the retried jobs always failing as the workspace will get
@@ -663,6 +668,7 @@ func NewKubernetesSingleJob(
 				Spec: corev1.PodSpec{
 					NodeName:              options.NodeName,
 					NodeSelector:          options.NodeSelector,
+					ImagePullSecrets:      options.ImagePullSecrets,
 					Affinity:              affinity,
 					RestartPolicy:         corev1.RestartPolicyNever,
 					Tolerations:           options.Tolerations,
