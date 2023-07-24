@@ -7,16 +7,13 @@ import (
 	"github.com/sourcegraph/log"
 
 	gcptraceexporter "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/trace"
-	"go.opentelemetry.io/contrib/detectors/gcp"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults"
 	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults/exporters"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -25,9 +22,9 @@ import (
 // and the use case is more niche as a standalone service.
 //
 // Based on https://cloud.google.com/trace/docs/setup/go-ot
-func maybeEnableTracing(ctx context.Context, logger log.Logger, config TraceConfig) (func(), error) {
+func maybeEnableTracing(ctx context.Context, logger log.Logger, config OpenTelemetryConfig, otelResource *resource.Resource) (func(), error) {
 	// Set globals
-	policy.SetTracePolicy(config.Policy)
+	policy.SetTracePolicy(config.TracePolicy)
 	otel.SetTextMapPropagator(oteldefaults.Propagator())
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
 		logger.Debug("OpenTelemetry error", log.Error(err))
@@ -50,34 +47,17 @@ func maybeEnableTracing(ctx context.Context, logger log.Logger, config TraceConf
 	} else {
 		logger.Info("initializing OTLP exporter")
 		var err error
-		exporter, err = exporters.NewOTLPExporter(ctx, logger)
+		exporter, err = exporters.NewOTLPTraceExporter(ctx, logger)
 		if err != nil {
 			return nil, errors.Wrap(err, "exporters.NewOTLPExporter")
 		}
 	}
 
-	// Identify your application using resource detection
-	res, err := resource.New(ctx,
-		// Use the GCP resource detector to detect information about the GCP platform
-		resource.WithDetectors(gcp.NewDetector()),
-		// Keep the default detectors
-		resource.WithTelemetrySDK(),
-		// Add your own custom attributes to identify your application
-		resource.WithAttributes(
-			semconv.ServiceNameKey.String("cody-gateway"),
-			semconv.ServiceVersionKey.String(version.Version()),
-		),
-	)
-	if err != nil {
-		return nil, errors.Wrap(err, "resource.New")
-	}
-
 	// Create and set global tracer
-	tp := sdktrace.NewTracerProvider(
+	provider := sdktrace.NewTracerProvider(
 		sdktrace.WithBatcher(exporter),
-		sdktrace.WithResource(res),
-	)
-	otel.SetTracerProvider(tp)
+		sdktrace.WithResource(otelResource))
+	otel.SetTracerProvider(provider)
 
 	logger.Info("tracing configured")
 	return func() {
@@ -86,10 +66,10 @@ func maybeEnableTracing(ctx context.Context, logger log.Logger, config TraceConf
 
 		start := time.Now()
 		logger.Info("Shutting down tracing")
-		if err := tp.ForceFlush(shutdownCtx); err != nil {
+		if err := provider.ForceFlush(shutdownCtx); err != nil {
 			logger.Warn("error occurred force-flushing traces", log.Error(err))
 		}
-		if err := tp.Shutdown(shutdownCtx); err != nil {
+		if err := provider.Shutdown(shutdownCtx); err != nil {
 			logger.Warn("error occured shutting down tracing", log.Error(err))
 		}
 		logger.Info("Tracing shut down", log.Duration("elapsed", time.Since(start)))

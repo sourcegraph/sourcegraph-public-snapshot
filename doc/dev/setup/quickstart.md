@@ -96,4 +96,4 @@ Here are some additional resources to help you go further:
 - [Full `sg` reference](../background-information/sg/reference.md)
 - [Troubleshooting local development](troubleshooting.md)
 - [Continuous integration](../background-information/ci/index.md)
-- [Background information](../background-information/index.md) for more context on various topics.
+- [Background information](../index.md#background-information) for more context on various topics.

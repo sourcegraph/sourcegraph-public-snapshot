@@ -3,6 +3,7 @@ package com.sourcegraph.cody.chat;
 import com.intellij.openapi.project.Project;
 import java.awt.*;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.*;
 import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
@@ -12,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 public class ChatBubble extends JPanel {
 
   private final @NotNull Project project;
+  private final @NotNull AtomicReference<String> lastMessage = new AtomicReference<>("");
 
   public ChatBubble(
       @NotNull ChatMessage message, @NotNull Project project, @NotNull JPanel parentPanel) {
@@ -48,12 +50,17 @@ public class ChatBubble extends JPanel {
   /**
    * This is useful when receiving the streamed response. In the background, it removes the last
    * message and adds the updated one.
+   *
+   * <p>Only updates if the new message is longer than the previous one.
    */
-  public void updateText(@NotNull ChatMessage message, @NotNull JPanel parentPanel) {
-    JPanel newMessage = buildMessagePanel(message, this.project, parentPanel);
-    this.remove(0);
-    this.add(newMessage, BorderLayout.CENTER, 0);
-    this.revalidate();
-    this.repaint();
+  public void incrementallyUpdateText(@NotNull ChatMessage message, @NotNull JPanel parentPanel) {
+    if (message.getDisplayText().length() > this.lastMessage.get().length()) {
+      this.lastMessage.set(message.getDisplayText());
+      JPanel newMessage = buildMessagePanel(message, this.project, parentPanel);
+      this.remove(0);
+      this.add(newMessage, BorderLayout.CENTER, 0);
+      this.revalidate();
+      this.repaint();
+    }
   }
 }

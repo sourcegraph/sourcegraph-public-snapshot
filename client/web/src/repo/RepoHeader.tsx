@@ -196,21 +196,23 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
 
     return (
         <nav data-testid="repo-header" className={classNames('navbar navbar-expand', 'px-3', styles.repoHeader)}>
-            <div className="d-flex align-items-center flex-shrink-past-contents">
-                {/* Breadcrumb for the nav elements */}
-                <Breadcrumbs
-                    breadcrumbs={props.breadcrumbs}
-                    className={classNames('justify-content-start', !props.forceWrap ? styles.breadcrumbWrap : '')}
-                />
-            </div>
-            <ul className="navbar-nav">
-                {leftActions.map((a, index) => (
-                    <li className="nav-item" key={a.id || index}>
-                        {a.element}
-                    </li>
-                ))}
-            </ul>
-            <div className={styles.spacer} />
+            <Breadcrumbs
+                breadcrumbs={props.breadcrumbs}
+                className={classNames(
+                    'justify-content-start flex-grow-1',
+                    !props.forceWrap ? styles.breadcrumbWrap : ''
+                )}
+            />
+
+            {leftActions.length !== 0 && (
+                <ul className="navbar-nav">
+                    {leftActions.map((a, index) => (
+                        <li className="nav-item" key={a.id || index}>
+                            {a.element}
+                        </li>
+                    ))}
+                </ul>
+            )}
             <ErrorBoundary
                 location={location}
                 // To be clear to users that this isn't an error reported by extensions

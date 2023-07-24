@@ -6,6 +6,7 @@ import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
+import com.intellij.serviceContainer.AlreadyDisposedException;
 import com.intellij.ui.ColorUtil;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
@@ -85,7 +86,13 @@ public class EmbeddingStatusView extends JPanel {
   }
 
   private void updateEmbeddingStatusView() {
-    VirtualFile currentFile = EditorUtil.getCurrentFile(project);
+    VirtualFile currentFile;
+    try {
+      currentFile = EditorUtil.getCurrentFile(project);
+    } catch (AlreadyDisposedException e) {
+      return;
+    }
+
     ApplicationManager.getApplication()
         .executeOnPooledThread(
             () -> {

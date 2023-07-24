@@ -617,7 +617,7 @@ func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (Mo
 	if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
 		return nil, err
 	}
-	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, r.user.ID, args)
+	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, &r.user.ID, args)
 }
 
 func (r *UserResolver) ToUser() (*UserResolver, bool) {

@@ -1,10 +1,8 @@
 <script lang="ts">
     import { mdiFolderOutline, mdiFileDocumentOutline } from '@mdi/js'
 
-    import Commit from '$lib/Commit.svelte'
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { NODE_LIMIT } from '$lib/repo/api/tree'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
@@ -14,14 +12,8 @@
 
     export let data: PageData
 
-    const { value: treeOrError, set: setTree } = createPromiseStore<typeof data.fileTree.deferred>()
-    const {
-        pending: loadingCommits,
-        value: commits,
-        set: setCommits,
-    } = createPromiseStore<typeof data.commits.deferred>()
-    $: setTree(data.fileTree.deferred)
-    $: setCommits(data.commits.deferred)
+    const { value: treeOrError, set: setTree } = createPromiseStore<PageData['deferred']['fileTree']>()
+    $: setTree(data.deferred.fileTree)
 </script>
 
 {#if !$sidebarOpen}
@@ -56,17 +48,6 @@
             {/each}
         </ul>
     {/if}
-
-    <h3 class="mt-3">Changes</h3>
-    <ul class="commits">
-        {#if $loadingCommits}
-            <LoadingSpinner />
-        {:else if $commits}
-            {#each $commits as commit (commit.url)}
-                <li><Commit {commit} /></li>
-            {/each}
-        {/if}
-    </ul>
 </div>
 
 <style lang="scss">
@@ -77,21 +58,7 @@
     .content {
         padding: 1rem;
         overflow: auto;
-    }
-
-    ul.commits {
-        padding: 0;
-        margin: 0;
-        list-style: none;
-
-        li {
-            border-bottom: 1px solid var(--border-color);
-            padding: 0.5rem 0;
-
-            &:last-child {
-                border: none;
-            }
-        }
+        flex: 1;
     }
 
     ul.files {

@@ -82,6 +82,7 @@ Sourcegraph code search is fast, works across all your repositories at any commi
 
 Read the [code search documentation](../code_search/index.md) to learn more and discover the full feature set. Here's a video to help you get started:
 - [How to Search commits and diffs with Sourcegraph](https://youtu.be/w-RrDz9hyGI)
+- [Search Examples](https://sourcegraph.github.io/sourcegraph-search-examples/)
 
 ---
 

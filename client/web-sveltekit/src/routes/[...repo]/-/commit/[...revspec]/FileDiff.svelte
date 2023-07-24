@@ -11,7 +11,7 @@
     import FileDiffHunks from './FileDiffHunks.svelte'
 
     export let fileDiff: FileDiffFields
-    let expanded = true
+    export let expanded = !!fileDiff.newPath
 
     $: isBinary = fileDiff.newFile?.binary
     $: isNew = !fileDiff.oldPath
@@ -48,7 +48,7 @@
         <span title={path}>{path}</span>
     {/if}
 </div>
-{#if !isDeleted && !isBinary && expanded}
+{#if !isBinary && expanded}
     <FileDiffHunks hunks={fileDiff.hunks} />
 {/if}
 
@@ -56,7 +56,7 @@
     .header {
         display: flex;
         align-items: center;
-        padding: 0.25rem 0.5rem;
+        padding: 0.25rem 0rem;
     }
 
     .file-link {
