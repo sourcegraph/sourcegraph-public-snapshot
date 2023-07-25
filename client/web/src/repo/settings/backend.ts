@@ -48,6 +48,7 @@ export const settingsAreaRepositoryFragment = gql`
                 index
                 total
             }
+            shard
         }
         externalServices {
             nodes {

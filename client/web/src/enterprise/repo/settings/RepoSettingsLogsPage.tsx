@@ -1,7 +1,6 @@
 import { FC, useEffect, useState } from 'react'
 
-import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
-import classNames from 'classnames'
+import { mdiCalendar, mdiClockAlertOutline } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
@@ -15,10 +14,6 @@ import {
     TabPanels,
     TabPanel,
     Input,
-    Button,
-    Collapse,
-    CollapseHeader,
-    CollapsePanel,
     Icon,
 } from '@sourcegraph/wildcard'
 
@@ -53,8 +48,6 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
                 default:
                     setActiveTab(LogsPageTabs.COMMANDS)
             }
-        } else {
-            setActiveTab(LogsPageTabs.COMMANDS)
         }
     }, [location.search])
 
@@ -84,11 +77,14 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
 
                     <TabPanels>
                         <TabPanel>
-                            <LastGitCommands recordedCommands={repo.recordedCommands} />
+                            <LastRepoCommands
+                                mirrorInfo={repo.mirrorInfo}
+                                recordedCommands={repo.recordedCommands.slice(0, 5)}
+                            />
                         </TabPanel>
 
                         <TabPanel>
-                            <LastSyncOutput repo={repo} />
+                            <LastSyncOutput mirrorInfo={repo.mirrorInfo} />
                         </TabPanel>
                     </TabPanels>
                 </Tabs>
@@ -97,15 +93,14 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
     )
 }
 
-interface LastGitCommandsProps {
+interface LastRepoCommandsProps {
     recordedCommands: SettingsAreaRepositoryFields['recordedCommands']
+    mirrorInfo: SettingsAreaRepositoryFields['mirrorInfo']
 }
 
-const LastGitCommands: FC<LastGitCommandsProps> = props => {
-    const { recordedCommands } = props
-
+const LastRepoCommands: FC<LastRepoCommandsProps> = ({ recordedCommands, mirrorInfo }) => {
     if (recordedCommands.length === 0) {
-        return <Text className="my-2">No recorded commands for repository.</Text>
+        return <Text className="my-3">No recorded commands for repository.</Text>
     }
 
     return (
@@ -115,19 +110,18 @@ const LastGitCommands: FC<LastGitCommandsProps> = props => {
                 // of IDs and there's nothing really unique about each command.
                 //
                 // eslint-disable-next-line react/no-array-index-key
-                <LastGitCommandNode command={command} key={index} name={`Command ${index + 1}`} />
+                <LastRepoCommandNode mirrorInfo={mirrorInfo} command={command} key={index} />
             ))}
         </div>
     )
 }
 
-interface LastGitCommandNodeProps {
+interface LastRepoCommandNodeProps {
     command: SettingsAreaRepositoryFields['recordedCommands'][0]
-    name: string
+    mirrorInfo: SettingsAreaRepositoryFields['mirrorInfo']
 }
 
-const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command, name }) => {
-    const [isOpened, setIsOpened] = useState(false)
+const LastRepoCommandNode: FC<LastRepoCommandNodeProps> = ({ command, mirrorInfo }) => {
     const startDate = new Date(command.start)
 
     let duration: string
@@ -139,34 +133,44 @@ const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command, name }) => {
     }
 
     return (
-        <Collapse isOpen={isOpened} onOpenChange={setIsOpened}>
-            <CollapseHeader
-                as={Button}
-                outline={true}
-                focusLocked={false}
-                variant="secondary"
-                className={classNames('w-100 my-2 text-left', styles.commandNode)}
-            >
-                <Icon aria-hidden={true} svgPath={isOpened ? mdiChevronUp : mdiChevronDown} className="mr-1" />
-                <Timestamp date={startDate} />
-                <Text className="mb-0">{name}</Text>
-                <Text className="mb-0">{duration}</Text>
-            </CollapseHeader>
-            <CollapsePanel>
-                <LogOutput text={command.command} logDescription="Command:" />
-            </CollapsePanel>
-        </Collapse>
+        <div className={styles.commandNode}>
+            <div className={styles.commandNodeHeader}>
+                <div>
+                    <Icon aria-hidden={true} svgPath={mdiCalendar} className="mr-1" />
+                    <Timestamp date={startDate} />
+                </div>
+
+                {/* Replace this we type when we have the type field */}
+                <Text />
+
+                <div className={styles.commandNodeDurationGroup}>
+                    <Icon aria-hidden={true} svgPath={mdiClockAlertOutline} className="mr-1" />
+                    <Text className="mb-0">Ran in {duration}</Text>
+                </div>
+            </div>
+
+            <LogOutput className={styles.commandNodeLogOutput} text={command.command} logDescription="Command:" />
+
+            <div className={styles.commandNodeFooter}>
+                <small className="mt-2 mb-0">
+                    <span className="font-weight-bold">Shard:</span> {mirrorInfo.shard}
+                </small>
+                <small className="mt-2 mb-0">
+                    <span className="font-weight-bold">Path:</span> {command.dir}
+                </small>
+            </div>
+        </div>
     )
 }
 
 interface LastSyncOutputProps {
-    repo: SettingsAreaRepositoryFields
+    mirrorInfo: SettingsAreaRepositoryFields['mirrorInfo']
 }
 
 const LastSyncOutput: FC<LastSyncOutputProps> = props => {
     const output =
-        (props.repo.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
-        props.repo.mirrorInfo.lastSyncOutput ||
+        (props.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
+        props.mirrorInfo.lastSyncOutput ||
         'No logs yet.'
     return (
         <div className="mt-2">
