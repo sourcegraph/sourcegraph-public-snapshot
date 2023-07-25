@@ -22,70 +22,80 @@ import javax.swing.text.Document
 import javax.swing.text.PlainDocument
 
 class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JPanel) {
-    val textArea: JBTextArea
-    val scrollPane: JBScrollPane
-    private val initialPreferredSize: Dimension
-    private val autoGrowUpToRow: Int
+  val textArea: JBTextArea
+  val scrollPane: JBScrollPane
+  private val initialPreferredSize: Dimension
+  private val autoGrowUpToRow: Int
 
-    init {
-        autoGrowUpToRow = maxRows + 1
-        textArea = createTextArea()
-        scrollPane = JBScrollPane(textArea)
-        initialPreferredSize = scrollPane.preferredSize
-        val document: Document = object : PlainDocument() {
-            override fun insertString(offs: Int, str: String, a: AttributeSet) {
-                super.insertString(offs, str, a)
-                updateTextAreaSize()
-                outerPanel.revalidate()
-            }
+  init {
+    autoGrowUpToRow = maxRows + 1
+    textArea = createTextArea()
+    scrollPane = JBScrollPane(textArea)
+    initialPreferredSize = scrollPane.preferredSize
+    val document: Document =
+        object : PlainDocument() {
+          override fun insertString(offs: Int, str: String, a: AttributeSet) {
+            super.insertString(offs, str, a)
+            updateTextAreaSize()
+            outerPanel.revalidate()
+          }
 
-            override fun remove(offs: Int, len: Int) {
-                super.remove(offs, len)
-                updateTextAreaSize()
-                outerPanel.revalidate()
-            }
+          override fun remove(offs: Int, len: Int) {
+            super.remove(offs, len)
+            updateTextAreaSize()
+            outerPanel.revalidate()
+          }
         }
-        textArea.document = document
-    }
+    textArea.document = document
+  }
 
-    private fun createTextArea(): JBTextArea {
-        val promptInput: JBTextArea = RoundedJBTextArea(minRows, 10)
-        val textUI = DarculaTextAreaUI.createUI(promptInput) as BasicTextAreaUI
-        promptInput.setUI(textUI)
-        promptInput.font = UIUtil.getLabelFont()
-        promptInput.lineWrap = true
-        promptInput.wrapStyleWord = true
-        promptInput.requestFocusInWindow()
+  private fun createTextArea(): JBTextArea {
+    val promptInput: JBTextArea = RoundedJBTextArea(minRows, 10)
+    val textUI = DarculaTextAreaUI.createUI(promptInput) as BasicTextAreaUI
+    promptInput.setUI(textUI)
+    promptInput.font = UIUtil.getLabelFont()
+    promptInput.lineWrap = true
+    promptInput.wrapStyleWord = true
+    promptInput.requestFocusInWindow()
 
-        /* Insert Enter on Shift+Enter, Ctrl+Enter, Alt/Option+Enter, and Meta+Enter */
-        val shiftEnter = KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.SHIFT_DOWN_MASK), null)
-        val ctrlEnter = KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), null)
-        val altOrOptionEnter = KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_DOWN_MASK), null)
-        val metaEnter = KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_DOWN_MASK), null)
-        val insertEnterShortcut: ShortcutSet = CustomShortcutSet(ctrlEnter, shiftEnter, metaEnter, altOrOptionEnter)
-        val insertEnterAction: AnAction = object : DumbAwareAction() {
-            override fun actionPerformed(e: AnActionEvent) {
-                promptInput.insert("\n", promptInput.caretPosition)
-            }
+    /* Insert Enter on Shift+Enter, Ctrl+Enter, Alt/Option+Enter, and Meta+Enter */
+    val shiftEnter =
+        KeyboardShortcut(
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.SHIFT_DOWN_MASK), null)
+    val ctrlEnter =
+        KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.CTRL_DOWN_MASK), null)
+    val altOrOptionEnter =
+        KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.ALT_DOWN_MASK), null)
+    val metaEnter =
+        KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, InputEvent.META_DOWN_MASK), null)
+    val insertEnterShortcut: ShortcutSet =
+        CustomShortcutSet(ctrlEnter, shiftEnter, metaEnter, altOrOptionEnter)
+    val insertEnterAction: AnAction =
+        object : DumbAwareAction() {
+          override fun actionPerformed(e: AnActionEvent) {
+            promptInput.insert("\n", promptInput.caretPosition)
+          }
         }
-        insertEnterAction.registerCustomShortcutSet(insertEnterShortcut, promptInput)
-        return promptInput
-    }
+    insertEnterAction.registerCustomShortcutSet(insertEnterShortcut, promptInput)
+    return promptInput
+  }
 
-    private fun updateTextAreaSize() {
-        // Get the preferred size of the JTextArea based on its content
-        val preferredSize = textArea.preferredSize
-        // Limit the number of rows to maxRows
-        val fontMetrics = textArea.getFontMetrics(textArea.font)
-        val maxTextAreaHeight = fontMetrics.height * autoGrowUpToRow
-        var preferredHeight = Math.min(preferredSize.height, maxTextAreaHeight)
-        preferredHeight = Math.max(preferredHeight, initialPreferredSize.height)
+  private fun updateTextAreaSize() {
+    // Get the preferred size of the JTextArea based on its content
+    val preferredSize = textArea.preferredSize
+    // Limit the number of rows to maxRows
+    val fontMetrics = textArea.getFontMetrics(textArea.font)
+    val maxTextAreaHeight = fontMetrics.height * autoGrowUpToRow
+    var preferredHeight = Math.min(preferredSize.height, maxTextAreaHeight)
+    preferredHeight = Math.max(preferredHeight, initialPreferredSize.height)
 
-        // Set the preferred size of the JScrollPane to accommodate the JTextArea
-        val scrollPaneSize = scrollPane.size
-        scrollPaneSize.height = preferredHeight
-        scrollPane.preferredSize = scrollPaneSize
-        val shouldShowScrollbar = preferredSize.height > maxTextAreaHeight
-        scrollPane.verticalScrollBarPolicy = if (shouldShowScrollbar) ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS else ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER
-    }
+    // Set the preferred size of the JScrollPane to accommodate the JTextArea
+    val scrollPaneSize = scrollPane.size
+    scrollPaneSize.height = preferredHeight
+    scrollPane.preferredSize = scrollPaneSize
+    val shouldShowScrollbar = preferredSize.height > maxTextAreaHeight
+    scrollPane.verticalScrollBarPolicy =
+        if (shouldShowScrollbar) ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS
+        else ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER
+  }
 }
