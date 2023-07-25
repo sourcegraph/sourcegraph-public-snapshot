@@ -63,7 +63,7 @@ func bazelPushImagesCandidatesNoTest(version string) func(*bk.Pipeline) {
 
 // Used in CandidateNoTest run type
 func bazelPushImagesFinalNoTest(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, "bazel-push-images-candidate")
+	return bazelPushImagesCmd(version, false, "pipeline-gen")
 }
 
 func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*bk.Pipeline) {

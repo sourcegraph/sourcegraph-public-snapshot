@@ -224,7 +224,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 		// Add final artifacts
 		publishOps := operations.NewNamedSet("Publish images")
-		publishOps.Append(bazelPushImagesCandidatesNoTest(c.Version))
+		publishOps.Append(bazelPushImagesFinalNoTest(c.Version))
 
 		for _, dockerImage := range legacyDockerImages {
 			publishOps.Append(publishFinalDockerImage(c, dockerImage))
