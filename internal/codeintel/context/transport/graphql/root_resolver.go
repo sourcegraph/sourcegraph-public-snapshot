@@ -37,7 +37,7 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 
 	resolvers := make([]resolverstubs.PreciseContextOutputResolver, 0, len(context))
 	for _, c := range context {
-		resolvers = append(resolvers, &preciseDataResolver{
+		resolvers = append(resolvers, &preciseContextResolver{
 			scipSymbolName:  c.ScipSymbolName,
 			fuzzySymbolName: c.FuzzySymbolName,
 			repositoryName:  c.RepositoryName,
@@ -45,18 +45,18 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 			filepath:        c.FilePath,
 		})
 	}
-	return &preciseContextResolver{context: resolvers}, nil
+	return &preciseContextOutputResolver{context: resolvers}, nil
 }
 
-type preciseContextResolver struct {
+type preciseContextOutputResolver struct {
 	context []resolverstubs.PreciseContextOutputResolver
 }
 
-func (r *preciseContextResolver) Context() []resolverstubs.PreciseContextOutputResolver {
+func (r *preciseContextOutputResolver) Context() []resolverstubs.PreciseContextOutputResolver {
 	return r.context
 }
 
-type preciseDataResolver struct {
+type preciseContextResolver struct {
 	scipSymbolName  string
 	fuzzySymbolName string
 	repositoryName  string
@@ -64,8 +64,8 @@ type preciseDataResolver struct {
 	filepath        string
 }
 
-func (r *preciseDataResolver) ScipSymbolName() string  { return r.scipSymbolName }
-func (r *preciseDataResolver) FuzzySymbolName() string { return r.fuzzySymbolName }
-func (r *preciseDataResolver) RepositoryName() string  { return r.repositoryName }
-func (r *preciseDataResolver) Text() string            { return r.text }
-func (r *preciseDataResolver) FilePath() string        { return r.filepath }
+func (r *preciseContextResolver) ScipSymbolName() string  { return r.scipSymbolName }
+func (r *preciseContextResolver) FuzzySymbolName() string { return r.fuzzySymbolName }
+func (r *preciseContextResolver) RepositoryName() string  { return r.repositoryName }
+func (r *preciseContextResolver) Text() string            { return r.text }
+func (r *preciseContextResolver) FilePath() string        { return r.filepath }
