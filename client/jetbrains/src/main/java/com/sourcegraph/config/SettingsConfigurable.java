@@ -8,6 +8,7 @@ import com.sourcegraph.cody.localapp.LocalAppManager;
 import javax.swing.*;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Provides controller functionality for application settings. */
@@ -17,7 +18,7 @@ public class SettingsConfigurable implements Configurable {
   private final Project project;
   private SettingsComponent mySettingsComponent;
 
-  public SettingsConfigurable(Project project) {
+  public SettingsConfigurable(@NotNull Project project) {
     this.project = project;
   }
 
@@ -35,7 +36,7 @@ public class SettingsConfigurable implements Configurable {
   @Nullable
   @Override
   public JComponent createComponent() {
-    mySettingsComponent = new SettingsComponent();
+    mySettingsComponent = new SettingsComponent(project);
     Disposer.register(project, mySettingsComponent);
     return mySettingsComponent.getPanel();
   }
@@ -159,9 +160,9 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
     mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
     boolean dotComAccessTokenSet = ConfigUtil.isDotComAccessTokenSet(project);
-    mySettingsComponent.setDotComAccessToken(dotComAccessTokenSet ? MOCK_ACCESS_TOKEN : "");
+    mySettingsComponent.resetDotComAccessToken(dotComAccessTokenSet, MOCK_ACCESS_TOKEN);
     boolean enterpriseAccessTokenSet = ConfigUtil.isEnterpriseAccessTokenSet(project);
-    mySettingsComponent.setEnterpriseAccessToken(enterpriseAccessTokenSet ? MOCK_ACCESS_TOKEN : "");
+    mySettingsComponent.resetEnterpriseAccessToken(enterpriseAccessTokenSet, MOCK_ACCESS_TOKEN);
     mySettingsComponent.setCustomRequestHeaders(ConfigUtil.getCustomRequestHeaders(project));
     String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
     mySettingsComponent.setDefaultBranchName(defaultBranchName);
@@ -170,8 +171,6 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     mySettingsComponent.setCodyEnabled(ConfigUtil.isCodyEnabled());
     mySettingsComponent.setCodyAutoCompleteEnabled(ConfigUtil.isCodyAutoCompleteEnabled());
-    mySettingsComponent.setDotComAccessTokenNotChanged();
-    mySettingsComponent.setEnterpriseAccessTokenNotChanged();
     mySettingsComponent.getPanel().requestFocusInWindow();
   }
 

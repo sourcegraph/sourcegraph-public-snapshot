@@ -3,6 +3,7 @@ package com.sourcegraph.config;
 import com.intellij.openapi.Disposable;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.ModalityState;
+import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
@@ -12,10 +13,9 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
+import com.sourcegraph.cody.ui.PasswordWithPreviewField;
 import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.awt.event.KeyEvent;
 import java.util.Enumeration;
 import java.util.Optional;
@@ -32,6 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.Document;
 import javax.swing.text.JTextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -41,10 +42,8 @@ public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
   private JBTextField urlTextField;
-  private JBPasswordField enterpriseAccessTokenTextField;
-  private boolean enterpriseAccessTokenChanged = false;
-  private JBPasswordField dotComAccessTokenTextField;
-  private boolean dotComAccessTokenChanged = false;
+  private PasswordWithPreviewField enterpriseAccessTokenTextField;
+  private PasswordWithPreviewField dotComAccessTokenTextField;
   private JBLabel userDocsLinkComment;
   private JBLabel enterpriseAccessTokenLinkComment;
   private JBTextField customRequestHeadersTextField;
@@ -66,8 +65,8 @@ public class SettingsComponent implements Disposable {
     return defaultBranchNameTextField;
   }
 
-  public SettingsComponent() {
-    JPanel userAuthenticationPanel = createAuthenticationPanel();
+  public SettingsComponent(@NotNull Project project) {
+    JPanel userAuthenticationPanel = createAuthenticationPanel(project);
     JPanel navigationSettingsPanel = createNavigationSettingsPanel();
     JPanel codySettingsPanel = createCodySettingsPanel();
 
@@ -119,7 +118,7 @@ public class SettingsComponent implements Disposable {
   }
 
   @NotNull
-  private JPanel createAuthenticationPanel() {
+  private JPanel createAuthenticationPanel(@NotNull Project project) {
     // Create URL field for the enterprise section
     JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
     urlTextField = new JBTextField();
@@ -134,45 +133,21 @@ public class SettingsComponent implements Disposable {
                 : (!JsonSchemaConfigurable.isValidURL(urlTextField.getText())
                     ? new ValidationInfo("This is an invalid URL", urlTextField)
                     : null));
-    addDocumentListener(urlTextField, e -> updateAccessTokenLinkCommentText());
+    addDocumentListener(
+        urlTextField, urlTextField.getDocument(), e -> updateAccessTokenLinkCommentText());
 
     // Create access token field
     JBLabel accessTokenLabel = new JBLabel("Access token:");
-    enterpriseAccessTokenTextField = new JBPasswordField();
-    enterpriseAccessTokenTextField.getEmptyText().setText("Paste your access token here");
+    enterpriseAccessTokenTextField =
+        new PasswordWithPreviewField(
+            new JBPasswordField(), () -> ConfigUtil.getEnterpriseAccessToken(project));
+    enterpriseAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         enterpriseAccessTokenTextField,
         () ->
-            !AuthorizationUtil.isValidAccessToken(getPassword(enterpriseAccessTokenTextField))
+            !AuthorizationUtil.isValidAccessToken(enterpriseAccessTokenTextField.getPassword())
                 ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
                 : null);
-    enterpriseAccessTokenTextField
-        .getDocument()
-        .addDocumentListener(
-            new DocumentListener() {
-              @Override
-              public void insertUpdate(DocumentEvent e) {
-                enterpriseAccessTokenChanged = true;
-              }
-
-              @Override
-              public void removeUpdate(DocumentEvent e) {
-                enterpriseAccessTokenChanged = true;
-              }
-
-              @Override
-              public void changedUpdate(DocumentEvent e) {
-                enterpriseAccessTokenChanged = true;
-              }
-            });
-
-    enterpriseAccessTokenTextField.addFocusListener(
-        new FocusAdapter() {
-          @Override
-          public void focusGained(FocusEvent e) {
-            enterpriseAccessTokenTextField.setText("");
-          }
-        });
     // Create access token field
     JBLabel dotComAccessTokenComment =
         new JBLabel(
@@ -181,41 +156,16 @@ public class SettingsComponent implements Disposable {
                 UIUtil.FontColor.BRIGHTER)
             .withBorder(JBUI.Borders.emptyLeft(10));
     JBLabel dotComAccessTokenLabel = new JBLabel("Access token:");
-    dotComAccessTokenTextField = new JBPasswordField();
-    dotComAccessTokenTextField.getEmptyText().setText("Paste your access token here");
+    dotComAccessTokenTextField =
+        new PasswordWithPreviewField(
+            new JBPasswordField(), () -> ConfigUtil.getDotComAccessToken(project));
+    dotComAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         dotComAccessTokenTextField,
         () ->
-            !AuthorizationUtil.isValidAccessToken(getPassword(dotComAccessTokenTextField))
+            !AuthorizationUtil.isValidAccessToken(dotComAccessTokenTextField.getPassword())
                 ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
                 : null);
-    dotComAccessTokenTextField
-        .getDocument()
-        .addDocumentListener(
-            new DocumentListener() {
-              @Override
-              public void insertUpdate(DocumentEvent e) {
-                dotComAccessTokenChanged = true;
-              }
-
-              @Override
-              public void removeUpdate(DocumentEvent e) {
-                dotComAccessTokenChanged = true;
-              }
-
-              @Override
-              public void changedUpdate(DocumentEvent e) {
-                dotComAccessTokenChanged = true;
-              }
-            });
-
-    dotComAccessTokenTextField.addFocusListener(
-        new FocusAdapter() {
-          @Override
-          public void focusGained(FocusEvent e) {
-            dotComAccessTokenTextField.setText("");
-          }
-        });
     // Create comments
     userDocsLinkComment =
         new JBLabel(
@@ -379,11 +329,6 @@ public class SettingsComponent implements Disposable {
     return userAuthenticationPanel;
   }
 
-  private String getPassword(JBPasswordField passwordField) {
-    char[] passwordChars = passwordField.getPassword();
-    return String.copyValueOf(passwordChars);
-  }
-
   private void updateVisibilityOfHelperLinks() {
     boolean isLocalAppInstalled = LocalAppManager.isLocalAppInstalled();
     boolean isLocalAppRunning = LocalAppManager.isLocalAppRunning();
@@ -412,36 +357,28 @@ public class SettingsComponent implements Disposable {
 
   @NotNull
   public String getDotComAccessToken() {
-    return getPassword(dotComAccessTokenTextField);
+    return dotComAccessTokenTextField.getPassword();
   }
 
-  public void setDotComAccessToken(@NotNull String value) {
-    dotComAccessTokenTextField.setText(value);
+  public void resetDotComAccessToken(boolean isAccessTokenSet, @NotNull String mockToken) {
+    dotComAccessTokenTextField.resetPassword(isAccessTokenSet, mockToken);
   }
 
   public boolean isDotComAccessTokenChanged() {
-    return dotComAccessTokenChanged;
-  }
-
-  public void setDotComAccessTokenNotChanged() {
-    dotComAccessTokenChanged = false;
+    return dotComAccessTokenTextField.hasPasswordChanged();
   }
 
   @NotNull
   public String getEnterpriseAccessToken() {
-    return getPassword(enterpriseAccessTokenTextField);
+    return enterpriseAccessTokenTextField.getPassword();
   }
 
-  public void setEnterpriseAccessToken(@NotNull String value) {
-    enterpriseAccessTokenTextField.setText(value);
+  public void resetEnterpriseAccessToken(boolean isAccessTokenSet, @NotNull String mockToken) {
+    enterpriseAccessTokenTextField.resetPassword(isAccessTokenSet, mockToken);
   }
 
   public boolean isEnterpriseAccessTokenChanged() {
-    return enterpriseAccessTokenChanged;
-  }
-
-  public void setEnterpriseAccessTokenNotChanged() {
-    enterpriseAccessTokenChanged = false;
+    return enterpriseAccessTokenTextField.hasPasswordChanged();
   }
 
   @NotNull
@@ -531,32 +468,36 @@ public class SettingsComponent implements Disposable {
   private void addValidation(
       @NotNull JTextComponent component, @NotNull Supplier<ValidationInfo> validator) {
     new ComponentValidator(this).withValidator(validator).installOn(component);
-    addDocumentListener(
-        component,
-        e -> ComponentValidator.getInstance(component).ifPresent(ComponentValidator::revalidate));
+    addDocumentListener(component, component.getDocument(), ComponentValidator::revalidate);
+  }
+
+  private void addValidation(
+      @NotNull PasswordWithPreviewField component, @NotNull Supplier<ValidationInfo> validator) {
+    new ComponentValidator(this).withValidator(validator).installOn(component);
+    addDocumentListener(component, component.getDocument(), ComponentValidator::revalidate);
   }
 
   private void addDocumentListener(
-      @NotNull JTextComponent textComponent, @NotNull Consumer<ComponentValidator> function) {
-    textComponent
-        .getDocument()
-        .addDocumentListener(
-            new DocumentListener() {
-              @Override
-              public void insertUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
+      @NotNull JComponent component,
+      @NotNull Document document,
+      @NotNull Consumer<ComponentValidator> function) {
+    document.addDocumentListener(
+        new DocumentListener() {
+          @Override
+          public void insertUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
 
-              @Override
-              public void removeUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
+          @Override
+          public void removeUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
 
-              @Override
-              public void changedUpdate(DocumentEvent e) {
-                ComponentValidator.getInstance(textComponent).ifPresent(function);
-              }
-            });
+          @Override
+          public void changedUpdate(DocumentEvent e) {
+            ComponentValidator.getInstance(component).ifPresent(function);
+          }
+        });
   }
 
   private void updateAccessTokenLinkCommentText() {
