@@ -24,12 +24,12 @@ var helpCommand = &cli.Command{
 		&cli.BoolFlag{
 			Name:    "full",
 			Aliases: []string{"f"},
-			Usage:   "Generate full markdown sg reference",
+			Usage:   "generate full markdown sg reference",
 		},
 		&cli.StringFlag{
 			Name:      "output",
 			TakesFile: true,
-			Usage:     "Write reference to `file`",
+			Usage:     "write reference to `file`",
 		},
 	},
 	Action: func(cmd *cli.Context) error {
