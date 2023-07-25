@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -134,21 +135,16 @@ func (c *Client) waitForReposByQuery(query string, repos ...string) ([]string, e
 		return nil, errors.Wrap(err, "request GraphQL")
 	}
 
-	repoSet := make(map[string]struct{}, len(repos))
-	for _, repo := range repos {
-		repoSet[repo] = struct{}{}
+	nodes := resp.Data.Repositories.Nodes
+	repoSet := collections.NewSet[string](repos...)
+	clonedRepoNamesSlice := make([]string, 0, len(nodes))
+	for _, node := range nodes {
+		clonedRepoNamesSlice = append(clonedRepoNamesSlice, node.Name)
 	}
-	for _, node := range resp.Data.Repositories.Nodes {
-		delete(repoSet, node.Name)
-	}
-	if len(repoSet) > 0 {
-		missing := make([]string, 0, len(repoSet))
-		for name := range repoSet {
-			missing = append(missing, name)
-		}
+	missing := repoSet.Difference(collections.NewSet[string](clonedRepoNamesSlice...)).Values()
+	if len(missing) > 0 {
 		return missing, nil
 	}
-
 	return nil, nil
 }
 

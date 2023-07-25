@@ -25,27 +25,27 @@ func NewSet[T comparable](values ...T) Set[T] {
 	return s
 }
 
-func (s Set[T]) Add(values ...T) {
+func (a Set[T]) Add(values ...T) {
 	for _, v := range values {
-		s[v] = struct{}{}
+		a[v] = struct{}{}
 	}
 }
 
-func (s Set[T]) Remove(values ...T) {
+func (a Set[T]) Remove(values ...T) {
 	for _, v := range values {
-		delete(s, v)
+		delete(a, v)
 	}
 }
 
-func (s Set[T]) Has(value T) bool {
-	_, found := s[value]
+func (a Set[T]) Has(value T) bool {
+	_, found := a[value]
 	return found
 }
 
 // Values returns a slice with all the values in the set.
 // The values are returned in an unspecified order.
-func (s Set[T]) Values() []T {
-	return maps.Keys(s)
+func (a Set[T]) Values() []T {
+	return maps.Keys(a)
 }
 
 // Sorted returns the values of the set in sorted order using the given
@@ -56,20 +56,20 @@ func (s Set[T]) Values() []T {
 //
 // Example:
 //
-//	s.Sorted(func(a, b int) bool { return a < b })
-func (s Set[T]) Sorted(comparator func(a, b T) bool) []T {
-	vals := s.Values()
+//	a.Sorted(func(a, b int) bool { return a < b })
+func (a Set[T]) Sorted(comparator func(a, b T) bool) []T {
+	vals := a.Values()
 	sort.Slice(vals, func(i, j int) bool {
 		return comparator(vals[i], vals[j])
 	})
 	return vals
 }
 
-// Difference returns a set with elements in s that are not in b.
-func (s Set[T]) Difference(b Set[T]) Set[T] {
+// Difference returns a set with elements in A that are not in B.
+func (a Set[T]) Difference(b Set[T]) Set[T] {
 	diff := NewSet[T]()
 
-	for v := range s {
+	for v := range a {
 		if !b.Has(v) {
 			diff.Add(v)
 		}
@@ -78,20 +78,20 @@ func (s Set[T]) Difference(b Set[T]) Set[T] {
 	return diff
 }
 
-// Intersect returns a new set with elements that are in both s and b.
-func (s Set[T]) Intersect(b Set[T]) Set[T] {
-	return Intersection(s, b)
+// Intersect returns a new set with elements that are in both A and B.
+func (a Set[T]) Intersect(b Set[T]) Set[T] {
+	return Intersection(a, b)
 }
 
-// Contains returns true if a has all the elements in b.
-func (s Set[T]) Contains(b Set[T]) bool {
-	// do not waste time on loop if b is bigger than s
-	if len(b) > len(s) {
+// Contains returns true if A has all the elements in B.
+func (a Set[T]) Contains(b Set[T]) bool {
+	// Do not waste time on loop if B is bigger than A.
+	if len(b) > len(a) {
 		return false
 	}
 
 	for v := range b {
-		if !s.Has(v) {
+		if !a.Has(v) {
 			return false
 		}
 	}
@@ -99,18 +99,18 @@ func (s Set[T]) Contains(b Set[T]) bool {
 }
 
 // IsEmpty returns true if the set doesn't contain any elements.
-func (s Set[T]) IsEmpty() bool {
-	return len(s) == 0
+func (a Set[T]) IsEmpty() bool {
+	return len(a) == 0
 }
 
-// Union returns a new set with all the elements from s and b
-func (s Set[T]) Union(b Set[T]) Set[T] {
-	return Union(s, b)
+// Union returns a new set with all the elements from A and B.
+func (a Set[T]) Union(b Set[T]) Set[T] {
+	return Union(a, b)
 }
 
 // String returns a string representation of the set.
-func (s Set[T]) String() string {
-	return fmt.Sprintf("Set%v", maps.Keys(s))
+func (a Set[T]) String() string {
+	return fmt.Sprintf("Set%v", maps.Keys(a))
 }
 
 func getShortLong[T comparable](a, b Set[T]) (Set[T], Set[T]) {
@@ -120,7 +120,7 @@ func getShortLong[T comparable](a, b Set[T]) (Set[T], Set[T]) {
 	return b, a
 }
 
-// Union returns a new set with all the elements from a and b
+// Union returns a new set with all the elements from A and B.
 func Union[T comparable](a, b Set[T]) Set[T] {
 	short, long := getShortLong(a, b)
 	union := NewSet(long.Values()...)
@@ -129,7 +129,7 @@ func Union[T comparable](a, b Set[T]) Set[T] {
 	return union
 }
 
-// Intersection returns a new set with all the elements that are in both a and b.
+// Intersection returns a new set with all the elements that are in both A and B.
 func Intersection[T comparable](a, b Set[T]) Set[T] {
 	itrsc := NewSet[T]()
 	short, long := getShortLong(a, b)
