@@ -31,6 +31,9 @@ input PreciseContextInput {
     activeFileSelectionRange: ActiveFileSelectionRange
 }
 
+"""
+The input required to denote a selection within an active file.
+"""
 input ActiveFileSelectionRange {
     """
     The selection start line
