@@ -21,7 +21,16 @@ var ErrNotInsideSourcegraph = errors.New("not running inside sourcegraph/sourceg
 
 // RepositoryRoot caches and returns the value of findRoot.
 func RepositoryRoot() (string, error) {
-	once.Do(func() { repositoryRootValue, repositoryRootError = findRootFromCwd() })
+	// If the repositoryRootValue
+	if repositoryRootValue == "" {
+		once.Do(func() {
+			if forcedRoot := os.Getenv("SG_FORCE_REPO_ROOT"); forcedRoot != "" {
+				repositoryRootValue = forcedRoot
+			} else {
+				repositoryRootValue, repositoryRootError = findRootFromCwd()
+			}
+		})
+	}
 	return repositoryRootValue, repositoryRootError
 }
 
