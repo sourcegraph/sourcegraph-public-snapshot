@@ -6,7 +6,6 @@ import { AuthenticatedUser } from '../auth'
 import { Page } from '../components/Page'
 import { PageTitle } from '../components/PageTitle'
 import { CodySurveyToast } from '../marketing/toast/CodySurveyToast'
-import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 
 import { withAuthenticatedUser } from './withAuthenticatedUser'
@@ -18,9 +17,9 @@ interface PostSignUpPageProps {
 }
 
 const PostSignUp: React.FunctionComponent<PostSignUpPageProps> = ({ authenticatedUser }) => {
-    // redirects user to /get-cody page if they have aleady completed the post signup flow.
+    // Redirects to /search page, if user has already completed post signup flow
     if (authenticatedUser.completedPostSignup) {
-        return <Navigate to={PageRoutes.GetCody} replace={true} />
+        return <Navigate to="/search" replace={true} />
     }
 
     return (

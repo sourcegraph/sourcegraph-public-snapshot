@@ -1199,78 +1199,176 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 }
 
-func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepo(t *testing.T) {
+func TestGitserverRepos_UpdatePoolRepoID_And_GetPoolRepoName(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
+	t.Parallel()
+
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	// Create one test poolRepo
-	poolRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "internal.github.com/sourcegraph/repo",
-		URI:           "github.com/sourcegraph/repo",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
-	})
+	setupRepos := func() (DB, *types.Repo, *types.Repo) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		// Create a test parentRepo, whose ID will be used as pool_repo_id to establish a relationship
+		// between a fork and parent repo with deduplciation.
+		parentRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name:          "internal.github.com/sourcegraph/repo",
+			URI:           "github.com/sourcegraph/repo",
+			CloneStatus:   types.CloneStatusNotCloned,
+			RepoSizeBytes: 100,
+		})
 
-	// Create one test repo
-	forkedRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "internal.github.com/forked/repo",
-		URI:           "github.com/forked/repo",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
+		// Create a test forked repo.
+		forkedRepo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
+			Name:          "internal.github.com/forked/repo",
+			URI:           "github.com/forked/repo",
+			Fork:          true,
+			CloneStatus:   types.CloneStatusNotCloned,
+			RepoSizeBytes: 100,
+		})
+
+		return db, parentRepo, forkedRepo
+	}
+
+	emptyPoolRepoName := api.RepoName("")
+
+	t.Run("no pool repo relation exists", func(t *testing.T) {
+		db, _, forkedRepo := setupRepos()
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		require.NoError(t, err)
+		require.False(t, ok)
+		require.Equal(t, api.RepoName(""), gotPoolRepoName)
 	})
 
 	t.Run("pool repo does not exist", func(t *testing.T) {
+		db, _, forkedRepo := setupRepos()
+		// Updating pool repo ID relation with a bogus poolRepoName.
 		err := db.GitserverRepos().UpdatePoolRepoID(ctx, api.RepoName("foo"), forkedRepo.Name)
 		require.NoError(t, err)
 
-		gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, forkedRepo.Name)
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
 		require.NoError(t, err)
-		require.Nil(t, gotPoolRepo)
-
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 
 	t.Run("forked repo does not exist", func(t *testing.T) {
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, poolRepo.Name, api.RepoName("foo"))
+		db, parentRepo, _ := setupRepos()
+		// Updating pool repo ID relation with a bogus forkedRepoName.
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, api.RepoName("foo"))
 		require.NoError(t, err)
 
-		gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, api.RepoName("foo"))
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, api.RepoName("foo"))
 		require.NoError(t, err)
-		require.Nil(t, gotPoolRepo)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 
 	t.Run("both pool and forked repo do not exist", func(t *testing.T) {
+		db, _, _ := setupRepos()
+
+		// Updating pool repo ID relation with a bogus poolRepoName a bogus forkedRepoName.
 		err := db.GitserverRepos().UpdatePoolRepoID(ctx, api.RepoName("foo"), api.RepoName("bar"))
 		require.NoError(t, err)
 
-		gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, api.RepoName("bar"))
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, api.RepoName("bar"))
 		require.NoError(t, err)
-		require.Nil(t, gotPoolRepo)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
+
 	})
 
-	t.Run("both pool and forked repo exist", func(t *testing.T) {
-		err := db.GitserverRepos().UpdatePoolRepoID(ctx, poolRepo.Name, forkedRepo.Name)
+	t.Run("pool relation exists lookup parent repo", func(t *testing.T) {
+		db, parentRepo, forkedRepo := setupRepos()
+		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
 		require.NoError(t, err)
-		gotPoolRepo, err := db.GitserverRepos().GetPoolRepo(ctx, forkedRepo.Name)
 
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
 		require.NoError(t, err)
-		require.NotNil(t, gotPoolRepo)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
+	})
 
-		wantPoolRepo := types.PoolRepo{RepoName: poolRepo.Name, RepoURI: poolRepo.URI}
-		if diff := cmp.Diff(wantPoolRepo, *gotPoolRepo); diff != "" {
-			t.Fatalf("mismatched pool repo got, (-want, +got):\n%s", diff)
-		}
+	t.Run("pool relation exists lookup forked repo", func(t *testing.T) {
+		db, parentRepo, forkedRepo := setupRepos()
+		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
+		require.NoError(t, err)
+
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		require.NoError(t, err)
+		require.True(t, ok)
+		require.Equal(t, parentRepo.Name, gotPoolRepoName)
+	})
+
+	t.Run("pool relation exists but parent repo is deleted, lookup parent repo", func(t *testing.T) {
+		db, parentRepo, forkedRepo := setupRepos()
+		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
+		require.NoError(t, err)
+
+		err = db.Repos().Delete(ctx, parentRepo.ID)
+		require.NoError(t, err)
+
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
+		require.NoError(t, err)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
+	})
+
+	t.Run("pool relation exists but parent repo is deleted, lookup forked repo", func(t *testing.T) {
+		db, parentRepo, forkedRepo := setupRepos()
+		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
+		require.NoError(t, err)
+
+		err = db.Repos().Delete(ctx, parentRepo.ID)
+		require.NoError(t, err)
+
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		require.NoError(t, err)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
+	})
+
+	t.Run("pool relation exists but forked repo is deleted, lookup parent repo", func(t *testing.T) {
+		db, parentRepo, forkedRepo := setupRepos()
+		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
+		require.NoError(t, err)
+
+		err = db.Repos().Delete(ctx, forkedRepo.ID)
+		require.NoError(t, err)
+
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, parentRepo.Name)
+		require.NoError(t, err)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
+	})
+
+	t.Run("pool relation exists but forked repo is deleted, lookup forked repo", func(t *testing.T) {
+		db, parentRepo, forkedRepo := setupRepos()
+		// Updating pool repo ID relation with legitimate poolRepoName and forkedRepoName.
+		err := db.GitserverRepos().UpdatePoolRepoID(ctx, parentRepo.Name, forkedRepo.Name)
+		require.NoError(t, err)
+
+		err = db.Repos().Delete(ctx, forkedRepo.ID)
+		require.NoError(t, err)
+
+		gotPoolRepoName, ok, err := db.GitserverRepos().GetPoolRepoName(ctx, forkedRepo.Name)
+		require.NoError(t, err)
+		require.False(t, ok)
+		require.Equal(t, emptyPoolRepoName, gotPoolRepoName)
 	})
 }
 
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
-	repo := &types.Repo{Name: payload.Name, URI: payload.URI}
+	repo := &types.Repo{Name: payload.Name, URI: payload.URI, Fork: payload.Fork}
 
 	// Create Repo
 	err := db.Repos().Create(ctx, repo)
@@ -1305,8 +1403,8 @@ type createTestRepoPayload struct {
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
-
-	URI string
+	URI  string
+	Fork bool
 
 	// Gitserver related properties
 

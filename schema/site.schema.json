@@ -125,6 +125,14 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
+        "useGitserverAddressLookupCache": {
+          "description": "(Internal development only) Short lived experimental flag to test the effect of caching vs no caching of repo address lookup",
+          "type": "boolean",
+          "default": true,
+          "!go": {
+            "pointer": true
+          }
+        },
         "rateLimitAnonymous": {
           "description": "Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.",
           "type": "integer",

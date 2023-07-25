@@ -211,7 +211,11 @@ export const SearchPageInput: FC<SearchPageInputProps> = props => {
             {simpleSearch && (
                 <div>
                     <hr className="mt-4 mb-4" />
-                    <SimpleSearch onSubmit={onSubmit} onSimpleSearchUpdate={onSimpleSearchUpdate} />
+                    <SimpleSearch
+                        telemetryService={telemetryService}
+                        onSubmit={onSubmit}
+                        onSimpleSearchUpdate={onSimpleSearchUpdate}
+                    />
                 </div>
             )}
         </div>

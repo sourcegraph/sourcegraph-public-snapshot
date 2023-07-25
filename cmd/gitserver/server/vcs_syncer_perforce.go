@@ -69,7 +69,7 @@ func (s *PerforceDepotSyncer) Type() string {
 }
 
 // IsCloneable checks to see if the Perforce remote URL is cloneable.
-func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, remoteURL *vcs.URL) error {
+func (s *PerforceDepotSyncer) IsCloneable(ctx context.Context, _ api.RepoName, remoteURL *vcs.URL) error {
 	username, password, host, path, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "decompose")

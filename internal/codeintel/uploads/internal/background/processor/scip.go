@@ -3,13 +3,10 @@ package processor
 import (
 	"bytes"
 	"context"
-	"io"
-	"sort"
-
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/scip/bindings/go/scip"
 	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/protobuf/proto"
+	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -55,146 +52,143 @@ func aggregateExternalSymbolsAndPaths(indexReader *gzipReadSeeker) (firstPassRes
 	return firstPassResult{metadata, externalSymbolsByName, paths, documentCountByPath}, nil
 }
 
-// correlateSCIP reads the content of the given reader as a SCIP index object. The index is processed in
-// the background, and processed documents are emitted on a channel to be persisted to the database.
-//
-// **NOTE TO CONSUMERS OF THIS FUNCTION** (see `readPackageAndPackageReferences` for a concrete impl):
-//
-// As a side-effect of processing documents, a symbol map is built to determine which symbols should
-// be advertised as part of our cross-index/cross-repository metadata. Consumers must expect to consume
-// the set of processed documents *before* accessing the package or package reference channels - they
-// will not be written to until the documents channel has been closed. Consumers should process both
-// package and package reference channels concurrently.
-func correlateSCIP(
+type documentOneShotIterator struct {
+	ignorePaths  collections.Set[string]
+	indexSummary firstPassResult
+	indexReader  gzipReadSeeker
+}
+
+var _ lsifstore.SCIPDocumentVisitor = &documentOneShotIterator{}
+
+func (it *documentOneShotIterator) VisitAllDocuments(
 	ctx context.Context,
 	logger log.Logger,
+	p *lsifstore.ProcessedPackageData,
+	doIt func(lsifstore.ProcessedSCIPDocument) error,
+) error {
+	repeatedDocumentsByPath := make(map[string][]*scip.Document, 1)
+	packageSet := map[precise.Package]bool{}
+
+	var outerError error = nil
+
+	secondPassVisitor := scip.IndexVisitor{VisitDocument: func(currentDocument *scip.Document) {
+		path := currentDocument.RelativePath
+		if it.ignorePaths.Has(path) {
+			return
+		}
+		document := currentDocument
+		if docCount := it.indexSummary.documentCountByPath[path]; docCount > 1 {
+			samePathDocs := append(repeatedDocumentsByPath[path], document)
+			repeatedDocumentsByPath[path] = samePathDocs
+			if len(samePathDocs) != docCount {
+				// The document will be processed later when all other Documents
+				// with the same path are seen.
+				return
+			}
+			flattenedDoc := scip.FlattenDocuments(samePathDocs)
+			delete(repeatedDocumentsByPath, path)
+			if len(flattenedDoc) != 1 {
+				logger.Warn("FlattenDocuments should return a single Document as input slice contains Documents"+
+					" with the same RelativePath",
+					log.String("path", path),
+					log.Int("obtainedCount", len(flattenedDoc)))
+				return
+			}
+			document = flattenedDoc[0]
+		}
+
+		if ctx.Err() != nil {
+			outerError = ctx.Err()
+			return
+		}
+		if err := doIt(processDocument(document, it.indexSummary.externalSymbolsByName)); err != nil {
+			outerError = err
+			return
+		}
+
+		// While processing this document, stash the unique packages of each symbol name
+		// in the document. If there is an occurrence that defines that symbol, mark that
+		// package as being one that we define (rather than simply reference).
+
+		for _, symbol := range document.Symbols {
+			if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
+				// no-op if key exists; add false if key is absent
+				packageSet[pkg] = packageSet[pkg] || false
+			}
+
+			for _, relationship := range symbol.Relationships {
+				if pkg, ok := packageFromSymbol(relationship.Symbol); ok {
+					// no-op if key exists; add false if key is absent
+					packageSet[pkg] = packageSet[pkg] || false
+				}
+			}
+		}
+
+		for _, occurrence := range document.Occurrences {
+			if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+				continue
+			}
+
+			if pkg, ok := packageFromSymbol(occurrence.Symbol); ok {
+				if isDefinition := scip.SymbolRole_Definition.Matches(occurrence); isDefinition {
+					packageSet[pkg] = true
+				} else {
+					// no-op if key exists; add false if key is absent
+					packageSet[pkg] = packageSet[pkg] || false
+				}
+			}
+		}
+	},
+	}
+	if err := secondPassVisitor.ParseStreaming(&it.indexReader); err != nil {
+		logger.Warn("error on second pass over SCIP index; should've hit it in the first pass",
+			log.Error(err))
+	}
+	if outerError != nil {
+		return outerError
+	}
+	// Reset state in case we want to read documents again
+	if err := it.indexReader.seekToStart(); err != nil {
+		return err
+	}
+
+	// Now that we've populated our index-global packages map, separate them into ones that
+	// we define and ones that we simply reference. The closing of the documents channel at
+	// the end of this function will signal that these lists have been populated.
+
+	for pkg, hasDefinition := range packageSet {
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		if hasDefinition {
+			p.Packages = append(p.Packages, pkg)
+		} else {
+			p.PackageReferences = append(p.PackageReferences, precise.PackageReference{Package: pkg})
+		}
+	}
+
+	return nil
+}
+
+// prepareSCIPDataStream performs a streaming traversal of the index to get some preliminary
+// information, and creates a SCIPDataStream that can be used to write Documents into the database.
+//
+// Package information can be obtained when documents are visited.
+func prepareSCIPDataStream(
+	ctx context.Context,
 	indexReader gzipReadSeeker,
 	root string,
 	getChildren pathexistence.GetChildrenFunc,
-) (lsifstore.ProcessedSCIPData, error) {
+) (lsifstore.SCIPDataStream, error) {
 	indexSummary, err := aggregateExternalSymbolsAndPaths(&indexReader)
 	if err != nil {
-		return lsifstore.ProcessedSCIPData{}, err
+		return lsifstore.SCIPDataStream{}, err
 	}
 
 	ignorePaths, err := ignorePaths(ctx, indexSummary.relativePaths, root, getChildren)
 	if err != nil {
-		return lsifstore.ProcessedSCIPData{}, err
+		return lsifstore.SCIPDataStream{}, err
 	}
-
-	var (
-		documents             = make(chan lsifstore.ProcessedSCIPDocument)
-		packages              = make(chan precise.Package)
-		packageReferences     = make(chan precise.PackageReference)
-		externalSymbolsByName = indexSummary.externalSymbolsByName
-	)
-
-	go func() {
-		defer close(documents)
-
-		repeatedDocumentsByPath := make(map[string][]*scip.Document, 1)
-		packageSet := map[precise.Package]bool{}
-
-		secondPassVisitor := scip.IndexVisitor{VisitDocument: func(currentDocument *scip.Document) {
-			path := currentDocument.RelativePath
-			if ignorePaths.Has(path) {
-				return
-			}
-			document := currentDocument
-			// Most indexers should emit a single SCIP Document for a single file.
-			// In the rare case of an indexer bug, if the indexer emits multiple
-			// Documents for a single path, we will aggregate those Documents in
-			// memory so that we can merge+normalize before processing them further.
-			if docCount := indexSummary.documentCountByPath[path]; docCount > 1 {
-				samePathDocs := append(repeatedDocumentsByPath[path], document)
-				repeatedDocumentsByPath[path] = samePathDocs
-				if len(samePathDocs) != docCount {
-					// The document will be processed later when all other Documents
-					// with the same path are seen.
-					return
-				}
-				flattenedDoc := scip.FlattenDocuments(samePathDocs)
-				delete(repeatedDocumentsByPath, path)
-				if len(flattenedDoc) != 1 {
-					logger.Warn("FlattenDocuments should return a single Document as input slice contains Documents"+
-						" with the same RelativePath",
-						log.String("path", path),
-						log.Int("obtainedCount", len(flattenedDoc)))
-					return
-				}
-				document = flattenedDoc[0]
-			}
-
-			select {
-			case documents <- processDocument(document, externalSymbolsByName):
-			case <-ctx.Done():
-				return
-			}
-
-			// While processing this document, stash the unique packages of each symbol name
-			// in the document. If there is an occurrence that defines that symbol, mark that
-			// package as being one that we define (rather than simply reference).
-
-			for _, symbol := range document.Symbols {
-				if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
-					// no-op if key exists; add false if key is absent
-					packageSet[pkg] = packageSet[pkg] || false
-				}
-
-				for _, relationship := range symbol.Relationships {
-					if pkg, ok := packageFromSymbol(relationship.Symbol); ok {
-						// no-op if key exists; add false if key is absent
-						packageSet[pkg] = packageSet[pkg] || false
-					}
-				}
-			}
-
-			for _, occurrence := range document.Occurrences {
-				if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
-					continue
-				}
-
-				if pkg, ok := packageFromSymbol(occurrence.Symbol); ok {
-					if isDefinition := scip.SymbolRole_Definition.Matches(occurrence); isDefinition {
-						packageSet[pkg] = true
-					} else {
-						// no-op if key exists; add false if key is absent
-						packageSet[pkg] = packageSet[pkg] || false
-					}
-				}
-			}
-		},
-		}
-		if err := secondPassVisitor.ParseStreaming(&indexReader); err != nil {
-			logger.Warn("error on second pass over SCIP index; should've hit it in the first pass",
-				log.Error(err))
-		}
-
-		go func() {
-			defer close(packages)
-			defer close(packageReferences)
-
-			// Now that we've populated our index-global packages map, separate them into ones that
-			// we define and ones that we simply reference. The closing of the documents channel at
-			// the end of this function will signal that these lists have been populated.
-
-			for pkg, hasDefinition := range packageSet {
-				if hasDefinition {
-					select {
-					case packages <- pkg:
-					case <-ctx.Done():
-						return
-					}
-				} else {
-					select {
-					case packageReferences <- precise.PackageReference{Package: pkg}:
-					case <-ctx.Done():
-						return
-					}
-				}
-			}
-		}()
-	}()
 
 	metadata := lsifstore.ProcessedMetadata{
 		TextDocumentEncoding: indexSummary.metadata.TextDocumentEncoding.String(),
@@ -204,81 +198,10 @@ func correlateSCIP(
 		ProtocolVersion:      int(indexSummary.metadata.Version),
 	}
 
-	return lsifstore.ProcessedSCIPData{
-		Metadata:          metadata,
-		Documents:         documents,
-		Packages:          packages,
-		PackageReferences: packageReferences,
+	return lsifstore.SCIPDataStream{
+		Metadata:         metadata,
+		DocumentIterator: &documentOneShotIterator{ignorePaths, indexSummary, indexReader},
 	}, nil
-}
-
-// readPackageAndPackageReferences reads content from the package and package reference channels of
-// the output of `correlateSCIP` and returns them as slices categorized by type. See the implementations
-// notes on that function for details.
-func readPackageAndPackageReferences(
-	ctx context.Context,
-	correlatedSCIPData lsifstore.ProcessedSCIPData,
-) (packages []precise.Package, packageReferences []precise.PackageReference, _ error) {
-	// Perform the following loop while both the package and package reference channels are
-	// open. Since the producer of both channels are from the same thread, we have to be able
-	// to read from either channel as values are being produced. Once one channel closes, we
-	// switch to reading from the still open channel until it is closed as well.
-
-loop:
-	for {
-		select {
-		case pkg, ok := <-correlatedSCIPData.Packages:
-			if !ok {
-				break loop
-			}
-			packages = append(packages, pkg)
-
-		case packageReference, ok := <-correlatedSCIPData.PackageReferences:
-			if !ok {
-				break loop
-			}
-			packageReferences = append(packageReferences, packageReference)
-
-		case <-ctx.Done():
-			return nil, nil, ctx.Err()
-		}
-	}
-
-	// Drain both channels in case anything is left
-	for pkg := range correlatedSCIPData.Packages {
-		packages = append(packages, pkg)
-	}
-	for packageReference := range correlatedSCIPData.PackageReferences {
-		packageReferences = append(packageReferences, packageReference)
-	}
-
-	// Sort prior to return to get deterministic output
-	sort.Slice(packages, func(i, j int) bool {
-		return comparePackages(packages[i], packages[j])
-	})
-	sort.Slice(packageReferences, func(i, j int) bool {
-		return comparePackages(packageReferences[i].Package, packageReferences[j].Package)
-	})
-
-	return packages, packageReferences, nil
-}
-
-// readIndex unmarshals a SCIP index from the given reader. The given reader is in practice
-// a gzip deflate layer. We pass the _uncompressed_ size of the reader's payload, which we
-// store at upload time, as a hint to the total buffer size we'll be returning. If this value
-// is undersized, the standard slice resizing behavior (symmetric to io.ReadAll) is used.
-func readIndex(r io.Reader, n int64) (*scip.Index, error) {
-	content, err := readAllWithSizeHint(r, n)
-	if err != nil {
-		return nil, err
-	}
-
-	var index scip.Index
-	if err := proto.Unmarshal(content, &index); err != nil {
-		return nil, err
-	}
-
-	return &index, nil
 }
 
 // Copied from io.ReadAll, but uses the given initial size for the buffer to
@@ -422,17 +345,19 @@ func packageFromSymbol(symbolName string) (precise.Package, bool) {
 	return pkg, true
 }
 
-// writeSCIPData transactionally writes the given correlated SCIP data into the given store targeting
-// the codeintel-db.
-func writeSCIPData(
+// writeSCIPDocuments iterates over the documents in the index and:
+// - Assembles package information
+// - Writes processed documents into the given store targeting codeintel-db
+func writeSCIPDocuments(
 	ctx context.Context,
+	logger log.Logger,
 	lsifStore lsifstore.Store,
 	upload shared.Upload,
-	correlatedSCIPData lsifstore.ProcessedSCIPData,
+	scipDataStream lsifstore.SCIPDataStream,
 	trace observation.TraceLogger,
-) (err error) {
-	return lsifStore.WithTransaction(ctx, func(tx lsifstore.Store) error {
-		if err := tx.InsertMetadata(ctx, upload.ID, correlatedSCIPData.Metadata); err != nil {
+) (pkgData lsifstore.ProcessedPackageData, err error) {
+	return pkgData, lsifStore.WithTransaction(ctx, func(tx lsifstore.Store) error {
+		if err := tx.InsertMetadata(ctx, upload.ID, scipDataStream.Metadata); err != nil {
 			return err
 		}
 
@@ -442,12 +367,15 @@ func writeSCIPData(
 		}
 
 		var numDocuments uint32
-		for document := range correlatedSCIPData.Documents {
+		processDoc := func(document lsifstore.ProcessedSCIPDocument) error {
+			numDocuments += 1
 			if err := scipWriter.InsertDocument(ctx, document.Path, document.Document); err != nil {
 				return err
 			}
-
-			numDocuments += 1
+			return nil
+		}
+		if err := scipDataStream.DocumentIterator.VisitAllDocuments(ctx, logger, &pkgData, processDoc); err != nil {
+			return err
 		}
 		trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(numDocuments)))
 
@@ -457,23 +385,7 @@ func writeSCIPData(
 		}
 		trace.AddEvent("TODO Domain Owner", attribute.Int64("numSymbols", int64(count)))
 
+		pkgData.Normalize()
 		return nil
 	})
-}
-
-// comparePackages returns true if pi sorts lower than pj.
-func comparePackages(pi, pj precise.Package) bool {
-	if pi.Scheme == pj.Scheme {
-		if pi.Manager == pj.Manager {
-			if pi.Name == pj.Name {
-				return pi.Version < pj.Version
-			}
-
-			return pi.Name < pj.Name
-		}
-
-		return pi.Manager < pj.Manager
-	}
-
-	return pi.Scheme < pj.Scheme
 }

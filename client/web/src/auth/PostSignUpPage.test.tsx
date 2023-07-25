@@ -63,7 +63,7 @@ describe('PostSignUpPage', () => {
 
     test('renders redirect when user has completed post signup flow', () => {
         const { asFragment } = renderPage({ completedPostSignup: true, hasVerifiedEmail: true })
-        expect(document.title).toBe('Get Started with Cody - Sourcegraph')
+        expect(document.title).toBe('Sourcegraph')
         expect(asFragment()).toMatchSnapshot()
     })
 })

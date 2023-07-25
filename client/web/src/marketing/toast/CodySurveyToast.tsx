@@ -2,12 +2,11 @@ import { useState, useCallback, useEffect } from 'react'
 
 import { mdiEmail } from '@mdi/js'
 import classNames from 'classnames'
-import { Navigate } from 'react-router-dom'
 
 import { asError, ErrorLike } from '@sourcegraph/common'
 import { gql, useMutation } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Checkbox, Form, H3, Modal, Text, Button, Icon } from '@sourcegraph/wildcard'
+import { Checkbox, Form, H3, Modal, Text, Button, Icon, AnchorLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { CodyColorIcon } from '../../cody/chat/CodyPageIcon'
@@ -109,7 +108,12 @@ const CodySurveyToastInner: React.FC<
     }, [telemetryService])
 
     return (
-        <Modal className={styles.codySurveyToastModal} position="center" aria-label="Welcome message">
+        <Modal
+            className={styles.codySurveyToastModal}
+            position="center"
+            aria-label="Welcome message"
+            containerClassName={styles.modalOverlay}
+        >
             <H3 className="mb-4 d-flex align-items-center">
                 <CodyColorIcon className={styles.codyIcon} />
                 <span>Just one more thing...</span>
@@ -186,7 +190,12 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
     }, [telemetryService])
 
     return (
-        <Modal className={styles.codySurveyToastModal} position="center" aria-label="Welcome message">
+        <Modal
+            className={styles.codySurveyToastModal}
+            position="center"
+            aria-label="Welcome message"
+            containerClassName={styles.modalOverlay}
+        >
             <H3 className="mb-4">
                 <Icon svgPath={mdiEmail} className={classNames('mr-2', styles.emailIcon)} aria-hidden={true} />
                 Verify your email address
@@ -213,6 +222,9 @@ const CodyVerifyEmailToast: React.FC<{ onNext: () => void; authenticatedUser: Au
             )}
             {resendEmailError && <Text>{resendEmailError.message}.</Text>}
             <div className="d-flex justify-content-end mt-4">
+                <AnchorLink className="mr-3 mt-auto mb-auto" to="/-/sign-out">
+                    Sign out
+                </AnchorLink>
                 <Button className={styles.codySurveyToastModalButton} variant="primary" onClick={onNext}>
                     Next
                 </Button>
@@ -229,6 +241,7 @@ export const CodySurveyToast: React.FC<
     const [showVerifyEmail, setShowVerifyEmail] = useState(!authenticatedUser.hasVerifiedEmail)
 
     const handleSubmitEnd = (): void => {
+        // Redirects to /get-cody page, once user submits the post-sign-up form
         window.location.replace(PageRoutes.GetCody)
     }
 
@@ -236,10 +249,6 @@ export const CodySurveyToast: React.FC<
         telemetryService.log('VerifyEmailToastDismissed')
         setShowVerifyEmail(false)
     }, [telemetryService])
-
-    if (authenticatedUser.completedPostSignup) {
-        return <Navigate to={PageRoutes.GetCody} replace={true} />
-    }
 
     if (showVerifyEmail) {
         return (

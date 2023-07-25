@@ -3211,10 +3211,6 @@ def go_dependencies():
     )
     go_repository(
         name = "com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric",
-        sum = "h1:VahL5SjDdCas8mMKARolw2vvBsuLc5oV7XNSbxeMQP8=",
-        version = "v0.41.0",
         build_directives = [
             # @go_googleapis is the modern version of @org_golang_google_genproto
             # use @go_googleapis to avoid dependency conflicts between the two
@@ -3224,6 +3220,10 @@ def go_dependencies():
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/label @go_googleapis//google/api:label_go_proto",  # keep
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/monitoredres @go_googleapis//google/api:monitoredres_go_proto",  # keep
         ],
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric",
+        sum = "h1:VahL5SjDdCas8mMKARolw2vvBsuLc5oV7XNSbxeMQP8=",
+        version = "v0.41.0",
     )
 
     go_repository(
@@ -6266,8 +6266,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:TJsG99aZ8wBa4yQ7znUrhi2QpbgEDPrfSmwlMohGt+8=",
-        version = "v0.0.0-20230719140114-b7e5070bfb56",
+        sum = "h1:VWYAOJEy4iCY5ypRui6xgFGyUWhlq2AtPj3J7BYgzQk=",
+        version = "v0.0.0-20230724134010-f9b3ea5dcf46",
     )
 
     go_repository(

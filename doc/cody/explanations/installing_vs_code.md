@@ -21,7 +21,7 @@ If you haven't yet done this, see Step 1 on the following pages:
 You can install Cody in VS Code in 2 ways:
 
 - Click the Extensions icon on the VS Code activity bar
-- Search for "Sourcegraph Cody"
+- Search for "Cody AI"
 - Install the extension directly to VS Code
 
 Or:
