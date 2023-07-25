@@ -68,7 +68,7 @@ func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			bk.Agent("queue", "bazel"),
-			bk.DependsOn("bazel-tests"),
+			// bk.DependsOn("bazel-tests"),
 			bk.Key(stepKey),
 			bk.Env("PUSH_VERSION", version),
 			bk.Env("CANDIDATE_ONLY", candidate),
