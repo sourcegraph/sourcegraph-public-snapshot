@@ -37,7 +37,7 @@ func TestErrStatusNotOK(t *testing.T) {
 		require.Error(t, err)
 		assert.Nil(t, resp)
 
-		autogold.Expect("OpenAI: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
+		autogold.Expect("AzureOpenAI: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
 		_, ok := types.IsErrStatusNotOK(err)
 		assert.True(t, ok)
 	})
@@ -46,7 +46,7 @@ func TestErrStatusNotOK(t *testing.T) {
 		err := mockClient.Stream(context.Background(), types.CompletionsFeatureChat, types.CompletionRequestParameters{}, func(event types.CompletionResponse) error { return nil })
 		require.Error(t, err)
 
-		autogold.Expect("OpenAI: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
+		autogold.Expect("AzureOpenAI: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
 		_, ok := types.IsErrStatusNotOK(err)
 		assert.True(t, ok)
 	})

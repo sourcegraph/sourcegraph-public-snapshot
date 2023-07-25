@@ -63,6 +63,9 @@ func (c *azureOpenaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 
 	embeddings := make([]float32, 0, len(augmentedTexts)*c.dimensions)
 	for i, input := range augmentedTexts {
+		// This is a difference to the OpenAI implementation: Azure OpenAI currently
+		// only supports a single input at a time, so we will need to fire off a request
+		// for each of the texts individually.
 		resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, input, 3)
 		if err != nil {
 			return nil, client.PartialError{Err: err, Index: i}

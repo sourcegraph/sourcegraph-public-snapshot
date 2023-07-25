@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-func TestOpenAI(t *testing.T) {
+func TestAzureOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
 		client := NewClient(http.DefaultClient, &conftypes.EmbeddingsConfig{})
 		invalidTexts := []string{"a", ""} // empty string is invalid
@@ -30,9 +30,6 @@ func TestOpenAI(t *testing.T) {
 				resp := openaiEmbeddingAPIResponse{
 					Data: []openaiEmbeddingAPIResponseData{{
 						Index:     0,
-						Embedding: append(make([]float32, 1535), 1),
-					}, {
-						Index:     1,
 						Embedding: nil,
 					}},
 				}
@@ -46,7 +43,7 @@ func TestOpenAI(t *testing.T) {
 				resp := openaiEmbeddingAPIResponse{
 					Data: []openaiEmbeddingAPIResponseData{{
 						Index:     0,
-						Embedding: append(make([]float32, 1535), 2),
+						Embedding: append(make([]float32, 1535), 1),
 					}},
 				}
 				json.NewEncoder(w).Encode(resp)
@@ -68,14 +65,12 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetEmbeddings(context.Background(), []string{"a"})
 		require.NoError(t, err)
 		var expected []float32
 		{
 			expected = append(expected, make([]float32, 1535)...)
 			expected = append(expected, 1)
-			expected = append(expected, make([]float32, 1535)...)
-			expected = append(expected, 2)
 		}
 		require.Equal(t, expected, resp)
 		require.True(t, gotRequest1)
@@ -90,9 +85,6 @@ func TestOpenAI(t *testing.T) {
 				resp := openaiEmbeddingAPIResponse{
 					Data: []openaiEmbeddingAPIResponseData{{
 						Index:     0,
-						Embedding: append(make([]float32, 1535), 1),
-					}, {
-						Index:     1,
 						Embedding: nil,
 					}},
 				}
@@ -120,8 +112,42 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		_, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		_, err := client.GetEmbeddings(context.Background(), []string{"a"})
 		require.Error(t, err, "expected request to error on failed retry")
+	})
+
+	t.Run("success", func(t *testing.T) {
+		requestCount := 0
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			requestCount++
+			resp := openaiEmbeddingAPIResponse{
+				Data: []openaiEmbeddingAPIResponseData{{
+					Index:     0,
+					Embedding: append(make([]float32, 1535), float32(requestCount)),
+				}},
+			}
+			json.NewEncoder(w).Encode(resp)
+		}))
+		defer s.Close()
+
+		httpClient := s.Client()
+		oldTransport := httpClient.Transport
+		httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			r.URL, _ = url.Parse(s.URL)
+			return oldTransport.RoundTrip(r)
+		})
+
+		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
+		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		require.NoError(t, err, "expected request to succeed")
+		var expected []float32
+		{
+			expected = append(expected, make([]float32, 1535)...)
+			expected = append(expected, 1)
+			expected = append(expected, make([]float32, 1535)...)
+			expected = append(expected, 2)
+		}
+		require.Equal(t, expected, resp)
 	})
 }
 
