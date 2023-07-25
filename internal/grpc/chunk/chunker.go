@@ -33,7 +33,7 @@ type Chunker[T Message] struct {
 }
 
 // maxMessageSize is the maximum size per protobuf message
-const maxMessageSize = 1 * 1024 * 1024
+const maxMessageSize = 1 * 1024 * 1024 // 1 MiB
 
 // Send will append the provided items to the current chunk, and send the chunk if it is full.
 //
