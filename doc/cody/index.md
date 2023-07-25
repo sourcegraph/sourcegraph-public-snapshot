@@ -51,7 +51,7 @@ Cody tells you which code files it reads to generate its response. In case of a 
 Cody can help you make interactive edits and refactor code by following natural-language instructions. To do so, add natural-language instructions to your code, select the relevant code, and run:
 
 ```bash
- Cody: Fixup(Ctrl+Opt+/) — for MacOS
+ Cody: Fixup(Ctrl+Opt+/) — for macOS
 
  Cody: Fixup(Ctrl+Alt+/) — for Windows
 ```
