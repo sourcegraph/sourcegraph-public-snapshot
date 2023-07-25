@@ -2074,7 +2074,6 @@ type dedupeType int
 
 const (
 	dedupeSource dedupeType = iota
-	// TODO: Maybe we don't need this state.
 	dedupeFork
 	dedupePool
 )
@@ -2366,26 +2365,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pr := progressPipe.reader
 	pw := progressPipe.writer
 
-	if opts != nil {
-		if opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.dedupeCloneType != dedupePool {
-			go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
-
-			// 1. Check if poolDir exists.
-			// 2. If it exists:
-			// 		2.a: Run git rev-parse HEAD to verify the pool repo is in a cloned state.
-			// 3. If it does not exist:
-			//      3.b: Create git init for poolDir and git fetch.
-
-			// ensurePoolRepoIsCloned()
-		}
-	} else {
-		go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
-	}
-
-	// if !isDedupeClone || (isDedupeClone && opts.DeduplicatedCloneOptions.which != dedupePool) {
-	// 	// UGH: Don't like the defer being so far away hidden inside an edge case.
-	// 	defer pw.Close()
-	// }
+	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	// If this repo is meant to be deduplicated, let us first check if the pool repo exists or not.
 	// If it doesn't clone it out of step and then continue with git fetch in this repo which will
@@ -2396,84 +2376,74 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 		_, err := os.Stat(string(poolDir))
 		if err != nil {
-			if errors.Is(err, os.ErrNotExist) {
-				// Clone the pool repository.
-
-				// Two scenarios is possible at this point. Either we are cloning a source or a
-				// forked repository with deduplication enabled. In either case, we will attempt to
-				// acquire a lock over the pool repository's directory first. Whoever gets their
-				// first will initiate the clone of the pool repository which is the expensive part
-				// of this operation. The other will backoff and wait for the lock acquisition to
-				// complete.
-
-				// Start with a backoff of 30 seconds. We double the backoff the first time so this
-				// is 15.
-				backoff := int64(15)
-
-				// The maximum time we want to wait is 80% of the GitLongCommandTimeout. We will
-				// reserve the 20% time of the GitLongCommandTimeout to "clone" our fork repository
-				// and sort our own housekeeping in the leftover time, but if the pool repository's
-				// directory is still locked for more than the 80% threshold, we might just return
-				// and show the error to the user.
-				maxWait := 0.8 * conf.GitLongCommandTimeout().Seconds()
-				var poolLock *RepositoryLock
-				var ok bool
-				for {
-					poolLock, ok = s.locker.TryAcquire(poolDir, "starting pool repo clone")
-					if ok {
-						break
-					}
-
-					status, _ := s.locker.Status(poolDir)
-
-					if backoff >= int64(maxWait) {
-						return &poolRepoCloneInProgress{
-							dir:            poolDir,
-							triedFor:       backoff,
-							lastLockStatus: status,
-						}
-					}
-
-					// Add a jitter of ± 5 seconds to the backoff. If there are multiple forks
-					// of the same repository happening concurrently, we don't want them all
-					// retrying on the same schedule.
-					// https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/
-					jitter := backoffJitterGenerator.Int63n(2*5) - 5
-					backoff = (backoff * 2) + jitter
-
-					logger.Warn(
-						"failed to acquire lock poolDir %q, retrying after backoff",
-						log.String("poolDir", string(poolDir)),
-						log.String("lockStatus", status),
-						log.Int64("backoff (seconds)", backoff),
-					)
-					time.Sleep(time.Duration(backoff) * time.Second)
-				}
-
-				// Ensure that if the pool repo clone is being triggered by a fork, we still clone
-				// the parent repo as the pool repo.
-				poolRepoName := opts.DeduplicatedCloneOptions.poolRepoName
-
-				poolCloneOpts := opts.DeepCopy()
-				poolCloneOpts.DeduplicatedCloneOptions.dedupeCloneType = dedupePool
-
-				// poolCloneOpts.DeduplicatedCloneOptions.progressPipe = &struct {
-				// 	pr *io.PipeReader
-				// 	pw *io.PipeWriter
-				// }{pr: pr, pw: pw}
-
-				// TODO: Add a final check before triggering the doClone to make sure the pool
-				// repository is not already cloned. How? Check if the poolDir already exists and
-				// run a git command in the poolDir?
-				err := s.doClone(ctx, poolRepoName, poolDir, syncer, poolLock, remoteURL, poolCloneOpts, progressPipe)
-				// TODO: Do something about the error.
-				if err != nil {
-					logger.Error("failed to clone pool repo", log.Error(err))
-					return err
-				}
-			} else {
-				// TODO: Update error more user friendly
+			if !errors.Is(err, os.ErrNotExist) {
 				return errors.Wrap(err, "failed to determine if pool repo exists, deduplicated storage will not be available for this repo")
+			}
+
+			// We have validated that the pool repository does not exist on disk. Clone the pool
+			// repository.
+			//
+			// Two scenarios is possible at this point. Either we are cloning a source or a
+			// forked repository with deduplication enabled. In either case, we will attempt to
+			// acquire a lock over the pool repository's directory first. Whoever gets their
+			// first will initiate the clone of the pool repository which is the expensive part
+			// of this operation. The other will backoff and wait for the lock acquisition to
+			// complete.
+
+			// Start with a backoff of 30 seconds. We double the backoff the first time so this
+			// is 15.
+			backoff := int64(15)
+
+			// The maximum time we want to wait is 80% of the GitLongCommandTimeout. We will
+			// reserve the 20% time of the GitLongCommandTimeout to "clone" our fork repository
+			// and sort our own housekeeping in the leftover time, but if the pool repository's
+			// directory is still locked for more than the 80% threshold, we might just return
+			// and show the error to the user.
+			maxWait := 0.8 * conf.GitLongCommandTimeout().Seconds()
+			var poolLock *RepositoryLock
+			var ok bool
+			for {
+				poolLock, ok = s.locker.TryAcquire(poolDir, "starting pool repo clone")
+				if ok {
+					break
+				}
+
+				status, _ := s.locker.Status(poolDir)
+
+				if backoff >= int64(maxWait) {
+					return &poolRepoCloneInProgress{
+						dir:            poolDir,
+						triedFor:       backoff,
+						lastLockStatus: status,
+					}
+				}
+
+				// Add a jitter of ± 5 seconds to the backoff. If there are multiple forks
+				// of the same repository happening concurrently, we don't want them all
+				// retrying on the same schedule.
+				// https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/
+				jitter := backoffJitterGenerator.Int63n(2*5) - 5
+				backoff = (backoff * 2) + jitter
+
+				logger.Warn(
+					"failed to acquire lock poolDir %q, retrying after backoff",
+					log.String("poolDir", string(poolDir)),
+					log.String("lockStatus", status),
+					log.Int64("backoff (seconds)", backoff),
+				)
+				time.Sleep(time.Duration(backoff) * time.Second)
+			}
+
+			// Ensure that if the pool repo clone is being triggered by a fork, we still clone
+			// the parent repo as the pool repo.
+			poolRepoName := opts.DeduplicatedCloneOptions.poolRepoName
+
+			poolCloneOpts := opts.DeepCopy()
+			poolCloneOpts.DeduplicatedCloneOptions.dedupeCloneType = dedupePool
+
+			err := s.doClone(ctx, poolRepoName, poolDir, syncer, poolLock, remoteURL, poolCloneOpts, progressPipe)
+			if err != nil {
+				return errors.Wrap(err, "failed to clone pool repo")
 			}
 		}
 
@@ -2485,8 +2455,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	// see issue #7322: skip LFS content in repositories with Git LFS configured
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
-
-	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
