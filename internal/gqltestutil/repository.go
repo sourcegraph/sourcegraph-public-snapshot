@@ -26,7 +26,7 @@ func (c *Client) WaitForReposToBeClonedWithin(timeout time.Duration, repos ...st
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	var missing []string
+	var missing collections.Set[string]
 	for {
 		select {
 		case <-ctx.Done():
@@ -48,7 +48,7 @@ query Repositories {
 		if err != nil {
 			return errors.Wrap(err, "wait for repos to be cloned")
 		}
-		if len(missing) == 0 {
+		if missing.IsEmpty() {
 			break
 		}
 
@@ -89,7 +89,7 @@ func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	var missing []string
+	var missing collections.Set[string]
 	for {
 		select {
 		case <-ctx.Done():
@@ -111,7 +111,7 @@ query Repositories {
 		if err != nil {
 			return errors.Wrap(err, "wait for repos to be indexed")
 		}
-		if len(missing) == 0 {
+		if missing.IsEmpty() {
 			break
 		}
 
@@ -120,7 +120,7 @@ query Repositories {
 	return nil
 }
 
-func (c *Client) waitForReposByQuery(query string, repos ...string) ([]string, error) {
+func (c *Client) waitForReposByQuery(query string, repos ...string) (collections.Set[string], error) {
 	var resp struct {
 		Data struct {
 			Repositories struct {
@@ -137,12 +137,12 @@ func (c *Client) waitForReposByQuery(query string, repos ...string) ([]string, e
 
 	nodes := resp.Data.Repositories.Nodes
 	repoSet := collections.NewSet[string](repos...)
-	clonedRepoNamesSlice := make([]string, 0, len(nodes))
+	clonedRepoNames := collections.NewSet[string]()
 	for _, node := range nodes {
-		clonedRepoNamesSlice = append(clonedRepoNamesSlice, node.Name)
+		clonedRepoNames.Add(node.Name)
 	}
-	missing := repoSet.Difference(collections.NewSet[string](clonedRepoNamesSlice...)).Values()
-	if len(missing) > 0 {
+	missing := repoSet.Difference(clonedRepoNames)
+	if !missing.IsEmpty() {
 		return missing, nil
 	}
 	return nil, nil
