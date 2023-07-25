@@ -220,6 +220,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
 		ops.Merge(imageBuildOps)
 
+		publishOpsDev := operations.NewNamedSet("Publish candidate images")
+		publishOpsDev.Append(bazelPushImagesCandidatesNoTest(c.Version))
+		ops.Merge(publishOpsDev)
+
 		ops.Append(wait)
 
 		// Add final artifacts
@@ -230,7 +234,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Final Bazel images
-		publishOps.Append(bazelPushImagesFinal(c.Version))
+		publishOps.Append(bazelPushImagesFinalNoTest(c.Version))
 		ops.Merge(publishOps)
 
 	case runtype.ImagePatch:
