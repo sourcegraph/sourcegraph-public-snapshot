@@ -71,6 +71,8 @@ func bazelPushImagesCmd(version string, isCandidate bool, requiresTest bool) fun
 	var dependsOn string
 	if requiresTest {
 		dependsOn = "bazel-tests"
+	} else {
+		dependsOn = "pipeline-gen"
 	}
 
 	return func(pipeline *bk.Pipeline) {
