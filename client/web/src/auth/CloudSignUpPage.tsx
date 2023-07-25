@@ -12,6 +12,7 @@ import { Link, Icon, H2 } from '@sourcegraph/wildcard'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { UserAreaUserProfileResult, UserAreaUserProfileVariables } from '../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
+import { useCodySurveyToast } from '../marketing/toast/CodySurveyToast'
 import { USER_AREA_USER_PROFILE } from '../user/area/UserArea'
 
 import { ExternalsAuth } from './components/ExternalsAuth'
@@ -58,6 +59,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     isSourcegraphDotCom,
 }) => {
     const location = useLocation()
+    const { setShouldShowCodySurvey } = useCodySurveyToast()
 
     const queryWithUseEmailToggled = new URLSearchParams(location.search)
     if (showEmailForm) {
@@ -79,6 +81,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
     const invitedByUser = data?.user
 
     const logEventAndSetFlags = (type: AuthProvider['serviceType']): void => {
+        setShouldShowCodySurvey(true)
         const eventType = type === 'builtin' ? 'form' : type
         telemetryService.log('SignupInitiated', { type: eventType }, { type: eventType })
     }
