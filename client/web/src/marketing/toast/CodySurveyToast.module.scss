@@ -11,18 +11,6 @@
         border-radius: 0.3125rem;
         color: var(--white);
         border: none;
-
-        &:not(:disabled):not([aria-disabled='true']) {
-            &:hover,
-            &:focus {
-                background: var(--violet-05) !important;
-            }
-        }
-
-        &:disabled,
-        &[aria-disabled='true'] {
-            background: var(--violet-03);
-        }
     }
 
     label {
@@ -48,10 +36,6 @@
 
 .resend-button {
     color: var(--violet-05);
-}
-
-.modal-overlay {
-    background-color: unset;
 }
 
 .modal-checkbox[type='checkbox'] {
