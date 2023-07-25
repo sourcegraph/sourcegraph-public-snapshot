@@ -1149,15 +1149,15 @@ func TestClient_buildGetRepositoriesBatchQuery(t *testing.T) {
 	}
 
 	wantIncluded := `
-repo0: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields } }
-repo1: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields } }
-repo2: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields } }
-repo3: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields } }
-repo4: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields } }
-repo5: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields } }
-repo6: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields } }
-repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields } }
-repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields } }`
+repo0: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+repo1: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+repo2: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+repo3: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+repo4: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+repo5: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+repo6: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }`
 
 	mock := mockHTTPResponseBody{responseBody: ""}
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}

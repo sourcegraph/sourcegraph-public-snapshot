@@ -498,7 +498,7 @@ query($query: String!, $type: SearchType!, $after: String, $first: Int!) {
 	search(query: $query, type: $type, after: $after, first: $first) {
 		repositoryCount
 		pageInfo { hasNextPage,  endCursor }
-		nodes { ... on Repository { ...RepositoryFields } }
+		nodes {... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
 	}
 }`)
 	return b.String()
@@ -565,7 +565,7 @@ func (c *V4Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners 
 			return "", err
 		}
 		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
-		b.WriteString("... on Repository { ...RepositoryFields } }\n")
+		b.WriteString("... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }\n")
 	}
 
 	b.WriteString("}")
@@ -599,14 +599,6 @@ fragment RepositoryFields on Repository {
 			}
 		}
 	}
-    parent {
-      id
-	  databaseId
-      nameWithOwner
-      # TODO: fork of a fork is not in scope at the moment. Use this field to flag second degree forks and do not deduplicate them maybe?
-	  # Also, we need all the other fields from the RepositoryFields. Rework this to make a common fragment and reuse.
-      isFork
-    }
 }
 	`
 	}
