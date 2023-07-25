@@ -3,7 +3,7 @@ package httpapi
 import (
 	"context"
 
-	proto "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/frontend/v1"
+	proto "github.com/sourcegraph/sourcegraph/internal/frontend/v1"
 )
 
 type GRPCService struct {

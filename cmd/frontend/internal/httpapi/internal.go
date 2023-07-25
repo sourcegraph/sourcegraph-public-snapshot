@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/frontend"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -28,54 +29,64 @@ type frontendServer struct {
 // external service configs that match the requested kind.
 func (fs *frontendServer) serveExternalServiceConfigs() func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		var req api.ExternalServiceConfigsRequest
+		var req frontend.ExternalServiceConfigsRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			return err
 		}
 
-		options := database.ExternalServicesListOptions{
-			Kinds:   []string{req.Kind},
-			AfterID: int64(req.AfterID),
-		}
-		if req.Limit > 0 {
-			options.LimitOffset = &database.LimitOffset{
-				Limit: req.Limit,
-			}
-		}
-
-		services, err := fs.db.ExternalServices().List(r.Context(), options)
+		configs, err := fs.getExternalServiceConfigs(r.Context(), req)
 		if err != nil {
 			return err
 		}
 
-		// Instead of returning an intermediate response type, we directly return
-		// the array of configs (which are themselves JSON objects).
-		// This makes it possible for the caller to directly unmarshal the response into
-		// a slice of connection configurations for this external service kind.
-		configs := make([]map[string]any, 0, len(services))
-		for _, service := range services {
-			var config map[string]any
-			// Raw configs may have comments in them so we have to use a json parser
-			// that supports comments in json.
-			rawConfig, err := service.Config.Decrypt(r.Context())
-			if err != nil {
-				return err
-			}
-			if jsonc.Unmarshal(rawConfig, &config); err != nil {
-				log15.Error(
-					"ignoring external service config that has invalid json",
-					"id", service.ID,
-					"displayName", service.DisplayName,
-					"config", rawConfig,
-					"err", err,
-				)
-				continue
-			}
-			configs = append(configs, config)
-		}
 		return json.NewEncoder(w).Encode(configs)
 	}
+}
+
+func (fs *frontendServer) getExternalServiceConfigs(ctx context.Context, req frontend.ExternalServiceConfigsRequest) ([]map[string]interface{}, error) {
+	options := database.ExternalServicesListOptions{
+		Kinds:   []string{req.Kind},
+		AfterID: int64(req.AfterID),
+	}
+	if req.Limit > 0 {
+		options.LimitOffset = &database.LimitOffset{
+			Limit: req.Limit,
+		}
+	}
+
+	services, err := fs.db.ExternalServices().List(ctx, options)
+	if err != nil {
+		return nil, err
+	}
+
+	// Instead of returning an intermediate response type, we directly return
+	// the array of configs (which are themselves JSON objects).
+	// This makes it possible for the caller to directly unmarshal the response into
+	// a slice of connection configurations for this external service kind.
+	configs := make([]map[string]any, 0, len(services))
+	for _, service := range services {
+		var config map[string]any
+		// Raw configs may have comments in them so we have to use a json parser
+		// that supports comments in json.
+		rawConfig, err := service.Config.Decrypt(ctx)
+		if err != nil {
+			return nil, err
+		}
+		if jsonc.Unmarshal(rawConfig, &config); err != nil {
+			log15.Error(
+				"ignoring external service config that has invalid json",
+				"id", service.ID,
+				"displayName", service.DisplayName,
+				"config", rawConfig,
+				"err", err,
+			)
+			continue
+		}
+		configs = append(configs, config)
+	}
+
+	return configs, nil
 }
 
 func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
