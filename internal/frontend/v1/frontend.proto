@@ -15,5 +15,5 @@ message ExternalServiceConfigsRequest {
 }
 
 message ExternalServiceConfigsResponse {
-    string config = 1;
+  string config = 1;
 }
