@@ -174,7 +174,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case CandidatesNoTest:
 		return &RunTypeMatcher{
-			Branch: "docker0-images-candidates-notest/",
+			Branch: "docker-images-candidates-notest/",
 		}
 	case BazelDo:
 		return &RunTypeMatcher{
@@ -221,10 +221,10 @@ func (t RunType) String() string {
 		return "Patch image"
 	case ImagePatchNoTest:
 		return "Patch image without testing"
-	case ExecutorPatchNoTest:
-		return "Build executor without testing"
 	case CandidatesNoTest:
 		return "Build all candidates without testing"
+	case ExecutorPatchNoTest:
+		return "Build executor without testing"
 	case BackendIntegrationTests:
 		return "Backend integration tests"
 	case BazelDo:
