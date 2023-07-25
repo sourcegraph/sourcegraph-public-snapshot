@@ -24,6 +24,10 @@ func RepositoryRoot() (string, error) {
 	// If the repositoryRootValue
 	if repositoryRootValue == "" {
 		once.Do(func() {
+			// This effectively disables automatic repo detection. This is useful in select automation
+			// cases where we really do not need to be sourcegraph/sourcegraph repo ie. generate help docs.
+			// Some commands call RepositoryRoot at init time. So we use the environment variable here to allow us
+			// to set the repo root as early as possible.
 			if forcedRoot := os.Getenv("SG_FORCE_REPO_ROOT"); forcedRoot != "" {
 				repositoryRootValue = forcedRoot
 			} else {
