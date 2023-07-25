@@ -221,7 +221,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Merge(imageBuildOps)
 
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")
-		publishOpsDev.Append(bazelPushImagesCandidates(c.Version))
+		publishOpsDev.Append(bazelPushImagesCandidatesNoTest(c.Version))
 		ops.Merge(publishOpsDev)
 
 		ops.Append(wait)

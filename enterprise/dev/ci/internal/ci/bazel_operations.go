@@ -47,14 +47,18 @@ func bazelCmd(args ...string) string {
 }
 
 func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, true)
+	return bazelPushImagesCmd(version, true, true)
+}
+
+func bazelPushImagesCandidatesNoTest(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, true, false)
 }
 
 func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false)
+	return bazelPushImagesCmd(version, false, true)
 }
 
-func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
+func bazelPushImagesCmd(version string, isCandidate bool, requiresTest bool) func(*bk.Pipeline) {
 	stepName := ":bazel::docker: Push final images"
 	stepKey := "bazel-push-images"
 	candidate := ""
@@ -64,11 +68,15 @@ func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
 		stepKey = stepKey + "-candidate"
 		candidate = "true"
 	}
+	var dependsOn string
+	if requiresTest {
+		dependsOn = "bazel-tests"
+	}
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			bk.Agent("queue", "bazel"),
-			// bk.DependsOn("bazel-tests"),
+			bk.DependsOn(dependsOn),
 			bk.Key(stepKey),
 			bk.Env("PUSH_VERSION", version),
 			bk.Env("CANDIDATE_ONLY", candidate),
