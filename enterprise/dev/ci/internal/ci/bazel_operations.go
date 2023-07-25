@@ -46,18 +46,22 @@ func bazelCmd(args ...string) string {
 	return strings.Join(Cmd, " ")
 }
 
+// Used in default run type
 func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
 	return bazelPushImagesCmd(version, true, "bazel-tests")
 }
 
+// Used in default run type
 func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
 	return bazelPushImagesCmd(version, false, "bazel-tests")
 }
 
+// Used in CandidateNoTest run type
 func bazelPushImagesCandidatesNoTest(version string) func(*bk.Pipeline) {
 	return bazelPushImagesCmd(version, true, "pipeline-gen")
 }
 
+// Used in CandidateNoTest run type
 func bazelPushImagesFinalNoTest(version string) func(*bk.Pipeline) {
 	return bazelPushImagesCmd(version, false, "bazel-push-images-candidate")
 }
