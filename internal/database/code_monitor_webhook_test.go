@@ -146,6 +146,8 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 		ctx1 := actor.WithActor(ctx, actor.FromUser(uid1))
 		uid2 := insertTestUser(ctx, t, db, "u2", false)
 		ctx2 := actor.WithActor(ctx, actor.FromUser(uid2))
+		uid3 := insertTestUser(ctx, t, db, "u3", true)
+		ctx3 := actor.WithActor(ctx, actor.FromUser(uid3))
 		fixtures := s.insertTestMonitor(ctx1, t)
 		_ = s.insertTestMonitor(ctx2, t)
 
@@ -159,6 +161,10 @@ func TestCodeMonitorStoreWebhooks(t *testing.T) {
 		// User2 cannot update it
 		_, err = s.UpdateWebhookAction(ctx2, wa.ID, true, true, "https://truer.com")
 		require.Error(t, err)
+
+		// User3 can update it
+		_, err = s.UpdateWebhookAction(ctx3, wa.ID, true, true, "https://false.com")
+		require.NoError(t, err)
 
 		wa, err = s.GetWebhookAction(ctx1, wa.ID)
 		require.NoError(t, err)

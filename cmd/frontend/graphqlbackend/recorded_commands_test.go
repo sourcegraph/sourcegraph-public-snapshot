@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRecordedCommandsResolver(t *testing.T) {
@@ -23,6 +24,41 @@ func TestRecordedCommandsResolver(t *testing.T) {
 	timeFormat := "2006-01-02T15:04:05Z"
 	startTime, err := time.Parse(timeFormat, "2023-07-20T15:04:05Z")
 	require.NoError(t, err)
+
+	db := database.NewMockDB()
+
+	repoName := "github.com/sourcegraph/sourcegraph"
+	backend.Mocks.Repos.GetByName = func(context.Context, api.RepoName) (*types.Repo, error) {
+		return &types.Repo{Name: api.RepoName(repoName)}, nil
+	}
+	t.Cleanup(func() {
+		backend.Mocks = backend.MockServices{}
+	})
+
+	// When gitRecorder isn't set, we return an empty list.
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Query: `
+				{
+					repository(name: "github.com/sourcegraph/sourcegraph") {
+						recordedCommands {
+							start
+							duration
+							command
+							dir
+							path
+						}
+					}
+				}
+			`,
+		ExpectedResult: `
+				{
+					"repository": {
+						"recordedCommands": []
+					}
+				}
+			`,
+	})
 
 	cmd1 := wrexec.RecordedCommand{
 		Start:    startTime,
@@ -48,15 +84,6 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
 	t.Cleanup(func() { conf.Mock(nil) })
-	db := database.NewMockDB()
-
-	repoName := "github.com/sourcegraph/sourcegraph"
-	backend.Mocks.Repos.GetByName = func(context.Context, api.RepoName) (*types.Repo, error) {
-		return &types.Repo{Name: api.RepoName(repoName)}, nil
-	}
-	t.Cleanup(func() {
-		backend.Mocks = backend.MockServices{}
-	})
 
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)

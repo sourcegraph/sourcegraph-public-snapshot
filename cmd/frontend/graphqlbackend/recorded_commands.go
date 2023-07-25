@@ -12,6 +12,9 @@ import (
 
 func (r *RepositoryResolver) RecordedCommands(ctx context.Context) ([]RecordedCommandResolver, error) {
 	recordingConf := conf.Get().SiteConfig().GitRecorder
+	if recordingConf == nil {
+		return []RecordedCommandResolver{}, nil
+	}
 	store := rcache.NewFIFOList(wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
 	empty, err := store.IsEmpty()
 	if err != nil {

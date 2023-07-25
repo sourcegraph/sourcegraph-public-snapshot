@@ -109,6 +109,8 @@ type RepoEmbeddingJobsStore interface {
 
 	UpdateRepoEmbeddingJobStats(ctx context.Context, jobID int, stats *EmbedRepoStats) error
 	GetRepoEmbeddingJobStats(ctx context.Context, jobID int) (EmbedRepoStats, error)
+
+	CountRepoEmbeddings(ctx context.Context) (int, error)
 }
 
 var _ basestore.ShareableStore = &repoEmbeddingJobsStore{}
@@ -544,3 +546,13 @@ WHERE
 	AND
 	state IN ('queued', 'processing')
 `
+
+const countRepoEmbeddingsQuery = `
+SELECT COUNT(DISTINCT repo_id) AS count
+FROM repo_embedding_jobs
+WHERE state = 'completed';
+`
+
+func (s *repoEmbeddingJobsStore) CountRepoEmbeddings(ctx context.Context) (int, error) {
+	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(countRepoEmbeddingsQuery)))
+}

@@ -90,27 +90,28 @@ func TestAddrForRepo(t *testing.T) {
 			},
 		})
 
+		emptyRepoName := api.RepoName("")
 		testCases := []struct {
 			name                         string
-			getPoolRepoFuncDefaultReturn func() (*types.PoolRepo, error)
+			getPoolRepoFuncDefaultReturn func() (api.RepoName, bool, error)
 			expectedShardParentRepo      string
 			expectedShardForkedRepo      string
 		}{
 			{
 				name:                         "valid pool repo",
-				getPoolRepoFuncDefaultReturn: func() (*types.PoolRepo, error) { return &types.PoolRepo{RepoName: parentRepo}, nil },
+				getPoolRepoFuncDefaultReturn: func() (api.RepoName, bool, error) { return parentRepo, true, nil },
 				expectedShardParentRepo:      shardParentRepo,
 				expectedShardForkedRepo:      shardParentRepo,
 			},
 			{
 				name:                         "no pool repo",
-				getPoolRepoFuncDefaultReturn: func() (*types.PoolRepo, error) { return nil, nil },
+				getPoolRepoFuncDefaultReturn: func() (api.RepoName, bool, error) { return emptyRepoName, false, nil },
 				expectedShardParentRepo:      shardParentRepo,
 				expectedShardForkedRepo:      shardForkedRepo,
 			},
 			{
 				name:                         "get pool repo returns an error",
-				getPoolRepoFuncDefaultReturn: func() (*types.PoolRepo, error) { return nil, errors.New("mocked error") },
+				getPoolRepoFuncDefaultReturn: func() (api.RepoName, bool, error) { return emptyRepoName, false, errors.New("mocked error") },
 				expectedShardParentRepo:      shardParentRepo,
 				expectedShardForkedRepo:      shardForkedRepo,
 			},
@@ -136,7 +137,7 @@ func TestAddrForRepo(t *testing.T) {
 				db.ReposFunc.SetDefaultReturn(repos)
 
 				gs := database.NewMockGitserverRepoStore()
-				gs.GetPoolRepoFunc.SetDefaultReturn(tc.getPoolRepoFuncDefaultReturn())
+				gs.GetPoolRepoNameFunc.SetDefaultReturn(tc.getPoolRepoFuncDefaultReturn())
 				db.GitserverReposFunc.SetDefaultReturn(gs)
 
 				require.Equal(t, tc.expectedShardParentRepo, ga.AddrForRepo(ctx, logger, "gitserver", parentRepo))
