@@ -51,6 +51,9 @@ replace (
 	github.com/prometheus/common => github.com/prometheus/common v0.32.1
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
+
+	// TODO(burmudar): wait till Gazelle fixes dependence on this
+	golang.org/x/tools => golang.org/x/tools v0.10.0
 )
 
 // Status unclear replace directives
