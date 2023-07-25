@@ -45,6 +45,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - A bug where we would temporarily use much more memory than needed during embeddings fetching. [#54972](https://github.com/sourcegraph/sourcegraph/pull/54972)
+- Problem with passing multi-line credentials to Coursier in JVM packages resolution. [#55113](https://github.com/sourcegraph/sourcegraph/pull/55113)
 
 ### Changed
 
