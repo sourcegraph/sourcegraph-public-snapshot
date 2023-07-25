@@ -215,6 +215,28 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.AppInsiders:
 		ops = operations.NewSet(addAppReleaseSteps(c, true))
 
+	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		ops.Merge(imageBuildOps)
+
+		publishOpsDev := operations.NewNamedSet("Publish candidate images")
+		publishOpsDev.Append(bazelPushImagesCandidatesNoTest(c.Version))
+		ops.Merge(publishOpsDev)
+
+		ops.Append(wait)
+
+		// Add final artifacts
+		publishOps := operations.NewNamedSet("Publish images")
+		// Add final artifacts
+		for _, dockerImage := range legacyDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+
+		// Final Bazel images
+		publishOps.Append(bazelPushImagesFinalNoTest(c.Version))
+		ops.Merge(publishOps)
+
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
 		// see https://handbook.sourcegraph.com/engineering/deployments#building-docker-images-for-a-specific-branch
