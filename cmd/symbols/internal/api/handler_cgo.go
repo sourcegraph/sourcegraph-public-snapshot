@@ -110,10 +110,6 @@ func newLocalCodeIntelSender(sendFunc func(symbols []*proto.LocalCodeIntelRespon
 }
 
 func (s *localCodeIntelSender) Reset() {
-	if s.buf == nil {
-		return
-	}
-
 	s.buf = s.buf[:0]
 }
 
