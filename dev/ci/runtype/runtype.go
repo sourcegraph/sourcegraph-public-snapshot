@@ -211,12 +211,10 @@ func (t RunType) String() string {
 		return "Browser extension release build"
 	case VsceReleaseBranch:
 		return "VS Code extension release build"
-
 	case MainBranch:
 		return "Main branch"
 	case MainDryRun:
 		return "Main dry run"
-
 	case ImagePatch:
 		return "Patch image"
 	case ImagePatchNoTest:
