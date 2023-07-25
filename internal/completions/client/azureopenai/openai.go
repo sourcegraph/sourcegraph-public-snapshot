@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -67,7 +68,7 @@ func (c *azureCompletionClient) Stream(
 	}
 	defer resp.Body.Close()
 
-	dec := NewDecoder(resp.Body)
+	dec := openai.NewDecoder(resp.Body)
 	var content string
 	for dec.Scan() {
 		if ctx.Err() != nil && ctx.Err() == context.Canceled {
