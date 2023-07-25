@@ -48,9 +48,6 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
 
     let returnTo = getReturnTo(location)
     if (authenticatedUser) {
-        if (context.sourcegraphDotComMode && returnTo === '/search') {
-            returnTo = '/get-cody'
-        }
         return <Navigate to={returnTo} replace={true} />
     }
 
