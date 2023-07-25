@@ -180,7 +180,6 @@ type FileFilters struct {
 }
 
 type batchInserter func(metadata []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error
-type truncate func(count int) error
 
 type FlushResults struct {
 	size  int
