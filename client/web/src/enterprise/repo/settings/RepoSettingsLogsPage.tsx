@@ -34,13 +34,11 @@ export interface RepoSettingsLogsPageProps {
     repo: SettingsAreaRepositoryFields
 }
 
-type ActiveTabType = typeof LogsPageTabs[keyof typeof LogsPageTabs]
-
 /**
  * The repository settings log page.
  */
 export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) => {
-    const [activeTab, setActiveTab] = useState<ActiveTabType>(LogsPageTabs.COMMANDS)
+    const [activeTab, setActiveTab] = useState<number>(LogsPageTabs.COMMANDS)
     useEffect(() => eventLogger.logPageView('RepoSettingsLogs'))
     const location = useLocation()
 
@@ -48,10 +46,10 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
         const searchParams = new URLSearchParams(location.search)
         if (searchParams.has('activeTab')) {
             switch (searchParams.get('activeTab')) {
-                case LogsPageTabs.SYNCLOGS:
+                case LogsPageTabs.SYNCLOGS.toString():
                     setActiveTab(LogsPageTabs.SYNCLOGS)
                     break
-                case LogsPageTabs.COMMANDS:
+                case LogsPageTabs.COMMANDS.toString():
                 default:
                     setActiveTab(LogsPageTabs.COMMANDS)
             }
@@ -60,41 +58,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
         }
     }, [location.search])
 
-    return (
-        <>
-            <PageHeader>
-                <PageTitle>Logs</PageTitle>
-            </PageHeader>
-
-            <Container>
-                <Tabs activeTab={activeTab}>
-                    <TabList>
-                        <Tab>Sync logs</Tab>
-                        <Tab>Commands</Tab>
-                    </TabList>
-
-                    <TabPanels>
-                        <TabPanel>
-                            <LastSyncOutput repo={repo} />
-                        </TabPanel>
-
-                        <TabPanel>
-                            <CommandsLogs repo={repo} />
-                        </TabPanel>
-                    </TabPanels>
-                </Tabs>
-            </Container>
-        </>
-    )
-}
-
-const LastSyncOutput = (props: { repo: SettingsAreaRepositoryFields }) => {
-    const output =
-        (props.repo.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
-        props.repo.mirrorInfo.lastSyncOutput ||
-        'No logs yet.'
-    const searchParams = new URLSearchParams(location.search)
-    console.log(searchParams.has('tabIndex'), '<====')
+    const handleActiveTab = (index: number): void => setActiveTab(index)
 
     return (
         <>
@@ -106,9 +70,15 @@ const LastSyncOutput = (props: { repo: SettingsAreaRepositoryFields }) => {
                     <Input value={repo.name} readOnly={true} className="mb-0" />
                 </div>
 
-                <Tabs size="medium" lazy={true} className={styles.tabContainer}>
+                <Tabs
+                    size="medium"
+                    lazy={true}
+                    className={styles.tabContainer}
+                    index={activeTab}
+                    onChange={handleActiveTab}
+                >
                     <TabList>
-                        <Tab>Last Git commands</Tab>
+                        <Tab>Last repo commands</Tab>
                         <Tab>Last sync output</Tab>
                     </TabList>
 
@@ -118,7 +88,7 @@ const LastSyncOutput = (props: { repo: SettingsAreaRepositoryFields }) => {
                         </TabPanel>
 
                         <TabPanel>
-                            <LastRepoGitLogs repo={repo} />
+                            <LastSyncOutput repo={repo} />
                         </TabPanel>
                     </TabPanels>
                 </Tabs>
@@ -189,11 +159,11 @@ const LastGitCommandNode: FC<LastGitCommandNodeProps> = ({ command, name }) => {
     )
 }
 
-interface LastRepoGitLogsProps {
+interface LastSyncOutputProps {
     repo: SettingsAreaRepositoryFields
 }
 
-const LastRepoGitLogs: FC<LastRepoGitLogsProps> = props => {
+const LastSyncOutput: FC<LastSyncOutputProps> = props => {
     const output =
         (props.repo.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
         props.repo.mirrorInfo.lastSyncOutput ||

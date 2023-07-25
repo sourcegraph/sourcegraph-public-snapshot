@@ -1,4 +1,4 @@
 export const LogsPageTabs = {
-    COMMANDS: 1,
-    SYNCLOGS: 2,
+    COMMANDS: 0,
+    SYNCLOGS: 1,
 } as const
