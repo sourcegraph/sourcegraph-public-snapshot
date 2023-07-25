@@ -77,10 +77,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
 
                     <TabPanels>
                         <TabPanel>
-                            <LastRepoCommands
-                                mirrorInfo={repo.mirrorInfo}
-                                recordedCommands={repo.recordedCommands.slice(0, 5)}
-                            />
+                            <LastRepoCommands mirrorInfo={repo.mirrorInfo} recordedCommands={repo.recordedCommands} />
                         </TabPanel>
 
                         <TabPanel>
