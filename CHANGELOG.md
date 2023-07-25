@@ -33,6 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Fixed an embeddings job scheduler bug where if we cannot resolve one of the repositories or its default branch then all repositories submitted will not have their respective embeddings job enqueued. Embeddings job scheduler will now continue to schedule jobs for subsequent repositories in the submitted repositories set. [#54701](https://github.com/sourcegraph/sourcegraph/pull/54701)
 - Creation of GitHub Apps will now respect system certificate authorities when specifying certificates for the tls.external site configuration. [#55084](https://github.com/sourcegraph/sourcegraph/pull/55084)
+- SCIP indexes are now ingested in a streaming fashion, eliminating out-of-memory errors in most cases, even when uploading very large indexes (1GB+ uncompressed). [#53828](https://github.com/sourcegraph/sourcegraph/pull/53828)
 
 ### Changed
 
