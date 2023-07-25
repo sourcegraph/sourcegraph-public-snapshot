@@ -177,8 +177,13 @@ genrule(
     outs = ["reference.md"],
     cmd = """
     set -x
-    $(location :sg) --disable-overwrite --disable-analytics --skip-auto-update --config sg.config.yaml \
-            help --use-cwd --full --output $@
+    SG_FORCE_REPO_ROOT="$$(pwd)" $(location :sg) \
+            --no-dev-private \
+            --disable-overwrite \
+            --disable-analytics \
+            --skip-auto-update \
+            --config sg.config.yaml \
+            help --full --output $@
     """,
     tools = [":sg"],
     visibility = ["//visibility:public"],
