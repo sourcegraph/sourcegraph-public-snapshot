@@ -208,38 +208,6 @@ func (s *gitserverRepoStore) GetPoolRepoName(ctx context.Context, repoName api.R
 	return api.RepoName(poolRepoName), ok, errors.Wrap(err, "GetPoolRepoName failed")
 }
 
-// const getPoolRepoNameQueryFmtStr = `
-// SELECT
-// 	name,
-// 	uri
-// FROM
-// 	repo
-// 	JOIN gitserver_repos AS gs ON id = gs.repo_id
-// WHERE
-// 	gs.repo_id = (
-// 		SELECT
-// 			pool_repo_id
-// 		FROM
-// 			repo
-// 			JOIN gitserver_repos AS gs ON id = gs.repo_id
-// 		WHERE
-// 			name = %s);
-// `
-
-// func (s *gitserverRepoStore) GetPoolRepo(ctx context.Context, repoURI api.RepoName) (*types.PoolRepo, error) {
-// 	row := s.QueryRow(ctx, sqlf.Sprintf(getPoolRepoQueryFmtStr, repoURI))
-
-// 	var poolRepo types.PoolRepo
-// 	if err := row.Scan(&poolRepo.RepoName, &poolRepo.RepoURI); err != nil {
-// 		if errors.Is(err, sql.ErrNoRows) {
-// 			return nil, nil
-// 		}
-// 		return nil, errors.Wrap(err, "GetPoolRepoURI: failed to scan")
-// 	}
-
-// 	return &poolRepo, nil
-// }
-
 const updateGitserverReposQueryFmtstr = `
 UPDATE gitserver_repos AS gr
 SET
