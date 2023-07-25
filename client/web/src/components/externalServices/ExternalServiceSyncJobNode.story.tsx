@@ -22,6 +22,7 @@ export const Default: Story = () => (
     <div>
         {Object.values(ExternalServiceSyncJobState).map(state => (
             <ExternalServiceSyncJobNode
+                key={state}
                 onUpdate={new Subject()}
                 node={{
                     __typename: 'ExternalServiceSyncJob',
