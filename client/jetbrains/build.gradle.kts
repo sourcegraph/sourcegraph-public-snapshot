@@ -48,6 +48,11 @@ spotless {
         removeUnusedImports()
         googleJavaFormat()
     }
+    kotlin {
+        target("src/*/kotlin/**/*.kt")
+        trimTrailingWhitespace()
+        ktlint()
+    }
 }
 
 java {
