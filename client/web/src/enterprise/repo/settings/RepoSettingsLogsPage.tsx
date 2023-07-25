@@ -51,7 +51,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
                 <Tabs size="medium" lazy={true} className={styles.tabContainer}>
                     <TabList>
                         <Tab>Last Git commands</Tab>
-                        <Tab>Last Git logs</Tab>
+                        <Tab>Last sync output</Tab>
                     </TabList>
 
                     <TabPanels>
