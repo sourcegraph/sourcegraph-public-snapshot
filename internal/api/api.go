@@ -16,6 +16,8 @@ import (
 // RepoID is the unique identifier for a repository.
 type RepoID int32
 
+const EmptyRepoID = RepoID(0)
+
 // RepoName is the name of a repository, consisting of one or more "/"-separated path components.
 //
 // Previously, this was called RepoURI.

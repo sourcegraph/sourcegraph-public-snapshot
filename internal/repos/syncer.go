@@ -888,7 +888,7 @@ func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, svc *types.Ex
 	// TODO: Decrypt and read repositoryPathPattern from config svc.Config.
 	poolRepoName := reposource.GitHubRepoName("", "github.com", parentRepo.NameWithOwner)
 
-	if !s.DeduplicatedForksIndex.Contains(string(poolRepoName)) {
+	if !s.DeduplicatedForksSet.Contains(string(poolRepoName)) {
 		return nil
 	}
 

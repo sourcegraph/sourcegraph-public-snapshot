@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"math/rand"
 	"net/http"
 	"os"
 	"os/exec"
@@ -441,7 +442,6 @@ func (s *Server) Janitor(ctx context.Context, interval time.Duration) {
 // expected to run in a background goroutine. We perform a full sync if the known
 // gitserver addresses has changed since the last run. Otherwise, we only sync
 // repos that have not yet been assigned a shard.
-// TODO: It seems like we don't cleanly exit from SyncRepoState on restarts. FIXME by passing context and using ctx.Done().
 func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int) {
 	var previousAddrs string
 	var previousPinned string
@@ -689,17 +689,21 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitserverAddresses, batc
 
 			// NOTE: This fork has been configured to use deduplicated storage so will be present on
 			// the same shard as the parent repo.
-			if repo.GitserverRepo.PoolRepoID != nil {
-				// HACK: This has to be when Server is initialised. But we don't have a constructor yet, so this
-				// is doable for now and also won't have to update all the tests immediately.
-				if s.deduplicatedForksAddressCache == nil {
-					s.deduplicatedForksAddressCache = make(map[api.RepoName]string)
-				}
 
-				if _, ok := s.deduplicatedForksAddressCache[repo.Name]; ok {
-					// Use parent's addr.
-				}
-			}
+			// FIXME NOTE IMPORTANT Probably don't need this code block below, because now
+			// addrForRepo will return the address. Use the cache if available.
+
+			// if repo.GitserverRepo.PoolRepoID != api.EmptyRepoID {
+			// 	// HACK: This has to be when Server is initialised. But we don't have a constructor yet, so this
+			// 	// is doable for now and also won't have to update all the tests immediately.
+			// 	if s.DeduplicatedForksSet == nil {
+			// 		s.DeduplicatedForksSet = types.NewRepoURICache(conf.GetDeduplicatedForksIndex())
+			// 	}
+
+			// 	if s.DeduplicatedForksSet.Contains(string(repo.Name)) {
+			// 		// Use parent's addr.
+			// 	}
+			// }
 
 			// Ensure we're only dealing with repos we are responsible for.
 			addr := s.addrForRepo(ctx, repo.Name, gitServerAddrs)
@@ -2019,25 +2023,22 @@ func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoN
 
 	poolRepoName := repo
 	if dedupeWhich == dedupeFork {
-		poolRepo, err := s.DB.GitserverRepos().GetPoolRepo(ctx, repo)
+		poolRepo, ok, err := s.DB.GitserverRepos().GetPoolRepoName(ctx, repo)
 		if err != nil {
 			return errors.Wrap(err, "failed to determine relationship between forked and parent repo (this repo will not be configured as a git-alternate and will not benefit from deduplicated storage)")
 		}
 
-		poolRepoName = poolRepo.RepoName
+		// TODO: Figure out this cleanup thingy.
+		if ok {
+			poolRepoName = poolRepo
+		}
 	}
 
 	// "/data/repos/.pool/github.com/owner/this-repo/.git/objects"
 	poolRepoObjectsFilePath := filepath.Join(string(s.poolDir(poolRepoName)), "objects")
 
-	// FIXME: Directly return and skip the error checking.
-	// FIXME: Find a different file permissions bit.
-	if err := os.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), os.ModePerm); err != nil {
-		return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
-	}
-
-	return nil
-
+	err := os.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), os.FileMode(0644))
+	return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
 }
 
 // TODO: Maybe we don't need this for new clones. Investigate side effects of disabling this on the clone path.
@@ -2095,9 +2096,9 @@ func (c *cloneOptions) DeepCopy() *cloneOptions {
 	d := c.DeduplicatedCloneOptions
 	if d != nil {
 		opts.DeduplicatedCloneOptions = &deduplicatedCloneOptions{
-			which:    d.which,
-			poolDir:  d.poolDir,
-			poolRepo: d.poolRepo,
+			dedupeCloneType: d.dedupeCloneType,
+			poolDir:         d.poolDir,
+			poolRepo:        d.poolRepo,
 		}
 
 		// UGH: The fact that deep copying progressPipe is not looking such a great idea is a
@@ -2120,15 +2121,17 @@ const (
 )
 
 type deduplicatedCloneOptions struct {
-	// FIXME: Find a better name.
-	which    dedupeType
-	poolDir  common.GitDir
-	poolRepo types.PoolRepo
+	dedupeCloneType dedupeType
+	poolDir         common.GitDir
+	poolRepo        types.PoolRepo
 
 	// progressPipe *struct {
 	// 	pr *io.PipeReader
 	// 	pw *io.PipeWriter
 	// }
+	//
+
+	// TODO: Add paretn information here all the time.
 }
 
 // FIXME: A better name please
@@ -2148,18 +2151,19 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *typ
 	//
 	// Otherwise this may be a fork, so we check in the DB to see if this repo is a fork and if its
 	// parent is listed in for deduplication.
-	if s.DeduplicatedForksIndex.Contains(repo.URI) {
+	if s.DeduplicatedForksSet.Contains(repo.URI) {
 		poolDir := s.poolDir(repo.Name)
-		return &deduplicatedCloneOptions{which: dedupeSource, poolDir: poolDir}, nil
+		return &deduplicatedCloneOptions{dedupeCloneType: dedupeSource, poolDir: poolDir}, nil
 	}
 
-	poolRepo, err := s.DB.GitserverRepos().GetPoolRepo(ctx, repo.Name)
+	// TODO: Rename poolRepo to poolRepoName.
+	poolRepo, ok, err := s.DB.GitserverRepos().GetPoolRepoName(ctx, repo.Name)
 	if err != nil {
 		logger.Warn("failed to get by name from DB (repo will be cloned without deduplicated storage if this was supposed to be deduplicated)", log.Error(err))
 		return nil, nil
 	}
 
-	if poolRepo == nil {
+	if !ok {
 		return nil, nil
 	}
 
@@ -2167,14 +2171,16 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *typ
 	// have removed a repo from the config but the code host sync may not have been run or completed
 	// yet and this code path is being executed. So we want to be sure that this fork's parent
 	// repository is enlisted for deduplication.
-	if !s.DeduplicatedForksIndex.Contains(poolRepo.RepoURI) {
+	if !s.DeduplicatedForksSet.Contains(string(poolRepo)) {
 		return nil, nil
 	}
 
 	return &deduplicatedCloneOptions{
-		which:    dedupeFork,
-		poolDir:  s.poolDir(poolRepo.RepoName),
-		poolRepo: *poolRepo,
+		dedupeCloneType: dedupeFork,
+		poolDir:         s.poolDir(poolRepo),
+
+		// FIXME: Most likely we don't need to assign this type anymore. And can just use the poolRepoName directly.
+		poolRepo: types.PoolRepo{RepoName: poolRepo},
 	}, nil
 }
 
@@ -2259,7 +2265,7 @@ func (s *Server) cloneRepo(ctx context.Context, repoName api.RepoName, opts *clo
 		return "", err
 	}
 
-	if err := syncer.IsCloneable(ctx, repo, remoteURL); err != nil {
+	if err := syncer.IsCloneable(ctx, repo.Name, remoteURL); err != nil {
 		redactedErr := newURLRedactor(remoteURL).redact(err.Error())
 		return "", errors.Errorf("error cloning repo: repo %s not cloneable: %s", repoName, redactedErr)
 	}
@@ -2322,6 +2328,8 @@ func newProgressPipe() *progressPipe {
 	r, w := io.Pipe()
 	return &progressPipe{reader: r, writer: w}
 }
+
+var backoffJitterGenerator = rand.New(rand.NewSource(time.Now().UnixNano()))
 
 func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions, progressPipe *progressPipe) (err error) {
 	logger := s.Logger.Scoped("doClone", "").With(
@@ -2393,7 +2401,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pw := progressPipe.writer
 
 	if opts != nil {
-		if opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.which != dedupePool {
+		if opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.dedupeCloneType != dedupePool {
 			go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
 
 			// 1. Check if poolDir exists.
@@ -2416,7 +2424,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	// If this repo is meant to be deduplicated, let us first check if the pool repo exists or not.
 	// If it doesn't clone it out of step and then continue with git fetch in this repo which will
 	// be efficient because this won't fetch the objects already in the pool repo.
-	if isDedupeClone && opts.DeduplicatedCloneOptions.which != dedupePool {
+	if isDedupeClone && opts.DeduplicatedCloneOptions.dedupeCloneType != dedupePool {
 
 		// Update or create pool.
 		//
@@ -2425,43 +2433,84 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		_, err := os.Stat(string(poolDir))
 		if err != nil {
 			if errors.Is(err, os.ErrNotExist) {
-				// Clone pool
+				// Clone the pool repository.
 
-				// FIXME: Add commenton how this is safe from a race condition.
-				//
-				// TODO: Iterate on this and make this a backoff and retry instead of returning an error (we don't want these errors to pop out ....)
-				poolLock, ok := s.locker.TryAcquire(poolDir, "starting pool repo clone")
-				if !ok {
-					// It's better to abort this clone operation for now since pool is already being
-					// cloned by someone else (another fork or parent might be being cloned first
-					// which would have triggered the pool repo to be created.)
-					//
-					// Let us error out now and let the cloning mechanism retry it again after
-					// sometime.
-					status, _ := s.locker.Status(poolDir)
-					return errors.Newf("failed to acquire lock poolDir %q, will retry soon, status %v", string(poolDir), status)
+				// Two scenarios is possible at this point. Either we are cloning a source or a
+				// forked repository with deduplication enabled. In either case, we will attempt to
+				// acquire a lock over the pool repository's directory first. Whoever gets their
+				// first will initiate the clone of the pool repository which is the expensive part
+				// of this operation. The other will backoff and wait for the lock acquisition to
+				// complete.
+
+				// Start with a backoff of 30 seconds. We double the backoff the first time so this
+				// is 15.
+				backoff := int64(15)
+
+				// The maximum time we want to wait is 80% of the GitLongCommandTimeout. We will
+				// reserve the 20% time of the GitLongCommandTimeout to "clone" our fork repository
+				// and sort our own housekeeping in the leftover time, but if the pool repository's
+				// directory is still locked for more than the 80% threshold, we might just return
+				// and show the error to the user.
+				maxWait := 0.8 * conf.GitLongCommandTimeout().Seconds()
+				var poolLock *RepositoryLock
+				var ok bool
+				for {
+					poolLock, ok = s.locker.TryAcquire(poolDir, "starting pool repo clone")
+					if !ok {
+						// It's better to abort this clone operation for now since pool is already being
+						// cloned by someone else (another fork or parent might be being cloned first
+						// which would have triggered the pool repo to be created.)
+						//
+						// Let us error out now and let the cloning mechanism retry it again after
+						// sometime.
+						status, _ := s.locker.Status(poolDir)
+
+						if backoff >= int64(maxWait) {
+							return &poolRepoCloneInProgress{
+								dir:            poolDir,
+								triedFor:       backoff,
+								lastLockStatus: status,
+							}
+						}
+
+						// Add a jitter of ± 5 seconds to the backoff. If there are multiple forks
+						// of the same repository happening concurrently, we don't want them all
+						// retrying on the same schedule.
+						// https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/
+						jitter := backoffJitterGenerator.Int63n(2*5) - 5
+						backoff = (backoff * 2) + jitter
+
+						logger.Warn(
+							"failed to acquire lock poolDir %q, retrying after backoff",
+							log.String("poolDir", string(poolDir)),
+							log.String("lockStatus", status),
+							log.Int64("backoff (seconds)", backoff),
+						)
+						time.Sleep(time.Duration(backoff) * time.Second)
+					}
 				}
-
-				logger.Warn("acquired lock on poolDir", log.String("poolDir", string(poolDir)))
 
 				// FIXME FIXME FIXME: Always send parent repo here and not just the current repo.
 
 				// Ensure that if the pool repo clone is being triggered by a fork, we still clone
 				// the parent repo as the pool repo.
 				poolRepoName := repo
-				if opts.DeduplicatedCloneOptions.which == dedupeFork {
+				if opts.DeduplicatedCloneOptions.dedupeCloneType == dedupeFork {
 					poolRepoName = opts.DeduplicatedCloneOptions.poolRepo.RepoName
 				}
 
 				// TODO: Maybe add a method called Copy / DeepCopy to cloneOptions.
 				poolCloneOpts := opts.DeepCopy()
-				poolCloneOpts.DeduplicatedCloneOptions.which = dedupePool
+				poolCloneOpts.DeduplicatedCloneOptions.dedupeCloneType = dedupePool
 
 				// poolCloneOpts.DeduplicatedCloneOptions.progressPipe = &struct {
 				// 	pr *io.PipeReader
 				// 	pw *io.PipeWriter
 				// }{pr: pr, pw: pw}
 
+				// TODO: Add a final check before triggering the doClone to make sure the pool
+				// repository is not already cloned. How? Check if the poolDir already exists and
+				// run a git command in the poolDir?
 				err := s.doClone(ctx, poolRepoName, poolDir, syncer, poolLock, remoteURL, poolCloneOpts, progressPipe)
 				// TODO: Do something about the error.
 				if err != nil {
@@ -2475,7 +2524,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		}
 
 		// Configure git alternate for repo.
-		if err := s.configureRepoAsGitAlternate(ctx, repo, opts.DeduplicatedCloneOptions.which, tmpPath); err != nil {
+		if err := s.configureRepoAsGitAlternate(ctx, repo, opts.DeduplicatedCloneOptions.dedupeCloneType, tmpPath); err != nil {
 			logger.Error("failed to configure reop as git-alternate, deduplicated storage will not be available for this repo", log.Error(err))
 		}
 	}
@@ -2533,7 +2582,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	}
 
 	// Set gc.auto depending on gitGCMode.
-	if opts != nil && opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.which != dedupePool {
+	if opts != nil && opts.DeduplicatedCloneOptions != nil && opts.DeduplicatedCloneOptions.dedupeCloneType != dedupePool {
 		if err := gitSetAutoGC(tmp, s); err != nil {
 			return err
 		}
@@ -2595,7 +2644,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	// }
 	//
 
-	if isDedupeClone && opts.DeduplicatedCloneOptions.which != dedupePool {
+	if isDedupeClone && opts.DeduplicatedCloneOptions.dedupeCloneType != dedupePool {
 		if err := optimizeForGitAlternateRepo(ctx, s.dir(repo)); err != nil {
 			logger.Error("failed to optimise repo, deduplicated storage will not be available", log.Error(err))
 		}
@@ -3379,4 +3428,17 @@ func isAbsoluteRevision(s string) bool {
 		}
 	}
 	return true
+}
+
+type poolRepoCloneInProgress struct {
+	triedFor       int64
+	dir            common.GitDir
+	lastLockStatus string
+}
+
+func (e *poolRepoCloneInProgress) Error() string {
+	return fmt.Sprintf(
+		"failed to acquire lock on pool dir, dir: %q, tried for: %d seconds, last lock status: %q",
+		e.dir, e.triedFor, e.lastLockStatus,
+	)
 }
