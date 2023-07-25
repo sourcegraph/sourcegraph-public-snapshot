@@ -213,7 +213,7 @@ func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, ar
 	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
 }
 
-func (r *Resolver) GetPreciseContext(ctx context.Context, input *GetPreciseContextInput) (PreciseContextResolver, error) {
+func (r *Resolver) GetPreciseContext(ctx context.Context, input *GetPreciseContextInput) (PreciseContextOutputResolver, error) {
 	return r.contextRootResolver.GetPreciseContext(ctx, input)
 }
 

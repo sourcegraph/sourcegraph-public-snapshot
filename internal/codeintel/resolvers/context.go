@@ -5,7 +5,7 @@ import (
 )
 
 type ContextServiceResolver interface {
-	GetPreciseContext(ctx context.Context, input *GetPreciseContextInput) (PreciseContextResolver, error)
+	GetPreciseContext(ctx context.Context, input *GetPreciseContextInput) (PreciseContextOutputResolver, error)
 }
 
 type GetPreciseContextInput struct {
@@ -32,7 +32,7 @@ type ActiveFileSelectionRangeInput struct {
 	EndCharacter   int32
 }
 
-type PreciseContextOutputResolver interface {
+type PreciseContextResolver interface {
 	ScipSymbolName() string
 	FuzzySymbolName() string
 	RepositoryName() string
@@ -40,6 +40,6 @@ type PreciseContextOutputResolver interface {
 	FilePath() string
 }
 
-type PreciseContextResolver interface {
-	Context() []PreciseContextOutputResolver
+type PreciseContextOutputResolver interface {
+	Context() []PreciseContextResolver
 }

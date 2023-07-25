@@ -19,7 +19,7 @@ func NewRootResolver(observationCtx *observation.Context, svc ContextService) re
 	}
 }
 
-func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstubs.GetPreciseContextInput) (resolverstubs.PreciseContextResolver, error) {
+func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstubs.GetPreciseContextInput) (resolverstubs.PreciseContextOutputResolver, error) {
 	if err := validateGetPreciseContextInput(input); err != nil {
 		return nil, err
 	}
@@ -35,7 +35,7 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 		return nil, err
 	}
 
-	resolvers := make([]resolverstubs.PreciseContextOutputResolver, 0, len(context))
+	resolvers := make([]resolverstubs.PreciseContextResolver, 0, len(context))
 	for _, c := range context {
 		resolvers = append(resolvers, &preciseContextResolver{
 			scipSymbolName:  c.ScipSymbolName,
@@ -49,10 +49,10 @@ func (r *rootResolver) GetPreciseContext(ctx context.Context, input *resolverstu
 }
 
 type preciseContextOutputResolver struct {
-	context []resolverstubs.PreciseContextOutputResolver
+	context []resolverstubs.PreciseContextResolver
 }
 
-func (r *preciseContextOutputResolver) Context() []resolverstubs.PreciseContextOutputResolver {
+func (r *preciseContextOutputResolver) Context() []resolverstubs.PreciseContextResolver {
 	return r.context
 }
 

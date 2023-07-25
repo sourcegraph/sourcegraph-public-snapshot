@@ -2,7 +2,7 @@ extend type Query {
     """
     EXPERIMENTAL: Returns the most relevant SCIP symbol information based on a list and the current state of the editor.
     """
-    getPreciseContext(input: PreciseContextInput!): PreciseContext!
+    getPreciseContext(input: PreciseContextInput!): PreciseContextOutput!
 }
 
 """
@@ -54,19 +54,19 @@ input ActiveFileSelectionRange {
 }
 
 """
-PreciseContext provides code intelligence context.
+PreciseContextOutput provides code intelligence context.
 """
-type PreciseContext {
+type PreciseContextOutput {
     """
     The precise context data.
     """
-    context: [PreciseContextOutput!]!
+    context: [PreciseContext!]!
 }
 
 """
-PreciseContextOutput provides code intelligence information for a snippet of code.
+PreciseContext provides code intelligence information for a snippet of code.
 """
-type PreciseContextOutput {
+type PreciseContext {
     """
     The scip symbol name.
     """
