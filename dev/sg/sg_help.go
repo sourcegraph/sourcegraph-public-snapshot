@@ -24,12 +24,16 @@ var helpCommand = &cli.Command{
 		&cli.BoolFlag{
 			Name:    "full",
 			Aliases: []string{"f"},
-			Usage:   "generate full markdown sg reference",
+			Usage:   "Generate full markdown sg reference",
 		},
 		&cli.StringFlag{
 			Name:      "output",
 			TakesFile: true,
-			Usage:     "write reference to `file`",
+			Usage:     "Write reference to `file`",
+		},
+		&cli.BoolFlag{
+			Name:  "use-cwd",
+			Usage: "Use the current directory instead of checking that we're in sourcegraph/sourcegraph repository.",
 		},
 	},
 	Action: func(cmd *cli.Context) error {
@@ -52,12 +56,13 @@ var helpCommand = &cli.Command{
 			return err
 		}
 
+		rootDir, err := determineRootDir(cmd)
+		if err != nil {
+			return err
+		}
+
 		if output := cmd.String("output"); output != "" {
-			root, err := root.RepositoryRoot()
-			if err != nil {
-				return err
-			}
-			output = filepath.Join(root, output)
+			output = filepath.Join(rootDir, output)
 
 			if err := os.WriteFile(output, []byte(generatedSgReferenceHeader+"\n\n"+doc), 0644); err != nil {
 				return errors.Wrapf(err, "failed to write reference to %q", output)
@@ -67,4 +72,23 @@ var helpCommand = &cli.Command{
 
 		return std.Out.WriteMarkdown(doc)
 	},
+}
+
+func determineRootDir(cmd *cli.Context) (string, error) {
+	var dir string
+	if cmd.Bool("use-cwd") {
+		wd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		dir = wd
+	} else {
+		repoRoot, err := root.RepositoryRoot()
+		if err != nil {
+			return "", err
+		}
+		dir = repoRoot
+	}
+
+	return dir, nil
 }
