@@ -48,7 +48,7 @@ func main() {
 var (
 	BuildCommit = "dev"
 
-	DisableDevPrivateCheck = false
+	NoDevPrivateCheck = false
 
 	// configFile is the path to use with sgconf.Get - it must not be used before flag
 	// initialization.
@@ -144,8 +144,8 @@ var sg = &cli.App{
 			Name:        "no-dev-private",
 			Usage:       "disable checking for dev-private - only useful for automation or ci",
 			EnvVars:     []string{"SG_NO_DEV_PRIVATE"},
-			Value:       true,
-			Destination: &DisableDevPrivateCheck,
+			Value:       false,
+			Destination: &NoDevPrivateCheck,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
