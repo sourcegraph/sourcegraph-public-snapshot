@@ -267,6 +267,7 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
 * executor-patch-notest - Build executor without testing
+* docker-images-candidates-notest - Build all candidates without testing
 * backend-integration - Backend integration tests
 * bazel-do - Bazel command
 

@@ -338,6 +338,21 @@ Base pipeline (more steps might be included based on branch changes):
 - Publish docker registry mirror image
 - Publish executor binary
 
+### Build all candidates without testing
+
+The run type for branches matching `docker-images-candidates-notest/`.
+You can create a build of this run type for your changes using:
+
+```sh
+sg ci build docker-images-candidates-notest
+```
+
+Base pipeline (more steps might be included based on branch changes):
+
+- **Image builds**: Build Docker images
+- **Publish candidate images**: Push candidate Images
+- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+
 ### Backend integration tests
 
 The run type for branches matching `backend-integration/`.
