@@ -42,6 +42,10 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
+	emptyParent := &BaseRepository{
+		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
+	}
+
 	tests := []struct {
 		name         string
 		visibility   Visibility
@@ -62,6 +66,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				}, {
 					BaseRepository: &BaseRepository{
 						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
@@ -72,6 +77,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				}, {
 					BaseRepository: &BaseRepository{
 						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
@@ -81,6 +87,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				}, {
 					BaseRepository: &BaseRepository{
 						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
@@ -90,6 +97,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				},
 			},
 		},
@@ -106,6 +114,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				}, {
 					BaseRepository: &BaseRepository{
 						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
@@ -115,6 +124,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				},
 			},
 		},
@@ -132,6 +142,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				}, {
 					BaseRepository: &BaseRepository{
 						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
@@ -142,6 +153,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				},
 			},
 		},
@@ -159,6 +171,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				}, {
 					BaseRepository: &BaseRepository{
 						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
@@ -168,6 +181,7 @@ func TestListAffiliatedRepositories(t *testing.T) {
 						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					},
 					ViewerPermission: "ADMIN",
+					Parent:           emptyParent,
 				},
 			},
 		},
@@ -764,6 +778,13 @@ func TestV3Client_Fork(t *testing.T) {
 		// user's namespace and sourcegraph-testing: it doesn't matter whether it
 		// already has been or not because of the way the GitHub API operates.
 		// We'll use github.com/sourcegraph/automation-testing as our guinea pig.
+		//
+		// Note: If you're running this test with `-update=success`, it will fail because the repo
+		// is already forked here at:
+		//
+		// https://github.com/sourcegraph-testing/sourcegraph-automation-testing
+		//
+		// Request an admin to deleted the fork and then run the test again with `-update=success`
 		for name, org := range map[string]*string{
 			"user":                nil,
 			"sourcegraph-testing": pointers.Ptr("sourcegraph-testing"),
@@ -774,12 +795,12 @@ func TestV3Client_Fork(t *testing.T) {
 				defer save()
 
 				fork, err := client.Fork(ctx, "sourcegraph", "automation-testing", org, "sourcegraph-automation-testing")
-				assert.Nil(t, err)
-				assert.NotNil(t, fork)
+				require.Nil(t, err)
+				require.NotNil(t, fork)
 				if org != nil {
 					owner, err := fork.Owner()
-					assert.Nil(t, err)
-					assert.Equal(t, *org, owner)
+					require.Nil(t, err)
+					require.Equal(t, *org, owner)
 				}
 
 				testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
@@ -795,8 +816,8 @@ func TestV3Client_Fork(t *testing.T) {
 		defer save()
 
 		fork, err := client.Fork(ctx, "sourcegraph-testing", "unforkable", nil, "sourcegraph-testing-unforkable")
-		assert.NotNil(t, err)
-		assert.Nil(t, fork)
+		require.NotNil(t, err)
+		require.Nil(t, fork)
 
 		testutil.AssertGolden(t, filepath.Join("testdata", "golden", testName), update(testName), fork)
 	})

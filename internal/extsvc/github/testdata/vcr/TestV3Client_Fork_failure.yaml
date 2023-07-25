@@ -2,18 +2,20 @@
 version: 1
 interactions:
 - request:
-    body: '{}'
+    body: '{"name":"sourcegraph-testing-unforkable"}'
     form: {}
     headers:
       Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       - application/vnd.github.machine-man-preview+json
+      Cache-Control:
+      - max-age=0
       Content-Type:
       - application/json; charset=utf-8
     url: https://api.github.com/repos/sourcegraph-testing/unforkable/forks
     method: POST
   response:
-    body: '{"message":"The repository exists, but forking is disabled.","documentation_url":"https://docs.github.com/rest/reference/repos#create-a-fork"}'
+    body: '{"message":"The repository exists, but forking is disabled.","documentation_url":"https://docs.github.com/rest/repos/forks#create-a-fork"}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -27,7 +29,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 31 Dec 2021 00:02:26 GMT
+      - Tue, 25 Jul 2023 16:24:49 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -36,30 +38,27 @@ interactions:
       - max-age=31536000; includeSubdomains; preload
       Vary:
       - Accept-Encoding, Accept, X-Requested-With
-      X-Accepted-Oauth-Scopes:
-      - ""
       X-Content-Type-Options:
       - nosniff
       X-Frame-Options:
       - deny
+      X-Github-Api-Version-Selected:
+      - "2022-11-28"
       X-Github-Media-Type:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - D406:7EDF:79CC9E:15383C9:61CE4892
-      X-Oauth-Scopes:
-      - read:discussion, read:org, read:packages, read:public_key, read:repo_hook,
-        read:user, repo, workflow
+      - CB0D:17827A:61E26C:678811:64BFF750
       X-Ratelimit-Limit:
       - "5000"
       X-Ratelimit-Remaining:
-      - "4960"
+      - "4983"
       X-Ratelimit-Reset:
-      - "1640910677"
+      - "1690304122"
       X-Ratelimit-Resource:
       - core
       X-Ratelimit-Used:
-      - "40"
+      - "17"
       X-Xss-Protection:
       - "0"
     status: 403 Forbidden
