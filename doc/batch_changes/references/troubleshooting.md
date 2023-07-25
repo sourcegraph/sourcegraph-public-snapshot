@@ -184,7 +184,13 @@ When publishing changesets fails, make sure that you have [configured credential
 
 ### Do you have email privacy enabled on GitHub?
 
-If you run into the error that your push was rejected because it contains an email address that's not allowed to be
-public, you need to either allow your email address to be public or disable the **Block command line pushes that expose my email**.
+In case you encounter an error informing that your push was rejected due to the presence of an email address that isn't
+permitted to be public, there are a couple of possible solutions.
 
-See [GitHub Email Settings](https://github.com/settings/emails) for configuring these settings.
+You can choose either to:
+
+1. Permit your email address to be public.
+2. Disable the feature **Block command line pushes that expose my email**.
+
+Instructions for both of these potential solutions can be found in
+the [GitHub Email Settings](https://github.com/settings/emails).
