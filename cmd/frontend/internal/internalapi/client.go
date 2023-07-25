@@ -4,18 +4,20 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
-	proto "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/frontend/v1"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/frontend"
+	proto "github.com/sourcegraph/sourcegraph/internal/frontend/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -98,6 +100,7 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 		return MockExternalServiceConfigs(kind, result)
 	}
 	if internalgrpc.IsGRPCEnabled(ctx) {
+		fmt.Println("GRPC.internalClient.ExternalServiceConfigs")
 		cc, err := c.GRPCConnectionCache.GetConnection(c.URL)
 		if err != nil {
 			return err
@@ -108,15 +111,15 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 			Kind: kind,
 		})
 
-		err = json.Unmarshal([]byte(resp), &result)
+		err = json.Unmarshal([]byte(resp.Config), &result)
 		if err != nil {
-			return nil, err
+			return err
 		}
 
 		return nil
 
 	}
-	return c.postInternal(ctx, "external-services/configs", api.ExternalServiceConfigsRequest{
+	return c.postInternal(ctx, "external-services/configs", frontend.ExternalServiceConfigsRequest{
 		Kind: kind,
 	}, &result)
 }

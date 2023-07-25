@@ -12,10 +12,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/frontend"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -92,7 +92,7 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 	if MockExternalServiceConfigs != nil {
 		return MockExternalServiceConfigs(kind, result)
 	}
-	return c.postInternal(ctx, "external-services/configs", api.ExternalServiceConfigsRequest{
+	return c.postInternal(ctx, "external-services/configs", frontend.ExternalServiceConfigsRequest{
 		Kind: kind,
 	}, &result)
 }
