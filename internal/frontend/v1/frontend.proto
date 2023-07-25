@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package frontend.v1;
 
-option go_package = "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/v1";
+option go_package = "github.com/sourcegraph/sourcegraph/internal/v1";
 
 service FrontendService {
   rpc ExternalServiceConfigs(ExternalServiceConfigsRequest) returns (ExternalServiceConfigsResponse) {}
@@ -15,5 +15,5 @@ message ExternalServiceConfigsRequest {
 }
 
 message ExternalServiceConfigsResponse {
-  string config = 1;
+    string config = 1;
 }
