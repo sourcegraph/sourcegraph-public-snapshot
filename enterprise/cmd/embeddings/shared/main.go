@@ -155,9 +155,14 @@ func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, er
 	}
 
 	embeddings, err := client.GetEmbeddings(ctx, []string{query})
-	if err != nil || len(embeddings.Failed) > 0 {
+
+	if err != nil {
 		return nil, "", errors.Wrap(err, "getting query embedding")
 	}
+	if len(embeddings.Failed) > 0 {
+		return nil, "", errors.Newf("failed to get embeddings for query %s", query)
+	}
+
 	return embeddings.Embeddings, client.GetModelIdentifier(), nil
 }
 
