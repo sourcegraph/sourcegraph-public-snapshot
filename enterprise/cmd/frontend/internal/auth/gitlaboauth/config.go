@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -52,6 +53,7 @@ type Provider struct {
 }
 
 func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
+	existingProviders := make(collections.Set[string])
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gitlab == nil {
 			continue
@@ -70,24 +72,22 @@ func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database
 		callbackURL.Path = "/.auth/gitlab/callback"
 
 		provider, providerMessages := parseProvider(logger, db, callbackURL.String(), pr.Gitlab, pr)
-
 		problems = append(problems, conf.NewSiteProblems(providerMessages...)...)
-		if provider != nil {
-			alreadyExists := false
-			for _, p := range ps {
-				if p.CachedInfo().ServiceID == provider.ServiceID {
-					problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one auth provider with url %q, only the first one will be used`, provider.ServiceID))...)
-					alreadyExists = true
-				}
-			}
-			if alreadyExists {
-				continue
-			}
+		if provider == nil {
+			continue
 		}
+
+		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
+			problems = append(problems, conf.NewSiteProblems(fmt.Sprintf(`Cannot have more than one GitLab auth provider with url %q and client ID %q, only the first one will be used`, provider.ServiceID, provider.CachedInfo().ClientID))...)
+			continue
+		}
+
 		ps = append(ps, Provider{
 			GitLabAuthProvider: pr.Gitlab,
 			Provider:           provider,
 		})
+
+		existingProviders.Add(provider.CachedInfo().UniqueID())
 	}
 	return ps, problems
 }

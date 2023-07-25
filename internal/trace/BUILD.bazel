@@ -10,7 +10,6 @@ go_library(
         "httptrace.go",
         "logger.go",
         "trace.go",
-        "tracer.go",
         "url.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/trace",
@@ -35,14 +34,10 @@ go_library(
 
 go_test(
     name = "trace_test",
-    srcs = [
-        "attributes_test.go",
-        "context_test.go",
-    ],
+    srcs = ["attributes_test.go"],
     embed = [":trace"],
     deps = [
         "//lib/errors",
         "@com_github_stretchr_testify//require",
-        "@io_opentelemetry_go_otel_trace//:trace",
     ],
 )

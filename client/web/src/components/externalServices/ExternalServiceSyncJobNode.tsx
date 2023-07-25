@@ -4,7 +4,7 @@ import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { Subject } from 'rxjs'
 
 import { Timestamp, TimestampFormat } from '@sourcegraph/branded/src/components/Timestamp'
-import { Badge, Button, ErrorAlert, Icon } from '@sourcegraph/wildcard'
+import { Badge, BadgeProps, Button, ErrorAlert, Icon } from '@sourcegraph/wildcard'
 
 import { ExternalServiceSyncJobListFields, ExternalServiceSyncJobState } from '../../graphql-operations'
 import { ValueLegendList, ValueLegendListProps } from '../../site-admin/analytics/components/ValueLegendList'
@@ -19,6 +19,16 @@ import styles from './ExternalServiceSyncJobNode.module.scss'
 export interface ExternalServiceSyncJobNodeProps {
     node: ExternalServiceSyncJobListFields
     onUpdate: Subject<void>
+}
+
+const syncStateToBadgeVariant: Record<ExternalServiceSyncJobState, BadgeProps['variant']> = {
+    [ExternalServiceSyncJobState.FAILED]: 'danger',
+    [ExternalServiceSyncJobState.ERRORED]: 'warning',
+    [ExternalServiceSyncJobState.COMPLETED]: 'success',
+    [ExternalServiceSyncJobState.PROCESSING]: undefined,
+    [ExternalServiceSyncJobState.QUEUED]: 'outlineSecondary',
+    [ExternalServiceSyncJobState.CANCELED]: 'info',
+    [ExternalServiceSyncJobState.CANCELING]: 'secondary',
 }
 
 export const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({
@@ -87,7 +97,7 @@ export const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalService
 
     return (
         <li className="list-group-item py-3">
-            <div className="d-flex justify-content-left">
+            <div className="d-flex justify-content-left align-items-center">
                 <div className="d-flex mr-2 justify-content-left">
                     <Button
                         variant="icon"
@@ -98,7 +108,7 @@ export const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalService
                     </Button>
                 </div>
                 <div className="d-flex mr-2 justify-content-left">
-                    <Badge>{node.state}</Badge>
+                    <Badge variant={syncStateToBadgeVariant[node.state]}>{node.state}</Badge>
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
                     {node.startedAt === null && 'Not started yet.'}

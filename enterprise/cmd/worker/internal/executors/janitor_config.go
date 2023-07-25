@@ -3,8 +3,8 @@ package executors
 import (
 	"time"
 
-	executortypes "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
 )
 
 type janitorConfig struct {

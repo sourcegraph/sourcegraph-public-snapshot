@@ -24,5 +24,11 @@ FLAKES = {
             "reason": "Shifting constraints on table; ranking is experimental",
         },
     ],
-    "5.1.0": [],
+    "5.1.0": [
+        {
+            "path": "internal/database",
+            "prefix": "TestUserCredentials_CreateUpdate",
+            "reason": "Update to crypto internals affects ability to compare authenticators",
+        },
+    ],
 }

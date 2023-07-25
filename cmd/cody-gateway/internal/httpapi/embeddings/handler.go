@@ -1,8 +1,8 @@
 package embeddings
 
 import (
+	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -74,10 +74,10 @@ func NewHandler(
 			}
 
 			// Add the client type to the logger fields.
-			logger = logger.With(log.String("client", fmt.Sprintf("%T", c)))
+			logger = logger.With(log.String("client", c.ProviderName()))
 
-			upstreamStarted := time.Now()
 			var (
+				upstreamStarted    = time.Now()
 				upstreamFinished   time.Duration
 				upstreamStatusCode = -1
 				// resolvedStatusCode is the status code that we returned to the
@@ -125,6 +125,14 @@ func NewHandler(
 					if originalCode, ok := statusCodeErr.IsCustom(); ok {
 						upstreamStatusCode = originalCode
 					}
+					return
+				}
+
+				// More user-friendly message for timeouts
+				if errors.Is(err, context.DeadlineExceeded) {
+					resolvedStatusCode = http.StatusGatewayTimeout
+					response.JSONError(logger, w, resolvedStatusCode,
+						errors.Newf("request to upstream provider %s timed out", c.ProviderName()))
 					return
 				}
 

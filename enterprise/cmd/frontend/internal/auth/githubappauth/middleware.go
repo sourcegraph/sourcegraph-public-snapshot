@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -59,7 +60,7 @@ func newMiddleware(db database.DB, authPrefix string, isAPIHandler bool, next ht
 		// redirecting.
 		span, _ := trace.New(r.Context(), "githubapp")
 		span.SetAttributes(attribute.Bool("isAPIHandler", isAPIHandler))
-		span.Finish()
+		span.End()
 		if strings.HasPrefix(r.URL.Path, authPrefix+"/") {
 			handler.ServeHTTP(w, r)
 			return
@@ -492,15 +493,22 @@ func createGitHubApp(conversionURL string, domain types.GitHubAppDomain) (*ghtyp
 	if MockCreateGitHubApp != nil {
 		return MockCreateGitHubApp(conversionURL, domain)
 	}
-	r, err := http.NewRequest("POST", conversionURL, http.NoBody)
+	r, err := http.NewRequest(http.MethodPost, conversionURL, http.NoBody)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := http.DefaultClient.Do(r)
+
+	cf := httpcli.UncachedExternalClientFactory
+	client, err := cf.Doer()
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to create GitHub client")
+	}
+
+	resp, err := client.Do(r)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != 201 {
+	if resp.StatusCode != http.StatusCreated {
 		return nil, errors.Newf("expected 201 statusCode, got: %d", resp.StatusCode)
 	}
 

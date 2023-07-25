@@ -10,8 +10,8 @@ go_library(
     visibility = ["//visibility:public"],
     deps = [
         "//cmd/gitserver/shared",
-        "//enterprise/internal/authz/subrepoperms",
         "//internal/authz",
+        "//internal/authz/subrepoperms",
         "//internal/database",
         "//internal/debugserver",
         "//internal/encryption/keyring",

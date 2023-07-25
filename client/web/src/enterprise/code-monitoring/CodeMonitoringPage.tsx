@@ -25,6 +25,7 @@ import { eventLogger } from '../../tracking/eventLogger'
 
 import {
     fetchUserCodeMonitors as _fetchUserCodeMonitors,
+    fetchCodeMonitors as _fetchCodeMonitors,
     toggleCodeMonitorEnabled as _toggleCodeMonitorEnabled,
 } from './backend'
 import { CodeMonitoringGettingStarted } from './CodeMonitoringGettingStarted'
@@ -34,6 +35,7 @@ import { CodeMonitorList } from './CodeMonitorList'
 export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> {
     authenticatedUser: AuthenticatedUser | null
     fetchUserCodeMonitors?: typeof _fetchUserCodeMonitors
+    fetchCodeMonitors?: typeof _fetchCodeMonitors
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
     isSourcegraphApp: boolean
     // For testing purposes only
@@ -43,6 +45,7 @@ export interface CodeMonitoringPageProps extends SettingsCascadeProps<Settings> 
 export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren<CodeMonitoringPageProps>> = ({
     authenticatedUser,
     fetchUserCodeMonitors = _fetchUserCodeMonitors,
+    fetchCodeMonitors = _fetchCodeMonitors,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
     testForceTab,
     isSourcegraphApp,
@@ -199,6 +202,7 @@ export const CodeMonitoringPage: React.FunctionComponent<React.PropsWithChildren
                         <CodeMonitorList
                             authenticatedUser={authenticatedUser}
                             fetchUserCodeMonitors={fetchUserCodeMonitors}
+                            fetchCodeMonitors={fetchCodeMonitors}
                             toggleCodeMonitorEnabled={toggleCodeMonitorEnabled}
                         />
                     )}

@@ -61,7 +61,7 @@ func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContext
 	defer func() {
 		tr.AddEvent("resolved search context", attribute.String("searchContext", fmt.Sprintf("%+v", sc)))
 		tr.SetErrorIfNotContext(err)
-		tr.Finish()
+		tr.End()
 	}()
 
 	parsedSearchContextSpec := ParseSearchContextSpec(searchContextSpec)

@@ -1,12 +1,8 @@
 package com.sourcegraph.config;
 
 import com.intellij.openapi.actionSystem.AnAction;
-import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.actionSystem.Presentation;
 import com.intellij.openapi.actionSystem.impl.ActionButton;
-import com.intellij.openapi.options.ShowSettingsUtil;
-import com.intellij.openapi.project.DumbAwareAction;
-import com.intellij.openapi.project.Project;
 import com.intellij.util.IconUtil;
 import com.intellij.util.ui.JBDimension;
 import com.intellij.util.ui.JBUI;
@@ -17,16 +13,10 @@ import org.jetbrains.annotations.NotNull;
 public class GoToPluginSettingsButtonFactory {
 
   @NotNull
-  public static ActionButton createGoToPluginSettingsButton(@NotNull Project project) {
+  public static ActionButton createGoToPluginSettingsButton() {
     JBDimension actionButtonSize = JBUI.size(22, 22);
 
-    AnAction action =
-        new DumbAwareAction() {
-          @Override
-          public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
-          }
-        };
+    AnAction action = new OpenPluginSettingsAction();
     Presentation presentation = new Presentation("Open Plugin Settings");
 
     ActionButton button =

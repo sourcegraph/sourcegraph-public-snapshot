@@ -1,16 +1,12 @@
 <script lang="ts">
     import { mdiAccount, mdiCodeTags, mdiSourceBranch, mdiSourceCommit, mdiSourceRepository, mdiTag } from '@mdi/js'
-    import { setContext } from 'svelte'
 
     import { page } from '$app/stores'
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { createActionStore, type ActionStore } from '$lib/repo/actions'
-    import { getRevisionLabel, navFromPath } from '$lib/repo/utils'
     import { displayRepoName, isRepoNotFoundErrorLike } from '$lib/shared'
 
     import type { LayoutData } from './$types'
-    import Permalink from './Permalink.svelte'
     import RepoNotFoundError from './RepoNotFoundError.svelte'
 
     export let data: LayoutData
@@ -28,20 +24,10 @@
         )
     }
 
-    // Sets up a context for other components to add add buttons to the header
-    const repoActions = createActionStore()
-    setContext<ActionStore>('repo-actions', repoActions)
-
     $: viewerCanAdminister = data.user?.siteAdmin ?? false
-    $: ({ repo, path } = $page.params)
-    $: nav = path ? navFromPath(path, repo, $page.url.pathname.includes('/-/blob/')) : []
+    $: ({ repo } = $page.params)
 
-    $: resolvedRevision = isErrorLike(data.resolvedRevision) ? null : data.resolvedRevision
-    $: revisionLabel = getRevisionLabel(data.revision, resolvedRevision)
     $: repoName = displayRepoName(repo.split('@')[0])
-    $: if (resolvedRevision) {
-        repoActions.setAction({ key: 'permalink', priority: 100, component: Permalink })
-    }
 </script>
 
 {#if isErrorLike(data.resolvedRevision)}
@@ -80,22 +66,6 @@
                 {/each}
             </ul>
         </nav>
-
-        <div class="actions">
-            {#each $repoActions as action (action.key)}
-                <svelte:component this={action.component} />
-            {/each}
-        </div>
-    </div>
-    <div class="ml-3 mt-1">
-        {#if nav.length > 0}
-            <span class="crumps">
-                {#each nav as [label, url]}
-                    <span>/</span>
-                    <a href={url}>{label}</a>&nbsp;
-                {/each}
-            </span>
-        {/if}
     </div>
     <slot />
 {/if}
@@ -104,7 +74,7 @@
     .header {
         display: flex;
         align-items: center;
-        padding: 0.5rem 1rem;
+        padding: 0.5rem;
         border-bottom: 1px solid var(--border-color);
     }
 
@@ -148,23 +118,7 @@
         }
     }
 
-    .actions {
-        margin-left: auto;
-    }
-
     nav {
         color: var(--body-color);
-    }
-
-    .crumps {
-        color: var(--link-color);
-    }
-
-    .button {
-        color: var(--body-color);
-        border: 1px solid var(--border-color);
-        padding: 0.25rem 0.5rem;
-        border-radius: var(--border-radius);
-        text-decoration: none;
     }
 </style>

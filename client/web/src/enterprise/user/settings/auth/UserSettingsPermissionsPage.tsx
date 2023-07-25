@@ -1,5 +1,7 @@
 import React, { useEffect } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
+
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -13,6 +15,8 @@ import {
     Link,
     Badge,
     BadgeProps,
+    Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -101,14 +105,24 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                     <table className="table">
                         <tbody>
                             <tr>
-                                <th className="border-0">Last complete sync</th>
+                                <th className="border-0">
+                                    Last complete sync{' '}
+                                    <Tooltip content="Syncs user permissions from the code host. All repositories that the user has access to on the code host will be accessible on Sourcegraph as well.">
+                                        <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
+                                    </Tooltip>
+                                </th>
                                 <td className="border-0">
                                     {permissionsInfo.syncedAt ? <Timestamp date={permissionsInfo.syncedAt} /> : 'Never'}
                                 </td>
-                                <td className="text-muted border-0">Updated by user permissions syncing</td>
+                                <td className="text-muted border-0">Updated by user-centric permission sync.</td>
                             </tr>
                             <tr>
-                                <th>Last incremental sync</th>
+                                <th>
+                                    Last partial sync{' '}
+                                    <Tooltip content="Syncs repository permissions from the code host. If a repository-centric sync returns this user as accessor, it is noted here as partial sync. Partial syncs do not show in the list of permission sync jobs below.">
+                                        <Icon aria-label="more-info" svgPath={mdiInformationOutline} />
+                                    </Tooltip>
+                                </th>
                                 <td>
                                     {permissionsInfo.updatedAt === null ? (
                                         'Never'
@@ -116,7 +130,9 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                                         <Timestamp date={permissionsInfo.updatedAt} />
                                     )}
                                 </td>
-                                <td className="text-muted">Updated by repository permissions syncing</td>
+                                <td className="text-muted">
+                                    Partial update done by repositor-centric permission sync.
+                                </td>
                             </tr>
                         </tbody>
                     </table>

@@ -126,9 +126,13 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
+	gss := database.NewMockGlobalStateStore()
+	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+
 	users := database.NewMockUserStore()
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 	db := database.NewMockDB()
+	db.GlobalStateFunc.SetDefaultReturn(gss)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
 	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())

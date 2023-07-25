@@ -22,7 +22,7 @@ type PerforceSource struct {
 	perforceCreds   *gitserver.PerforceCredentials
 }
 
-func NewPerforceSource(ctx context.Context, svc *types.ExternalService, _ *httpcli.Factory) (*PerforceSource, error) {
+func NewPerforceSource(ctx context.Context, gitserverClient gitserver.Client, svc *types.ExternalService, _ *httpcli.Factory) (*PerforceSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -32,7 +32,10 @@ func NewPerforceSource(ctx context.Context, svc *types.ExternalService, _ *httpc
 		return nil, errors.Wrapf(err, "external service id=%d", svc.ID)
 	}
 
-	return &PerforceSource{server: c, gitServerClient: gitserver.NewClientDeprecatedNeedsDB()}, nil
+	return &PerforceSource{
+		server:          c,
+		gitServerClient: gitserverClient,
+	}, nil
 }
 
 // GitserverPushConfig returns an authenticated push config used for pushing commits to the code host.

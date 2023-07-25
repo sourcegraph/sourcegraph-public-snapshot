@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -121,6 +122,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		})
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/", nil)
+		req = req.WithContext(actor.WithActor(context.Background(), actor.FromUser(32)))
 
 		// Request with access logging disabled
 		h.ServeHTTP(rec, req)

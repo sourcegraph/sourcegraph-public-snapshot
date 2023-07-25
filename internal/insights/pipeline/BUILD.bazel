@@ -1,0 +1,55 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "pipeline",
+    srcs = ["backfill.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/pipeline",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/insights/background/queryrunner",
+        "//internal/insights/compression",
+        "//internal/insights/gitserver",
+        "//internal/insights/query/querybuilder",
+        "//internal/insights/store",
+        "//internal/insights/types",
+        "//internal/metrics",
+        "//internal/ratelimit",
+        "//internal/search/query",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+        "@com_github_sourcegraph_conc//pool",
+        "@com_github_sourcegraph_log//:log",
+    ],
+)
+
+go_test(
+    name = "pipeline_test",
+    timeout = "short",
+    srcs = ["backfill_test.go"],
+    embed = [":pipeline"],
+    deps = [
+        "//internal/api",
+        "//internal/gitserver",
+        "//internal/gitserver/gitdomain",
+        "//internal/insights/background/queryrunner",
+        "//internal/insights/compression",
+        "//internal/insights/gitserver",
+        "//internal/insights/store",
+        "//internal/insights/timeseries",
+        "//internal/insights/types",
+        "//internal/ratelimit",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_derision_test_glock//:glock",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_log//logtest",
+        "@org_golang_x_time//rate",
+    ],
+)

@@ -66,8 +66,9 @@ func RandomID() (string, error) {
 // Store exposes methods to read and write batches domain models
 // from persistent storage.
 type Store struct {
-	logger log.Logger
 	*basestore.Store
+
+	logger         log.Logger
 	key            encryption.Key
 	now            func() time.Time
 	operations     *operations
@@ -101,14 +102,14 @@ func (s *Store) GitHubAppsStore() store.GitHubAppsStore {
 	return store.GitHubAppsWith(s.Store).WithEncryptionKey(keyring.Default().GitHubAppKey)
 }
 
-// Clock returns the clock used by the Store.
-func (s *Store) Clock() func() time.Time { return s.now }
-
 // DatabaseDB returns a database.DB with the same handle that this Store was
 // instantiated with.
 // It's here for legacy reason to pass the database.DB to a repos.Store while
 // repos.Store doesn't accept a basestore.TransactableHandle yet.
 func (s *Store) DatabaseDB() database.DB { return database.NewDBWith(s.logger, s) }
+
+// Clock returns the clock used by the Store.
+func (s *Store) Clock() func() time.Time { return s.now }
 
 var _ basestore.ShareableStore = &Store{}
 

@@ -1,0 +1,57 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "discovery",
+    srcs = [
+        "all_repos_iterator.go",
+        "mocks_temp.go",
+        "repo_iterator_from_query.go",
+        "scoped_repo_iterator.go",
+        "series_repo_iterator.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/insights/discovery",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/actor",
+        "//internal/api",
+        "//internal/database",
+        "//internal/insights/query",
+        "//internal/insights/query/querybuilder",
+        "//internal/insights/types",
+        "//internal/types",
+        "//lib/errors",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_prometheus_client_golang//prometheus/promauto",
+    ],
+)
+
+go_test(
+    name = "discovery_test",
+    timeout = "short",
+    srcs = [
+        "all_repos_iterator_test.go",
+        "mocks_test.go",
+        "repo_iterator_from_query_test.go",
+        "scoped_repo_iterator_test.go",
+    ],
+    embed = [":discovery"],
+    tags = [
+        "requires-network",
+    ],
+    deps = [
+        "//cmd/frontend/globals",
+        "//internal/actor",
+        "//internal/api",
+        "//internal/authz",
+        "//internal/database",
+        "//internal/database/dbtest",
+        "//internal/insights/query/querybuilder",
+        "//internal/types",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_prometheus_client_golang//prometheus",
+        "@com_github_sourcegraph_log//logtest",
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
+)

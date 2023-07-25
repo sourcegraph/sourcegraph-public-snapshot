@@ -198,7 +198,7 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
 	tr, ctx := trace.New(ctx, "GitTreeEntryResolver.url")
-	defer tr.Finish()
+	defer tr.End()
 
 	if submodule := r.Submodule(); submodule != nil {
 		tr.SetAttributes(attribute.Bool("submodule", true))
@@ -295,7 +295,7 @@ func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
 
 func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (_ string, err error) {
 	tr, ctx := trace.New(ctx, "cloneURLToRepoName")
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
 	if err != nil {

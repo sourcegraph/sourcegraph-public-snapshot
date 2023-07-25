@@ -24,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
 	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
@@ -153,7 +152,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	if err != nil {
 		return errors.Wrap(err, "Failed to create sub-repo client")
 	}
-	ui.InitRouter(db, enterpriseServices.EnterpriseSearchJobs)
+	ui.InitRouter(db)
 
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
@@ -202,8 +201,6 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		return err
 	}
 
-	siteid.Init(db)
-
 	globals.WatchBranding()
 	globals.WatchExternalURL()
 	globals.WatchPermissionsUserMapping()
@@ -219,8 +216,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 
 	schema, err := graphqlbackend.NewSchema(
 		db,
-		gitserver.NewClientDeprecatedNeedsDB(),
-		enterpriseServices.EnterpriseSearchJobs,
+		gitserver.NewClient(db),
 		[]graphqlbackend.OptionalResolver{enterpriseServices.OptionalResolver},
 	)
 	if err != nil {
@@ -271,7 +267,6 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	// Create the external HTTP handler.
 	externalHandler := newExternalHTTPHandler(
 		db,
-		enterprise.EnterpriseSearchJobs,
 		schema,
 		rateLimiter,
 		&httpapi.Handlers{
@@ -333,7 +328,6 @@ func makeInternalAPI(
 		schema,
 		db,
 		grpcServer,
-		enterprise.EnterpriseSearchJobs,
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.RankingService,
 		enterprise.NewComputeStreamHandler,

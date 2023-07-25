@@ -133,7 +133,12 @@ def back_compat_defs():
     git_repository(
         name = "sourcegraph_back_compat",
         remote = "https://github.com/sourcegraph/sourcegraph.git",
-        patches = ["//dev/backcompat/patches:back_compat_migrations.patch", "//dev/backcompat/patches:ui_assets.patch"],
+        patches = [
+            "//dev/backcompat/patches:back_compat_migrations.patch",
+            "//dev/backcompat/patches:ui_assets.patch",
+            "//dev/backcompat/patches:back_compat_internal_instrumentation.patch",
+            "//dev/backcompat/patches:back_compat_otlp_adapter.patch",
+        ],
         patch_args = ["-p1"],
         commit = MINIMUM_UPGRADEABLE_VERSION_REF,
         patch_cmds = [

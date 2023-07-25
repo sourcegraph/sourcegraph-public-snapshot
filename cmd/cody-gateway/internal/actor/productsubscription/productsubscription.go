@@ -16,9 +16,9 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
 	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	elicensing "github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -76,8 +76,8 @@ func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
 	// NOTE: For back-compat, we support both the old and new token prefixes.
 	// However, as we use the token as part of the cache key, we need to be
 	// consistent with the prefix we use.
-	token = strings.Replace(token, productsubscription.AccessTokenPrefix, licensing.LicenseKeyBasedAccessTokenPrefix, 1)
-	if !strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
+	token = strings.Replace(token, productsubscription.AccessTokenPrefix, license.LicenseKeyBasedAccessTokenPrefix, 1)
+	if !strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
 		return nil, actor.ErrNotFromSource{Reason: "unknown token prefix"}
 	}
 
@@ -245,7 +245,7 @@ func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, i
 	// In internal mode, only allow dev and internal licenses.
 	disallowedLicense := internalMode &&
 		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
-			!containsOneOf(s.ActiveLicense.Info.Tags, elicensing.DevTag, elicensing.InternalTag))
+			!containsOneOf(s.ActiveLicense.Info.Tags, licensing.DevTag, licensing.InternalTag))
 
 	now := time.Now()
 	a := &actor.Actor{

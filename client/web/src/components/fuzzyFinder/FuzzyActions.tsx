@@ -35,7 +35,6 @@ export function createActionsFSM(actions: FuzzyAction[]): FuzzyFSM {
             text: action.title,
             onClick: action.run,
             icon: <Icon aria-label={action.title} svgPath={mdiCodeGreaterThan} />,
-        })),
-        undefined
+        }))
     )
 }

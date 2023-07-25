@@ -36,33 +36,33 @@ Solution: run `git clean -ffdx` then run `bazel configure` again.
 
 Use `bazel info output_base` to find the output base directory. From there go to the `external` folder to find Bazel rules saved locally.
 
-### How do I build a container on MacOS 
+### How do I build a container on MacOS
 
-Our containers are only built for `linux/amd64`, therefore we need to cross-compile on MacOS to produce correct images. To simplify this process, a configuration flag is available: `--config darwin-docker` to swap the toolchains for you. 
+Our containers are only built for `linux/amd64`, therefore we need to cross-compile on MacOS to produce correct images. To simplify this process, a configuration flag is available: `--config darwin-docker` to swap the toolchains for you.
 
-Example: 
+Example:
 
 ```
 # Create a tarball that can be loaded in Docker of the worker service:
 bazel build //cmd/worker:image_tarball --config darwin-docker
 
-# Load the image in Docker: 
+# Load the image in Docker:
 docker load --input $(bazel cquery //cmd/worker:image_tarball  --config darwin-docker --output=files)
 ```
 
-You can also use the same configuration flag to run the container tests on MacOS: 
+You can also use the same configuration flag to run the container tests on MacOS:
 
 ```
 bazel test //cmd/worker:image_test --config darwin-docker
 ```
 
-### Can I run integration tests (`bazel test //testing/...`) locally? 
+### Can I run integration tests (`bazel test //testing/...`) locally?
 
-At the time of writing this documentation, it's not possible to do so, because we need to cross compile to produce `linux/amd64` container images, but the test runners need to run against your host architecture. If your host isn't `linux/amd64` you won't be able to run those tests. 
+At the time of writing this documentation, it's not possible to do so, because we need to cross compile to produce `linux/amd64` container images, but the test runners need to run against your host architecture. If your host isn't `linux/amd64` you won't be able to run those tests.
 
 This is caused by the fact that there is no straightforward way of telling Bazel to use a given toolchain for certain targets and another one for others, in a consistent fashion across the various binaries we produce (rust+go).
 
-See [this issue](https://github.com/sourcegraph/sourcegraph/issues/52914) to track progress on this particular problem. 
+See [this issue](https://github.com/sourcegraph/sourcegraph/issues/52914) to track progress on this particular problem.
 
 ### When using nix, when protobuf gets compiled I get a C/C++ compiler issue `fatal error: 'algorithm' file not found` or some core header files are not found
 Nix sets the CC environment variable to a clang version use by nix which is independent of the host system. You can verify this by running the following commands in your nix shell.
@@ -107,22 +107,22 @@ To fix this, you need to install Rosetta 2. There are various ways of doing that
 
 __Tested on Darwin 22.3.0 Darwin Kernel Version 22.3.0__
 
-## Queries 
+## Queries
 
-Bazel queries (`bazel query`, `bazel cquery` and `bazel aqueries`) are powerful tools that can assist you to visualize dependencies and understand how targets are being built or tested. 
+Bazel queries (`bazel query`, `bazel cquery` and `bazel aqueries`) are powerful tools that can assist you to visualize dependencies and understand how targets are being built or tested.
 
-### Errors about not being able to fetch a manifest for an OCI rule 
+### Errors about not being able to fetch a manifest for an OCI rule
 
-When running the following query: 
+When running the following query:
 
 ```
 bazel query 'kind("go_binary", rdeps(//..., //internal/database/migration/cliutil))'
 ```
 
-We get the following error. 
+We get the following error.
 
 ```
-WARNING: Could not fetch the manifest. Either there was an authentication issue or trying to pull an image with OCI image media types. 
+WARNING: Could not fetch the manifest. Either there was an authentication issue or trying to pull an image with OCI image media types.
 Falling back to using `curl`. See https://github.com/bazelbuild/bazel/issues/17829 for the context.
 INFO: Repository wolfi_redis_base_single instantiated at:
   /home/noah/Sourcegraph/sourcegraph/WORKSPACE:376:9: in <toplevel>
@@ -137,21 +137,21 @@ ERROR: An error occurred during the fetch of repository 'wolfi_redis_base_single
                 mf, mf_len = downloader.download_manifest(rctx.attr.identifier, "manifest.json")
 ```
 
-This query requires to analyse external dependencies for the [base images](containers.md), which are not yet publicly available.  
+This query requires to analyse external dependencies for the [base images](containers.md), which are not yet publicly available.
 
-Solution: `gcloud auth configure-docker us.gcr.io` to get access to the registry. 
+Solution: `gcloud auth configure-docker us.gcr.io` to get access to the registry.
 
-Solution: Pass the `--keep_going` additional flag to your `bazel query` command, so the evaluation doesn't stop at the first error. 
+Solution: Pass the `--keep_going` additional flag to your `bazel query` command, so the evaluation doesn't stop at the first error.
 
 ## Networking
 
 ### Tests fail with `connection refused`
-Any tests that make network calls on `localhost` need to be reachable from your Bazel build and test environment. If tests fail with errors like `error="dial tcp 127.0.0.1:6379: connect: connection refused"`, you most likely have to allow outbound networking for the sandbox environment.   
-    
+Any tests that make network calls on `localhost` need to be reachable from your Bazel build and test environment. If tests fail with errors like `error="dial tcp 127.0.0.1:6379: connect: connection refused"`, you most likely have to allow outbound networking for the sandbox environment.
+
 This can be achieved by adding the attribute `tags = ["requires-network"]` to the `go_test` rule in the `BUILD.bazel` file of the test directory.
-    
-> NOTE: make sure to run `bazel configure` after adding the tag as it will probably move it to another line. Save yourself a failing build! 
-    
+
+> NOTE: make sure to run `bazel configure` after adding the tag as it will probably move it to another line. Save yourself a failing build!
+
 ## Go
 
 ### It complains about some missing symbols, but I'm sure they are there since I can see my files
@@ -300,3 +300,64 @@ rust_binary(
 )
 ```
 
+## Docs
+
+### `//docs:test` is not finding my documents after I added `BUILD.bazel` file in a child directory
+
+When you add a `BUILD.bazel` to a directory Bazel will start recognizing that directory as a package. By default
+nothing is exposed from the package - Yes, even plain files. So you need to tell Bazel that you would like to expose
+the files in the directory to the outside world / other targets by using a filegroup target:
+
+```
+filegroup(
+  name = "my_files",
+  srcs = glob(
+    [**/*],
+  visibility = ["//doc:__pkg__"], # only targets in the //doc package can use it
+)
+```
+
+We can see that all the docs are exposed by our doc by running `bazel cquery //<path/to/my/target>:my_files --output=files` - example:
+
+```
+bazel cquery "//doc/cli/references:doc_files" --output=files
+
+INFO: Analyzed target //doc/cli/references:doc_files (100 packages loaded, 439 targets configured).
+INFO: Found 1 target...
+doc/cli/references/BUILD.bazel
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/admin.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/api.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/apply.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/exec.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/index.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/new.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/preview.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/remote.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/repositories.md
+bazel-out/darwin_arm64-fastbuild/bin/doc/cli/references/batch/validate.md
+<snip>
+```
+
+Now that our files are exposed by a target, we need to tell Bazel to expose it to `//doc:test`. In `/doc/BUILD.bazel`
+update the `data` attribute:
+
+```
+sh_test(
+    name = "test",
+    size = "small",
+    timeout = "moderate",
+    srcs = ["test.sh"],
+    args = ["$(location //dev/tools:docsite)"],
+    data = [
+        "//dev/tools:docsite",
+        "//doc/cli/references:doc_files",
+        "//doc/mydocs:my_files, # our target
+    ] + glob(
+        ["**/*"],
+        ["test.sh"],
+    ),
+    tags = [
+        "requires-network",
+    ],
+)
+```

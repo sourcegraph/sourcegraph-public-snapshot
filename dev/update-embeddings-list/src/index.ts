@@ -13,7 +13,8 @@ interface Embedding {
     repo: Repo
 }
 
-const access_token = process.env.SOURCEGRAPH_DOCS_ACCESS_TOKEN
+// const access_token = process.env.SOURCEGRAPH_DOCS_ACCESS_TOKEN
+const access_token = 'sgp_3cd38e14441e074638882442f9762609624402e0'
 const endpoint = 'https://sourcegraph.com/.api/graphql'
 
 async function start() {
