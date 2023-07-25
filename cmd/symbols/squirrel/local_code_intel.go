@@ -55,7 +55,8 @@ func (s *SquirrelService) LocalCodeIntel(ctx context.Context, repoCommitPath typ
 					// Found the scope.
 					if scope, ok := scopes[nodeId(cur)]; ok {
 						// Get the symbol name.
-						symbolName := SymbolName(node.Content(node.Contents))
+						const utf8ReplacementChar = "\xFF\xFD"
+						symbolName := SymbolName(strings.ToValidUTF8(node.Content(node.Contents), utf8ReplacementChar))
 
 						// Skip the symbol if it's already defined.
 						if _, ok := scope[symbolName]; ok {
