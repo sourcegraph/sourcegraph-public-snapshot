@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -99,7 +100,7 @@ func GetConfiguredProductLicenseInfo() (*Info, error) {
 }
 
 func IsLicenseValid() bool {
-	val := store.Get(licenseValidityStoreKey)
+	val := store.Get(LicenseValidityStoreKey)
 	if val.IsNil() {
 		return true
 	}
@@ -112,6 +113,8 @@ func IsLicenseValid() bool {
 	return v
 }
 
+var store = redispool.Store
+
 func GetLicenseInvalidReason() string {
 	if IsLicenseValid() {
 		return ""
@@ -119,7 +122,7 @@ func GetLicenseInvalidReason() string {
 
 	defaultReason := "unknown"
 
-	val := store.Get(licenseInvalidReason)
+	val := store.Get(LicenseInvalidReason)
 	if val.IsNil() {
 		return defaultReason
 	}
