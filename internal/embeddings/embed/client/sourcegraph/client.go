@@ -20,22 +20,22 @@ import (
 
 func NewClient(client *http.Client, config *conftypes.EmbeddingsConfig) *sourcegraphEmbeddingsClient {
 	return &sourcegraphEmbeddingsClient{
-		httpClient:   client,
-		model:        config.Model,
-		dimensions:   config.Dimensions,
-		endpoint:     config.Endpoint,
-		accessToken:  config.AccessToken,
-		excludeFiles: config.ExcludeFileOnError,
+		httpClient:    client,
+		model:         config.Model,
+		dimensions:    config.Dimensions,
+		endpoint:      config.Endpoint,
+		accessToken:   config.AccessToken,
+		excludeChunks: config.ExcludeChunkOnError,
 	}
 }
 
 type sourcegraphEmbeddingsClient struct {
-	httpClient   *http.Client
-	model        string
-	dimensions   int
-	endpoint     string
-	accessToken  string
-	excludeFiles bool
+	httpClient    *http.Client
+	model         string
+	dimensions    int
+	endpoint      string
+	accessToken   string
+	excludeChunks bool
 }
 
 func (c *sourcegraphEmbeddingsClient) GetDimensions() (int, error) {
@@ -95,12 +95,11 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, c.model, augmentedTexts[embedding.Index], 3)
 			if err != nil {
 				// if exclude files is enabled then do not return error and fail the entire repo embed job
-				if c.excludeFiles {
+				if c.excludeChunks {
 					failed = append(failed, embedding.Index)
 
-					// caller expects one vector per text input so append zero values
-					placeholder := make([]float32, response.ModelDimensions)
-					embeddings = append(embeddings, placeholder...)
+					// reslice to provide zero value embedding for failed chunk
+					embeddings = embeddings[:len(embeddings)+response.ModelDimensions]
 					continue
 				}
 				return nil, client.PartialError{Err: err, Index: embedding.Index}

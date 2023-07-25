@@ -114,22 +114,9 @@ func EmbedRepo(
 		}
 	}
 
-	truncateIndex := func(index *embeddings.EmbeddingIndex, count int) {
-		cutoff := len(index.RowMetadata) - count
-
-		index.RowMetadata = index.RowMetadata[:cutoff]
-		index.Embeddings = index.Embeddings[:cutoff*index.ColumnDimension]
-		index.Ranks = index.Ranks[:cutoff]
-	}
-
 	codeIndex := newIndex(len(codeFileNames))
 	insertCode := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
 		insertIndex(&codeIndex, md, embeddings)
-		return nil
-	}
-
-	truncateCode := func(count int) error {
-		truncateIndex(&codeIndex, count)
 		return nil
 	}
 
@@ -138,7 +125,7 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, opts.BatchSize, insertCode, truncateCode, reportCodeProgress, logger)
+	codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, opts.BatchSize, insertCode, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -150,17 +137,12 @@ func EmbedRepo(
 		return nil
 	}
 
-	truncateText := func(count int) error {
-		truncateIndex(&textIndex, count)
-		return nil
-	}
-
 	reportTextProgress := func(textIndexStats bgrepo.EmbedFilesStats) {
 		stats.TextIndexStats = textIndexStats
 		reportProgress(&stats)
 	}
 
-	textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, opts.BatchSize, insertText, truncateText, reportTextProgress, logger)
+	textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, opts.BatchSize, insertText, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -179,14 +161,13 @@ func EmbedRepo(
 }
 
 type EmbedRepoOpts struct {
-	RepoName           api.RepoName
-	Revision           api.CommitID
-	FileFilters        FileFilters
-	SplitOptions       codeintelContext.SplitOptions
-	MaxCodeEmbeddings  int
-	MaxTextEmbeddings  int
-	BatchSize          int
-	ExcludeFileOnError bool
+	RepoName          api.RepoName
+	Revision          api.CommitID
+	FileFilters       FileFilters
+	SplitOptions      codeintelContext.SplitOptions
+	MaxCodeEmbeddings int
+	MaxTextEmbeddings int
+	BatchSize         int
 
 	// If set, we already have an index for a previous commit.
 	IndexedRevision api.CommitID
@@ -200,6 +181,11 @@ type FileFilters struct {
 
 type batchInserter func(metadata []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error
 type truncate func(count int) error
+
+type FlushResults struct {
+	size  int
+	count int
+}
 
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
@@ -215,9 +201,7 @@ func embedFiles(
 	maxEmbeddingVectors int,
 	batchSize int,
 	insert batchInserter,
-	truncate truncate,
 	reportProgress func(bgrepo.EmbedFilesStats),
-	logger log.Logger,
 ) (bgrepo.EmbedFilesStats, error) {
 	dimensions, err := embeddingsClient.GetDimensions()
 	if err != nil {
@@ -228,15 +212,9 @@ func embedFiles(
 
 	var batch []codeintelContext.EmbeddableChunk
 
-	// how many chunks were added to batches for the current file
-	var currentFileBatchedCount int
-
-	// how many embedding rows were indexed for the most recently indexed file
-	var partiallyIndexedFileCount int
-
-	flush := func() (bool, error) {
+	flush := func() (*FlushResults, error) {
 		if len(batch) == 0 {
-			return false, nil
+			return nil, nil
 		}
 
 		batchChunks := make([]string, len(batch))
@@ -247,45 +225,29 @@ func embedFiles(
 		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
 		if err != nil {
 			if partErr := (client.PartialError{}); errors.As(err, &partErr) {
-				return false, errors.Wrapf(partErr.Err, "batch failed on file %q", batch[partErr.Index].FileName)
+				return nil, errors.Wrapf(partErr.Err, "batch failed on file %q", batch[partErr.Index].FileName)
 			}
-			return false, errors.Wrap(err, "error while getting embeddings")
+			return nil, errors.Wrap(err, "error while getting embeddings")
 		}
 
 		if expected := len(batchChunks) * dimensions; len(batchEmbeddings.Embeddings) != expected {
-			return false, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
+			return nil, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
 		}
 
-		// files with partial failures need to be excluded from the index entirely
-		excludedFileNames := make(map[string]struct{}, len(batchEmbeddings.Failed))
+		excludedBatches := make(map[int]struct{}, len(batchEmbeddings.Failed))
 		for _, batchIdx := range batchEmbeddings.Failed {
 			if batchIdx < 0 || batchIdx >= len(batch) {
 				continue
 			}
-			if _, ok := excludedFileNames[batch[batchIdx].FileName]; !ok {
-				excludedFileNames[batch[batchIdx].FileName] = struct{}{}
-			}
+			excludedBatches[batchIdx] = struct{}{}
 		}
 
-		// if the first file of this batch had a partial failure and already has had chunks
-		// indexed by the immediately preceding flush operation(s) then truncate the index to exclude that file
-		if _, ok := excludedFileNames[batch[0].FileName]; ok {
-			if err := truncate(partiallyIndexedFileCount); err != nil {
-				return false, err
-			}
-		}
-
-		for fileName := range excludedFileNames {
-			logger.Debug("error getting embeddings for file",
-				log.String("file", fileName),
-			)
-		}
-
-		metadata := make([]embeddings.RepoEmbeddingRowMetadata, 0, (len(batchEmbeddings.Embeddings)-len(batchEmbeddings.Failed))*dimensions)
-
+		rowsCount := len(batch) - len(batchEmbeddings.Failed)
+		metadata := make([]embeddings.RepoEmbeddingRowMetadata, 0, rowsCount)
+		var size int
 		cursor := 0
 		for idx, chunk := range batch {
-			if _, ok := excludedFileNames[chunk.FileName]; ok {
+			if _, ok := excludedBatches[idx]; ok {
 				continue
 			}
 			copy(batchEmbeddings.Row(cursor), batchEmbeddings.Row(idx))
@@ -294,45 +256,29 @@ func embedFiles(
 				StartLine: chunk.StartLine,
 				EndLine:   chunk.EndLine,
 			})
-
+			size += len(chunk.Content)
 			cursor++
 		}
 
 		if err := insert(metadata, batchEmbeddings.Embeddings[:cursor*dimensions]); err != nil {
-			return false, err
-		}
-
-		// if the file currently being processed (i.e. the file for the most recently batched chunk)
-		// is flagged for exclusion then notify caller to skip the file's subsequent chunks
-		var excludeCurrentFile bool
-
-		if _, excludeCurrentFile = excludedFileNames[batch[len(batch)-1].FileName]; excludeCurrentFile {
-			// current file was not indexed this flush and was truncated from index (if indexed by a previous flush)
-			partiallyIndexedFileCount = 0
-		} else {
-			// current file could still fail later
-			partiallyIndexedFileCount = currentFileBatchedCount
+			return nil, err
 		}
 
 		batch = batch[:0] // reset batch
 		reportProgress(stats)
-		return excludeCurrentFile, nil
+		return &FlushResults{size, rowsCount}, nil
 	}
 
-	addToBatch := func(chunk codeintelContext.EmbeddableChunk) (bool, error) {
+	addToBatch := func(chunk codeintelContext.EmbeddableChunk) (*FlushResults, error) {
 		batch = append(batch, chunk)
-		currentFileBatchedCount++
 		if len(batch) >= batchSize {
 			// Flush if we've hit batch size
 			return flush()
 		}
-		return false, nil
+		return nil, nil
 	}
 
-fileLoop:
 	for _, file := range files {
-		currentFileBatchedCount = 0
-
 		if ctx.Err() != nil {
 			return bgrepo.EmbedFilesStats{}, ctx.Err()
 		}
@@ -373,25 +319,25 @@ fileLoop:
 		if err != nil {
 			return bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
 		}
-		var size int
+
 		for _, chunk := range chunks {
-			if excludeCurrentFile, err := addToBatch(chunk); err != nil {
+			if results, err := addToBatch(chunk); err != nil {
 				return bgrepo.EmbedFilesStats{}, err
-			} else if excludeCurrentFile {
-				// current file received an embedding error in the last flush()
-				continue fileLoop
+			} else if results != nil {
+				stats.AddChunks(results.count, results.size)
+				stats.ExcludeChunks(batchSize - results.count)
 			}
-
-			size += len(chunk.Content)
 		}
-
-		stats.AddChunks(len(chunks), size)
 		stats.AddFile()
 	}
 
 	// Always do a final flush
-	if _, err := flush(); err != nil {
+	currentBatch := len(batch)
+	if results, err := flush(); err != nil {
 		return bgrepo.EmbedFilesStats{}, err
+	} else if results != nil {
+		stats.AddChunks(results.count, results.size)
+		stats.ExcludeChunks(currentBatch - results.count)
 	}
 
 	return stats, nil

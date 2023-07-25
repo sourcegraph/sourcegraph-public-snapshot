@@ -605,7 +605,7 @@ func HashedLicenseKeyForAnalytics(licenseKey string) string {
 
 // HashedLicenseKeyWithPrefix provides a sha256 hashed license key with a prefix (to ensure unique hashed values by use case).
 func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
-	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix+licenseKey)))
+	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
 }
 
 func GetDeduplicatedForksIndex() collections.Set[string] {
@@ -840,9 +840,9 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		embeddingsConfig.Incremental = pointers.Ptr(true)
 	}
 
-	// The default value for ExcludeFileOnError is false.
-	if embeddingsConfig.ExcludeFileOnError == nil {
-		embeddingsConfig.ExcludeFileOnError = pointers.Ptr(false)
+	// The default value for ExcludeChunkOnError is true.
+	if embeddingsConfig.ExcludeChunkOnError == nil {
+		embeddingsConfig.ExcludeChunkOnError = pointers.Ptr(true)
 	}
 
 	// Set default values for max embeddings counts.
@@ -947,7 +947,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
-		ExcludeFileOnError:         *embeddingsConfig.ExcludeFileOnError,
+		ExcludeChunkOnError:        *embeddingsConfig.ExcludeChunkOnError,
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {

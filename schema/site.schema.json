@@ -2568,13 +2568,13 @@
           },
           "default": "5000"
         },
-        "excludeFileOnError": {
-          "description": "Whether to skip indexing a file if an embedding request fails for it. If true, the file is not indexed and indexing the remainder of the repository proceeds.",
+        "excludeChunkOnError": {
+          "description": "Whether to cancel indexing a repo if an embedding request fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.",
           "type": "boolean",
           "!go": {
             "pointer": true
           },
-          "default": false
+          "default": true
         }
       },
       "examples": [

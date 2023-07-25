@@ -17,22 +17,22 @@ import (
 
 func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 	return &openaiEmbeddingsClient{
-		httpClient:   httpClient,
-		dimensions:   config.Dimensions,
-		accessToken:  config.AccessToken,
-		model:        config.Model,
-		endpoint:     config.Endpoint,
-		excludeFiles: config.ExcludeFileOnError,
+		httpClient:    httpClient,
+		dimensions:    config.Dimensions,
+		accessToken:   config.AccessToken,
+		model:         config.Model,
+		endpoint:      config.Endpoint,
+		excludeChunks: config.ExcludeChunkOnError,
 	}
 }
 
 type openaiEmbeddingsClient struct {
-	httpClient   *http.Client
-	model        string
-	dimensions   int
-	endpoint     string
-	accessToken  string
-	excludeFiles bool
+	httpClient    *http.Client
+	model         string
+	dimensions    int
+	endpoint      string
+	accessToken   string
+	excludeChunks bool
 }
 
 func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
@@ -82,7 +82,7 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 
 	dimensionality := len(response.Data[0].Embedding)
 	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
-	failed := make([]int, 0, len(response.Data))
+	failed := make([]int, 0)
 	for _, embedding := range response.Data {
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
@@ -92,13 +92,12 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 			// response. Try it again a few times and hope for the best.
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
 			if err != nil {
-				// if exclude files is enabled then do not return error and fail the entire repo embed job
-				if c.excludeFiles {
+				// if exclude files is enabled then do not return error, just exclude the chunk
+				if c.excludeChunks {
 					failed = append(failed, embedding.Index)
 
-					// caller expects one vector per text input so append zero values
-					placeholder := make([]float32, dimensionality)
-					embeddings = append(embeddings, placeholder...)
+					// reslice to provide zero value embedding for failed chunk
+					embeddings = embeddings[:len(embeddings)+dimensionality]
 					continue
 				}
 				return nil, client.PartialError{Err: err, Index: embedding.Index}
