@@ -25,7 +25,7 @@ const syncStateToBadgeVariant: Record<ExternalServiceSyncJobState, BadgeProps['v
     [ExternalServiceSyncJobState.FAILED]: 'danger',
     [ExternalServiceSyncJobState.ERRORED]: 'warning',
     [ExternalServiceSyncJobState.COMPLETED]: 'success',
-    [ExternalServiceSyncJobState.PROCESSING]: 'secondary',
+    [ExternalServiceSyncJobState.PROCESSING]: undefined,
     [ExternalServiceSyncJobState.QUEUED]: 'outlineSecondary',
     [ExternalServiceSyncJobState.CANCELED]: 'info',
     [ExternalServiceSyncJobState.CANCELING]: 'secondary',
@@ -108,7 +108,7 @@ export const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalService
                     </Button>
                 </div>
                 <div className="d-flex mr-2 justify-content-left">
-                    <Badge variant={syncStateToBadgeVariant[node.state]}>{node.state}</Badge>{' '}
+                    <Badge variant={syncStateToBadgeVariant[node.state]}>{node.state}</Badge>
                 </div>
                 <div className="flex-shrink-1 flex-grow-0 mr-1">
                     {node.startedAt === null && 'Not started yet.'}
