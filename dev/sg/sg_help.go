@@ -52,12 +52,11 @@ var helpCommand = &cli.Command{
 			return err
 		}
 
-		rootDir, err := root.RepositoryRoot()
-		if err != nil {
-			return err
-		}
-
 		if output := cmd.String("output"); output != "" {
+			rootDir, err := root.RepositoryRoot()
+			if err != nil {
+				return err
+			}
 			output = filepath.Join(rootDir, output)
 
 			if err := os.WriteFile(output, []byte(generatedSgReferenceHeader+"\n\n"+doc), 0644); err != nil {
