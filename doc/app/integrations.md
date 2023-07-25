@@ -42,6 +42,9 @@ The local API endpoint is `http://localhost:3080` by default. The `endpoint` fie
 
 To detect if the Cody app has been installed locally and run at least once, check for the existance of the `app.json` file in the expected directory
 
+## Detecting if the Cody app is running
+
+To detect if the Cody app is running a GET request to the version endpoint can be used.  The endpoint can be found at `/__version` and if the app is running it will return a string that is the current version.
 ## Deep links
 
 The Cody app supports opening deep links that start with the `sourcegraph://` prefix. Opening of a deep links from a browser or from another application will launch the app if it's not already running and will navigate the app's UI to the destination.
