@@ -234,7 +234,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		}
 
 		// Final Bazel images
-		publishOps.Append(bazelPushImagesFinal(c.Version))
+		publishOps.Append(bazelPushImagesFinalNoTest(c.Version))
 		ops.Merge(publishOps)
 
 	case runtype.ImagePatch:

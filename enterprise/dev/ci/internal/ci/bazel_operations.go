@@ -47,18 +47,22 @@ func bazelCmd(args ...string) string {
 }
 
 func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, true, true)
-}
-
-func bazelPushImagesCandidatesNoTest(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, true, false)
+	return bazelPushImagesCmd(version, true, "bazel-tests")
 }
 
 func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, true)
+	return bazelPushImagesCmd(version, false, "bazel-tests")
 }
 
-func bazelPushImagesCmd(version string, isCandidate bool, requiresTest bool) func(*bk.Pipeline) {
+func bazelPushImagesCandidatesNoTest(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, true, "pipeline-gen")
+}
+
+func bazelPushImagesFinalNoTest(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, false, "bazel-push-images-candidate")
+}
+
+func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*bk.Pipeline) {
 	stepName := ":bazel::docker: Push final images"
 	stepKey := "bazel-push-images"
 	candidate := ""
@@ -68,17 +72,11 @@ func bazelPushImagesCmd(version string, isCandidate bool, requiresTest bool) fun
 		stepKey = stepKey + "-candidate"
 		candidate = "true"
 	}
-	var dependsOn string
-	if requiresTest {
-		dependsOn = "bazel-tests"
-	} else {
-		dependsOn = "pipeline-gen"
-	}
 
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			bk.Agent("queue", "bazel"),
-			bk.DependsOn(dependsOn),
+			bk.DependsOn(depKey),
 			bk.Key(stepKey),
 			bk.Env("PUSH_VERSION", version),
 			bk.Env("CANDIDATE_ONLY", candidate),
