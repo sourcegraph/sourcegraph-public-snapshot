@@ -46,7 +46,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
     const [searchParams, setSearchParams] = useSearchParams()
     const isRequestAccessAllowed = checkRequestAccessAllowed(props.context)
 
-    let returnTo = getReturnTo(location)
+    const returnTo = getReturnTo(location)
     if (authenticatedUser) {
         return <Navigate to={returnTo} replace={true} />
     }
