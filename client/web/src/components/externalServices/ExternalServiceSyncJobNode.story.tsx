@@ -11,6 +11,9 @@ const decorator: DecoratorFn = story => <WebStory>{() => <div className="p-3 con
 const config: Meta = {
     title: 'web/External services/ExternalServiceSyncJobNode',
     decorators: [decorator],
+    parameters: {
+        chromatic: { disableSnapshot: false },
+    },
 }
 
 export default config
