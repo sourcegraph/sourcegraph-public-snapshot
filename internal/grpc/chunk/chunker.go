@@ -18,27 +18,18 @@ type Message interface {
 	proto.Message
 }
 
-// Sender encapsulates a gRPC response stream and the current chunk
-// that's being built.
-//
-// Reset, Append, [Append...], Send, Reset, Append, [Append...], Send, ...
-type Sender[T Message] interface {
-	// Reset should create a fresh response message.
-	Reset()
-	// Append should append the given items to the slice in the current response message
-	Append(...T)
-	// Send should send the current response message
-	Send() error
+// New returns a new Chunker that will use the given sendFunc to send chunks of messages.
+func New[T Message](sendFunc func([]T) error) *Chunker[T] {
+	return &Chunker[T]{sendFunc: sendFunc}
 }
-
-// New returns a new Chunker.
-func New[T Message](s Sender[T]) *Chunker[T] { return &Chunker[T]{s: s} }
 
 // Chunker lets you spread items you want to send over multiple chunks.
 // This type is not thread-safe.
 type Chunker[T Message] struct {
-	s    Sender[T]
-	size int
+	sendFunc func([]T) error // sendFunc is the function that will be invoked when a chunk is ready to be sent.
+
+	buffer    []T // buffer stores the items that will be sent when the sendFunc is invoked.
+	sizeBytes int // sizeBytes is the size of the current chunk in bytes.
 }
 
 // maxMessageSize is the maximum size per protobuf message
@@ -48,35 +39,52 @@ const maxMessageSize = 1 * 1024 * 1024
 //
 // Callers should ensure that they call Flush() after the last call to Send().
 func (c *Chunker[T]) Send(items ...T) error {
-	for _, it := range items {
-		if c.size == 0 {
-			c.s.Reset()
+	for _, item := range items {
+		if err := c.sendOne(item); err != nil {
+			return err
 		}
-
-		itSize := proto.Size(it)
-
-		if itSize+c.size >= maxMessageSize {
-			if err := c.sendResponseMsg(); err != nil {
-				return err
-			}
-			c.s.Reset()
-		}
-
-		c.s.Append(it)
-		c.size += itSize
 	}
 
 	return nil
 }
 
+func (c *Chunker[T]) sendOne(item T) error {
+	if c.sizeBytes == 0 {
+		c.clearBuffer()
+	}
+
+	itemSize := proto.Size(item)
+
+	if itemSize+c.sizeBytes >= maxMessageSize {
+		if err := c.sendResponseMsg(); err != nil {
+			return err
+		}
+
+		c.clearBuffer()
+	}
+
+	c.append(item)
+	c.sizeBytes += itemSize
+
+	return nil
+}
+
+func (c *Chunker[T]) append(items ...T) {
+	c.buffer = append(c.buffer, items...)
+}
+
+func (c *Chunker[T]) clearBuffer() {
+	c.buffer = c.buffer[:0]
+}
+
 func (c *Chunker[T]) sendResponseMsg() error {
-	c.size = 0
-	return c.s.Send()
+	c.sizeBytes = 0
+	return c.sendFunc(c.buffer)
 }
 
 // Flush sends remaining items in the current chunk, if any.
 func (c *Chunker[T]) Flush() error {
-	if c.size == 0 {
+	if c.sizeBytes == 0 {
 		return nil
 	}
 

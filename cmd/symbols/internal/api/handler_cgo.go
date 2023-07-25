@@ -50,11 +50,11 @@ func (s *grpcService) LocalCodeIntel(request *proto.LocalCodeIntelRequest, ss pr
 	var response proto.LocalCodeIntelResponse
 	response.FromInternal(payload)
 
-	sender := newLocalCodeIntelSender(func(symbols []*proto.LocalCodeIntelResponse_Symbol) error {
+	sendFunc := func(symbols []*proto.LocalCodeIntelResponse_Symbol) error {
 		return ss.Send(&proto.LocalCodeIntelResponse{Symbols: symbols})
-	})
+	}
 
-	chunker := chunk.New[*proto.LocalCodeIntelResponse_Symbol](sender)
+	chunker := chunk.New[*proto.LocalCodeIntelResponse_Symbol](sendFunc)
 	err = chunker.Send(response.GetSymbols()...)
 	if err != nil {
 		return errors.Wrap(err, "sending response")
@@ -96,29 +96,3 @@ func (s *grpcService) SymbolInfo(ctx context.Context, request *proto.SymbolInfoR
 
 	return &response, nil
 }
-
-type localCodeIntelSender struct {
-	sendFunc func(symbols []*proto.LocalCodeIntelResponse_Symbol) error
-
-	buf []*proto.LocalCodeIntelResponse_Symbol
-}
-
-func newLocalCodeIntelSender(sendFunc func(symbols []*proto.LocalCodeIntelResponse_Symbol) error) *localCodeIntelSender {
-	return &localCodeIntelSender{
-		sendFunc: sendFunc,
-	}
-}
-
-func (s *localCodeIntelSender) Reset() {
-	s.buf = s.buf[:0]
-}
-
-func (s *localCodeIntelSender) Append(rs ...*proto.LocalCodeIntelResponse_Symbol) {
-	s.buf = append(s.buf, rs...)
-}
-
-func (s *localCodeIntelSender) Send() error {
-	return s.sendFunc(s.buf)
-}
-
-var _ chunk.Sender[*proto.LocalCodeIntelResponse_Symbol] = &localCodeIntelSender{}

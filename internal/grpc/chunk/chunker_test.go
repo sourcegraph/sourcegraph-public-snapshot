@@ -16,34 +16,13 @@ import (
 	"strconv"
 	"testing"
 
+	"github.com/dustin/go-humanize"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/interop/grpc_testing"
 	"google.golang.org/protobuf/proto"
 )
-
-type testSender struct {
-	stream grpc_testing.TestService_StreamingOutputCallServer
-	body   []byte
-}
-
-func (ts *testSender) Reset() { ts.body = ts.body[:0] }
-func (ts *testSender) Append(payloads ...*grpc_testing.Payload) {
-	for _, p := range payloads {
-		ts.body = append(ts.body, p.GetBody()...)
-	}
-}
-
-func (ts *testSender) Send() error {
-	return ts.stream.Send(&grpc_testing.StreamingOutputCallResponse{
-		Payload: &grpc_testing.Payload{
-			Body: ts.body,
-		},
-	})
-}
-
-var _ Sender[*grpc_testing.Payload] = &testSender{}
 
 func TestChunker(t *testing.T) {
 	s := &server{}
@@ -54,19 +33,39 @@ func TestChunker(t *testing.T) {
 	defer conn.Close()
 	ctx := context.Background()
 
+	inputPayloadSizeBytes := int(3.5 * maxMessageSize)
+
 	stream, err := client.StreamingOutputCall(ctx, &grpc_testing.StreamingOutputCallRequest{
 		Payload: &grpc_testing.Payload{
-			Body: []byte(strconv.FormatInt(3.5*maxMessageSize, 10)),
+			Body: []byte(strconv.FormatInt(int64(inputPayloadSizeBytes), 10)),
 		},
 	})
+
 	require.NoError(t, err)
 
+	messageCount := 0
+	var receivedPayload []byte
 	for {
 		resp, err := stream.Recv()
 		if err == io.EOF {
 			break
 		}
+
+		messageCount++
+		receivedPayload = append(receivedPayload, resp.GetPayload().GetBody()...)
+
 		require.Less(t, proto.Size(resp), maxMessageSize)
+	}
+
+	require.Equal(t, 4, messageCount)
+
+	receivedPayloadSizeBytes := len(receivedPayload)
+
+	if receivedPayloadSizeBytes != inputPayloadSizeBytes {
+		t.Fatalf("input payload size is not %d bytes (~ %q), got size: %d (~ %q)",
+			inputPayloadSizeBytes, humanize.Bytes(uint64(inputPayloadSizeBytes)),
+			receivedPayloadSizeBytes, humanize.Bytes(uint64(receivedPayloadSizeBytes)),
+		)
 	}
 }
 
@@ -82,7 +81,14 @@ func (s *server) StreamingOutputCall(req *grpc_testing.StreamingOutputCallReques
 		return err
 	}
 
-	c := New[*grpc_testing.Payload](&testSender{stream: stream})
+	c := New[*grpc_testing.Payload](func(payloads []*grpc_testing.Payload) error {
+		var body []byte
+		for _, p := range payloads {
+			body = append(body, p.GetBody()...)
+		}
+
+		return stream.Send(&grpc_testing.StreamingOutputCallResponse{Payload: &grpc_testing.Payload{Body: body}})
+	})
 	for numBytes := int64(0); numBytes < bytesToSend; numBytes += kilobyte {
 		if err := c.Send(&grpc_testing.Payload{Body: make([]byte, kilobyte)}); err != nil {
 			return err
