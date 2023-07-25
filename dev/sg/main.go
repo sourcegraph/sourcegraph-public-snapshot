@@ -48,6 +48,8 @@ func main() {
 var (
 	BuildCommit = "dev"
 
+	DisableDevPrivateCheck = false
+
 	// configFile is the path to use with sgconf.Get - it must not be used before flag
 	// initialization.
 	configFile string
@@ -137,6 +139,13 @@ var sg = &cli.App{
 			Usage:       "use fixed output configuration instead of detecting terminal capabilities",
 			EnvVars:     []string{"SG_DISABLE_OUTPUT_DETECTION"},
 			Destination: &std.DisableOutputDetection,
+		},
+		&cli.BoolFlag{
+			Name:        "no-dev-private",
+			Usage:       "disable checking for dev-private - only useful for automation or ci",
+			EnvVars:     []string{"SG_NO_DEV_PRIVATE"},
+			Value:       true,
+			Destination: &DisableDevPrivateCheck,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {

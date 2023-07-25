@@ -31,10 +31,6 @@ var helpCommand = &cli.Command{
 			TakesFile: true,
 			Usage:     "Write reference to `file`",
 		},
-		&cli.BoolFlag{
-			Name:  "use-cwd",
-			Usage: "Use the current directory instead of checking that we're in sourcegraph/sourcegraph repository.",
-		},
 	},
 	Action: func(cmd *cli.Context) error {
 		if cmd.NArg() != 0 {
@@ -56,7 +52,7 @@ var helpCommand = &cli.Command{
 			return err
 		}
 
-		rootDir, err := determineRootDir(cmd)
+		rootDir, err := root.RepositoryRoot()
 		if err != nil {
 			return err
 		}
@@ -72,23 +68,4 @@ var helpCommand = &cli.Command{
 
 		return std.Out.WriteMarkdown(doc)
 	},
-}
-
-func determineRootDir(cmd *cli.Context) (string, error) {
-	var dir string
-	if cmd.Bool("use-cwd") {
-		wd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		dir = wd
-	} else {
-		repoRoot, err := root.RepositoryRoot()
-		if err != nil {
-			return "", err
-		}
-		dir = repoRoot
-	}
-
-	return dir, nil
 }
