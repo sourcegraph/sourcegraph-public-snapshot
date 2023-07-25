@@ -2,6 +2,7 @@ import { FC, useEffect, useState } from 'react'
 
 import { mdiChevronUp, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
+import { useLocation } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
@@ -24,6 +25,7 @@ import {
 import { LogOutput } from '../../../components/LogOutput'
 import { PageTitle } from '../../../components/PageTitle'
 import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
+import { LogsPageTabs } from '../../../repo/constants'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import styles from './RepoSettingsLogsPage.module.scss'
@@ -32,11 +34,67 @@ export interface RepoSettingsLogsPageProps {
     repo: SettingsAreaRepositoryFields
 }
 
+type ActiveTabType = typeof LogsPageTabs[keyof typeof LogsPageTabs]
+
 /**
  * The repository settings log page.
  */
 export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) => {
+    const [activeTab, setActiveTab] = useState<ActiveTabType>(LogsPageTabs.COMMANDS)
     useEffect(() => eventLogger.logPageView('RepoSettingsLogs'))
+    const location = useLocation()
+
+    useEffect(() => {
+        const searchParams = new URLSearchParams(location.search)
+        if (searchParams.has('activeTab')) {
+            switch (searchParams.get('activeTab')) {
+                case LogsPageTabs.SYNCLOGS:
+                    setActiveTab(LogsPageTabs.SYNCLOGS)
+                    break
+                case LogsPageTabs.COMMANDS:
+                default:
+                    setActiveTab(LogsPageTabs.COMMANDS)
+            }
+        } else {
+            setActiveTab(LogsPageTabs.COMMANDS)
+        }
+    }, [location.search])
+
+    return (
+        <>
+            <PageHeader>
+                <PageTitle>Logs</PageTitle>
+            </PageHeader>
+
+            <Container>
+                <Tabs activeTab={activeTab}>
+                    <TabList>
+                        <Tab>Sync logs</Tab>
+                        <Tab>Commands</Tab>
+                    </TabList>
+
+                    <TabPanels>
+                        <TabPanel>
+                            <LastSyncOutput repo={repo} />
+                        </TabPanel>
+
+                        <TabPanel>
+                            <CommandsLogs repo={repo} />
+                        </TabPanel>
+                    </TabPanels>
+                </Tabs>
+            </Container>
+        </>
+    )
+}
+
+const LastSyncOutput = (props: { repo: SettingsAreaRepositoryFields }) => {
+    const output =
+        (props.repo.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
+        props.repo.mirrorInfo.lastSyncOutput ||
+        'No logs yet.'
+    const searchParams = new URLSearchParams(location.search)
+    console.log(searchParams.has('tabIndex'), '<====')
 
     return (
         <>
