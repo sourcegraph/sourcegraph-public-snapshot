@@ -42,7 +42,10 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		return graphqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
 	}
 
-	raws, err := store.Slice(ctx, offset, limit)
+	// the FIFO list is zero-indexed, so we need to deduct one from the limit
+	// to be able to get the correct amount of data.
+	to := currentEnd - 1
+	raws, err := store.Slice(ctx, offset, to)
 	if err != nil {
 		return nil, err
 	}
