@@ -11,7 +11,9 @@ const E5_QUERY_PREFIX = "query: "
 const E5_DOCUMENT_PREFIX = "passage: "
 
 func isE5LikeModel(model string) bool {
-	return strings.HasPrefix(model, "sourcegraph/scout") || strings.HasPrefix(model, "sourcegraph/e5")
+	parts := strings.Split(model, "/")
+	modelName := parts[len(parts)-1]
+	return strings.HasPrefix(modelName, "scout") || strings.HasPrefix(modelName, "e5")
 }
 
 func ApplyToQuery(query string, model string) string {
