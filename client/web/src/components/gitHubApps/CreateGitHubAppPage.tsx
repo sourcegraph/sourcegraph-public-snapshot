@@ -129,7 +129,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
         setError(undefined)
         try {
             const response = await fetch(
-                `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}`
+                `/.auth/githubapp/new-app-state?appName=${name}&webhookURN=${url}&domain=${appDomain}&baseURL=${url}`
             )
             if (!response.ok) {
                 if (response.body instanceof ReadableStream) {
@@ -155,7 +155,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 setError('Unknown error occurred.')
             }
         }
-    }, [submitForm, name, appDomain, url, originURL])
+    }, [submitForm, name, appDomain, url, originURL, url])
 
     const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value)
