@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type TokenResponse struct {
@@ -29,7 +30,7 @@ type ImageInfo struct {
 	Image  string
 }
 
-func getAnonDockerAuthToken(repo string) string {
+func getAnonDockerAuthToken(repo string) (string, error) {
 	// get a token so we can fetch manifests
 	if !strings.Contains(repo, "/") {
 		repo = fmt.Sprintf("%s/%s", repo, repo)
@@ -51,8 +52,7 @@ func getAnonDockerAuthToken(repo string) string {
 	resp, _ := client.Do(req)
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("unexpected status code %d\n", resp.StatusCode)
-		os.Exit(1)
+		return "", errors.Newf("unexpected status code while fetching token %d\n", resp.StatusCode)
 	}
 
 	defer resp.Body.Close()
@@ -63,14 +63,18 @@ func getAnonDockerAuthToken(repo string) string {
 	err := json.Unmarshal([]byte(body), &tr)
 
 	if err != nil {
-		panic(err)
+		return "", err
 	}
 
-	return tr.Token
+	return tr.Token, nil
 }
 
-func getImageManifest(image string, tag string) string {
-	token := getAnonDockerAuthToken(image)
+func getImageManifest(image string, tag string) (string, error) {
+	token, err := getAnonDockerAuthToken(image)
+
+	if err != nil {
+		return "", err
+	}
 
 	reg := "https://registry.hub.docker.com/v2/%s/manifests/%s"
 	url := fmt.Sprintf(reg, image, tag)
@@ -84,13 +88,13 @@ func getImageManifest(image string, tag string) string {
 	resp, _ := client.Do(req)
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("unexpected status code %d\n", resp.StatusCode)
-		os.Exit(1)
+		return "", errors.Newf("unexpected status code while fetching manifest %d\n", resp.StatusCode)
 	}
+	defer resp.Body.Close()
 
 	digest := resp.Header.Get("Docker-Content-Digest")
 
-	return digest
+	return digest, nil
 }
 
 func UpdateHashes(ctx *cli.Context) error {
@@ -142,7 +146,11 @@ func UpdateHashes(ctx *cli.Context) error {
 
 				if !strings.HasPrefix(currentImage.Image, "us.gcr.io") {
 					// fetch new digest for latest tag
-					newDigest := getImageManifest(currentImage.Image, "latest")
+					newDigest, err := getImageManifest(currentImage.Image, "latest")
+
+					if err != nil {
+						std.Out.WriteWarningf("%v", err)
+					}
 
 					if currentImage.Digest != newDigest {
 						updated = true
