@@ -155,7 +155,7 @@ export const CreateGitHubAppPage: FC<CreateGitHubAppPageProps> = ({
                 setError('Unknown error occurred.')
             }
         }
-    }, [submitForm, name, appDomain, url, originURL, url])
+    }, [submitForm, name, appDomain, url, originURL])
 
     const handleNameChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         setName(event.target.value)
