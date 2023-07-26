@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -11,11 +12,16 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/frontend"
+	proto "github.com/sourcegraph/sourcegraph/internal/frontend/v1"
+	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,11 +37,20 @@ func defaultFrontendInternal() string {
 }
 
 type internalClient struct {
+	GRPCConnectionCache *defaults.ConnectionCache
+
 	// URL is the root to the internal API frontend server.
 	URL string
 }
 
-var Client = &internalClient{URL: "http://" + frontendInternal}
+var Client = &internalClient{GRPCConnectionCache: GRPCConnectionCache(), URL: "http://" + frontendInternal}
+
+func GRPCConnectionCache() *defaults.ConnectionCache {
+
+	logger := log.Scoped("frontendConnectionCache", "grpc connection cache for clients of the frontend service")
+
+	return defaults.NewConnectionCache(logger)
+}
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Name:    "src_frontend_internal_request_duration_seconds",
@@ -91,6 +106,32 @@ var MockExternalServiceConfigs func(kind string, result any) error
 func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result any) error {
 	if MockExternalServiceConfigs != nil {
 		return MockExternalServiceConfigs(kind, result)
+	}
+	fmt.Println("internalClient.ExternalServiceConfigs")
+	if internalgrpc.IsGRPCEnabled(ctx) {
+		fmt.Println("GRPC.internalClient.ExternalServiceConfigs")
+		fmt.Printf("c.URL: %s\n", c.URL)
+		cc, err := c.GRPCConnectionCache.GetConnection(c.URL)
+		if err != nil {
+			fmt.Printf("c.GRPCConnectionCache.GetConnection(c.URL) error: %s\n", err)
+			return err
+		}
+		fmt.Println("Works Here")
+		client := proto.NewFrontendServiceClient(cc)
+		resp, err := client.ExternalServiceConfigs(ctx, &proto.ExternalServiceConfigsRequest{
+			Kind: kind,
+		})
+		if err != nil {
+			return err
+		}
+
+		err = json.Unmarshal([]byte(resp.Config), &result)
+		if err != nil {
+			return err
+		}
+
+		return nil
+
 	}
 	return c.postInternal(ctx, "external-services/configs", frontend.ExternalServiceConfigsRequest{
 		Kind: kind,
