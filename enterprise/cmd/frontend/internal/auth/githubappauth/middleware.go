@@ -114,6 +114,7 @@ type gitHubAppStateDetails struct {
 	WebhookUUID string `json:"webhookUUID,omitempty"`
 	Domain      string `json:"domain"`
 	AppID       int    `json:"app_id,omitempty"`
+	BaseURL     string `json:"base_url,omitempty"`
 }
 
 func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handler {
@@ -134,6 +135,7 @@ func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handle
 
 		gqlID := req.URL.Query().Get("id")
 		domain := req.URL.Query().Get("domain")
+		baseURL := req.URL.Query().Get("baseURL")
 		if gqlID == "" {
 			// we marshal an empty `gitHubAppStateDetails` struct because we want the values saved in the cache
 			// to always conform to the same structure.
@@ -154,8 +156,9 @@ func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handle
 			return
 		}
 		stateDetails, err := json.Marshal(gitHubAppStateDetails{
-			AppID:  int(id64),
-			Domain: domain,
+			AppID:   int(id64),
+			Domain:  domain,
+			BaseURL: baseURL,
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
@@ -177,6 +180,7 @@ func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handle
 		webhookURN := req.URL.Query().Get("webhookURN")
 		appName := req.URL.Query().Get("appName")
 		domain := req.URL.Query().Get("domain")
+		baseURL := req.URL.Query().Get("baseURL")
 		var webhookUUID string
 		if webhookURN != "" {
 			ws := backend.NewWebhookService(db, keyring.Default())
@@ -197,6 +201,7 @@ func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handle
 		stateDetails, err := json.Marshal(gitHubAppStateDetails{
 			WebhookUUID: webhookUUID,
 			Domain:      domain,
+			BaseURL:     baseURL,
 		})
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when marshalling state: %s", err.Error()), http.StatusInternalServerError)
@@ -260,13 +265,13 @@ func newServeMux(db database.DB, prefix string, cache *rcache.Cache) http.Handle
 			return
 		}
 
-		referer, err := url.Parse(req.Referer())
+		baseURL, err := url.Parse(stateDetails.BaseURL)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Bad request, could not parse referer URL: %v, error: %v", req.Referer(), err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Bad request, could not parse baseURL from state: %v, error: %v", stateDetails.BaseURL, err), http.StatusInternalServerError)
 			return
 		}
 
-		apiURL, _ := github.APIRoot(referer)
+		apiURL, _ := github.APIRoot(baseURL)
 		u, err := url.JoinPath(apiURL.String(), "/app-manifests", code, "conversions")
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Unexpected error when building manifest endpoint URL: %v", err), http.StatusInternalServerError)
