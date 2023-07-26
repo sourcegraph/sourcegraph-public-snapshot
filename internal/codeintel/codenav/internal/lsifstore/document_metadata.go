@@ -79,6 +79,59 @@ WHERE
 LIMIT 1
 `
 
+func (s *store) GetStencilToo(ctx context.Context, bundleID int, path string, r *scip.Range) (_ []string, err error) {
+	ctx, trace, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("bundleID", bundleID),
+		attribute.String("path", path),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+		stencilQuery,
+		bundleID,
+		path,
+	)))
+	if err != nil || !exists {
+		return nil, err
+	}
+
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+
+	symbolNameMap := map[string]struct{}{}
+	for _, occurrence := range documentData.SCIPData.Occurrences {
+		if r == nil || ComparePosition(*r, int(scip.NewRange(occurrence.Range).Start.Line), int(scip.NewRange(occurrence.Range).Start.Character)) == 0 {
+			symbolNameMap[occurrence.Symbol] = struct{}{}
+		}
+	}
+
+	symbolNames := make([]string, 0, len(symbolNameMap))
+	for symbolName := range symbolNameMap {
+		symbolNames = append(symbolNames, symbolName)
+	}
+
+	return symbolNames, nil
+}
+
+func ComparePosition(r scip.Range, line, character int) int {
+	if line < int(r.Start.Line) {
+		return 1
+	}
+
+	if line > int(r.End.Line) {
+		return -1
+	}
+
+	if line == int(r.Start.Line) && character < int(r.Start.Character) {
+		return 1
+	}
+
+	if line == int(r.End.Line) && character >= int(r.End.Character) {
+		return -1
+	}
+
+	return 0
+}
+
 // GetRanges returns definition, reference, implementation, and hover data for each range within the given span of lines.
 func (s *store) GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error) {
 	ctx, _, endObservation := s.operations.getRanges.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{

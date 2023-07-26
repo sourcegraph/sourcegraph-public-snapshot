@@ -1191,6 +1191,42 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	return dedupeRanges(sortedRanges), nil
 }
 
+// GetStencilToo returns the set of locations defining the symbol at the given position.
+func (s *Service) GetStencilToo(ctx context.Context, args RequestArgs, path string, requestState RequestState, r *scip.Range) (symbolsNames []string, err error) {
+	ctx, trace, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+		attribute.Int("repositoryID", args.RepositoryID),
+		attribute.String("commit", args.Commit),
+		attribute.String("path", path),
+		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	adjustedUploads, err := s.getUploadPaths(ctx, path, requestState)
+	if err != nil {
+		return nil, err
+	}
+
+	for i := range adjustedUploads {
+		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", adjustedUploads[i].Upload.ID))
+
+		symbolNames, err := s.lsifstore.GetStencilToo(
+			ctx,
+			adjustedUploads[i].Upload.ID,
+			adjustedUploads[i].TargetPathWithoutRoot,
+			r,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "lsifStore.StencilToo")
+		}
+
+		symbolsNames = append(symbolsNames, symbolNames...)
+	}
+	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(symbolsNames)))
+
+	return symbolsNames, nil
+}
+
 func (s *Service) GetFullSCIPNameByDescriptor(ctx context.Context, uploadID []int, symbolNames []string) (names []*symbols.ExplodedSymbol, err error) {
 	return s.lsifstore.GetFullSCIPNameByDescriptor(ctx, uploadID, symbolNames)
 }

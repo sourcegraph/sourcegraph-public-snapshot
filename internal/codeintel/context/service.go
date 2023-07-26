@@ -56,6 +56,7 @@ func newService(
 const (
 	maximumIndexesPerMonikerSearch = 500
 	hunkCacheSize                  = 1000
+	enableSyntect                  = true
 )
 
 func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.GetPreciseContextInput) (_ []*types.PreciseContext, err error) {
@@ -119,128 +120,166 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}
 	fmt.Printf("> CONTEXT API\n")
 	defer func() { fmt.Printf("< CONTEXT API done in %s (%s)\n", time.Since(start), err) }()
+	fuzzyNameSetBySymbol := map[string]map[string]struct{}{}
+	if enableSyntect {
+		// PHASE 1: Run current scope through treesitter
+		syntectDocument, err := s.getSCIPDocumentByContent(ctx, content, filename)
+		if err != nil {
+			return nil, err
+		}
+		trace.AddEvent("contextSvc.getSCIPDocumentByContent",
+			attribute.String("filename", filename),
+		)
 
-	// PHASE 1: Run current scope through treesitter
+		fuzzySymbolNameMap := map[string]struct{}{}
+		var rng *scip.Range
+		if args.Input.ActiveFileSelectionRange != nil {
+			rng = &scip.Range{
+				Start: scip.Position{
+					Line:      int32(args.Input.ActiveFileSelectionRange.StartLine),
+					Character: int32(args.Input.ActiveFileSelectionRange.StartCharacter),
+				},
+				End: scip.Position{
+					Line:      int32(args.Input.ActiveFileSelectionRange.EndLine),
+					Character: int32(args.Input.ActiveFileSelectionRange.EndCharacter),
+				},
+			}
+		}
+		for _, occurrence := range syntectDocument.Occurrences {
+			if rng == nil || ComparePosition(*rng, int(scip.NewRange(occurrence.Range).Start.Line), int(scip.NewRange(occurrence.Range).Start.Character)) == 0 {
+				fuzzySymbolNameMap[occurrence.Symbol] = struct{}{}
+			}
+		}
+		fuzzySymbolNames := make([]string, 0, len(fuzzySymbolNameMap))
+		for fuzzyName := range fuzzySymbolNameMap {
+			trace.AddEvent("symbolNameMap", attribute.String("symbolName", fuzzyName)) // TODO - batch
+			fuzzySymbolNames = append(fuzzySymbolNames, fuzzyName)
+		}
+		sort.Strings(fuzzySymbolNames)
 
-	syntectDocument, err := s.getSCIPDocumentByContent(ctx, content, filename)
-	if err != nil {
-		return nil, err
-	}
-	trace.AddEvent("contextSvc.getSCIPDocumentByContent",
-		attribute.String("filename", filename),
-	)
+		// DEBUGGING
+		lap("PHASE 1: %d symbols from %s: %v\n", len(fuzzySymbolNames), filename, fuzzySymbolNames)
 
-	fuzzySymbolNameMap := map[string]struct{}{}
-	for _, occurrence := range syntectDocument.Occurrences {
-		fuzzySymbolNameMap[occurrence.Symbol] = struct{}{}
-	}
-	fuzzySymbolNames := make([]string, 0, len(fuzzySymbolNameMap))
-	for fuzzyName := range fuzzySymbolNameMap {
-		trace.AddEvent("symbolNameMap", attribute.String("symbolName", fuzzyName)) // TODO - batch
-		fuzzySymbolNames = append(fuzzySymbolNames, fuzzyName)
-	}
-	sort.Strings(fuzzySymbolNames)
+		// PHASE 2: Run treesitter output through a translation layer so we can do
+		// the graph navigation in "SCIP-world" using proper identifiers. The following
+		// code is pretty sloppy right now since we haven't consolidated on a single way
+		// to "match" descriptors together. This should align in the db layer as well.
+		//
+		// This isn't a deep technical problem, just one of deciding on a thing and
+		// conforming to/communicating it in the codebase.
 
-	// DEBUGGING
-	lap("PHASE 1: %d symbols from %s: %v\n", len(fuzzySymbolNames), filename, fuzzySymbolNames)
+		// Construct a map from syntect (fuzzy) name to a list of SCIP names matching the syntect
+		// output. I'd like to have the `GetFullSCIPNameByDescriptor` method create this
+		// mapping instead. This block should become a single function call after that
+		// transformation.
 
-	// PHASE 2: Run treesitter output through a translation layer so we can do
-	// the graph navigation in "SCIP-world" using proper identifiers. The following
-	// code is pretty sloppy right now since we haven't consolidated on a single way
-	// to "match" descriptors together. This should align in the db layer as well.
-	//
-	// This isn't a deep technical problem, just one of deciding on a thing and
-	// conforming to/communicating it in the codebase.
+		scipNamesByFuzzyName, err := func() (map[string][]*symbols.ExplodedSymbol, error) {
+			// TODO: Either pass a slice of uploads or loop thru uploads and pass the ids to fix this hardcoding of the first
+			// TODO: does it make more sense to return a map to avoid having to loop thru them on line 189?
+			explodedScipNames, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, []int{uploads[0].ID}, fuzzySymbolNames)
+			if err != nil {
+				return nil, err
+			}
 
-	// Construct a map from syntect (fuzzy) name to a list of SCIP names matching the syntect
-	// output. I'd like to have the `GetFullSCIPNameByDescriptor` method create this
-	// mapping instead. This block should become a single function call after that
-	// transformation.
+			// DEBUGGING
+			for _, scipName := range explodedScipNames {
+				if strings.Contains(scipName.DescriptorSuffix, "Runner") {
+					fmt.Printf("\tSCIP:%q\n", scipName.DescriptorSuffix)
+				}
+			}
+			for _, fuzzyName := range fuzzySymbolNames {
+				if strings.Contains(fuzzyName, "Runner") {
+					ex, _ := symbols.NewExplodedSymbol(fuzzyName)
+					fmt.Printf("\tSYNTECT: %q -> %q\n", fuzzyName, ex.DescriptorSuffix)
+				}
+			}
+			fmt.Printf("\n\n")
 
-	scipNamesByFuzzyName, err := func() (map[string][]*symbols.ExplodedSymbol, error) {
-		// TODO: Either pass a slice of uploads or loop thru uploads and pass the ids to fix this hardcoding of the first
-		// TODO: does it make more sense to return a map to avoid having to loop thru them on line 189?
-		explodedScipNames, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, []int{uploads[0].ID}, fuzzySymbolNames)
+			explodedScipSymbolsByFuzzyName := map[string][]*symbols.ExplodedSymbol{}
+			for _, fuzzyName := range fuzzySymbolNames {
+				// TODO: Don't swallow error
+				ex, _ := symbols.NewExplodedSymbol(fuzzyName)
+				var explodedScipSymbols []*symbols.ExplodedSymbol
+				for _, esn := range explodedScipNames {
+					// N.B. this matches what we search against in fuzzyDescriptorSuffixConditions
+					if !strings.HasSuffix(esn.DescriptorSuffix, ex.DescriptorSuffix) {
+						continue
+					}
+					// TODO - batch
+					trace.AddEvent(
+						"scipNames DescriptorSuffix or DescriptorSuffix",
+						attribute.String("fuzzyName DescriptorSuffix", ex.DescriptorSuffix),
+						attribute.String("scipName DescriptorSuffix", esn.DescriptorSuffix),
+					)
+
+					explodedScipSymbols = append(explodedScipSymbols, esn)
+				}
+
+				// DEBUGGING
+				if len(explodedScipSymbols) == 0 {
+					ex, _ := symbols.NewExplodedSymbol(fuzzyName)
+					if strings.Contains(fuzzyName, "Runner") {
+						fmt.Printf("> NO MATCHES FOR %q (%q)??\n", fuzzyName, ex.DescriptorSuffix)
+					}
+				}
+
+				if len(explodedScipSymbols) > 20 {
+					// DEBUGGING
+					fmt.Printf("TOO MANY RESULTS FOR %q\n", fuzzyName)
+					trace.AddEvent("TOO MANY RESULTS", attribute.String("syntectName", fuzzyName))
+					explodedScipSymbols = nil
+				}
+
+				if len(explodedScipSymbols) > 0 {
+					explodedScipSymbolsByFuzzyName[fuzzyName] = explodedScipSymbols
+				}
+			}
+			// DEBUGGING
+			fmt.Printf("\n\n")
+
+			return explodedScipSymbolsByFuzzyName, nil
+		}()
 		if err != nil {
 			return nil, err
 		}
 
-		// DEBUGGING
-		for _, scipName := range explodedScipNames {
-			if strings.Contains(scipName.DescriptorSuffix, "Runner") {
-				fmt.Printf("\tSCIP:%q\n", scipName.DescriptorSuffix)
-			}
-		}
-		for _, fuzzyName := range fuzzySymbolNames {
-			if strings.Contains(fuzzyName, "Runner") {
-				ex, _ := symbols.NewExplodedSymbol(fuzzyName)
-				fmt.Printf("\tSYNTECT: %q -> %q\n", fuzzyName, ex.DescriptorSuffix)
-			}
-		}
-		fmt.Printf("\n\n")
-
-		explodedScipSymbolsByFuzzyName := map[string][]*symbols.ExplodedSymbol{}
-		for _, fuzzyName := range fuzzySymbolNames {
-			// TODO: Don't swallow error
-			ex, _ := symbols.NewExplodedSymbol(fuzzyName)
-			var explodedScipSymbols []*symbols.ExplodedSymbol
-			for _, esn := range explodedScipNames {
-				// N.B. this matches what we search against in fuzzyDescriptorSuffixConditions
-				if !strings.HasSuffix(esn.DescriptorSuffix, ex.DescriptorSuffix) {
-					continue
+		for fuzzyName, explodedSymbols := range scipNamesByFuzzyName {
+			for _, explodedSymbol := range explodedSymbols {
+				symbol := explodedSymbol.Symbol()
+				if _, ok := fuzzyNameSetBySymbol[symbol]; !ok {
+					fuzzyNameSetBySymbol[symbol] = map[string]struct{}{}
 				}
-				// TODO - batch
-				trace.AddEvent(
-					"scipNames DescriptorSuffix or DescriptorSuffix",
-					attribute.String("fuzzyName DescriptorSuffix", ex.DescriptorSuffix),
-					attribute.String("scipName DescriptorSuffix", esn.DescriptorSuffix),
-				)
 
-				explodedScipSymbols = append(explodedScipSymbols, esn)
-			}
-
-			// DEBUGGING
-			if len(explodedScipSymbols) == 0 {
-				ex, _ := symbols.NewExplodedSymbol(fuzzyName)
-				if strings.Contains(fuzzyName, "Runner") {
-					fmt.Printf("> NO MATCHES FOR %q (%q)??\n", fuzzyName, ex.DescriptorSuffix)
-				}
-			}
-
-			if len(explodedScipSymbols) > 20 {
-				// DEBUGGING
-				fmt.Printf("TOO MANY RESULTS FOR %q\n", fuzzyName)
-				trace.AddEvent("TOO MANY RESULTS", attribute.String("syntectName", fuzzyName))
-				explodedScipSymbols = nil
-			}
-
-			if len(explodedScipSymbols) > 0 {
-				explodedScipSymbolsByFuzzyName[fuzzyName] = explodedScipSymbols
+				fuzzyNameSetBySymbol[symbol][fuzzyName] = struct{}{}
 			}
 		}
+
 		// DEBUGGING
-		fmt.Printf("\n\n")
-
-		return explodedScipSymbolsByFuzzyName, nil
-	}()
-	if err != nil {
-		return nil, err
-	}
-
-	fuzzyNameSetBySymbol := map[string]map[string]struct{}{}
-	for fuzzyName, explodedSymbols := range scipNamesByFuzzyName {
-		for _, explodedSymbol := range explodedSymbols {
-			symbol := explodedSymbol.Symbol()
-			if _, ok := fuzzyNameSetBySymbol[symbol]; !ok {
-				fuzzyNameSetBySymbol[symbol] = map[string]struct{}{}
+		lap("PHASE 2: %d matching precise symbols\n", len(fuzzyNameSetBySymbol))
+	} else {
+		var rng *scip.Range
+		if args.Input.ActiveFileSelectionRange != nil {
+			rng = &scip.Range{
+				Start: scip.Position{
+					Line:      int32(args.Input.ActiveFileSelectionRange.StartLine),
+					Character: int32(args.Input.ActiveFileSelectionRange.StartCharacter),
+				},
+				End: scip.Position{
+					Line:      int32(args.Input.ActiveFileSelectionRange.EndLine),
+					Character: int32(args.Input.ActiveFileSelectionRange.EndCharacter),
+				},
 			}
+		}
+		// TODO: we might have to strip the root active file
+		symbolsNames, err := s.codenavSvc.GetStencilToo(ctx, requestArgs, filename, reqState, rng)
+		if err != nil {
+			return nil, err
+		}
 
-			fuzzyNameSetBySymbol[symbol][fuzzyName] = struct{}{}
+		for _, symbolName := range symbolsNames {
+			fuzzyNameSetBySymbol[symbolName] = map[string]struct{}{"": {}}
 		}
 	}
-
-	// DEBUGGING
-	lap("PHASE 2: %d matching precise symbols\n", len(fuzzyNameSetBySymbol))
 
 	// PHASE 3: Gather definitions for each relevant SCIP symbol
 
@@ -341,7 +380,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				// NOTE: assumption made; we may want to look at the precise
 				// range as an alternate or additional indicator for which
 				// syntect occurrences we are interested in
-				if occ.Symbol != pd.fuzzyName {
+				if occ.Symbol != pd.fuzzyName && pd.fuzzyName != "" {
 					continue
 				}
 				fmt.Println("THIS is the EnclosingRange", occ.EnclosingRange)
@@ -396,6 +435,26 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 // 	return strings.Join(c, "\n")
 // }
+
+func ComparePosition(r scip.Range, line, character int) int {
+	if line < int(r.Start.Line) {
+		return 1
+	}
+
+	if line > int(r.End.Line) {
+		return -1
+	}
+
+	if line == int(r.Start.Line) && character < int(r.Start.Character) {
+		return 1
+	}
+
+	if line == int(r.End.Line) && character >= int(r.End.Character) {
+		return -1
+	}
+
+	return 0
+}
 
 func extractSnippet(lines []string, startLine, endLine, startChar, endChar int32) string {
 	if startLine > endLine || startLine < 0 || endLine >= int32(len(lines)) {

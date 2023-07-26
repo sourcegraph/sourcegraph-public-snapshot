@@ -17,6 +17,7 @@ type LsifStore interface {
 	// Whole-document metadata
 	GetPathExists(ctx context.Context, bundleID int, path string) (bool, error)
 	GetStencil(ctx context.Context, bundleID int, path string) ([]shared.Range, error)
+	GetStencilToo(ctx context.Context, bundleID int, path string, r *scip.Range) (_ []string, err error)
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
 
 	// Fetch symbol names by position
