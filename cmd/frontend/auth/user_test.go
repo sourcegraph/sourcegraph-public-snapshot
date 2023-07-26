@@ -440,6 +440,8 @@ func TestGetAndSaveUser(t *testing.T) {
 		errNotFound := &errcode.Mock{
 			IsNotFound: true,
 		}
+		gss := database.NewMockGlobalStateStore()
+		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 		usersStore := database.NewMockUserStore()
 		usersStore.GetByVerifiedEmailFunc.SetDefaultReturn(nil, errNotFound)
 		externalAccountsStore := database.NewMockUserExternalAccountsStore()
@@ -455,6 +457,7 @@ func TestGetAndSaveUser(t *testing.T) {
 		})
 		permsSyncJobsStore := database.NewMockPermissionSyncJobStore()
 		db := database.NewMockDB()
+		db.GlobalStateFunc.SetDefaultReturn(gss)
 		db.UsersFunc.SetDefaultReturn(usersStore)
 		db.UserExternalAccountsFunc.SetDefaultReturn(externalAccountsStore)
 		db.AuthzFunc.SetDefaultReturn(database.NewMockAuthzStore())
@@ -530,6 +533,9 @@ func newMocks(t *testing.T, m mockParams) *mocks {
 func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 	t.Parallel()
 
+	gss := database.NewMockGlobalStateStore()
+	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+
 	user := &types.User{ID: 1, DisplayName: "", AvatarURL: ""}
 
 	users := database.NewMockUserStore()
@@ -544,6 +550,7 @@ func TestMetadataOnlyAutomaticallySetOnFirstOccurrence(t *testing.T) {
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultReturn(user.ID, nil)
 
 	db := database.NewMockDB()
+	db.GlobalStateFunc.SetDefaultReturn(gss)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 
@@ -631,6 +638,9 @@ type mocks struct {
 }
 
 func (m *mocks) DB() database.DB {
+	gss := database.NewMockGlobalStateStore()
+	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+
 	externalAccounts := database.NewMockUserExternalAccountsStore()
 	externalAccounts.LookupUserAndSaveFunc.SetDefaultHook(m.LookupUserAndSave)
 	externalAccounts.AssociateUserAndSaveFunc.SetDefaultHook(m.AssociateUserAndSave)
@@ -649,6 +659,7 @@ func (m *mocks) DB() database.DB {
 	permsSyncStore.CreateUserSyncJobFunc.SetDefaultHook(m.CreateUserSyncJobFunc)
 
 	db := database.NewMockDB()
+	db.GlobalStateFunc.SetDefaultReturn(gss)
 	db.UserExternalAccountsFunc.SetDefaultReturn(externalAccounts)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.AuthzFunc.SetDefaultReturn(authzStore)

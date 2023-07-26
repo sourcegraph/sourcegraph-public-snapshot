@@ -180,7 +180,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, format HighlightRespon
 		attribute.String("filepath", q.Filepath),
 		attribute.String("theme", q.Theme),
 		attribute.Bool("css", q.CSS))
-	defer tr.FinishWithErr(&err)
+	defer tr.EndWithErr(&err)
 
 	if isTreesitterBased(q.Engine) && !IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")

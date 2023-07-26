@@ -80,3 +80,5 @@ export function createLocalWritable<T>(localStorageKey: string, defaultValue: T)
         },
     }
 }
+
+export const scrollAll = writable(false)

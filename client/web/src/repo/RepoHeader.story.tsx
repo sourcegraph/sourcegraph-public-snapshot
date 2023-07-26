@@ -123,7 +123,7 @@ const createBreadcrumbs = (path: string) => [
     {
         breadcrumb: {
             key: 'treePath',
-            className: 'flex-shrink-past-contents',
+            className: 'flex-shrink-past-contents flex-grow-1',
             element: (
                 <FilePathBreadcrumbs
                     key="path"

@@ -5,6 +5,7 @@ import type { Observable } from 'rxjs'
 import { map, tap } from 'rxjs/operators'
 
 import { requestGraphQL, getWebGraphQLClient, mutateGraphQL } from '@sourcegraph/web/src/backend/graphql'
+import type { ResolvedRevision, Repo } from '@sourcegraph/web/src/repo/backend'
 
 import { resetAllMemoizationCaches } from './common'
 import type { CheckMirrorRepositoryConnectionResult, Scalars } from './graphql-operations'
@@ -13,7 +14,7 @@ import { dataOrThrowErrors, gql } from './http-client'
 export { requestGraphQL, getWebGraphQLClient, mutateGraphQL }
 export { parseSearchURL } from '@sourcegraph/web/src/search/index'
 export { replaceRevisionInURL } from '@sourcegraph/web/src/util/url'
-export type { ResolvedRevision } from '@sourcegraph/web/src/repo/backend'
+
 export { syntaxHighlight } from '@sourcegraph/web/src/repo/blob/codemirror/highlight'
 export { defaultSearchModeFromSettings } from '@sourcegraph/web/src/util/settings'
 export { GlobalNotebooksArea, type GlobalNotebooksAreaProps } from '@sourcegraph/web/src/notebooks/GlobalNotebooksArea'
@@ -21,6 +22,9 @@ export {
     CodeInsightsRouter,
     type CodeInsightsRouterProps,
 } from '@sourcegraph/web/src/enterprise/insights/CodeInsightsRouter'
+
+export type RepoResolvedRevision = ResolvedRevision & Repo
+export { ResolvedRevision, Repo }
 
 // Copy of non-reusable code
 

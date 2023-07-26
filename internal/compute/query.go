@@ -161,7 +161,10 @@ func parseReplace(q *query.Basic) (Command, bool, error) {
 		return nil, false, nil
 	}
 
-	return &Replace{SearchPattern: matchPattern, ReplacePattern: right}, true, nil
+	return &Replace{
+		SearchPattern:  matchPattern,
+		ReplacePattern: right,
+	}, true, nil
 }
 
 func parseOutput(q *query.Basic) (Command, bool, error) {

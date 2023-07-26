@@ -327,6 +327,21 @@ You can use the following filters to control how users can create accounts and s
     }
   ```
 
+### How to set up GitLab auth provider for use with GitLab group SAML/SSO
+
+GitLab groups can require SAML/SSO sign-in to have access to the group. The regular OAuth sign-in won't work in this case, as users will be redirected to the normal GitLab sign-in page, requesting a username/password. In this scenario, add a `ssoURL` to your GitLab auth provider configuration:
+
+  ```json
+    {
+      "type": "gitlab",
+      // ...
+      "ssoURL": "https://gitlab.com/groups/your-group/-/saml/sso?token=xxxxxxxx"
+      ]
+    }
+  ```
+
+The `token` parameter can be found on the **Settings > SAML SSO** page on GitLab.
+
 ## Bitbucket Cloud
 
 [Create a Bitbucket Cloud OAuth consumer](https://support.atlassian.com/bitbucket-cloud/docs/use-oauth-on-bitbucket-cloud/). Set the following values, replacing `sourcegraph.example.com` with the IP or hostname of your

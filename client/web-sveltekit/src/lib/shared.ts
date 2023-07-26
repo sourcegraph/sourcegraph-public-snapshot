@@ -1,5 +1,7 @@
 // We want to limit the number of imported modules as much as possible
 
+export type { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
+
 export { parseRepoRevision, buildSearchURLQuery, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,
@@ -60,7 +62,7 @@ export { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourc
  */
 export function displayRepoName(repoName: string): string {
     let parts = repoName.split('/')
-    if (parts.length >= 3 && parts[0].includes('.')) {
+    if (parts.length > 0 && parts[0].includes('.')) {
         parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
     }
     return parts.join('/')

@@ -19,7 +19,7 @@ func BazelOperations(isMain bool) []operations.Operation {
 	ops := []operations.Operation{}
 	ops = append(ops, bazelConfigure())
 	if isMain {
-		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test"))
+		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
 	} else {
 		ops = append(ops, bazelTest("//...", "//client/web:test"))
 	}
@@ -46,15 +46,27 @@ func bazelCmd(args ...string) string {
 	return strings.Join(Cmd, " ")
 }
 
+// Used in default run type
 func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, true)
+	return bazelPushImagesCmd(version, true, "bazel-tests")
 }
 
+// Used in default run type
 func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false)
+	return bazelPushImagesCmd(version, false, "bazel-tests")
 }
 
-func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
+// Used in CandidateNoTest run type
+func bazelPushImagesCandidatesNoTest(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, true, "pipeline-gen")
+}
+
+// Used in CandidateNoTest run type
+func bazelPushImagesFinalNoTest(version string) func(*bk.Pipeline) {
+	return bazelPushImagesCmd(version, false, "bazel-push-images-candidate")
+}
+
+func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*bk.Pipeline) {
 	stepName := ":bazel::docker: Push final images"
 	stepKey := "bazel-push-images"
 	candidate := ""
@@ -68,7 +80,7 @@ func bazelPushImagesCmd(version string, isCandidate bool) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
 		pipeline.AddStep(stepName,
 			bk.Agent("queue", "bazel"),
-			bk.DependsOn("bazel-tests"),
+			bk.DependsOn(depKey),
 			bk.Key(stepKey),
 			bk.Env("PUSH_VERSION", version),
 			bk.Env("CANDIDATE_ONLY", candidate),
@@ -157,8 +169,8 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	// bazel build //client/web:bundle is very resource hungry and often crashes when ran along other targets
 	// so we run it first to avoid failing builds midway.
 	cmds = append(cmds,
-		bazelAnnouncef("bazel build //client/web:bundle-*"),
-		bk.Cmd(bazelCmd("build //client/web:bundle //client/web:bundle-enterprise")),
+		bazelAnnouncef("bazel build //client/web:bundle-enterprise"),
+		bk.Cmd(bazelCmd("build //client/web:bundle-enterprise")),
 	)
 
 	for _, target := range targets {

@@ -12,6 +12,7 @@ go_library(
         "outbound_webhook_jobs.go",
         "outbound_webhook_logs.go",
         "outbound_webhooks.go",
+        "repos.go",
         "saved_searches.go",
         "secret.go",
         "types.go",
@@ -21,6 +22,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/collections",
         "//internal/database/dbutil",
         "//internal/encryption",
         "//internal/executor",
@@ -38,11 +40,16 @@ go_library(
 go_test(
     name = "types_test",
     timeout = "short",
-    srcs = ["secret_test.go"],
+    srcs = [
+        "repos_test.go",
+        "secret_test.go",
+    ],
     embed = [":types"],
     deps = [
+        "//internal/collections",
         "//internal/extsvc",
         "//schema",
         "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
     ],
 )

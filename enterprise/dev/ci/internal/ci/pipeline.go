@@ -161,6 +161,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CreateBundleSizeDiff:      true,
 		}))
 
+		securityOps := operations.NewNamedSet("Security Scanning")
+		securityOps.Append(sonarcloudScan())
+		ops.Merge(securityOps)
+
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
@@ -210,6 +214,28 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.AppInsiders:
 		ops = operations.NewSet(addAppReleaseSteps(c, true))
+
+	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		ops.Merge(imageBuildOps)
+
+		publishOpsDev := operations.NewNamedSet("Publish candidate images")
+		publishOpsDev.Append(bazelPushImagesCandidatesNoTest(c.Version))
+		ops.Merge(publishOpsDev)
+
+		ops.Append(wait)
+
+		// Add final artifacts
+		publishOps := operations.NewNamedSet("Publish images")
+		// Add final artifacts
+		for _, dockerImage := range legacyDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+
+		// Final Bazel images
+		publishOps.Append(bazelPushImagesFinalNoTest(c.Version))
+		ops.Merge(publishOps)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name
@@ -290,6 +316,11 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			CacheBundleSize:           c.RunType.Is(runtype.MainBranch, runtype.MainDryRun),
 			IsMainBranch:              true,
 		}))
+
+		// Security scanning - sonarcloud
+		securityOps := operations.NewNamedSet("Security Scanning")
+		securityOps.Append(sonarcloudScan())
+		ops.Merge(securityOps)
 
 		// Publish candidate images to dev registry
 		publishOpsDev := operations.NewNamedSet("Publish candidate images")

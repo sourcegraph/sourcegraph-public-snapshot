@@ -16,6 +16,7 @@ Global flags:
 * `--disable-analytics`: disable event logging (logged to '~/.sourcegraph/events')
 * `--disable-output-detection`: use fixed output configuration instead of detecting terminal capabilities
 * `--disable-overwrite`: disable loading additional sg configuration from overwrite file (see -overwrite)
+* `--no-dev-private`: disable checking for dev-private - only useful for automation or ci
 * `--overwrite, -o="<value>"`: load sg configuration from `file` that is gitignored and can be used to, for example, add credentials (default: sg.config.overwrite.yaml)
 * `--skip-auto-update`: prevent sg from automatically updating itself
 * `--verbose, -v`: toggle verbose mode
@@ -78,8 +79,10 @@ Flags:
 * `--debug, -d="<value>"`: Services to set at debug log level.
 * `--describe`: Print details about the selected commandset
 * `--error, -e="<value>"`: Services to set at info error level.
+* `--except="<value>"`: List of services of the specified command set to NOT start
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--info, -i="<value>"`: Services to set at info log level.
+* `--only="<value>"`: List of services of the specified command set to start. Commands NOT in this list will NOT be started.
 * `--warn, -w="<value>"`: Services to set at warn log level.
 
 ## sg run
@@ -264,6 +267,7 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
 * executor-patch-notest - Build executor without testing
+* docker-images-candidates-notest - Build all candidates without testing
 * backend-integration - Backend integration tests
 * bazel-do - Bazel command
 

@@ -153,6 +153,7 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         label: maintenanceGroupHeaderLabel,
         icon: MonitorStarIcon,
     },
+    condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
     items: [
         {
             label: maintenanceGroupUpdatesItemLabel,
@@ -161,55 +162,45 @@ export const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Documentation',
             to: '/help',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Pings',
             to: '/site-admin/pings',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Report a bug',
             to: '/site-admin/report-bug',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupMigrationsItemLabel,
             to: '/site-admin/migrations',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupInstrumentationItemLabel,
             to: '/-/debug/',
             source: 'server',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupMonitoringItemLabel,
             to: '/-/debug/grafana',
             source: 'server',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: maintenanceGroupTracingItemLabel,
             to: '/-/debug/jaeger',
             source: 'server',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Outbound requests',
             to: '/site-admin/outbound-requests',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Slow requests',
             to: '/site-admin/slow-requests',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
         {
             label: 'Background jobs',
             to: '/site-admin/background-jobs',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
         },
     ],
 }

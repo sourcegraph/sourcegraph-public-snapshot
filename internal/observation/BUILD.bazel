@@ -22,7 +22,6 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@com_github_sourcegraph_log//logtest",
-        "@io_opentelemetry_go_otel//:otel",
         "@io_opentelemetry_go_otel//attribute",
         "@io_opentelemetry_go_otel_trace//:trace",
         "@org_uber_go_zap//:zap",

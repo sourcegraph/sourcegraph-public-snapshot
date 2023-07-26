@@ -37,10 +37,10 @@ public class Event {
     returnValue.addProperty("source", "IDEEXTENSION");
     returnValue.addProperty("referrer", "JETBRAINS");
     if (eventProperties != null) {
-      returnValue.add("argument", eventProperties);
+      returnValue.addProperty("argument", eventProperties.toString());
     }
     if (publicArgument != null) {
-      returnValue.add("publicArgument", publicArgument);
+      returnValue.addProperty("publicArgument", publicArgument.toString());
     }
     returnValue.addProperty("deviceID", this.anonymousUserId);
     return returnValue;

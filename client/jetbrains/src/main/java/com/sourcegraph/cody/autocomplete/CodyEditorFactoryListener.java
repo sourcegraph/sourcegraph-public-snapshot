@@ -23,6 +23,7 @@ import com.sourcegraph.cody.agent.protocol.Position;
 import com.sourcegraph.cody.agent.protocol.Range;
 import com.sourcegraph.cody.agent.protocol.TextDocument;
 import com.sourcegraph.cody.vscode.InlineAutoCompleteTriggerKind;
+import com.sourcegraph.config.ConfigUtil;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,6 +41,9 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
 
   @Override
   public void editorCreated(@NotNull EditorFactoryEvent event) {
+    if (!ConfigUtil.isCodyEnabled()) {
+      return;
+    }
     Editor editor = event.getEditor();
     informAgentAboutEditorChange(editor);
     Project project = editor.getProject();
@@ -57,6 +61,9 @@ public class CodyEditorFactoryListener implements EditorFactoryListener {
 
     @Override
     public void caretPositionChanged(@NotNull CaretEvent e) {
+      if (!ConfigUtil.isCodyEnabled()) {
+        return;
+      }
       informAgentAboutEditorChange(e.getEditor());
       CodyAutoCompleteManager suggestions = CodyAutoCompleteManager.getInstance();
       if (suggestions.isEnabledForEditor(e.getEditor())

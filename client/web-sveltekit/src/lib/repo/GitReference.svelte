@@ -1,8 +1,8 @@
 <script lang="ts">
     import { numberWithCommas } from '$lib/common'
     import type { GitRefFields } from '$lib/graphql-operations'
-    import { getRelativeTime } from '$lib/relativeTime'
     import { currentDate as now } from '$lib/stores'
+    import { getRelativeTime } from '$lib/utils'
 
     export let ref: GitRefFields
 

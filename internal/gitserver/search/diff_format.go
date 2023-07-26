@@ -20,6 +20,12 @@ const (
 
 var escaper = strings.NewReplacer(" ", `\ `)
 
+const utf8ReplacementChar = "\xFF\xFD"
+
+func escapeUTF8AndSpaces(s string) string {
+	return escaper.Replace(strings.ToValidUTF8(s, utf8ReplacementChar))
+}
+
 func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (string, result.Ranges) {
 	var buf strings.Builder
 	var loc result.Location
@@ -39,14 +45,14 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 		ranges = append(ranges, fdh.OldFile.Add(loc)...)
 		// NOTE(@camdencheek): this does not correctly update the highlight ranges of files with spaces in the name.
 		// Doing so would require a smarter replacer.
-		escaped := escaper.Replace(fileDiff.OrigName)
+		escaped := escapeUTF8AndSpaces(fileDiff.OrigName)
 		buf.WriteString(escaped)
 		buf.WriteByte(' ')
 		loc.Offset = buf.Len()
 		loc.Column = len(escaped) + len(" ")
 
 		ranges = append(ranges, fdh.NewFile.Add(loc)...)
-		buf.WriteString(escaper.Replace(fileDiff.NewName))
+		buf.WriteString(escapeUTF8AndSpaces(fileDiff.NewName))
 		buf.WriteByte('\n')
 		loc.Offset = buf.Len()
 		loc.Line++
@@ -96,7 +102,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 					ranges = append(ranges, lineHighlights.Add(loc)...)
 				}
 
-				buf.Write(lineWithoutPrefix)
+				buf.Write(bytes.ToValidUTF8(lineWithoutPrefix, []byte(utf8ReplacementChar)))
 				buf.WriteByte('\n')
 				loc.Offset = buf.Len()
 				loc.Line++

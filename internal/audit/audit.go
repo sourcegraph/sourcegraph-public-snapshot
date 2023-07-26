@@ -23,12 +23,17 @@ func Log(ctx context.Context, logger log.Logger, record Record) {
 
 	// internal actors add a lot of noise to the audit log
 	siteConfig := conf.SiteConfig()
+	// if the actor is internal  and internal traffic logging is disabled, do not log
 	if act.Internal && !IsEnabled(siteConfig, InternalTraffic) {
 		return
 	}
 
 	client := requestclient.FromContext(ctx)
-
+	// if the actor and client ip is unknown, and internal traffic logging is disabled, do not log
+	// internal actors generate a large volume of logs, and they are generally not useful
+	if (actorId(act) == "unknown" && ip(client) == "unknown") && !IsEnabled(siteConfig, InternalTraffic) {
+		return
+	}
 	auditId := uuid.New().String()
 	if record.auditIDGenerator != nil {
 		auditId = record.auditIDGenerator()

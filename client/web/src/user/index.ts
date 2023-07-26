@@ -1,7 +1,8 @@
 /**
  * Regular expression to identify valid username.
  */
-export const VALID_USERNAME_REGEXP = /^\w(?:\w|[.-](?=\w))*-?$/.source
+// eslint-disable-next-line no-useless-escape
+export const VALID_USERNAME_REGEXP = /^\w(?:\w|[.\-](?=\w))*-?$/.source
 
 /** Maximum allowed length for a username. */
 export const USERNAME_MAX_LENGTH = 255

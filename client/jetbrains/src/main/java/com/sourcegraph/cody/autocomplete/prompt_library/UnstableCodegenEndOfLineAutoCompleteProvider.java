@@ -89,7 +89,7 @@ public class UnstableCodegenEndOfLineAutoCompleteProvider extends AutoCompletePr
 
       return result;
     } catch (JsonProcessingException | UnsupportedEncodingException e) {
-      logger.error(e);
+      logger.warn(e);
       return null;
     }
   }
@@ -102,7 +102,7 @@ public class UnstableCodegenEndOfLineAutoCompleteProvider extends AutoCompletePr
         () -> {
           StringEntity params = getParams();
           if (params == null) {
-            logger.error("Cody: Could not create params for unstable-codegen");
+            logger.warn("Cody: Could not create params for unstable-codegen");
             return Collections.emptyList();
           }
           HttpPost httpPost = new HttpPost(autocompleteEndpoint);
@@ -118,7 +118,7 @@ public class UnstableCodegenEndOfLineAutoCompleteProvider extends AutoCompletePr
             CloseableHttpResponse response = client.execute(httpPost);
             int responseCode = response.getStatusLine().getStatusCode();
             if (responseCode != 200) {
-              logger.error(
+              logger.warn(
                   "Cody: `unstable-codegen` autocomplete provider returned non-200 response code: "
                       + responseCode);
               return Collections.emptyList();
@@ -144,10 +144,10 @@ public class UnstableCodegenEndOfLineAutoCompleteProvider extends AutoCompletePr
                   .collect(Collectors.toList());
             }
           } catch (ConnectException e) {
-            logger.error("Cody: Could not connect to the 'unstable-codegen' autocomplete provider");
+            logger.warn("Cody: Could not connect to the 'unstable-codegen' autocomplete provider");
             return Collections.emptyList();
           } catch (Exception e) {
-            logger.error(e);
+            logger.warn(e);
             return Collections.emptyList();
           }
           return Collections.emptyList();

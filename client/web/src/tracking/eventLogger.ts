@@ -5,6 +5,7 @@ import * as uuid from 'uuid'
 
 import { isErrorLike, isFirefox, logger } from '@sourcegraph/common'
 import { SharedEventLogger } from '@sourcegraph/shared/src/api/sharedEventLogger'
+import { EventClient } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { UTMMarker } from '@sourcegraph/shared/src/tracking/utm'
 
@@ -360,6 +361,16 @@ export class EventLogger implements TelemetryService, SharedEventLogger {
         } catch {
             return ''
         }
+    }
+
+    public getClient(): string {
+        if (window.context?.sourcegraphAppMode) {
+            return EventClient.APP_WEB
+        }
+        if (window.context?.sourcegraphDotComMode) {
+            return EventClient.DOTCOM_WEB
+        }
+        return EventClient.SERVER_WEB
     }
 
     // Grabs and sets the deviceSessionID to renew the session expiration

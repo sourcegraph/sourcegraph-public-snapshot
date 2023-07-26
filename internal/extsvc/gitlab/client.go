@@ -258,7 +258,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 		if resp != nil {
 			tr.SetAttributes(attribute.String("status", resp.Status))
 		}
-		tr.FinishWithErr(&err)
+		tr.EndWithErr(&err)
 	}()
 	req = req.WithContext(ctx)
 

@@ -14,10 +14,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	eiauthz "github.com/sourcegraph/sourcegraph/enterprise/internal/authz"
-	srp "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
+	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -69,8 +70,8 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 	indexGetter, err := NewCachedEmbeddingIndexGetter(
 		repoStore,
 		repoEmbeddingJobsStore,
-		func(ctx context.Context, repoEmbeddingIndexName embeddings.RepoEmbeddingIndexName) (*embeddings.RepoEmbeddingIndex, error) {
-			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, string(repoEmbeddingIndexName))
+		func(ctx context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+			return embeddings.DownloadRepoEmbeddingIndex(ctx, uploadStore, repoID, repoName)
 		},
 		config.EmbeddingsCacheSize,
 	)
@@ -140,24 +141,6 @@ func NewHandler(
 		json.NewEncoder(w).Encode(res)
 	})
 
-	mux.HandleFunc("/isContextRequiredForChatQuery", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
-			return
-		}
-
-		var args embeddings.IsContextRequiredForChatQueryParameters
-		err := json.NewDecoder(r.Body).Decode(&args)
-		if err != nil {
-			http.Error(w, "could not parse request body", http.StatusBadRequest)
-			return
-		}
-
-		isRequired := isContextRequiredForChatQuery(args.Query)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(embeddings.IsContextRequiredForChatQueryResult{IsRequired: isRequired})
-	})
-
 	return mux
 }
 
@@ -199,8 +182,8 @@ func setAuthzProviders(ctx context.Context, db database.DB) {
 	// authz also relies on UserMappings being setup.
 	globals.WatchPermissionsUserMapping()
 
-	for range time.NewTicker(eiauthz.RefreshInterval()).C {
-		allowAccessByDefault, authzProviders, _, _, _ := eiauthz.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
+	for range time.NewTicker(providers.RefreshInterval()).C {
+		allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
 		authz.SetProviders(allowAccessByDefault, authzProviders)
 	}
 }
