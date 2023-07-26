@@ -3893,7 +3893,36 @@ type Repository implements Node & GenericSearchResultInterface {
     """
     Returns a list of all recorded commands for given repository.
     """
-    recordedCommands: [RecordedCommand!]!
+    recordedCommands(
+        """
+        Returns the "limit" number recorded commands from the list.
+        """
+        limit: Int
+        """
+        Skips initial "offset" number of recorded commands.
+        """
+        offset: Int
+    ): RecordedCommandConnection!
+}
+
+"""
+RecordedCommandConnection is a connection containing a list of RecordedCommand nodes.
+"""
+type RecordedCommandConnection {
+    """
+    A list of recorded commands for given repository.
+    """
+    nodes: [RecordedCommand!]!
+
+    """
+    The total number of recorded commands for given repository in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
 }
 
 """
