@@ -60,14 +60,6 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 	return graphqlutil.NewSliceConnectionResolver(resolvers, size, offset+limit), nil
 }
 
-func recordedCommandTransformer(raw []byte) (RecordedCommandResolver, error) {
-	command, err := wrexec.UnmarshalCommand(raw)
-	if err != nil {
-		return nil, err
-	}
-	return NewRecordedCommandResolver(command), nil
-}
-
 type RecordedCommandResolver interface {
 	Start() gqlutil.DateTime
 	Duration() float64
