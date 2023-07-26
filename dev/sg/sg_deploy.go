@@ -23,12 +23,16 @@ sg deploy --values <path to values file>
 	Flags: []cli.Flag{
 		&cli.StringFlag{
 			Name:     "values",
-			Usage:    "perform the RFC action on the private RFC drive",
+			Usage:    "The path to the values file",
 			Required: true,
 		},
-	},
+		&cli.BoolFlag{
+			Name:     "dry-run",
+			Usage:    "Write the manifest to stdout instead of writing to a file",
+			Required: false,
+		}},
 	Action: func(c *cli.Context) error {
-		err := generateManifest(c.String("values"))
+		err := generateManifest(c.String("values"), c.Bool("dry-run"))
 		if err != nil {
 			return errors.Wrap(err, "generate manifest")
 		}
@@ -36,7 +40,7 @@ sg deploy --values <path to values file>
 	}}
 
 type Values struct {
-	Name    string ``
+	Name    string
 	Envvars []struct {
 		Name  string
 		Value string
@@ -84,7 +88,7 @@ spec:
         - containerPort: {{ $port.Port }}
           name: {{ $port.Name }}
           {{- end }}
-{{ if .ServicePorts }}
+{{ if .ServicePorts -}}
 ---
 apiVersion: v1
 kind: Service
@@ -101,7 +105,7 @@ spec:
         protocol: TCP
     {{- end }}
 {{- end}}
-{{ if .Dns }}
+{{ if .Dns -}}
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -129,12 +133,7 @@ spec:
 {{- end }}
 `
 
-func generateManifest(configFile string) error {
-
-	err := checkCurrentDir("infrastructure")
-	if err != nil {
-		return errors.Wrap(err, "check current directory")
-	}
+func generateManifest(configFile string, dryRun bool) error {
 
 	var values Values
 	v, err := os.ReadFile(configFile)
@@ -146,21 +145,28 @@ func generateManifest(configFile string) error {
 	if err != nil {
 		return errors.Wrap(err, "error rendering values")
 	}
-
-	path := "dogfood/kubernetes/tooling/" + values.Name
-	err = os.MkdirAll(path, 0755)
-	if err != nil {
-		return errors.Wrap(err, "create directory")
+	var output *os.File
+	if dryRun {
+		output = os.Stdout
+	} else {
+		err := checkCurrentDir("infrastructure")
+		if err != nil {
+			return err
+		}
+		path := fmt.Sprintf("dogfood/kubernetes/tooling/%s", values.Name)
+		err = os.MkdirAll(path, 0755)
+		if err != nil {
+			return errors.Wrap(err, "create directory")
+		}
+		output, err = os.Create(fmt.Sprintf("dogfood/kubernetes/tooling/%s/%s.yaml", values.Name, values.Name))
+		if err != nil {
+			return errors.Wrap(err, "create file")
+		}
+		defer output.Close()
 	}
-
-	file, err := os.Create(path + values.Name + ".yaml")
-	if err != nil {
-		return errors.Wrap(err, "create file")
-	}
-	defer file.Close()
 
 	t := template.Must(template.New("app").Parse(k8sTemplate))
-	err = t.Execute(file, &values)
+	err = t.Execute(output, &values)
 	if err != nil {
 		return errors.Wrap(err, "execute template")
 	}
@@ -169,7 +175,6 @@ func generateManifest(configFile string) error {
 
 func checkCurrentDir(expected string) error {
 
-	fmt.Println("Checking current directory")
 	cwd, err := os.Getwd()
 	if err != nil {
 		return errors.Wrap(err, "error getting current directory")
@@ -177,8 +182,7 @@ func checkCurrentDir(expected string) error {
 
 	current := path.Base(cwd)
 	if current != expected {
-		return errors.Wrap(err, "Incorrect direcotory. Please run from the sourcegraph/infrastructure repository")
+		return errors.New("Incorrect directory. Please run from the sourcegraph/infrastructure repository")
 	}
-
 	return nil
 }
