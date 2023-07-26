@@ -42,11 +42,14 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				{
 					repository(name: "github.com/sourcegraph/sourcegraph") {
 						recordedCommands {
-							start
-							duration
-							command
-							dir
-							path
+							nodes {
+								start
+								duration
+								command
+								dir
+								path
+							}
+							totalCount
 						}
 					}
 				}
@@ -54,7 +57,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		ExpectedResult: `
 				{
 					"repository": {
-						"recordedCommands": []
+						"recordedCommands": {
+							"nodes": [],
+							"totalCount": 0
+						}
 					}
 				}
 			`,
@@ -95,11 +101,14 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				{
 					repository(name: "github.com/sourcegraph/sourcegraph") {
 						recordedCommands {
-							start
-							duration
-							command
-							dir
-							path
+							nodes {
+								start
+								duration
+								command
+								dir
+								path
+							}
+							totalCount
 						}
 					}
 				}
@@ -107,7 +116,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		ExpectedResult: `
 				{
 					"repository": {
-						"recordedCommands": []
+						"recordedCommands": {
+							"nodes": [],
+							"totalCount": 0
+						}
 					}
 				}
 			`,
@@ -123,11 +135,14 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				{
 					repository(name: "github.com/sourcegraph/sourcegraph") {
 						recordedCommands {
-							start
-							duration
-							command
-							dir
-							path
+							nodes {
+								start
+								duration
+								command
+								dir
+								path
+							}
+							totalCount
 						}
 					}
 				}
@@ -135,15 +150,18 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		ExpectedResult: `
 				{
 					"repository": {
-						"recordedCommands": [
-							{
-								"command": "git fetch",
-								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-								"duration": 100,
-								"path": "/opt/homebrew/bin/git",
-								"start": "2023-07-20T15:04:05Z"
-							}
-						]
+						"recordedCommands": {
+							"nodes": [
+								{
+									"command": "git fetch",
+									"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+									"duration": 100,
+									"path": "/opt/homebrew/bin/git",
+									"start": "2023-07-20T15:04:05Z"
+								}
+							],
+							"totalCount": 1
+						}
 					}
 				}
 			`,
@@ -160,11 +178,14 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				{
 					repository(name: "github.com/sourcegraph/sourcegraph") {
 						recordedCommands {
-							start
-							duration
-							command
-							dir
-							path
+							nodes {
+								start
+								duration
+								command
+								dir
+								path
+							}
+							totalCount
 						}
 					}
 				}
@@ -172,29 +193,32 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		ExpectedResult: `
 				{
 					"repository": {
-						"recordedCommands": [
-							{
-								"command": "git ls-files",
-								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-								"duration": 5,
-								"path": "/opt/homebrew/bin/git",
-								"start": "2023-07-20T15:04:05Z"
-							},
-							{
-								"command": "git clone",
-								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-								"duration": 10,
-								"path": "/opt/homebrew/bin/git",
-								"start": "2023-07-20T15:04:05Z"
-							},
-							{
-								"command": "git fetch",
-								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-								"duration": 100,
-								"path": "/opt/homebrew/bin/git",
-								"start": "2023-07-20T15:04:05Z"
-							}
-						]
+						"recordedCommands": {
+							"nodes": [
+								{
+									"command": "git ls-files",
+									"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+									"duration": 5,
+									"path": "/opt/homebrew/bin/git",
+									"start": "2023-07-20T15:04:05Z"
+								},
+								{
+									"command": "git clone",
+									"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+									"duration": 10,
+									"path": "/opt/homebrew/bin/git",
+									"start": "2023-07-20T15:04:05Z"
+								},
+								{
+									"command": "git fetch",
+									"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+									"duration": 100,
+									"path": "/opt/homebrew/bin/git",
+									"start": "2023-07-20T15:04:05Z"
+								}
+							],
+							"totalCount": 3
+						}
 					}
 				}
 			`,
