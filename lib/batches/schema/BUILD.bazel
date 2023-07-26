@@ -6,10 +6,12 @@ GENERATED_FILES = [
     "changeset_spec_stringdata.go",
 ]
 
+# Telling gazelle to ignore here otherwise it wants to add generated files to srcs instead of fetching them
+# gazelle:ignore
 go_library(
     name = "schema",
     srcs = [
-        ":generate_stringdata_code"
+        ":generate_stringdata_code",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/lib/batches/schema",
     visibility = ["//visibility:public"],
@@ -32,14 +34,16 @@ genrule(
     $(location //lib/batches/schema/gen:stringdata) -i $${srcs[1]} -name ChangesetSpecJSON -pkg schema -o $${outs[1]}
     $(location @go_sdk//:bin/gofmt) -s -w $${outs[1]}
     """,
-    tools = ["//lib/batches/schema/gen:stringdata", "@go_sdk//:bin/gofmt"],
-    visibility = ["//visibility:public"]
+    tools = [
+        "//lib/batches/schema/gen:stringdata",
+        "@go_sdk//:bin/gofmt",
+    ],
+    visibility = ["//visibility:public"],
 )
 
 write_generated_to_source_files(
     name = "write_generated_code",
     src = ":generate_stringdata_code",
     files = GENERATED_FILES,
-    tags = ["go_generate"]
-
+    tags = ["go_generate"],
 )

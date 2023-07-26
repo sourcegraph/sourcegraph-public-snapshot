@@ -1,5 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_binary")
-
+load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 
 # This target is used by //lib/batches/schema:generate_stringdata_code
 # to generate code based on json schemas found in schema/
@@ -11,6 +10,13 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_binary")
 # to it's own package side steps some unneeded complexity
 go_binary(
     name = "stringdata",
+    embed = [":gen_lib"],
+    visibility = ["//lib/batches/schema:__pkg__"],
+)
+
+go_library(
+    name = "gen_lib",
     srcs = ["gen.go"],
-    visibility = [ "//lib/batches/schema:__pkg__"],
+    importpath = "github.com/sourcegraph/sourcegraph/lib/batches/schema/gen",
+    visibility = ["//visibility:private"],
 )
