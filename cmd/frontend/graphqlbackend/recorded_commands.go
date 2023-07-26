@@ -11,6 +11,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
 
+// recordedCommandMaxLimit is the maximum number of recorded commands that can be
+// returned in a single query. This limit prevents returning an excessive number of
+// recorded commands. It should always be in sync with the default in `cmd/frontend/graphqlbackend/schema.graphql`
 const recordedCommandMaxLimit = 40
 
 type RecordedCommandsArgs struct {
@@ -19,10 +22,16 @@ type RecordedCommandsArgs struct {
 }
 
 func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *RecordedCommandsArgs) (graphqlutil.SliceConnectionResolver[RecordedCommandResolver], error) {
-	var resolvers []RecordedCommandResolver
+	offset := int(args.Offset)
+	limit := int(args.Limit)
+	if limit == 0 || limit > recordedCommandMaxLimit {
+		limit = recordedCommandMaxLimit
+	}
+	currentEnd := offset + limit
+
 	recordingConf := conf.Get().SiteConfig().GitRecorder
 	if recordingConf == nil {
-		return graphqlutil.NewSliceConnectionResolver(resolvers, 0, 0), nil
+		return graphqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
 	}
 	store := rcache.NewFIFOList(wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
 	empty, err := store.IsEmpty()
@@ -30,14 +39,9 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		return nil, err
 	}
 	if empty {
-		return graphqlutil.NewSliceConnectionResolver(resolvers, 0, 0), nil
+		return graphqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
 	}
 
-	offset := int(args.Offset)
-	limit := int(args.Limit)
-	if limit <= 0 || limit > recordedCommandMaxLimit {
-		limit = recordedCommandMaxLimit
-	}
 	raws, err := store.Slice(ctx, offset, limit)
 	if err != nil {
 		return nil, err
@@ -48,7 +52,7 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		return nil, err
 	}
 
-	resolvers = make([]RecordedCommandResolver, len(raws))
+	resolvers := make([]RecordedCommandResolver, len(raws))
 	for i, raw := range raws {
 		command, err := wrexec.UnmarshalCommand(raw)
 		if err != nil {
@@ -57,7 +61,7 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		resolvers[i] = NewRecordedCommandResolver(command)
 	}
 
-	return graphqlutil.NewSliceConnectionResolver(resolvers, size, offset+limit), nil
+	return graphqlutil.NewSliceConnectionResolver(resolvers, size, currentEnd), nil
 }
 
 type RecordedCommandResolver interface {
