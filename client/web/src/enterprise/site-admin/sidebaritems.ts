@@ -1,18 +1,19 @@
-import BrainIcon from 'mdi-react/BrainIcon';
-import BriefcaseIcon from 'mdi-react/BriefcaseIcon';
-import PackageVariantIcon from 'mdi-react/PackageVariantIcon';
+import BrainIcon from 'mdi-react/BrainIcon'
+import BriefcaseIcon from 'mdi-react/BriefcaseIcon'
+import PackageVariantIcon from 'mdi-react/PackageVariantIcon'
 
-
-
-import { BatchChangesIcon } from '../../batches/icons';
-import { CodyPageIcon } from '../../cody/chat/CodyPageIcon';
-import { apiConsoleGroup, analyticsGroup, configurationGroup as ossConfigurationGroup, maintenanceGroup as ossMaintenanceGroup, repositoriesGroup as ossRepositoriesGroup, usersGroup as ossUsersGroup } from '../../site-admin/sidebaritems';
-import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar';
-import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features';
-
-
-
-
+import { BatchChangesIcon } from '../../batches/icons'
+import { CodyPageIcon } from '../../cody/chat/CodyPageIcon'
+import {
+    apiConsoleGroup,
+    analyticsGroup,
+    configurationGroup as ossConfigurationGroup,
+    maintenanceGroup as ossMaintenanceGroup,
+    repositoriesGroup as ossRepositoriesGroup,
+    usersGroup as ossUsersGroup,
+} from '../../site-admin/sidebaritems'
+import { SiteAdminSideBarGroup, SiteAdminSideBarGroups } from '../../site-admin/SiteAdminSidebar'
+import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 
 const configurationGroup: SiteAdminSideBarGroup = {
     ...ossConfigurationGroup,
@@ -44,7 +45,7 @@ const maintenanceGroup: SiteAdminSideBarGroup = {
         {
             label: 'Code Insights jobs',
             to: '/site-admin/code-insights-jobs',
-            condition: ({ isSourcegraphApp }) => !isSourcegraphApp,
+            condition: ({ isSourcegraphApp, codeInsightsEnabled }) => !isSourcegraphApp && codeInsightsEnabled,
         },
     ],
 }
