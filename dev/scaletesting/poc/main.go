@@ -38,19 +38,66 @@ func Load(filename string) (*config, error) {
 
 type Client struct {
 	config *config
+	org    *github.Organization
 	gh     *github.Client
 }
 
-func (c *Client) GetOrCreateTeam(ctx context.Context, slug, description string) (*github.Team, error) {
-	team, resp, err := c.gh.Teams.GetTeamBySlug(ctx, c.config.GithubOrg, slug)
+func NewClient(ctx context.Context, cfg config) (*Client, error) {
+	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: cfg.GithubToken},
+	))
+
+	if true {
+		tc.Transport.(*oauth2.Transport).Base = http.DefaultTransport
+		tc.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	}
+
+	gh, err := github.NewEnterpriseClient(cfg.GithubURL, cfg.GithubURL, tc)
+	if err != nil {
+		log.Fatalf("failed to creaTe enterprise cLient: %v\n", err)
+	}
+
+	org, _, err := gh.Organizations.Get(ctx, cfg.GithubOrg)
+	if err != nil {
+		return nil, err
+	}
+
+	c := Client{
+		gh:     gh,
+		org:    org,
+		config: &cfg,
+	}
+
+	return &c, err
+}
+
+func (c *Client) AddTeamMembership(ctx context.Context, user *github.User, team *github.Team) error {
+	// is this user already part of the team?
+	_, resp, err := c.gh.Teams.GetTeamMembershipByID(ctx, c.org.GetID(), team.GetID(), user.GetLogin())
+	if resp.StatusCode == 200 {
+		// user is already part of this team
+		return nil
+	} else if resp.StatusCode >= 500 {
+		return fmt.Errorf("server error[%d]: %v", resp.StatusCode, err)
+	}
+
+	// user isn't part of the team so lets add them
+	log.Printf("[INFO] Add user %q to team %s", user.GetLogin(), team.GetName())
+	_, _, err = c.gh.Teams.AddTeamMembershipByID(ctx, c.org.GetID(), team.GetID(), user.GetLogin(), &github.TeamAddTeamMembershipOptions{
+		Role: "member",
+	})
+
+	return err
+
+}
+
+func (c *Client) GetOrCreateTeam(ctx context.Context, newTeam *github.NewTeam) (*github.Team, error) {
+	team, resp, err := c.gh.Teams.GetTeamBySlug(ctx, c.config.GithubOrg, newTeam.Name)
 	switch resp.StatusCode {
 	case 200:
 		return team, nil
 	case 404:
-		team, _, err = c.gh.Teams.CreateTeam(ctx, c.config.GithubOrg, github.NewTeam{
-			Name:        slug,
-			Description: &description,
-		})
+		team, _, err = c.gh.Teams.CreateTeam(ctx, c.config.GithubOrg, *newTeam)
 	}
 	return team, err
 }
@@ -133,28 +180,15 @@ func strp(v string) *string {
 }
 
 func main() {
+	ctx := context.Background()
 	cfg, err := Load("config.json")
 	if err != nil {
-		log.Fatalf("failed to load config.json: %v\n", err)
-	}
-	ctx := context.Background()
-	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: cfg.GithubToken},
-	))
-
-	if true {
-		tc.Transport.(*oauth2.Transport).Base = http.DefaultTransport
-		tc.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		log.Fatalf("[ERR] failed to load config.json: %v\n", err)
 	}
 
-	gh, err := github.NewEnterpriseClient(cfg.GithubURL, cfg.GithubURL, tc)
+	c, err := NewClient(ctx, *cfg)
 	if err != nil {
-		log.Fatalf("failed to creaTe enterprise cLient: %v\n", err)
-	}
-
-	c := Client{
-		gh:     gh,
-		config: cfg,
+		log.Fatalf("[ERR] failed to create client: %v", err)
 	}
 
 	templateUsers := map[string]*TemplateUser{
@@ -172,10 +206,10 @@ func main() {
 		name := u.GetLogin()
 
 		if key, ok := userMap[name]; ok {
-			fmt.Printf("user match %q\n", name)
+			log.Printf("[INFO] user match %q\n", name)
 			templateUsers[key].User = u
 		} else {
-			fmt.Printf("skip %q\n", name)
+			log.Printf("[INFO] skip %q\n", name)
 		}
 	}
 
@@ -192,12 +226,21 @@ func main() {
 	}
 
 	for _, t := range teams {
-		team, err := c.GetOrCreateTeam(ctx, t.Name, t.Description)
+		team, err := c.GetOrCreateTeam(ctx, &github.NewTeam{
+			Name:        t.Name,
+			Description: &t.Description,
+			Privacy:     strp("closed"),
+		})
 		if err != nil {
-			log.Fatalf("failed to get/create team %s: %v", t.Name, err)
+			log.Fatalf("[ERR] failed to get/create team %s: %v", t.Name, err)
 		}
 
 		for _, key := range t.MemberKeys {
+			user := templateUsers[key]
+			if err := c.AddTeamMembership(ctx, user.User, team); err != nil {
+				log.Printf("[ERR] failed to add %q to team %v: %v", user.User.GetLogin(), team.GetName(), err)
+				continue
+			}
 			templateUsers[key].Teams = append(templateUsers[key].Teams, team)
 		}
 	}
