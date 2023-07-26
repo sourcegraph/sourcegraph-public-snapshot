@@ -86,8 +86,9 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 		return response.Embeddings[i].Index < response.Embeddings[j].Index
 	})
 
-	embeddings := make([]float32, 0, len(response.Embeddings)*response.ModelDimensions)
-	failed := make([]int, 0, len(response.Embeddings))
+	dimensionality := response.ModelDimensions
+	embeddings := make([]float32, 0, len(response.Embeddings)*dimensionality)
+	failed := make([]int, 0)
 	for _, embedding := range response.Embeddings {
 		if len(embedding.Data) > 0 {
 			embeddings = append(embeddings, embedding.Data...)
@@ -99,7 +100,7 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 					failed = append(failed, embedding.Index)
 
 					// reslice to provide zero value embedding for failed chunk
-					embeddings = embeddings[:len(embeddings)+response.ModelDimensions]
+					embeddings = embeddings[:len(embeddings)+dimensionality]
 					continue
 				}
 				return nil, client.PartialError{Err: err, Index: embedding.Index}

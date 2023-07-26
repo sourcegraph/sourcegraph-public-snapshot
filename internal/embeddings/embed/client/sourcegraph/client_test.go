@@ -117,6 +117,69 @@ func TestOpenAI(t *testing.T) {
 		_, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
 		require.Error(t, err, "expected request to error on failed retry")
 	})
+
+	t.Run("retry on empty embedding fails and returns failed indices no error", func(t *testing.T) {
+		gotRequest1 := false
+		dimensions := 1536
+		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+			// On the first request, respond with a null embedding
+			if !gotRequest1 {
+				resp := codygateway.EmbeddingsResponse{
+					Embeddings: []codygateway.Embedding{{
+						Index: 0,
+						Data:  append(make([]float32, 1535), 1),
+					}, {
+						Index: 1,
+						Data:  nil,
+					}, {
+						Index: 2,
+						Data:  append(make([]float32, 1535), 2),
+					}},
+					ModelDimensions: dimensions,
+				}
+				json.NewEncoder(w).Encode(resp)
+				gotRequest1 = true
+				return
+			}
+
+			// Always return an invalid response to all the retry requests
+			resp := codygateway.EmbeddingsResponse{
+				Embeddings: []codygateway.Embedding{{
+					Index: 0,
+					Data:  nil,
+				}},
+			}
+			json.NewEncoder(w).Encode(resp)
+		}))
+		defer s.Close()
+
+		httpClient := s.Client()
+		oldTransport := httpClient.Transport
+		httpClient.Transport = roundTripFunc(func(r *http.Request) (*http.Response, error) {
+			r.URL, _ = url.Parse(s.URL)
+			return oldTransport.RoundTrip(r)
+		})
+
+		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: dimensions, ExcludeChunkOnError: true})
+		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		require.NoError(t, err)
+		var expected []float32
+		{
+			expected = append(expected, make([]float32, 1535)...)
+			expected = append(expected, 1)
+
+			// zero value embedding when chunk fails to generate embeddings
+			expected = append(expected, make([]float32, 1536)...)
+
+			expected = append(expected, make([]float32, 1535)...)
+			expected = append(expected, 2)
+		}
+
+		failed := []int{1}
+		require.Equal(t, expected, resp.Embeddings)
+		require.Equal(t, failed, resp.Failed)
+		require.True(t, gotRequest1)
+	})
 }
 
 type roundTripFunc func(r *http.Request) (*http.Response, error)
