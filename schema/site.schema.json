@@ -2946,6 +2946,11 @@
           "description": "URL of the GitLab instance, such as https://gitlab.com or https://gitlab.example.com.",
           "default": "https://gitlab.com/"
         },
+        "ssoURL": {
+          "type": "string",
+          "description": "An alternate sign-in URL used to ease SSO sign-in flows, such as https://gitlab.com/groups/your-group/saml/sso?token=xxxxxx",
+          "default": ""
+        },
         "clientID": {
           "type": "string",
           "description": "The Client ID of the GitLab OAuth app, accessible from https://gitlab.com/oauth/applications (or the same path on your private GitLab instance)."
