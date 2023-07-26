@@ -42,6 +42,8 @@ jobs:
           author: github-actions <github-actions[bot]@users.noreply.github.com>
           body: |
             - This is an automated PR to update the list of [embedded repos](https://docs.sourcegraph.com/cody/embedded-repos).
+            ## Test Plan
+            N/A
           labels: |
             embeddings-list-update
             automerge
