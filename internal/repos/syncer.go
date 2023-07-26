@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/singleflight"
 	"golang.org/x/time/rate"
 
@@ -291,7 +292,7 @@ func (s *Syncer) SyncRepo(ctx context.Context, name api.RepoName, background boo
 
 	logger.Debug("SyncRepo started")
 
-	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", string(name))
+	tr, ctx := trace.New(ctx, "Syncer.SyncRepo", name.Attr())
 	defer tr.Finish()
 
 	repo, err = s.Store.RepoStore().GetByName(ctx, name)
@@ -359,7 +360,7 @@ func (s *Syncer) syncRepo(
 	stored *types.Repo,
 ) (repo *types.Repo, err error) {
 	var svc *types.ExternalService
-	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", string(name))
+	ctx, save := s.observeSync(ctx, "Syncer.syncRepo", name.Attr())
 	defer func() { save(svc, err) }()
 
 	svcs, err := s.Store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{
@@ -505,7 +506,7 @@ func (s *Syncer) SyncExternalService(
 	ctx = metrics.ContextWithTask(ctx, "SyncExternalService")
 
 	var svc *types.ExternalService
-	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService", "")
+	ctx, save := s.observeSync(ctx, "Syncer.SyncExternalService")
 	defer func() { save(svc, err) }()
 
 	// We don't use tx here as the sourcing process below can be slow and we don't
@@ -525,10 +526,16 @@ func (s *Syncer) SyncExternalService(
 		now := s.Now()
 		interval := calcSyncInterval(now, svc.LastSyncAt, minSyncInterval, modified, err)
 
-		svc.NextSyncAt = now.Add(interval)
-		svc.LastSyncAt = now
+		nextSyncAt := now.Add(interval)
+		lastSyncAt := now
 
-		if err := s.Store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
+		// We call Update here instead of Upsert, because upsert stores all fields of the external
+		// service, and syncs take a while so changes to the external service made while this sync
+		// was running would be overwritten again.
+		if err := s.Store.ExternalServiceStore().Update(ctx, nil, svc.ID, &database.ExternalServiceUpdate{
+			LastSyncAt: &lastSyncAt,
+			NextSyncAt: &nextSyncAt,
+		}); err != nil {
 			// We only want to log this error, not return it
 			logger.Error("upserting external service", log.Error(err))
 		}
@@ -876,10 +883,11 @@ func calcSyncInterval(
 
 func (s *Syncer) observeSync(
 	ctx context.Context,
-	family, title string,
+	name string,
+	attributes ...attribute.KeyValue,
 ) (context.Context, func(*types.ExternalService, error)) {
 	began := s.Now()
-	tr, ctx := trace.New(ctx, family, title)
+	tr, ctx := trace.New(ctx, name, attributes...)
 
 	return ctx, func(svc *types.ExternalService, err error) {
 		var owner string
@@ -889,19 +897,19 @@ func (s *Syncer) observeSync(
 			owner = ownerSite
 		}
 
-		syncStarted.WithLabelValues(family, owner).Inc()
+		syncStarted.WithLabelValues(name, owner).Inc()
 
 		now := s.Now()
 		took := now.Sub(began).Seconds()
 
-		lastSync.WithLabelValues(family).Set(float64(now.Unix()))
+		lastSync.WithLabelValues(name).Set(float64(now.Unix()))
 
 		success := err == nil
-		syncDuration.WithLabelValues(strconv.FormatBool(success), family).Observe(took)
+		syncDuration.WithLabelValues(strconv.FormatBool(success), name).Observe(took)
 
 		if !success {
 			tr.SetError(err)
-			syncErrors.WithLabelValues(family, owner, syncErrorReason(err)).Inc()
+			syncErrors.WithLabelValues(name, owner, syncErrorReason(err)).Inc()
 		}
 
 		tr.Finish()

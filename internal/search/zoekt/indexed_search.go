@@ -224,7 +224,7 @@ func PartitionRepos(
 		return &IndexedRepoRevs{}, repos, nil
 	}
 
-	tr, ctx := trace.New(ctx, "PartitionRepos", string(typ))
+	tr, ctx := trace.New(ctx, "PartitionRepos", attribute.String("type", string(typ)))
 	defer tr.FinishWithErr(&err)
 
 	// Only include indexes with symbol information if a symbol request.
@@ -755,7 +755,7 @@ func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
 func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.New(ctx, "privateReposForActor", "")
+	tr, ctx := trace.New(ctx, "privateReposForActor")
 	defer tr.Finish()
 
 	userID := int32(0)
@@ -763,7 +763,7 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 		if a := actor.FromContext(ctx); a.IsAuthenticated() {
 			userID = a.UID
 		} else {
-			tr.LazyPrintf("skipping private repo resolution for unauthed user")
+			tr.AddEvent("skipping private repo resolution for unauthed user")
 			return nil
 		}
 	}
@@ -785,7 +785,7 @@ func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 
 	if err != nil {
 		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
-		tr.LazyPrintf("error resolving user private repos: %v", err)
+		tr.AddEvent("error resolving user private repos", trace.Error(err))
 	}
 	return userPrivateRepos
 }

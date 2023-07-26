@@ -1,0 +1,31 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "graphql",
+    srcs = [
+        "configuration_policy_resolver.go",
+        "iface.go",
+        "observability.go",
+        "root_resolver.go",
+        "root_resolver_policy_mutations.go",
+        "root_resolver_policy_queries.go",
+        "root_resolver_previews.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/policies",
+        "//internal/codeintel/policies/shared",
+        "//internal/codeintel/resolvers",
+        "//internal/codeintel/shared/resolvers",
+        "//internal/codeintel/shared/resolvers/gitresolvers",
+        "//internal/database",
+        "//internal/gqlutil",
+        "//internal/metrics",
+        "//internal/observation",
+        "//lib/errors",
+        "//lib/pointers",
+        "@com_github_graph_gophers_graphql_go//:graphql-go",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)

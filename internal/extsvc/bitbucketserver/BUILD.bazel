@@ -39,6 +39,10 @@ go_test(
     ],
     data = glob(["testdata/**"]),
     embed = [":bitbucketserver"],
+    # The race detector was causing weird memory issues that looked like this:
+    # https://github.com/golang/go/issues/46099
+    # This disables the race detector which seems to mitigate the issue.
+    race = "off",
     deps = [
         "//internal/extsvc/auth",
         "//internal/ratelimit",

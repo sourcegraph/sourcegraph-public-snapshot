@@ -1,0 +1,47 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "bitbucketserver",
+    srcs = [
+        "authz.go",
+        "provider.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/authz/providers/bitbucketserver",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/authz",
+        "//internal/authz/types",
+        "//internal/encryption",
+        "//internal/extsvc",
+        "//internal/extsvc/bitbucketserver",
+        "//internal/licensing",
+        "//internal/trace",
+        "//internal/types",
+        "//lib/errors",
+        "//schema",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "bitbucketserver_test",
+    timeout = "short",
+    srcs = [
+        "integration_test.go",
+        "main_test.go",
+        "provider_test.go",
+    ],
+    data = glob(["testdata/**"]),
+    embed = [":bitbucketserver"],
+    deps = [
+        "//internal/api",
+        "//internal/authz",
+        "//internal/extsvc",
+        "//internal/extsvc/auth",
+        "//internal/extsvc/bitbucketserver",
+        "//internal/types",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_inconshreveable_log15//:log15",
+    ],
+)

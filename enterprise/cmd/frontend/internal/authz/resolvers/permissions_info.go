@@ -11,7 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -20,8 +19,7 @@ import (
 )
 
 type permissionsInfoResolver struct {
-	db           edb.EnterpriseDB
-	ossDB        database.DB
+	db           database.DB
 	userID       int32
 	repoID       api.RepoID
 	perms        authz.Perms
@@ -70,7 +68,6 @@ func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlba
 	connectionStore := &permissionsInfoRepositoriesStore{
 		userID: r.userID,
 		db:     r.db,
-		ossDB:  r.ossDB,
 		query:  query,
 	}
 
@@ -79,8 +76,7 @@ func (r *permissionsInfoResolver) Repositories(_ context.Context, args graphqlba
 
 type permissionsInfoRepositoriesStore struct {
 	userID int32
-	db     edb.EnterpriseDB
-	ossDB  database.DB
+	db     database.DB
 	query  string
 }
 
@@ -97,7 +93,7 @@ func (s *permissionsInfoRepositoriesStore) UnmarshalCursor(cursor string, _ data
 }
 
 func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.ossDB.Repos().Count(actor.WithActor(ctx, actor.FromUser(s.userID)), database.ReposListOptions{Query: s.query})
+	count, err := s.db.Repos().Count(actor.WithActor(ctx, actor.FromUser(s.userID)), database.ReposListOptions{Query: s.query})
 	if err != nil {
 		return nil, err
 	}
@@ -107,14 +103,14 @@ func (s *permissionsInfoRepositoriesStore) ComputeTotal(ctx context.Context) (*i
 }
 
 func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoRepositoryResolver, error) {
-	permissions, err := s.db.Perms().ListUserPermissions(ctx, s.userID, &edb.ListUserPermissionsArgs{Query: s.query, PaginationArgs: args})
+	permissions, err := s.db.Perms().ListUserPermissions(ctx, s.userID, &database.ListUserPermissionsArgs{Query: s.query, PaginationArgs: args})
 	if err != nil {
 		return nil, err
 	}
 
 	var permissionResolvers []graphqlbackend.PermissionsInfoRepositoryResolver
 	for _, perm := range permissions {
-		permissionResolvers = append(permissionResolvers, permissionsInfoRepositoryResolver{perm: perm, db: s.ossDB})
+		permissionResolvers = append(permissionResolvers, permissionsInfoRepositoryResolver{perm: perm, db: s.db})
 	}
 
 	return permissionResolvers, nil
@@ -122,7 +118,7 @@ func (s *permissionsInfoRepositoriesStore) ComputeNodes(ctx context.Context, arg
 
 type permissionsInfoRepositoryResolver struct {
 	db   database.DB
-	perm *edb.UserPermission
+	perm *database.UserPermission
 }
 
 func (r permissionsInfoRepositoryResolver) ID() graphql.ID {
@@ -163,7 +159,6 @@ func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend
 		ctx:    ctx,
 		repoID: r.repoID,
 		db:     r.db,
-		ossDB:  r.ossDB,
 		query:  query,
 	}
 
@@ -173,8 +168,7 @@ func (r *permissionsInfoResolver) Users(ctx context.Context, args graphqlbackend
 type permissionsInfoUsersStore struct {
 	ctx    context.Context
 	repoID api.RepoID
-	db     edb.EnterpriseDB
-	ossDB  database.DB
+	db     database.DB
 	query  string
 }
 
@@ -196,14 +190,14 @@ func (s *permissionsInfoUsersStore) ComputeTotal(ctx context.Context) (*int32, e
 }
 
 func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]graphqlbackend.PermissionsInfoUserResolver, error) {
-	permissions, err := s.db.Perms().ListRepoPermissions(ctx, s.repoID, &edb.ListRepoPermissionsArgs{Query: s.query, PaginationArgs: args})
+	permissions, err := s.db.Perms().ListRepoPermissions(ctx, s.repoID, &database.ListRepoPermissionsArgs{Query: s.query, PaginationArgs: args})
 	if err != nil {
 		return nil, err
 	}
 
 	permissionResolvers := make([]graphqlbackend.PermissionsInfoUserResolver, 0, len(permissions))
 	for _, perm := range permissions {
-		permissionResolvers = append(permissionResolvers, permissionsInfoUserResolver{perm: perm, db: s.ossDB})
+		permissionResolvers = append(permissionResolvers, permissionsInfoUserResolver{perm: perm, db: s.db})
 	}
 
 	return permissionResolvers, nil
@@ -211,7 +205,7 @@ func (s *permissionsInfoUsersStore) ComputeNodes(ctx context.Context, args *data
 
 type permissionsInfoUserResolver struct {
 	db   database.DB
-	perm *edb.RepoPermission
+	perm *database.RepoPermission
 }
 
 func (r permissionsInfoUserResolver) ID() graphql.ID {

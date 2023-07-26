@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = ["types.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared",
+    visibility = ["//:__subpackages__"],
+    deps = ["//lib/codeintel/autoindex/config"],
+)

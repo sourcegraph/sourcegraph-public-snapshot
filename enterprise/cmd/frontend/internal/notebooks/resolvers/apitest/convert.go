@@ -4,7 +4,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
+	"github.com/sourcegraph/sourcegraph/internal/notebooks"
 )
 
 func BlockToAPIResponse(block notebooks.NotebookBlock) NotebookBlock {

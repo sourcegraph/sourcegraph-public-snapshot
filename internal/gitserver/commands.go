@@ -406,8 +406,8 @@ func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, 
 // ReadDir reads the contents of the named directory at commit.
 func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
 	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
-		attribute.String("commit", string(commit)),
+		repo.Attr(),
+		commit.Attr(),
 		attribute.String("path", path),
 		attribute.Bool("recurse", recurse),
 	}})
@@ -497,7 +497,7 @@ func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
 // no attempt to follow the link.
 func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
 	ctx, _, endObservation := c.operations.lstat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("commit", string(commit)),
+		commit.Attr(),
 		attribute.String("path", path),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -742,7 +742,7 @@ type Hunk struct {
 func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
 	ctx, _, endObservation := c.operations.streamBlameFile.With(ctx, &err, observation.Args{
 		Attrs: append([]attribute.KeyValue{
-			attribute.String("repo", string(repo)),
+			repo.Attr(),
 			attribute.String("path", path),
 		}, opt.Attrs()...),
 	})
@@ -797,7 +797,7 @@ func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChec
 func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ []*Hunk, err error) {
 	ctx, _, endObservation := c.operations.blameFile.With(ctx, &err, observation.Args{
 		Attrs: append([]attribute.KeyValue{
-			attribute.String("repo", string(repo)),
+			repo.Attr(),
 			attribute.String("path", path),
 		}, opt.Attrs()...),
 	})
@@ -990,7 +990,7 @@ func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoNa
 	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
 
 	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 		attribute.String("spec", spec),
 		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 	}})
@@ -1207,7 +1207,7 @@ func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
 // ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
 func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
 	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 		attribute.StringSlice("commitObjs", commitObjs),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1339,7 +1339,7 @@ func RevListArgs(givenCommit string) []string {
 // revspecs).
 func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
 	ctx, _, endObservation := c.operations.getBehindAhead.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 		attribute.String("left", left),
 		attribute.String("right", right),
 	}})
@@ -1373,8 +1373,8 @@ func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoNam
 // file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
 func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
 	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
-		attribute.String("commit", string(commit)),
+		repo.Attr(),
+		commit.Attr(),
 		attribute.String("name", name),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1398,8 +1398,8 @@ func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoP
 func (c *clientImplementor) NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
 	// TODO: this does not capture the lifetime of the request since we return a reader
 	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
-		attribute.String("commit", string(commit)),
+		repo.Attr(),
+		commit.Attr(),
 		attribute.String("name", name),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1536,7 +1536,7 @@ func (br *blobReader) convertError(err error) error {
 // Stat returns a FileInfo describing the named file at commit.
 func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
 	ctx, _, endObservation := c.operations.stat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("commit", string(commit)),
+		commit.Attr(),
 		attribute.String("path", path),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1640,8 +1640,8 @@ func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepo
 // the repository or if the commit must be fetched from the remote.
 func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
-		attribute.String("commit", string(id)),
+		repo.Attr(),
+		id.Attr(),
 		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1653,7 +1653,7 @@ func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepo
 func (c *clientImplementor) Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) (_ []*gitdomain.Commit, err error) {
 	opt = addNameOnly(opt, checker)
 	ctx, _, endObservation := c.operations.commits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 		attribute.String("opts", fmt.Sprintf("%#v", opt)),
 	}})
 	defer endObservation(1, observation.Args{})
@@ -1771,7 +1771,7 @@ func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err err
 // contains a commit past a specified date.
 func (c *clientImplementor) HasCommitAfter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, date string, revspec string) (_ bool, err error) {
 	ctx, _, endObservation := c.operations.hasCommitAfter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 		attribute.String("date", date),
 		attribute.String("revSpec", revspec),
 	}})
@@ -2014,7 +2014,7 @@ func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err
 // FirstEverCommit returns the first commit ever made to the repository.
 func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (_ *gitdomain.Commit, err error) {
 	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -2509,7 +2509,7 @@ func (c *clientImplementor) ArchiveReader(
 	// TODO: this does not capture the lifetime of the request because we return a reader
 	ctx, _, endObservation := c.operations.archiveReader.With(ctx, &err, observation.Args{
 		Attrs: append(
-			[]attribute.KeyValue{attribute.String("repo", string(repo))},
+			[]attribute.KeyValue{repo.Attr()},
 			options.Attrs()...,
 		),
 	})
@@ -2718,7 +2718,7 @@ func (f branchFilter) add(list []string) {
 func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (_ []*gitdomain.Branch, err error) {
 	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
 		Attrs: append(
-			[]attribute.KeyValue{attribute.String("repo", string(repo))},
+			[]attribute.KeyValue{repo.Attr()},
 			opt.Attrs()...,
 		),
 	})
@@ -2796,7 +2796,7 @@ func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
 // ListRefs returns a list of all refs in the repository.
 func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) (_ []gitdomain.Ref, err error) {
 	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", string(repo)),
+		repo.Attr(),
 	}})
 	defer endObservation(1, observation.Args{})
 

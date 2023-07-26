@@ -103,11 +103,11 @@
 
 /enterprise/cmd/migrator/**/* @efritz
 
-/enterprise/cmd/precise-code-intel-worker/**/* @efritz
+/cmd/precise-code-intel-worker/**/* @efritz
 
-/enterprise/cmd/repo-updater/**/* @indradhanush
+/cmd/repo-updater/**/* @indradhanush
 
-/enterprise/cmd/repo-updater/internal/authz/**/* @unknwon
+/cmd/repo-updater/internal/authz/**/* @unknwon
 
 /enterprise/cmd/worker/**/* @efritz
 
@@ -121,11 +121,11 @@
 
 /enterprise/internal/authz/**/* @unknwon
 
-/enterprise/internal/batches/**/* @eseliger
+/internal/batches/**/* @eseliger
 
 /enterprise/internal/cloud/**/* @unknwon @michaellzc
 
-/enterprise/internal/codeintel/**/* @efritz @Strum355
+/internal/codeintel/**/* @efritz @Strum355
 
 /enterprise/internal/database/external_services* @unknwon
 /enterprise/internal/database/perms_store* @unknwon

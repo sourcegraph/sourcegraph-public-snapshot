@@ -11,7 +11,7 @@ import (
 	"io"
 	"sync"
 
-	types "github.com/sourcegraph/sourcegraph/enterprise/internal/executor/types"
+	types "github.com/sourcegraph/sourcegraph/internal/executor/types"
 )
 
 // MockStore is a mock implementation of the Store interface (from the

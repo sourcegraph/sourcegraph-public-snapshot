@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -25,7 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func addPerms(t *testing.T, s edb.PermsStore, userID, repoID int32) {
+func addPerms(t *testing.T, s database.PermsStore, userID, repoID int32) {
 	t.Helper()
 
 	ctx := context.Background()
@@ -55,7 +54,7 @@ func TestPermsSyncerScheduler_scheduleJobs(t *testing.T) {
 		usersStore := database.UsersWith(logger, db)
 		externalAccountStore := database.ExternalAccountsWith(logger, db)
 		reposStore := database.ReposWith(logger, db)
-		permsStore := edb.Perms(logger, db, clock)
+		permsStore := database.Perms(logger, db, clock)
 
 		// Creating site-admin.
 		adminUser, err := usersStore.Create(ctx, database.NewUser{Username: "admin"})

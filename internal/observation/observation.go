@@ -322,7 +322,7 @@ func (op *Operation) startTrace(ctx context.Context) (*trace.Trace, context.Cont
 		return nil, ctx
 	}
 
-	tr, ctx := op.context.Tracer.New(ctx, op.kebabName, "")
+	tr, ctx := op.context.Tracer.New(ctx, op.kebabName)
 	return tr, ctx
 }
 

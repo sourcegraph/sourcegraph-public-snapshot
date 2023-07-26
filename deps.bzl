@@ -5058,6 +5058,14 @@ def go_dependencies():
         version = "v0.0.0-20190623134757-126b35219450",
     )
     go_repository(
+        name = "com_github_mroth_weightedrand_v2",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/mroth/weightedrand/v2",
+        sum = "h1:zrEVDIaau/E4QLOKu02kpg8T8myweFlMGikIgbIdrRA=",
+        version = "v2.0.1",
+    )
+
+    go_repository(
         name = "com_github_mrunalp_fileutils",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/mrunalp/fileutils",
@@ -6265,8 +6273,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_log",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/log",
-        sum = "h1:xz1lIhx6YvYYhiLio9INCIWHCZFH9MoRVuFye/lz07c=",
-        version = "v0.0.0-20230523201558-ad2d71b4d2ee",
+        sum = "h1:VwYrG1+YNyOD3nSb0M84ISMQiOOS/5Js05HqU1iNFSU=",
+        version = "v0.0.0-20230711093019-40c57b632cca",
     )
     go_repository(
         name = "com_github_sourcegraph_mountinfo",
@@ -6518,14 +6526,6 @@ def go_dependencies():
         importpath = "github.com/tidwall/pretty",
         sum = "h1:RWIZEg2iJ8/g6fDDYzMpobmaoGh5OLl4AXtGUGPcqCs=",
         version = "v1.2.0",
-    )
-
-    go_repository(
-        name = "com_github_tj_assert",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/tj/assert",
-        sum = "h1:NSWpaDaurcAJY7PkL8Xt0PhZE7qpvbZl5ljd8r6U0bI=",
-        version = "v0.0.0-20190920132354-ee03d75cd160",
     )
 
     go_repository(

@@ -255,7 +255,7 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 	db := NewDBWith(s.Logger, s)
 	// Getting own signal config to find out if there are any excluded repos.
 	// TODO(own): remove magic "recent-views" and use
-	// "/enterprise/internal/own/types" when this file is moved to enterprise package
+	// "/internal/own/types" when this file is moved to enterprise package
 	configurations, err := db.OwnSignalConfigurations().LoadConfigurations(ctx, LoadSignalConfigurationArgs{Name: "recent-views"})
 	if err != nil {
 		return errors.Wrap(err, "error during fetching own signals configuration")

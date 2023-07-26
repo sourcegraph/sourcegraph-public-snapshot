@@ -9,13 +9,13 @@ import (
 
 	"github.com/hashicorp/cronexpr"
 
+	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -670,9 +670,9 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	if completionsConfig == nil {
 		completionsConfig = &schema.Completions{
 			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-v1",
-			FastChatModel:   "anthropic/claude-instant-v1",
-			CompletionModel: "anthropic/claude-instant-v1",
+			ChatModel:       "anthropic/claude-2",
+			FastChatModel:   "anthropic/claude-instant-1",
+			CompletionModel: "anthropic/claude-instant-1",
 		}
 	}
 
@@ -710,17 +710,17 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-v1"
+			completionsConfig.ChatModel = "anthropic/claude-2"
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic/claude-instant-v1"
+			completionsConfig.FastChatModel = "anthropic/claude-instant-1"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic/claude-instant-v1"
+			completionsConfig.CompletionModel = "anthropic/claude-instant-1"
 		}
 	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
 		// If no endpoint is configured, use a default value.
@@ -760,17 +760,42 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 		// Set a default chat model.
 		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-v1"
+			completionsConfig.ChatModel = "claude-2"
 		}
 
 		// Set a default fast chat model.
 		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "claude-instant-v1"
+			completionsConfig.FastChatModel = "claude-instant-1"
 		}
 
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-v1"
+			completionsConfig.CompletionModel = "claude-instant-1"
+		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, this provider is misconfigured.
+		if completionsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If not chat model is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.ChatModel == "" {
+			return nil
+		}
+
+		// If not fast chat model is set, we fall back to the Chat Model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = completionsConfig.ChatModel
+		}
+
+		// If not completions model is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.CompletionModel == "" {
+			return nil
 		}
 	}
 
@@ -783,6 +808,18 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	// not available.
 	if completionsConfig.ChatModel == "" || completionsConfig.FastChatModel == "" || completionsConfig.CompletionModel == "" {
 		return nil
+	}
+
+	if completionsConfig.ChatModelMaxTokens == 0 {
+		completionsConfig.ChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.ChatModel)
+	}
+
+	if completionsConfig.FastChatModelMaxTokens == 0 {
+		completionsConfig.FastChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.FastChatModel)
+	}
+
+	if completionsConfig.CompletionModelMaxTokens == 0 {
+		completionsConfig.CompletionModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.CompletionModel)
 	}
 
 	computedConfig := &conftypes.CompletionsConfig{
@@ -801,6 +838,8 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 
 	return computedConfig
 }
+
+const embeddingsMaxFileSizeBytes = 1000000
 
 // GetEmbeddingsConfig evaluates a complete embeddings configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
@@ -922,9 +961,44 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "text-embedding-ada-002" {
 			embeddingsConfig.Dimensions = 1536
 		}
+	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, we cannot talk to Azure OpenAI.
+		if embeddingsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to OpenAI. Bail.
+		if embeddingsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If no model is set, we cannot do anything here.
+		if embeddingsConfig.Model == "" {
+			return nil
+		}
+		// Make sure models are always treated case-insensitive.
+		// TODO: Are model names on azure case insensitive?
+		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
 	} else {
 		// Unknown provider value.
 		return nil
+	}
+
+	// While its not removed, use both options
+	var includedFilePathPatterns []string
+	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
+	maxFileSizeLimit := embeddingsMaxFileSizeBytes
+	if embeddingsConfig.FileFilters != nil {
+		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
+		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
+		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
+			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
+		}
+	}
+	fileFilters := conftypes.EmbeddingsFileFilters{
+		IncludedFilePathPatterns: includedFilePathPatterns,
+		ExcludedFilePathPatterns: excludedFilePathPatterns,
+		MaxFileSizeBytes:         maxFileSizeLimit,
 	}
 
 	computedConfig := &conftypes.EmbeddingsConfig{
@@ -935,7 +1009,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		Dimensions:  embeddingsConfig.Dimensions,
 		// This is definitely set at this point.
 		Incremental:                *embeddingsConfig.Incremental,
-		ExcludedFilePathPatterns:   embeddingsConfig.ExcludedFilePathPatterns,
+		FileFilters:                fileFilters,
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
@@ -981,4 +1055,58 @@ func defaultTo(val, def int) int {
 		return def
 	}
 	return val
+}
+
+func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model string) int {
+	switch provider {
+	case conftypes.CompletionsProviderNameSourcegraph:
+		if strings.HasPrefix(model, "openai/") {
+			return openaiDefaultMaxPromptTokens(strings.TrimPrefix(model, "openai/"))
+		}
+		if strings.HasPrefix(model, "anthropic/") {
+			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic/"))
+		}
+		// Fallback for weird values.
+		return 9_000
+	case conftypes.CompletionsProviderNameAnthropic:
+		return anthropicDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameOpenAI:
+		return openaiDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameAzureOpenAI:
+		// We cannot know based on the model name what model is actually used,
+		// this is a sane default for GPT in general.
+		return 8_000
+	}
+
+	// Should be unreachable.
+	return 9_000
+}
+
+func anthropicDefaultMaxPromptTokens(model string) int {
+	if strings.HasSuffix(model, "-100k") {
+		return 100_000
+
+	}
+	if model == "claude-2" {
+		// TODO: Technically, v2 also uses a 100k window, but we should validate
+		// that returning 100k here is the right thing to do.
+		return 12_000
+	}
+	// For now, all other claude models have a 9k token window.
+	return 9_000
+}
+
+func openaiDefaultMaxPromptTokens(model string) int {
+	switch model {
+	case "gpt-4":
+		return 8_000
+	case "gpt-4-32k":
+		return 32_000
+	case "gpt-3.5-turbo":
+		return 4_000
+	case "gpt-3.5-turbo-16k":
+		return 16_000
+	default:
+		return 4_000
+	}
 }

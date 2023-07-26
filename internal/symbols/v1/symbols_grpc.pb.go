@@ -31,7 +31,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SymbolsServiceClient interface {
 	Search(ctx context.Context, in *SearchRequest, opts ...grpc.CallOption) (*SearchResponse, error)
-	LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error)
+	LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (SymbolsService_LocalCodeIntelClient, error)
 	ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error)
 	SymbolInfo(ctx context.Context, in *SymbolInfoRequest, opts ...grpc.CallOption) (*SymbolInfoResponse, error)
 	Healthz(ctx context.Context, in *HealthzRequest, opts ...grpc.CallOption) (*HealthzResponse, error)
@@ -54,13 +54,36 @@ func (c *symbolsServiceClient) Search(ctx context.Context, in *SearchRequest, op
 	return out, nil
 }
 
-func (c *symbolsServiceClient) LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (*LocalCodeIntelResponse, error) {
-	out := new(LocalCodeIntelResponse)
-	err := c.cc.Invoke(ctx, SymbolsService_LocalCodeIntel_FullMethodName, in, out, opts...)
+func (c *symbolsServiceClient) LocalCodeIntel(ctx context.Context, in *LocalCodeIntelRequest, opts ...grpc.CallOption) (SymbolsService_LocalCodeIntelClient, error) {
+	stream, err := c.cc.NewStream(ctx, &SymbolsService_ServiceDesc.Streams[0], SymbolsService_LocalCodeIntel_FullMethodName, opts...)
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	x := &symbolsServiceLocalCodeIntelClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type SymbolsService_LocalCodeIntelClient interface {
+	Recv() (*LocalCodeIntelResponse, error)
+	grpc.ClientStream
+}
+
+type symbolsServiceLocalCodeIntelClient struct {
+	grpc.ClientStream
+}
+
+func (x *symbolsServiceLocalCodeIntelClient) Recv() (*LocalCodeIntelResponse, error) {
+	m := new(LocalCodeIntelResponse)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
 }
 
 func (c *symbolsServiceClient) ListLanguages(ctx context.Context, in *ListLanguagesRequest, opts ...grpc.CallOption) (*ListLanguagesResponse, error) {
@@ -95,7 +118,7 @@ func (c *symbolsServiceClient) Healthz(ctx context.Context, in *HealthzRequest, 
 // for forward compatibility
 type SymbolsServiceServer interface {
 	Search(context.Context, *SearchRequest) (*SearchResponse, error)
-	LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error)
+	LocalCodeIntel(*LocalCodeIntelRequest, SymbolsService_LocalCodeIntelServer) error
 	ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error)
 	SymbolInfo(context.Context, *SymbolInfoRequest) (*SymbolInfoResponse, error)
 	Healthz(context.Context, *HealthzRequest) (*HealthzResponse, error)
@@ -109,8 +132,8 @@ type UnimplementedSymbolsServiceServer struct {
 func (UnimplementedSymbolsServiceServer) Search(context.Context, *SearchRequest) (*SearchResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Search not implemented")
 }
-func (UnimplementedSymbolsServiceServer) LocalCodeIntel(context.Context, *LocalCodeIntelRequest) (*LocalCodeIntelResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method LocalCodeIntel not implemented")
+func (UnimplementedSymbolsServiceServer) LocalCodeIntel(*LocalCodeIntelRequest, SymbolsService_LocalCodeIntelServer) error {
+	return status.Errorf(codes.Unimplemented, "method LocalCodeIntel not implemented")
 }
 func (UnimplementedSymbolsServiceServer) ListLanguages(context.Context, *ListLanguagesRequest) (*ListLanguagesResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListLanguages not implemented")
@@ -152,22 +175,25 @@ func _SymbolsService_Search_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _SymbolsService_LocalCodeIntel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(LocalCodeIntelRequest)
-	if err := dec(in); err != nil {
-		return nil, err
+func _SymbolsService_LocalCodeIntel_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(LocalCodeIntelRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
 	}
-	if interceptor == nil {
-		return srv.(SymbolsServiceServer).LocalCodeIntel(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: SymbolsService_LocalCodeIntel_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SymbolsServiceServer).LocalCodeIntel(ctx, req.(*LocalCodeIntelRequest))
-	}
-	return interceptor(ctx, in, info, handler)
+	return srv.(SymbolsServiceServer).LocalCodeIntel(m, &symbolsServiceLocalCodeIntelServer{stream})
+}
+
+type SymbolsService_LocalCodeIntelServer interface {
+	Send(*LocalCodeIntelResponse) error
+	grpc.ServerStream
+}
+
+type symbolsServiceLocalCodeIntelServer struct {
+	grpc.ServerStream
+}
+
+func (x *symbolsServiceLocalCodeIntelServer) Send(m *LocalCodeIntelResponse) error {
+	return x.ServerStream.SendMsg(m)
 }
 
 func _SymbolsService_ListLanguages_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -236,10 +262,6 @@ var SymbolsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SymbolsService_Search_Handler,
 		},
 		{
-			MethodName: "LocalCodeIntel",
-			Handler:    _SymbolsService_LocalCodeIntel_Handler,
-		},
-		{
 			MethodName: "ListLanguages",
 			Handler:    _SymbolsService_ListLanguages_Handler,
 		},
@@ -252,6 +274,12 @@ var SymbolsService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _SymbolsService_Healthz_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "LocalCodeIntel",
+			Handler:       _SymbolsService_LocalCodeIntel_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "symbols.proto",
 }

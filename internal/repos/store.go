@@ -208,7 +208,7 @@ func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context
 	if txctx == nil {
 		txctx = ctx
 	}
-	tr, txctx := s.Tracer.New(txctx, family, "")
+	tr, txctx := s.Tracer.New(txctx, family)
 	ctx = trace.CopyContext(ctx, txctx)
 	return tr, ctx
 }

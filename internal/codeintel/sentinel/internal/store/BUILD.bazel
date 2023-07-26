@@ -1,0 +1,54 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "store",
+    srcs = [
+        "matches.go",
+        "observability.go",
+        "store.go",
+        "vulnerabilities.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/store",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/sentinel/shared",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/batch",
+        "//internal/database/dbutil",
+        "//internal/metrics",
+        "//internal/observation",
+        "@com_github_hashicorp_go_version//:go-version",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_log//:log",
+        "@io_opentelemetry_go_otel//attribute",
+    ],
+)
+
+go_test(
+    name = "store_test",
+    timeout = "moderate",
+    srcs = [
+        "matches_test.go",
+        "vulnerabilities_test.go",
+    ],
+    embed = [":store"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
+    deps = [
+        "//internal/codeintel/sentinel/shared",
+        "//internal/codeintel/uploads/shared",
+        "//internal/database",
+        "//internal/database/basestore",
+        "//internal/database/dbtest",
+        "//internal/observation",
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+        "@com_github_lib_pq//:pq",
+        "@com_github_sourcegraph_log//logtest",
+    ],
+)

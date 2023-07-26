@@ -1,0 +1,22 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "codeintel",
+    srcs = ["services.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/autoindexing",
+        "//internal/codeintel/codenav",
+        "//internal/codeintel/context",
+        "//internal/codeintel/dependencies",
+        "//internal/codeintel/policies",
+        "//internal/codeintel/ranking",
+        "//internal/codeintel/sentinel",
+        "//internal/codeintel/shared",
+        "//internal/codeintel/uploads",
+        "//internal/database",
+        "//internal/gitserver",
+        "//internal/observation",
+    ],
+)

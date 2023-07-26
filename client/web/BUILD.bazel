@@ -1854,6 +1854,7 @@ ts_project(
         "src/components/diff/DiffStat.test.tsx",
         "src/components/externalServices/ExternalServiceForm.test.tsx",
         "src/components/externalServices/externalServices.test.tsx",
+        "src/components/fuzzyFinder/FuzzyFiles.test.ts",
         "src/components/fuzzyFinder/FuzzyFinder.mocks.tsx",
         "src/components/fuzzyFinder/FuzzyFinder.test.tsx",
         "src/components/legacyLayoutRouteContext.mock.ts",
@@ -2061,9 +2062,6 @@ BUNDLE_DATA_DEPS = [
 ]
 
 ENTERPRISE_BUNDLE_DATA_DEPS = BUNDLE_DATA_DEPS + [
-    # static assets imported in .ts
-    "src/enterprise/productSubscription/ProductCertificate-background.png",
-
     # TODO(bazel): this is already in the main ts_project(srcs). Why also here?
     "src/enterprise/codeintel/configuration/schema.json",
     ":enterprise-yaml",

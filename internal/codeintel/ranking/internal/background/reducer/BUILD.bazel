@@ -1,0 +1,20 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "reducer",
+    srcs = [
+        "config.go",
+        "job.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/reducer",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/codeintel/ranking/internal/shared",
+        "//internal/codeintel/ranking/internal/store",
+        "//internal/codeintel/shared/background",
+        "//internal/conf",
+        "//internal/env",
+        "//internal/goroutine",
+        "//internal/observation",
+    ],
+)

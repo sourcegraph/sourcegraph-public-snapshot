@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "shared",
+    srcs = ["keys.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/shared",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/conf"],
+)

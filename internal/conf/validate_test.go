@@ -296,6 +296,20 @@ func TestRedactConfSecrets(t *testing.T) {
 	}
 }
 
+func TestReturnSafeConfig(t *testing.T) {
+	conf := `{
+  "executors.frontendURL": "http://host.docker.internal:3082",
+  "batchChanges.rolloutWindows": [{"rate": "unlimited"}]
+}`
+
+	want := `{"batchChanges.rolloutWindows":[{"rate":"unlimited"}]}`
+
+	redacted, err := ReturnSafeConfigs(conftypes.RawUnified{Site: conf})
+	require.NoError(t, err)
+
+	assert.Equal(t, want, redacted.Site)
+}
+
 func TestRedactConfSecretsWithCommentedOutSecret(t *testing.T) {
 	conf := `{
   // "executors.accessToken": "supersecret",
@@ -308,9 +322,8 @@ func TestRedactConfSecretsWithCommentedOutSecret(t *testing.T) {
 }`
 
 	testCases := []struct {
-		name           string
-		hashSecrets    bool
-		redactedFmtStr string
+		name        string
+		hashSecrets bool
 	}{
 		{
 			name:        "hashSecrets true",

@@ -1,0 +1,45 @@
+load("//dev:go_defs.bzl", "go_test")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "types",
+    srcs = ["ranges.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/types",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)
+
+go_test(
+    name = "types_test",
+    timeout = "short",
+    srcs = ["ranges_test.go"],
+    embed = [":types"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)
+
+go_library(
+    name = "ranges",
+    srcs = ["ranges.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//lib/errors",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)
+
+go_test(
+    name = "ranges_test",
+    srcs = ["ranges_test.go"],
+    embed = [":ranges"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
+)
