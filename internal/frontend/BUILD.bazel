@@ -1,8 +1,0 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_library")
-
-go_library(
-    name = "frontend",
-    srcs = ["httpapi_schema.go"],
-    importpath = "github.com/sourcegraph/sourcegraph/internal/frontend",
-    visibility = ["//:__subpackages__"],
-)

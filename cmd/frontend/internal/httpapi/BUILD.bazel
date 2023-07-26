@@ -52,7 +52,6 @@ go_library(
         "//internal/errcode",
         "//internal/eventlogger",
         "//internal/featureflag",
-        "//internal/frontend",
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
