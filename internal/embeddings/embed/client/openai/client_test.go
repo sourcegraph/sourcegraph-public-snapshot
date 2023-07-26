@@ -76,7 +76,8 @@ func TestOpenAI(t *testing.T) {
 			expected = append(expected, make([]float32, 1535)...)
 			expected = append(expected, 2)
 		}
-		require.Equal(t, expected, resp)
+		require.Equal(t, expected, resp.Embeddings)
+		require.Empty(t, resp.Failed)
 		require.True(t, gotRequest1)
 		require.True(t, gotRequest2)
 	})
