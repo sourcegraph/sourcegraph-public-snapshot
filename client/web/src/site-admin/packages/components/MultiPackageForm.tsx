@@ -180,7 +180,7 @@ const PackageList: React.FunctionComponent<PackageListProps> = ({ blockState, qu
                 </span>
                 {nodes.length < totalCount && (
                     <Button variant="link" className="p-0 mr-3" onClick={() => setPackageFetchLimit(nextFetchLimit)}>
-                        <>Show {nextFetchLimit === totalCount ? 'all ' : { nextFetchLimit }}</>
+                        <>Show {nextFetchLimit === totalCount ? 'all ' : nextFetchLimit.toString()}</>
                     </Button>
                 )}
             </div>

@@ -3,6 +3,7 @@ package search
 import (
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
@@ -76,10 +77,11 @@ index dbace57d5f..53357b4971 100644
 		}
 
 		formatted, _ := FormatDiff(parsedDiff, highlights)
-		expectedFormatted := "file\\ with\\ spaces new\\ file\\ with\\ spaces\\ and\\ invalid\xFF\xFD\\ utf8\n" +
+		expectedFormatted := "file\\ with\\ spaces new\\ file\\ with\\ spaces\\ and\\ invalid�\\ utf8\n" +
 			"@@ -60,1 +60,2 @@ Unknown <u@gogs.io> 无闻 <u@gogs.io>\n" +
 			" Matt King <kingy895@gmail.com> Matthew King <kingy895@gmail.com>\n" +
-			"+Camden Cheek <invalid@utf8.\xFF\xFDm> Camden Cheek <camden@ccheek.com>\n"
+			"+Camden Cheek <invalid@utf8.�m> Camden Cheek <camden@ccheek.com>\n"
 		require.Equal(t, expectedFormatted, formatted)
+		require.True(t, utf8.ValidString(formatted))
 	})
 }

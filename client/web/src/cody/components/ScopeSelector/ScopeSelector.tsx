@@ -53,7 +53,7 @@ export const ScopeSelector: React.FC<ScopeSelectorProps> = React.memo(function S
 
         loadReposStatus({
             variables: { repoNames, first: repoNames.length, includeJobs: !!window.context.currentUser?.siteAdmin },
-            pollInterval: 5000,
+            pollInterval: 2000,
         }).catch(() => null)
     }, [activeEditor, scope.repositories, loadReposStatus])
 
