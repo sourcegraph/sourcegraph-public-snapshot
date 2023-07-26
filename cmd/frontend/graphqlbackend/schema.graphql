@@ -3896,12 +3896,14 @@ type Repository implements Node & GenericSearchResultInterface {
     recordedCommands(
         """
         Returns the "limit" number recorded commands from the list.
+        (Default: 40)
         """
-        limit: Int
+        limit: Int = 40
         """
         Skips initial "offset" number of recorded commands.
+        (Default: 0)
         """
-        offset: Int
+        offset: Int = 0
     ): RecordedCommandConnection!
 }
 

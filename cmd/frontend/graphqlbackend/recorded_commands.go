@@ -9,18 +9,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-const recordedCommandDefaultLimit = 40
+const recordedCommandMaxLimit = 40
 
-func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *struct {
-	Limit  *int32
-	Offset *int32
-}) (graphqlutil.SliceConnectionResolver[[]byte, RecordedCommandResolver], error) {
+type RecordedCommandsArgs struct {
+	Limit  int32
+	Offset int32
+}
+
+func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *RecordedCommandsArgs) (graphqlutil.SliceConnectionResolver[RecordedCommandResolver], error) {
+	var resolvers []RecordedCommandResolver
 	recordingConf := conf.Get().SiteConfig().GitRecorder
 	if recordingConf == nil {
-		return graphqlutil.NewSliceConnectionResolver([][]byte{}, 0, 0, recordedCommandTransformer), nil
+		return graphqlutil.NewSliceConnectionResolver(resolvers, 0, 0), nil
 	}
 	store := rcache.NewFIFOList(wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
 	empty, err := store.IsEmpty()
@@ -28,22 +30,34 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *struct 
 		return nil, err
 	}
 	if empty {
-		return graphqlutil.NewSliceConnectionResolver([][]byte{}, 0, 0, recordedCommandTransformer), nil
+		return graphqlutil.NewSliceConnectionResolver(resolvers, 0, 0), nil
 	}
-	raws, err := store.All(ctx)
+
+	offset := int(args.Offset)
+	limit := int(args.Limit)
+	if limit <= 0 || limit > recordedCommandMaxLimit {
+		limit = recordedCommandMaxLimit
+	}
+	raws, err := store.Slice(ctx, offset, limit)
 	if err != nil {
 		return nil, err
 	}
 
-	if args.Limit == nil || *args.Limit > recordedCommandDefaultLimit {
-		args.Limit = pointers.Ptr(int32(recordedCommandDefaultLimit))
+	size, err := store.Size()
+	if err != nil {
+		return nil, err
 	}
 
-	if args.Offset == nil {
-		args.Offset = pointers.Ptr(int32(0))
+	resolvers = make([]RecordedCommandResolver, len(raws))
+	for i, raw := range raws {
+		command, err := wrexec.UnmarshalCommand(raw)
+		if err != nil {
+			return nil, err
+		}
+		resolvers[i] = NewRecordedCommandResolver(command)
 	}
 
-	return graphqlutil.NewSliceConnectionResolver(raws, int(*args.Limit), int(*args.Offset), recordedCommandTransformer), nil
+	return graphqlutil.NewSliceConnectionResolver(resolvers, size, offset+limit), nil
 }
 
 func recordedCommandTransformer(raw []byte) (RecordedCommandResolver, error) {
