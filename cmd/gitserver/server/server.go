@@ -1995,16 +1995,15 @@ func setGitAttributes(dir common.GitDir) error {
 	return nil
 }
 
-func (s *Server) configureRepoAsGitAlternate(ctx context.Context, repo api.RepoName, repoTmpPath string, poolRepoName api.RepoName) error {
+func (s *Server) configureRepoAsGitAlternate(repoTmpPath string, poolRepoName api.RepoName) error {
 
-	// Do the equivalent of this command:
-	// echo "$REPO_DIR/.pool/$REPO_NAME/.git/objects" > $REPOS_DIR/$REPO_NAME/.git/objects/info/alternates
-	// repoDir := s.dir(repo)
+	// Write "$REPO_DIR/.pool/$REPO_NAME/.git/objects" to the file at
+	// $REPOS_DIR/$REPO_NAME/.git/objects/info/alternates.
 
-	// "/data/repos/github.com/owner/this-repo/.git/objects/info/alternates"
+	// For example, /data/repos/github.com/owner/this-repo/.git/objects/info/alternates.
 	repoAlternatesFilePath := filepath.Join(repoTmpPath, "objects/info/alternates")
 
-	// "/data/repos/.pool/github.com/owner/this-repo/.git/objects"
+	// For example /data/repos/.pool/github.com/owner/this-repo/.git/objects
 	poolRepoObjectsFilePath := filepath.Join(string(s.poolDir(poolRepoName)), "objects")
 
 	err := os.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), os.FileMode(0644))
@@ -2092,7 +2091,7 @@ func (d *deduplicatedCloneOptions) DeepCopy() *deduplicatedCloneOptions {
 	}
 }
 
-func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *types.Repo) (*deduplicatedCloneOptions, error) {
+func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *types.Repo) *deduplicatedCloneOptions {
 	logger := s.ObservationCtx.Logger.Scoped("deduplicateRepoClone", "").With(log.String("repo", string(repo.Name)))
 
 	// We only ask users to list the name of the source repository. If this repository is a parent
@@ -2114,24 +2113,24 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *typ
 			dedupeCloneType: dedupeSource,
 			poolDir:         poolDir,
 			poolRepoName:    repo.Name,
-		}, nil
+		}
 	}
 
 	// Return early if this repository is not a fork. Forks are not listed in the `deduplicateForks`
 	// site config option so we will have to check in the DB beyond this point to see if we can find
 	// a parent-fork relationship with deduplication enabled for the related repositories.
 	if !repo.Fork {
-		return nil, nil
+		return nil
 	}
 
 	poolRepoName, ok, err := s.DB.GitserverRepos().GetPoolRepoName(ctx, repo.Name)
 	if err != nil {
 		logger.Warn("failed to get by name from DB (repo will be cloned without deduplicated storage if this was supposed to be deduplicated)", log.Error(err))
-		return nil, nil
+		return nil
 	}
 
 	if !ok {
-		return nil, nil
+		return nil
 	}
 
 	// IMPORTANT: Check in the config in case the DB is lagging behind. For example the user may
@@ -2139,14 +2138,14 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *typ
 	// yet and this code path is being executed. So we want to be sure that this fork's parent
 	// repository is enlisted for deduplication.
 	if !s.DeduplicatedForksSet.Contains(string(poolRepoName)) {
-		return nil, nil
+		return nil
 	}
 
 	return &deduplicatedCloneOptions{
 		dedupeCloneType: dedupeFork,
 		poolDir:         s.poolDir(poolRepoName),
 		poolRepoName:    poolRepoName,
-	}, nil
+	}
 }
 
 // cloneRepo performs a clone operation for the given repository. It is
@@ -2163,25 +2162,18 @@ func (s *Server) cloneRepo(ctx context.Context, repoName api.RepoName, opts *clo
 	}()
 
 	logger := s.ObservationCtx.Logger.Scoped("cloneRepo", "").With(log.String("repo", string(repoName)))
+	logger.Debug("")
 
 	repo, err := s.DB.Repos().GetByName(ctx, repoName)
 	if err != nil {
 		return "", errors.Wrap(err, "failed to get repository by name, repo will not be cloned")
 	}
 
-	dedupeOptions, _ := s.maybeGetDeduplicatedCloneOptions(ctx, repo)
-	if dedupeOptions != nil {
-		// if dedupeOptions.which == dedupeSource {
-		logger.Warn("######## Configuring pool dir", log.String("options", fmt.Sprintf("%#v", *dedupeOptions)))
-		// dir = s.poolDir(repo)
-		// }
-
-		if opts == nil {
-			opts = &cloneOptions{}
-		}
-
-		opts.DeduplicatedCloneOptions = dedupeOptions
+	if opts == nil {
+		opts = &cloneOptions{}
 	}
+
+	opts.DeduplicatedCloneOptions = s.maybeGetDeduplicatedCloneOptions(ctx, repo)
 
 	dir := s.dir(repoName)
 	// PERF: Before doing the network request to check if isCloneable, lets
@@ -2447,7 +2439,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 			}
 		}
 
-		if err := s.configureRepoAsGitAlternate(ctx, repo, tmpPath, opts.DeduplicatedCloneOptions.poolRepoName); err != nil {
+		if err := s.configureRepoAsGitAlternate(tmpPath, opts.DeduplicatedCloneOptions.poolRepoName); err != nil {
 			logger.Error("failed to configure reop as git-alternate, deduplicated storage will not be available for this repo", log.Error(err))
 		}
 	}
