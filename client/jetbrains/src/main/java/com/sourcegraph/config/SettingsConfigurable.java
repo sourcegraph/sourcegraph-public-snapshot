@@ -138,7 +138,7 @@ public class SettingsConfigurable implements Configurable {
       aSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
     }
     aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
-    aSettings.isCodyEnabled = newCodyEnabled;
+    aSettings.setCodyEnabled(newCodyEnabled);
     aSettings.isCodyAutoCompleteEnabled = newCodyAutoCompleteEnabled;
 
     publisher.afterAction(context);

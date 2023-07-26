@@ -93,7 +93,7 @@ export const fetchTreeEntries = memoizeObservable(
 const MAX_FILE_TREE_ENTRIES = 1000
 export const NODE_LIMIT: unique symbol = Symbol()
 type ExpandableFileTreeNodeValues = TreeEntryFields
-type FileTreeNodeValue = ExpandableFileTreeNodeValues | typeof NODE_LIMIT
+export type FileTreeNodeValue = ExpandableFileTreeNodeValues | typeof NODE_LIMIT
 
 export const fetchSidebarFileTree = memoize(
     async ({

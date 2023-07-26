@@ -52,7 +52,7 @@ func (c *completionsResolver) Completions(ctx context.Context, args graphqlbacke
 		chatModel = completionsConfig.ChatModel
 	}
 
-	ctx, done := httpapi.Trace(ctx, "resolver", chatModel).
+	ctx, done := httpapi.Trace(ctx, "resolver", chatModel, int(args.Input.MaxTokensToSample)).
 		WithErrorP(&err).
 		Build()
 	defer done()

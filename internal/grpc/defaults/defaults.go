@@ -38,6 +38,10 @@ func DialContext(ctx context.Context, addr string, logger log.Logger, additional
 	return grpc.DialContext(ctx, addr, DialOptions(logger, additionalOpts...)...)
 }
 
+// defaultGRPCMessageReceiveSizeBytes is the default message size that gRPCs servers and clients are allowed to process.
+// This can be overridden by providing custom Server/Dial options.
+const defaultGRPCMessageReceiveSizeBytes = 90 * 1024 * 1024 // 90 MB
+
 // DialOptions is a set of default dial options that should be used for all
 // gRPC clients in Sourcegraph, along with any additional client-specific options.
 //
@@ -72,6 +76,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 			internalerrs.LoggingUnaryClientInterceptor(logger),
 			contextconv.UnaryClientInterceptor,
 		),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(defaultGRPCMessageReceiveSizeBytes)),
 	}
 
 	out = append(out, additionalOptions...)
@@ -126,6 +131,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 			otelgrpc.UnaryServerInterceptor(),
 			contextconv.UnaryServerInterceptor,
 		),
+		grpc.MaxRecvMsgSize(defaultGRPCMessageReceiveSizeBytes),
 	}
 
 	out = append(out, additionalOptions...)

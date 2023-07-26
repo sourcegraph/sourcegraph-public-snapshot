@@ -160,6 +160,8 @@ export const REPOSITORIES_QUERY = gql`
         $query: String
         $indexed: Boolean
         $notIndexed: Boolean
+        $embedded: Boolean
+        $notEmbedded: Boolean
         $failedFetch: Boolean
         $corrupted: Boolean
         $cloneStatus: CloneStatus
@@ -176,6 +178,8 @@ export const REPOSITORIES_QUERY = gql`
             query: $query
             indexed: $indexed
             notIndexed: $notIndexed
+            embedded: $embedded
+            notEmbedded: $notEmbedded
             failedFetch: $failedFetch
             corrupted: $corrupted
             cloneStatus: $cloneStatus
@@ -755,6 +759,7 @@ export const STATUS_AND_REPO_STATS = gql`
             failedFetch
             corrupted
             indexed
+            embedded
         }
         statusMessages {
             ... on GitUpdatesDisabled {

@@ -1,14 +1,11 @@
 package server
 
 import (
-	"bytes"
-	"context"
 	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -22,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -103,50 +99,6 @@ var repoLastChanged = func(dir common.GitDir) (time.Time, error) {
 		return time.Time{}, err
 	}
 	return fi.ModTime(), nil
-}
-
-// repoRemoteRefs returns a map containing ref + commit pairs from the
-// remote Git repository starting with the specified prefix.
-//
-// The ref prefix `ref/<ref type>/` is stripped away from the returned
-// refs.
-var repoRemoteRefs = func(ctx context.Context, remoteURL *vcs.URL, prefix string) (map[string]string, error) {
-	// The expected output of this git command is a list of:
-	// <commit hash> <ref name>
-	cmd := exec.Command("git", "ls-remote", remoteURL.String(), prefix+"*")
-
-	var stdout, stderr bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	_, err := runCommand(ctx, wrexec.Wrap(ctx, nil, cmd))
-	if err != nil {
-		stderr := stderr.Bytes()
-		if len(stderr) > 200 {
-			stderr = stderr[:200]
-		}
-		return nil, errors.Errorf("git %s failed: %s (%q)", cmd.Args, err, stderr)
-	}
-
-	refs := make(map[string]string)
-	raw := stdout.String()
-	for _, line := range strings.Split(raw, "\n") {
-		if line == "" {
-			continue
-		}
-
-		fields := strings.Fields(line)
-		if len(fields) != 2 {
-			return nil, errors.Errorf("git %s failed (invalid output): %s", cmd.Args, line)
-		}
-
-		split := strings.SplitN(fields[1], "/", 3)
-		if len(split) != 3 {
-			return nil, errors.Errorf("git %s failed (invalid refname): %s", cmd.Args, fields[1])
-		}
-
-		refs[split[2]] = fields[0]
-	}
-	return refs, nil
 }
 
 // writeCounter wraps an io.Writer and keeps track of bytes written.

@@ -221,7 +221,7 @@ func startExec(ctx *cli.Context) error {
 
 	// If the commandset requires the dev-private repository to be cloned, we
 	// check that it's at the right location here.
-	if set.RequiresDevPrivate {
+	if set.RequiresDevPrivate && !NoDevPrivateCheck {
 		repoRoot, err := root.RepositoryRoot()
 		if err != nil {
 			std.Out.WriteLine(output.Styledf(output.StyleWarning, "Failed to determine repository root location: %s", err))

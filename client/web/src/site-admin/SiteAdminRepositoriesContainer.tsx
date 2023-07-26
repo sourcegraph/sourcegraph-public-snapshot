@@ -4,7 +4,7 @@ import { isEqual } from 'lodash'
 import { useLocation, useNavigate } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher } from '@sourcegraph/wildcard'
+import { Container, ErrorAlert, Input, LoadingSpinner, PageSwitcher, useDebounce } from '@sourcegraph/wildcard'
 
 import { EXTERNAL_SERVICE_IDS_AND_NAMES } from '../components/externalServices/backend'
 import {
@@ -81,6 +81,12 @@ const STATUS_FILTERS: { [label: string]: FilteredConnectionFilterValue } = {
         value: 'corrupted',
         tooltip: 'Show only repositories which are corrupt',
         args: { corrupted: true },
+    },
+    Embedded: {
+        label: 'Embedded',
+        value: 'embedded',
+        tooltip: 'Show only repositories which are embedded',
+        args: { notEmbedded: false },
     },
 }
 
@@ -249,6 +255,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
             query: searchQuery,
             indexed: args.indexed ?? true,
             notIndexed: args.notIndexed ?? true,
+            embedded: args.embedded ?? true,
+            notEmbedded: args.notEmbedded ?? true,
             failedFetch: args.failedFetch ?? false,
             corrupted: args.corrupted ?? false,
             cloneStatus: args.cloneStatus ?? null,
@@ -256,6 +264,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
             displayCloneProgress,
         } as RepositoriesVariables
     }, [searchQuery, filterValues, displayCloneProgress])
+
+    const debouncedVariables = useDebounce(variables, 300)
 
     const {
         connection,
@@ -265,17 +275,18 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
         ...paginationProps
     } = usePageSwitcherPagination<RepositoriesResult, RepositoriesVariables, SiteAdminRepositoryFields>({
         query: REPOSITORIES_QUERY,
-        variables,
+        variables: debouncedVariables,
         getConnection: ({ data }) => data?.repositories || undefined,
         options: { pollInterval: 5000 },
     })
 
     useEffect(() => {
-        refetch(variables)
-    }, [refetch, variables])
+        refetch(debouncedVariables)
+    }, [refetch, debouncedVariables])
 
     const error = repoStatsError || extSvcError || reposError
     const loading = repoStatsLoading || extSvcLoading || reposLoading
+    const debouncedLoading = useDebounce(loading, 300)
 
     const legends = useMemo((): ValueLegendListProps['items'] | undefined => {
         if (!data) {
@@ -354,6 +365,19 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                         return newValues
                     }),
             },
+            {
+                value: data.repositoryStats.embedded,
+                description: 'Embedded',
+                color: 'var(--body-color)',
+                position: 'right',
+                tooltip: 'The number of repositories that have been embedded for Cody.',
+                onClick: () =>
+                    setFilterValues(values => {
+                        const newValues = new Map(values)
+                        newValues.set('status', STATUS_FILTERS.Embedded)
+                        return newValues
+                    }),
+            },
         ]
         if (data.repositoryStats.corrupted > 0) {
             items.push({
@@ -371,14 +395,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                     }),
             })
         }
-        if (loading && !error) {
-            items.splice(0, 1, {
-                value: <LoadingSpinner />,
-                description: 'Repositories',
-            })
-        }
         return items
-    }, [data, setFilterValues, loading, error])
+    }, [data, setFilterValues])
 
     return (
         <>
@@ -415,6 +433,11 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                             variant="regular"
                         />
                     </div>
+                    {debouncedLoading && !error && (
+                        <div className="d-flex justify-content-center align-items-center ">
+                            <LoadingSpinner />
+                        </div>
+                    )}
                     <ul className="list-group list-group-flush mt-4">
                         {(connection?.nodes || []).map(node => (
                             <RepositoryNode key={node.id} node={node} />

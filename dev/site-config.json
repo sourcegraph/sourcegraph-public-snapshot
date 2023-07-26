@@ -9,6 +9,5 @@
   "externalURL": "http://localhost:3080/",
   "update.channel": "release",
   "experimentalFeatures": {},
-  "disablePublicRepoRedirects": true,
   "repoListUpdateInterval": 1
 }

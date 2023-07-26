@@ -62,7 +62,7 @@ export const RepositoriesSelectorPopover: React.FC<{
     inferredRepository: IRepo | null
     inferredFilePath: string | null
     additionalRepositories: IRepo[]
-    resetScope: () => Promise<void>
+    resetScope: (() => Promise<void>) | null
     addRepository: (repoName: string) => void
     removeRepository: (repoName: string) => void
     toggleIncludeInferredRepository: () => void
@@ -194,7 +194,7 @@ export const RepositoriesSelectorPopover: React.FC<{
                                 <>
                                     <div className="d-flex justify-content-between p-2 border-bottom mb-1">
                                         <Text className={classNames('m-0', styles.header)}>Chat Context</Text>
-                                        {scopeChanged && (
+                                        {resetScope && scopeChanged && (
                                             <Button
                                                 onClick={resetScope}
                                                 variant="icon"

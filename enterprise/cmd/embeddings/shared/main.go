@@ -141,24 +141,6 @@ func NewHandler(
 		json.NewEncoder(w).Encode(res)
 	})
 
-	mux.HandleFunc("/isContextRequiredForChatQuery", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
-			return
-		}
-
-		var args embeddings.IsContextRequiredForChatQueryParameters
-		err := json.NewDecoder(r.Body).Decode(&args)
-		if err != nil {
-			http.Error(w, "could not parse request body", http.StatusBadRequest)
-			return
-		}
-
-		isRequired := isContextRequiredForChatQuery(args.Query)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(embeddings.IsContextRequiredForChatQueryResult{IsRequired: isRequired})
-	})
-
 	return mux
 }
 

@@ -73,3 +73,8 @@
   targets:
     # embeddings
     - host.docker.internal:6099
+- labels:
+    job: cody-gateway
+  targets:
+    # cody gateway
+    - host.docker.internal:6098

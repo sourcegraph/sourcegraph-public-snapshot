@@ -150,6 +150,12 @@ This job periodically fetches the list of indexed repositories from Zoekt shards
 
 This job periodically cleans up the Sourcegraph Operator user accounts on the instance. It hard deletes expired Sourcegraph Operator user accounts based on the configured lifecycle duration every minute. It skips users that have external accounts connected other than service type `sourcegraph-operator` (i.e. a special case handling for "sourcegraph.sourcegraph.com").
 
+#### `license-check`
+
+This job starts the periodic license check that ensures the Sourcegraph instance is in compliance with its license and that the license is still valid. If the license is not valid anymore, features will be disabled and a warning banner will be shown.
+
+**Scaling notes**: There must always be just a *single instance* of `license-check` worker. Scaling this worker horizontally would result in unexpected behavior. See [the horizontal scaling second](#2-scale-horizontally) below for additional details.
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular code graph data uploads), a single `worker` instance may experience low throughput or stability issues.

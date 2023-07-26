@@ -124,6 +124,8 @@ ts_project(
         "src/components/Badge/index.ts",
         "src/components/BeforeUnloadPrompt/BeforeUnloadPrompt.tsx",
         "src/components/BeforeUnloadPrompt/index.ts",
+        "src/components/Breadcrumbs/Breadcrumbs.tsx",
+        "src/components/Breadcrumbs/index.ts",
         "src/components/Button/Button.tsx",
         "src/components/Button/ButtonGroup.tsx",
         "src/components/Button/constants.ts",

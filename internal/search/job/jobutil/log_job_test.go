@@ -60,8 +60,13 @@ func TestOwnSearchEventNames(t *testing.T) {
 				OnSourcegraphDotCom: true,
 				Query:               q,
 			}
+
+			gss := database.NewMockGlobalStateStore()
+			gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+
 			db := database.NewMockDB()
 			eventStore := &fakeEventLogStore{}
+			db.GlobalStateFunc.SetDefaultReturn(gss)
 			db.EventLogsFunc.SetDefaultReturn(eventStore)
 			ctx := actor.WithActor(context.Background(), actor.FromUser(42))
 			childJob := mockjob.NewMockJob()

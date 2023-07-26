@@ -648,7 +648,7 @@ func computeSingleChangesetExternalState(c *btypes.Changeset) (s btypes.Changese
 		case protocol.PerforceChangelistStatePending, protocol.PerforceChangelistStateShelved:
 			s = btypes.ChangesetExternalStateOpen
 		default:
-			return "", errors.Errorf("unknown Gerrit Change state: %s", m.State)
+			return "", errors.Errorf("unknown Perforce Change state: %s", m.State)
 		}
 	default:
 		return "", errors.New("unknown changeset type")

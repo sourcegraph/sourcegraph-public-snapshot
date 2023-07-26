@@ -13,16 +13,16 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	elicensing "github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
 func TestNewLicenseCheckHandler(t *testing.T) {
 	makeToken := func(licenseKey string) []byte {
-		token := licensing.GenerateLicenseKeyBasedAccessToken(licenseKey)
+		token := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
 		return []byte(token)
 	}
 	now := time.Now()
@@ -85,14 +85,14 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 		name       string
 		body       string
 		headers    http.Header
-		want       elicensing.LicenseCheckResponse
+		want       licensing.LicenseCheckResponse
 		wantStatus int
 	}{
 		{
 			name:       "no access token",
 			body:       getBody(""),
 			headers:    nil,
-			want:       elicensing.LicenseCheckResponse{Error: ErrInvalidAccessTokenMsg},
+			want:       licensing.LicenseCheckResponse{Error: ErrInvalidAccessTokenMsg},
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
@@ -101,7 +101,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer invalid-token"},
 			},
-			want:       elicensing.LicenseCheckResponse{Error: ErrInvalidAccessTokenMsg},
+			want:       licensing.LicenseCheckResponse{Error: ErrInvalidAccessTokenMsg},
 			wantStatus: http.StatusUnauthorized,
 		},
 		{
@@ -110,7 +110,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(expiredLicense.LicenseCheckToken)},
 			},
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseExpired}},
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseExpired}},
 			wantStatus: http.StatusForbidden,
 		},
 		{
@@ -119,7 +119,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(revokedLicense.LicenseCheckToken)},
 			},
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseRevokedMsg}},
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: false, Reason: ReasonLicenseRevokedMsg}},
 			wantStatus: http.StatusForbidden,
 		},
 		{
@@ -128,7 +128,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(validLicense.LicenseCheckToken)},
 			},
-			want:       elicensing.LicenseCheckResponse{Error: ErrInvalidRequestBodyMsg},
+			want:       licensing.LicenseCheckResponse{Error: ErrInvalidRequestBodyMsg},
 			wantStatus: http.StatusBadRequest,
 		},
 		{
@@ -137,7 +137,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
 			},
 			body:       getBody(""),
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: true, Reason: ReasonLicenseIsAlreadyInUseMsg}},
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true, Reason: ReasonLicenseIsAlreadyInUseMsg}},
 			wantStatus: http.StatusOK,
 		},
 		{
@@ -146,7 +146,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(assignedLicense.LicenseCheckToken)},
 			},
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: true}},
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true}},
 			wantStatus: http.StatusOK,
 		},
 		{
@@ -155,7 +155,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(validLicense.LicenseCheckToken)},
 			},
-			want:       elicensing.LicenseCheckResponse{Error: ErrInvalidSiteIDMsg},
+			want:       licensing.LicenseCheckResponse{Error: ErrInvalidSiteIDMsg},
 			wantStatus: http.StatusBadRequest,
 		},
 		{
@@ -164,7 +164,7 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			headers: http.Header{
 				"Authorization": {"Bearer " + hex.EncodeToString(validLicense.LicenseCheckToken)},
 			},
-			want:       elicensing.LicenseCheckResponse{Data: &elicensing.LicenseCheckResponseData{IsValid: true}},
+			want:       licensing.LicenseCheckResponse{Data: &licensing.LicenseCheckResponseData{IsValid: true}},
 			wantStatus: http.StatusOK,
 		},
 	}
@@ -184,8 +184,8 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 			require.Equal(t, test.wantStatus, res.Code)
 			require.Equal(t, "application/json", res.Header().Get("Content-Type"))
 
-			var got elicensing.LicenseCheckResponse
-			_ = json.Unmarshal([]byte(res.Body.String()), &got)
+			var got licensing.LicenseCheckResponse
+			_ = json.Unmarshal(res.Body.Bytes(), &got)
 			require.Equal(t, test.want, got)
 		})
 	}

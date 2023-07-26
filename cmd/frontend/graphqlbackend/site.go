@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -37,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -90,7 +90,7 @@ type siteResolver struct {
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 
-func (r *siteResolver) SiteID() string { return siteid.Get() }
+func (r *siteResolver) SiteID() string { return siteid.Get(r.db) }
 
 type SiteConfigurationArgs struct {
 	ReturnSafeConfigsOnly *bool

@@ -48,6 +48,8 @@ func main() {
 var (
 	BuildCommit = "dev"
 
+	NoDevPrivateCheck = false
+
 	// configFile is the path to use with sgconf.Get - it must not be used before flag
 	// initialization.
 	configFile string
@@ -79,7 +81,8 @@ const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/n
 
 // sg is the main sg CLI application.
 //
-//go:generate go run . -disable-overwrite help -full -output ./doc/dev/background-information/sg/reference.md
+// To generate the reference.md (previously done with go generate) do:
+// bazel run /doc/dev/background-information/sg:write_cli_reference_doc
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
@@ -136,6 +139,13 @@ var sg = &cli.App{
 			Usage:       "use fixed output configuration instead of detecting terminal capabilities",
 			EnvVars:     []string{"SG_DISABLE_OUTPUT_DETECTION"},
 			Destination: &std.DisableOutputDetection,
+		},
+		&cli.BoolFlag{
+			Name:        "no-dev-private",
+			Usage:       "disable checking for dev-private - only useful for automation or ci",
+			EnvVars:     []string{"SG_NO_DEV_PRIVATE"},
+			Value:       false,
+			Destination: &NoDevPrivateCheck,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {

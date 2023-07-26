@@ -23,7 +23,7 @@ jobs:
                   team/security=@dcomas
                   team/dev-experience=@jhchabran @kstretch9
                   team/devops=@sourcegraph/cloud-devops
-                  team/repo-management=@sourcegraph/source
-                  team/iam=@sourcegraph/source
+                  repo-management=@sourcegraph/source
+                  iam=@sourcegraph/source
                   team/source=@sourcegraph/source
                   cody-gateway=@unknwon @eseliger @bobheadxi

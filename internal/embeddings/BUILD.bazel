@@ -5,6 +5,7 @@ go_library(
     name = "embeddings",
     srcs = [
         "client.go",
+        "context_detection.go",
         "dot.go",
         "dot_amd64.go",
         "dot_amd64.s",
@@ -57,6 +58,7 @@ go_test(
     name = "embeddings_test",
     timeout = "moderate",
     srcs = [
+        "context_detection_test.go",
         "dot_test.go",
         "index_storage_test.go",
         "quantize_test.go",

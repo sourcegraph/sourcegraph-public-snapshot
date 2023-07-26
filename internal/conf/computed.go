@@ -2,19 +2,22 @@ package conf
 
 import (
 	"context"
+	"encoding/hex"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/cronexpr"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -123,6 +126,16 @@ func EmailVerificationRequired() bool {
 // It's false for sites that do not have an email sending API key set up.
 func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
+}
+
+// EmailSenderName returns `email.senderName`. If that's not set, it returns
+// the default value "Sourcegraph".
+func EmailSenderName() string {
+	sender := Get().EmailSenderName
+	if sender != "" {
+		return sender
+	}
+	return "Sourcegraph"
 }
 
 // UpdateChannel tells the update channel. Default is "release".
@@ -580,6 +593,33 @@ func GitMaxConcurrentClones() int {
 	return v
 }
 
+// HashedCurrentLicenseKeyForAnalytics provides the current site license key, hashed using sha256, for anaytics purposes.
+func HashedCurrentLicenseKeyForAnalytics() string {
+	return HashedLicenseKeyForAnalytics(Get().LicenseKey)
+}
+
+// HashedCurrentLicenseKeyForAnalytics provides a license key, hashed using sha256, for anaytics purposes.
+func HashedLicenseKeyForAnalytics(licenseKey string) string {
+	return HashedLicenseKeyWithPrefix(licenseKey, "event-logging-telemetry-prefix")
+}
+
+// HashedLicenseKeyWithPrefix provides a sha256 hashed license key with a prefix (to ensure unique hashed values by use case).
+func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
+	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix+licenseKey)))
+}
+
+func GetDeduplicatedForksIndex() collections.Set[string] {
+	index := collections.NewSet[string]()
+
+	repoConf := Get().Repositories
+	if repoConf == nil {
+		return index
+	}
+
+	index.Add(repoConf.DeduplicateForks...)
+	return index
+}
+
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
@@ -929,7 +969,7 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 	if config.LicenseKey == "" {
 		return ""
 	}
-	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
+	return license.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
 }
 
 const (

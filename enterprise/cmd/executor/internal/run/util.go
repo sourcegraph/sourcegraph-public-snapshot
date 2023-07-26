@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/utils/pointer"
 
@@ -206,6 +207,15 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 	}
 	fsGroup := pointer.Int64(int64(c.KubernetesSecurityContextFSGroup))
 	deadline := pointer.Int64(int64(c.KubernetesJobDeadline))
+
+	var imagePullSecrets []corev1.LocalObjectReference
+	if c.KubernetesImagePullSecrets != "" {
+		secrets := strings.Split(c.KubernetesImagePullSecrets, ",")
+		for _, secret := range secrets {
+			imagePullSecrets = append(imagePullSecrets, corev1.LocalObjectReference{Name: secret})
+		}
+	}
+
 	return runner.KubernetesOptions{
 		Enabled:    config.IsKubernetes(),
 		ConfigPath: c.KubernetesConfigPath,
@@ -215,8 +225,10 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 				EndpointURL:    c.FrontendURL,
 				GitServicePath: "/.executors/git",
 			},
-			NodeName:     c.KubernetesNodeName,
-			NodeSelector: nodeSelector,
+			NodeName:         c.KubernetesNodeName,
+			NodeSelector:     nodeSelector,
+			Annotations:      c.KubernetesJobAnnotations,
+			ImagePullSecrets: imagePullSecrets,
 			RequiredNodeAffinity: command.KubernetesNodeAffinity{
 				MatchExpressions: c.KubernetesNodeRequiredAffinityMatchExpressions,
 				MatchFields:      c.KubernetesNodeRequiredAffinityMatchFields,

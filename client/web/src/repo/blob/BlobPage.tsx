@@ -176,7 +176,7 @@ export const BlobPage: React.FunctionComponent<BlobPageProps> = ({ className, co
 
             return {
                 key: 'filePath',
-                className: 'flex-shrink-past-contents',
+                className: 'flex-shrink-past-contents flex-grow-1',
                 element: (
                     // TODO should these be "flattened" all using setBreadcrumb()?
                     <FilePathBreadcrumbs
