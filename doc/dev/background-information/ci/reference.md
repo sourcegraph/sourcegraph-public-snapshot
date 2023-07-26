@@ -350,8 +350,7 @@ sg ci build docker-images-candidates-notest
 Base pipeline (more steps might be included based on branch changes):
 
 - **Image builds**: Build Docker images
-- **Publish candidate images**: Push candidate Images
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: Push final images, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine
 
 ### Backend integration tests
 
