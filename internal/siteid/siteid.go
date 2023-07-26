@@ -12,30 +12,26 @@ import (
 	"context"
 	"log"
 	"os"
+	"sync"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
 var (
-	inited bool
-	siteID string
+	initOnce sync.Once
+	siteID   string
 
 	fatalln = log.Fatalln // overridden in tests
 )
 
-// Init reads (or generates) the site ID. This func must be called exactly once before
-// Get can be called.
-func Init(db database.DB) {
-	if inited {
-		panic("siteid: already initialized")
-	}
-
+// get reads (or generates) the site ID
+func get(db database.DB) string {
 	if v := os.Getenv("TRACKING_APP_ID"); v != "" {
 		// Legacy way of specifying site ID.
 		//
 		// TODO(dadlerj): remove this
-		siteID = v
+		return v
 	} else {
 		// Site ID is retrieved from the database (where it might be created automatically
 		// if it doesn't yet exist.)
@@ -45,18 +41,14 @@ func Init(db database.DB) {
 		if err != nil {
 			fatalln("Error initializing global state:", err)
 		}
-		siteID = globalState.SiteID
+		return globalState.SiteID
 	}
-
-	inited = true
 }
 
 // Get returns the site ID.
-//
-// Get may only be called after Init has been called.
-func Get() string {
-	if !inited {
-		panic("siteid: not yet initialized")
-	}
+func Get(db database.DB) string {
+	initOnce.Do(func() {
+		siteID = get(db)
+	})
 	return siteID
 }

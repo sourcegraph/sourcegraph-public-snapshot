@@ -50,7 +50,7 @@ type Values struct {
 	ServicePorts []struct {
 		Name       string
 		Port       int
-		TargetPort interface{}
+		TargetPort interface{} `yaml:"targetPort"` // This can take a string or int
 	} `yaml:"servicePorts"`
 	Dns string
 }
@@ -94,9 +94,12 @@ spec:
   selector:
     app: {{.Name}}
   ports:
-    - protocol: TCP
-      port:
-      targetPort:
+  {{- range $i, $port := .ServicePorts }}
+      - port: {{ $port.Port }}
+        name: {{ $port.Name }}
+        targetPort: {{ $port.TargetPort }}
+        protocol: TCP
+    {{- end }}
 {{- end}}
 {{ if .Dns }}
 ---
@@ -108,26 +111,30 @@ metadata:
   annotations:
     kubernetes.io/ingress.class: 'nginx'
 spec:
+  tls:
+    - hosts:
+      - {{.Dns}}
+      secretName: sgdev-tls-secret
   rules:
-    - http:
+    - host: {{.Dns}}
+      http:
         paths:
-          - pathType: Prefix
-            path: /
-            backend:
+          - backend:
               service:
-                name: {{.Name}}
+                name: {{ .Name }}-service
                 port:
-                  number: 80
-      host: {{.Dns}}
+                  number: {{ (index .ServicePorts 0).Port }}
+            path: /
+            pathType: Prefix
 {{- end }}
 `
 
 func generateManifest(configFile string) error {
 
-	// err := checkCurrentDir("infrastructure")
-	// if err != nil {
-	// 	return errors.Wrap(err, "check current directory")
-	// }
+	err := checkCurrentDir("infrastructure")
+	if err != nil {
+		return errors.Wrap(err, "check current directory")
+	}
 
 	var values Values
 	v, err := os.ReadFile(configFile)
@@ -139,19 +146,25 @@ func generateManifest(configFile string) error {
 	if err != nil {
 		return errors.Wrap(err, "error rendering values")
 	}
-	path := "dogfood/kubernetes/tooling/" + values.Name + "/"
+
+	path := "dogfood/kubernetes/tooling/" + values.Name
+	err = os.MkdirAll(path, 0755)
+	if err != nil {
+		return errors.Wrap(err, "create directory")
+	}
+
 	file, err := os.Create(path + values.Name + ".yaml")
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "create file")
 	}
 	defer file.Close()
+
 	t := template.Must(template.New("app").Parse(k8sTemplate))
 	err = t.Execute(file, &values)
 	if err != nil {
 		return errors.Wrap(err, "execute template")
 	}
 	return nil
-
 }
 
 func checkCurrentDir(expected string) error {
@@ -164,7 +177,7 @@ func checkCurrentDir(expected string) error {
 
 	current := path.Base(cwd)
 	if current != expected {
-		return errors.Wrap(err, "incorrect directory detected")
+		return errors.Wrap(err, "Incorrect direcotory. Please run from the sourcegraph/infrastructure repository")
 	}
 
 	return nil

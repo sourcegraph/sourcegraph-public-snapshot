@@ -41,6 +41,7 @@ go_library(
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
         "@com_github_urfave_cli_v2//:cli",
+        "@io_k8s_api//core/v1:core",
         "@io_k8s_apimachinery//pkg/api/resource",
         "@io_k8s_utils//pointer",
     ] + select({

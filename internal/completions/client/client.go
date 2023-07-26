@@ -2,6 +2,7 @@ package client
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
+	"github.com/sourcegraph/sourcegraph/internal/completions/client/azureopenai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/completions/types"
@@ -24,6 +25,8 @@ func getBasic(endpoint string, provider conftypes.CompletionsProviderName, acces
 		return anthropic.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case conftypes.CompletionsProviderNameOpenAI:
 		return openai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
+	case conftypes.CompletionsProviderNameAzureOpenAI:
+		return azureopenai.NewClient(httpcli.ExternalDoer, endpoint, accessToken), nil
 	case conftypes.CompletionsProviderNameSourcegraph:
 		return codygateway.NewClient(httpcli.ExternalDoer, endpoint, accessToken)
 	default:

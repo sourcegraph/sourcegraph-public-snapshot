@@ -656,7 +656,11 @@ func TestSubRepoFiltering(t *testing.T) {
 			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 			repos.CountFunc.SetDefaultReturn(0, nil)
 
+			gss := database.NewMockGlobalStateStore()
+			gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+
 			db := database.NewMockDB()
+			db.GlobalStateFunc.SetDefaultReturn(gss)
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.EventLogsFunc.SetDefaultHook(func() database.EventLogStore {
 				return database.NewMockEventLogStore()

@@ -83,24 +83,29 @@ func (*schemaResolver) LogUserEvent(ctx context.Context, args *struct {
 }
 
 type Event struct {
-	Event            string
-	UserCookieID     string
-	FirstSourceURL   *string
-	LastSourceURL    *string
-	URL              string
-	Source           string
-	Argument         *string
-	CohortID         *string
-	Referrer         *string
-	OriginalReferrer *string
-	SessionReferrer  *string
-	SessionFirstURL  *string
-	DeviceSessionID  *string
-	PublicArgument   *string
-	UserProperties   *string
-	DeviceID         *string
-	InsertID         *string
-	EventID          *int32
+	Event                  string
+	UserCookieID           string
+	FirstSourceURL         *string
+	LastSourceURL          *string
+	URL                    string
+	Source                 string
+	Argument               *string
+	CohortID               *string
+	Referrer               *string
+	OriginalReferrer       *string
+	SessionReferrer        *string
+	SessionFirstURL        *string
+	DeviceSessionID        *string
+	PublicArgument         *string
+	UserProperties         *string
+	DeviceID               *string
+	InsertID               *string
+	EventID                *int32
+	Client                 *string
+	BillingProductCategory *string
+	BillingEventID         *string
+	ConnectedSiteID        *string
+	HashedLicenseKey       *string
 }
 
 type EventBatch struct {
@@ -191,26 +196,31 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		}
 
 		events = append(events, usagestats.Event{
-			EventName:        args.Event,
-			URL:              args.URL,
-			UserID:           userID,
-			UserCookieID:     args.UserCookieID,
-			FirstSourceURL:   args.FirstSourceURL,
-			LastSourceURL:    args.LastSourceURL,
-			Source:           args.Source,
-			Argument:         argumentPayload,
-			EvaluatedFlagSet: featureflag.GetEvaluatedFlagSet(ctx),
-			CohortID:         args.CohortID,
-			Referrer:         args.Referrer,
-			OriginalReferrer: args.OriginalReferrer,
-			SessionReferrer:  args.SessionReferrer,
-			SessionFirstURL:  args.SessionFirstURL,
-			PublicArgument:   publicArgumentPayload,
-			UserProperties:   userPropertiesPayload,
-			DeviceID:         args.DeviceID,
-			EventID:          args.EventID,
-			InsertID:         args.InsertID,
-			DeviceSessionID:  args.DeviceSessionID,
+			EventName:              args.Event,
+			URL:                    args.URL,
+			UserID:                 userID,
+			UserCookieID:           args.UserCookieID,
+			FirstSourceURL:         args.FirstSourceURL,
+			LastSourceURL:          args.LastSourceURL,
+			Source:                 args.Source,
+			Argument:               argumentPayload,
+			EvaluatedFlagSet:       featureflag.GetEvaluatedFlagSet(ctx),
+			CohortID:               args.CohortID,
+			Referrer:               args.Referrer,
+			OriginalReferrer:       args.OriginalReferrer,
+			SessionReferrer:        args.SessionReferrer,
+			SessionFirstURL:        args.SessionFirstURL,
+			PublicArgument:         publicArgumentPayload,
+			UserProperties:         userPropertiesPayload,
+			DeviceID:               args.DeviceID,
+			EventID:                args.EventID,
+			InsertID:               args.InsertID,
+			DeviceSessionID:        args.DeviceSessionID,
+			Client:                 args.Client,
+			BillingProductCategory: args.BillingProductCategory,
+			BillingEventID:         args.BillingEventID,
+			ConnectedSiteID:        args.ConnectedSiteID,
+			HashedLicenseKey:       args.HashedLicenseKey,
 		})
 	}
 

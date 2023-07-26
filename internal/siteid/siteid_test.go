@@ -2,6 +2,7 @@ package siteid
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -9,15 +10,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func TestNotInited(t *testing.T) {
-	if inited {
-		t.Fatal("one of this test package's imports called Init, but these tests require that it has not yet been called")
-	}
-}
-
 func TestGet(t *testing.T) {
 	reset := func() {
-		inited = false
+		initOnce = sync.Once{}
 		siteID = ""
 		conf.Mock(nil)
 	}
@@ -28,14 +23,13 @@ func TestGet(t *testing.T) {
 		defer func() { fatalln = origFatalln }()
 	}
 
-	tryInit := func(db database.DB) (err error) {
+	tryGet := func(db database.DB) (_ string, err error) {
 		defer func() {
 			if e := recover(); e != nil {
 				err = errors.Errorf("panic: %v", e)
 			}
 		}()
-		Init(db)
-		return nil
+		return Get(db), nil
 	}
 
 	t.Run("from DB", func(t *testing.T) {
@@ -46,13 +40,12 @@ func TestGet(t *testing.T) {
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
-		if err := tryInit(db); err != nil {
+		got, err := tryGet(db)
+		if err != nil {
 			t.Fatal(err)
 		}
-		if !inited {
-			t.Error("!inited")
-		}
-		if got, want := Get(), "a"; got != want {
+		want := "a"
+		if got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
@@ -66,13 +59,11 @@ func TestGet(t *testing.T) {
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
 		want := errors.Errorf("panic: [Error initializing global state: x]")
-		if err := tryInit(db); fmt.Sprint(err) != fmt.Sprint(want) {
+		got, err := tryGet(db)
+		if fmt.Sprint(err) != fmt.Sprint(want) {
 			t.Errorf("got error %q, want %q", err, want)
 		}
-		if inited {
-			t.Error("inited")
-		}
-		if siteID != "" {
+		if got != "" {
 			t.Error("siteID is set")
 		}
 	})
@@ -83,13 +74,12 @@ func TestGet(t *testing.T) {
 
 		db := database.NewMockDB()
 
-		if err := tryInit(db); err != nil {
+		got, err := tryGet(db)
+		if err != nil {
 			t.Fatal(err)
 		}
-		if !inited {
-			t.Error("!inited")
-		}
-		if got, want := Get(), "a"; got != want {
+		want := "a"
+		if got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
@@ -104,13 +94,12 @@ func TestGet(t *testing.T) {
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
 
-		if err := tryInit(db); err != nil {
+		got, err := tryGet(db)
+		if err != nil {
 			t.Fatal(err)
 		}
-		if !inited {
-			t.Error("!inited")
-		}
-		if got, want := Get(), "a"; got != want {
+		want := "a"
+		if got != want {
 			t.Errorf("got %q, want %q", got, want)
 		}
 	})
