@@ -1,76 +1,85 @@
 package graphqlutil
 
 import (
+	"bytes"
 	"context"
 	"testing"
 )
 
 func TestSliceConnectionResolver(t *testing.T) {
-	data := [][]byte{
+	store := [][]byte{
 		[]byte("a"),
 		[]byte("b"),
 		[]byte("c"),
-		[]byte("d"),
-		[]byte("e"),
-		[]byte("f"),
-		[]byte("g"),
-		[]byte("h"),
-		[]byte("i"),
-		[]byte("j"),
-		[]byte("k"),
-		[]byte("l"),
 	}
 
-	ctx := context.Background()
-	transformer := func(item []byte) (string, error) {
-		return string(item), nil
-	}
+	t.Run("paginated slice", func(t *testing.T) {
+		ctx := context.Background()
+		offset := 0
+		limit := 3
 
-	resolver := NewSliceConnectionResolver(data, 2, 0, transformer)
+		data := store[offset : offset+limit]
+		resolver := NewSliceConnectionResolver(data, len(store), offset+limit)
 
-	nodes, err := resolver.Nodes(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+		nodes := resolver.Nodes(ctx)
+		if len(nodes) != limit {
+			t.Fatalf("expected at most %d nodes, got %d", limit, len(nodes))
+		}
 
-	if len(nodes) != 2 {
-		t.Fatalf("expected 2 nodes, got %d", len(nodes))
-	}
+		for idx, node := range nodes {
+			expected := data[idx]
+			if !bytes.Equal(node, expected) {
+				t.Fatalf("expected node to be %s, got %s", string(expected), string(node))
+			}
+		}
 
-	if nodes[0] != "a" {
-		t.Fatalf("expected first node to be a, got %s", nodes[0])
-	}
+		totalCount := resolver.TotalCount(ctx)
+		if int(totalCount) != len(data) {
+			t.Fatalf("expected totalCount to be %d, got %d", len(store), totalCount)
+		}
 
-	if nodes[1] != "b" {
-		t.Fatalf("expected second node to be b, got %s", nodes[1])
-	}
+		p := resolver.PageInfo(ctx)
+		if p == nil {
+			t.Fatal("expected pageInfo to be non-nil")
+		}
 
-	totalCount := resolver.TotalCount(ctx)
-	if int(totalCount) != len(data) {
-		t.Fatalf("expected totalCount to be %d, got %d", len(data), totalCount)
-	}
+		if p.hasNextPage != false {
+			t.Fatalf("expected hasNextPage to be false, got %t", p.hasNextPage)
+		}
+	})
 
-	resolver = NewSliceConnectionResolver(data, 2, 2, transformer)
+	t.Run("hasNextPage is true", func(t *testing.T) {
+		ctx := context.Background()
 
-	nodes, err = resolver.Nodes(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
+		offset := 0
+		limit := 2
+		data := store[offset : offset+limit]
 
-	if len(nodes) != 2 {
-		t.Fatalf("expected 2 nodes, got %d", len(nodes))
-	}
+		resolver := NewSliceConnectionResolver(data, len(store), limit)
+		p := resolver.PageInfo(ctx)
+		if p == nil {
+			t.Fatal("expected pageInfo to be non-nil")
+		}
 
-	if nodes[0] != "c" {
-		t.Fatalf("expected first node to be c, got %s", nodes[0])
-	}
+		nodes := resolver.Nodes(ctx)
+		if len(nodes) > limit {
+			t.Fatalf("expected at most %d nodes, got %d", limit, len(nodes))
+		}
 
-	if nodes[1] != "d" {
-		t.Fatalf("expected second node to be d, got %s", nodes[1])
-	}
+		for idx, node := range nodes {
+			expected := data[idx]
+			if !bytes.Equal(node, expected) {
+				t.Fatalf("expected node to be %s, got %s", string(expected), string(node))
+			}
+		}
 
-	totalCount = resolver.TotalCount(ctx)
-	if int(totalCount) != len(data) {
-		t.Fatalf("expected totalCount to be %d, got %d", len(data), totalCount)
-	}
+		totalCount := resolver.TotalCount(ctx)
+		if int(totalCount) != len(store) {
+			t.Fatalf("expected totalCount to be %d, got %d", len(store), totalCount)
+		}
+
+		if p.hasNextPage != true {
+			t.Fatalf("expected hasNextPage to be true, got %t", p.hasNextPage)
+		}
+	})
 }

@@ -2,7 +2,6 @@ package graphqlutil
 
 import (
 	"context"
-	"sync"
 )
 
 type SliceConnectionResolver[T any] interface {
@@ -11,6 +10,16 @@ type SliceConnectionResolver[T any] interface {
 	PageInfo(ctx context.Context) *PageInfo
 }
 
+// NewSliceConnectionResolver creates a new sliceConnectionResolver that implements
+// the SliceConnectionResolver interface. This is simply a convenience helper to return
+// paginated slice in graphql-compliant way.
+//
+// data is the slice of nodes for this connection.
+// total is the total number of nodes available.
+// currentEnd is the current end index of the nodes slice.
+//
+// Returns a new sliceConnectionResolver that provides resolver methods for
+// connection fields.
 func NewSliceConnectionResolver[T any](data []T, total, currentEnd int) SliceConnectionResolver[T] {
 	return &sliceConnectionResolver[T]{
 		data:       data,
@@ -19,11 +28,16 @@ func NewSliceConnectionResolver[T any](data []T, total, currentEnd int) SliceCon
 	}
 }
 
+// sliceConnectionResolver implements the SliceConnectionResolver interface
+// to provide resolver functions for a connection backed by a slice.
+//
+// data is the slice of nodes for this connection.
+// total is the total number of nodes available.
+// currentEnd is the current end index of the nodes slice.
 type sliceConnectionResolver[T any] struct {
-	computeOnce sync.Once
-	data        []T
-	total       int
-	currentEnd  int
+	data       []T
+	total      int
+	currentEnd int
 }
 
 func (c *sliceConnectionResolver[T]) Nodes(ctx context.Context) []T {
