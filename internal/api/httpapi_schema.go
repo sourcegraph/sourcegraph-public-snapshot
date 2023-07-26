@@ -1,4 +1,4 @@
-package frontend
+package api
 
 import (
 	proto "github.com/sourcegraph/sourcegraph/internal/frontend/v1"

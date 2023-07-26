@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/frontend"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
@@ -29,7 +28,7 @@ type frontendServer struct {
 // external service configs that match the requested kind.
 func (fs *frontendServer) serveExternalServiceConfigs() func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		var req frontend.ExternalServiceConfigsRequest
+		var req api.ExternalServiceConfigsRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
 		if err != nil {
 			return err
@@ -44,7 +43,7 @@ func (fs *frontendServer) serveExternalServiceConfigs() func(w http.ResponseWrit
 	}
 }
 
-func (fs *frontendServer) getExternalServiceConfigs(ctx context.Context, req frontend.ExternalServiceConfigsRequest) ([]map[string]interface{}, error) {
+func (fs *frontendServer) getExternalServiceConfigs(ctx context.Context, req api.ExternalServiceConfigsRequest) ([]map[string]interface{}, error) {
 	options := database.ExternalServicesListOptions{
 		Kinds:   []string{req.Kind},
 		AfterID: int64(req.AfterID),

@@ -7,7 +7,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/sourcegraph/sourcegraph/internal/frontend"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	proto "github.com/sourcegraph/sourcegraph/internal/frontend/v1"
 )
 
@@ -17,7 +17,7 @@ type GRPCService struct {
 }
 
 func (s *GRPCService) ExternalServiceConfigs(ctx context.Context, in *proto.ExternalServiceConfigsRequest) (*proto.ExternalServiceConfigsResponse, error) {
-	internalReq := frontend.ExternalServiceConfigsRequest{}
+	internalReq := api.ExternalServiceConfigsRequest{}
 	internalReq.FromProto(in)
 
 	configs, err := s.Server.getExternalServiceConfigs(ctx, internalReq)

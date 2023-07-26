@@ -16,10 +16,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/frontend"
 	proto "github.com/sourcegraph/sourcegraph/internal/frontend/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
@@ -144,7 +144,7 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 		return nil
 
 	}
-	return c.postInternal(ctx, "external-services/configs", frontend.ExternalServiceConfigsRequest{
+	return c.postInternal(ctx, "external-services/configs", api.ExternalServiceConfigsRequest{
 		Kind: kind,
 	}, &result)
 }
