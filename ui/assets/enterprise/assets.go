@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/ui/assets"
 )
 
-//go:embed *
+//go:embed all:*
 var assetsFS embed.FS
 var afs fs.FS = assetsFS
 

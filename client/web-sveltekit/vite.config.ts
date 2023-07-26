@@ -1,18 +1,21 @@
-import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
-import codegen from 'vite-plugin-graphql-codegen'
-import inspect from 'vite-plugin-inspect'
-
-import operations from '@sourcegraph/shared/dev/generateGraphQlOperations'
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
+import { sveltekit } from '@sveltejs/kit/vite'
+import { defineConfig, mergeConfig, type Plugin, type UserConfig } from 'vite'
+import inspect from 'vite-plugin-inspect'
+
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-function generateGraphQLOperations(): Plugin {
+async function generateGraphQLOperations(): Promise<Plugin> {
     const outputPath = './src/lib/graphql-operations.ts'
     const interfaceNameForOperations = 'SvelteKitGraphQlOperations'
     const documents = ['src/lib/**/*.{ts,graphql}', '!src/lib/graphql-operations.ts']
+
+    // We have to dynamically import this module to not make it a dependency when using
+    // Bazel
+    const operations = await import('@sourcegraph/shared/dev/generateGraphQlOperations')
+    const codegen = (await import('vite-plugin-graphql-codegen')).default
 
     return codegen({
         config: {
@@ -26,14 +29,20 @@ function generateGraphQLOperations(): Plugin {
 
 export default defineConfig(({ mode }) => {
     let config: UserConfig = {
-        plugins: [sveltekit(), generateGraphQLOperations(), inspect()],
+        plugins: [
+            sveltekit(),
+            // When using bazel the graphql operations fiel is generated
+            // by bazel targets
+            process.env.BAZEL ? null : generateGraphQLOperations(),
+            inspect(),
+        ],
         define:
             mode === 'test'
                 ? {}
                 : {
                       'process.platform': '"browser"',
                       'process.env.VITEST': 'undefined',
-                      'process.env': '{}',
+                      'process.env': '({})',
                   },
         css: {
             preprocessorOptions: {
@@ -51,6 +60,10 @@ export default defineConfig(({ mode }) => {
             },
         },
         server: {
+            // Allow setting the port via env variables to make it easier to integrate with
+            // our existing caddy setup (which proxies requests to a specific port).
+            port: process.env.SK_PORT ? +process.env.SK_PORT : undefined,
+            strictPort: !!process.env.SV_PORT,
             proxy: {
                 // Proxy requests to specific endpoints to a real Sourcegraph
                 // instance.
@@ -61,6 +74,7 @@ export default defineConfig(({ mode }) => {
                 },
             },
         },
+
         optimizeDeps: {
             exclude: [
                 // Without addings this Vite throws an error

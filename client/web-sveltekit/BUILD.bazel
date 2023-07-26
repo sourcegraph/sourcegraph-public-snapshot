@@ -11,7 +11,8 @@ load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 js_library(
     name = "graphql_operations_files",
     # Keep in sync with glob in client/shared/dev/generateGraphQlOperations.js
-    srcs = glob(["src/**/*.ts"],
+    srcs = glob(
+        ["src/**/*.ts"],
         [
             # TODO: Ignore legacy build generated file as it conflicts with the Bazel
             # build. This can be removed after the migration.
@@ -45,21 +46,24 @@ SRCS = [
     "//client/wildcard:sass-breakpoints",
     "//client/wildcard:global-style-sources",
     "//ui/assets/img:copy",
-] + glob(["src/" + d for d in [
-    "**/*.scss",
-    "**/*.svg",
-    "**/*.ts",
-    "**/*.svelte",
-    "**/*.html",
-    "**/*.tsx",
+] + glob(
+    ["src/" + d for d in [
+        "**/*.scss",
+        "**/*.svg",
+        "**/*.ts",
+        "**/*.svelte",
+        "**/*.html",
+        "**/*.tsx",
     ]],
     [
         "src/lib/graphql-operations.ts",
     ],
- )
+)
 
 BUILD_DEPS = [
     ":graphql_operations_ts",
+    ":node_modules/@faker-js/faker",
+    ":node_modules/@popperjs/core",
     ":node_modules/@remix-run/router",
     ":node_modules/@sourcegraph/branded",
     ":node_modules/@sourcegraph/common",
@@ -68,36 +72,38 @@ BUILD_DEPS = [
     ":node_modules/@sourcegraph/web",
     ":node_modules/@sourcegraph/wildcard",
     ":node_modules/@storybook/svelte",
-    ":node_modules/@sveltejs/kit",
     ":node_modules/@sveltejs/adapter-static",
+    ":node_modules/@sveltejs/kit",
     ":node_modules/@types/prismjs",
+    ":node_modules/lodash-es",
     ":node_modules/prismjs",
     ":node_modules/react",
     ":node_modules/svelte",
-    ":node_modules/lodash-es",
-    ":node_modules/@popperjs/core",
     ":node_modules/ts-key-enum",
     ":node_modules/vite",
+    ":node_modules/vite-plugin-inspect",
+    "//:node_modules/@apollo/client",
     "//:node_modules/@codemirror/autocomplete",
     "//:node_modules/@codemirror/commands",
-    "//:node_modules/@apollo/client",
     "//:node_modules/@codemirror/state",
     "//:node_modules/@codemirror/view",
     "//:node_modules/@mdi/js",
+    "//:node_modules/@reach/combobox",
+    "//:node_modules/@reach/menu-button",
     "//:node_modules/@types/lodash",
     "//:node_modules/@types/node",
     "//:node_modules/@types/react",
+    "//:node_modules/classnames",
+    "//:node_modules/date-fns",
+    "//:node_modules/highlight.js",
     "//:node_modules/lodash",
+    "//:node_modules/open-color",
+    "//:node_modules/path-browserify",
+    "//:node_modules/react-dom",
+    "//:node_modules/react-resizable",
     "//:node_modules/react-router-dom",
     "//:node_modules/rxjs",
-    "//:node_modules/react-dom",
-    "//:node_modules/path-browserify",
-    "//:node_modules/react-resizable",
-    "//:node_modules/@reach/combobox",
-    "//:node_modules/@reach/menu-button",
     "//:node_modules/uuid",
-    "//:node_modules/classnames",
-    "//:node_modules/open-color",
 ]
 
 CONFIGS = [
@@ -116,15 +122,16 @@ npm_link_all_packages(name = "node_modules")
 vite_bin.vite(
     name = "web-sveltekit",
     srcs = SRCS + BUILD_DEPS + CONFIGS,
+    outs = ["build"],
     args = [
         "build",
         "-c vite.config.ts",
     ],
     chdir = package_name(),
-    outs = ["build"],
     env = {
         "BAZEL": "1",
-    }
+    },
+    visibility = ["//ui/assets/enterprise:__pkg__"],
 )
 
 # TODO: remove this once we have some tests.
