@@ -1,8 +1,10 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { WebStory } from '../components/WebStory'
+import { Grid } from '@sourcegraph/wildcard'
 
-import { siteAdminSidebarGroups } from './sidebaritems'
+import { WebStory } from '../components/WebStory'
+import { enterpriseSiteAdminSidebarGroups } from '../enterprise/site-admin/sidebaritems'
+
 import { SiteAdminSidebar } from './SiteAdminSidebar'
 
 const decorator: DecoratorFn = story => <div style={{ width: '192px' }}>{story()}</div>
@@ -10,6 +12,11 @@ const decorator: DecoratorFn = story => <div style={{ width: '192px' }}>{story()
 const config: Meta = {
     title: 'web/site-admin/AdminSidebar',
     decorators: [decorator],
+    parameters: {
+        chromatic: {
+            disableSnapshot: false,
+        },
+    },
 }
 
 export default config
@@ -17,15 +24,63 @@ export default config
 export const AdminSidebarItems: Story = () => (
     <WebStory>
         {webProps => (
-            <SiteAdminSidebar
-                {...webProps}
-                groups={siteAdminSidebarGroups}
-                isSourcegraphDotCom={false}
-                isSourcegraphApp={false}
-                batchChangesEnabled={false}
-                batchChangesExecutionEnabled={false}
-                batchChangesWebhookLogsEnabled={false}
-            />
+            <Grid columnCount={5}>
+                <code>isSourcegraphApp=true</code>
+                <code>default</code>
+                <code>isSourcegraphDotCom=true</code>
+                <code>batchChangesEnabled=false</code>
+                <code>codeInsightsEnabled=false</code>
+                <SiteAdminSidebar
+                    {...webProps}
+                    groups={enterpriseSiteAdminSidebarGroups}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={true}
+                    batchChangesEnabled={true}
+                    batchChangesExecutionEnabled={true}
+                    batchChangesWebhookLogsEnabled={true}
+                    codeInsightsEnabled={true}
+                />
+                <SiteAdminSidebar
+                    {...webProps}
+                    groups={enterpriseSiteAdminSidebarGroups}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    batchChangesEnabled={true}
+                    batchChangesExecutionEnabled={true}
+                    batchChangesWebhookLogsEnabled={true}
+                    codeInsightsEnabled={true}
+                />
+                <SiteAdminSidebar
+                    {...webProps}
+                    groups={enterpriseSiteAdminSidebarGroups}
+                    isSourcegraphDotCom={true}
+                    isSourcegraphApp={false}
+                    batchChangesEnabled={true}
+                    batchChangesExecutionEnabled={true}
+                    batchChangesWebhookLogsEnabled={true}
+                    codeInsightsEnabled={true}
+                />
+                <SiteAdminSidebar
+                    {...webProps}
+                    groups={enterpriseSiteAdminSidebarGroups}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    batchChangesEnabled={false}
+                    batchChangesExecutionEnabled={false}
+                    batchChangesWebhookLogsEnabled={false}
+                    codeInsightsEnabled={true}
+                />
+                <SiteAdminSidebar
+                    {...webProps}
+                    groups={enterpriseSiteAdminSidebarGroups}
+                    isSourcegraphDotCom={false}
+                    isSourcegraphApp={false}
+                    batchChangesEnabled={true}
+                    batchChangesExecutionEnabled={true}
+                    batchChangesWebhookLogsEnabled={true}
+                    codeInsightsEnabled={false}
+                />
+            </Grid>
         )}
     </WebStory>
 )
