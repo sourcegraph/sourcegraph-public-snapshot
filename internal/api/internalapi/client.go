@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -23,8 +24,8 @@ import (
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -38,24 +39,29 @@ func defaultFrontendInternal() string {
 }
 
 type internalClient struct {
-	GRPCConnectionCache *defaults.ConnectionCache
-
 	// URL is the root to the internal API frontend server.
 	URL string
+
+	grpcClient func() (proto.FrontendServiceClient, error)
 }
 
-var Client = &internalClient{GRPCConnectionCache: GRPCConnectionCache(), URL: "http://" + frontendInternal}
+var Client = &internalClient{
+	URL: "http://" + frontendInternal,
+	grpcClient: syncx.OnceValues(func() (proto.FrontendServiceClient, error) {
+		serverURL := "http://" + frontendInternal
+		u, err := url.Parse(serverURL)
+		if err != nil {
+			return nil, err
+		}
 
-func GRPCConnectionCache() *defaults.ConnectionCache {
-	liblog := log.Init(log.Resource{
-		Name:    env.MyName,
-		Version: version.Version(),
-	}, log.NewSentrySink())
-	defer liblog.Sync()
+		l := log.Scoped("frontendGRPCClient", "gRPC client for frontend internal api")
+		conn, err := defaults.Dial(u.Host, l)
+		if err != nil {
+			return nil, err
+		}
 
-	logger := log.Scoped("frontendConnectionCache", "grpc connection cache for clients of the frontend service")
-
-	return defaults.NewConnectionCache(logger)
+		return proto.NewFrontendServiceClient(conn), nil
+	}),
 }
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
@@ -117,13 +123,12 @@ func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string
 	if internalgrpc.IsGRPCEnabled(ctx) {
 		fmt.Println("GRPC.internalClient.ExternalServiceConfigs")
 		fmt.Printf("c.URL: %s\n", c.URL)
-		cc, err := c.GRPCConnectionCache.GetConnection(c.URL)
+		client, err := c.grpcClient()
 		if err != nil {
 			fmt.Printf("c.GRPCConnectionCache.GetConnection(c.URL) error: %s\n", err)
 			return err
 		}
 		fmt.Println("Works Here")
-		client := proto.NewFrontendServiceClient(cc)
 		resp, err := client.ExternalServiceConfigs(ctx, &proto.ExternalServiceConfigsRequest{
 			Kind: kind,
 		})
