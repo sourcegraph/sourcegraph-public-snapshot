@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -46,6 +47,11 @@ type internalClient struct {
 var Client = &internalClient{GRPCConnectionCache: GRPCConnectionCache(), URL: "http://" + frontendInternal}
 
 func GRPCConnectionCache() *defaults.ConnectionCache {
+	liblog := log.Init(log.Resource{
+		Name:    env.MyName,
+		Version: version.Version(),
+	}, log.NewSentrySink())
+	defer liblog.Sync()
 
 	logger := log.Scoped("frontendConnectionCache", "grpc connection cache for clients of the frontend service")
 
