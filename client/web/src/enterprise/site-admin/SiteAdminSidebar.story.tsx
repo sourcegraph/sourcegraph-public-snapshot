@@ -2,10 +2,10 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { Grid } from '@sourcegraph/wildcard'
 
-import { WebStory } from '../components/WebStory'
-import { enterpriseSiteAdminSidebarGroups } from '../enterprise/site-admin/sidebaritems'
+import { WebStory } from '../../components/WebStory'
+import { SiteAdminSidebar } from '../../site-admin/SiteAdminSidebar'
 
-import { SiteAdminSidebar } from './SiteAdminSidebar'
+import { enterpriseSiteAdminSidebarGroups } from './sidebaritems'
 
 const decorator: DecoratorFn = story => <div style={{ width: '192px' }}>{story()}</div>
 
@@ -21,6 +21,8 @@ const config: Meta = {
 
 export default config
 
+// Moved story under enterprise folder to avoid failing ci linting
+// due to importing enterprise path in oss folders.
 export const AdminSidebarItems: Story = () => (
     <WebStory>
         {webProps => (
