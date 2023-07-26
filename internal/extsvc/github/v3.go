@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v41/github"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 
 	"github.com/sourcegraph/log"
 
@@ -64,6 +65,8 @@ type V3Client struct {
 	// maxRateLimitRetries determines how many times we retry requests due to rate limits
 	maxRateLimitRetries int
 
+	newRateLimiter redispool.RateLimiter
+
 	// resource specifies which API this client is intended for.
 	// One of 'rest' or 'search'.
 	resource string
@@ -115,6 +118,11 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 	rl := ratelimit.DefaultRegistry.Get(urn)
 	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
 
+	nrl, err := redispool.NewRateLimiter()
+	if err != nil {
+		panic(err)
+	}
+
 	return &V3Client{
 		log: logger.Scoped("github.v3", "github v3 client").
 			With(
@@ -131,6 +139,7 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 		resource:            resource,
 		waitForRateLimit:    true,
 		maxRateLimitRetries: 2,
+		newRateLimiter:      nrl,
 	}
 }
 
@@ -222,7 +231,10 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
 	}
 
-	err := c.internalRateLimiter.Wait(ctx)
+	//err := c.internalRateLimiter.Wait(ctx)
+
+	//Need to figure out a place for this where you can realistically know how many tokens you are about to need
+	allowed, _, err := c.newRateLimiter.GetTokensFromBucket(ctx, req.URL.Host+":api_token_bucket", 1)
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.
@@ -232,6 +244,9 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 
 		c.log.Warn("internal rate limiter error", log.Error(err))
 		return nil, errInternalRateLimitExceeded
+	}
+	if !allowed {
+		return nil, errors.New("Limit exceeded")
 	}
 
 	if c.waitForRateLimit {
