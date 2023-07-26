@@ -176,7 +176,6 @@ genrule(
     srcs = ["//:sg.config.yaml"],
     outs = ["reference.md"],
     cmd = """
-    set -x
     SG_FORCE_REPO_ROOT="$$(pwd)" $(location :sg) \
             --no-dev-private \
             --disable-overwrite \
