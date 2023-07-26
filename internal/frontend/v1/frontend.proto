@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package frontend.v1;
+
+option go_package = "github.com/sourcegraph/sourcegraph/internal/frontend/v1";
+
+service FrontendService {
+  rpc Configuration(ConfigurationRequest) returns (ConfigurationResponse) {}
+  rpc ExternalURL(ExternalURLRequest) returns (ExternalURLResponse) {}
+  rpc ExternalServiceConfigs(ExternalServiceConfigsRequest) returns (ExternalServiceConfigsResponse) {}
+  rpc SendEmail(SendEmailRequest) returns (SendEmailResponse) {}
+}
+
+message ConfigurationRequest {}
+
+message ConfigurationResponse {}
+
+message ExternalURLRequest {}
+
+message ExternalURLResponse {}
+
+message SendEmailRequest {}
+
+message SendEmailResponse {}
+
+message ExternalServiceConfigsRequest {}
+
+message ExternalServiceConfigsResponse {}
