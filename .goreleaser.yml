@@ -36,7 +36,7 @@ brews:
     name: src-cli
     homepage: "https://sourcegraph.com/"
     description: "Sourcegraph CLI"
-    tap:
+    repository:
       owner: sourcegraph
       name: homebrew-src-cli
     # Folder inside the repository to put the formula.
