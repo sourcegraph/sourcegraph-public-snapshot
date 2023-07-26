@@ -3895,7 +3895,7 @@ type Repository implements Node & GenericSearchResultInterface {
     """
     recordedCommands(
         """
-        Returns the "limit" number recorded commands from the list.
+        Maximum number of recorded commands returned.
         (Default: 40)
         """
         limit: Int = 40
