@@ -20,10 +20,8 @@ const (
 
 var escaper = strings.NewReplacer(" ", `\ `)
 
-const utf8ReplacementChar = "\xFF\xFD"
-
 func escapeUTF8AndSpaces(s string) string {
-	return escaper.Replace(strings.ToValidUTF8(s, utf8ReplacementChar))
+	return escaper.Replace(strings.ToValidUTF8(s, "�"))
 }
 
 func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (string, result.Ranges) {
@@ -102,7 +100,7 @@ func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (s
 					ranges = append(ranges, lineHighlights.Add(loc)...)
 				}
 
-				buf.Write(bytes.ToValidUTF8(lineWithoutPrefix, []byte(utf8ReplacementChar)))
+				buf.Write(bytes.ToValidUTF8(lineWithoutPrefix, []byte("�")))
 				buf.WriteByte('\n')
 				loc.Offset = buf.Len()
 				loc.Line++
