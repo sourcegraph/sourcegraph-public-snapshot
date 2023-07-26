@@ -142,11 +142,11 @@ func UpdateHashes(ctx *cli.Context) error {
 		case imagePattern.MatchString(line):
 			match := imagePattern.FindStringSubmatch(line)
 			if len(match) > 1 && currentImage != nil {
-				currentImage.Image = strings.Replace(strings.Trim(match[1], `"`), "index.docker.io/", "", 1)
+				currentImage.Image = strings.Trim(match[1], `"`)
 
-				if !strings.HasPrefix(currentImage.Image, "us.gcr.io") {
+				if strings.HasPrefix(currentImage.Image, "index.docker.io") {
 					// fetch new digest for latest tag
-					newDigest, err := getImageManifest(currentImage.Image, "latest")
+					newDigest, err := getImageManifest(strings.Replace(currentImage.Image, "index.docker.io/", "", 1), "latest")
 
 					if err != nil {
 						std.Out.WriteWarningf("%v", err)
