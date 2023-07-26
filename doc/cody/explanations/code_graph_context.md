@@ -157,16 +157,45 @@ Supported time units are h (hours), m ( minutes), and s (seconds).
 
 ### Using a third-party embeddings provider directly
 
-Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly for embeddings. Currently, this can only be OpenAI embeddings.
+Instead of [Sourcegraph Cody Gateway](./cody_gateway.md), you can configure Sourcegraph to use a third-party provider directly for embeddings. Currently, this can be one of
+- OpenAI
+- Azure OpenAI <span class="badge badge-experimental">Experimental</span>
 
-You must create your own key with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+#### OpenAI
+
+First, you must create your own key with OpenAI [here](https://beta.openai.com/account/api-keys). Once you have the key, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
+
+```jsonc
+{
+  // [...]
+  "cody.enabled": true,
+  "embeddings": {
+    "provider": "openai",
+    "accessToken": "<token>",
+    "excludedFilePathPatterns": []
+  }
+}
+```
+
+#### Azure OpenAI <span class="badge badge-experimental">Experimental</span>
+
+First, make sure you created a project in the Azure OpenAI portal. 
+
+From the project overview, go to **Keys and Endpoint** and grab **one of the keys** on that page, and the **endpoint**.
+
+Next, under **Model deployments** click "manage deployments" and make sure you deploy the models you want to use. For example, `text-embedding-ada-002`. Take note of the **deployment name**.
+
+Once done, go to **Site admin > Site configuration** (`/site-admin/configuration`) on your instance and set:
 
 ```jsonc
 {
   "cody.enabled": true,
   "embeddings": {
-    "provider": "openai",
-    "accessToken": "<token>",
+    "provider": "azure-openai",
+    "model": "<deployment name of the model>",
+    "endpoint": "<endpoint>",
+    "accessToken": "<key>",
+    "dimensions": 1536,
     "excludedFilePathPatterns": []
   }
 }
