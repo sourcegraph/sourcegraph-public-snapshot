@@ -17,7 +17,7 @@ func TestAzureOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
 		client := NewClient(http.DefaultClient, &conftypes.EmbeddingsConfig{})
 		invalidTexts := []string{"a", ""} // empty string is invalid
-		_, err := client.GetEmbeddings(context.Background(), invalidTexts)
+		_, err := client.GetDocumentEmbeddings(context.Background(), invalidTexts)
 		require.ErrorContains(t, err, "empty string")
 	})
 
@@ -65,7 +65,7 @@ func TestAzureOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a"})
+		resp, err := client.GetQueryEmbedding(context.Background(), "a")
 		require.NoError(t, err)
 		var expected []float32
 		{
@@ -112,7 +112,7 @@ func TestAzureOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		_, err := client.GetEmbeddings(context.Background(), []string{"a"})
+		_, err := client.GetQueryEmbedding(context.Background(), "a")
 		require.Error(t, err, "expected request to error on failed retry")
 	})
 
@@ -138,7 +138,7 @@ func TestAzureOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
 		require.NoError(t, err, "expected request to succeed")
 		var expected []float32
 		{
