@@ -1156,6 +1156,23 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--url, -u="<value>"`: Run the evaluation against this endpoint (default: http://localhost:9991/search)
 
+## sg wolfi
+
+Automate Wolfi related tasks.
+
+```sh
+$ sg wolfi update-hashes
+```
+
+### sg wolfi update-hashes
+
+Update Wolfi dependency digests to the latest version.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
 ## sg secret
 
 Manipulate secrets stored in memory and in file.
