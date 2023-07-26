@@ -187,7 +187,8 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 		webhookURN := "https://example.com"
 		appName := "TestApp"
 		domain := "batches"
-		req := httptest.NewRequest("GET", fmt.Sprintf("/githubapp/new-app-state?webhookURN=%s&appName=%s&domain=%s", webhookURN, appName, domain), nil)
+		baseURL := "https://ghe.example.org"
+		req := httptest.NewRequest("GET", fmt.Sprintf("/githubapp/new-app-state?webhookURN=%s&appName=%s&domain=%s&baseURL=%s", webhookURN, appName, domain, baseURL), nil)
 
 		t.Run("normal user", func(t *testing.T) {
 			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
@@ -244,6 +245,9 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 			}
 			if stateDetails.Domain != domain {
 				t.Fatal("expected domain in state details to match request param")
+			}
+			if stateDetails.BaseURL != baseURL {
+				t.Fatal("expected baseURL in state details to match request param")
 			}
 		})
 	})
