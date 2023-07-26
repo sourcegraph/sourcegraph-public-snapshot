@@ -102,16 +102,36 @@ body {
   color: var(--text-color);
   font-size: 16px;
 }
+
 a {
-  color: rgb(161, 161, 161);
   text-decoration: none;
 }
-a:hover {
+
+body.theme-light a,
+body.theme-light .markdown-body a {
+  color: var(--link-color);
+}
+
+body.theme-dark a {
   color:var(--brand-cyan-color);
+
+}
+a:hover {
   opacity:0.8;
   transition: color 0.2s ease-in-out;
   text-decoration: none;
 }
+
+body.theme-light #sidebar a,
+body.theme-light #index a {
+  color: #171717;
+}
+
+body.theme-dark #sidebar a,
+body.theme-dark #index a {
+  color: rgb(161, 161, 161);
+}
+
 /* Nav links */
 nav.links ul {
     padding: 0;
@@ -535,6 +555,8 @@ body > #page > main > #content {
     max-width: 100%;
     height: auto;
     aspect-ratio: attr(width) / attr(height);
+    border-radius: .375rem;
+    /* border: 1px solid rgb(31, 31, 31); */
 }
 .markdown-body a:not([href]) {
   color: inherit;
@@ -546,7 +568,7 @@ body > #page > main > #content {
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  margin-top: 24px;
+  margin-top: 32px;
   margin-bottom: 16px;
   font-weight: 600;
   line-height: 1.25;
@@ -974,7 +996,7 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
 .markdown-body .getting-started .btn {
   flex: 1;
   margin: 0.5em;
-  padding: 1rem 1.25rem;
+  padding: 0.1rem 0.25rem;
   color: var(--text-color);
   border-radius: 4px;
   border: 1px solid var(--sidebar-nav-active-bg);
@@ -1352,12 +1374,16 @@ markprompt-content.dark {
     padding-bottom: 0.5rem;
 }
 
-.markdown-body p,
-.markdown-body ul,
-.markdown-body li,
-.markdown-body a {
-    color: #ededed;
+body.theme-dark .markdown-body p,
+body.theme-dark .markdown-body ul,
+body.theme-dark .markdown-body li {
     color: #94a5b8;
+}
+
+body.theme-light .markdown-body p,
+body.theme-light .markdown-body ul,
+body.theme-light .markdown-body li {
+    color: #171717;
 }
 
 .toc-bottom {
@@ -1409,6 +1435,9 @@ body.theme-light #content > .breadcrumbs > .active,
 
 body.theme-light > #sidebar .nav-section ul ul li.active-subsection{
     border-left: solid 1px #000018;
+}
+body > #sidebar .current > a  {
+    font-weight: bold;
 }
 
 .hidden {
