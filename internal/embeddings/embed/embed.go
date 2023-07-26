@@ -129,6 +129,14 @@ func EmbedRepo(
 	if err != nil {
 		return nil, nil, nil, err
 	}
+
+	if codeIndexStats.ChunksExcluded > 0 {
+		logger.Debug("error getting embeddings for chunks",
+			log.Int("count", codeIndexStats.ChunksExcluded),
+			log.String("file_type", "code"),
+		)
+	}
+
 	stats.CodeIndexStats = codeIndexStats
 
 	textIndex := newIndex(len(textFileNames))
@@ -146,6 +154,14 @@ func EmbedRepo(
 	if err != nil {
 		return nil, nil, nil, err
 	}
+
+	if textIndexStats.ChunksExcluded > 0 {
+		logger.Debug("error getting embeddings for chunks",
+			log.Int("count", textIndexStats.ChunksExcluded),
+			log.String("file_type", "text"),
+		)
+	}
+
 	stats.TextIndexStats = textIndexStats
 
 	embeddingsModel := client.GetModelIdentifier()
