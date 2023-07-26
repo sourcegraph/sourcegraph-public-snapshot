@@ -71,12 +71,7 @@ Examples:
 func handleCodeIntelUpload(args []string) error {
 	ctx := context.Background()
 
-	isSCIPAvailable, err := isSCIPAvailable()
-	if err != nil {
-		return err
-	}
-
-	out, err := parseAndValidateCodeIntelUploadFlags(args, isSCIPAvailable)
+	out, isSCIPAvailable, err := parseAndValidateCodeIntelUploadFlags(args)
 	if !codeintelUploadFlags.json {
 		if out != nil {
 			printInferredArguments(out)

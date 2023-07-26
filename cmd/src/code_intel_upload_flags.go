@@ -100,9 +100,9 @@ func init() {
 //
 // On success, the global codeintelUploadFlags object will be populated with valid values. An
 // error is returned on failure.
-func parseAndValidateCodeIntelUploadFlags(args []string, isSCIPAvailable bool) (*output.Output, error) {
+func parseAndValidateCodeIntelUploadFlags(args []string) (*output.Output, bool, error) {
 	if err := codeintelUploadFlagSet.Parse(args); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	out := codeintelUploadOutput()
@@ -120,13 +120,13 @@ func parseAndValidateCodeIntelUploadFlags(args []string, isSCIPAvailable bool) (
 	// and maybe we'll use some in the future
 	codeintelUploadFlags.apiFlags = api.NewFlags(apiClientFlagSet)
 	if err := apiClientFlagSet.Parse(insecureSkipVerifyFlag); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
 	if !isFlagSet(codeintelUploadFlagSet, "file") {
 		defaultFile, err := inferDefaultFile()
 		if err != nil {
-			return nil, err
+			return nil, false, err
 		}
 		codeintelUploadFlags.file = defaultFile
 	}
@@ -134,37 +134,42 @@ func parseAndValidateCodeIntelUploadFlags(args []string, isSCIPAvailable bool) (
 	// Check to see if input file exists
 	if _, err := os.Stat(codeintelUploadFlags.file); os.IsNotExist(err) {
 		if !isFlagSet(codeintelUploadFlagSet, "file") {
-			return nil, formatInferenceError(argumentInferenceError{"file", err})
+			return nil, false, formatInferenceError(argumentInferenceError{"file", err})
 		}
 
-		return nil, errors.Newf("file %q does not exist", codeintelUploadFlags.file)
+		return nil, false, errors.Newf("file %q does not exist", codeintelUploadFlags.file)
+	}
+
+	isSCIPAvailable, err := isSCIPAvailable()
+	if err != nil {
+		return nil, false, err
 	}
 
 	if !isSCIPAvailable {
 		if err := handleSCIP(out); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	} else {
 		if err := handleLSIF(out); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	}
 
 	// Check for new file existence after transformation
 	if _, err := os.Stat(codeintelUploadFlags.file); os.IsNotExist(err) {
-		return nil, errors.Newf("file %q does not exist", codeintelUploadFlags.file)
+		return nil, false, errors.Newf("file %q does not exist", codeintelUploadFlags.file)
 	}
 
 	// Infer the remaining default arguments (may require reading from new file)
 	if inferenceErrors := inferMissingCodeIntelUploadFlags(); len(inferenceErrors) > 0 {
-		return nil, formatInferenceError(inferenceErrors[0])
+		return nil, false, formatInferenceError(inferenceErrors[0])
 	}
 
 	if err := validateCodeIntelUploadFlags(); err != nil {
-		return nil, err
+		return nil, false, err
 	}
 
-	return out, nil
+	return out, isSCIPAvailable, nil
 }
 
 // codeintelUploadOutput returns an output object that should be used to print the progres
