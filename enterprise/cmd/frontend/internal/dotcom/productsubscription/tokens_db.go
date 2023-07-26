@@ -7,9 +7,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
 )
 
@@ -37,7 +37,7 @@ func (e productSubscriptionNotFoundError) NotFound() bool {
 // corresponding to a token, trimming token prefixes if there are any.
 func (t dbTokens) LookupProductSubscriptionIDByAccessToken(ctx context.Context, token string) (string, error) {
 	if !strings.HasPrefix(token, productsubscription.AccessTokenPrefix) &&
-		!strings.HasPrefix(token, licensing.LicenseKeyBasedAccessTokenPrefix) {
+		!strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
 		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown prefix"}
 	}
 
@@ -45,10 +45,10 @@ func (t dbTokens) LookupProductSubscriptionIDByAccessToken(ctx context.Context, 
 	// much, we only track 'license_key' and check the that the raw token value
 	// matches the license key. Note that all prefixes have the same length.
 	//
-	// TODO(@bobheadxi): Migrate to licensing.ExtractLicenseKeyBasedAccessTokenContents(token)
+	// TODO(@bobheadxi): Migrate to license.GenerateLicenseKeyBasedAccessToken(token)
 	// after back-compat with productsubscription.AccessTokenPrefix is no longer
 	// needed
-	decoded, err := hex.DecodeString(token[len(licensing.LicenseKeyBasedAccessTokenPrefix):])
+	decoded, err := hex.DecodeString(token[len(license.LicenseKeyBasedAccessTokenPrefix):])
 	if err != nil {
 		return "", productSubscriptionNotFoundError{reason: "invalid token with unknown encoding"}
 	}

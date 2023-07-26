@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -20,21 +21,10 @@ type SearchRepositoryResult struct {
 type SearchRepositoryResults []*SearchRepositoryResult
 
 // Exists returns the list of missing repositories from given names that do not exist
-// in search results. If all of given names are found, it returns empty list.
+// in search results. If all given names are found, it returns empty list.
 func (rs SearchRepositoryResults) Exists(names ...string) []string {
-	set := make(map[string]struct{}, len(names))
-	for _, name := range names {
-		set[name] = struct{}{}
-	}
-	for _, r := range rs {
-		delete(set, r.Name)
-	}
-
-	missing := make([]string, 0, len(set))
-	for name := range set {
-		missing = append(missing, name)
-	}
-	return missing
+	set := collections.NewSet[string](names...)
+	return set.Difference(collections.NewSet[string](rs.Names()...)).Values()
 }
 
 func (rs SearchRepositoryResults) Names() []string {

@@ -99,7 +99,7 @@ func InitGitserver() {
 	}()
 
 	serverAddress := l.Addr().String()
-	source := gitserver.NewTestClientSource(&t, []string{serverAddress})
+	source := gitserver.NewTestClientSource(&t, db, []string{serverAddress})
 	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, source)
 	GitserverAddresses = []string{serverAddress}
 }

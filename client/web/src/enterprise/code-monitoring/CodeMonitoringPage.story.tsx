@@ -6,7 +6,7 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 
 import { AuthenticatedUser } from '../../auth'
 import { WebStory } from '../../components/WebStory'
-import { ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
+import { ListAllCodeMonitorsVariables, ListCodeMonitors, ListUserCodeMonitorsVariables } from '../../graphql-operations'
 
 import { CodeMonitoringPage } from './CodeMonitoringPage'
 import { mockCodeMonitorNodes } from './testing/util'
@@ -38,6 +38,20 @@ const generateMockFetchMonitors =
         return of(result)
     }
 
+const generateMockFetchAllMonitors =
+    (count: number) =>
+    ({ first, after }: ListAllCodeMonitorsVariables) => {
+        const result: ListCodeMonitors = {
+            nodes: mockCodeMonitorNodes.slice(0, count),
+            pageInfo: {
+                endCursor: `foo${count}`,
+                hasNextPage: count > 10,
+            },
+            totalCount: count,
+        }
+        return of(result)
+    }
+
 const additionalProps = {
     authenticatedUser: {
         id: 'foobar',
@@ -49,10 +63,24 @@ const additionalProps = {
     isSourcegraphApp: false,
 }
 
-const additionalPropsShortList = { ...additionalProps, fetchUserCodeMonitors: generateMockFetchMonitors(3) }
-const additionalPropsLongList = { ...additionalProps, fetchUserCodeMonitors: generateMockFetchMonitors(12) }
-const additionalPropsEmptyList = { ...additionalProps, fetchUserCodeMonitors: generateMockFetchMonitors(0) }
+const additionalPropsShortList = {
+    ...additionalProps,
+    fetchUserCodeMonitors: generateMockFetchMonitors(3),
+}
+const additionalPropsLongList = {
+    ...additionalProps,
+    fetchUserCodeMonitors: generateMockFetchMonitors(12),
+}
+const additionalPropsEmptyList = {
+    ...additionalProps,
+    fetchUserCodeMonitors: generateMockFetchMonitors(0),
+}
 const additionalPropsAlwaysLoading = { ...additionalProps, fetchUserCodeMonitors: () => NEVER }
+const siteAdminProps = {
+    ...additionalProps,
+    fetchCodeMonitors: generateMockFetchAllMonitors(3),
+    authenticatedUser: { ...additionalProps.authenticatedUser, siteAdmin: true },
+}
 
 export const LessThan10Results: Story = () => (
     <WebStory>{props => <CodeMonitoringPage {...props} {...additionalPropsShortList} />}</WebStory>
@@ -140,3 +168,11 @@ EmptyListPageUnauthenticated.parameters = {
         url: 'https://www.figma.com/file/6WMfHdPt2ovTE1P527brwc/Code-monitor-getting-started-21161?node-id=1%3A1650',
     },
 }
+
+export const SiteAdminUser: Story = () => (
+    <WebStory initialEntries={['/code-monitoring']}>
+        {props => <CodeMonitoringPage {...props} {...siteAdminProps} testForceTab="list" />}
+    </WebStory>
+)
+
+SiteAdminUser.storyName = 'Code monitoring list page - site admin user'

@@ -62,13 +62,14 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, *g
 					break
 				}
 			}
-			if len(idSubset) == 0 {
-				// r.after is set, but there are no elements larger than it, so return empty slice.
-				r.users = []*types.User{}
-				r.pageInfo = graphqlutil.HasNextPage(false)
-				return
-			}
 		}
+
+		if len(idSubset) == 0 {
+			r.users = []*types.User{}
+			r.pageInfo = graphqlutil.HasNextPage(false)
+			return
+		}
+
 		// If we have more ids than we need, trim them
 		if int32(len(idSubset)) > r.first {
 			idSubset = idSubset[:r.first]

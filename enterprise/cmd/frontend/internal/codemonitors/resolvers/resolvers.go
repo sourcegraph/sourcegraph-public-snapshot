@@ -57,7 +57,7 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 	}
 }
 
-func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
+func (r *Resolver) Monitors(ctx context.Context, userID *int32, args *graphqlbackend.ListMonitorsArgs) (graphqlbackend.MonitorConnectionResolver, error) {
 	// Request one extra to determine if there are more pages
 	newArgs := *args
 	newArgs.First += 1
@@ -68,7 +68,7 @@ func (r *Resolver) Monitors(ctx context.Context, userID int32, args *graphqlback
 	}
 
 	ms, err := r.db.CodeMonitors().ListMonitors(ctx, database.ListMonitorsOpts{
-		UserID: &userID,
+		UserID: userID,
 		First:  pointers.Ptr(int(newArgs.First)),
 		After:  intPtrToInt64Ptr(after),
 	})
@@ -640,7 +640,6 @@ func (r *Resolver) withTransact(ctx context.Context, f func(*Resolver) error) er
 			db:     tx,
 		})
 	})
-
 }
 
 // isAllowedToEdit checks whether an actor is allowed to edit a given monitor.

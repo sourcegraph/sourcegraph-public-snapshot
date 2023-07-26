@@ -1,21 +1,19 @@
 <script lang="ts">
     import { mdiFolderOutline, mdiFileDocumentOutline } from '@mdi/js'
 
-    import Commit from '$lib/Commit.svelte'
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import { NODE_LIMIT } from '$lib/repo/api/tree'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: treeEntries = asStore(data.fileTree.deferred.then(({ values }) => values))
-    $: commits = asStore(data.commits.deferred)
+    const { value: treeOrError, set: setTree } = createPromiseStore<PageData['deferred']['fileTree']>()
+    $: setTree(data.deferred.fileTree)
 </script>
 
 {#if !$sidebarOpen}
@@ -32,10 +30,10 @@
         </p>
     {/if}
 
-    {#if !$treeEntries.loading && $treeEntries.data}
+    {#if $treeOrError && !isErrorLike($treeOrError)}
         <h3>Files and directories</h3>
         <ul class="files">
-            {#each $treeEntries.data as entry}
+            {#each $treeOrError.values as entry}
                 <li>
                     {#if entry !== NODE_LIMIT}
                         <a
@@ -50,17 +48,6 @@
             {/each}
         </ul>
     {/if}
-
-    <h3 class="mt-3">Changes</h3>
-    <ul class="commits">
-        {#if $commits.loading}
-            <LoadingSpinner />
-        {:else if $commits.data}
-            {#each $commits.data as commit (commit.url)}
-                <li><Commit {commit} /></li>
-            {/each}
-        {/if}
-    </ul>
 </div>
 
 <style lang="scss">
@@ -71,21 +58,7 @@
     .content {
         padding: 1rem;
         overflow: auto;
-    }
-
-    ul.commits {
-        padding: 0;
-        margin: 0;
-        list-style: none;
-
-        li {
-            border-bottom: 1px solid var(--border-color);
-            padding: 0.5rem 0;
-
-            &:last-child {
-                border: none;
-            }
-        }
+        flex: 1;
     }
 
     ul.files {

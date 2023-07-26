@@ -1,4 +1,4 @@
-import React, { FC, useState, useEffect, useMemo, useCallback } from 'react'
+import React, { FC, useState, useEffect, useMemo, useCallback, ReactNode } from 'react'
 
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
@@ -151,12 +151,13 @@ export const useBreadcrumbs = (): BreadcrumbsProps & BreadcrumbSetters => {
 interface BreadcrumbsInternalProps {
     breadcrumbs: BreadcrumbAtDepth[]
     className?: string
+    children?: ReactNode
 }
 
 /**
  * Renders breadcrumbs by depth.
  */
-export const Breadcrumbs: FC<BreadcrumbsInternalProps> = ({ breadcrumbs, className }) => {
+export const Breadcrumbs: FC<BreadcrumbsInternalProps> = ({ breadcrumbs, className, children }) => {
     const location = useLocation()
 
     return (
@@ -192,6 +193,7 @@ export const Breadcrumbs: FC<BreadcrumbsInternalProps> = ({ breadcrumbs, classNa
                         </span>
                     )
                 })}
+            {children}
         </nav>
     )
 }

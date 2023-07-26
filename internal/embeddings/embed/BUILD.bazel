@@ -19,6 +19,7 @@ go_library(
         "//internal/embeddings",
         "//internal/embeddings/background/repo",
         "//internal/embeddings/embed/client",
+        "//internal/embeddings/embed/client/azureopenai",
         "//internal/embeddings/embed/client/openai",
         "//internal/embeddings/embed/client/sourcegraph",
         "//internal/httpcli",

@@ -42,6 +42,7 @@ const (
 	ImagePatch          // build a patched image after testing
 	ImagePatchNoTest    // build a patched image without testing
 	ExecutorPatchNoTest // build executor image without testing
+	CandidatesNoTest    // build one or all candidate images without testing
 
 	// Special test branches
 
@@ -171,6 +172,10 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		return &RunTypeMatcher{
 			Branch: "backend-integration/",
 		}
+	case CandidatesNoTest:
+		return &RunTypeMatcher{
+			Branch: "docker-images-candidates-notest/",
+		}
 	case BazelDo:
 		return &RunTypeMatcher{
 			Branch: "bazel-do/",
@@ -206,19 +211,18 @@ func (t RunType) String() string {
 		return "Browser extension release build"
 	case VsceReleaseBranch:
 		return "VS Code extension release build"
-
 	case MainBranch:
 		return "Main branch"
 	case MainDryRun:
 		return "Main dry run"
-
 	case ImagePatch:
 		return "Patch image"
 	case ImagePatchNoTest:
 		return "Patch image without testing"
+	case CandidatesNoTest:
+		return "Build all candidates without testing"
 	case ExecutorPatchNoTest:
 		return "Build executor without testing"
-
 	case BackendIntegrationTests:
 		return "Backend integration tests"
 	case BazelDo:

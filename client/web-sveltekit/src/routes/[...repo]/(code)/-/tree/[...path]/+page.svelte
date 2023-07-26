@@ -3,26 +3,40 @@
 
     import { isErrorLike } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import FileHeader from '$lib/repo/FileHeader.svelte'
-    import { asStore } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
+
+    import FileDiff from '../../../../-/commit/[...revspec]/FileDiff.svelte'
+    import Permalink from '../../../../Permalink.svelte'
 
     import type { PageData } from './$types'
 
     export let data: PageData
 
-    $: treeDataStatus = asStore(data.treeEntries.deferred)
-    $: treeOrError = (!$treeDataStatus.loading && $treeDataStatus.data) || null
-    $: entries = treeOrError && !isErrorLike(treeOrError) ? treeOrError.entries : []
+    const { value: treeOrError, set } = createPromiseStore<PageData['deferred']['treeEntries']>()
+    $: set(data.deferred.treeEntries)
+    $: entries = $treeOrError && !isErrorLike($treeOrError) ? $treeOrError.entries : []
 </script>
 
 <FileHeader>
     <Icon slot="icon" svgPath={mdiFolderOutline} />
+    <svelte:fragment slot="actions">
+        <Permalink resolvedRevision={data.resolvedRevision} />
+    </svelte:fragment>
 </FileHeader>
 
 <div class="content">
-    <h2>Files and directories</h2>
-    <ul>
-        {#if treeOrError}
+    {#if data.deferred.compare}
+        {#await data.deferred.compare.diff}
+            <LoadingSpinner />
+        {:then result}
+            {#each result.nodes as fileDiff}
+                <FileDiff {fileDiff} expanded={false} />
+            {/each}
+        {/await}
+    {:else}
+        <ul>
             {#each entries as entry}
                 <li>
                     <a href={entry.url}>
@@ -31,13 +45,14 @@
                     </a>
                 </li>
             {/each}
-        {/if}
-    </ul>
+        </ul>
+    {/if}
 </div>
 
 <style lang="scss">
     .content {
         padding: 1rem;
+        flex: 1;
     }
 
     ul {

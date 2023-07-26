@@ -4,7 +4,6 @@ import { logger } from '$lib/common'
 import { type TemporarySettings, TemporarySettingsStorage, migrateLocalStorageToTemporarySettings } from '$lib/shared'
 
 import { getStores } from './stores'
-import type { LoadingData } from './utils'
 
 const loggedOutUserStore = new TemporarySettingsStorage(null, false)
 
@@ -26,6 +25,11 @@ export function createTemporarySettingsStorage(storage = loggedOutUserStore): Wr
         subscribe,
     }
 }
+
+type LoadingData<D, E> =
+    | { loading: true }
+    | { loading: false; data: D; error: null }
+    | { loading: false; data: null; error: E }
 
 type TemporarySettingsKey = keyof TemporarySettings
 type TemporarySettingStatus<K extends TemporarySettingsKey> = LoadingData<TemporarySettings[K], unknown>

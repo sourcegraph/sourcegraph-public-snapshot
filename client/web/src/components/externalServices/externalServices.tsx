@@ -819,8 +819,24 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
                     >
                         instructions
                     </Link>
-                    ) with <b>read</b> scope over your repositories and teams. Set it to be the value of the{' '}
-                    <Field>appPassword</Field> field in the configuration below.
+                    ) with the following scopes:
+                    <ul>
+                        <li>
+                            <strong>Workspace membership</strong>: Read
+                        </li>
+                        <li>
+                            <strong>Repositories</strong>: Read
+                            <ul>
+                                <li>
+                                    To enable repository permissions syncing, <strong>Repositories</strong>: Admin is
+                                    required.
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+                <li>
+                    Paste your app password in the <Field>appPassword</Field> field in the configuration below.
                 </li>
                 <li>
                     Set the <Field>username</Field> field to be the username corresponding to <Field>appPassword</Field>

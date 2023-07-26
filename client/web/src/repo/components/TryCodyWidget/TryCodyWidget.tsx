@@ -89,7 +89,6 @@ const NoAuthWidgetContent: React.FC<NoAuhWidgetContentProps> = ({ type, telemetr
                         onClick={logEvent}
                         ctaClassName={styles.authButton}
                         iconClassName={styles.buttonIcon}
-                        redirect="/get-cody"
                     />
                     <Link
                         to="https://sourcegraph.com/sign-up?showEmail=true"

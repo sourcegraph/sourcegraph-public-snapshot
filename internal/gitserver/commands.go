@@ -2507,7 +2507,7 @@ func (c *clientImplementor) ArchiveReader(
 	}
 
 	if internalgrpc.IsGRPCEnabled(ctx) {
-		client, err := c.clientSource.ClientForRepo(c.userAgent, repo)
+		client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -2585,7 +2585,7 @@ func (c *clientImplementor) ArchiveReader(
 
 	} else {
 		// Fall back to http request
-		u := c.archiveURL(repo, options)
+		u := c.archiveURL(ctx, repo, options)
 		resp, err := c.do(ctx, repo, "POST", u.String(), nil)
 		if err != nil {
 			return nil, err

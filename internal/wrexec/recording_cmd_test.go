@@ -111,11 +111,26 @@ func TestRecordingCmd(t *testing.T) {
 			t.Error(err)
 		}
 	})
+	t.Run("separate FIFOList instance can read the list", func(t *testing.T) {
+		f := createTmpFile(t, "foobar")
+		cmd := osexec.Command("cat", f.Name())
+		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
+		_, err := rcmd.CombinedOutput()
+		if err != nil {
+			t.Fatalf("failed to execute recorded command: %v", err)
+		}
+
+		readingStore := rcache.NewFIFOList(wrexec.KeyPrefix, 100)
+		recording := getFirst(t, readingStore)
+		if valid, err := isValidRecording(t, cmd, recording); !valid {
+			t.Error(err)
+		}
+	})
 	t.Run("with Run", func(t *testing.T) {
 		f := createTmpFile(t, "foobar")
 		cmd := osexec.Command("cat", f.Name())
 		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
-		rcmd.Run()
+		_ = rcmd.Run()
 
 		recording := getFirst(t, store)
 		if valid, err := isValidRecording(t, cmd, recording); !valid {

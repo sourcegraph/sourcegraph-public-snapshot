@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "chunk",
+    srcs = ["chunker.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/grpc/chunk",
+    visibility = ["//:__subpackages__"],
+    deps = ["@org_golang_google_protobuf//proto"],
+)
+
+go_test(
+    name = "chunk_test",
+    srcs = ["chunker_test.go"],
+    embed = [":chunk"],
+    deps = [
+        "@com_github_dustin_go_humanize//:go-humanize",
+        "@com_github_stretchr_testify//require",
+        "@org_golang_google_grpc//:go_default_library",
+        "@org_golang_google_grpc//credentials/insecure",
+        "@org_golang_google_grpc//interop/grpc_testing",
+        "@org_golang_google_protobuf//proto",
+    ],
+)
