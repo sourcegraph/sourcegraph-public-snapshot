@@ -1,13 +1,16 @@
 package gitdomain
 
 import (
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
-	"os"
 
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/log"
+
+	"k8s.io/utils/strings/slices"
 )
 
 var (
@@ -102,12 +105,8 @@ func isAllowedDiffArg(arg string) bool {
 		}
 	}
 
-	if strings.HasPrefix(arg, "/") || strings.HasPrefix(arg, "../") {
-		_, err := os.Stat(arg)
-		return os.IsNotExist(err)
-	}
-
-	return true
+	_, err := os.Stat(arg)
+	return os.IsNotExist(err)
 }
 
 // isAllowedGitArg checks if the arg is allowed.
@@ -129,8 +128,34 @@ func isAllowedGitArg(allowedArgs []string, arg string) bool {
 	return false
 }
 
+// isAllowedDiffPathArg checks if the diff path arg is allowed.
+func isAllowedDiffPathArg(arg string, repoDir string) bool {
+	// allows diff command path that requires (dot) as path
+	// example: diff --find-renames ... --no-prefix commit -- .
+	if arg == "." {
+		return true
+	}
+
+	arg = filepath.Clean(arg)
+	if !filepath.IsAbs(arg) {
+		arg = filepath.Join(repoDir, arg)
+	}
+	filePath, err := filepath.Abs(arg)
+
+	if err != nil {
+		return false
+	} else {
+		// Check if absolute path is a sub path of the repo dir
+		repoRoot, err := filepath.Abs(repoDir)
+		if err == nil {
+			return strings.HasPrefix(filePath, repoRoot)
+		}
+	}
+	return false
+}
+
 // IsAllowedGitCmd checks if the cmd and arguments are allowed.
-func IsAllowedGitCmd(logger log.Logger, args []string) bool {
+func IsAllowedGitCmd(logger log.Logger, args []string, dir string) bool {
 	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
 		return false
 	}
@@ -142,7 +167,7 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 		logger.Warn("command not allowed", log.String("cmd", cmd))
 		return false
 	}
-	for _, arg := range args[1:] {
+	for i, arg := range args[1:] {
 		if strings.HasPrefix(arg, "-") {
 			// Special-case `git log -S` and `git log -G`, which interpret any characters
 			// after their 'S' or 'G' as part of the query. There is no long form of this
@@ -168,10 +193,17 @@ func IsAllowedGitCmd(logger log.Logger, args []string) bool {
 				return false
 			}
 		}
-		// diff argument may contains file path and isAllowedDiffArg helps verifying the file existence in disk 
+		// diff argument may contains file path and isAllowedDiffArg and isAllowedDiffPathArg
+		// helps verifying the file existence in disk
 		if cmd == "diff" {
-			if !strings.HasPrefix(arg,"-") && !isAllowedDiffArg(arg) {
+			dashIndex := slices.Index(args[1:], "--")
+			if (dashIndex < 0 || i < dashIndex) && !isAllowedDiffArg(arg) {
+				// verifies arguments before --
 				logger.Warn("IsAllowedGitCmd.isAllowedDiffArg", log.String("cmd", cmd), log.String("arg", arg))
+				return false
+			} else if (i > dashIndex && dashIndex >= 0) && !isAllowedDiffPathArg(arg, dir) {
+				// verifies arguments after --
+				logger.Warn("IsAllowedGitCmd.isAllowedDiffPathArg", log.String("cmd", cmd), log.String("arg", arg))
 				return false
 			}
 		}

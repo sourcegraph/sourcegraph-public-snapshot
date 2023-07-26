@@ -61,6 +61,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	var resp protocol.CreateCommitFromPatchResponse
 
 	repo := string(protocol.NormalizeRepo(req.Repo))
+	repoDir := filepath.Join(s.ReposDir, repo)
 	repoGitDir := filepath.Join(s.ReposDir, repo, ".git")
 	if _, err := os.Stat(repoGitDir); os.IsNotExist(err) {
 		repoGitDir = filepath.Join(s.ReposDir, repo)
@@ -142,7 +143,7 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 	// Temporary logging command wrapper
 	prefix := fmt.Sprintf("%d %s ", atomic.AddUint64(&patchID, 1), repo)
 	run := func(cmd *exec.Cmd, reason string) ([]byte, error) {
-		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:]) {
+		if !gitdomain.IsAllowedGitCmd(logger, cmd.Args[1:], repoDir) {
 			return nil, errors.New("command not on allow list")
 		}
 
