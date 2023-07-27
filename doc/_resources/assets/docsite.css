@@ -996,7 +996,7 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
 .markdown-body .getting-started .btn {
   flex: 1;
   margin: 0.5em;
-  padding: 0.1rem 0.25rem;
+  padding: 1rem 1rem;
   color: var(--text-color);
   border-radius: 4px;
   border: 1px solid var(--sidebar-nav-active-bg);
