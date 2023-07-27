@@ -67,6 +67,7 @@ export const CommandInput: React.FunctionComponent<CommandInputProps> = React.me
     const extensions = useMemo(
         () => [
             staticExtensions,
+            [EditorView.lineWrapping].filter(() => readOnly),
             EditorState.readOnly.of(readOnly),
             EditorView.updateListener.of(update => {
                 if (update.docChanged) {
