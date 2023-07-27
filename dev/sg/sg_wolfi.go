@@ -11,13 +11,15 @@ var (
 	wolfiCommand = &cli.Command{
 		Name:        "wolfi",
 		Usage:       "Automate Wolfi related tasks",
-		Description: `Ideal for iterating quickly on new packages and base images, rather than relying on Continuous Integration`,
+		Description: `Build Wolfi packages and images locally, and update base image hashes`,
 		UsageText: `
 # Update base image hashes
 sg wolfi update-hashes
+
 # Build a specific package using a manifest from wolfi-packages/
 sg wolfi package jaeger
 sg wolfi package jaeger.yaml
+
 # Build a base image using a manifest from wolfi-images/
 sg wolfi image gitserver
 sg wolfi image gitserver.yaml
@@ -26,7 +28,7 @@ sg wolfi image gitserver.yaml
 		Subcommands: []*cli.Command{{
 			Name:      "package",
 			ArgsUsage: "<package-manifest>",
-			Usage:     "Build a package using a manifest from wolfi-packages/",
+			Usage:     "Build a package locally using a manifest from wolfi-packages/",
 			Action: func(ctx *cli.Context) error {
 				args := ctx.Args().Slice()
 				if len(args) == 0 {
@@ -55,7 +57,7 @@ sg wolfi image gitserver.yaml
 			{
 				Name:      "image",
 				ArgsUsage: "<base-image-manifest>",
-				Usage:     "Build a base image using a manifest from wolfi-images/",
+				Usage:     "Build a base image locally using a manifest from wolfi-images/",
 				Action: func(ctx *cli.Context) error {
 					args := ctx.Args().Slice()
 					if len(args) == 0 {
@@ -92,7 +94,7 @@ sg wolfi image gitserver.yaml
 			},
 			{
 				Name:   "update-hashes",
-				Usage:  "Update Wolfi dependency digests to the latest version",
+				Usage:  "Update Wolfi base images hashes to the latest versions",
 				Action: wolfi.UpdateHashes,
 			}},
 	}
