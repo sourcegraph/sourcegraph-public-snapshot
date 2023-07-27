@@ -473,6 +473,16 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 	}
 }
 
+// addrForRepo is a helper over the public AddrForRepo method and will use the command line args of
+// the currently running process to pass the userAgent to the AddrForRepo method.
+//
+// NOTE: You most probably do not want to be adding any functionality changes to this method and
+// instead all functionality change should be in the AddrForRepo method instead that this calls
+// under the hood. This guarantees that any modified approach to gitserver address resolution can be
+// used by all consumers of gitserver and not just the internal server which is where this method is
+// called from. Modifications to the address resolution scheme here will likely add a bug where this
+// Server's result of address lookup may vary from that of other services ending up in
+// inconsistencies with the shard_id of a repository.
 func (s *Server) addrForRepo(ctx context.Context, repoName api.RepoName, gitServerAddrs gitserver.GitserverAddresses) string {
 	return gitServerAddrs.AddrForRepo(ctx, s.Logger, filepath.Base(os.Args[0]), repoName)
 }
@@ -2230,7 +2240,7 @@ func (s *Server) cloneRepo(ctx context.Context, repoName api.RepoName, opts *clo
 	// Mark this repo as currently being cloned. We have to check again if someone else isn't already
 	// cloning since we released the lock. We released the lock since isCloneable is a potentially
 	// slow operation.
-	lock, ok := s.locker.TryAcquire(dir, "starting clone")
+	lock, ok := s.locker.TryAcquire(dir, "Starting clone")
 	if !ok {
 		// Someone else beat us to it
 		status, _ := s.locker.Status(dir)
@@ -2531,38 +2541,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 	return nil
 }
-
-// func (s *Server) ensurePoolRepoIsCloned(ctx context.Context, repoName api.RepoName, opts deduplicatedCloneOptions) error {
-// 	_, err := os.Stat(string(opts.poolDir))
-// 	if err != nil && !errors.Is(err, os.ErrNotExist) {
-// 		return errors.Wrapf(err, "failed to check if poolDir %q for repo %q exists", opts.poolDir, repoName)
-// 	}
-
-// 	if errors.Is(err, os.ErrNotExist) {
-// 		tmpPath, err := s.tempDir("clone-")
-// 		if err != nil {
-// 			return err
-// 		}
-// 		defer os.RemoveAll(tmpPath)
-// 		tmpPath = filepath.Join(tmpPath, ".git")
-// 		tmp := common.GitDir(tmpPath)
-
-// 		cmd, err := syncer.CloneCommand(ctx, remoteURL, tmpPath)
-// 		if err != nil {
-// 			return errors.Wrap(err, "get clone command")
-// 		}
-// 		if cmd.Env == nil {
-// 			cmd.Env = os.Environ()
-// 		}
-
-// 		// see issue #7322: skip LFS content in repositories with Git LFS configured
-// 		cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
-// 		logger.Info("cloning pool repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
-
-// 	}
-
-// 	return nil
-// }
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
