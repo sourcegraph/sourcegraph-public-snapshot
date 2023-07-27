@@ -11,7 +11,7 @@ type RepoURISet struct {
 	index collections.Set[string]
 }
 
-func NewRepoURICache(index collections.Set[string]) *RepoURISet {
+func NewRepoURISet(index collections.Set[string]) *RepoURISet {
 	if index == nil {
 		index = make(collections.Set[string])
 	}
@@ -34,3 +34,6 @@ func (c *RepoURISet) Overwrite(index collections.Set[string]) {
 	c.index = index
 	c.mu.Unlock()
 }
+
+// NewEmptyRepoURISet is syntactical sugar to initialise a RepoURISet with a nil set used in tests.
+func NewEmptyRepoURISet() *RepoURISet { return NewRepoURISet(nil) }

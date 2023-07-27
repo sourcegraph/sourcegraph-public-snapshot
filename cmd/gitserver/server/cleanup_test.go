@@ -44,6 +44,8 @@ func (s *Server) testSetup(t *testing.T) {
 	s.Handler() // Handler as a side-effect sets up Server
 	db := dbtest.NewDB(s.Logger, t)
 	s.DB = database.NewDB(s.Logger, db)
+	s.DB.Repos().Create(context.Background(), &types.Repo{})
+
 	s.Hostname = "gitserver-0"
 	s.RecordingCommandFactory = wrexec.NewNoOpRecordingCommandFactory()
 }
@@ -335,6 +337,8 @@ func TestGitGCAuto(t *testing.T) {
 func TestCleanupExpired(t *testing.T) {
 	root := t.TempDir()
 
+	// NOTE: If you're adding any new repos to this test, make sure you also insert them into the
+	// test DB as is being done below.
 	repoNew := path.Join(root, "repo-new", ".git")
 	repoOld := path.Join(root, "repo-old", ".git")
 	repoGCNew := path.Join(root, "repo-gc-new", ".git")
@@ -377,9 +381,30 @@ func TestCleanupExpired(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB: database.NewMockDB(),
+		DB:                   database.NewMockDB(),
+		DeduplicatedForksSet: types.NewEmptyRepoURISet(),
 	}
 	s.testSetup(t)
+
+	repoNames := []api.RepoName{
+		"repo-new",
+		"repo-old",
+		"repo-gc-new",
+		"repo-gc-old",
+		"repo-boom",
+		"repo-corrupt",
+		"repo-non-bare",
+		"repo-perforce",
+		"repo-perforce-gc-old",
+		"remote",
+	}
+
+	var repos []*types.Repo
+	for _, r := range repoNames {
+		repos = append(repos, &types.Repo{Name: r})
+	}
+
+	s.DB.Repos().Create(context.Background(), repos...)
 
 	modTime := func(path string) time.Time {
 		t.Helper()

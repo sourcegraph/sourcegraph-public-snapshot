@@ -55,6 +55,8 @@ type Test struct {
 	ExpectedCode     int
 	ExpectedBody     string
 	ExpectedTrailers http.Header
+
+	mockRepoGetByNameDefaultReturnFunc func() (*types.Repo, error)
 }
 
 func newRequest(method, path string, body io.Reader) *http.Request {
@@ -66,10 +68,11 @@ func newRequest(method, path string, body io.Reader) *http.Request {
 func TestExecRequest(t *testing.T) {
 	tests := []Test{
 		{
-			Name:         "HTTP GET",
-			Request:      newRequest("GET", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusMethodNotAllowed,
-			ExpectedBody: "",
+			Name:                               "HTTP GET",
+			Request:                            newRequest("GET", "/exec", strings.NewReader("{}")),
+			ExpectedCode:                       http.StatusMethodNotAllowed,
+			ExpectedBody:                       "",
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
 			Name:         "Command",
@@ -81,6 +84,7 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"42"},
 				"X-Exec-Stderr":      {"teststderr"},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
 			Name:         "CommandWithURL",
@@ -92,6 +96,7 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"42"},
 				"X-Exec-Stderr":      {"teststderr"},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
 			Name: "echo",
@@ -107,6 +112,7 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
 			Name: "stdin",
@@ -122,12 +128,14 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
-			Name:         "NonexistingRepo",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
+			Name:                               "NonexistingRepo",
+			Request:                            newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
+			ExpectedCode:                       http.StatusNotFound,
+			ExpectedBody:                       `{"cloneInProgress":false}`,
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return nil, &database.RepoNotFoundErr{Name: "NonexistingRepo"} },
 		},
 		{
 			Name: "NonexistingRepoWithURL",
@@ -135,18 +143,23 @@ func TestExecRequest(t *testing.T) {
 				"POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
 			ExpectedCode: http.StatusNotFound,
 			ExpectedBody: `{"cloneInProgress":false}`,
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) {
+				return nil, &database.RepoNotFoundErr{Name: "github.com/gorilla/doesnotexist"}
+			},
 		},
 		{
-			Name:         "UnclonedRepoWithoutURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
+			Name:                               "UnclonedRepoWithoutURL",
+			Request:                            newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
+			ExpectedCode:                       http.StatusNotFound,
+			ExpectedBody:                       `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/nicksnyder/go-i18n"}, nil },
 		},
 		{
-			Name:         "UnclonedRepoWithURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":true}`,
+			Name:                               "UnclonedRepoWithURL",
+			Request:                            newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
+			ExpectedCode:                       http.StatusNotFound,
+			ExpectedBody:                       `{"cloneInProgress":true}`,
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/nicksnyder/go-i18n"}, nil },
 		},
 		{
 			Name:         "Error",
@@ -157,24 +170,30 @@ func TestExecRequest(t *testing.T) {
 				"X-Exec-Exit-Status": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
-			Name:         "EmptyInput",
-			Request:      newRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "invalid command",
+			Name:                               "EmptyInput",
+			Request:                            newRequest("POST", "/exec", strings.NewReader("{}")),
+			ExpectedCode:                       http.StatusBadRequest,
+			ExpectedBody:                       "invalid command",
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/gorilla/mux"}, nil },
 		},
 		{
-			Name:         "BadCommand",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "invalid command",
+			Name:                               "BadCommand",
+			Request:                            newRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
+			ExpectedCode:                       http.StatusBadRequest,
+			ExpectedBody:                       "invalid command",
+			mockRepoGetByNameDefaultReturnFunc: func() (*types.Repo, error) { return &types.Repo{Name: "github.com/sourcegraph/sourcegraph"}, nil },
 		},
 	}
 
 	db := database.NewMockDB()
+	r := database.NewMockRepoStore()
 	gr := database.NewMockGitserverRepoStore()
+	db.ReposFunc.SetDefaultReturn(r)
 	db.GitserverReposFunc.SetDefaultReturn(gr)
+
 	s := &Server{
 		Logger:            logtest.Scoped(t),
 		ObservationCtx:    observation.TestContextTB(t),
@@ -188,6 +207,7 @@ func TestExecRequest(t *testing.T) {
 		},
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 	h := s.Handler()
 
@@ -237,6 +257,10 @@ func TestExecRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
+			if test.mockRepoGetByNameDefaultReturnFunc != nil {
+				r.GetByNameFunc.SetDefaultReturn(test.mockRepoGetByNameDefaultReturnFunc())
+			}
+
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
 			h.ServeHTTP(&w, test.Request)
 
@@ -695,19 +719,6 @@ func addCommitToRepo(cmd func(string, ...string) string) string {
 }
 
 func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
-	if db == nil {
-		mDB := database.NewMockDB()
-		mDB.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
-		mDB.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
-
-		repoStore := database.NewMockRepoStore()
-		repoStore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{})
-
-		mDB.ReposFunc.SetDefaultReturn(repoStore)
-
-		db = mDB
-	}
-
 	logger := logtest.Scoped(t)
 	obctx := observation.TestContextTB(t)
 
@@ -728,7 +739,7 @@ func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, d
 		rpsLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
 		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
-		DeduplicatedForksSet:    types.NewRepoURICache(nil),
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 
 	s.StartClonePipeline(ctx)
@@ -1349,6 +1360,21 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
+	exampleRepo := api.RepoName("example.com/foo/bar")
+
+	getMockDB := func() *database.MockDB {
+		db := database.NewMockDB()
+
+		db.GitserverReposFunc.SetDefaultReturn(database.NewMockGitserverRepoStore())
+		db.FeatureFlagsFunc.SetDefaultReturn(database.NewMockFeatureFlagStore())
+
+		repoStore := database.NewMockRepoStore()
+		repoStore.GetByNameFunc.SetDefaultReturn(&types.Repo{Name: exampleRepo}, nil)
+		db.ReposFunc.SetDefaultReturn(repoStore)
+
+		return db
+	}
+
 	t.Run("with no remote HEAD file", func(t *testing.T) {
 		var (
 			remote   = t.TempDir()
@@ -1362,11 +1388,12 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("git", "init", ".")
 		cmd("rm", ".git/HEAD")
 
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
+		s := makeTestServer(ctx, t, reposDir, remote, getMockDB())
+		if _, err := s.cloneRepo(ctx, exampleRepo, nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
+
 	t.Run("with an empty remote HEAD file", func(t *testing.T) {
 		var (
 			remote   = t.TempDir()
@@ -1380,11 +1407,12 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		cmd("git", "init", ".")
 		cmd("sh", "-c", ": > .git/HEAD")
 
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err == nil {
+		s := makeTestServer(ctx, t, reposDir, remote, getMockDB())
+		if _, err := s.cloneRepo(ctx, exampleRepo, nil); err == nil {
 			t.Fatal("expected an error, got none")
 		}
 	})
+
 	t.Run("with no local HEAD file", func(t *testing.T) {
 		var (
 			remote   = t.TempDir()
@@ -1396,7 +1424,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		)
 
 		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, t, reposDir, remote, getMockDB())
 
 		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			if err := os.Remove(tmpDir.Path("HEAD")); err != nil {
@@ -1404,11 +1432,11 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			}
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
+		if _, err := s.cloneRepo(ctx, exampleRepo, nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
-		dst := s.dir("example.com/foo/bar")
+		dst := s.dir(exampleRepo)
 		for i := 0; i < 1000; i++ {
 			_, cloning := s.locker.Status(dst)
 			if !cloning {
@@ -1425,6 +1453,7 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 			t.Fatal("expected a reconstituted HEAD, but the file is empty")
 		}
 	})
+
 	t.Run("with an empty local HEAD file", func(t *testing.T) {
 		var (
 			remote   = t.TempDir()
@@ -1436,18 +1465,18 @@ func TestCloneRepo_EnsureValidity(t *testing.T) {
 		)
 
 		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		s := makeTestServer(ctx, t, reposDir, remote, getMockDB())
 
 		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
 		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.cloneRepo(ctx, "example.com/foo/bar", nil); err != nil {
+		if _, err := s.cloneRepo(ctx, exampleRepo, nil); err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
 
 		// wait for repo to be cloned
-		dst := s.dir("example.com/foo/bar")
+		dst := s.dir(exampleRepo)
 		for i := 0; i < 1000; i++ {
 			_, cloning := s.locker.Status(dst)
 			if !cloning {

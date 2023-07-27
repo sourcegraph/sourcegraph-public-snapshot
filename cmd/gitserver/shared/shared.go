@@ -165,7 +165,7 @@ func Main(ctx context.Context, observationCtx *observation.Context, ready servic
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(batchLogGlobalConcurrencyLimit)),
 		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
 		RecordingCommandFactory: recordingCommandFactory,
-		DeduplicatedForksSet:    types.NewRepoURICache(conf.GetDeduplicatedForksIndex()),
+		DeduplicatedForksSet:    types.NewRepoURISet(conf.GetDeduplicatedForksIndex()),
 	}
 
 	conf.Watch(func() {

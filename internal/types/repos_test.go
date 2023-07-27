@@ -9,7 +9,7 @@ import (
 
 func TestRepoURICache(t *testing.T) {
 	index := collections.NewSet[string]("abc", "def")
-	cache := NewRepoURICache(index)
+	cache := NewRepoURISet(index)
 
 	require.True(t, cache.Contains("abc"))
 	require.False(t, cache.Contains("ghi"))

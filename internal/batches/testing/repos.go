@@ -113,8 +113,10 @@ func CreateTestRepos(t *testing.T, ctx context.Context, db database.DB, count in
 	for i := 0; i < count; i++ {
 		r := TestRepoWithService(t, esStore, fmt.Sprintf("repo-%d-%d", ext.ID, i+1), ext)
 		r.Metadata = &github.Repository{
-			NameWithOwner: string(r.Name),
-			URL:           fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name)),
+			BaseRepository: &github.BaseRepository{
+				NameWithOwner: string(r.Name),
+				URL:           fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name)),
+			},
 		}
 
 		r.Sources[ext.URN()].CloneURL = fmt.Sprintf("https://github.com/sourcegraph/%s", string(r.Name))

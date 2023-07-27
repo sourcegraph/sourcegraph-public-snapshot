@@ -806,7 +806,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			}
 		}
 
-		if err := s.maybePrepareForDeduplication(ctx, svc, sourced); err != nil {
+		if err := s.maybePrepareForDeduplication(ctx, sourced); err != nil {
 			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
 		}
 
@@ -836,7 +836,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			return Diff{}, errors.Wrapf(err, "syncer: failed to create external service repo: %s", sourced.Name)
 		}
 
-		if err := s.maybePrepareForDeduplication(ctx, svc, sourced); err != nil {
+		if err := s.maybePrepareForDeduplication(ctx, sourced); err != nil {
 			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
 		} else {
 			s.ObsvCtx.Logger.Warn("no error in maybePrepareForDeduplication", log.String("repo", string(sourced.Name)))
@@ -855,7 +855,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 // maybePrepareForDeduplication will:
 // 1. Get the repo_id of the parent repo
 // 2. Insert that as the pool_id into gitserver_repos table
-func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, svc *types.ExternalService, repo *types.Repo) error {
+func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, repo *types.Repo) error {
 	// Nothing special needs to be done for non-forks.
 	if !repo.Fork {
 		return nil
