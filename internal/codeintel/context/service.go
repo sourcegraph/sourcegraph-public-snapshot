@@ -130,17 +130,15 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		}
 		trace.AddEvent("contextSvc.getSCIPDocumentByContent", attribute.String("filename", filename))
 
-		fuzzySymbolNameMap := map[string]struct{}{}
+		fuzzySymbolNameSet := precise.NewSet[string]()
 		rng := translateToScipRange(args.Input.ActiveFileSelectionRange)
 		for _, occurrence := range syntectDocument.Occurrences {
 			if rng == nil || precise.IsOccurrenceWithinRange(rng, occurrence) {
-				fuzzySymbolNameMap[occurrence.Symbol] = struct{}{}
+				fuzzySymbolNameSet.Add(occurrence.Symbol)
 			}
 		}
-		fuzzySymbolNames := make([]string, 0, len(fuzzySymbolNameMap))
-		for fuzzyName := range fuzzySymbolNameMap {
-			fuzzySymbolNames = append(fuzzySymbolNames, fuzzyName)
-		}
+
+		fuzzySymbolNames := fuzzySymbolNameSet.ToSlice()
 		sort.Strings(fuzzySymbolNames)
 		trace.AddEvent("fuzzySymbolNames", attribute.StringSlice("fuzzyNames", fuzzySymbolNames))
 

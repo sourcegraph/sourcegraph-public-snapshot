@@ -87,26 +87,21 @@ func (s *store) GetSymbolNamesByRange(ctx context.Context, bundleID int, path st
 	}})
 	defer endObservation(1, observation.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(stencilQuery, bundleID, path)))
+	d, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(stencilQuery, bundleID, path)))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	trace.AddEvent("GetSymbolNamesByRange", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
+	trace.AddEvent("GetSymbolNamesByRange", attribute.Int("numOccurrences", len(d.SCIPData.Occurrences)))
 
-	symbolNameMap := map[string]struct{}{}
-	for _, occurrence := range documentData.SCIPData.Occurrences {
-		if r == nil || precise.IsOccurrenceWithinRange(r, occurrence) {
-			symbolNameMap[occurrence.Symbol] = struct{}{}
+	symbolNameSet := precise.NewSet[string]()
+	for _, occ := range d.SCIPData.Occurrences {
+		if r == nil || precise.IsOccurrenceWithinRange(r, occ) {
+			symbolNameSet.Add(occ.Symbol)
 		}
 	}
 
-	symbolNames := make([]string, 0, len(symbolNameMap))
-	for symbolName := range symbolNameMap {
-		symbolNames = append(symbolNames, symbolName)
-	}
-
-	return symbolNames, nil
+	return symbolNameSet.ToSlice(), nil
 }
 
 // GetRanges returns definition, reference, implementation, and hover data for each range within the given span of lines.
