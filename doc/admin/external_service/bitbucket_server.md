@@ -72,7 +72,7 @@ Generate a *Consumer Key* in your terminal with `echo sourcegraph$(openssl rand 
 
 <img src="https://imgur.com/1kK2Y5x.png" width="800">
 
-Generate an RSA key pair in your terminal with `openssl genrsa -out sourcegraph.pem 4096 && openssl rsa -in sourcegraph.pem -pubout > sourcegraph.pub`. Copy the contents of `sourcegraph.pub` and paste them in the *Public Key* field.
+Generate an RSA key pair in your terminal with `openssl genrsa -out sourcegraph.pem 4096 && openssl rsa -in sourcegraph.pem -pubout > sourcegraph.pub`. Copy the contents of `sourcegraph.pub` and paste them in the *Public Key* field. **Note** If you run into this error `use ParsePKCS8PrivateKey instead for this key format`, add the `-traditional` flag to the `openssl genrsa` command.
 
 <img src="https://imgur.com/YHm1uSr.png" width="800">
 
