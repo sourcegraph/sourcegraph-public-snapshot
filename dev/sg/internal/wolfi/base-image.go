@@ -68,7 +68,7 @@ func (c PackageRepoConfig) DoBaseImageBuild(name string, buildDir string) error 
 	}
 
 	std.Out.Write("")
-	std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully built base image %s\n", name))
+	std.Out.WriteSuccessf("Successfully built base image %s\n", name)
 
 	return nil
 }

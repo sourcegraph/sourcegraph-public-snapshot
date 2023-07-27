@@ -159,7 +159,7 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 		return err
 	}
 
-	std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully built package %s\n", name))
+	std.Out.WriteSuccessf("Successfully built package %s\n", name)
 	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to the base image config\n", name))
 
 	return nil
