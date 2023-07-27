@@ -4,6 +4,12 @@ import (
 	"context"
 )
 
+// SliceConnectionResolver defines the interface that slice-based connection
+// resolvers need to implement. It provides resolver functions for connection fields.
+//
+// Nodes returns the slice of nodes for the connection.
+// TotalCount returns the total number of nodes available.
+// PageInfo returns pagination information for the connection.
 type SliceConnectionResolver[T any] interface {
 	Nodes(ctx context.Context) []T
 	TotalCount(ctx context.Context) int32
