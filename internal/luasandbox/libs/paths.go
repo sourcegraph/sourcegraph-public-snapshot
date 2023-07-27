@@ -41,7 +41,7 @@ func (api pathAPI) LuaAPI() map[string]lua.LGFunction {
 // this function will return an empty string (instead of a `.`) to indicate an empty
 // directory name.
 func dirWithoutDot(path string) string {
-	if dir := filepath.Dir(path); dir != "." {
+	if dir := filepath.Dir(path); dir != "." && dir != "/" {
 		return dir
 	}
 	return ""

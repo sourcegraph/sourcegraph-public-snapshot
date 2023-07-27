@@ -11,6 +11,7 @@ func TestDirWithoutDot(t *testing.T) {
 		actual   string
 		expected string
 	}{
+		{dirWithoutDot("/"), ""},
 		{dirWithoutDot("foo.txt"), ""},
 		{dirWithoutDot("foo/bar.txt"), "foo"},
 		{dirWithoutDot("foo/baz"), "foo"},
@@ -35,3 +36,17 @@ func TestAncestorDirs(t *testing.T) {
 
 	}
 }
+
+func TestAncestorDirsRoots(t *testing.T) {
+	expectedAncestors := []string{
+		"/foo/bar/baz",
+		"/foo/bar",
+		"/foo",
+		"",
+	}
+	if diff := cmp.Diff(expectedAncestors, ancestorDirs("/foo/bar/baz/bonk.txt")); diff != "" {
+		t.Errorf("unexpected ancestor dirs (-want +got):\n%s", diff)
+
+	}
+}
+
