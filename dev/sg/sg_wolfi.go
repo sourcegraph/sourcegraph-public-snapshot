@@ -1,12 +1,8 @@
 package main
 
 import (
-	"strings"
-
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/wolfi"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -39,21 +35,17 @@ sg wolfi image gitserver.yaml
 				packageName := args[0]
 
 				// Set up package repo + keypair
-				// TODO: Get location of sourcegraph directory
 				c, err := wolfi.InitLocalPackageRepo()
 				if err != nil {
 					return err
 				}
 
-				// TODO: Sanitise .yaml input
-				// TODO: Check file exists + copy to tempdir
-				// TODO: Run docker command
-				buildDir, err := wolfi.SetupPackageBuild(packageName)
+				manifestBaseName, buildDir, err := wolfi.SetupPackageBuild(packageName)
 				if err != nil {
 					return err
 				}
 
-				err = c.DoPackageBuild(packageName, buildDir)
+				err = c.DoPackageBuild(manifestBaseName, buildDir)
 				if err != nil {
 					return err
 				}
@@ -71,16 +63,16 @@ sg wolfi image gitserver.yaml
 						return errors.New("no base image manifest file provided")
 					}
 
-					resolver, err := getTeamResolver(ctx.Context)
-					if err != nil {
-						return err
-					}
-					teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
-					if err != nil {
-						return err
-					}
-					std.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
-					return open.URL(teammate.HandbookLink)
+					// packageName := args[0]
+
+					// // Set up package repo + keypair
+					// c, err := wolfi.InitLocalPackageRepo()
+					// if err != nil {
+					// 	return err
+					// }
+
+					return nil
+
 				},
 			},
 			{
