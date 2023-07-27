@@ -4,9 +4,15 @@
 package enterprisecmd
 
 import (
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 )
+
+func init() {
+	// TODO(sqs): TODO(single-binary): could we move this out of init?
+	oobmigration.ReturnEnterpriseMigrations = true
+}
 
 var config = svcmain.Config{}
 
