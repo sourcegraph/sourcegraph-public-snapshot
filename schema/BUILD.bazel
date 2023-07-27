@@ -107,3 +107,26 @@ go_test(
         "@com_github_xeipuuv_gojsonschema//:gojsonschema",
     ],
 )
+
+# gazelle:resolve go github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler //tool/go-jsonschema-compiler
+
+genrule(
+    name = "generate",
+    srcs  = glob(["*.json"]),
+    outs = [
+        "bitbucket_server_util.go",
+        "bitbucketcloud_util.go",
+        "extension_schema.go",
+        "gen.go",
+        "github_util.go",
+        "gitlab_util.go",
+        "schema.go",
+        "stringdata.go",
+    ],
+    cmd = """
+    $(location @com_github_sourcegraph_go_jsonschema//:cmd/go-json-compiler) --help
+    """,
+    tools = [
+        "@com_github_sourcegraph_go_jsonschema",
+    ],
+)

@@ -251,6 +251,21 @@ go_repository(
     version = "v1.14.1",
 )
 
+go_repository(
+    name = "com_github_sourcegraph_go_jsonschema_compiler",
+    build_file_content = """
+    load("@io_bazel_rules_go//go:deps.bzl", "go_binary")
+
+    go_binary(
+        name = "go-jsonschema-compiler",
+        srcs = ["go-jsonschema-compiler.go]
+    )
+    """,
+    build_file_proto_mode = "disable_global",
+    commit = "d14e9f2",
+    importpath = "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler",
+)  # keep
+
 # Overrides the default provided protobuf dep from rules_go by a more
 # recent one.
 go_repository(
