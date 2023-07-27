@@ -305,6 +305,5 @@ func IsOccurrenceWithinRange(rng *scip.Range, occurrence *scip.Occurrence) bool 
 	}
 	occRange := scip.NewRange(occurrence.Range)
 
-	return CompareRange(*rng, occRange.Start.Line, occRange.Start.Character) == 0 &&
-		CompareRange(*rng, occRange.End.Line, occRange.End.Character) == 0
+	return CompareRange(*rng, occRange.Start.Line, occRange.Start.Character) == 0
 }
