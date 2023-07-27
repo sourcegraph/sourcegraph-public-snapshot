@@ -166,6 +166,8 @@ func generateConfig(configFile string, dryRun bool) error {
 	}
 
 	if dryRun {
+
+		fmt.Printf("This is a dry run. The following files would be created:\n\n")
 		t := template.Must(template.New("k8s").Parse(k8sTemplate))
 		err = t.Execute(os.Stdout, &values)
 		if err != nil {
