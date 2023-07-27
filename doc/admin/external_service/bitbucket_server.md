@@ -54,6 +54,61 @@ This section walks you through the process of setting up an *Application Link be
 
 As an admin user, go to the "Application Links" page. You can use the sidebar navigation in the admin dashboard, or go directly to [https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks](https://bitbucketserver.example.com/plugins/servlet/applinks/listApplicationLinks).
 
+There has been some [changes to the flow in Bitbucket v7.20](https://confluence.atlassian.com/bitbucketserver/bitbucket-data-center-and-server-7-20-release-notes-1101934428.html), so depending on your Bitbucket version, the first part of the setup is slightly different.
+#### Bitbucket v7.20 and above
+
+<!-- Duplicating content in this section and in 7.19 on purpose. If we decide to implement OAuth2 support, the 7.20 instructions would be much more different than now -->
+
+Click on **Create** link button. 
+
+![Screenshot of Bitbucket Application Links page.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/application_links_landing_page.png)
+
+Make sure **Atlassian product** is selected (This will probably look confusing, but it is the only way to setup legacy OAuth app that Sourcegraph supports).
+Write Sourcegraph's external URL in the **Application URL** field and click **Continue**. Click **Continue** on the next screen again, even if Bitbucket Server / Bitbucket Data Center warns you about the given URL not responding.
+
+![Screenshot of Bitbucket Create Link form.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/create_link_part_1.png)
+
+Write `Sourcegraph` as the *Application Name* and select `Generic Application` as the *Application Type*. Leave everything else unset and click **Continue**.
+
+![Screenshot of second part of Bitbucket Create Link form.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/create_link_part_2.png)
+
+Now click the edit button in the `Sourcegraph` Application Link that you just created and select the `Incoming Authentication` panel.
+
+![Screenshot of first part of Bitbucket Edit Link form.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/edit_link_part_1.png)
+
+Generate a *Consumer Key* in your terminal with `echo sourcegraph$(openssl rand -hex 16)`. Copy this command's output and paste it in the *Consumer Key* field. Write `Sourcegraph` in the *Consumer Name* field.
+
+![Screenshot of second part of Bitbucket Edit Link form.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/edit_link_part_2.png)
+
+Generate an RSA key pair in your terminal with `openssl genrsa -out sourcegraph.pem 4096 && openssl rsa -in sourcegraph.pem -pubout > sourcegraph.pub`. Copy the contents of `sourcegraph.pub` and paste them in the *Public Key* field.
+
+![Screenshot of third part of Bitbucket Edit Link form.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/edit_link_part_3.png)
+
+Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write your admin account's username in the *Execute as* field and, lastly, check the *Allow user impersonation through 2-Legged OAuth* checkbox. Press **Save**.
+
+![Screenshot of last part of Bitbucket Edit Link form.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/edit_link_part_4.png)
+
+Go to your Sourcegraph's *Manage code hosts* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
+
+```json
+{
+	// Other config goes here
+	"authorization": {
+		"identityProvider": {
+			"type": "username"
+		},
+		"oauth": {
+			"consumerKey": "<KEY GOES HERE>",
+			"signingKey": "<KEY GOES HERE>"
+		}
+	}
+}
+```
+
+Copy the *Consumer Key* you generated before to the `oauth.consumerKey` field and the output of the command `base64 sourcegraph.pem | tr -d '\n'` to the `oauth.signingKey` field. Finally, **save the configuration**. You're done!
+
+#### Bitbucket v7.19 and below
+
 <img src="https://imgur.com/Hg4bzOf.png" width="800">
 
 Write Sourcegraph's external URL in the text area (e.g. `https://sourcegraph.example.com`) and click **Create new link**. Click **Continue** even if Bitbucket Server / Bitbucket Data Center warns you about the given URL not responding.
