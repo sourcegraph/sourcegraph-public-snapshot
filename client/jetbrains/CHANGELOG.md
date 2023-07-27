@@ -16,6 +16,8 @@
 
 - Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
 
+- Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
+
 ### Security
 
 ## [3.0.8]
