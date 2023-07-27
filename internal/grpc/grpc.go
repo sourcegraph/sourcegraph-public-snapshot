@@ -27,14 +27,3 @@ func MultiplexHandlers(grpcServer *grpc.Server, httpHandler http.Handler) http.H
 	// h2s protocol, so this hijacks h2s requests and handles them correctly.
 	return h2c.NewHandler(newHandler, &http2.Server{})
 }
-
-const envGRPCEnabled = "SG_FEATURE_FLAG_GRPC"
-
-func IsGRPCEnabled(ctx context.Context) bool {
-	if val, err := strconv.ParseBool(os.Getenv(envGRPCEnabled)); err == nil {
-		return val
-
-	}
-	return conf.Get().ExperimentalFeatures.EnableGRPC
-}
-
