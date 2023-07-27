@@ -93,4 +93,4 @@ Yes!
 | Name                    | macOS                                         | Windows                                     | Linux    |
 | ----------------------- | --------------------------------------------- | ------------------------------------------- | -------- |
 | Fixup                   | <kbd>Ctrl</kbd>+<kbd>Opt</kbd>+<kbd>/</kbd>   | <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>/</kbd> | **todo** |
-| Start inline discussion | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> | **todo**                                    | **todo** |
+| Start inline discussion | <kbd>Ctrl</kbd>+<kbd>Shift</kbd>+<kbd>C</kbd> | **todo**                                    | **todo**  |
