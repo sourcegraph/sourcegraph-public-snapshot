@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v41/github"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -222,7 +223,6 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 	}
 
 	err := c.internalRateLimiter.Wait(ctx)
-
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.
