@@ -45,6 +45,7 @@ go_test(
         "//internal/extsvc",
         "//internal/extsvc/auth",
         "//internal/extsvc/gitlab",
+        "//internal/featureflag",
         "//internal/oauthutil",
         "//internal/rcache",
         "//internal/types",
