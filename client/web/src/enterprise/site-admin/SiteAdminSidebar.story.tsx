@@ -1,6 +1,6 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { Grid } from '@sourcegraph/wildcard'
+import { Code, Grid } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 import { SiteAdminSidebar } from '../../site-admin/SiteAdminSidebar'
@@ -27,11 +27,11 @@ export const AdminSidebarItems: Story = () => (
     <WebStory>
         {webProps => (
             <Grid columnCount={5}>
-                <code>isSourcegraphApp=true</code>
-                <code>default</code>
-                <code>isSourcegraphDotCom=true</code>
-                <code>batchChangesEnabled=false</code>
-                <code>codeInsightsEnabled=false</code>
+                <Code>isSourcegraphApp=true</Code>
+                <Code>default</Code>
+                <Code>isSourcegraphDotCom=true</Code>
+                <Code>batchChangesEnabled=false</Code>
+                <Code>codeInsightsEnabled=false</Code>
                 <SiteAdminSidebar
                     {...webProps}
                     groups={enterpriseSiteAdminSidebarGroups}
