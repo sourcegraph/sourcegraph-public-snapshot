@@ -2534,7 +2534,7 @@ func (c *clientImplementor) ArchiveReader(
 	}
 
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
+		client, err := c.clientSource.ClientForRepo(c.userAgent, repo)
 		if err != nil {
 			return nil, err
 		}
