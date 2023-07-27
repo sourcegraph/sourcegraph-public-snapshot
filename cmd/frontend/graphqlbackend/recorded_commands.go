@@ -16,6 +16,15 @@ import (
 // recorded commands. It should always be in sync with the default in `cmd/frontend/graphqlbackend/schema.graphql`
 const recordedCommandMaxLimit = 40
 
+var MockGetRecordedCommandMaxLimit func() int
+
+func GetRecordedCommandMaxLimit() int {
+	if MockGetRecordedCommandMaxLimit != nil {
+		return MockGetRecordedCommandMaxLimit()
+	}
+	return recordedCommandMaxLimit
+}
+
 type RecordedCommandsArgs struct {
 	Limit  int32
 	Offset int32
@@ -24,8 +33,9 @@ type RecordedCommandsArgs struct {
 func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *RecordedCommandsArgs) (graphqlutil.SliceConnectionResolver[RecordedCommandResolver], error) {
 	offset := int(args.Offset)
 	limit := int(args.Limit)
-	if limit == 0 || limit > recordedCommandMaxLimit {
-		limit = recordedCommandMaxLimit
+	maxLimit := GetRecordedCommandMaxLimit()
+	if limit == 0 || limit > maxLimit {
+		limit = maxLimit
 	}
 	currentEnd := offset + limit
 
