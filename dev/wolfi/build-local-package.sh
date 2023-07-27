@@ -2,6 +2,10 @@
 
 set -eu -o pipefail
 
+###
+### DEPRECATED in favour of `sg wolfi package`
+###
+
 # This script can be used to quickly build packages locally when working on package configs in this directory.
 # In production, packages are built using the CI pipeline.
 

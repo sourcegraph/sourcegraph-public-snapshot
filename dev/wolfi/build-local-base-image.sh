@@ -2,6 +2,10 @@
 
 set -euo pipefail
 
+###
+### DEPRECATED in favour of `sg wolfi image`
+###
+
 # This script can be used to quickly build base images locally when working on image configs in this directory.
 # In production, base images are built using the CI pipeline.
 
