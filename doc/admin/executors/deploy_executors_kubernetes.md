@@ -75,6 +75,7 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | KUBERNETES_FS_GROUP                                          | `1000`            | The group ID to run all containers in the Kubernetes jobs as.                                                                                                                                          |
 | KUBERNETES_KEEP_JOBS                                         | `false`           | If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.                                                                                                                |
 | KUBERNETES_JOB_ANNOTATIONS                                   | N/A               | The JSON encoded annotations to add to the Kubernetes Jobs. e.g. `{"foo": "bar", "faz": "baz"}`                                                                                                        |
+| KUBERNETES_JOB_POD_ANNOTATIONS                               | N/A               | The JSON encoded annotations to add to the Kubernetes Job Pods. e.g. `{"foo": "bar", "faz": "baz"}`                                                                                                    |
 | KUBERNETES_IMAGE_PULL_SECRETS                                | N/A               | The names of Kubernetes image pull secrets to use for pulling images. e.g. my-secret,my-other-secret                                                                                                   |
 
 <!--
