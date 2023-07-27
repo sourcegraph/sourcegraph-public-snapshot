@@ -20,6 +20,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Experimental support for Azure OpenAI for the completions and embeddings provider has been added. [#55178](https://github.com/sourcegraph/sourcegraph/pull/55178)
 - Added a feature flag for alternate GitLab project visibility resolution. This may solve some weird cases with not being able to see GitLab internal projects. [#54426](https://github.com/sourcegraph/sourcegraph/pull/54426)
   - To use this feature flag, create a Boolean feature flag named "gitLabProjectVisibilityExperimental" and set the value to True.
+- It is now possible to add annotations to pods spawned by jobs created by the Kubernetes executor. [#55361](https://github.com/sourcegraph/sourcegraph/pull/55361)
 
 ### Changed
 
