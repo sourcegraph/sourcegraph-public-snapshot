@@ -34,7 +34,8 @@ func NewChunkPoint(payload ChunkPayload, vector []float32) ChunkPoint {
 			payload.RepoID,
 			payload.Revision,
 			payload.FilePath,
-			int(payload.StartLine),
+			payload.StartLine,
+			payload.EndLine,
 		),
 		Payload: payload,
 		Vector:  vector,
@@ -120,19 +121,19 @@ func (p *ChunkPayload) FromQdrantPayload(payload map[string]*qdrant.Value) {
 	}
 }
 
-func chunkUUID(repoID api.RepoID, revision api.CommitID, filePath string, startLine int) uuid.UUID {
+// chunkUUID generates a stable UUID for a file chunk. It is not strictly necessary to have a stable ID,
+// but it does make it easier to reason about idempotent updates.
+func chunkUUID(repoID api.RepoID, revision api.CommitID, filePath string, startLine, endLine uint32) uuid.UUID {
 	hasher := fnv.New128()
 
 	var buf [4]byte
 
 	binary.LittleEndian.PutUint32(buf[:], uint32(repoID))
 	hasher.Write(buf[:])
-
 	hasher.Write([]byte(revision))
-
 	hasher.Write([]byte(filePath))
-
-	binary.LittleEndian.PutUint32(buf[:], uint32(startLine))
+	binary.LittleEndian.PutUint32(buf[:], startLine)
+	binary.LittleEndian.PutUint32(buf[:], endLine)
 	hasher.Write(buf[:])
 
 	var u uuid.UUID
