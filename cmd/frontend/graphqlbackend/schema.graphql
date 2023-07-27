@@ -3896,7 +3896,9 @@ type Repository implements Node & GenericSearchResultInterface {
     recordedCommands(
         """
         Maximum number of recorded commands returned.
-        (Default: 40)
+        If a query specifies a limit higher than 40, it will be capped at 40.
+        The default value is 40. This prevents returning an excessive number
+        of recorded commands for performance reasons.
         """
         limit: Int = 40
         """
