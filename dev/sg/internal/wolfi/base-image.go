@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 func (c PackageRepoConfig) SetupBaseImageBuild(name string) (manifestBaseName string, buildDir string, err error) {
@@ -35,8 +37,8 @@ func (c PackageRepoConfig) SetupBaseImageBuild(name string) (manifestBaseName st
 }
 
 func (c PackageRepoConfig) DoBaseImageBuild(name string, buildDir string) error {
-	fmt.Printf("📦 Building base image '%s'...\n\n", name)
-	fmt.Printf("Apko build output:\n\n")
+	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building base image %s...", name))
+	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Apko build output:\n"))
 
 	imageName := fmt.Sprintf("sourcegraph-wolfi/%s-base:latest", name)
 	imageFileName := fmt.Sprintf("sourcegraph-wolfi-%s-base.tar", name)
@@ -65,8 +67,8 @@ func (c PackageRepoConfig) DoBaseImageBuild(name string, buildDir string) error 
 		return errors.Wrap(err, "failed to build base image")
 	}
 
-	fmt.Printf("\n")
-	fmt.Printf("✅ Successfully built base image '%s'\n\n", name)
+	std.Out.Write("")
+	std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully built base image %s\n", name))
 
 	return nil
 }
@@ -81,7 +83,7 @@ func imageFileName(name string) string {
 
 func (c PackageRepoConfig) LoadBaseImage(name string) error {
 	baseImagePath := filepath.Join(c.ImageDir, imageFileName(name))
-	fmt.Printf("🐳 Loading base image into Docker... (%s)\n", baseImagePath)
+	std.Out.WriteLine(output.Linef("🐳", output.StylePending, "Loading base image into Docker... (%s)", baseImagePath))
 
 	f, err := os.Open(baseImagePath)
 	if err != nil {
@@ -99,8 +101,8 @@ func (c PackageRepoConfig) LoadBaseImage(name string) error {
 		return errors.Wrap(err, "failed to load base image in Docker")
 	}
 
-	fmt.Printf("\n")
-	fmt.Printf("🛠  Run base image using:\n\n\tdocker run -it --entrypoint /bin/sh %s\n\n", dockerImageName(name))
+	std.Out.Write("")
+	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Run base image locally using:\n\n\tdocker run -it --entrypoint /bin/sh %s...\n", dockerImageName(name)))
 
 	return nil
 }

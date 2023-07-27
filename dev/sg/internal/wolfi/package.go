@@ -7,8 +7,10 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 // PackageRepoConfig represents config for a local package repo
@@ -53,7 +55,6 @@ func InitLocalPackageRepo() (PackageRepoConfig, error) {
 	if err == nil {
 		f.Close()
 	} else if os.IsNotExist(err) {
-		fmt.Printf("Error is %s\n", err)
 		if err := c.GenerateKeypair(); err != nil {
 			return c, err
 		}
@@ -67,7 +68,7 @@ func InitLocalPackageRepo() (PackageRepoConfig, error) {
 // GenerateKeypair generates a new RSA keypair for signing packages
 func (c PackageRepoConfig) GenerateKeypair() error {
 	// Run docker command
-	fmt.Printf(" 🗝️  Initializing keypair for local repo... under %s\n", c.KeyDir)
+	std.Out.WriteLine(output.Linef("🗝️ ", output.StylePending, "Initializing keypair for local repo..."))
 
 	cmd := exec.Command(
 		"docker", "run", "--rm",
@@ -82,7 +83,7 @@ func (c PackageRepoConfig) GenerateKeypair() error {
 		return errors.Wrap(err, "failed to generate keypair")
 	}
 
-	fmt.Printf(" 🔐 Keypair initialized\n")
+	std.Out.WriteLine(output.Linef("🔐", output.StyleSuccess, "Keypair initialized"))
 
 	return nil
 }
@@ -132,8 +133,8 @@ func SetupPackageBuild(name string) (manifestBaseName string, buildDir string, e
 
 // DoPackageBuild builds a package using the provided build config
 func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
-	fmt.Printf("📦 Building package '%s'...\n\n", name)
-	fmt.Printf("Melange build output:\n\n")
+	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building package %s...", name))
+	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Melange build output:\n"))
 
 	cmd := exec.Command(
 		"docker", "run", "--rm", "--privileged",
@@ -152,14 +153,14 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 		return errors.Wrap(err, "failed to build package")
 	}
 
-	fmt.Printf("\n")
+	std.Out.Write("")
 
 	if err := deleteBuildDir(buildDir); err != nil {
 		return err
 	}
 
-	fmt.Printf(" ✅  Successfully built package '%s'\n", name)
-	fmt.Printf(" 🛠️  Use this package in local image builds by adding the package '%s@local' to the base image config\n", name)
+	std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Successfully built package %s\n", name))
+	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to the base image config\n", name))
 
 	return nil
 }
