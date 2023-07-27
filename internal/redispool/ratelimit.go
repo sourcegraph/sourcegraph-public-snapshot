@@ -3,42 +3,55 @@ package redispool
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
-	rateLimitScript          *redis.Script
+	globalRateLimiter        *rateLimiter
+	globalRateLimiterOnce    sync.Once
 	tokenBucketGlobablPrefix = "v2:rate_limiters"
-	bucketCapacity           = 2
-	bucketRefillRate         = 2
 )
 
 type RateLimiter interface {
-	GetTokensFromBucket(ctx context.Context, tokenBucketName string, amount int) (allowed bool, remianingTokens int, err error)
+	GetTokensFromBucket(ctx context.Context, bucketName string, getBucketInfoFunc func(db database.DB) (bucketCapacity, bucketReplenishRateSeconds int, err error), tokensWanted int) (allowed bool, remianingTokens int, err error)
 }
 
 type rateLimiter struct {
 	pool *redis.Pool
+	db   database.DB
 }
 
-func NewRateLimiter(logger log.Logger) (RateLimiter, error) {
+func InitializeGlobalRateLimiter(db database.DB) error {
 	var err error
-	pool, ok := Cache.Pool()
-	if !ok {
-		err = errors.New("unable to get redis connection")
-	}
-	return &rateLimiter{
-		pool: pool,
-	}, err
+	globalRateLimiterOnce.Do(func() {
+		var err2 error
+		pool, ok := Cache.Pool()
+		if !ok {
+			err = errors.New("unable to get redis connection")
+		} else if err2 != nil {
+			err = err2
+		}
+		globalRateLimiter = &rateLimiter{
+			pool: pool,
+			db:   db,
+		}
+	})
+	return err
 }
 
-func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, tokenBucketName string, amount int) (allowed bool, remianingTokens int, err error) {
-	result, err := redis.NewScript(1, rateLimitLuaScript).DoContext(ctx, r.pool.Get(), fmt.Sprintf("%s:%s", tokenBucketGlobablPrefix, tokenBucketName), bucketCapacity, bucketRefillRate, amount)
+func GetGlobalRateLimiter() RateLimiter {
+	return globalRateLimiter
+}
+
+func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, bucketName string, getBucketInfoFunc func(db database.DB) (bucketCapacity, bucketReplenishIntervalSeconds int, err error), tokensWanted int) (allowed bool, remianingTokens int, err error) {
+	bucketCapacity, bucketReplenishIntervalSeconds, err := getBucketInfoFunc(r.db)
+	result, err := redis.NewScript(1, rateLimitLuaScript).DoContext(ctx, r.pool.Get(), fmt.Sprintf("%s:%s", tokenBucketGlobablPrefix, bucketName), bucketCapacity, bucketReplenishIntervalSeconds, tokensWanted)
 	if err != nil {
-		return false, 0, errors.Wrapf(err, "error while getting tokens from bucket %s", tokenBucketName)
+		return false, 0, errors.Wrapf(err, "error while getting tokens from bucket %s", bucketName)
 	}
 
 	response, ok := result.([]interface{})
@@ -55,14 +68,14 @@ func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, tokenBucketName s
 	if !ok {
 		return false, 0, errors.New("unexpected response for tokens left")
 	}
-	fmt.Printf("Finished getting tokens for: %s, amount remaining: %d, allowed: %+v\n", tokenBucketName, remTokens, allwd == 1)
+	fmt.Printf("Finished getting tokens for: %s, amount remaining: %d, allowed: %+v\n", bucketName, remTokens, allwd == 1)
 
 	return allwd == 1, int(remTokens), nil
 }
 
 const rateLimitLuaScript = `local bucket_key = KEYS[1]
 local capacity = tonumber(ARGV[1])
-local refill_rate = tonumber(ARGV[2])
+local replenish_interval_seconds = tonumber(ARGV[2])
 local request_tokens = tonumber(ARGV[3])
 
 -- Check if the bucket exists.
@@ -71,7 +84,7 @@ local bucket_exists = redis.call('EXISTS', bucket_key)
 -- If the bucket does not exist or has expired, replenish the bucket and set the new expiration time.
 if bucket_exists == 0 then
     redis.call('SET', bucket_key, capacity)
-    redis.call('EXPIRE', bucket_key, 3600)
+    redis.call('EXPIRE', bucket_key, replenish_interval_seconds)
 end
 
 -- Get the current token count in the bucket.
