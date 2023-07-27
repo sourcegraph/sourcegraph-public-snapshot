@@ -428,6 +428,58 @@ func TestRecordedCommandsResolver(t *testing.T) {
 					`,
 			})
 		})
+
+		t.Run("limit exceeds recordedCommandMaxLimit", func(t *testing.T) {
+			MockGetRecordedCommandMaxLimit = func() int {
+				return 1
+			}
+			t.Cleanup(func() {
+				MockGetRecordedCommandMaxLimit = nil
+			})
+			RunTest(t, &Test{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+						{
+							repository(name: "github.com/sourcegraph/sourcegraph") {
+								recordedCommands(limit: 20) {
+									nodes {
+										start
+										duration
+										command
+										dir
+										path
+									}
+									totalCount
+									pageInfo {
+										hasNextPage
+									}
+								}
+							}
+						}
+					`,
+				ExpectedResult: `
+						{
+							"repository": {
+								"recordedCommands": {
+									"nodes": [
+										{
+											"command": "git ls-files",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 5,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										}
+									],
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": true
+									}
+								}
+							}
+						}
+					`,
+			})
+		})
 	})
 }
 
