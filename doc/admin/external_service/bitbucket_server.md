@@ -72,7 +72,7 @@ Write `Sourcegraph` as the *Application Name* and select `Generic Application` a
 
 ![Screenshot of second part of Bitbucket Create Link form.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/create_link_part_2.png)
 
-Now click the edit button in the `Sourcegraph` Application Link that you just created and select the `Incoming Authentication` panel.
+Now click the **Edit** button in the `Sourcegraph` Application Link that you just created and select the **Incoming Authentication** panel.
 
 ![Screenshot of first part of Bitbucket Edit Link form.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/edit_link_part_1.png)
 
