@@ -1,0 +1,283 @@
+package messagesize
+
+import (
+	"context"
+	"io"
+	"strconv"
+	"sync"
+	"sync/atomic"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"google.golang.org/grpc"
+	"google.golang.org/protobuf/proto"
+
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+const (
+	B  = 1
+	KB = 1024 * B
+	MB = 1024 * KB
+	GB = 1024 * MB
+)
+
+var metricSingleMessageSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name: "src_grpc_sent_individual_message_size_per_rpc_bytes",
+	Help: "Size of individual messages sent per RPC.",
+	Buckets: []float64{
+		0,
+		1 * KB,
+		10 * KB,
+		50 * KB,
+		100 * KB,
+		500 * KB,
+		1 * MB,
+		5 * MB,
+		10 * MB,
+		50 * MB,
+		100 * MB,
+		500 * MB,
+		1 * GB,
+		5 * GB,
+		10 * GB,
+	},
+}, []string{
+	"grpc_service", // e.g. "gitserver.v1.GitserverService"
+	"grpc_method",  // e.g. "Exec"
+	"is_server",    // e.g. "true"
+})
+
+var metricTotalSentPerRPCBytes = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	Name: "src_grpc_sent_bytes_per_rpc",
+	Help: "Total size of all the messages during the course of a single RPC call",
+	Buckets: []float64{
+		0,
+		1 * KB,
+		10 * KB,
+		50 * KB,
+		100 * KB,
+		500 * KB,
+		1 * MB,
+		5 * MB,
+		10 * MB,
+		50 * MB,
+		100 * MB,
+		500 * MB,
+		1 * GB,
+		5 * GB,
+		10 * GB,
+	},
+}, []string{
+	"grpc_service", // e.g. "gitserver.v1.GitserverService"
+	"grpc_method",  // e.g. "Exec"
+	"is_server",    // e.g. "true"
+})
+
+// UnaryServerInterceptor is a grpc.UnaryServerInterceptor that records Prometheus metrics that observe the size of
+// the response message sent back by the server for a single RPC call.
+func UnaryServerInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	r, err := handler(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	response, ok := r.(proto.Message)
+	if !ok {
+		return r, nil
+	}
+
+	o := newMessageSizeObserver(info.FullMethod, true)
+
+	o.Observe(response)
+	o.FinishRPC()
+
+	return response, nil
+}
+
+// StreamServerInterceptor is a grpc.StreamServerInterceptor that records Prometheus metrics that observe both the sizes of the
+// individual response messages and the cumulative response size of all the message sent back by the server over the course
+// of a single RPC call.
+func StreamServerInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	observer := newMessageSizeObserver(info.FullMethod, true)
+	wrappedStream := newObservingServerStream(ss, observer)
+
+	err := handler(srv, wrappedStream)
+	if err != nil {
+		// Don't record the total size of the messages if there was an error sending them, since they may not have been sent.
+		return err
+	}
+
+	// Record the total size of the messages sent during the course of the RPC call.
+	observer.FinishRPC()
+	return nil
+}
+
+// UnaryClientInterceptor is a grpc.UnaryClientInterceptor that records Prometheus metrics that observe the size of
+// the request message sent by client for a single RPC call.
+func UnaryClientInterceptor(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	o := newMessageSizeObserver(method, false)
+
+	err := invoker(ctx, method, req, reply, cc, opts...)
+	if err != nil {
+		// Don't record the size of the message if there was an error sending it, since it may not have been sent.
+		return err
+	}
+
+	// Observe the size of the request message.
+	request, ok := req.(proto.Message)
+	if !ok {
+		return nil
+	}
+
+	o.Observe(request)
+	o.FinishRPC()
+
+	return nil
+}
+
+// StreamClientInterceptor is a grpc.StreamClientInterceptor that records Prometheus metrics that observe both the sizes of the
+// individual request messages and the cumulative request size of all the message sent by the client over the course
+// of a single RPC call.
+func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
+	observer := newMessageSizeObserver(method, false)
+
+	s, err := streamer(ctx, desc, cc, method, opts...)
+	if err != nil {
+		return nil, err
+	}
+
+	wrappedStream := newObservingClientStream(s, observer)
+	return wrappedStream, nil
+}
+
+type observingServerStream struct {
+	grpc.ServerStream
+
+	observer *messageSizeObserver
+}
+
+func newObservingServerStream(s grpc.ServerStream, observer *messageSizeObserver) grpc.ServerStream {
+	return &observingServerStream{
+		ServerStream: s,
+		observer:     observer,
+	}
+}
+
+func (s *observingServerStream) SendMsg(m any) error {
+	err := s.ServerStream.SendMsg(m)
+	if err != nil {
+		// Don't record the size of the message if there was an error sending it, since it may not have been sent.
+		return err
+	}
+
+	// Observe the size of the sent message.
+	message, ok := m.(proto.Message)
+	if !ok {
+		return nil
+	}
+
+	s.observer.Observe(message)
+	return nil
+}
+
+type observingClientStream struct {
+	grpc.ClientStream
+
+	observer *messageSizeObserver
+}
+
+func newObservingClientStream(s grpc.ClientStream, observer *messageSizeObserver) grpc.ClientStream {
+	return &observingClientStream{
+		ClientStream: s,
+		observer:     observer,
+	}
+}
+
+func (s *observingClientStream) SendMsg(m any) error {
+	err := s.ClientStream.SendMsg(m)
+	if err != nil {
+		// Don't record the size of the message if there was an error sending it, since it may not have been sent.
+		return err
+	}
+
+	// Observe the size of the sent message.
+	message, ok := m.(proto.Message)
+	if !ok {
+		return nil
+	}
+
+	s.observer.Observe(message)
+	return nil
+}
+
+func (s *observingClientStream) RecvMsg(m any) error {
+	err := s.ClientStream.RecvMsg(m)
+	if errors.Is(err, io.EOF) { // EOF indicates a successful end of stream.
+
+		// Record the total size of the messages sent during the course of the RPC call.
+		s.observer.FinishRPC()
+	}
+
+	// Note: we don't call FinishRPC() if there was a real error, since the total size of the messages sent during the
+	// course of the RPC call may not be accurate.
+	return err
+}
+
+func newMessageSizeObserver(fullMethod string, isServer bool) *messageSizeObserver {
+	serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
+	isServerLabel := strconv.FormatBool(isServer)
+
+	onSingle := func(messageSize uint64) {
+		metricSingleMessageSize.WithLabelValues(serviceName, methodName, isServerLabel).Observe(float64(messageSize))
+	}
+
+	onFinish := func(totalSize uint64) {
+		metricTotalSentPerRPCBytes.WithLabelValues(serviceName, methodName, isServerLabel).Observe(float64(totalSize))
+	}
+
+	return &messageSizeObserver{
+		onSingleFunc: onSingle,
+		onFinishFunc: onFinish,
+	}
+}
+
+// messageSizeObserver is a utility that records Prometheus metrics that observe the size of each sent message and the
+// cumulative size of all sent messages during the course of a single RPC call.
+type messageSizeObserver struct {
+	onSingleFunc func(messageSizeBytes uint64)
+
+	finishOnce   sync.Once
+	onFinishFunc func(totalSizeBytes uint64)
+
+	totalSizeBytes uint64
+}
+
+// Observe records the size of a single message.
+func (o *messageSizeObserver) Observe(message proto.Message) {
+	s := uint64(proto.Size(message))
+	o.onSingleFunc(s)
+
+	atomic.AddUint64(&o.totalSizeBytes, s)
+}
+
+// FinishRPC records the total size of all sent messages during the course of a single RPC call.
+// This function should only be called once the RPC call has completed.
+func (o *messageSizeObserver) FinishRPC() {
+	o.finishOnce.Do(func() {
+		o.onFinishFunc(atomic.LoadUint64(&o.totalSizeBytes))
+	})
+}
+
+var (
+	_ grpc.ServerStream = &observingServerStream{}
+	_ grpc.ClientStream = &observingClientStream{}
+)
+
+var (
+	_ grpc.UnaryServerInterceptor  = UnaryServerInterceptor
+	_ grpc.StreamServerInterceptor = StreamServerInterceptor
+	_ grpc.UnaryClientInterceptor  = UnaryClientInterceptor
+	_ grpc.StreamClientInterceptor = StreamClientInterceptor
+)
