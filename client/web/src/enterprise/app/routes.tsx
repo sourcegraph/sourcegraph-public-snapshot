@@ -59,6 +59,7 @@ export const APP_ROUTES: RouteObject[] = [
                         routes={props.siteAdminAreaRoutes}
                         sideBarGroups={props.siteAdminSideBarGroups}
                         overviewComponents={props.siteAdminOverviewComponents}
+                        codeInsightsEnabled={!!props.codeInsightsEnabled}
                     />
                 )}
             />
