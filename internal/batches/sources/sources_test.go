@@ -109,8 +109,10 @@ func TestGetCloneURL(t *testing.T) {
 				URI:     "github.com/sourcegraph/sourcegraph",
 				Sources: sources,
 				Metadata: &github.Repository{
-					NameWithOwner: "sourcegraph/sourcegraph",
-					URL:           "https://github.com/sourcegraph/sourcegraph",
+					BaseRepository: &github.BaseRepository{
+						NameWithOwner: "sourcegraph/sourcegraph",
+						URL:           "https://github.com/sourcegraph/sourcegraph",
+					},
 				},
 			}
 
@@ -354,8 +356,10 @@ func TestSourcer_ForChangeset(t *testing.T) {
 		URI:     "test-repo",
 		Private: true,
 		Metadata: &github.Repository{
-			ID:            "external-id-123",
-			NameWithOwner: "some-org/test-repo",
+			BaseRepository: &github.BaseRepository{
+				ID:            "external-id-123",
+				NameWithOwner: "some-org/test-repo",
+			},
 		},
 		ExternalRepo: api.ExternalRepoSpec{
 			ID:          "external-id-123",

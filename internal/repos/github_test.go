@@ -231,17 +231,19 @@ func TestGithubSource_GetRepo(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:             "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
-						DatabaseID:     41288708,
-						NameWithOwner:  "sourcegraph/sourcegraph",
-						Description:    "Code search and navigation tool (self-hosted)",
-						URL:            "https://github.com/sourcegraph/sourcegraph",
-						StargazerCount: 2220,
-						ForkCount:      164,
-						// We're hitting github.com here, so visibility will be empty irrespective
-						// of repository type. This is a GitHub enterprise only feature.
-						Visibility:       "",
-						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{}},
+						BaseRepository: &github.BaseRepository{
+							ID:             "MDEwOlJlcG9zaXRvcnk0MTI4ODcwOA==",
+							DatabaseID:     41288708,
+							NameWithOwner:  "sourcegraph/sourcegraph",
+							Description:    "Code search and navigation tool (self-hosted)",
+							URL:            "https://github.com/sourcegraph/sourcegraph",
+							StargazerCount: 2220,
+							ForkCount:      164,
+							// We're hitting github.com here, so visibility will be empty irrespective
+							// of repository type. This is a GitHub enterprise only feature.
+							Visibility:       "",
+							RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{}},
+						},
 					},
 				}
 
@@ -322,16 +324,18 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 						},
 					},
 					Metadata: &github.Repository{
-						ID:               "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
-						DatabaseID:       442285,
-						NameWithOwner:    "admiring-austin-120/fluffy-enigma",
-						Description:      "Internal repo used in tests in sourcegraph code.",
-						URL:              "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
-						StargazerCount:   0,
-						ForkCount:        0,
-						IsPrivate:        true,
-						Visibility:       github.VisibilityInternal,
-						RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{{Topic: github.Topic{Name: "fluff"}}}},
+						BaseRepository: &github.BaseRepository{
+							ID:               "MDEwOlJlcG9zaXRvcnk0NDIyODU=",
+							DatabaseID:       442285,
+							NameWithOwner:    "admiring-austin-120/fluffy-enigma",
+							Description:      "Internal repo used in tests in sourcegraph code.",
+							URL:              "https://ghe.sgdev.org/admiring-austin-120/fluffy-enigma",
+							StargazerCount:   0,
+							ForkCount:        0,
+							IsPrivate:        true,
+							Visibility:       github.VisibilityInternal,
+							RepositoryTopics: github.RepositoryTopics{Nodes: []github.RepositoryTopic{{Topic: github.Topic{Name: "fluff"}}}},
+						},
 					},
 				}
 
@@ -409,7 +413,7 @@ func TestMakeRepo_NullCharacter(t *testing.T) {
 	rcache.SetupForTest(t)
 
 	r := &github.Repository{
-		Description: "Fun nulls \x00\x00\x00",
+		BaseRepository: &github.BaseRepository{Description: "Fun nulls \x00\x00\x00"},
 	}
 
 	svc := types.ExternalService{
@@ -568,11 +572,14 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 
 				resp.Data.Search.RepositoryCount = 5
 				resp.Data.Search.Nodes = []github.Repository{
-					{DatabaseID: 1}, {DatabaseID: 2}, {DatabaseID: 3}, {DatabaseID: 4},
+					{BaseRepository: &github.BaseRepository{DatabaseID: 1}},
+					{BaseRepository: &github.BaseRepository{DatabaseID: 1}},
+					{BaseRepository: &github.BaseRepository{DatabaseID: 3}},
+					{BaseRepository: &github.BaseRepository{DatabaseID: 4}},
 				}
 
 				if requestCounter >= tc.requestsBeforeFullSet {
-					resp.Data.Search.Nodes = append(resp.Data.Search.Nodes, github.Repository{DatabaseID: 5})
+					resp.Data.Search.Nodes = append(resp.Data.Search.Nodes, github.Repository{BaseRepository: &github.BaseRepository{DatabaseID: 5}})
 				}
 
 				encoder := json.NewEncoder(w)
@@ -842,9 +849,9 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 	}
 
 	for _, r := range []*github.Repository{
-		{IsDisabled: true},
-		{IsLocked: true},
-		{IsDisabled: true, IsLocked: true},
+		{BaseRepository: &github.BaseRepository{IsDisabled: true}},
+		{BaseRepository: &github.BaseRepository{IsLocked: true}},
+		{BaseRepository: &github.BaseRepository{IsDisabled: true, IsLocked: true}},
 	} {
 		if !githubSrc.excludes(r) {
 			t.Errorf("GitHubSource should exclude %+v", r)

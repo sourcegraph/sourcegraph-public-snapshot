@@ -28,7 +28,7 @@ func TestRepository(t *testing.T) {
 				ServiceType: extsvc.GitHubDotCom.ServiceType,
 			},
 			Metadata: &github.Repository{
-				URL: "http://github.com/foo/bar",
+				BaseRepository: &github.BaseRepository{URL: "http://github.com/foo/bar"},
 			},
 		}
 
@@ -210,7 +210,7 @@ func TestCommit(t *testing.T) {
 			ServiceType: extsvc.GitHubDotCom.ServiceType,
 		},
 		Metadata: &github.Repository{
-			URL: "http://github.com/foo/bar",
+			BaseRepository: &github.BaseRepository{URL: "http://github.com/foo/bar"},
 		},
 	}
 

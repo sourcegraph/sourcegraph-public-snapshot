@@ -276,7 +276,7 @@ func TestExcludeRepoFromExternalServices_NoExistingExcludedRepos_NewExcludedRepo
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
-		metadata := &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}
+		metadata := &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/sourcegraph"}}
 		return &types.Repo{ID: api.RepoID(1), Name: "github.com/sourcegraph/sourcegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
 	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
@@ -339,7 +339,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_AnotherExcludedRepoA
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
-		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
+		metadata := &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/horsegraph"}}
 		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
 	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
@@ -400,7 +400,7 @@ func TestExcludeRepoFromExternalServices_ExcludedRepoExists_SameRepoIsNotExclude
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
-		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
+		metadata := &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/horsegraph"}}
 		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
 	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
@@ -471,7 +471,7 @@ func TestExcludeRepoFromExternalServices_ExcludedFromTwoExternalServices(t *test
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
 		spec := api.ExternalRepoSpec{ServiceType: extsvc.KindGitHub}
-		metadata := &github.Repository{NameWithOwner: "sourcegraph/horsegraph"}
+		metadata := &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/horsegraph"}}
 		return &types.Repo{ID: api.RepoID(2), Name: "github.com/sourcegraph/horsegraph", ExternalRepo: spec, Metadata: metadata}, nil
 	})
 	repoupdater.MockSyncExternalService = func(_ context.Context, _ int64) (*protocol.ExternalServiceSyncResult, error) {
