@@ -546,6 +546,26 @@ type Mutation {
         Used on Sourcegraph Cloud only.
         """
         insertID: String
+        """
+        The client that this event is being sent from.
+        """
+        client: String
+        """
+        The product category for the event, used for billing purposes.
+        """
+        billingProductCategory: String
+        """
+        The billing ID for the event, used for tagging user events for billing aggregation purposes.
+        """
+        billingEventID: String
+        """
+        The site ID that the client was connected to when the event was logged.
+        """
+        connectedSiteID: String
+        """
+        The connected site's license key, hashed using sha256. Used for uniquely identifying the site.
+        """
+        hashedLicenseKey: String
     ): EmptyResponse
     """
     Logs a batch of events.
