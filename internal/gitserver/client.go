@@ -33,7 +33,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -608,9 +607,8 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		return nil, err
 	}
 
- 
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.execer.ClientForRepo(ctx, repoName)
+		client, err := c.execer.ClientForRepo(repoName)
 		if err != nil {
 			return nil, err
 		}
@@ -703,7 +701,11 @@ func convertGRPCErrorToGitDomainError(err error) error {
 		return context.Canceled
 	}
 
- {
+	if st.Code() == codes.DeadlineExceeded {
+		return context.DeadlineExceeded
+	}
+
+	for _, detail := range st.Details() {
 		switch payload := detail.(type) {
 
 		case *proto.ExecStatusPayload:
@@ -763,7 +765,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 	repoName := protocol.NormalizeRepo(args.Repo)
 
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repoName)
+		client, err := c.ClientForRepo(repoName)
 
 		if err != nil {
 			return false, err
@@ -886,7 +888,7 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 	}
 
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, "")
+		client, err := c.ClientForRepo("")
 		if err != nil {
 			return nil, nil, err
 		}
@@ -1169,9 +1171,8 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		Since: since,
 	}
 
-
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
+		client, err := c.ClientForRepo(repo)
 
 		if err != nil {
 			return nil, err
@@ -1210,7 +1211,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
+		client, err := c.ClientForRepo(repo)
 		if err != nil {
 			return nil, err
 		}
@@ -1263,7 +1264,7 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 	var resp protocol.IsRepoCloneableResponse
 
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
+		client, err := c.ClientForRepo(repo)
 		if err != nil {
 			return err
 		}
@@ -1515,7 +1516,7 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 	// the old name in order to land on the correct gitserver instance
 	repo = api.UndeletedRepoName(repo)
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, repo)
+		client, err := c.ClientForRepo(repo)
 		if err != nil {
 			return err
 		}
@@ -1606,63 +1607,63 @@ func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName,
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, req.Repo)
-			if err != nil {
-				return nil, err
-			}
-			resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
-			if err != nil {
-				return nil, err
-			}
-
-			var res protocol.CreateCommitFromPatchResponse
-			res.FromProto(resp)
-
-			if resp.GetError() != nil {
-				return &res, errors.New(resp.GetError().String())
-			}
-
-			return &res, nil
-		} else {
-			resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
-			if err != nil {
-				return nil, err
-			}
-			defer resp.Body.Close()
-
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to read response body")
-			}
-			var res protocol.CreateCommitFromPatchResponse
-			if err := json.Unmarshal(body, &res); err != nil {
-				c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
-				return nil, &url.Error{
-					URL: resp.Request.URL.String(),
-					Op:  "CreateCommitFromPatch",
-					Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
-				}
-			}
-
-			if res.Error != nil {
-				return &res, res.Error
-			}
-			return &res, nil
+		client, err := c.ClientForRepo(req.Repo)
+		if err != nil {
+			return nil, err
 		}
+		resp, err := client.CreateCommitFromPatchBinary(ctx, req.ToProto())
+		if err != nil {
+			return nil, err
+		}
+
+		var res protocol.CreateCommitFromPatchResponse
+		res.FromProto(resp)
+
+		if resp.GetError() != nil {
+			return &res, errors.New(resp.GetError().String())
+		}
+
+		return &res, nil
+	} else {
+		resp, err := c.httpPost(ctx, req.Repo, "create-commit-from-patch-binary", req)
+		if err != nil {
+			return nil, err
+		}
+		defer resp.Body.Close()
+
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, errors.Wrap(err, "failed to read response body")
+		}
+		var res protocol.CreateCommitFromPatchResponse
+		if err := json.Unmarshal(body, &res); err != nil {
+			c.logger.Warn("decoding gitserver create-commit-from-patch response", sglog.Error(err))
+			return nil, &url.Error{
+				URL: resp.Request.URL.String(),
+				Op:  "CreateCommitFromPatch",
+				Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.StatusCode, string(body)),
+			}
+		}
+
+		if res.Error != nil {
+			return &res, res.Error
+		}
+		return &res, nil
+	}
+}
+
+func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
+	if ClientMocks.GetObject != nil {
+		return ClientMocks.GetObject(repo, objectName)
 	}
 
-	func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error) {
-		if ClientMocks.GetObject != nil {
-			return ClientMocks.GetObject(repo, objectName)
-		}
-
-		req := protocol.GetObjectRequest{
-			Repo:       repo,
-			ObjectName: objectName,
-		}
+	req := protocol.GetObjectRequest{
+		Repo:       repo,
+		ObjectName: objectName,
+	}
 
 	if conf.IsGRPCEnabled(ctx) {
-		client, err := c.ClientForRepo(ctx, req.Repo)
+		client, err := c.ClientForRepo(req.Repo)
 		if err != nil {
 			return nil, err
 		}
