@@ -12,19 +12,7 @@
 
 ### Fixed
 
-### Security
-
-## [3.0.8]
-
-### Added
-
-### Changed
-
-### Deprecated
-
-### Removed
-
-### Fixed
+- Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
 
 ### Security
 
