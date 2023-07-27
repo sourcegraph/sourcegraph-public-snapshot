@@ -101,7 +101,7 @@ func SetupPackageBuild(name string) (manifestBaseName string, buildDir string, e
 	manifestPath := filepath.Join(repoRoot, "wolfi-packages", manifestFileName)
 	manifestDir := filepath.Join(repoRoot, "wolfi-packages", manifestBaseName)
 
-	if _, err := os.Open(manifestPath); err != nil {
+	if _, err := os.Stat(manifestDir); os.IsNotExist(err) {
 		return "", "", errors.Wrap(err, "manifest file does not exist")
 	}
 
