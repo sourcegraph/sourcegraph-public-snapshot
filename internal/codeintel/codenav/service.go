@@ -1191,38 +1191,33 @@ func (s *Service) GetStencil(ctx context.Context, args PositionalRequestArgs, re
 	return dedupeRanges(sortedRanges), nil
 }
 
-// GetStencilToo returns the set of locations defining the symbol at the given position.
-func (s *Service) GetStencilToo(ctx context.Context, args RequestArgs, path string, requestState RequestState, r *scip.Range) (symbolsNames []string, err error) {
+// GetSymbolNamesByRange returns the symbol names within the given range.
+func (s *Service) GetSymbolNamesByRange(ctx context.Context, args RequestArgs, path string, rs RequestState, rng *scip.Range) (symbolsNames []string, err error) {
 	ctx, trace, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
 		attribute.Int("repositoryID", args.RepositoryID),
 		attribute.String("commit", args.Commit),
 		attribute.String("path", path),
-		attribute.Int("numUploads", len(requestState.GetCacheUploads())),
-		attribute.String("uploads", uploadIDsToString(requestState.GetCacheUploads())),
+		attribute.Int("numUploads", len(rs.GetCacheUploads())),
+		attribute.String("uploads", uploadIDsToString(rs.GetCacheUploads())),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	adjustedUploads, err := s.getUploadPaths(ctx, path, requestState)
+	ups, err := s.getUploadPaths(ctx, path, rs)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range adjustedUploads {
-		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", adjustedUploads[i].Upload.ID))
+	for i := range ups {
+		trace.AddEvent("GetSymbolNamesByRange", attribute.Int("uploadID", ups[i].Upload.ID))
 
-		symbolNames, err := s.lsifstore.GetStencilToo(
-			ctx,
-			adjustedUploads[i].Upload.ID,
-			adjustedUploads[i].TargetPathWithoutRoot,
-			r,
-		)
+		sn, err := s.lsifstore.GetSymbolNamesByRange(ctx, ups[i].Upload.ID, ups[i].TargetPathWithoutRoot, rng)
 		if err != nil {
-			return nil, errors.Wrap(err, "lsifStore.StencilToo")
+			return nil, errors.Wrap(err, "lsifStore.GetSymbolNamesByRange")
 		}
 
-		symbolsNames = append(symbolsNames, symbolNames...)
+		symbolsNames = append(symbolsNames, sn...)
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numRanges", len(symbolsNames)))
+	trace.AddEvent("GetSymbolNamesByRange", attribute.Int("symbolsNames", len(symbolsNames)))
 
 	return symbolsNames, nil
 }

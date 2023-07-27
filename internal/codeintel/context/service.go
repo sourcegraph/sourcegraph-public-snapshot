@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
 
@@ -127,35 +128,21 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		if err != nil {
 			return nil, err
 		}
-		trace.AddEvent("contextSvc.getSCIPDocumentByContent",
-			attribute.String("filename", filename),
-		)
+		trace.AddEvent("contextSvc.getSCIPDocumentByContent", attribute.String("filename", filename))
 
 		fuzzySymbolNameMap := map[string]struct{}{}
-		var rng *scip.Range
-		if args.Input.ActiveFileSelectionRange != nil {
-			rng = &scip.Range{
-				Start: scip.Position{
-					Line:      int32(args.Input.ActiveFileSelectionRange.StartLine),
-					Character: int32(args.Input.ActiveFileSelectionRange.StartCharacter),
-				},
-				End: scip.Position{
-					Line:      int32(args.Input.ActiveFileSelectionRange.EndLine),
-					Character: int32(args.Input.ActiveFileSelectionRange.EndCharacter),
-				},
-			}
-		}
+		rng := translateToScipRange(args.Input.ActiveFileSelectionRange)
 		for _, occurrence := range syntectDocument.Occurrences {
-			if rng == nil || ComparePosition(*rng, int(scip.NewRange(occurrence.Range).Start.Line), int(scip.NewRange(occurrence.Range).Start.Character)) == 0 {
+			if rng == nil || precise.IsOccurrenceWithinRange(rng, occurrence) {
 				fuzzySymbolNameMap[occurrence.Symbol] = struct{}{}
 			}
 		}
 		fuzzySymbolNames := make([]string, 0, len(fuzzySymbolNameMap))
 		for fuzzyName := range fuzzySymbolNameMap {
-			trace.AddEvent("symbolNameMap", attribute.String("symbolName", fuzzyName)) // TODO - batch
 			fuzzySymbolNames = append(fuzzySymbolNames, fuzzyName)
 		}
 		sort.Strings(fuzzySymbolNames)
+		trace.AddEvent("fuzzySymbolNames", attribute.StringSlice("fuzzyNames", fuzzySymbolNames))
 
 		// DEBUGGING
 		lap("PHASE 1: %d symbols from %s: %v\n", len(fuzzySymbolNames), filename, fuzzySymbolNames)
@@ -257,21 +244,8 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		// DEBUGGING
 		lap("PHASE 2: %d matching precise symbols\n", len(fuzzyNameSetBySymbol))
 	} else {
-		var rng *scip.Range
-		if args.Input.ActiveFileSelectionRange != nil {
-			rng = &scip.Range{
-				Start: scip.Position{
-					Line:      int32(args.Input.ActiveFileSelectionRange.StartLine),
-					Character: int32(args.Input.ActiveFileSelectionRange.StartCharacter),
-				},
-				End: scip.Position{
-					Line:      int32(args.Input.ActiveFileSelectionRange.EndLine),
-					Character: int32(args.Input.ActiveFileSelectionRange.EndCharacter),
-				},
-			}
-		}
 		// TODO: we might have to strip the root active file
-		symbolsNames, err := s.codenavSvc.GetStencilToo(ctx, requestArgs, filename, reqState, rng)
+		symbolsNames, err := s.codenavSvc.GetSymbolNamesByRange(ctx, requestArgs, filename, reqState, translateToScipRange(args.Input.ActiveFileSelectionRange))
 		if err != nil {
 			return nil, err
 		}
@@ -436,26 +410,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 // 	return strings.Join(c, "\n")
 // }
 
-func ComparePosition(r scip.Range, line, character int) int {
-	if line < int(r.Start.Line) {
-		return 1
-	}
-
-	if line > int(r.End.Line) {
-		return -1
-	}
-
-	if line == int(r.Start.Line) && character < int(r.Start.Character) {
-		return 1
-	}
-
-	if line == int(r.End.Line) && character >= int(r.End.Character) {
-		return -1
-	}
-
-	return 0
-}
-
 func extractSnippet(lines []string, startLine, endLine, startChar, endChar int32) string {
 	if startLine > endLine || startLine < 0 || endLine >= int32(len(lines)) {
 		return ""
@@ -519,4 +473,15 @@ func (s *Service) getSCIPDocumentByContent(ctx context.Context, content, fileNam
 
 func (s *Service) SplitIntoEmbeddableChunks(ctx context.Context, text string, fileName string, splitOptions SplitOptions) ([]EmbeddableChunk, error) {
 	return SplitIntoEmbeddableChunks(text, fileName, splitOptions), nil
+}
+
+func translateToScipRange(ar *resolverstubs.ActiveFileSelectionRangeInput) (r *scip.Range) {
+	if ar == nil {
+		return nil
+	}
+
+	return &scip.Range{
+		Start: scip.Position{Line: int32(ar.StartLine), Character: int32(ar.StartCharacter)},
+		End:   scip.Position{Line: int32(ar.EndLine), Character: int32(ar.EndCharacter)},
+	}
 }
