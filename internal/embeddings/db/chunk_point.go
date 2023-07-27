@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 )
 
+// ChunkResult is a point along with its search score.
 type ChunkResult struct {
 	Point ChunkPoint
 	Score float32
@@ -88,6 +89,8 @@ const (
 	fieldIsCode    PayloadField = "isCode"
 )
 
+// ChunkPayload is a well-typed representation of the payload we store in the vector DB.
+// Changes to the contents of this struct may require a migration of the data in the DB.
 type ChunkPayload struct {
 	RepoName           api.RepoName
 	RepoID             api.RepoID

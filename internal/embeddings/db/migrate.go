@@ -8,11 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
 )
 
-type ExpectedCollectionConfig struct {
-	Name   string
-	Config *qdrant.CollectionConfig
-}
-
 func ensureModelCollectionWithDefaultConfig(ctx context.Context, cc qdrant.CollectionsClient, modelID string, modelDims uint64) error {
 	// Make the actual collection end with `.default` so we can switch between
 	// configurations with aliases.
