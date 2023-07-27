@@ -279,20 +279,20 @@ func GroupedBundleDataChansToMaps(chans *GroupedBundleDataChans) *GroupedBundleD
 // CompareRange compares the given range to the given line and character. It returns 0 if the
 // range contains the line and character, 1 if the range starts after the line and character,
 // and -1 if the range ends before the line and character.
-func CompareRange(r scip.Range, line, character int32) int {
-	if line < r.Start.Line {
+func CompareRange(r scip.Range, line, character int) int {
+	if line < int(r.Start.Line) {
 		return 1
 	}
 
-	if line > r.End.Line {
+	if line > int(r.End.Line) {
 		return -1
 	}
 
-	if line == r.Start.Line && character < r.Start.Character {
+	if line == int(r.Start.Line) && character < int(r.Start.Character) {
 		return 1
 	}
 
-	if line == r.End.Line && character >= r.End.Character {
+	if line == int(r.End.Line) && character >= int(r.End.Character) {
 		return -1
 	}
 
@@ -305,5 +305,5 @@ func IsOccurrenceWithinRange(rng *scip.Range, occurrence *scip.Occurrence) bool 
 	}
 	occRange := scip.NewRange(occurrence.Range)
 
-	return CompareRange(*rng, occRange.Start.Line, occRange.Start.Character) == 0
+	return CompareRange(*rng, int(occRange.Start.Line), int(occRange.Start.Character)) == 0
 }

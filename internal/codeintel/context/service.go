@@ -10,9 +10,10 @@ import (
 	"time"
 
 	"github.com/sourcegraph/scip/bindings/go/scip"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"go.opentelemetry.io/otel/attribute"
 	"google.golang.org/protobuf/proto"
+
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -68,16 +69,20 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}})
 	defer endObservation(1, observation.Args{})
 
-	// TODO: s.operations.getPreciseContext.With(ctx, ...)
-
 	filename := args.Input.ActiveFile
 	content := args.Input.ActiveFileContent
-	closestRemoteCommitSHA := args.Input.ClosestRemoteCommitSHA
+	repoName := api.RepoName(args.Input.RepositoryName)
 
-	repo, err := s.repostore.GetByName(ctx, api.RepoName(args.Input.RepositoryName))
+	repo, err := s.repostore.GetByName(ctx, repoName)
 	if err != nil {
 		return nil, err
 	}
+
+	commitID, err := s.gitserverClient.ResolveRevision(ctx, repoName, args.Input.ClosestRemoteCommitSHA, gitserver.ResolveRevisionOptions{})
+	if err != nil {
+		return nil, err
+	}
+	closestRemoteCommitSHA := string(commitID)
 
 	uploads, err := s.codenavSvc.GetClosestDumpsForBlob(ctx, int(repo.ID), closestRemoteCommitSHA, filename, true, "")
 	if err != nil {
@@ -183,14 +188,18 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			explodedScipSymbolsByFuzzyName := map[string][]*symbols.ExplodedSymbol{}
 			for _, fuzzyName := range fuzzySymbolNames {
 				// TODO: Don't swallow error
-				ex, _ := symbols.NewExplodedSymbol(fuzzyName)
+				ex, err := symbols.NewExplodedSymbol(fuzzyName)
+				if err != nil {
+					continue
+					// add debug logging
+				}
 				var explodedScipSymbols []*symbols.ExplodedSymbol
 				for _, esn := range explodedScipNames {
 					// N.B. this matches what we search against in fuzzyDescriptorSuffixConditions
 					if !strings.HasSuffix(esn.DescriptorSuffix, ex.DescriptorSuffix) {
 						continue
 					}
-					// TODO - batch
+					// TODO - batch (move it out of the loop)
 					trace.AddEvent(
 						"scipNames DescriptorSuffix or DescriptorSuffix",
 						attribute.String("fuzzyName DescriptorSuffix", ex.DescriptorSuffix),
@@ -243,6 +252,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		lap("PHASE 2: %d matching precise symbols\n", len(fuzzyNameSetBySymbol))
 	} else {
 		// TODO: we might have to strip the root active file
+		// TODO: if the file name starts with the root remove it
 		symbolsNames, err := s.codenavSvc.GetSymbolNamesByRange(ctx, requestArgs, filename, reqState, translateToScipRange(args.Input.ActiveFileSelectionRange))
 		if err != nil {
 			return nil, err
@@ -271,14 +281,14 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			return nil, err
 		}
 
-		// TODO - should this ever be non-singleton?
+		// TODO - should this ever be non-singleton? (this will go away when we batch)
 		for fzn := range fuzzyNames {
 			preciseDataList = append(preciseDataList, &preciseData{
 				fuzzyName:      fzn,
 				scipSymbolName: symbol,
 				location:       ul,
 			})
-			// TODO - batch
+			// TODO - batch (move it out of the loop)
 			trace.AddEvent(
 				"preciseDataList",
 				attribute.String("fuzzyName", fzn),
@@ -309,6 +319,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			// TODO - archive where possible when we fetch multiple files from the
 			// same repo. Cut round trips down from one per file to one per repo,
 			// and we'll likely have a lot of shared definition sources.
+			// TODO: Group by repo, then fetch the archive containing those files
 
 			file, err := s.gitserverClient.ReadFile(
 				ctx,
@@ -370,7 +381,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 						FilePath:        l.Path,
 					})
 
-					// TODO - batch?
+					// TODO - move this out of the nested loop
 					trace.AddEvent(
 						"preciseResponse",
 						attribute.String("symbolName", pd.scipSymbolName),
