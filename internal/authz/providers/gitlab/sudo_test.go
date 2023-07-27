@@ -274,7 +274,7 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 				if visibility != "private" && visibility != "internal" {
 					return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
 				}
-				want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
+				want := fmt.Sprintf("https://gitlab.com/api/v4/projects?per_page=100&visibility=%s", visibility)
 				if r.URL.String() != want {
 					return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
 				}
@@ -291,9 +291,9 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 					return nil, errors.Errorf("HTTP Sudo: want %q but got %q", want, got)
 				}
 
-				body := `[{"id": 1}, {"id": 2}]`
+				body := `[{"id": 1, "default_branch": "main"}, {"id": 2, "default_branch": "main"}]`
 				if visibility == "internal" {
-					body = `[{"id": 3}]`
+					body = `[{"id": 3, "default_branch": "main"}, {"id": 4}]`
 				}
 				return &http.Response{
 					Status:     http.StatusText(http.StatusOK),
