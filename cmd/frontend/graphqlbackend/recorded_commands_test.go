@@ -339,8 +339,54 @@ func TestRecordedCommandsResolver(t *testing.T) {
 					`,
 			})
 		})
-	})
 
+		t.Run("valid offset and limit", func(t *testing.T) {
+			RunTest(t, &Test{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+						{
+							repository(name: "github.com/sourcegraph/sourcegraph") {
+								recordedCommands(offset: 1, limit: 2) {
+									nodes {
+										start
+										duration
+										command
+										dir
+										path
+									}
+									totalCount
+								}
+							}
+						}
+					`,
+				ExpectedResult: `
+						{
+							"repository": {
+								"recordedCommands": {
+									"nodes": [
+										{
+											"command": "git clone",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 10,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										},
+										{
+											"command": "git fetch",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 100,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										}
+									],
+									"totalCount": 3
+								}
+							}
+						}
+					`,
+			})
+		})
+	})
 }
 
 func marshalCmd(t *testing.T, command wrexec.RecordedCommand) []byte {
