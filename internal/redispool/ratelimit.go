@@ -5,24 +5,26 @@ import (
 	"fmt"
 
 	"github.com/gomodule/redigo/redis"
+	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
 	rateLimitScript          *redis.Script
 	tokenBucketGlobablPrefix = "v2:rate_limiters"
-	bucketCapacity           = 1000
-	bucketRefillRate         = 1000
+	bucketCapacity           = 2
+	bucketRefillRate         = 2
 )
 
 type RateLimiter interface {
 	GetTokensFromBucket(ctx context.Context, tokenBucketName string, amount int) (allowed bool, remianingTokens int, err error)
 }
+
 type rateLimiter struct {
 	pool *redis.Pool
 }
 
-func NewRateLimiter() (RateLimiter, error) {
+func NewRateLimiter(logger log.Logger) (RateLimiter, error) {
 	var err error
 	pool, ok := Cache.Pool()
 	if !ok {
@@ -34,13 +36,7 @@ func NewRateLimiter() (RateLimiter, error) {
 }
 
 func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, tokenBucketName string, amount int) (allowed bool, remianingTokens int, err error) {
-	//fmt.Printf("Getting tokens for: %s, amount requested: %d\n", tokenBucketName, amount)
-	err = loadRateLimitScript()
-	if err != nil {
-		return false, 0, errors.Wrapf(err, "unable to get tokens from bucket %s", tokenBucketName)
-	}
-
-	result, err := rateLimitScript.DoContext(ctx, r.pool.Get(), fmt.Sprintf("%s:%s", tokenBucketGlobablPrefix, tokenBucketName), bucketCapacity, bucketRefillRate, amount)
+	result, err := redis.NewScript(1, rateLimitLuaScript).DoContext(ctx, r.pool.Get(), fmt.Sprintf("%s:%s", tokenBucketGlobablPrefix, tokenBucketName), bucketCapacity, bucketRefillRate, amount)
 	if err != nil {
 		return false, 0, errors.Wrapf(err, "error while getting tokens from bucket %s", tokenBucketName)
 	}
@@ -62,29 +58,6 @@ func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, tokenBucketName s
 	fmt.Printf("Finished getting tokens for: %s, amount remaining: %d, allowed: %+v\n", tokenBucketName, remTokens, allwd == 1)
 
 	return allwd == 1, int(remTokens), nil
-}
-
-func loadRateLimitScript() error {
-	loadScriptSHA := func(pool *redis.Pool) error {
-		s := redis.NewScript(1, rateLimitLuaScript)
-		err := s.Load(pool.Get())
-		if err != nil {
-			return errors.Wrap(err, "failed to load rate limit script in redis")
-		}
-		rateLimitScript = s
-		return nil
-	}
-
-	pool, ok := Store.Pool()
-	if !ok {
-		return errors.New("unable to get redis connection")
-	}
-
-	if rateLimitScript == nil {
-		return loadScriptSHA(pool)
-	}
-
-	return nil
 }
 
 const rateLimitLuaScript = `local bucket_key = KEYS[1]

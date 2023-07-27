@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -27,8 +26,6 @@ type client struct {
 	// RateLimit is the self-imposed rate limiter (since Gerrit does not have a concept
 	// of rate limiting in HTTP response headers).
 	rateLimit *ratelimit.InstrumentedLimiter
-
-	newRateLimiter redispool.RateLimiter
 
 	// Authenticator used to authenticate HTTP requests.
 	auther auth.Authenticator
@@ -66,17 +63,12 @@ func NewClient(urn string, url *url.URL, creds *AccountCredentials, httpClient h
 		Username: creds.Username,
 		Password: creds.Password,
 	}
-	nrl, err := redispool.NewRateLimiter()
-	if err != nil {
-		return nil, err
-	}
 
 	return &client{
-		httpClient:     httpClient,
-		URL:            url,
-		rateLimit:      ratelimit.DefaultRegistry.Get(urn),
-		auther:         auther,
-		newRateLimiter: nrl,
+		httpClient: httpClient,
+		URL:        url,
+		rateLimit:  ratelimit.DefaultRegistry.Get(urn),
+		auther:     auther,
 	}, nil
 }
 
@@ -147,14 +139,8 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 		}
 	}
 
-	//if err := c.rateLimit.Wait(ctx);
-
-	allowed, _, err := c.newRateLimiter.GetTokensFromBucket(ctx, fmt.Sprintf("%s:%s", c.URL, "api_token_bucket"), 1)
-	if err != nil {
+	if err := c.rateLimit.Wait(ctx); err != nil {
 		return nil, err
-	}
-	if !allowed {
-		errors.New("rate limit exceeded")
 	}
 
 	resp, err := c.httpClient.Do(req)
