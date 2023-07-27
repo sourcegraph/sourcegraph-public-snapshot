@@ -13,9 +13,10 @@ import (
 	"github.com/gorilla/schema"
 	"github.com/graph-gophers/graphql-go"
 	sglog "github.com/sourcegraph/log"
+	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
 	"google.golang.org/grpc"
 
-	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+	frontendproto "github.com/sourcegraph/sourcegraph/internal/frontend/v1"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
@@ -216,7 +217,9 @@ func RegisterInternalServices(
 		WriteErrBody: true,
 	})
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
+	fs := &frontendServer{db: db}
+
+	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(fs.serveExternalServiceConfigs())))
 
 	// zoekt-indexserver endpoints
 	gsClient := gitserver.NewClient(db)
@@ -239,9 +242,10 @@ func RegisterInternalServices(
 	m.Get(apirouter.UpdateIndexStatus).Handler(trace.Route(handler(indexer.handleIndexStatusUpdate)))
 
 	proto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
+	frontendproto.RegisterFrontendServiceServer(s, &GRPCService{Server: fs})
 
-	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
-	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
+	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(fs.serveExternalURL)))
+	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(fs.serveSendEmail)))
 	gitService := &gitServiceHandler{
 		Gitserver: gsClient,
 	}
@@ -249,7 +253,7 @@ func RegisterInternalServices(
 	m.Get(apirouter.GitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
 	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
-	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
+	m.Get(apirouter.Configuration).Handler(trace.Route(handler(fs.serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)
 	m.Get(apirouter.StreamingSearch).Handler(trace.Route(frontendsearch.StreamHandler(db)))
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))

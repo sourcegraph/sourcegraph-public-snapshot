@@ -5,11 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -17,7 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	proto "github.com/sourcegraph/sourcegraph/internal/frontend/v1"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/syncx"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -40,21 +45,21 @@ type internalClient struct {
 
 var Client = &internalClient{
 	URL: "http://" + frontendInternal,
-	// 	grpcClient: syncx.OnceValues(func() (proto.FrontendServiceClient, error) {
-	// 		serverURL := "http://" + frontendInternal
-	// 		u, err := url.Parse(serverURL)
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
+	grpcClient: syncx.OnceValues(func() (proto.FrontendServiceClient, error) {
+		serverURL := "http://" + frontendInternal
+		u, err := url.Parse(serverURL)
+		if err != nil {
+			return nil, err
+		}
 
-	// 		l := log.Scoped("frontendGRPCClient", "gRPC client for frontend internal api")
-	// 		conn, err := defaults.Dial(u.Host, l)
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
+		l := log.Scoped("frontendGRPCClient", "gRPC client for frontend internal api")
+		conn, err := defaults.Dial(u.Host, l)
+		if err != nil {
+			return nil, err
+		}
 
-	// 		return proto.NewFrontendServiceClient(conn), nil
-	// 	}),
+		return proto.NewFrontendServiceClient(conn), nil
+	}),
 }
 
 var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{

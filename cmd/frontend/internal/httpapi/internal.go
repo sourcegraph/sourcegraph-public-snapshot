@@ -20,9 +20,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type frontendServer struct {
+	db database.DB
+}
+
 // serveExternalServiceConfigs serves a JSON response that is an array of all
 // external service configs that match the requested kind.
-func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
+func (fs *frontendServer) serveExternalServiceConfigs() func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		var req api.ExternalServiceConfigsRequest
 		err := json.NewDecoder(r.Body).Decode(&req)
@@ -40,7 +44,7 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 			}
 		}
 
-		services, err := db.ExternalServices().List(r.Context(), options)
+		services, err := fs.db.ExternalServices().List(r.Context(), options)
 		if err != nil {
 			return err
 		}
@@ -74,7 +78,7 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 	}
 }
 
-func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
+func (fs *frontendServer) serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
 	raw := conf.Raw()
 	err := json.NewEncoder(w).Encode(raw)
 	if err != nil {
@@ -83,7 +87,7 @@ func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
 	return nil
 }
 
-func serveExternalURL(w http.ResponseWriter, _ *http.Request) error {
+func (fs *frontendServer) serveExternalURL(w http.ResponseWriter, _ *http.Request) error {
 	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
@@ -95,7 +99,7 @@ func decodeSendEmail(r *http.Request) (txtypes.InternalAPIMessage, error) {
 	return msg, json.NewDecoder(r.Body).Decode(&msg)
 }
 
-func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
+func (fs *frontendServer) serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
 	msg, err := decodeSendEmail(r)
 	if err != nil {
 		return errors.Wrap(err, "decode request")
