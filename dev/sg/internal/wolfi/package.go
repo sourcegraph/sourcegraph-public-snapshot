@@ -14,6 +14,7 @@ import (
 // PackageRepoConfig represents config for a local package repo
 type PackageRepoConfig struct {
 	PackageDir  string
+	ImageDir    string
 	Arch        string
 	KeyDir      string
 	KeyFilename string
@@ -29,6 +30,7 @@ func InitLocalPackageRepo() (PackageRepoConfig, error) {
 
 	c := PackageRepoConfig{
 		PackageDir:  filepath.Join(repoRoot, "wolfi-packages/local-repo/packages"),
+		ImageDir:    filepath.Join(repoRoot, "wolfi-images/local-images"),
 		Arch:        "x86_64",
 		KeyDir:      filepath.Join(repoRoot, "wolfi-packages/local-repo/keys"),
 		KeyFilename: "sourcegraph-dev-local.rsa",
@@ -40,6 +42,9 @@ func InitLocalPackageRepo() (PackageRepoConfig, error) {
 		return c, err
 	}
 	if err := os.MkdirAll(c.KeyDir, os.ModePerm); err != nil {
+		return c, err
+	}
+	if err := os.MkdirAll(filepath.Join(c.ImageDir, c.Arch), os.ModePerm); err != nil {
 		return c, err
 	}
 
@@ -84,8 +89,6 @@ func (c PackageRepoConfig) GenerateKeypair() error {
 
 // SetupPackageBuild sets up the build directory for a package
 func SetupPackageBuild(name string) (manifestBaseName string, buildDir string, err error) {
-	// Search for `.yaml` suffix in `name` and remove it if present
-
 	// Get root of repo
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {

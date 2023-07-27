@@ -34,7 +34,6 @@ sg wolfi image gitserver.yaml
 				}
 				packageName := args[0]
 
-				// Set up package repo + keypair
 				c, err := wolfi.InitLocalPackageRepo()
 				if err != nil {
 					return err
@@ -63,13 +62,29 @@ sg wolfi image gitserver.yaml
 						return errors.New("no base image manifest file provided")
 					}
 
-					// packageName := args[0]
+					baseImageName := args[0]
 
-					// // Set up package repo + keypair
-					// c, err := wolfi.InitLocalPackageRepo()
-					// if err != nil {
-					// 	return err
-					// }
+					c, err := wolfi.InitLocalPackageRepo()
+					if err != nil {
+						return err
+					}
+
+					manifestBaseName, buildDir, err := c.SetupBaseImageBuild(baseImageName)
+					if err != nil {
+						return err
+					}
+
+					if err = c.DoBaseImageBuild(manifestBaseName, buildDir); err != nil {
+						return err
+					}
+
+					if err = c.LoadBaseImage(baseImageName); err != nil {
+						return err
+					}
+
+					if err = c.CleanupBaseImageBuild(baseImageName); err != nil {
+						return err
+					}
 
 					return nil
 
