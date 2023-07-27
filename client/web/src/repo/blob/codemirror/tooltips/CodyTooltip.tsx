@@ -3,6 +3,7 @@ import { EditorView, PluginValue, Tooltip, ViewPlugin, showTooltip } from '@code
 import ReactDOM from 'react-dom/client'
 
 import { CodeMirrorEditor } from '../../../../cody/components/CodeMirrorEditor'
+import { CodyChatStore } from '../../../../cody/useCodyChat'
 import { CodyRecipesWidget } from '../../../../cody/widgets/CodyRecipesWidget'
 
 export const codyTooltip = StateField.define<Tooltip | null>({
@@ -81,7 +82,9 @@ function computeCodyWidget(state: EditorState, editor?: CodeMirrorEditor): Toolt
         create: () => {
             const dom = document.createElement('div')
             dom.style.background = 'transparent'
-            ReactDOM.createRoot(dom).render(<CodyRecipesWidget editor={editor} />)
+            ReactDOM.createRoot(dom).render(
+                <CodyRecipesWidget editor={editor} codyChatStore={(window as any).codySidebarStore as CodyChatStore} />
+            )
             return { dom }
         },
     }
