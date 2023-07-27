@@ -1,0 +1,142 @@
+package db
+
+import (
+	"encoding/binary"
+	"hash/fnv"
+
+	"github.com/google/uuid"
+	qdrant "github.com/qdrant/go-client/qdrant"
+
+	"github.com/sourcegraph/sourcegraph/internal/api"
+)
+
+type ChunkResult struct {
+	Point ChunkPoint
+	Score float32
+}
+
+func (c *ChunkResult) FromQdrantResult(res *qdrant.ScoredPoint) {
+	var payload ChunkPayload
+	payload.FromQdrantPayload(res.GetPayload())
+	*c = ChunkResult{
+		Point: ChunkPoint{
+			ID:      uuid.MustParse(res.GetId().GetUuid()),
+			Payload: payload,
+			Vector:  res.GetVectors().GetVector().GetData(),
+		},
+		Score: res.GetScore(),
+	}
+}
+
+func NewChunkPoint(payload ChunkPayload, vector []float32) ChunkPoint {
+	return ChunkPoint{
+		ID: chunkUUID(
+			payload.RepoID,
+			payload.Revision,
+			payload.FilePath,
+			int(payload.StartLine),
+		),
+		Payload: payload,
+		Vector:  vector,
+	}
+}
+
+type ChunkPoint struct {
+	ID      uuid.UUID
+	Payload ChunkPayload
+	Vector  []float32
+}
+
+func (c *ChunkPoint) ToQdrantPoint() *qdrant.PointStruct {
+	return &qdrant.PointStruct{
+		Id: &qdrant.PointId{
+			PointIdOptions: &qdrant.PointId_Uuid{
+				Uuid: c.ID.String(),
+			},
+		},
+		Payload: c.Payload.ToQdrantPayload(),
+		Vectors: &qdrant.Vectors{
+			VectorsOptions: &qdrant.Vectors_Vector{
+				Vector: &qdrant.Vector{
+					Data: c.Vector,
+				},
+			},
+		},
+	}
+}
+
+type ChunkPoints []ChunkPoint
+
+func (ps ChunkPoints) ToQdrantPoints() []*qdrant.PointStruct {
+	res := make([]*qdrant.PointStruct, len(ps))
+	for i, p := range ps {
+		res[i] = p.ToQdrantPoint()
+	}
+	return res
+}
+
+type PayloadField = string
+
+const (
+	fieldRepoID    PayloadField = "repoID"
+	fieldRepoName  PayloadField = "repoName"
+	fieldRevision  PayloadField = "revision"
+	fieldFilePath  PayloadField = "filePath"
+	fieldStartLine PayloadField = "startLine"
+	fieldEndLine   PayloadField = "endLine"
+	fieldIsCode    PayloadField = "isCode"
+)
+
+type ChunkPayload struct {
+	RepoName           api.RepoName
+	RepoID             api.RepoID
+	Revision           api.CommitID
+	FilePath           string
+	StartLine, EndLine uint32
+	IsCode             bool
+}
+
+func (p *ChunkPayload) ToQdrantPayload() map[string]*qdrant.Value {
+	return map[string]*qdrant.Value{
+		fieldRepoID:    {Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(p.RepoID)}},
+		fieldRepoName:  {Kind: &qdrant.Value_StringValue{StringValue: string(p.RepoName)}},
+		fieldRevision:  {Kind: &qdrant.Value_StringValue{StringValue: string(p.Revision)}},
+		fieldFilePath:  {Kind: &qdrant.Value_StringValue{StringValue: p.FilePath}},
+		fieldStartLine: {Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(p.StartLine)}},
+		fieldEndLine:   {Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(p.EndLine)}},
+		fieldIsCode:    {Kind: &qdrant.Value_BoolValue{BoolValue: p.IsCode}},
+	}
+}
+
+func (p *ChunkPayload) FromQdrantPayload(payload map[string]*qdrant.Value) {
+	*p = ChunkPayload{
+		RepoName:  api.RepoName(payload[fieldRepoName].GetStringValue()),
+		RepoID:    api.RepoID(payload[fieldRepoID].GetIntegerValue()),
+		Revision:  api.CommitID(payload[fieldRevision].GetStringValue()),
+		FilePath:  payload[fieldFilePath].GetStringValue(),
+		StartLine: uint32(payload[fieldStartLine].GetIntegerValue()),
+		EndLine:   uint32(payload[fieldEndLine].GetIntegerValue()),
+		IsCode:    payload[fieldIsCode].GetBoolValue(),
+	}
+}
+
+func chunkUUID(repoID api.RepoID, revision api.CommitID, filePath string, startLine int) uuid.UUID {
+	hasher := fnv.New128()
+
+	var buf [4]byte
+
+	binary.LittleEndian.PutUint32(buf[:], uint32(repoID))
+	hasher.Write(buf[:])
+
+	hasher.Write([]byte(revision))
+
+	hasher.Write([]byte(filePath))
+
+	binary.LittleEndian.PutUint32(buf[:], uint32(startLine))
+	hasher.Write(buf[:])
+
+	var u uuid.UUID
+	sum := hasher.Sum(nil)
+	copy(u[:], sum)
+	return u
+}
