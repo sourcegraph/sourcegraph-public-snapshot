@@ -51,6 +51,9 @@ func TestRecordedCommandsResolver(t *testing.T) {
 								path
 							}
 							totalCount
+							pageInfo {
+								hasNextPage
+							}
 						}
 					}
 				}
@@ -60,7 +63,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 					"repository": {
 						"recordedCommands": {
 							"nodes": [],
-							"totalCount": 0
+							"totalCount": 0,
+							"pageInfo": {
+								"hasNextPage": false
+							}
 						}
 					}
 				}
@@ -91,6 +97,9 @@ func TestRecordedCommandsResolver(t *testing.T) {
 									path
 								}
 								totalCount
+								pageInfo {
+									hasNextPage
+								}
 							}
 						}
 					}
@@ -100,7 +109,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 						"repository": {
 							"recordedCommands": {
 								"nodes": [],
-								"totalCount": 0
+								"totalCount": 0,
+								"pageInfo": {
+									"hasNextPage": false
+								}
 							}
 						}
 					}
@@ -142,6 +154,9 @@ func TestRecordedCommandsResolver(t *testing.T) {
 								path
 							}
 							totalCount
+							pageInfo {
+								hasNextPage
+							}
 						}
 					}
 				}
@@ -159,7 +174,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 									"start": "2023-07-20T15:04:05Z"
 								}
 							],
-							"totalCount": 1
+							"totalCount": 1,
+							"pageInfo": {
+								"hasNextPage": false
+							}
 						}
 					}
 				}
@@ -222,6 +240,9 @@ func TestRecordedCommandsResolver(t *testing.T) {
 										path
 									}
 									totalCount
+									pageInfo {
+										hasNextPage
+									}
 								}
 							}
 						}
@@ -246,7 +267,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 											"start": "2023-07-20T15:04:05Z"
 										}
 									],
-									"totalCount": 3
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": true
+									}
 								}
 							}
 						}
@@ -269,6 +293,9 @@ func TestRecordedCommandsResolver(t *testing.T) {
 										path
 									}
 									totalCount
+									pageInfo {
+										hasNextPage
+									}
 								}
 							}
 						}
@@ -300,7 +327,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 											"start": "2023-07-20T15:04:05Z"
 										}
 									],
-									"totalCount": 3
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": false
+									}
 								}
 							}
 						}
@@ -323,6 +353,9 @@ func TestRecordedCommandsResolver(t *testing.T) {
 										path
 									}
 									totalCount
+									pageInfo {
+										hasNextPage
+									}
 								}
 							}
 						}
@@ -332,7 +365,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 							"repository": {
 								"recordedCommands": {
 									"nodes": [],
-									"totalCount": 3
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": false
+									}
 								}
 							}
 						}
@@ -355,6 +391,9 @@ func TestRecordedCommandsResolver(t *testing.T) {
 										path
 									}
 									totalCount
+									pageInfo {
+										hasNextPage
+									}
 								}
 							}
 						}
@@ -379,7 +418,10 @@ func TestRecordedCommandsResolver(t *testing.T) {
 											"start": "2023-07-20T15:04:05Z"
 										}
 									],
-									"totalCount": 3
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": false
+									}
 								}
 							}
 						}
