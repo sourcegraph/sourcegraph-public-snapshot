@@ -28,6 +28,7 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an issue where GitHub Apps could not be set up using Firefox. [#55305](https://github.com/sourcegraph/sourcegraph/pull/55305)
+- GitLab internal project visibility is handled more reliably. [#54426](https://github.com/sourcegraph/sourcegraph/pull/54426)
 
 ### Removed
 
@@ -80,7 +81,6 @@ All notable changes to Sourcegraph are documented in this file.
 ### Fixed
 
 - Fixed an embeddings job scheduler bug where if we cannot resolve one of the repositories or its default branch then all repositories submitted will not have their respective embeddings job enqueued. Embeddings job scheduler will now continue to schedule jobs for subsequent repositories in the submitted repositories set. [#54701](https://github.com/sourcegraph/sourcegraph/pull/54701)
-- GitLab internal project visibility is handled more reliably. [#54426](https://github.com/sourcegraph/sourcegraph/pull/54426)
 
 ## 5.1.2
 
