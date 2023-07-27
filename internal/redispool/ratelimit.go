@@ -24,7 +24,7 @@ type rateLimiter struct {
 
 func NewRateLimiter() (RateLimiter, error) {
 	var err error
-	pool, ok := Store.Pool()
+	pool, ok := Cache.Pool()
 	if !ok {
 		err = errors.New("unable to get redis connection")
 	}
@@ -34,7 +34,7 @@ func NewRateLimiter() (RateLimiter, error) {
 }
 
 func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, tokenBucketName string, amount int) (allowed bool, remianingTokens int, err error) {
-	fmt.Printf("Getting tokens for: %s, amount requested: %d\n", tokenBucketName, amount)
+	//fmt.Printf("Getting tokens for: %s, amount requested: %d\n", tokenBucketName, amount)
 	err = loadRateLimitScript()
 	if err != nil {
 		return false, 0, errors.Wrapf(err, "unable to get tokens from bucket %s", tokenBucketName)
@@ -98,7 +98,7 @@ local bucket_exists = redis.call('EXISTS', bucket_key)
 -- If the bucket does not exist or has expired, replenish the bucket and set the new expiration time.
 if bucket_exists == 0 then
     redis.call('SET', bucket_key, capacity)
-    redis.call('EXPIRE', bucket_key, 30)
+    redis.call('EXPIRE', bucket_key, 3600)
 end
 
 -- Get the current token count in the bucket.

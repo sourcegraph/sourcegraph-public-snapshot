@@ -234,7 +234,11 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 	//err := c.internalRateLimiter.Wait(ctx)
 
 	//Need to figure out a place for this where you can realistically know how many tokens you are about to need
-	allowed, _, err := c.newRateLimiter.GetTokensFromBucket(ctx, req.URL.Host+":api_token_bucket", 1)
+	url := req.URL.Host
+	if url == "" {
+		url = "github.com"
+	}
+	allowed, _, err := c.newRateLimiter.GetTokensFromBucket(ctx, fmt.Sprintf("%s:%s", url, "api_token_bucket"), 1)
 	if err != nil {
 		// We don't want to return a misleading rate limit exceeded error if the error is coming
 		// from the context.

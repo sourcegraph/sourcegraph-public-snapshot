@@ -148,7 +148,8 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 	}
 
 	//if err := c.rateLimit.Wait(ctx);
-	allowed, _, err := c.newRateLimiter.GetTokensFromBucket(ctx, fmt.Sprintf("%s:%s", req.URL.Host, "api_token_bucket"), 1)
+
+	allowed, _, err := c.newRateLimiter.GetTokensFromBucket(ctx, fmt.Sprintf("%s:%s", c.URL, "api_token_bucket"), 1)
 	if err != nil {
 		return nil, err
 	}
