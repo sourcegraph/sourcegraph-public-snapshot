@@ -3,22 +3,77 @@
 
     import { afterNavigate, disableScrollHandling } from '$app/navigation'
     import { page } from '$app/stores'
-    import FileTree from '$lib/repo/FileTree.svelte'
+    import { isErrorLike } from '$lib/common'
+    import LoadingSpinner from '$lib/LoadingSpinner.svelte'
+    import { fetchSidebarFileTree, FileTreeProvider, type FileTreeLoader } from '$lib/repo/api/tree'
+    import BottomPanel from '$lib/repo/BottomPanel.svelte'
     import SidebarToggleButton from '$lib/repo/SidebarToggleButton.svelte'
     import { sidebarOpen } from '$lib/repo/stores'
     import Separator, { getSeparatorPosition } from '$lib/Separator.svelte'
     import { scrollAll } from '$lib/stores'
-    import { asStore } from '$lib/utils'
 
-    import type { PageData } from './$types'
+    import type { LayoutData, Snapshot } from './$types'
+    import FileTree from './FileTree.svelte'
 
-    export let data: PageData
+    export let data: LayoutData
 
-    function last<T>(arr: T[]): T {
-        return arr[arr.length - 1]
+    export const snapshot: Snapshot = {
+        capture() {
+            return {
+                bottomPanel: bottomPanel.capture(),
+            }
+        },
+        restore(data) {
+            bottomPanel.restore(data.bottomPanel)
+        },
     }
 
-    $: treeOrError = asStore(data.treeEntries.deferred)
+    let bottomPanel: BottomPanel
+
+    const fileTreeLoader: FileTreeLoader = args =>
+        fetchSidebarFileTree(args).then(
+            ({ root, values }) =>
+                new FileTreeProvider({
+                    root,
+                    values,
+                    loader: fileTreeLoader,
+                    ...args,
+                })
+        )
+    let treeProvider: FileTreeProvider | null = null
+
+    async function updateFileTreeProvider(
+        repoName: string,
+        revision: string | undefined,
+        commitID: string,
+        parentPath: string
+    ) {
+        const result = await data.deferred.fileTree
+        if (!result) {
+            treeProvider = null
+            return
+        }
+        const { root, values } = result
+
+        // Do nothing if update was called with new arguments in the meantime
+        if (repoName !== data.repoName || revision !== data.revision || parentPath !== data.parentPath) {
+            return
+        }
+        treeProvider = new FileTreeProvider({
+            root,
+            values,
+            repoName,
+            revision: revision ?? '',
+            commitID,
+            loader: fileTreeLoader,
+        })
+    }
+
+    $: ({ repoName, revision, parentPath, resolvedRevision } = data)
+    $: commitID = isErrorLike(resolvedRevision) ? '' : resolvedRevision.commitID
+    // Only update the file tree provider (which causes the tree to rerender) when repo, revision/commit or file path
+    // update
+    $: updateFileTreeProvider(repoName, revision, commitID, parentPath)
 
     const sidebarSize = getSeparatorPosition('repo-sidebar', 0.2)
     $: sidebarWidth = `max(200px, ${$sidebarSize * 100}%)`
@@ -37,22 +92,21 @@
 
 <section>
     <div class="sidebar" class:open={$sidebarOpen} style:min-width={sidebarWidth} style:max-width={sidebarWidth}>
-        {#if !$treeOrError.loading && $treeOrError.data}
-            <FileTree
-                activeEntry={$page.params.path ? last($page.params.path.split('/')) : ''}
-                treeOrError={$treeOrError.data}
-            >
-                <h3 slot="title">
-                    <SidebarToggleButton />&nbsp; Files
-                </h3>
-            </FileTree>
+        <h3>
+            <SidebarToggleButton />&nbsp; Files
+        </h3>
+        {#if treeProvider}
+            <FileTree {treeProvider} selectedPath={$page.params.path ?? ''} />
+        {:else}
+            <LoadingSpinner center={false} />
         {/if}
     </div>
     {#if $sidebarOpen}
         <Separator currentPosition={sidebarSize} />
     {/if}
-    <div class="content">
+    <div class="main">
         <slot />
+        <BottomPanel bind:this={bottomPanel} history={data.deferred.codeCommits} />
     </div>
 </section>
 
@@ -80,7 +134,7 @@
         max-height: 100vh;
     }
 
-    .content {
+    .main {
         flex: 1;
         display: flex;
         flex-direction: column;

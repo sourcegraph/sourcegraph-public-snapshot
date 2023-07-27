@@ -1,10 +1,12 @@
 package processor
 
 import (
+	"bytes"
 	"compress/gzip"
 	"context"
 	"fmt"
 	"io"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -240,7 +242,7 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 		return directoryChildren, nil
 	}
 
-	return false, withUploadData(ctx, logger, uploadStore, upload.ID, trace, func(r io.Reader) (err error) {
+	return false, withUploadData(ctx, logger, uploadStore, upload.SizeStats(), trace, func(indexReader gzipReadSeeker) (err error) {
 		const (
 			lsifContentType = "application/x-ndjson+lsif"
 			scipContentType = "application/x-protobuf+scip"
@@ -273,19 +275,15 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 			return errors.Wrap(err, "store.CommitDate")
 		}
 
-		rSize := int64(0)
-		if upload.UncompressedSize != nil {
-			rSize = *upload.UncompressedSize
-		}
-
-		correlatedSCIPData, err := correlateSCIP(ctx, r, rSize, upload.Root, getChildren)
+		scipDataStream, err := prepareSCIPDataStream(ctx, indexReader, upload.Root, getChildren)
 		if err != nil {
-			return errors.Wrap(err, "conversion.Correlate")
+			return errors.Wrap(err, "prepareSCIPDataStream")
 		}
 
 		// Note: this is writing to a different database than the block below, so we need to use a
 		// different transaction context (managed by the writeData function).
-		if err := writeSCIPData(ctx, h.lsifStore, upload, correlatedSCIPData, trace); err != nil {
+		pkgData, err := writeSCIPDocuments(ctx, logger, h.lsifStore, upload, scipDataStream, trace)
+		if err != nil {
 			if isUniqueConstraintViolation(err) {
 				// If this is a unique constraint violation, then we've previously processed this same
 				// upload record up to this point, but failed to perform the transaction below. We can
@@ -310,18 +308,13 @@ func (h *handler) HandleRawUpload(ctx context.Context, logger log.Logger, upload
 				return errors.Wrap(err, "store.DeleteOverlappingDumps")
 			}
 
-			packages, packageReferences, err := readPackageAndPackageReferences(ctx, correlatedSCIPData)
-			if err != nil {
-				return err
-			}
-
-			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(packages)))
+			trace.AddEvent("TODO Domain Owner", attribute.Int("packages", len(pkgData.Packages)))
 			// Update package and package reference data to support cross-repo queries.
-			if err := tx.UpdatePackages(ctx, upload.ID, packages); err != nil {
+			if err := tx.UpdatePackages(ctx, upload.ID, pkgData.Packages); err != nil {
 				return errors.Wrap(err, "store.UpdatePackages")
 			}
-			trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(packages)))
-			if err := tx.UpdatePackageReferences(ctx, upload.ID, packageReferences); err != nil {
+			trace.AddEvent("TODO Domain Owner", attribute.Int("packageReferences", len(pkgData.PackageReferences)))
+			if err := tx.UpdatePackageReferences(ctx, upload.ID, pkgData.PackageReferences); err != nil {
 				return errors.Wrap(err, "store.UpdatePackageReferences")
 			}
 
@@ -387,11 +380,46 @@ func requeueIfCloningOrCommitUnknown(ctx context.Context, logger log.Logger, git
 	return true, nil
 }
 
+// NOTE(scip-index-size-stats) In practice, the following seem to be true:
+//   - The size of an uncompressed index is about 5x-10x the size of
+//     the gzip-compressed index
+//   - The memory usage of a full deserialized scip.Index is about
+//     2.5x-4.5x times the size of the uncompressed index byte slice.
+//
+// The code intel worker sometimes has as little as 2GB of RAM, so 1/4-th of
+// that is 512MiB. There is no simple portable API to determine the
+// max available memory to the process, so use a constant for now.
+//
+// Marked as a 'var' only for testing.
+var uncompressedSizeLimitBytes int64 = 512 * 1024 * 1024
+
+type gzipReadSeeker struct {
+	inner      io.ReadSeeker
+	gzipReader *gzip.Reader
+}
+
+func newGzipReadSeeker(rs io.ReadSeeker) (gzipReadSeeker, error) {
+	gzipReader, err := gzip.NewReader(rs)
+	return gzipReadSeeker{rs, gzipReader}, err
+}
+
+func (grs gzipReadSeeker) Read(buf []byte) (int, error) {
+	return grs.gzipReader.Read(buf)
+}
+
+func (grs *gzipReadSeeker) seekToStart() (err error) {
+	if _, err := grs.inner.Seek(0, io.SeekStart); err != nil {
+		return err
+	}
+	grs.gzipReader, err = gzip.NewReader(grs.inner)
+	return err
+}
+
 // withUploadData will invoke the given function with a reader of the upload's raw data. The
 // consumer should expect raw newline-delimited JSON content. If the function returns without
 // an error, the upload file will be deleted.
-func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, id int, trace observation.TraceLogger, fn func(r io.Reader) error) error {
-	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", id)
+func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadstore.Store, uploadStats uploadsshared.UploadSizeStats, trace observation.TraceLogger, fn func(r gzipReadSeeker) error) error {
+	uploadFilename := fmt.Sprintf("upload-%d.lsif.gz", uploadStats.ID)
 
 	trace.AddEvent("TODO Domain Owner", attribute.String("uploadFilename", uploadFilename))
 
@@ -402,13 +430,80 @@ func withUploadData(ctx context.Context, logger log.Logger, uploadStore uploadst
 	}
 	defer rc.Close()
 
-	rc, err = gzip.NewReader(rc)
-	if err != nil {
-		return errors.Wrap(err, "gzip.NewReader")
-	}
-	defer rc.Close()
+	indexReader, cleanup, err := func() (_ gzipReadSeeker, cleanup func() error, err error) {
+		// If the uncompressed upload size is available and exceeds what we want
+		// to keep resident in memory during processing, write the upload to
+		// a temporary file, to allow processing in multiple passes.
+		shouldWriteToDisk := uploadStats.UncompressedSize != nil && *uploadStats.UncompressedSize > uncompressedSizeLimitBytes
 
-	if err := fn(rc); err != nil {
+		if !shouldWriteToDisk {
+			compressedSizeHint := int64(0)
+			if uploadStats.UploadSize != nil {
+				compressedSizeHint = *uploadStats.UploadSize
+			}
+			buf, err := readAllWithSizeHint(rc, compressedSizeHint)
+			if err != nil {
+				return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to read upload file")
+			}
+
+			if uploadStats.UncompressedSize == nil {
+				// Make a best-effort estimate for the uncompressed size, as it may
+				// make sense to write it the upload to disk despite having read
+				// it into memory to avoid OOM during processing.
+				// The factor of 5 is based on ~worst-case gzip compression ratio.
+				// See NOTE(scip-index-size-stats).
+				compressedSize := len(buf)
+				uncompressedSizeEstimate := compressedSize * 5
+				shouldWriteToDisk = int64(uncompressedSizeEstimate) > uncompressedSizeLimitBytes
+			}
+
+			if !shouldWriteToDisk {
+				// No temp files created, nothing to cleanup
+				cleanup := func() error { return nil }
+
+				// Payload is small enough to process in-memory, return a reader backed
+				// by the slice we've already read from the blobstore
+				indexReader, err := newGzipReadSeeker(bytes.NewReader(buf))
+				return indexReader, cleanup, err
+			}
+
+			// Fallthrough:
+			// Replace the reader we'll write to disk with the content we've already read
+			rc = io.NopCloser(bytes.NewReader(buf))
+		}
+
+		tempFile, err := os.CreateTemp("", fmt.Sprintf("upload-%d-tmp.gz", uploadStats.ID))
+		if err != nil {
+			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to create temporary file to save upload for streaming")
+		}
+
+		// Immediately create cleanup function after successful creation of a temporary file
+		// and on any non-nil error from this function ensure we clean up any resources we've
+		// created on the failure path.
+		cleanup = func() error { return os.RemoveAll(tempFile.Name()) }
+		defer func() {
+			if err != nil {
+				_ = cleanup()
+			}
+		}()
+
+		if _, err = io.Copy(tempFile, rc); err != nil {
+			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to copy buffer to temporary file")
+		}
+		if _, err = tempFile.Seek(0, io.SeekStart); err != nil {
+			return gzipReadSeeker{}, nil, errors.Wrap(err, "failed to seek to start")
+		}
+
+		// Wrap the file reader
+		indexReader, err := newGzipReadSeeker(tempFile)
+		return indexReader, cleanup, errors.Wrapf(err, "failed to decompress file %q", tempFile.Name())
+	}()
+	if err != nil {
+		return err
+	}
+	defer func() { _ = cleanup() }()
+
+	if err := fn(indexReader); err != nil {
 		return err
 	}
 

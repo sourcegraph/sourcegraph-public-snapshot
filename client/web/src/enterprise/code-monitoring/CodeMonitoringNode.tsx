@@ -17,6 +17,7 @@ import styles from './CodeMonitoringNode.module.scss'
 export interface CodeMonitorNodeProps {
     node: CodeMonitorFields
     location: H.Location
+    showOwner: boolean
 
     toggleCodeMonitorEnabled?: typeof _toggleCodeMonitorEnabled
 }
@@ -26,6 +27,7 @@ const LOADING = 'LOADING' as const
 export const CodeMonitorNode: React.FunctionComponent<React.PropsWithChildren<CodeMonitorNodeProps>> = ({
     location,
     node,
+    showOwner,
     toggleCodeMonitorEnabled = _toggleCodeMonitorEnabled,
 }: CodeMonitorNodeProps) => {
     const [enabled, setEnabled] = useState<boolean>(node.enabled)
@@ -86,6 +88,19 @@ export const CodeMonitorNode: React.FunctionComponent<React.PropsWithChildren<Co
                 <div className="d-flex flex-column">
                     <div className="font-weight-bold">
                         <Link to={`${location.pathname}/${node.id}`}>{node.description}</Link>
+                        {showOwner && (
+                            <>
+                                {' '}
+                                <Link
+                                    className="text-muted"
+                                    to={`${node.owner.url}/profile`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                >
+                                    (owned by {node.owner.namespaceName})
+                                </Link>
+                            </>
+                        )}
                     </div>
                     {node.actions.nodes.length > 0 && (
                         <div className="d-flex text-muted align-items-center">New search result → {actions}</div>

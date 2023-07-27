@@ -2,19 +2,22 @@ package conf
 
 import (
 	"context"
+	"encoding/hex"
 	"log"
 	"strings"
 	"time"
 
 	"github.com/hashicorp/cronexpr"
 
-	licensing "github.com/sourcegraph/sourcegraph/internal/accesstoken"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegraph/sourcegraph/internal/license"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/pointers"
@@ -123,6 +126,16 @@ func EmailVerificationRequired() bool {
 // It's false for sites that do not have an email sending API key set up.
 func CanSendEmail() bool {
 	return Get().EmailSmtp != nil
+}
+
+// EmailSenderName returns `email.senderName`. If that's not set, it returns
+// the default value "Sourcegraph".
+func EmailSenderName() string {
+	sender := Get().EmailSenderName
+	if sender != "" {
+		return sender
+	}
+	return "Sourcegraph"
 }
 
 // UpdateChannel tells the update channel. Default is "release".
@@ -580,6 +593,33 @@ func GitMaxConcurrentClones() int {
 	return v
 }
 
+// HashedCurrentLicenseKeyForAnalytics provides the current site license key, hashed using sha256, for anaytics purposes.
+func HashedCurrentLicenseKeyForAnalytics() string {
+	return HashedLicenseKeyForAnalytics(Get().LicenseKey)
+}
+
+// HashedCurrentLicenseKeyForAnalytics provides a license key, hashed using sha256, for anaytics purposes.
+func HashedLicenseKeyForAnalytics(licenseKey string) string {
+	return HashedLicenseKeyWithPrefix(licenseKey, "event-logging-telemetry-prefix")
+}
+
+// HashedLicenseKeyWithPrefix provides a sha256 hashed license key with a prefix (to ensure unique hashed values by use case).
+func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
+	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix+licenseKey)))
+}
+
+func GetDeduplicatedForksIndex() collections.Set[string] {
+	index := collections.NewSet[string]()
+
+	repoConf := Get().Repositories
+	if repoConf == nil {
+		return index
+	}
+
+	index.Add(repoConf.DeduplicateForks...)
+	return index
+}
+
 // GetCompletionsConfig evaluates a complete completions configuration based on
 // site configuration. The configuration may be nil if completions is disabled.
 func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
@@ -703,6 +743,31 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 		// Set a default completions model.
 		if completionsConfig.CompletionModel == "" {
 			completionsConfig.CompletionModel = "claude-instant-1"
+		}
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, this provider is misconfigured.
+		if completionsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If not chat model is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.ChatModel == "" {
+			return nil
+		}
+
+		// If not fast chat model is set, we fall back to the Chat Model.
+		if completionsConfig.FastChatModel == "" {
+			completionsConfig.FastChatModel = completionsConfig.ChatModel
+		}
+
+		// If not completions model is set, we cannot talk to Azure OpenAI. Bail.
+		if completionsConfig.CompletionModel == "" {
+			return nil
 		}
 	}
 
@@ -868,6 +933,24 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "text-embedding-ada-002" {
 			embeddingsConfig.Dimensions = 1536
 		}
+	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameAzureOpenAI) {
+		// If no endpoint is configured, we cannot talk to Azure OpenAI.
+		if embeddingsConfig.Endpoint == "" {
+			return nil
+		}
+
+		// If not access token is set, we cannot talk to OpenAI. Bail.
+		if embeddingsConfig.AccessToken == "" {
+			return nil
+		}
+
+		// If no model is set, we cannot do anything here.
+		if embeddingsConfig.Model == "" {
+			return nil
+		}
+		// Make sure models are always treated case-insensitive.
+		// TODO: Are model names on azure case insensitive?
+		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
 	} else {
 		// Unknown provider value.
 		return nil
@@ -929,7 +1012,7 @@ func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteCon
 	if config.LicenseKey == "" {
 		return ""
 	}
-	return licensing.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
+	return license.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
 }
 
 const (
@@ -961,6 +1044,10 @@ func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model st
 		return anthropicDefaultMaxPromptTokens(model)
 	case conftypes.CompletionsProviderNameOpenAI:
 		return openaiDefaultMaxPromptTokens(model)
+	case conftypes.CompletionsProviderNameAzureOpenAI:
+		// We cannot know based on the model name what model is actually used,
+		// this is a sane default for GPT in general.
+		return 8_000
 	}
 
 	// Should be unreachable.

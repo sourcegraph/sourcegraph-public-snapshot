@@ -23,17 +23,27 @@ func TestUsers(t *testing.T) {
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	users.ListFunc.SetDefaultReturn([]*types.User{{Username: "user1"}, {Username: "user2"}}, nil)
 	users.CountFunc.SetDefaultReturn(2, nil)
+	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		if id == 1 {
+			return &types.User{ID: 1, SiteAdmin: true}, nil
+		}
+		return nil, database.NewUserNotFoundError(id)
+	})
 
 	db := database.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Context: actor.WithActor(context.Background(), actor.FromMockUser(1)),
+			Schema:  mustParseGraphQLSchema(t, db),
 			Query: `
 				{
 					users {
-						nodes { username }
+						nodes {
+							username
+							siteAdmin
+						}
 						totalCount
 					}
 				}
@@ -43,10 +53,12 @@ func TestUsers(t *testing.T) {
 					"users": {
 						"nodes": [
 							{
-								"username": "user1"
+								"username": "user1",
+								"siteAdmin": false
 							},
 							{
-								"username": "user2"
+								"username": "user2",
+								"siteAdmin": false
 							}
 						],
 						"totalCount": 2
@@ -69,7 +81,8 @@ func TestUsers_Pagination(t *testing.T) {
 		}
 		return []*types.User{
 			{Username: "user1"},
-			{Username: "user2"}}, nil
+			{Username: "user2"},
+		}, nil
 	})
 	users.CountFunc.SetDefaultReturn(4, nil)
 
@@ -324,6 +337,7 @@ func runUsersQuery(t *testing.T, schema *graphql.Schema, want usersQueryTest) {
 		})
 	}
 }
+
 func TestUsers_InactiveSince(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -340,7 +354,7 @@ func TestUsers_InactiveSince(t *testing.T) {
 		return now.Add(-time.Duration(days) * 24 * time.Hour)
 	}
 
-	var users = []struct {
+	users := []struct {
 		user        database.NewUser
 		lastEventAt time.Time
 	}{

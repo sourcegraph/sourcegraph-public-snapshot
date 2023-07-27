@@ -37,6 +37,7 @@ The document content can set class names and IDs on elements (for example, Markd
     --experimental-color: #b200f8;
     --feature-color: #38757F;
     --beta-color: #72dbe8;
+    --brand-cyan-color: #72dbe8;
 
     --table-row-bg-1: var(--body-bg);
 }
@@ -101,14 +102,36 @@ body {
   color: var(--text-color);
   font-size: 16px;
 }
+
 a {
-  color: var(--link-color);
   text-decoration: none;
 }
-a:hover {
-  color: var(--link-hover-color);
-  text-decoration: underline;
+
+body.theme-light a,
+body.theme-light .markdown-body a {
+  color: var(--link-color);
 }
+
+body.theme-dark a {
+  color:var(--brand-cyan-color);
+
+}
+a:hover {
+  opacity:0.8;
+  transition: color 0.2s ease-in-out;
+  text-decoration: none;
+}
+
+body.theme-light #sidebar a,
+body.theme-light #index a {
+  color: #171717;
+}
+
+body.theme-dark #sidebar a,
+body.theme-dark #index a {
+  color: rgb(161, 161, 161);
+}
+
 /* Nav links */
 nav.links ul {
     padding: 0;
@@ -172,6 +195,7 @@ body > div#page {
     min-height: 100vh;
     justify-content: space-between;
     overflow-x: hidden; /* Prevent horizontal scrolling */
+    margin-top: calc(2*var(--spacing));
 }
 /* Responsive */
 @media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
@@ -180,6 +204,10 @@ body > div#page {
     }
     body > #sidebar {
         border-bottom: solid 1px var(--sidebar-border-color);
+        padding: 2rem;
+        margin: 0 auto !important;
+        width: 100%;
+        text-align: center;
     }
     body > #sidebar nav {
         display: none;
@@ -200,7 +228,6 @@ body > div#page {
         position: sticky;
         top: 0;
         align-self: flex-start;
-        border-right: solid 1px var(--sidebar-border-color);
         width: var(--sidebar-width);
         overflow-y: auto;
         padding-bottom: calc(0.75*var(--spacing));
@@ -222,10 +249,12 @@ body > div#page {
 
 /* SIDEBAR */
 body > #sidebar {
-    background-color: var(--sidebar-bg);
+    background-color: var(--body-bg);
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
+    margin-top: calc(2*var(--spacing));
+    margin-left: calc(6*var(--spacing));
 }
 /* Logo */
 body > #sidebar #logo {
@@ -234,7 +263,7 @@ body > #sidebar #logo {
 body > #sidebar #logo a {
     text-decoration: none;
     display: block;
-    padding: calc(1.25*var(--spacing)) calc(1.25*var(--spacing)) calc(0.5*var(--spacing)) ;
+    padding: 0;
 }
 body > #sidebar #logo img {
     width: 170px;
@@ -252,13 +281,15 @@ body > #sidebar #search-form {
 }
 body > #sidebar #search-form #search {
     color: var(--text-color);
-    border: solid 1px var(--input-border-color);
-    border-radius: 4px;
-    background-color: var(--body-bg);
+    border: none;
+    background-color: var(--border-color);
     width: 100%;
-    justify-self: center;
-    padding: calc(0.5*var(--spacing)) calc(0.25*var(--spacing)) calc(0.5*var(--spacing)) calc(2.2*var(--spacing));
     font-size: 1.0rem;
+    padding: calc(0.5*var(--spacing)) calc(0.6*var(--spacing));
+    box-shadow: inset 0 1px 0 0 #ffffff0d;
+    line-height: 1.5rem;
+    border-radius: .375rem;
+    border: 1px solid transparent;
 }
 body > #sidebar #search-form #search:focus {
     outline: none;
@@ -272,34 +303,42 @@ body > #sidebar #search-form .search-icon {
     top: 10px;
 }
 /* Nav */
-body > #sidebar nav.links {
-    margin-top: calc(0.75*var(--spacing));
-}
+body > #sidebar nav.links {margin-top: calc(2*var(--spacing));}
 body > #sidebar a {
-    padding: calc(0.4*var(--spacing)) calc(1.5*var(--spacing));
+    display: flex;
+    padding: calc(0.4*var(--spacing)) calc(1.5*var(--spacing)) calc(0.4*var(--spacing)) 0;
+    align-items: center;
 }
+
+#sidebar a svg {
+    width:16px;
+    margin-right: 0.5rem;
+}
+
 body > #sidebar nav .current > a {
-    font-weight: bold;
-    color: var(--text-color);
+    color: var(--brand-cyan-color);
 }
 body > #sidebar nav .nav-section  {
-    margin-top: calc(1.5*var(--spacing));
 }
 body > #sidebar .nav-section > ul > li {
     margin-bottom: calc(0.25*var(--spacing));
 }
 body > #sidebar .nav-section > ul > li.expand {
-    background-color: var(--sidebar-nav-active-bg);
+    /* background-color: var(--sidebar-nav-active-bg); */
 }
 body > #sidebar .nav-section ul ul {
     font-size: 90%;
-    padding-left: var(--spacing);
+    border-left: solid 1px var(--border-color);
+    margin-left: 0.2rem;
+    padding-right: .125rem;
 }
 body > #sidebar .nav-section ul ul li.active-subsection {
     font-weight: bold;
+    border-left: solid 1px var(--beta-color);
+    /* margin-left: -1px; */
 }
 body > #sidebar .nav-section ul ul li.active-subsection a {
-    color: var(--text-color);
+    color: var(--brand-cyan-color);
 }
 body > #sidebar .nav-section li.collapse ul {
     display: none;
@@ -370,20 +409,15 @@ body > #sidebar .external a, body > #page > footer .external a {
 		flex-direction: row-reverse;
 	}
 	body > #page > main > #index {
-        margin-top: calc(4.25*var(--spacing));
-        margin-left: calc(2*var(--spacing));
-        width: 30%;
+
+
         /* Note: all ancestors up to <html> (the scrolling element) must be overflow: visible (default) for this to work. */
-		position: sticky;
-		top: calc(2*var(--spacing));
-		max-height: calc(100vh - 4*var(--spacing));
-		padding: var(--spacing);
-        border: solid 1px var(--border-color);
-	}
+        top: calc(2*var(--spacing));
+        max-height: calc(100vh - 4*var(--spacing));
+ }
     body > #page > main > #content {
         flex: 8 4 auto;
         min-width: 0;
-        margin-top: calc(3.25*var(--spacing));
     }
 }
 
@@ -391,7 +425,11 @@ body > #page > main > #index {
 	font-size: 90%;
 	line-height: 24px;
 	overflow-y: auto;
-    align-self: flex-start;
+	align-self: flex-start;
+	position: fixed;
+	min-width: 300px;
+	max-width: 300px;
+	margin-top: calc(3*var(--spacing));
 }
 body > #page > main > #index > h3.version {
 	font-weight: bold;
@@ -401,8 +439,10 @@ body > #page > main > #index > h3.version {
 }
 body > #page > main > #index > h4 {
     margin-top: 0;
-	margin-bottom: 0;
-	padding-bottom: 0;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    line-height: 1.5rem;
+    margin-bottom: 1rem;
 }
 body > #page > main > #index .on-this-page {
     opacity: 0.7;
@@ -430,23 +470,27 @@ body > #page > main > #content {
 	font-size: 90%;
 }
 #content > .breadcrumbs {
-	margin-bottom: 0.75rem;
+	display: flex;
+	align-items: center;
+	color: rgb(143, 143, 143);
+	gap: .5rem;
+	padding: 0 1rem;
+	margin-bottom: 2.5rem;
 }
 #content > .breadcrumbs > .active {
 	color: inherit;
-	opacity: 0.8;
+	color: #ededed;
 }
 
 .page-btn {
 	display: inline-block;
 	font-size: 90%;
-	color: inherit;
 }
 
 .badge {
     /* Mirrored from product badge styles */
     display: inline-block;
-    padding: 0.125rem 0.375rem;
+    padding: 0.025rem 0.375rem;
     line-height: 1rem;
     border-radius: 4px;
     font-size: 0.75rem;
@@ -466,6 +510,7 @@ body > #page > main > #content {
     color: #000000;
     background-color: var(--beta-color);
     text-transform: uppercase;
+    margin-right: 0.2rem;
 }
 
 .badge-feature {
@@ -491,10 +536,12 @@ body > #page > main > #content {
 /* MARKDOWN */
 .markdown-body {
   text-size-adjust: 100%;
-  line-height: 1.5;
+  line-height: 1.77;
   word-wrap: break-word;
   tab-size: 2;
-
+  max-width: 665px;
+  margin-top: calc(2*var(--spacing));
+  padding: 0 1rem;
 }
 .markdown-body blockquote {
   border-left: solid 5px var(--border-color);
@@ -508,6 +555,8 @@ body > #page > main > #content {
     max-width: 100%;
     height: auto;
     aspect-ratio: attr(width) / attr(height);
+    border-radius: .375rem;
+    /* border: 1px solid rgb(31, 31, 31); */
 }
 .markdown-body a:not([href]) {
   color: inherit;
@@ -519,7 +568,7 @@ body > #page > main > #content {
 .markdown-body h4,
 .markdown-body h5,
 .markdown-body h6 {
-  margin-top: 24px;
+  margin-top: 32px;
   margin-bottom: 16px;
   font-weight: 600;
   line-height: 1.25;
@@ -528,8 +577,11 @@ body > #page > main > #content {
   position: relative;
   z-index: 1;
 }
-.markdown-body h1 { font-size: 32px; }
-.markdown-body h2 { font-size: 24px; }
+.markdown-body h1 {font-size: 36px;margin-bottom: 0.8888889em;line-height: 1.1111111;}
+.markdown-body h2 {
+    font-size: 24px;border-top-style: solid;border-top-width: 1px;
+    border-color: rgb(21 22 50);
+    padding-top: 2.5rem;scroll-margin-top: 11px;margin-top: 2em;margin-bottom: 1em;line-height: 1.3333333;}
 .markdown-body h3 { font-size: 20px; }
 .markdown-body h4 { font-size: 16px; }
 .markdown-body h5 { font-size: 14px; }
@@ -944,7 +996,7 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
 .markdown-body .getting-started .btn {
   flex: 1;
   margin: 0.5em;
-  padding: 1rem 1.25rem;
+  padding: 0.1rem 0.25rem;
   color: var(--text-color);
   border-radius: 4px;
   border: 1px solid var(--sidebar-nav-active-bg);
@@ -1197,7 +1249,8 @@ body.theme-dark {
     display: flex;
     flex-direction: row;
     gap: 8px;
-    padding: calc(0.5*var(--spacing)) calc(1*var(--spacing));
+    margin-top: calc(2*var(--spacing));
+    justify-content: center;
 }
 
 .MarkpromptSearchAnswerButton:focus,
@@ -1296,10 +1349,145 @@ markprompt-content.dark {
 #markprompt-button {
     background-color: transparent;
     border: 0px;
-    color: var(--link-color);
+    color: var(--markprompt-mutedForeground);
     cursor:pointer;
 }
 
 #markprompt-button:hover {
     color: var(--link-hover-color);
+}
+
+.markdown-body a {
+    color: var(--brand-cyan-color);
+}
+
+#sidebar ul ul li {
+    margin-left: -1px;
+    margin-top: 0.375rem;
+    margin-bottom: 0.375rem;
+}
+
+#sidebar ul ul li a {
+    cursor: pointer;
+    padding-left: 1rem;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+}
+
+body.theme-dark .markdown-body p,
+body.theme-dark .markdown-body ul,
+body.theme-dark .markdown-body li {
+    color: #94a5b8;
+}
+
+body.theme-light .markdown-body p,
+body.theme-light .markdown-body ul,
+body.theme-light .markdown-body li {
+    color: #171717;
+}
+
+.toc-bottom {
+    margin-top: 1.75rem;
+    padding-top: 1.25rem;
+    font-size: .875rem;
+    line-height: 1.25rem;
+    border-top: solid 1px rgb(21 22 50);
+}
+
+::placeholder { /* Chrome, Firefox, Opera, Safari 10.1+ */
+  color: rgb(161, 161, 161);
+  opacity: 1; /* Firefox */
+}
+
+:-ms-input-placeholder { /* Internet Explorer 10-11 */
+  color: rgb(161, 161, 161);
+}
+
+::-ms-input-placeholder { /* Microsoft Edge */
+  color: rgb(161, 161, 161);
+}
+
+.markdown-body ul {
+    padding-left: 12px;
+    margin-top: 1.25em;
+    margin-bottom: 1.25em;
+}
+
+.markdown-body li {
+    padding-left: 12px;
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+.theme-light .markdown-body h2 {
+    border-color: rgb(21 22 50 / 15%);
+}
+
+.theme-light .toc-bottom {
+    border-top: solid 1px rgb(21 22 50 / 15%);
+}
+body.theme-light > #sidebar .nav-section ul ul li.active-subsection a,
+body.theme-light > #sidebar nav .current > a,
+body.theme-light #content > .breadcrumbs > .active,
+.theme-light a:hover {
+    color: #000018;
+}
+
+body.theme-light > #sidebar .nav-section ul ul li.active-subsection{
+    border-left: solid 1px #000018;
+}
+body > #sidebar .current > a  {
+    font-weight: bold;
+}
+
+.hidden {
+    display: none;
+}
+
+@media (min-width: 1350px) {
+    .markdown-body {
+        max-width: 665px;
+        margin: unset;
+    }
+}
+
+@media (max-width: 1350px) {
+    .markdown-body {
+        max-width: 600px;
+    }
+}
+
+@media (min-width: 1280px) {
+    .xl\:block {
+        display: block;
+    }
+
+    body > #sidebar {
+        margin-left: calc(6*var(--spacing));
+    }
+
+     #content > .breadcrumbs {
+        display:flex;
+    }
+}
+
+@media (max-width: 1280px) {
+    #index {
+        display:none;
+    }
+    body > #sidebar {
+        margin-left: calc(2*var(--spacing));
+    }
+    #content > .breadcrumbs {
+        display:none;
+    }
+    .markdown-body {
+        margin: 0 auto;
+    }
+}
+
+@media (max-width: 800px) {
+    body > #sidebar {
+        background-color: var(--sidebar-bg);
+    }
 }

@@ -29,5 +29,8 @@ go_test(
         # Test requires localhost database
         "requires-network",
     ],
-    deps = ["@com_github_stretchr_testify//assert"],
+    deps = [
+        "@com_github_stretchr_testify//assert",
+        "@com_github_stretchr_testify//require",
+    ],
 )

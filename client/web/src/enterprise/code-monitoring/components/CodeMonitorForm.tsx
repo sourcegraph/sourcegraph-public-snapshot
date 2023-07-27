@@ -72,6 +72,11 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
             actions: {
                 nodes: [],
             },
+            owner: {
+                id: '',
+                namespaceName: '',
+                url: '',
+            },
         }
     )
 
@@ -189,8 +194,14 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
                         disabled={true}
                         message="Event history and configuration will not be shared. Code monitoring currently only supports individual owners."
                     >
-                        <option value={authenticatedUser.displayName || authenticatedUser.username}>
-                            {authenticatedUser.username}
+                        <option
+                            value={
+                                currentCodeMonitorState.owner.namespaceName ||
+                                authenticatedUser.displayName ||
+                                authenticatedUser.username
+                            }
+                        >
+                            {currentCodeMonitorState.owner.namespaceName || authenticatedUser.username}
                         </option>
                     </Select>
 
@@ -287,7 +298,10 @@ export const CodeMonitorForm: React.FunctionComponent<React.PropsWithChildren<Co
                         )}
                     </div>
                     {isErrorLike(codeMonitorOrError) && (
-                        <Alert variant="danger">Failed to create monitor: {codeMonitorOrError.message}</Alert>
+                        <Alert variant="danger">
+                            Failed to {currentCodeMonitorState.id === '' ? 'create' : 'update'} monitor:{' '}
+                            {codeMonitorOrError.message}
+                        </Alert>
                     )}
                 </div>
             </Form>

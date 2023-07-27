@@ -250,7 +250,7 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiOpenInNew} /> Cody Docs & FAQ
                                 </MenuLink>
-                                {authenticatedUser?.siteAdmin && (
+                                {!isSourcegraphApp && authenticatedUser?.siteAdmin && (
                                     <MenuLink as={Link} to="/site-admin/cody">
                                         <Icon aria-hidden={true} svgPath={mdiCogOutline} /> Cody Settings
                                     </MenuLink>

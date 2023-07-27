@@ -133,7 +133,7 @@ export const useUserBatchChangesCodeHostConnection = (
             first: 15,
         },
         options: {
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { node } = dataOrThrowErrors(result)
@@ -175,7 +175,7 @@ export const useGlobalBatchChangesCodeHostConnection = (): UseShowMorePagination
         },
         options: {
             useURL: true,
-            fetchPolicy: 'no-cache',
+            fetchPolicy: 'network-only',
         },
         getConnection: result => {
             const { batchChangesCodeHosts } = dataOrThrowErrors(result)

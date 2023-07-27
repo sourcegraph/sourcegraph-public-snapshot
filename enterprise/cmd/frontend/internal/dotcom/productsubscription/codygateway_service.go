@@ -147,11 +147,6 @@ ORDER BY
 	)
 
 	q := client.Query(query)
-	q.Labels = map[string]string{
-		"query":       "CompletionsUsageForActor",
-		"feature":     string(feature),
-		"actorSource": string(actorSource),
-	}
 	q.Parameters = []bigquery.QueryParameter{
 		{
 			Name:  "source",
@@ -275,10 +270,6 @@ ORDER BY
 	)
 
 	q := client.Query(query)
-	q.Labels = map[string]string{
-		"query":       "EmbeddingsUsageForActor",
-		"actorSource": string(actorSource),
-	}
 	q.Parameters = []bigquery.QueryParameter{
 		{
 			Name:  "source",

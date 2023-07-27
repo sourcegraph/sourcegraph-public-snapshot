@@ -1,6 +1,5 @@
 package com.sourcegraph.cody;
 
-import static com.sourcegraph.cody.chat.ChatUIConstants.TEXT_MARGIN;
 import static java.awt.event.KeyEvent.VK_ENTER;
 import static javax.swing.KeyStroke.getKeyStroke;
 
@@ -14,13 +13,11 @@ import com.intellij.openapi.actionSystem.KeyboardShortcut;
 import com.intellij.openapi.actionSystem.ShortcutSet;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.VerticalFlowLayout;
 import com.intellij.openapi.vcs.ProjectLevelVcsManager;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.ui.components.JBScrollPane;
 import com.intellij.ui.components.JBTabbedPane;
 import com.intellij.ui.components.JBTextArea;
 import com.intellij.util.IconUtil;
@@ -34,10 +31,8 @@ import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
 import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
-import com.sourcegraph.cody.chat.ChatUIConstants;
-import com.sourcegraph.cody.chat.ContentWithGradientBorder;
+import com.sourcegraph.cody.chat.ChatScrollPane;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
-import com.sourcegraph.cody.chat.HumanMessageToMarkdownTextTransformer;
 import com.sourcegraph.cody.chat.Interaction;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextGetter;
@@ -64,19 +59,14 @@ import com.sourcegraph.cody.vscode.CancellationToken;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import com.sourcegraph.config.SettingsComponent.InstanceType;
-import com.sourcegraph.config.SettingsConfigurable;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import com.sourcegraph.vcs.RepoUtil;
-import java.awt.BorderLayout;
-import java.awt.CardLayout;
-import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.GridLayout;
-import java.awt.event.AdjustmentListener;
+import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -84,13 +74,12 @@ import javax.swing.JComponent;
 import javax.swing.JEditorPane;
 import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.ButtonUI;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
-class CodyToolWindowContent implements UpdatableChat {
+public class CodyToolWindowContent implements UpdatableChat {
   public static Logger logger = Logger.getInstance(CodyToolWindowContent.class);
   private static final int CHAT_TAB_INDEX = 0;
   private static final int RECIPES_TAB_INDEX = 1;
@@ -103,7 +92,6 @@ class CodyToolWindowContent implements UpdatableChat {
   private final @NotNull Project project;
   private @NotNull volatile CancellationToken cancellationToken = new CancellationToken();
   private final JPanel stopGeneratingButtonPanel;
-  private boolean needScrollingDown = true;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
 
@@ -155,22 +143,7 @@ class CodyToolWindowContent implements UpdatableChat {
 
     // Chat panel
     messagesPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, true));
-    JBScrollPane chatPanel =
-        new JBScrollPane(
-            messagesPanel,
-            JBScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-            JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-    chatPanel.setBorder(BorderFactory.createEmptyBorder());
-
-    // Scroll all the way down after each message
-    AdjustmentListener scrollAdjustmentListener =
-        e -> {
-          if (needScrollingDown) {
-            e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-            needScrollingDown = false;
-          }
-        };
-    chatPanel.getVerticalScrollBar().addAdjustmentListener(scrollAdjustmentListener);
+    ChatScrollPane chatPanel = new ChatScrollPane(messagesPanel);
 
     // Controls panel
     JPanel controlsPanel = new JPanel();
@@ -241,6 +214,10 @@ class CodyToolWindowContent implements UpdatableChat {
     CodyLLMConfiguration.getInstance(project).refreshCache();
   }
 
+  public static CodyToolWindowContent getInstance(@NotNull Project project) {
+    return project.getService(CodyToolWindowContent.class);
+  }
+
   private static void enableAutoUpdateAvailabilityOfSummarizeRecentCodeChangesRecipe(
       @NotNull Project project, @NotNull JButton gitHistoryButton) {
     updateAvailabilityOfTheSummarizeRecentCodeChangesRecipe(project, gitHistoryButton);
@@ -294,15 +271,12 @@ class CodyToolWindowContent implements UpdatableChat {
 
   @NotNull
   private JPanel createAppNotInstalledPanel() {
-    JPanel appNotInstalledPanel =
-        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
     JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
     jEditorPane.setText(
         "<html><body><h2>Get Started</h2>"
             + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code."
             + " Download and run the Cody desktop app to Configure your local code graph.</p><"
             + "/body></html>");
-    appNotInstalledPanel.add(jEditorPane);
     JButton downloadCodyAppButton = createMainButton("Download Cody App");
     downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
     downloadCodyAppButton.addActionListener(
@@ -310,66 +284,25 @@ class CodyToolWindowContent implements UpdatableChat {
           BrowserUtil.browse("https://about.sourcegraph.com/app");
           updateVisibilityOfContentPanels();
         });
-    Border margin = JBUI.Borders.empty(TEXT_MARGIN);
-    jEditorPane.setBorder(margin);
-    appNotInstalledPanel.add(downloadCodyAppButton);
-    JPanel blankPanel = new JPanel();
-    blankPanel.setBorder(margin);
-    blankPanel.setOpaque(false);
-    appNotInstalledPanel.add(blankPanel);
-    JPanel wrapperAppNotInstalledPanel =
-        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
-    wrapperAppNotInstalledPanel.setBorder(margin);
-    wrapperAppNotInstalledPanel.add(appNotInstalledPanel);
-    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
-    wrapperAppNotInstalledPanel.add(goToSettingsPanel);
-    return wrapperAppNotInstalledPanel;
+    return new CodyOnboardingPanel(project, jEditorPane, downloadCodyAppButton);
   }
 
   @NotNull
   private JPanel createAppNotRunningPanel() {
-    JPanel appNotRunningPanel =
-        new ContentWithGradientBorder(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+
     JEditorPane jEditorPane = HtmlViewer.createHtmlViewer(UIUtil.getPanelBackground());
     jEditorPane.setText(
         "<html><body><h2>Cody App Not Running</h2>"
             + "<p>This plugin requires the Cody desktop app to enable context fetching for your private code.</p><"
             + "/body></html>");
-    appNotRunningPanel.add(jEditorPane);
-    JButton downloadCodyAppButton = createMainButton("Open Cody App");
-    downloadCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
-    downloadCodyAppButton.addActionListener(
+    JButton runCodyAppButton = createMainButton("Open Cody App");
+    runCodyAppButton.putClientProperty(DarculaButtonUI.DEFAULT_STYLE_KEY, Boolean.TRUE);
+    runCodyAppButton.addActionListener(
         e -> {
           LocalAppManager.runLocalApp();
           updateVisibilityOfContentPanels();
         });
-    Border margin = JBUI.Borders.empty(TEXT_MARGIN);
-    jEditorPane.setBorder(margin);
-    appNotRunningPanel.add(downloadCodyAppButton);
-    JPanel blankPanel = new JPanel();
-    blankPanel.setBorder(margin);
-    blankPanel.setOpaque(false);
-    appNotRunningPanel.add(blankPanel);
-    JPanel wrapperAppNotRunningPanel =
-        new JPanel(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
-    wrapperAppNotRunningPanel.setBorder(margin);
-    wrapperAppNotRunningPanel.add(appNotRunningPanel);
-    JPanel goToSettingsPanel = createPanelWithGoToSettingsButton();
-    wrapperAppNotRunningPanel.add(goToSettingsPanel);
-    return wrapperAppNotRunningPanel;
-  }
-
-  private JPanel createPanelWithGoToSettingsButton() {
-    JButton goToSettingsButton = new JButton("Sign in with an enterprise account");
-    goToSettingsButton.addActionListener(
-        e ->
-            ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class));
-    ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(goToSettingsButton);
-    goToSettingsButton.setUI(buttonUI);
-    JPanel panelWithSettingsButton = new JPanel(new BorderLayout());
-    panelWithSettingsButton.setBorder(JBUI.Borders.empty(TEXT_MARGIN, 0));
-    panelWithSettingsButton.add(goToSettingsButton, BorderLayout.CENTER);
-    return panelWithSettingsButton;
+    return new CodyOnboardingPanel(project, jEditorPane, runCodyAppButton);
   }
 
   @NotNull
@@ -385,6 +318,7 @@ class CodyToolWindowContent implements UpdatableChat {
   @NotNull
   private static JButton createMainButton(@NotNull String text) {
     JButton button = new JButton(text);
+    button.setMaximumSize(new Dimension(Short.MAX_VALUE, button.getPreferredSize().height));
     button.setAlignmentX(Component.CENTER_ALIGNMENT);
     ButtonUI buttonUI = (ButtonUI) DarculaButtonUI.createUI(button);
     button.setUI(buttonUI);
@@ -401,7 +335,7 @@ class CodyToolWindowContent implements UpdatableChat {
           "<p>It looks like you don't have Sourcegraph Access Token configured.</p>"
               + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
       AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-          new AssistantMessageWithSettingsButton(project, noAccessTokenText);
+          new AssistantMessageWithSettingsButton(noAccessTokenText);
       var messageContentPanel = new JPanel(new BorderLayout());
       messageContentPanel.add(assistantMessageWithSettingsButton);
       ApplicationManager.getApplication()
@@ -442,15 +376,6 @@ class CodyToolWindowContent implements UpdatableChat {
     messagesPanel.add(bubblePanel);
     messagesPanel.revalidate();
     messagesPanel.repaint();
-
-    // Need this hacky solution to scroll all the way down after each message
-    ApplicationManager.getApplication()
-        .invokeLater(
-            () -> {
-              needScrollingDown = true;
-              messagesPanel.revalidate();
-              messagesPanel.repaint();
-            });
   }
 
   @Override
@@ -471,15 +396,7 @@ class CodyToolWindowContent implements UpdatableChat {
           ChatMessage.createAssistantMessage(
               "I'm sorry, I can't connect to the server. Please make sure that the server is running and try again."));
     } else if (errorMessage.startsWith("Got error response 401")) {
-      String invalidAccessTokenText =
-          "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
-              + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
-      AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
-          new AssistantMessageWithSettingsButton(project, invalidAccessTokenText);
-      var messageContentPanel = new JPanel(new BorderLayout());
-      messageContentPanel.add(assistantMessageWithSettingsButton);
-      ApplicationManager.getApplication()
-          .invokeLater(() -> this.addComponentToChat(messageContentPanel));
+      addMessageWithInformationAboutInvalidAccessToken();
     } else {
       this.addMessageToChat(
           ChatMessage.createAssistantMessage(
@@ -489,23 +406,35 @@ class CodyToolWindowContent implements UpdatableChat {
     }
   }
 
+  private void addMessageWithInformationAboutInvalidAccessToken() {
+    String invalidAccessTokenText =
+        "<p>It looks like your Sourcegraph Access Token is invalid or not configured.</p>"
+            + "<p>See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> how to create one and configure it in the settings to use Cody.</p>";
+    AssistantMessageWithSettingsButton assistantMessageWithSettingsButton =
+        new AssistantMessageWithSettingsButton(invalidAccessTokenText);
+    var messageContentPanel = new JPanel(new BorderLayout());
+    messageContentPanel.add(assistantMessageWithSettingsButton);
+    ApplicationManager.getApplication()
+        .invokeLater(() -> this.addComponentToChat(messageContentPanel));
+  }
+
   public synchronized void updateLastMessage(@NotNull ChatMessage message) {
     ApplicationManager.getApplication()
         .invokeLater(
-            () -> {
-              transcript.addAssistantResponse(message);
-              if (messagesPanel.getComponentCount() > 0) {
-                JPanel lastBubblePanel =
-                    (JPanel) messagesPanel.getComponent(messagesPanel.getComponentCount() - 1);
-                Component component = lastBubblePanel.getComponent(0);
-                if (component instanceof ChatBubble) {
-                  ChatBubble lastBubble = (ChatBubble) component;
-                  lastBubble.updateText(message, messagesPanel);
-                  messagesPanel.revalidate();
-                  messagesPanel.repaint();
-                }
-              }
-            });
+            () ->
+                Optional.of(messagesPanel)
+                    .filter(mp -> mp.getComponentCount() > 0)
+                    .map(mp -> mp.getComponent(mp.getComponentCount() - 1))
+                    .filter(component -> component instanceof JPanel)
+                    .map(component -> (JPanel) component)
+                    .map(lastBubblePanel -> lastBubblePanel.getComponent(0))
+                    .filter(component -> component instanceof ChatBubble)
+                    .map(component -> (ChatBubble) component)
+                    .ifPresent(
+                        lastBubble -> {
+                          transcript.addAssistantResponse(message);
+                          lastBubble.incrementallyUpdateText(message, messagesPanel);
+                        }));
   }
 
   private void startMessageProcessing() {
@@ -556,10 +485,9 @@ class CodyToolWindowContent implements UpdatableChat {
   }
 
   private void sendMessage(@NotNull Project project) {
-    String messageText =
-        new HumanMessageToMarkdownTextTransformer(promptInput.getText()).transform();
+    String text = promptInput.getText();
     promptInput.setText("");
-    sendMessage(project, ChatMessage.createHumanMessage(messageText, messageText), "");
+    sendMessage(project, ChatMessage.createHumanMessage(text, text), "");
   }
 
   private void sendMessage(
@@ -602,28 +530,33 @@ class CodyToolWindowContent implements UpdatableChat {
                   logger.warn("Error sending message '" + humanMessage + "' to chat", e);
                 }
               } else {
-                List<ContextMessage> contextMessages =
-                    getContextFromEmbeddings(
-                        project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
-                this.displayUsedContext(contextMessages);
-                List<ContextMessage> editorContextMessages =
-                    getEditorContextMessages(editorContext);
-                contextMessages.addAll(editorContextMessages);
-                List<ContextMessage> selectionContextMessages =
-                    getSelectionContextMessages(editorContext);
-                contextMessages.addAll(selectionContextMessages);
-                // Add human message
-                transcript.addInteraction(new Interaction(humanMessage, contextMessages));
-
-                List<Message> prompt =
-                    transcript.getPromptForLastInteraction(
-                        Preamble.getPreamble(repoName),
-                        TruncationUtils.getChatMaxAvailablePromptLength(project));
-
                 try {
-                  chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
-                } catch (Exception e) {
-                  logger.warn("Error sending message '" + humanMessage + "' to chat", e);
+                  List<ContextMessage> contextMessages =
+                      getContextFromEmbeddings(
+                          project, humanMessage, instanceUrl, repoName, accessTokenOrEmpty);
+                  this.displayUsedContext(contextMessages);
+                  List<ContextMessage> editorContextMessages =
+                      getEditorContextMessages(editorContext);
+                  contextMessages.addAll(editorContextMessages);
+                  List<ContextMessage> selectionContextMessages =
+                      getSelectionContextMessages(editorContext);
+                  contextMessages.addAll(selectionContextMessages);
+                  // Add human message
+                  transcript.addInteraction(new Interaction(humanMessage, contextMessages));
+
+                  List<Message> prompt =
+                      transcript.getPromptForLastInteraction(
+                          Preamble.getPreamble(repoName),
+                          TruncationUtils.getChatMaxAvailablePromptLength(project));
+
+                  try {
+                    chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
+                  } catch (Exception e) {
+                    logger.warn("Error sending message '" + humanMessage + "' to chat", e);
+                  }
+                } catch (InvalidAccessTokenException ex) {
+                  addMessageWithInformationAboutInvalidAccessToken();
+                  finishMessageProcessing();
                 }
               }
               GraphQlLogger.logCodyEvent(this.project, "recipe:chat-question", "executed");
@@ -681,6 +614,11 @@ class CodyToolWindowContent implements UpdatableChat {
                 + ", in repo: "
                 + repoName,
             e);
+        String message = e.getMessage();
+        if (message != null && message.contains("request failed with status code 401")) {
+          throw new InvalidAccessTokenException(
+              "Invalid access token while loading context messages", e);
+        }
       }
     }
     return contextMessages;

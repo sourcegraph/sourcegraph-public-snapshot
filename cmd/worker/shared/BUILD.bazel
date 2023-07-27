@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//cmd/worker/internal/encryption",
         "//cmd/worker/internal/gitserver",
+        "//cmd/worker/internal/licensecheck",
         "//cmd/worker/internal/migrations",
         "//cmd/worker/internal/outboundwebhooks",
         "//cmd/worker/internal/repostatistics",

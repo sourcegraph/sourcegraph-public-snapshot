@@ -3,8 +3,8 @@ package com.sourcegraph.cody.chat;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.sourcegraph.cody.UpdatableChat;
-import com.sourcegraph.cody.UpdatableChatHolderService;
+import com.sourcegraph.cody.CodyToolWindowContent;
+import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 
 public class RefreshCodyAppDetection extends DumbAwareAction {
@@ -15,11 +15,9 @@ public class RefreshCodyAppDetection extends DumbAwareAction {
     if (project == null) {
       return;
     }
-    UpdatableChatHolderService updatableChatHolderService =
-        project.getService(UpdatableChatHolderService.class);
-    UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-    if (updatableChat != null) {
-      updatableChat.refreshPanelsVisibility();
+    CodyToolWindowContent codyToolWindowContent = CodyToolWindowContent.getInstance(project);
+    if (codyToolWindowContent != null) {
+      codyToolWindowContent.refreshPanelsVisibility();
     }
   }
 
@@ -30,13 +28,17 @@ public class RefreshCodyAppDetection extends DumbAwareAction {
   @Override
   public void update(@NotNull AnActionEvent e) {
     e.getPresentation().setVisible(false);
+    if (!ConfigUtil.isCodyEnabled()) {
+      e.getPresentation().setEnabled(false);
+      return;
+    } else {
+      e.getPresentation().setEnabled(true);
+    }
     Project project = e.getProject();
     if (project != null) {
-      UpdatableChatHolderService updatableChatHolderService =
-          project.getService(UpdatableChatHolderService.class);
-      UpdatableChat updatableChat = updatableChatHolderService.getUpdatableChat();
-      if (updatableChat != null) {
-        updatableChat.refreshPanelsVisibility();
+      CodyToolWindowContent codyToolWindowContent = CodyToolWindowContent.getInstance(project);
+      if (codyToolWindowContent != null) {
+        codyToolWindowContent.refreshPanelsVisibility();
       }
     }
   }

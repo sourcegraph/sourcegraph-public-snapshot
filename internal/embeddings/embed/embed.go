@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/azureopenai"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/openai"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/sourcegraph"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -21,10 +22,12 @@ import (
 
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
 	switch config.Provider {
-	case "sourcegraph":
+	case conftypes.EmbeddingsProviderNameSourcegraph:
 		return sourcegraph.NewClient(httpcli.ExternalClient, config), nil
-	case "openai":
+	case conftypes.EmbeddingsProviderNameOpenAI:
 		return openai.NewClient(httpcli.ExternalClient, config), nil
+	case conftypes.EmbeddingsProviderNameAzureOpenAI:
+		return azureopenai.NewClient(httpcli.ExternalClient, config), nil
 	default:
 		return nil, errors.Newf("invalid provider %q", config.Provider)
 	}
@@ -106,7 +109,7 @@ func EmbedRepo(
 
 	insertIndex := func(index *embeddings.EmbeddingIndex, metadata []embeddings.RepoEmbeddingRowMetadata, vectors []float32) {
 		index.RowMetadata = append(index.RowMetadata, metadata...)
-		index.Embeddings = append(index.Embeddings, embeddings.Quantize(vectors)...)
+		index.Embeddings = append(index.Embeddings, embeddings.Quantize(vectors, nil)...)
 		// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
 		// to "unimportant" files and the average for unknown files. We should probably
 		// add this here, too.

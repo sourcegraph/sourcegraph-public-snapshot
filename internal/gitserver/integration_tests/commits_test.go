@@ -79,7 +79,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 		}
 
-		source := gitserver.NewTestClientSource(t, GitserverAddresses)
+		source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, nil, repoCommits, true)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
@@ -117,7 +117,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 			nil,
 		}
-		source := gitserver.NewTestClientSource(t, GitserverAddresses)
+		source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 
 		commits, err := gitserver.NewTestClient(http.DefaultClient, source).GetCommits(ctx, getTestSubRepoPermsChecker("file1", "file3"), repoCommits, true)
 		if err != nil {
@@ -150,7 +150,8 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 }
 
 func TestHead(t *testing.T) {
-	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	db := database.NewMockDB()
+	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	t.Run("basic", func(t *testing.T) {
 		gitCommands := []string{

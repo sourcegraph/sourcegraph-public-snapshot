@@ -269,3 +269,29 @@ func BenchmarkCustomRepoEmbeddingIndexUpload(b *testing.B) {
 		}
 	}
 }
+
+func BenchmarkCustomRepoEmbeddingIndexDownload(b *testing.B) {
+	// Roughly the size of the sourcegraph/sourcegraph index.
+	index := &RepoEmbeddingIndex{
+		RepoName:  api.RepoName("repo"),
+		Revision:  api.CommitID("commit"),
+		CodeIndex: getMockEmbeddingIndex(40_000, 1536),
+		TextIndex: getMockEmbeddingIndex(10_000, 1536),
+	}
+
+	ctx := context.Background()
+	uploadStore := newMockUploadStore()
+	err := UploadRepoEmbeddingIndex(ctx, uploadStore, "index", index)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+
+	for i := 0; i < b.N; i++ {
+		_, err := downloadRepoEmbeddingIndex(ctx, uploadStore, "index")
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}

@@ -1,0 +1,24 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:go_defs.bzl", "go_test")
+
+go_library(
+    name = "azureopenai",
+    srcs = ["client.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/azureopenai",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/conf/conftypes",
+        "//internal/embeddings/embed/client",
+        "//lib/errors",
+    ],
+)
+
+go_test(
+    name = "azureopenai_test",
+    srcs = ["client_test.go"],
+    embed = [":azureopenai"],
+    deps = [
+        "//internal/conf/conftypes",
+        "@com_github_stretchr_testify//require",
+    ],
+)

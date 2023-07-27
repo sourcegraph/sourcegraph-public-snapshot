@@ -111,23 +111,36 @@ export const ExternalServiceNode: FC<ExternalServiceNodeProps> = ({ node, editin
                     </div>
                 </div>
                 <div className="flex-shrink-0 ml-3">
-                    <Tooltip content={`${editingDisabled ? 'View' : 'Edit'} code host connection settings`}>
+                    <Tooltip
+                        content={
+                            editingDisabled
+                                ? 'Editing code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                : 'Edit code host connection settings'
+                        }
+                    >
                         <Button
                             className="test-edit-external-service-button"
                             to={`/site-admin/external-services/${encodeURIComponent(node.id)}/edit`}
                             variant="secondary"
                             size="sm"
                             as={Link}
+                            disabled={editingDisabled}
                         >
-                            <Icon aria-hidden={true} svgPath={mdiCog} /> {editingDisabled ? 'View' : 'Edit'}
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
                         </Button>
                     </Tooltip>{' '}
-                    <Tooltip content="Delete code host connection">
+                    <Tooltip
+                        content={
+                            editingDisabled
+                                ? 'Deleting code host connections through the UI is disabled when the EXTSVC_CONFIG_FILE environment variable is set.'
+                                : 'Delete code host connection'
+                        }
+                    >
                         <Button
                             aria-label="Delete"
                             className="test-delete-external-service-button"
                             onClick={onDelete}
-                            disabled={isDeleting === true}
+                            disabled={isDeleting === true || editingDisabled}
                             variant="danger"
                             size="sm"
                         >

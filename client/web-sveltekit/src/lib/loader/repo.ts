@@ -19,7 +19,6 @@ import { gql } from '$lib/http-client'
 import { requestGraphQL } from '$lib/web'
 
 export { resolveRepoRevision } from '@sourcegraph/web/src/repo/backend'
-export { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 
 // Copies of non-reusable queries from the main app
 // TODO: Refactor queries to make them reusable
