@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -219,8 +220,13 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 // It may return partial but valid results in case of error, and it is up to callers to decide
 // whether to discard.
 func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
+	flags := featureflag.FromContext(ctx)
+	experimentalVisibility := flags.GetBoolOr("gitLabProjectVisibilityExperimental", false)
 	q := make(url.Values)
 	q.Add("per_page", "100") // 100 is the maximum page size
+	if !experimentalVisibility {
+		q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
+	}
 
 	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
 	// when appending the first 100 results to the slice.
@@ -242,10 +248,13 @@ func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUs
 			}
 
 			for _, p := range projects {
-				// Only append the project if the user can see the contents of the project.
-				if p.ContentsVisible() {
-					projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
+				if experimentalVisibility && !p.ContentsVisible() {
+					// If feature flag is enabled and user cannot see the contents
+					// of the project, skip the project
+					continue
 				}
+
+				projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
 			}
 
 			if next == nil {
