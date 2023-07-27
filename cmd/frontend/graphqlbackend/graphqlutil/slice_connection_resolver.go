@@ -49,9 +49,5 @@ func (c *sliceConnectionResolver[T]) TotalCount(ctx context.Context) int32 {
 }
 
 func (c *sliceConnectionResolver[T]) PageInfo(ctx context.Context) *PageInfo {
-	var hasNextPage bool
-	if c.total > c.currentEnd {
-		hasNextPage = true
-	}
-	return HasNextPage(hasNextPage)
+	return HasNextPage(c.total > c.currentEnd)
 }
