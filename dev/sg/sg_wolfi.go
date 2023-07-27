@@ -36,17 +36,28 @@ sg wolfi image gitserver.yaml
 				if len(args) == 0 {
 					return errors.New("no package manifest file provided")
 				}
+				packageName := args[0]
 
-				resolver, err := getTeamResolver(ctx.Context)
+				// Set up package repo + keypair
+				// TODO: Get location of sourcegraph directory
+				c, err := wolfi.InitLocalPackageRepo()
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
+
+				// TODO: Sanitise .yaml input
+				// TODO: Check file exists + copy to tempdir
+				// TODO: Run docker command
+				buildDir, err := wolfi.SetupPackageBuild(packageName)
 				if err != nil {
 					return err
 				}
-				std.Out.Writef("%s's current time is %s",
-					teammate.Name, timeAtLocation(teammate.SlackTimezone))
+
+				err = c.DoPackageBuild(packageName, buildDir)
+				if err != nil {
+					return err
+				}
+
 				return nil
 			},
 		},
