@@ -51,14 +51,11 @@ func InitLocalPackageRepo() (PackageRepoConfig, error) {
 	}
 
 	// Generate keys for local repository
-	f, err := os.Open(c.KeyFilepath)
-	if err == nil {
-		f.Close()
-	} else if os.IsNotExist(err) {
+	if _, err = os.Stat(c.KeyFilepath); os.IsNotExist(err) {
 		if err := c.GenerateKeypair(); err != nil {
 			return c, err
 		}
-	} else {
+	} else if err != nil {
 		return c, err
 	}
 

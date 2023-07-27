@@ -29,7 +29,7 @@ func (c PackageRepoConfig) SetupBaseImageBuild(name string) (manifestBaseName st
 	// Check manfest exists
 	manifestPath := filepath.Join(repoRoot, "wolfi-images", manifestFileName)
 
-	if _, err := os.Open(manifestPath); err != nil {
+	if _, err = os.Stat(manifestPath); !os.IsNotExist(err) {
 		return "", "", errors.Wrap(err, "manifest file does not exist")
 	}
 
