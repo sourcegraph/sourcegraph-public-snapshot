@@ -222,6 +222,7 @@ func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Accou
 func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
 	flags := featureflag.FromContext(ctx)
 	experimentalVisibility := flags.GetBoolOr("gitLabProjectVisibilityExperimental", false)
+
 	q := make(url.Values)
 	q.Add("per_page", "100") // 100 is the maximum page size
 	if !experimentalVisibility {
