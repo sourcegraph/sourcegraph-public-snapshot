@@ -59,7 +59,7 @@ There has been some [changes to the flow in Bitbucket v7.20](https://confluence.
 
 <!-- Duplicating content in this section and in 7.19 on purpose. If we decide to implement OAuth2 support, the 7.20 instructions would be much more different than now -->
 
-Click on **Create** link button. 
+Click on **Create link** button. 
 
 ![Screenshot of Bitbucket Application Links page.](https://storage.googleapis.com/sourcegraph-assets/docs/images/administration/config/external-services/bitbucket_server/application_links_landing_page.png)
 
