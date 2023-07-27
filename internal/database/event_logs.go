@@ -274,6 +274,9 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.Referrer,
 			ensureUuid(event.DeviceID),
 			ensureUuid(event.InsertID),
+			event.Client,
+			event.BillingProductCategory,
+			event.BillingEventID,
 		}
 	}
 	close(rowValues)
@@ -300,6 +303,9 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			"referrer",
 			"device_id",
 			"insert_id",
+			"client",
+			"billing_product_category",
+			"billing_event_id",
 		},
 		rowValues,
 	)
