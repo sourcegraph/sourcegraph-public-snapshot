@@ -151,7 +151,7 @@ func (t RunType) Matcher() *RunTypeMatcher {
 		}
 	case WolfiExpBranch:
 		return &RunTypeMatcher{
-			Branch: "wolfi/",
+			Branch: "will/", // TODO: Do not merge
 		}
 	case ImagePatch:
 		return &RunTypeMatcher{
