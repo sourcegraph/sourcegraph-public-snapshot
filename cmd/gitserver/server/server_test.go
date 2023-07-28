@@ -312,6 +312,7 @@ func TestServer_handleP4Exec(t *testing.T) {
 			skipCloneForTests:       true,
 			DB:                      database.NewMockDB(),
 			RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+			DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 		}
 
 		server := defaults.NewServer(logger)

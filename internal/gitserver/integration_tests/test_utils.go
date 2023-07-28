@@ -83,6 +83,7 @@ func InitGitserver() {
 		GlobalBatchLogSemaphore: semaphore.NewWeighted(32),
 		DB:                      db,
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 
 	grpcServer := defaults.NewServer(logger)

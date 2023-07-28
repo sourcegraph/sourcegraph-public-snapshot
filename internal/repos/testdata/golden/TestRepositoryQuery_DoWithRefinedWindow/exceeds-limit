@@ -1,69 +1,26 @@
 [
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk1NTc5Nzc=",
-    "DatabaseID": 557977,
-    "NameWithOwner": "socketio/socket.io-client",
-    "Description": "Realtime application framework (client)",
-    "URL": "https://github.com/socketio/socket.io-client",
+    "ID": "MDEwOlJlcG9zaXRvcnkzNTIxMDI0Mw==",
+    "DatabaseID": 35210243,
+    "NameWithOwner": "ctjhoa/rust-learning",
+    "Description": "A bunch of links to blog posts, articles, videos, etc for learning Rust",
+    "URL": "https://github.com/ctjhoa/rust-learning",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "browser"
+        "Name": "rust"
        }
       },
       {
        "Topic": {
-        "Name": "javascript"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "nodejs"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "socket-io"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "websocket"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10098,
-    "ForkCount": 3106
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMjA1MjYzMA==",
-    "DatabaseID": 12052630,
-    "NameWithOwner": "Zulko/moviepy",
-    "Description": "Video editing with Python",
-    "URL": "https://github.com/Zulko/moviepy",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "python"
+        "Name": "blog-article"
        }
       },
       {
@@ -73,113 +30,205 @@
       },
       {
        "Topic": {
-        "Name": "gif"
+        "Name": "tutorial"
        }
       },
       {
        "Topic": {
-        "Name": "animation"
+        "Name": "book"
        }
       },
       {
        "Topic": {
-        "Name": "video-editing"
+        "Name": "learn"
        }
       },
       {
        "Topic": {
-        "Name": "video-processing"
+        "Name": "teaching"
        }
       },
       {
        "Topic": {
         "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10095,
+    "ForkCount": 689,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyMTc4MDU2Mg==",
+    "DatabaseID": 21780562,
+    "NameWithOwner": "JStumpp/awesome-android",
+    "Description": "A curated list of awesome Android packages and resources.",
+    "URL": "https://github.com/JStumpp/awesome-android",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "android-library"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "android-development"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome-list-awesome-list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "android-tutorial"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome-list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "list"
        }
       }
      ]
     },
     "StargazerCount": 10091,
-    "ForkCount": 1335
+    "ForkCount": 1699,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMzYyMjE4OQ==",
-    "DatabaseID": 13622189,
-    "NameWithOwner": "tariqbuilds/linux-dash",
-    "Description": "A beautiful web dashboard for Linux",
-    "URL": "https://github.com/tariqbuilds/linux-dash",
+    "ID": "MDEwOlJlcG9zaXRvcnk5NzQ2NDc3",
+    "DatabaseID": 9746477,
+    "NameWithOwner": "sonic-pi-net/sonic-pi",
+    "Description": "Code. Music. Live.",
+    "URL": "https://github.com/sonic-pi-net/sonic-pi",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "linux"
+        "Name": "livecoding"
        }
       },
       {
        "Topic": {
-        "Name": "dashboard"
+        "Name": "music"
        }
       },
       {
        "Topic": {
-        "Name": "monitoring"
+        "Name": "education"
        }
       },
       {
        "Topic": {
-        "Name": "server"
+        "Name": "schools"
        }
       },
       {
        "Topic": {
-        "Name": "web"
+        "Name": "synthesis"
        }
       },
       {
        "Topic": {
-        "Name": "ui"
+        "Name": "synthesizer"
        }
       },
       {
        "Topic": {
-        "Name": "linux-dash"
+        "Name": "instrument"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "live-coding"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "art"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "audio"
        }
       }
      ]
     },
-    "StargazerCount": 10088,
-    "ForkCount": 1245
+    "StargazerCount": 10084,
+    "ForkCount": 902,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk3MTc4MTU1",
-    "DatabaseID": 7178155,
-    "NameWithOwner": "svgdotjs/svg.js",
-    "Description": "The lightweight library for manipulating and animating SVG",
-    "URL": "https://github.com/svgdotjs/svg.js",
+    "ID": "MDEwOlJlcG9zaXRvcnkxMTQ5NTc4Nw==",
+    "DatabaseID": 11495787,
+    "NameWithOwner": "JakeWharton/timber",
+    "Description": "A logger with a small, extensible API which provides utility on top of Android's normal Log class.",
+    "URL": "https://github.com/JakeWharton/timber",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10078,
+    "ForkCount": 952,
     "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkzMjIxOTE0Mg==",
+    "DatabaseID": 32219142,
+    "NameWithOwner": "chimurai/http-proxy-middleware",
+    "Description": ":zap: The one-liner node.js http-proxy middleware for connect, express, next.js and more",
+    "URL": "https://github.com/chimurai/http-proxy-middleware",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
     "RepositoryTopics": {
      "Nodes": [
-      {
-       "Topic": {
-        "Name": "svg"
-       }
-      },
       {
        "Topic": {
         "Name": "javascript"
@@ -187,396 +236,130 @@
       },
       {
        "Topic": {
-        "Name": "svgjs"
+        "Name": "proxy-middleware"
        }
       },
       {
        "Topic": {
-        "Name": "animation"
+        "Name": "http-proxy"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "proxy"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "middleware"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nodejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "browser-sync"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "connect"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "express"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "websocket"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "node"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "polka"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "fastify"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nextjs"
        }
       }
      ]
     },
-    "StargazerCount": 10082,
-    "ForkCount": 1062
+    "StargazerCount": 10069,
+    "ForkCount": 841,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyNDk1Njc3Mg==",
-    "DatabaseID": 24956772,
-    "NameWithOwner": "Hammerspoon/hammerspoon",
-    "Description": "Staggeringly powerful macOS desktop automation with Lua",
-    "URL": "https://github.com/Hammerspoon/hammerspoon",
+    "ID": "MDEwOlJlcG9zaXRvcnkyMzIwODAxMg==",
+    "DatabaseID": 23208012,
+    "NameWithOwner": "sbilly/awesome-security",
+    "Description": "A collection of awesome software, libraries, documents, books, resources and cools stuffs about security.",
+    "URL": "https://github.com/sbilly/awesome-security",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "macos"
+        "Name": "security"
        }
       },
       {
        "Topic": {
-        "Name": "objective-c"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "lua"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "hammerspoon"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "osx"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "automation"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "mjolnir"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "irc"
+        "Name": "awesome-list"
        }
       }
      ]
     },
-    "StargazerCount": 10079,
-    "ForkCount": 527
+    "StargazerCount": 10065,
+    "ForkCount": 1702,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNTQzNQ==",
-    "DatabaseID": 15435,
-    "NameWithOwner": "Shopify/liquid",
-    "Description": "Liquid markup language. Safe, customer facing template language for flexible web apps. ",
-    "URL": "https://github.com/Shopify/liquid",
+    "ID": "MDEwOlJlcG9zaXRvcnk3NDc1MTI=",
+    "DatabaseID": 747512,
+    "NameWithOwner": "clojure/clojure",
+    "Description": "The Clojure programming language",
+    "URL": "https://github.com/clojure/clojure",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": []
     },
-    "StargazerCount": 10059,
-    "ForkCount": 1309
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk3OTYxOTkx",
-    "DatabaseID": 7961991,
-    "NameWithOwner": "square/javapoet",
-    "Description": "A Java API for generating .java source files.",
-    "URL": "https://github.com/square/javapoet",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
+    "StargazerCount": 10057,
+    "ForkCount": 1470,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10054,
-    "ForkCount": 1304
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk2NDA1MzQ=",
-    "DatabaseID": 640534,
-    "NameWithOwner": "sympy/sympy",
-    "Description": "A computer algebra system written in pure Python",
-    "URL": "https://github.com/sympy/sympy",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "python"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "math"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "computer-algebra"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "science"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "hacktoberfest"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10052,
-    "ForkCount": 3848
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyOTA1MDMzOA==",
-    "DatabaseID": 29050338,
-    "NameWithOwner": "mementum/backtrader",
-    "Description": "Python Backtesting library for trading strategies",
-    "URL": "https://github.com/mementum/backtrader",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "python"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "trading"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "backtesting"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "metaclass"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10044,
-    "ForkCount": 3135
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyODM1MTEx",
-    "DatabaseID": 2835111,
-    "NameWithOwner": "pyinstaller/pyinstaller",
-    "Description": "Freeze (package) Python programs into stand-alone executables",
-    "URL": "https://github.com/pyinstaller/pyinstaller",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "python"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "python-3"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "bundle"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "package"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "pyinstaller"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "python-to-exe"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "py2exe"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "py2app"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10034,
-    "ForkCount": 1857
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNzE0MTYw",
-    "DatabaseID": 1714160,
-    "NameWithOwner": "NaturalNode/natural",
-    "Description": "general natural language facilities for node",
-    "URL": "https://github.com/NaturalNode/natural",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10029,
-    "ForkCount": 874
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk0MDMwNTc0",
-    "DatabaseID": 4030574,
-    "NameWithOwner": "ksky521/nodeppt",
-    "Description": "This is probably the best web presentation tool so far!",
-    "URL": "https://github.com/ksky521/nodeppt",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "presentation"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "ppt"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "webslide"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "markdown-it"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "posthtml"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "animation"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "slides"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "slideshow"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "keynote"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "markdown"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "html5"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "css3"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "javascript"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "javascript-library"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "webpack"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "html-presentation"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10026,
-    "ForkCount": 2102
+    "Parent": null
    },
    "Error": ""
   },
@@ -592,51 +375,693 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": []
     },
-    "StargazerCount": 10021,
-    "ForkCount": 719
+    "StargazerCount": 10040,
+    "ForkCount": 716,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMDIzMDM2OQ==",
-    "DatabaseID": 10230369,
-    "NameWithOwner": "google/auto",
-    "Description": "A collection of source code generators for Java.",
-    "URL": "https://github.com/google/auto",
+    "ID": "MDEwOlJlcG9zaXRvcnkzNTMxMzcxMg==",
+    "DatabaseID": 35313712,
+    "NameWithOwner": "rshipp/awesome-malware-analysis",
+    "Description": "Defund the Police.",
+    "URL": "https://github.com/rshipp/awesome-malware-analysis",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10017,
-    "ForkCount": 1180
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyNjk5OTM1",
-    "DatabaseID": 2699935,
-    "NameWithOwner": "squizlabs/PHP_CodeSniffer",
-    "Description": "PHP_CodeSniffer tokenizes PHP files and detects violations of a defined set of coding standards.",
-    "URL": "https://github.com/squizlabs/PHP_CodeSniffer",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
+      {
+       "Topic": {
+        "Name": "malware-analysis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome-list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "malware-samples"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "analysis-framework"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dynamic-analysis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "static-analysis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "threat-intelligence"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "automated-analysis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "domain-analysis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "network-traffic"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "threatintel"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "malware-collection"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "malware-research"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "threat-sharing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "chinese-translation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "chinese"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "drop-ice"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10038,
+    "ForkCount": 2441,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk1OTgxNjQ=",
+    "DatabaseID": 598164,
+    "NameWithOwner": "novnc/noVNC",
+    "Description": "VNC client web application",
+    "URL": "https://github.com/novnc/noVNC",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "novnc"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vnc-client"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "websockify"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "html5"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "html"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "html-canvas"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "websockets"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "wss"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "modern-browsers"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "arraybuffer"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10035,
+    "ForkCount": 2081,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkzNDA5Ng==",
+    "DatabaseID": 34096,
+    "NameWithOwner": "leachim6/hello-world",
+    "Description": "Hello world in every computer language.  Thanks to everyone who contributes to this, make sure to see contributing.md for contribution instructions!",
+    "URL": "https://github.com/leachim6/hello-world",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "hello-world"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "example-code"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "esolangs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10033,
+    "ForkCount": 1853,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk4NjI5NDE3",
+    "DatabaseID": 8629417,
+    "NameWithOwner": "mapbox/mapbox-gl-js",
+    "Description": "Interactive, thoroughly customizable maps in the browser, powered by vector tiles and WebGL",
+    "URL": "https://github.com/mapbox/mapbox-gl-js",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "map"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mapbox-gl"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "webgl"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vector-tiles"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "openstreetmap"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "monorepo"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mapbox-gl-js"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mapbox"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "geojson"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10017,
+    "ForkCount": 2128,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk5Nzc0NDgy",
+    "DatabaseID": 9774482,
+    "NameWithOwner": "maurosoria/dirsearch",
+    "Description": "Web path scanner",
+    "URL": "https://github.com/maurosoria/dirsearch",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "fuzzer"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "fuzzing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "security"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dirsearch"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacking"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "pentesting"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "penetration-testing"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "bug-bounty"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "appsec"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "wordlist"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacking-tool"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "infosec"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "brute"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "scanner"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "bugbounty"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "enumeration"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "pentest-tool"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "red-teaming"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "redteam"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10014,
+    "ForkCount": 2191,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk5MDkwOTMz",
+    "DatabaseID": 9090933,
+    "NameWithOwner": "capnproto/capnproto",
+    "Description": "Cap'n Proto serialization/RPC system - core tools and C++ library",
+    "URL": "https://github.com/capnproto/capnproto",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10008,
+    "ForkCount": 847,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk0MTY1Njc1",
+    "DatabaseID": 4165675,
+    "NameWithOwner": "smicallef/spiderfoot",
+    "Description": "SpiderFoot automates OSINT for threat intelligence and mapping your attack surface.",
+    "URL": "https://github.com/smicallef/spiderfoot",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "reconnaissance"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "footprinting"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "osint"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "threatintel"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "python"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "infosec"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "intelligence-gathering"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "osint-reconnaissance"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "attack-surface"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "pentesting"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "threat-intelligence"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "security-tools"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "information-gathering"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cybersecurity"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cti"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "osint-framework"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "attacksurface"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "osint-tool"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "pentest"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacking"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10008,
+    "ForkCount": 1909,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk0NTc4ODk4",
+    "DatabaseID": 4578898,
+    "NameWithOwner": "HabitRPG/habitica",
+    "Description": "A habit tracker app which treats your goals like a Role Playing Game.",
+    "URL": "https://github.com/HabitRPG/habitica",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "habitica"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "node"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nodejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mongodb"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vue"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vuejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "express"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "css"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "html"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10097,
+    "ForkCount": 3757,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyOTg0MzM2MQ==",
+    "DatabaseID": 29843361,
+    "NameWithOwner": "w7corp/easywechat",
+    "Description": "📦 一个 PHP 微信 SDK",
+    "URL": "https://github.com/w7corp/easywechat",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "wechat"
+       }
+      },
       {
        "Topic": {
         "Name": "php"
@@ -644,225 +1069,126 @@
       },
       {
        "Topic": {
-        "Name": "coding-standards"
+        "Name": "sdk"
        }
       },
       {
        "Topic": {
-        "Name": "automation"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "cli"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "qa"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "static-analysis"
+        "Name": "easywechat"
        }
       }
      ]
     },
-    "StargazerCount": 10014,
-    "ForkCount": 1504
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkzNTAyMTIw",
-    "DatabaseID": 3502120,
-    "NameWithOwner": "scottjehl/picturefill",
-    "Description": "A responsive image polyfill for \u003cpicture\u003e, srcset, sizes, and more",
-    "URL": "https://github.com/scottjehl/picturefill",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": true,
-    "IsLocked": false,
-    "IsDisabled": false,
+    "StargazerCount": 10082,
+    "ForkCount": 2435,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10008,
-    "ForkCount": 1120
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNTE5Nzc4MTg=",
-    "DatabaseID": 151977818,
-    "NameWithOwner": "felangel/bloc",
-    "Description": "A predictable state management library that helps implement the BLoC design pattern",
-    "URL": "https://github.com/felangel/bloc",
+    "ID": "MDEwOlJlcG9zaXRvcnk0MDkwMjg3",
+    "DatabaseID": 4090287,
+    "NameWithOwner": "paulmillr/chokidar",
+    "Description": "Minimal and efficient cross-platform file watching library",
+    "URL": "https://github.com/paulmillr/chokidar",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "flutter"
+        "Name": "watch-files"
        }
       },
       {
        "Topic": {
-        "Name": "dart"
+        "Name": "fsevents"
        }
       },
       {
        "Topic": {
-        "Name": "dartlang"
+        "Name": "watcher"
        }
       },
       {
        "Topic": {
-        "Name": "flutter-package"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "bloc"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "dart-web"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "dart-library"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "state-management"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "library"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "angulardart"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "concurrency"
+        "Name": "filesystem"
        }
       }
      ]
     },
-    "StargazerCount": 10097,
-    "ForkCount": 3110
+    "StargazerCount": 10058,
+    "ForkCount": 590,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNTk1NDA0NDA=",
-    "DatabaseID": 159540440,
-    "NameWithOwner": "google/wire",
-    "Description": "Compile-time Dependency Injection for Go",
-    "URL": "https://github.com/google/wire",
+    "ID": "R_kgDOJTVMKw",
+    "DatabaseID": 624249899,
+    "NameWithOwner": "IDEA-Research/Grounded-Segment-Anything",
+    "Description": "Grounded-SAM: Marrying Grounding DINO with Segment Anything \u0026 Stable Diffusion \u0026 Recognize Anything - Automatically Detect , Segment and Generate Anything",
+    "URL": "https://github.com/IDEA-Research/Grounded-Segment-Anything",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "go"
+        "Name": "open-vocabulary-detection"
        }
       },
       {
        "Topic": {
-        "Name": "golang"
+        "Name": "open-vocabulary-segmentation"
        }
       },
       {
        "Topic": {
-        "Name": "dependency-injection"
+        "Name": "data-generation"
        }
       },
       {
        "Topic": {
-        "Name": "codegen"
+        "Name": "automatic-labeling-system"
        }
       },
       {
        "Topic": {
-        "Name": "initialization"
+        "Name": "caption"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "speech"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "3d-whole-body-pose-estimation"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "image-editing"
        }
       }
      ]
     },
-    "StargazerCount": 10008,
-    "ForkCount": 550
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNzUzOTg1OTQ=",
-    "DatabaseID": 175398594,
-    "NameWithOwner": "sindresorhus/type-fest",
-    "Description": "A collection of essential TypeScript types",
-    "URL": "https://github.com/sindresorhus/type-fest",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
+    "StargazerCount": 10099,
+    "ForkCount": 878,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "typescript-definitions"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "typescript"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "types"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "utilities"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "npm-package"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10061,
-    "ForkCount": 374
+    "Parent": null
    },
    "Error": ""
   },
@@ -878,7 +1204,6 @@
     "IsArchived": true,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
@@ -933,517 +1258,10 @@
       }
      ]
     },
-    "StargazerCount": 10055,
-    "ForkCount": 722
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk3MDAzODQzNw==",
-    "DatabaseID": 70038437,
-    "NameWithOwner": "vnotex/vnote",
-    "Description": "A pleasant note-taking platform.",
-    "URL": "https://github.com/vnotex/vnote",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
+    "StargazerCount": 10094,
+    "ForkCount": 726,
     "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "vnote"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "vim"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "markdown"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "note-taking"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "note"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "editor"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "uml"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "mathjax"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10032,
-    "ForkCount": 1055
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk3NTg5MDk2Mg==",
-    "DatabaseID": 75890962,
-    "NameWithOwner": "bailicangdu/vue2-happyfri",
-    "Description": "vue2 + vue-router + vuex  入门项目",
-    "URL": "https://github.com/bailicangdu/vue2-happyfri",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "vue"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10026,
-    "ForkCount": 2878
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMDIyMjI5Mjc=",
-    "DatabaseID": 102222927,
-    "NameWithOwner": "hmemcpy/milewski-ctfp-pdf",
-    "Description": "Bartosz Milewski's 'Category Theory for Programmers' unofficial PDF and LaTeX source",
-    "URL": "https://github.com/hmemcpy/milewski-ctfp-pdf",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "haskell"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "category-theory"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "functional-programming"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "pdf"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "latex"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "cpp"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "scala"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "ocaml"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10026,
-    "ForkCount": 527
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMjY0ODY3MDE=",
-    "DatabaseID": 126486701,
-    "NameWithOwner": "Unity-Technologies/UnityCsReference",
-    "Description": "Unity C# reference source code.",
-    "URL": "https://github.com/Unity-Technologies/UnityCsReference",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10019,
-    "ForkCount": 2243
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMjE0NzAzODM=",
-    "DatabaseID": 121470383,
-    "NameWithOwner": "solana-labs/solana",
-    "Description": "Web-Scale Blockchain for fast, secure, scalable, decentralized apps and marketplaces.",
-    "URL": "https://github.com/solana-labs/solana",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "ledger"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "blockchain"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "solana"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "performance-blockchain"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "rustc"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "bitcoin"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "rust"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10016,
-    "ForkCount": 2763
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMjM4MDc3Mjk=",
-    "DatabaseID": 123807729,
-    "NameWithOwner": "jaakkopasanen/AutoEq",
-    "Description": "Automatic headphone equalization from frequency responses",
-    "URL": "https://github.com/jaakkopasanen/AutoEq",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10013,
-    "ForkCount": 2331
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNDI0MjI3Mzk=",
-    "DatabaseID": 142422739,
-    "NameWithOwner": "google/dopamine",
-    "Description": "Dopamine is a research framework for fast prototyping of reinforcement learning algorithms. ",
-    "URL": "https://github.com/google/dopamine",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "rl"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "ml"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "ai"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "google"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "tensorflow"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10012,
-    "ForkCount": 1340
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkzNjk2MDMyMQ==",
-    "DatabaseID": 36960321,
-    "NameWithOwner": "opencontainers/runc",
-    "Description": "CLI tool for spawning and running containers according to the OCI specification",
-    "URL": "https://github.com/opencontainers/runc",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "containers"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "docker"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "oci"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10007,
-    "ForkCount": 1898
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNDg4OTI4ODQ=",
-    "DatabaseID": 148892884,
-    "NameWithOwner": "vueComponent/ant-design-vue-pro",
-    "Description": "👨🏻‍💻👩🏻‍💻 Use Ant Design Vue like a Pro!   (vue2)",
-    "URL": "https://github.com/vueComponent/ant-design-vue-pro",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "antd"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "vue"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "vuex"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "admin"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "dashboard"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "css"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "antd-pro"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "ant-design"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "vue-admin"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10006,
-    "ForkCount": 2995
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk0NjYxMTg4OQ==",
-    "DatabaseID": 46611889,
-    "NameWithOwner": "ttroy50/cmake-examples",
-    "Description": "Useful CMake Examples",
-    "URL": "https://github.com/ttroy50/cmake-examples",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "cmake"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "cpp"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "tutorial"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "clang"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "cppcheck"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "static-analysis"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "clang-format"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "unit-testing"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "google-test"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "catch"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "boost"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "cpack"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "ctest"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10000,
-    "ForkCount": 2235
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxOTkzMjg3NTQ=",
-    "DatabaseID": 199328754,
-    "NameWithOwner": "cmiscm/leonsans",
-    "Description": "Leon Sans is a geometric sans-serif typeface made with code in 2019 by Jongmin Kim.",
-    "URL": "https://github.com/cmiscm/leonsans",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10086,
-    "ForkCount": 529
+    "Parent": null
    },
    "Error": ""
   },
@@ -1459,92 +1277,95 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": []
     },
-    "StargazerCount": 10057,
-    "ForkCount": 661
+    "StargazerCount": 10093,
+    "ForkCount": 655,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkzNTE0MzIzOTc=",
-    "DatabaseID": 351432397,
-    "NameWithOwner": "microsoft/Swin-Transformer",
-    "Description": "This is an official implementation for \"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows\".",
-    "URL": "https://github.com/microsoft/Swin-Transformer",
+    "ID": "MDEwOlJlcG9zaXRvcnkxNTYzMzI0OTc=",
+    "DatabaseID": 156332497,
+    "NameWithOwner": "codota/TabNine",
+    "Description": "AI Code Completions",
+    "URL": "https://github.com/codota/TabNine",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "swin-transformer"
+        "Name": "ai"
        }
       },
       {
        "Topic": {
-        "Name": "image-classification"
+        "Name": "artificial-intelligence"
        }
       },
       {
        "Topic": {
-        "Name": "object-detection"
+        "Name": "gpt-2"
        }
       },
       {
        "Topic": {
-        "Name": "semantic-segmentation"
+        "Name": "jetbrains-plugin"
        }
       },
       {
        "Topic": {
-        "Name": "imagenet"
+        "Name": "vscode-extension"
        }
       },
       {
        "Topic": {
-        "Name": "mscoco"
+        "Name": "sublime-package"
        }
       },
       {
        "Topic": {
-        "Name": "ade20k"
+        "Name": "vim-plugin"
        }
       },
       {
        "Topic": {
-        "Name": "mask-rcnn"
+        "Name": "javascript"
        }
-      }
-     ]
-    },
-    "StargazerCount": 10054,
-    "ForkCount": 1671
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNzk0OTI4NjE=",
-    "DatabaseID": 179492861,
-    "NameWithOwner": "encode/httpx",
-    "Description": "A next generation HTTP client for Python. 🦋",
-    "URL": "https://github.com/encode/httpx",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
+      },
+      {
+       "Topic": {
+        "Name": "typescript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "rust"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "cpp"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ruby"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "java"
+       }
+      },
       {
        "Topic": {
         "Name": "python"
@@ -1552,137 +1373,239 @@
       },
       {
        "Topic": {
-        "Name": "http"
+        "Name": "golang"
        }
       },
       {
        "Topic": {
-        "Name": "trio"
+        "Name": "lua"
        }
       },
       {
        "Topic": {
-        "Name": "asyncio"
+        "Name": "bash"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "swift"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "php"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "atom-package"
        }
       }
      ]
     },
-    "StargazerCount": 10044,
-    "ForkCount": 663
+    "StargazerCount": 10090,
+    "ForkCount": 473,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyNTA3NjEyNDY=",
-    "DatabaseID": 250761246,
-    "NameWithOwner": "aristocratos/bashtop",
-    "Description": "Linux/OSX/FreeBSD resource monitor",
-    "URL": "https://github.com/aristocratos/bashtop",
+    "ID": "R_kgDOGx4Z8A",
+    "DatabaseID": 454957552,
+    "NameWithOwner": "AstroNvim/AstroNvim",
+    "Description": "AstroNvim is an aesthetic and feature-rich neovim config that is extensible and easy to use with a great set of plugins ",
+    "URL": "https://github.com/AstroNvim/AstroNvim",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10036,
-    "ForkCount": 531
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyODM0MTAxMDI=",
-    "DatabaseID": 283410102,
-    "NameWithOwner": "sogou/workflow",
-    "Description": "C++ Parallel Computing and Asynchronous Networking Engine",
-    "URL": "https://github.com/sogou/workflow",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "tasking"
+        "Name": "vim"
        }
       },
       {
        "Topic": {
-        "Name": "http"
+        "Name": "lua"
        }
       },
       {
        "Topic": {
-        "Name": "redis"
+        "Name": "neovim"
        }
       },
       {
        "Topic": {
-        "Name": "mysql"
+        "Name": "ide"
        }
       },
       {
        "Topic": {
-        "Name": "kafka"
+        "Name": "nvim"
        }
       },
       {
        "Topic": {
-        "Name": "asychronous"
+        "Name": "neovim-configuration"
        }
       },
       {
        "Topic": {
-        "Name": "embedded"
+        "Name": "neovim-config"
        }
       },
       {
        "Topic": {
-        "Name": "parallel"
+        "Name": "neovim-lua"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "neovim-setup"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "astrovim"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "astronvim"
        }
       }
      ]
     },
-    "StargazerCount": 10026,
-    "ForkCount": 1967
+    "StargazerCount": 10086,
+    "ForkCount": 721,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyNDMxODE3MzU=",
-    "DatabaseID": 243181735,
-    "NameWithOwner": "amusi/CVPR2022-Papers-with-Code",
-    "Description": "CVPR 2022 论文和开源项目合集",
-    "URL": "https://github.com/amusi/CVPR2022-Papers-with-Code",
+    "ID": "MDEwOlJlcG9zaXRvcnk2NzA0MzcxNA==",
+    "DatabaseID": 67043714,
+    "NameWithOwner": "heynickc/awesome-ddd",
+    "Description": "A curated list of Domain-Driven Design (DDD), Command Query Responsibility Segregation (CQRS), Event Sourcing, and Event Storming resources",
+    "URL": "https://github.com/heynickc/awesome-ddd",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "cvpr"
+        "Name": "awesome"
        }
       },
       {
        "Topic": {
-        "Name": "cvpr2020"
+        "Name": "awesome-list"
        }
       },
       {
        "Topic": {
-        "Name": "computer-vision"
+        "Name": "list"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10083,
+    "ForkCount": 1280,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkzODk4MDMyMTk=",
+    "DatabaseID": 389803219,
+    "NameWithOwner": "smartcontractkit/full-blockchain-solidity-course-py",
+    "Description": "Ultimate Solidity, Blockchain, and Smart Contract - Beginner to Expert Full Course | Python Edition",
+    "URL": "https://github.com/smartcontractkit/full-blockchain-solidity-course-py",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "ethereum"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "blockchain"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "solidity"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "smart-contracts"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "dapp"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "chainlink"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "web3"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10080,
+    "ForkCount": 2835,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3MDc0NjQ4NA==",
+    "DatabaseID": 70746484,
+    "NameWithOwner": "apache/tvm",
+    "Description": "Open deep learning compiler stack for cpu, gpu and specialized accelerators",
+    "URL": "https://github.com/apache/tvm",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "compiler"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "tensor"
        }
       },
       {
@@ -1692,32 +1615,148 @@
       },
       {
        "Topic": {
+        "Name": "gpu"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "opencl"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "metal"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "performance"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "rocm"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "tvm"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vulkan"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "spirv"
+       }
+      },
+      {
+       "Topic": {
         "Name": "machine-learning"
        }
-      },
+      }
+     ]
+    },
+    "StargazerCount": 10066,
+    "ForkCount": 3166,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk4MTgxMDQ4Ng==",
+    "DatabaseID": 81810486,
+    "NameWithOwner": "antvis/G6",
+    "Description": "♾ A Graph Visualization Framework in JavaScript",
+    "URL": "https://github.com/antvis/G6",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
       {
        "Topic": {
-        "Name": "object-detection"
+        "Name": "graph-drawing"
        }
       },
       {
        "Topic": {
-        "Name": "image-segmentation"
+        "Name": "tree"
        }
       },
       {
        "Topic": {
-        "Name": "paper"
+        "Name": "network"
        }
       },
       {
        "Topic": {
-        "Name": "image-processing"
+        "Name": "graph"
        }
       },
       {
        "Topic": {
-        "Name": "visual-tracking"
+        "Name": "visualization"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "data-visualization"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "graph-visualization"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "visual-analytics"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "graph-analytics"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10045,
+    "ForkCount": 1230,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "R_kgDOITROHQ",
+    "DatabaseID": 557075997,
+    "NameWithOwner": "reflex-dev/reflex",
+    "Description": "(Previously Pynecone) 🕸 Web apps in pure Python 🐍",
+    "URL": "https://github.com/reflex-dev/reflex",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "fullstack"
        }
       },
       {
@@ -1727,186 +1766,401 @@
       },
       {
        "Topic": {
-        "Name": "cvpr2021"
+        "Name": "webdev"
        }
       },
       {
        "Topic": {
-        "Name": "semantic-segmentation"
+        "Name": "framework"
        }
       },
       {
        "Topic": {
-        "Name": "cvpr2022"
+        "Name": "web"
        }
       },
       {
        "Topic": {
-        "Name": "transformer"
+        "Name": "python-library"
        }
       },
       {
        "Topic": {
-        "Name": "transformers"
+        "Name": "python3"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "open-source"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "infrastructure"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "webdevelopment"
        }
       }
      ]
+    },
+    "StargazerCount": 10041,
+    "ForkCount": 618,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk1OTk2NjkwMQ==",
+    "DatabaseID": 59966901,
+    "NameWithOwner": "jhen0409/react-native-debugger",
+    "Description": "The standalone app based on official debugger of React Native, and includes React Inspector / Redux DevTools",
+    "URL": "https://github.com/jhen0409/react-native-debugger",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "react-native"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "debugger"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "react-devtools"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "redux-devtools-extension"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "electron"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10031,
+    "ForkCount": 855,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3MDEwMDYyMg==",
+    "DatabaseID": 70100622,
+    "NameWithOwner": "kleampa/not-paid",
+    "Description": "Client did not pay? Add opacity to the body tag and decrease it every day until their site completely fades away",
+    "URL": "https://github.com/kleampa/not-paid",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10026,
+    "ForkCount": 772,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNjk5NDgyMTc=",
+    "DatabaseID": 169948217,
+    "NameWithOwner": "crawlab-team/crawlab",
+    "Description": "Distributed web crawler admin platform for spiders management regardless of languages and frameworks. 分布式爬虫管理平台，支持任何语言和框架",
+    "URL": "https://github.com/crawlab-team/crawlab",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "webcrawler"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "scrapy"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "crawlab"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "spiders-management"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "go"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "scrapyd-ui"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "spider"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "crawler"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "webspider"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "web-crawler"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "docker"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "platform"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "crawling-tasks"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10022,
+    "ForkCount": 1651,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk3NDQyMTM3MQ==",
+    "DatabaseID": 74421371,
+    "NameWithOwner": "ryanburgess/engineer-manager",
+    "Description": "A list of engineering manager resource links.",
+    "URL": "https://github.com/ryanburgess/engineer-manager",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": []
     },
     "StargazerCount": 10021,
-    "ForkCount": 1968
+    "ForkCount": 600,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyMjcwMTk3MTU=",
-    "DatabaseID": 227019715,
-    "NameWithOwner": "Loyalsoldier/v2ray-rules-dat",
-    "Description": "🦄 🎃 👻 V2Ray 路由规则文件加强版，可代替 V2Ray 官方 geoip.dat 和 geosite.dat，兼容 Shadowsocks-windows、Xray-core、Trojan-Go 和 leaf。Enhanced edition of V2Ray rules dat files, compatible with Xray-core, Shadowsocks-windows, Trojan-Go and leaf.",
-    "URL": "https://github.com/Loyalsoldier/v2ray-rules-dat",
+    "ID": "MDEwOlJlcG9zaXRvcnkxMDMwNTM4MjU=",
+    "DatabaseID": 103053825,
+    "NameWithOwner": "pock/pock",
+    "Description": "Widgets manager for MacBook Touch Bar",
+    "URL": "https://github.com/pock/pock",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "v2ray"
+        "Name": "macbook-pro"
        }
       },
       {
        "Topic": {
-        "Name": "geoip"
+        "Name": "touchbar"
        }
       },
       {
        "Topic": {
-        "Name": "geosite"
+        "Name": "dock"
        }
       },
       {
        "Topic": {
-        "Name": "routing"
+        "Name": "macos"
        }
       },
       {
        "Topic": {
-        "Name": "gfw"
+        "Name": "control-strip"
        }
       },
       {
        "Topic": {
-        "Name": "gfwlist"
+        "Name": "widgets"
        }
       },
       {
        "Topic": {
-        "Name": "chinalist"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "adblock"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "greatfire-analyzer"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "dnsmasq"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "adguard"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "trojan-go"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "shadowsocks"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "xray"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "anticensorship"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "trojan"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "proxy"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "easylist"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "ssr"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "ss"
+        "Name": "display-macos-dock"
        }
       }
      ]
     },
-    "StargazerCount": 10013,
-    "ForkCount": 1069
+    "StargazerCount": 10018,
+    "ForkCount": 375,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyOTIwMTQyMjk=",
-    "DatabaseID": 292014229,
-    "NameWithOwner": "zellij-org/zellij",
-    "Description": "A terminal workspace with batteries included",
-    "URL": "https://github.com/zellij-org/zellij",
+    "ID": "R_kgDOGo9OOA",
+    "DatabaseID": 445599288,
+    "NameWithOwner": "faker-js/faker",
+    "Description": "Generate massive amounts of fake data in the browser and node.js",
+    "URL": "https://github.com/faker-js/faker",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "workspace"
+        "Name": "faker"
        }
       },
       {
        "Topic": {
-        "Name": "terminal"
+        "Name": "data"
        }
       },
       {
        "Topic": {
-        "Name": "multiplexer"
+        "Name": "fake"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nodejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "browser"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10017,
+    "ForkCount": 776,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk0Nzc3NTc0MQ==",
+    "DatabaseID": 47775741,
+    "NameWithOwner": "milligram/milligram",
+    "Description": "A minimalist CSS framework.",
+    "URL": "https://github.com/milligram/milligram",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "milligram"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "css"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "html"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "framework"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "css-framework"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "design"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "minimalist"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "flexbox"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "amp"
        }
       },
       {
@@ -1916,8 +2170,10 @@
       }
      ]
     },
-    "StargazerCount": 10010,
-    "ForkCount": 307
+    "StargazerCount": 10016,
+    "ForkCount": 650,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   }

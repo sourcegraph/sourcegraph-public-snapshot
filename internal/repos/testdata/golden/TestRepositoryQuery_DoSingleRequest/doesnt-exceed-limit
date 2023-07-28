@@ -11,7 +11,6 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
@@ -36,8 +35,10 @@
       }
      ]
     },
-    "StargazerCount": 20900,
-    "ForkCount": 1281
+    "StargazerCount": 21557,
+    "ForkCount": 1296,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   }

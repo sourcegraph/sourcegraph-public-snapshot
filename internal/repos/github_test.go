@@ -573,7 +573,7 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 				resp.Data.Search.RepositoryCount = 5
 				resp.Data.Search.Nodes = []github.Repository{
 					{BaseRepository: &github.BaseRepository{DatabaseID: 1}},
-					{BaseRepository: &github.BaseRepository{DatabaseID: 1}},
+					{BaseRepository: &github.BaseRepository{DatabaseID: 2}},
 					{BaseRepository: &github.BaseRepository{DatabaseID: 3}},
 					{BaseRepository: &github.BaseRepository{DatabaseID: 4}},
 				}
@@ -606,7 +606,7 @@ func TestGitHubSource_doRecursively(t *testing.T) {
 			}
 
 			// Confirm that we received 5 repositories, confirming that we retried the request.
-			assert.Len(t, repos, tc.expectedRepoCount)
+			require.Len(t, repos, tc.expectedRepoCount)
 		})
 	}
 }

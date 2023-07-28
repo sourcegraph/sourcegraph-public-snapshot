@@ -76,10 +76,11 @@ func TestCleanup_computeStats(t *testing.T) {
 	// the correct file in the correct place.
 	logger, capturedLogs := logtest.Captured(t)
 	s := &Server{
-		ReposDir:       root,
-		Logger:         logger,
-		ObservationCtx: observation.TestContextTB(t),
-		DB:             database.NewMockDB(),
+		ReposDir:             root,
+		Logger:               logger,
+		ObservationCtx:       observation.TestContextTB(t),
+		DB:                   database.NewMockDB(),
+		DeduplicatedForksSet: types.NewEmptyRepoURISet(),
 	}
 	s.testSetup(t)
 

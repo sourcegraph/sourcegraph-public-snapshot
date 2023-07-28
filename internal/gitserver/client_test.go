@@ -526,6 +526,8 @@ func TestClient_ArchiveReader(t *testing.T) {
 					return server.NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 				},
 				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+				ObservationCtx:          &observation.TestContext,
+				DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 			}
 
 			grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1069,6 +1071,7 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := newMockDB()
+
 	ctx := context.Background()
 
 	s := server.Server{
@@ -1083,6 +1086,8 @@ func TestClient_ResolveRevisions(t *testing.T) {
 		DB:                      db,
 		Perforce:                perforce.NewService(ctx, observation.TestContextTB(t), logger, db, list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		ObservationCtx:          &observation.TestContext,
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))
@@ -1592,6 +1597,8 @@ func TestGitserverClient_RepoClone(t *testing.T) {
 		DB:                      db,
 		CloneQueue:              server.NewCloneQueue(observation.TestContextTB(t), list.New()),
 		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		ObservationCtx:          &observation.TestContext,
+		DeduplicatedForksSet:    types.NewEmptyRepoURISet(),
 	}
 
 	grpcServer := defaults.NewServer(logtest.Scoped(t))

@@ -21,8 +21,8 @@
    }
   },
   "Metadata": {
-   "ID": "R_kgDOI5jPpg",
-   "DatabaseID": 597217190,
+   "ID": "R_kgDOKAzg4Q",
+   "DatabaseID": 671932641,
    "NameWithOwner": "sgtest/sourcegraph-testing-vcr-fork-test-repo-not-forked",
    "Description": "This repo is intended to be used for recording batch changes VCR tests",
    "URL": "https://github.com/sgtest/sourcegraph-testing-vcr-fork-test-repo-not-forked",
@@ -31,9 +31,25 @@
    "IsArchived": false,
    "IsLocked": false,
    "IsDisabled": false,
-   "ViewerPermission": "ADMIN",
    "RepositoryTopics": {
     "Nodes": []
+   },
+   "ViewerPermission": "READ",
+   "Parent": {
+    "ID": "R_kgDOI5jFsw",
+    "DatabaseID": 597214643,
+    "NameWithOwner": "sourcegraph-testing/vcr-fork-test-repo-not-forked",
+    "Description": "This repo is intended to be used for recording batch changes VCR tests",
+    "URL": "https://github.com/sourcegraph-testing/vcr-fork-test-repo-not-forked",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "ForkCount": 3
    }
   }
  }

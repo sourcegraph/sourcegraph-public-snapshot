@@ -32,10 +32,11 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "",
     "RepositoryTopics": {
      "Nodes": null
-    }
+    },
+    "ViewerPermission": "",
+    "Parent": null
    }
   },
   {
@@ -71,10 +72,11 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "",
     "RepositoryTopics": {
      "Nodes": null
-    }
+    },
+    "ViewerPermission": "",
+    "Parent": null
    }
   }
  ]

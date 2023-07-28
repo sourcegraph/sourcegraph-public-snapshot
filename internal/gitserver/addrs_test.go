@@ -115,12 +115,6 @@ func TestAddrForRepo(t *testing.T) {
 				expectedShardParentRepo:      shardParentRepo,
 				expectedShardForkedRepo:      shardForkedRepo,
 			},
-			{
-				name:                         "get pool repo returns an error",
-				getPoolRepoFuncDefaultReturn: func() (*types.PoolRepo, error) { return nil, errors.New("mocked error") },
-				expectedShardParentRepo:      shardParentRepo,
-				expectedShardForkedRepo:      shardForkedRepo,
-			},
 		}
 
 		for _, tc := range testCases {
@@ -231,76 +225,4 @@ func TestGitserverAddresses_getCachedRepoAddress(t *testing.T) {
 	addr := "address1"
 	ga.repoAddressCache.Write(repo, addr)
 	require.Equal(t, addr, ga.getCachedRepoAddress(repo))
-}
-
-func TestRepoAddressCache(t *testing.T) {
-	repoAddrCache := repoAddressCache{}
-
-	// Read an object that does not exist in the cache.
-	item := repoAddrCache.Read("foo")
-	require.Nil(t, item)
-
-	// Mock currentTime. Expect this when the value is read.
-	expectedFirstWrite := time.Date(2023, 01, 01, 23, 00, 00, 0, time.UTC)
-	currentTime = func() time.Time {
-		return expectedFirstWrite
-	}
-
-	// Now insert an item to the cache.
-	repoName := api.RepoName("github.com/foo/bar")
-	addr := "127.0.0.1:3080"
-	repoAddrCache.Write(repoName, addr)
-
-	// Increment the clock for a subsequent read.
-	currentTime = func() time.Time {
-		return time.Date(2023, 01, 01, 23, 30, 00, 1, time.UTC)
-	}
-
-	item = repoAddrCache.Read(repoName)
-	require.NotNil(t, item)
-	require.Equal(t, item.address, addr)
-	require.Equal(t, item.lastAccessed, expectedFirstWrite)
-
-	// No verify that the item in the cache has the updated timestamp after we Read the item.
-	item2 := repoAddrCache.cache[repoName]
-	require.Greater(t, item2.lastAccessed, item.lastAccessed)
-}
-
-func TestWithUpdateCache(t *testing.T) {
-	ga := GitserverAddresses{}
-
-	// Ensures that a nil repoAddressCache will not cause a panic if consumers of GitserverAddresses
-	// do not initialise a cache.
-	require.Nil(t, ga.repoAddressCache)
-
-	repo := api.RepoName("repo1")
-	addr := "address1"
-	gotAddress := ga.withUpdateCache(repo, addr)
-	require.Equal(t, gotAddress, addr)
-
-	item := ga.repoAddressCache.Read(repo)
-	require.Equal(t, item.address, addr)
-}
-
-func TestGetCachedRepoAddress(t *testing.T) {
-	db := database.NewMockDB()
-	ga := GitserverAddresses{
-		db:        db,
-		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
-		PinnedServers: map[string]string{
-			"repo2": "gitserver-1",
-		},
-	}
-
-	require.Nil(t, ga.repoAddressCache)
-
-	repo := api.RepoName("repo1")
-	require.Equal(t, ga.getCachedRepoAddress(repo), "")
-
-	require.NotNil(t, ga.repoAddressCache)
-	require.Equal(t, ga.getCachedRepoAddress(repo), "")
-
-	addr := "address1"
-	ga.repoAddressCache.Write(repo, addr)
-	require.Equal(t, ga.getCachedRepoAddress(repo), addr)
 }

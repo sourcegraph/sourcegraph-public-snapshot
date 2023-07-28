@@ -2006,7 +2006,6 @@ func setGitAttributes(dir common.GitDir) error {
 }
 
 func (s *Server) configureRepoAsGitAlternate(repoTmpPath string, poolRepoName api.RepoName) error {
-
 	// Write "$REPO_DIR/.pool/$REPO_NAME/.git/objects" to the file at
 	// $REPOS_DIR/$REPO_NAME/.git/objects/info/alternates.
 
@@ -2020,9 +2019,7 @@ func (s *Server) configureRepoAsGitAlternate(repoTmpPath string, poolRepoName ap
 	return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
 }
 
-// TODO: Maybe we don't need this for new clones. Investigate side effects of disabling this on the clone path.
 func optimizeForGitAlternateRepo(ctx context.Context, repoDir common.GitDir) error {
-
 	// Run in this in the repo and not the pool.
 	// NEVER run this in the pool repo.
 	cmd := exec.CommandContext(ctx, "git", "repack")
@@ -2170,9 +2167,6 @@ func (s *Server) cloneRepo(ctx context.Context, repoName api.RepoName, opts *clo
 		// Use a different context in case we failed because the original context failed.
 		s.setLastErrorNonFatal(s.ctx, repoName, err)
 	}()
-
-	logger := s.ObservationCtx.Logger.Scoped("cloneRepo", "").With(log.String("repo", string(repoName)))
-	logger.Debug("")
 
 	repo, err := s.DB.Repos().GetByName(ctx, repoName)
 	if err != nil {

@@ -1,183 +1,227 @@
 [
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyMDExODgxMjI=",
-    "DatabaseID": 201188122,
-    "NameWithOwner": "rocksdanister/lively",
-    "Description": "Free and open-source software that allows users to set animated desktop wallpapers and screensavers powered by WinUI 3.",
-    "URL": "https://github.com/rocksdanister/lively",
+    "ID": "R_kgDOJTVMKw",
+    "DatabaseID": 624249899,
+    "NameWithOwner": "IDEA-Research/Grounded-Segment-Anything",
+    "Description": "Grounded-SAM: Marrying Grounding DINO with Segment Anything \u0026 Stable Diffusion \u0026 Recognize Anything - Automatically Detect , Segment and Generate Anything",
+    "URL": "https://github.com/IDEA-Research/Grounded-Segment-Anything",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "rainmeter"
+        "Name": "open-vocabulary-detection"
        }
       },
       {
        "Topic": {
-        "Name": "desktop"
+        "Name": "open-vocabulary-segmentation"
        }
       },
       {
        "Topic": {
-        "Name": "wallpaper"
+        "Name": "data-generation"
        }
       },
       {
        "Topic": {
-        "Name": "widgets"
+        "Name": "automatic-labeling-system"
        }
       },
       {
        "Topic": {
-        "Name": "desktop-wallpaper"
+        "Name": "caption"
        }
       },
       {
        "Topic": {
-        "Name": "wallpaper-engine"
+        "Name": "speech"
        }
       },
       {
        "Topic": {
-        "Name": "wallpaperengine"
+        "Name": "3d-whole-body-pose-estimation"
        }
       },
       {
        "Topic": {
-        "Name": "live-wallpaper"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "windows-app"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "dynamic-wallpaper"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "dynamic-desktop"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "wallpaper-changer"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "wallpaper-app"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "screensavers"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "windows-10"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "csharp"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "wallpapers"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "fluent"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "windows-11"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "winui"
+        "Name": "image-editing"
        }
       }
      ]
     },
-    "StargazerCount": 10100,
-    "ForkCount": 816
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxNTQzNQ==",
-    "DatabaseID": 15435,
-    "NameWithOwner": "Shopify/liquid",
-    "Description": "Liquid markup language. Safe, customer facing template language for flexible web apps. ",
-    "URL": "https://github.com/Shopify/liquid",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
     "StargazerCount": 10098,
-    "ForkCount": 1316
+    "ForkCount": 877,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMjY0ODY3MDE=",
-    "DatabaseID": 126486701,
-    "NameWithOwner": "Unity-Technologies/UnityCsReference",
-    "Description": "Unity C# reference source code.",
-    "URL": "https://github.com/Unity-Technologies/UnityCsReference",
+    "ID": "MDEwOlJlcG9zaXRvcnk0NTc4ODk4",
+    "DatabaseID": 4578898,
+    "NameWithOwner": "HabitRPG/habitica",
+    "Description": "A habit tracker app which treats your goals like a Role Playing Game.",
+    "URL": "https://github.com/HabitRPG/habitica",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10094,
-    "ForkCount": 2261
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMzYyMjE4OQ==",
-    "DatabaseID": 13622189,
-    "NameWithOwner": "tariqbuilds/linux-dash",
-    "Description": "A beautiful web dashboard for Linux",
-    "URL": "https://github.com/tariqbuilds/linux-dash",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
+      {
+       "Topic": {
+        "Name": "habitica"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "node"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "nodejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "mongodb"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vue"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vuejs"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "express"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "css"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "html"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10097,
+    "ForkCount": 3757,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkzNTIxMDI0Mw==",
+    "DatabaseID": 35210243,
+    "NameWithOwner": "ctjhoa/rust-learning",
+    "Description": "A bunch of links to blog posts, articles, videos, etc for learning Rust",
+    "URL": "https://github.com/ctjhoa/rust-learning",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "rust"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "blog-article"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "video"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "tutorial"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "book"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "learn"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "teaching"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "hacktoberfest"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10095,
+    "ForkCount": 689,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk4NjEzMjgzMg==",
+    "DatabaseID": 86132832,
+    "NameWithOwner": "learnbyexample/Command-line-text-processing",
+    "Description": ":zap: From finding text to search and replace, from sorting to beautifying text and more :art:",
+    "URL": "https://github.com/learnbyexample/Command-line-text-processing",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": true,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "command-line"
+       }
+      },
       {
        "Topic": {
         "Name": "linux"
@@ -185,64 +229,185 @@
       },
       {
        "Topic": {
-        "Name": "dashboard"
+        "Name": "text-processing"
        }
       },
       {
        "Topic": {
-        "Name": "monitoring"
+        "Name": "ebook"
        }
       },
       {
        "Topic": {
-        "Name": "server"
+        "Name": "sed"
        }
       },
       {
        "Topic": {
-        "Name": "web"
+        "Name": "grep"
        }
       },
       {
        "Topic": {
-        "Name": "ui"
+        "Name": "perl"
        }
       },
       {
        "Topic": {
-        "Name": "linux-dash"
+        "Name": "awk"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ruby"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "regex"
        }
       }
      ]
     },
-    "StargazerCount": 10093,
-    "ForkCount": 1243
+    "StargazerCount": 10094,
+    "ForkCount": 726,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkzNjUyNjM4NDM=",
-    "DatabaseID": 365263843,
-    "NameWithOwner": "denoland/fresh",
-    "Description": "The next-gen web framework.",
-    "URL": "https://github.com/denoland/fresh",
+    "ID": "MDEwOlJlcG9zaXRvcnkxODIwMzQ3NDg=",
+    "DatabaseID": 182034748,
+    "NameWithOwner": "MSWorkers/support.996.ICU",
+    "Description": "Microsoft and GitHub Workers Support 996.ICU",
+    "URL": "https://github.com/MSWorkers/support.996.ICU",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": []
+    },
+    "StargazerCount": 10093,
+    "ForkCount": 655,
     "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkyMTc4MDU2Mg==",
+    "DatabaseID": 21780562,
+    "NameWithOwner": "JStumpp/awesome-android",
+    "Description": "A curated list of awesome Android packages and resources.",
+    "URL": "https://github.com/JStumpp/awesome-android",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
     "RepositoryTopics": {
      "Nodes": [
       {
        "Topic": {
-        "Name": "deno"
+        "Name": "android-library"
        }
       },
       {
        "Topic": {
-        "Name": "fresh"
+        "Name": "android-development"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome-list-awesome-list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "android-tutorial"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome-list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "list"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10091,
+    "ForkCount": 1699,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnkxNTYzMzI0OTc=",
+    "DatabaseID": 156332497,
+    "NameWithOwner": "codota/TabNine",
+    "Description": "AI Code Completions",
+    "URL": "https://github.com/codota/TabNine",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "ai"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "artificial-intelligence"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "gpt-2"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "jetbrains-plugin"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vscode-extension"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "sublime-package"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "vim-plugin"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "javascript"
        }
       },
       {
@@ -252,135 +417,24 @@
       },
       {
        "Topic": {
-        "Name": "preact"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "javascript"
-       }
-      }
-     ]
-    },
-    "StargazerCount": 10093,
-    "ForkCount": 430
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk3OTYxOTkx",
-    "DatabaseID": 7961991,
-    "NameWithOwner": "square/javapoet",
-    "Description": "A Java API for generating .java source files.",
-    "URL": "https://github.com/square/javapoet",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10087,
-    "ForkCount": 1307
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxOTkzMjg3NTQ=",
-    "DatabaseID": 199328754,
-    "NameWithOwner": "cmiscm/leonsans",
-    "Description": "Leon Sans is a geometric sans-serif typeface made with code in 2019 by Jongmin Kim.",
-    "URL": "https://github.com/cmiscm/leonsans",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": []
-    },
-    "StargazerCount": 10085,
-    "ForkCount": 531
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkxMjE0NzAzODM=",
-    "DatabaseID": 121470383,
-    "NameWithOwner": "solana-labs/solana",
-    "Description": "Web-Scale Blockchain for fast, secure, scalable, decentralized apps and marketplaces.",
-    "URL": "https://github.com/solana-labs/solana",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
-      {
-       "Topic": {
-        "Name": "ledger"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "blockchain"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "solana"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "performance-blockchain"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "rustc"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "bitcoin"
-       }
-      },
-      {
-       "Topic": {
         "Name": "rust"
        }
-      }
-     ]
-    },
-    "StargazerCount": 10081,
-    "ForkCount": 2783
-   },
-   "Error": ""
-  },
-  {
-   "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnkyODM1MTEx",
-    "DatabaseID": 2835111,
-    "NameWithOwner": "pyinstaller/pyinstaller",
-    "Description": "Freeze (package) Python programs into stand-alone executables",
-    "URL": "https://github.com/pyinstaller/pyinstaller",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "ViewerPermission": "READ",
-    "RepositoryTopics": {
-     "Nodes": [
+      },
+      {
+       "Topic": {
+        "Name": "cpp"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "ruby"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "java"
+       }
+      },
       {
        "Topic": {
         "Name": "python"
@@ -388,66 +442,57 @@
       },
       {
        "Topic": {
-        "Name": "python-3"
+        "Name": "golang"
        }
       },
       {
        "Topic": {
-        "Name": "bundle"
+        "Name": "lua"
        }
       },
       {
        "Topic": {
-        "Name": "package"
+        "Name": "bash"
        }
       },
       {
        "Topic": {
-        "Name": "pyinstaller"
+        "Name": "swift"
        }
       },
       {
        "Topic": {
-        "Name": "python-to-exe"
+        "Name": "php"
        }
       },
       {
        "Topic": {
-        "Name": "py2exe"
-       }
-      },
-      {
-       "Topic": {
-        "Name": "py2app"
+        "Name": "atom-package"
        }
       }
      ]
     },
-    "StargazerCount": 10075,
-    "ForkCount": 1859
+    "StargazerCount": 10090,
+    "ForkCount": 473,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   },
   {
    "Repo": {
-    "ID": "MDEwOlJlcG9zaXRvcnk3MDAzODQzNw==",
-    "DatabaseID": 70038437,
-    "NameWithOwner": "vnotex/vnote",
-    "Description": "A pleasant note-taking platform.",
-    "URL": "https://github.com/vnotex/vnote",
+    "ID": "R_kgDOGx4Z8A",
+    "DatabaseID": 454957552,
+    "NameWithOwner": "AstroNvim/AstroNvim",
+    "Description": "AstroNvim is an aesthetic and feature-rich neovim config that is extensible and easy to use with a great set of plugins ",
+    "URL": "https://github.com/AstroNvim/AstroNvim",
     "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
-    "ViewerPermission": "READ",
     "RepositoryTopics": {
      "Nodes": [
-      {
-       "Topic": {
-        "Name": "vnote"
-       }
-      },
       {
        "Topic": {
         "Name": "vim"
@@ -455,38 +500,171 @@
       },
       {
        "Topic": {
-        "Name": "markdown"
+        "Name": "lua"
        }
       },
       {
        "Topic": {
-        "Name": "note-taking"
+        "Name": "neovim"
        }
       },
       {
        "Topic": {
-        "Name": "note"
+        "Name": "ide"
        }
       },
       {
        "Topic": {
-        "Name": "editor"
+        "Name": "nvim"
        }
       },
       {
        "Topic": {
-        "Name": "uml"
+        "Name": "neovim-configuration"
        }
       },
       {
        "Topic": {
-        "Name": "mathjax"
+        "Name": "neovim-config"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "neovim-lua"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "neovim-setup"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "astrovim"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "astronvim"
        }
       }
      ]
     },
-    "StargazerCount": 10075,
-    "ForkCount": 1058
+    "StargazerCount": 10086,
+    "ForkCount": 721,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk5NzQ2NDc3",
+    "DatabaseID": 9746477,
+    "NameWithOwner": "sonic-pi-net/sonic-pi",
+    "Description": "Code. Music. Live.",
+    "URL": "https://github.com/sonic-pi-net/sonic-pi",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "livecoding"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "music"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "education"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "schools"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "synthesis"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "synthesizer"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "instrument"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "live-coding"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "art"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "audio"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10084,
+    "ForkCount": 902,
+    "ViewerPermission": "READ",
+    "Parent": null
+   },
+   "Error": ""
+  },
+  {
+   "Repo": {
+    "ID": "MDEwOlJlcG9zaXRvcnk2NzA0MzcxNA==",
+    "DatabaseID": 67043714,
+    "NameWithOwner": "heynickc/awesome-ddd",
+    "Description": "A curated list of Domain-Driven Design (DDD), Command Query Responsibility Segregation (CQRS), Event Sourcing, and Event Storming resources",
+    "URL": "https://github.com/heynickc/awesome-ddd",
+    "IsPrivate": false,
+    "IsFork": false,
+    "IsArchived": false,
+    "IsLocked": false,
+    "IsDisabled": false,
+    "RepositoryTopics": {
+     "Nodes": [
+      {
+       "Topic": {
+        "Name": "awesome"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "awesome-list"
+       }
+      },
+      {
+       "Topic": {
+        "Name": "list"
+       }
+      }
+     ]
+    },
+    "StargazerCount": 10083,
+    "ForkCount": 1280,
+    "ViewerPermission": "READ",
+    "Parent": null
    },
    "Error": ""
   }

@@ -1334,6 +1334,9 @@ func TestRepos_List_topics(t *testing.T) {
 		return func(r *types.Repo) {
 			if ghr, ok := r.Metadata.(*github.Repository); ok {
 				for _, topic := range topics {
+					if ghr.BaseRepository == nil {
+						ghr.BaseRepository = new(github.BaseRepository)
+					}
 					ghr.RepositoryTopics.Nodes = append(ghr.RepositoryTopics.Nodes, github.RepositoryTopic{
 						Topic: github.Topic{Name: topic},
 					})
