@@ -1105,7 +1105,6 @@ go_library(
         "frontend/1689886483_sg_telemetry_allowlist/down.sql",
         "frontend/1689886483_sg_telemetry_allowlist/metadata.yaml",
         "frontend/1689886483_sg_telemetry_allowlist/up.sql",
-        "frontend/.DS_Store",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/migrations",
     visibility = ["//visibility:public"],
