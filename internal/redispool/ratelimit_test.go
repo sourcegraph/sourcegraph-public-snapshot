@@ -49,8 +49,8 @@ func TestRateLimiter(t *testing.T) {
 		t.Errorf("Expected the request to be allowed, but it was not.")
 	}
 
-	if remTokens != bucketCapacity-requestedTokens {
-		t.Errorf("Expected %d remaining tokens, but got %d", bucketCapacity-requestedTokens, remTokens)
+	if remTokens != 90 {
+		t.Errorf("Expected %d remaining tokens, but got %d", 90, remTokens)
 	}
 
 	// Get more tokens
@@ -63,8 +63,8 @@ func TestRateLimiter(t *testing.T) {
 		t.Errorf("Expected the request to be allowed, but it was not.")
 	}
 
-	if remTokens != bucketCapacity-requestedTokens-requestedTokens2 {
-		t.Errorf("Expected %d remaining tokens, but got %d", bucketCapacity-requestedTokens, remTokens)
+	if remTokens != 60 {
+		t.Errorf("Expected %d remaining tokens, but got %d", 60, remTokens)
 	}
 
 	// Try to get more tokens than the remaining capacity
@@ -74,9 +74,12 @@ func TestRateLimiter(t *testing.T) {
 		t.Fatalf("Error getting tokens from bucket: %v", err)
 	}
 
-	// Assertions
 	if allowed {
 		t.Errorf("Expected the request to be denied due to insufficient tokens, but it was allowed.")
+	}
+	// Remaining tokens should be unchanged
+	if remTokens != 60 {
+		t.Errorf("Expected %d remaining tokens, but got %d", 60, remTokens)
 	}
 }
 
