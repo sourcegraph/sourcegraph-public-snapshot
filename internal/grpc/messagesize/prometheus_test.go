@@ -1,13 +1,81 @@
 package messagesize
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
 	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
 )
+
+var (
+	binaryMessage = &newspb.BinaryAttachment{
+		Name: "data",
+		Data: []byte(strings.Repeat("x", 1*1024*1024)),
+	}
+
+	keyValueMessage = &newspb.KeyValueAttachment{
+		Name: "data",
+		Data: map[string]string{
+			"key1": strings.Repeat("x", 1*1024*1024),
+			"key2": "value2",
+		},
+	}
+
+	articleMessage = &newspb.Article{
+		Author:  "author",
+		Date:    &timestamppb.Timestamp{Seconds: 1234567890},
+		Title:   "title",
+		Content: "content",
+		Status:  newspb.Article_STATUS_PUBLISHED,
+		Attachments: []*newspb.Attachment{
+			{Contents: &newspb.Attachment_KeyValueAttachment{KeyValueAttachment: keyValueMessage}},
+			{Contents: &newspb.Attachment_KeyValueAttachment{KeyValueAttachment: keyValueMessage}},
+			{Contents: &newspb.Attachment_BinaryAttachment{BinaryAttachment: binaryMessage}},
+			{Contents: &newspb.Attachment_BinaryAttachment{BinaryAttachment: binaryMessage}},
+		},
+	}
+)
+
+func BenchmarkObserverBinary(b *testing.B) {
+	o := messageSizeObserver{
+		onSingleFunc: func(messageSizeBytes uint64) {},
+		onFinishFunc: func(totalSizeBytes uint64) {},
+	}
+
+	benchmarkObserver(b, &o, binaryMessage)
+}
+
+func BenchmarkObserverKeyValue(b *testing.B) {
+	o := messageSizeObserver{
+		onSingleFunc: func(messageSizeBytes uint64) {},
+		onFinishFunc: func(totalSizeBytes uint64) {},
+	}
+
+	benchmarkObserver(b, &o, keyValueMessage)
+}
+
+func BenchmarkObserverArticle(b *testing.B) {
+	o := messageSizeObserver{
+		onSingleFunc: func(messageSizeBytes uint64) {},
+		onFinishFunc: func(totalSizeBytes uint64) {},
+	}
+
+	benchmarkObserver(b, &o, articleMessage)
+}
+
+func benchmarkObserver(b *testing.B, observer *messageSizeObserver, message proto.Message) {
+	b.ReportAllocs()
+
+	for n := 0; n < b.N; n++ {
+		observer.Observe(message)
+	}
+
+	observer.FinishRPC()
+}
 
 func TestObserver(t *testing.T) {
 	testCases := []struct {

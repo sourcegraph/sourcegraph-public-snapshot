@@ -251,7 +251,7 @@ type messageSizeObserver struct {
 	finishOnce   sync.Once
 	onFinishFunc func(totalSizeBytes uint64)
 
-	totalSizeBytes uint64
+	totalSizeBytes atomic.Uint64
 }
 
 // Observe records the size of a single message.
@@ -259,14 +259,14 @@ func (o *messageSizeObserver) Observe(message proto.Message) {
 	s := uint64(proto.Size(message))
 	o.onSingleFunc(s)
 
-	atomic.AddUint64(&o.totalSizeBytes, s)
+	o.totalSizeBytes.Add(s)
 }
 
 // FinishRPC records the total size of all sent messages during the course of a single RPC call.
 // This function should only be called once the RPC call has completed.
 func (o *messageSizeObserver) FinishRPC() {
 	o.finishOnce.Do(func() {
-		o.onFinishFunc(atomic.LoadUint64(&o.totalSizeBytes))
+		o.onFinishFunc(o.totalSizeBytes.Load())
 	})
 }
 
