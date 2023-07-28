@@ -238,7 +238,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiBrain} className="mr-1" />
                                     Code graph data
                                 </MenuItem>
-
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
@@ -248,7 +247,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
                                     Embeddings policies
                                 </MenuItem>
-
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
@@ -260,7 +258,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiVectorPolyline} className="mr-1" />
                                     Embeddings jobs
                                 </MenuItem>
-
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoClonedAndHealthy(node)}
@@ -270,6 +267,20 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiSecurity} className="mr-1" />
                                     Permissions
                                 </MenuItem>
+                                {node.externalServices.nodes?.length !== 0 && (
+                                    <MenuItem
+                                        as={Button}
+                                        onSelect={() =>
+                                            navigate(
+                                                `/site-admin/external-services/${node.externalServices.nodes[0].id}`
+                                            )
+                                        }
+                                        className="p-2"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
+                                        Connection: {truncateName(node.externalServices.nodes[0].displayName)}
+                                    </MenuItem>
+                                )}
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoCloned(node)}
@@ -278,17 +289,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiCog} className="mr-1" />
                                     Settings
-                                </MenuItem>
-                                <MenuItem
-                                    as={Button}
-                                    disabled={node.externalServices.nodes?.length === 0}
-                                    onSelect={() =>
-                                        navigate(`/site-admin/external-services/${node.externalServices.nodes[0].id}`)
-                                    }
-                                    className="p-2"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
-                                    Code host connection
                                 </MenuItem>
                             </MenuList>
                         </Menu>
@@ -311,3 +311,5 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         </li>
     )
 }
+
+const truncateName = (name: string): string => (name.length >= 25 ? `${name.slice(0, 25)}...` : name)

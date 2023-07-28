@@ -152,6 +152,7 @@ const siteAdminRepositoryFieldsFragment = gql`
         externalServices(first: 1) {
             nodes {
                 id
+                displayName
             }
         }
     }
