@@ -10,9 +10,13 @@ GCS_BUCKET="package-repository"
 TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
+IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
+
 # shellcheck disable=SC2001
 BRANCH_PATH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
-IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
+if [[ "$IS_MAIN" != "true" ]]; then
+  BRANCH_PATH="branches/$BRANCH_PATH"
+fi
 
 cd wolfi-packages/packages/$TARGET_ARCH
 
@@ -26,9 +30,6 @@ for apk in "${apks[@]}"; do
   echo " * Processing $apk"
 
   # Generate the branch-specific path to upload the package to
-  if [[ "$IS_MAIN" != "true" ]]; then
-    BRANCH_PATH="branches/$BRANCH"
-  fi
   dest_path="gs://$GCS_BUCKET/packages/$BRANCH_PATH/$TARGET_ARCH/"
   echo "   -> File path: ${dest_path}${apk}"
 
