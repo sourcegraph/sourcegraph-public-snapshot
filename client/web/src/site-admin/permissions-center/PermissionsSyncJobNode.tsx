@@ -249,7 +249,11 @@ export enum PermissionsSyncJobNumberType {
     TOTAL = 'TOTAL',
 }
 
-const failedStates = [PermissionsSyncJobState.CANCELED, PermissionsSyncJobState.ERRORED, PermissionsSyncJobState.FAILED]
+const failedStates = new Set([
+    PermissionsSyncJobState.CANCELED,
+    PermissionsSyncJobState.ERRORED,
+    PermissionsSyncJobState.FAILED,
+])
 interface PermissionsSyncJobNumbersProps extends PermissionsSyncJobDefaultProps {
     type: PermissionsSyncJobNumberType
 }
@@ -269,10 +273,10 @@ export const PermissionsSyncJobNumbers: React.FunctionComponent<PermissionsSyncJ
         default:
             diff = job.permissionsFound
     }
-    classes = classNames(classes, { [styles.textTotalNumber]: diff == 0 })
+    classes = classNames(classes, { [styles.textTotalNumber]: diff === 0 })
 
     // do not show anything
-    if (diff === 0 && (job.finishedAt === null || failedStates.includes(job.state))) {
+    if (diff === 0 && (job.finishedAt === null || failedStates.has(job.state))) {
         return null
     }
 

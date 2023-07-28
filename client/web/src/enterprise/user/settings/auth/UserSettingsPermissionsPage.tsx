@@ -15,8 +15,8 @@ import {
     Link,
     Badge,
     BadgeProps,
-    Tooltip,
     Icon,
+    Text,
 } from '@sourcegraph/wildcard'
 
 import { usePageSwitcherPagination } from '../../../../components/FilteredConnection/hooks/usePageSwitcherPagination'
@@ -111,7 +111,10 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                                         <Timestamp date={permissionsInfo.updatedAt} />
                                     </span>
                                     <span>
-                                        by <PermissionSource source={permissionsInfo.source} />
+                                        by{' '}
+                                        <PermissionSource
+                                            source={permissionsInfo.source as PermissionSourceProps['source']}
+                                        />
                                     </span>
                                 </>
                             ) : (
@@ -119,7 +122,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                             )}
                         </span>
                     </div>
-                    <p className="text-muted mt-1 mb-4">
+                    <Text className="text-muted mt-1 mb-4">
                         <Icon aria-label="more-info text-normal" svgPath={mdiInformationOutline} /> The timestamp
                         indicates the last update made to the repository permissions of this user. This might have been
                         done via{' '}
@@ -133,7 +136,7 @@ export const UserSettingsPermissionsPage: React.FunctionComponent<React.PropsWit
                         . If the value <i>never</i> is displayed, it means we currently do not have any permission
                         records for the user. However, please note that the user may have had permissions stored in
                         Sourcegraph in the past.
-                    </p>
+                    </Text>
                     <ScheduleUserPermissionsSyncActionContainer user={user} />
                 </>
             </Container>
@@ -268,8 +271,8 @@ interface PermissionSourceProps {
 }
 
 const PermissionSource: React.FunctionComponent<PermissionSourceProps> = ({ source }) => {
-    if (source == null) {
-        return 'unknown'
+    if (!source) {
+        return <>unknown</>
     }
-    return permsSourceMap[source]
+    return <>{permsSourceMap[source]}</>
 }
