@@ -102,6 +102,11 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         return <></>
     }
 
+    const RecipeWidgetWrapperWithProps = useMemo(
+        () => (props: { targetRef: any; children: any }) =>
+            <RecipeWidgetWrapper {...props} codyChatStore={codyChatStore} />,
+        [codyChatStore]
+    )
     return (
         <>
             <Chat
@@ -145,13 +150,19 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
     )
 }
 
+// TODO: fix the types
 interface RecipeWidgetWrapperProps {
     targetRef: any
     children: any
+    codyChatStore: any
+    fileName?: string
+    repoName?: string
+    revision?: string
 }
 
+// TODO: move the component to a separete file inside cody/components
 const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = React.memo(
-    function CodyRecipeWidgetWrapper({ targetRef, children }) {
+    function CodyRecipeWidgetWrapper({ targetRef, children, codyChatStore }) {
         const [show, setShow] = useState(false)
 
         return (
@@ -161,6 +172,7 @@ const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = R
                 <Popover
                     target={targetRef.current}
                     render={({ clientRect, isCollapsed, textContent }) => {
+                        // TODO: figure out if we can use useEffect here and if so, then handle linter issues
                         useEffect(() => {
                             setShow(!isCollapsed)
                         }, [isCollapsed, setShow])
@@ -171,7 +183,15 @@ const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = R
                             return null
                         }
 
-                        return <CodyRecipesWidget />
+                        // TODO: pass editor and codyChatStore to the widget
+                        return (
+                            <CodyRecipesWidget
+                                codyChatStore={codyChatStore}
+                                editor={
+                                    null /* TODO: create an editor implementation using the textContent & targetRef.current?.innerText*/
+                                }
+                            />
+                        )
                     }}
                 />
             </>

@@ -16,6 +16,7 @@ import { RecipeAction } from './components/RecipeAction'
 import { Recipes } from './components/Recipes'
 
 interface IProps {
+    // TODO: change to Editor type
     editor?: CodeMirrorEditor
     codyChatStore?: CodyChatStore | null
 }
