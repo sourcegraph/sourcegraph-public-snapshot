@@ -6,7 +6,8 @@ CREATE TABLE IF NOT EXISTS code_hosts (
     api_rate_limit_interval_seconds integer,
     git_rate_limit_quota integer,
     git_rate_limit_interval_seconds integer,
-    created_at timestamp with time zone NOT NULL DEFAULT now()
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    updated_at timestamp with time zone NOT NULL DEFAULT now()
 );
 
 ALTER TABLE external_services

@@ -1660,7 +1660,8 @@ CREATE TABLE code_hosts (
     api_rate_limit_interval_seconds integer,
     git_rate_limit_quota integer,
     git_rate_limit_interval_seconds integer,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE code_hosts_id_seq

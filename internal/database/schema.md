@@ -835,6 +835,7 @@ Webhook actions configured on code monitors
  git_rate_limit_quota            | integer                  |           |          | 
  git_rate_limit_interval_seconds | integer                  |           |          | 
  created_at                      | timestamp with time zone |           | not null | now()
+ updated_at                      | timestamp with time zone |           | not null | now()
 Indexes:
     "code_hosts_pkey" PRIMARY KEY, btree (id)
     "code_hosts_url_key" UNIQUE CONSTRAINT, btree (url)
