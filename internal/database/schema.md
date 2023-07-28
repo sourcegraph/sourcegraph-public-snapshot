@@ -2000,6 +2000,23 @@ Stores data points for a code insight that do not need to be queried directly, b
 
 ```
 
+# Table "public.license_user_limit_check"
+```
+             Column              |           Type           | Collation | Nullable | Default 
+---------------------------------+--------------------------+-----------+----------+---------
+ id                              | uuid                     |           | not null | 
+ license_id                      | uuid                     |           | not null | 
+ user_count_alert_sent_at        | timestamp with time zone |           |          | 
+ user_count_when_email_last_sent | integer                  |           |          | 
+ updated_at                      | timestamp with time zone |           |          | 
+ created_at                      | timestamp with time zone |           |          | 
+Indexes:
+    "license_user_limit_check_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "license_user_limit_check_license_id_fkey" FOREIGN KEY (license_id) REFERENCES product_licenses(id)
+
+```
+
 # Table "public.lsif_configuration_policies"
 ```
            Column            |           Type           | Collation | Nullable |                         Default                         
@@ -3265,29 +3282,30 @@ Indexes:
 
 # Table "public.product_licenses"
 ```
-          Column          |           Type           | Collation | Nullable | Default 
---------------------------+--------------------------+-----------+----------+---------
- id                       | uuid                     |           | not null | 
- product_subscription_id  | uuid                     |           | not null | 
- license_key              | text                     |           | not null | 
- created_at               | timestamp with time zone |           | not null | now()
- license_version          | integer                  |           |          | 
- license_tags             | text[]                   |           |          | 
- license_user_count       | integer                  |           |          | 
- license_expires_at       | timestamp with time zone |           |          | 
- access_token_enabled     | boolean                  |           | not null | true
- site_id                  | uuid                     |           |          | 
- license_check_token      | bytea                    |           |          | 
- revoked_at               | timestamp with time zone |           |          | 
- salesforce_sub_id        | text                     |           |          | 
- salesforce_opp_id        | text                     |           |          | 
- revoke_reason            | text                     |           |          | 
- user_count_alert_sent_at | timestamp with time zone |           |          | 
+         Column          |           Type           | Collation | Nullable | Default 
+-------------------------+--------------------------+-----------+----------+---------
+ id                      | uuid                     |           | not null | 
+ product_subscription_id | uuid                     |           | not null | 
+ license_key             | text                     |           | not null | 
+ created_at              | timestamp with time zone |           | not null | now()
+ license_version         | integer                  |           |          | 
+ license_tags            | text[]                   |           |          | 
+ license_user_count      | integer                  |           |          | 
+ license_expires_at      | timestamp with time zone |           |          | 
+ access_token_enabled    | boolean                  |           | not null | true
+ site_id                 | uuid                     |           |          | 
+ license_check_token     | bytea                    |           |          | 
+ revoked_at              | timestamp with time zone |           |          | 
+ salesforce_sub_id       | text                     |           |          | 
+ salesforce_opp_id       | text                     |           |          | 
+ revoke_reason           | text                     |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
     "product_licenses_license_check_token_idx" UNIQUE, btree (license_check_token)
 Foreign-key constraints:
     "product_licenses_product_subscription_id_fkey" FOREIGN KEY (product_subscription_id) REFERENCES product_subscriptions(id)
+Referenced by:
+    TABLE "license_user_limit_check" CONSTRAINT "license_user_limit_check_license_id_fkey" FOREIGN KEY (license_id) REFERENCES product_licenses(id)
 
 ```
 

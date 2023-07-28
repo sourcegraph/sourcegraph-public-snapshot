@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/userlimitchecker"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -29,6 +30,8 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 	userStore := db.Users()
 	user, err := userStore.Create(ctx, users[0])
 	require.NoError(t, err)
+	_, err = userStore.Create(ctx, users[1])
+	require.NoError(t, err)
 
 	// create product_subscription to satisfy product_license foreign key constraint
 	subStore := ps.NewDbSubscription(db)
@@ -37,20 +40,24 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 
 	// license can now be created
 	licensesStore := ps.NewDbLicense(db)
-	id, err := licensesStore.Create(ctx, subId, "12345", 5, license.Info{
-		UserCount: 2,
+	licenseID, err := licensesStore.Create(ctx, subId, "12345", 5, license.Info{
+		UserCount: 3,
 		ExpiresAt: time.Now().Add(14 * 24 * time.Hour),
 	})
 	require.NoError(t, err)
 
-	t.Run("sends correctly formatted email", func(t *testing.T) {
-		var gotEmail txtypes.Message
-		internalapi.MockSend = func(ctx context.Context, message txemail.Message) error {
-			gotEmail = message
-			return nil
-		}
-		t.Cleanup(func() { internalapi.MockSend = nil })
+	checkerStore := userlimitchecker.NewUserLimitChecker(db)
+	_, err = checkerStore.Create(ctx, licenseID, 1)
+	require.NoError(t, err)
 
+	var gotEmail txtypes.Message
+	internalapi.MockSend = func(ctx context.Context, message txemail.Message) error {
+		gotEmail = message
+		return nil
+	}
+	t.Cleanup(func() { internalapi.MockSend = nil })
+
+	t.Run("sends correctly formatted email", func(t *testing.T) {
 		err = SendApproachingUserLimitAlert(ctx, db)
 		require.NoError(t, err)
 
@@ -75,53 +82,137 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		assert.Equal(t, 1, gotEmailData.RemainingUsers)
 	})
 
-	t.Run("does not send email if user count is not approaching user limit", func(t *testing.T) {
-		err := licensesStore.UpdateUserCount(ctx, id, "15")
-		require.NoError(t, err)
+	// update user count for next test
+	err = licensesStore.UpdateUserCount(ctx, licenseID, "15")
+	require.NoError(t, err)
 
+	t.Run("does not send email if user count is not approaching user limit", func(t *testing.T) {
 		old := os.Stdout
 		r, w, err := os.Pipe()
 		require.NoError(t, err)
 		os.Stdout = w
 
 		err = SendApproachingUserLimitAlert(ctx, db)
-		if err != nil {
-			t.Errorf("could not run sendApproachingUserLimitAlert function: %s", err)
-		}
+		require.NoError(t, err)
 
 		w.Close()
 		out, err := ioutil.ReadAll(r)
 		require.NoError(t, err)
 		os.Stdout = old
 
-		assert.Equal(t, "user count on license within limit\n", string(out))
+		assert.Equal(t, "user count within limit; admin not alerted\n", string(out))
 	})
 
-	t.Run("does not send email if email sent within 7 days of current time", func(t *testing.T) {
-		err := licensesStore.UpdateUserCount(ctx, id, "2")
+	// update user count for next test
+	err = licensesStore.UpdateUserCount(ctx, licenseID, "3")
+	require.NoError(t, err)
+
+	t.Run("updates fields once email is sent", func(t *testing.T) {
+		checkerData, err := checkerStore.GetByLicenseID(ctx, licenseID)
 		require.NoError(t, err)
 
-		err = licensesStore.UpdateUserCountAlertSentAt(ctx, id, time.Now().UTC())
-		require.NoError(t, err)
+		prevUserCountAlertSentAt := checkerData.UserCountAlertSentAt
+		prevUpdatedAt := checkerData.UpdatedAt
+		prevUserCountWhenEmailLastSent := checkerData.UserCountWhenEmailLastSent
 
-		old := os.Stdout
-		r, w, err := os.Pipe()
+		_, err = userStore.Create(ctx, users[2])
 		require.NoError(t, err)
-		os.Stdout = w
 
 		err = SendApproachingUserLimitAlert(ctx, db)
 		require.NoError(t, err)
 
-		w.Close()
-		out, err := ioutil.ReadAll(r)
+		updatedCheckerData, err := checkerStore.GetByLicenseID(ctx, licenseID)
 		require.NoError(t, err)
-		os.Stdout = old
 
-		assert.Equal(t, "email recently sent\n", string(out))
+		newUserCountAlertSentAt := updatedCheckerData.UserCountAlertSentAt
+		newUpdatedAt := updatedCheckerData.UpdatedAt
+		newUserCountWhenEmailLastSent := updatedCheckerData.UserCountWhenEmailLastSent
+
+		assert.NotEqual(t, prevUserCountAlertSentAt, newUserCountAlertSentAt)
+		assert.NotEqual(t, prevUpdatedAt, newUpdatedAt)
+		assert.NotEqual(t, prevUserCountWhenEmailLastSent, newUserCountWhenEmailLastSent)
 	})
 }
 
-func TestGetPercentOfLimit(t *testing.T) {
+func TestGetActiveLicense(t *testing.T) {
+	logger := log.NoOp()
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	// create user to satisfy product_subscription foreign key constraint
+	userStore := db.Users()
+	user, err := userStore.Create(ctx, users[0])
+	require.NoError(t, err)
+	_, err = userStore.Create(ctx, users[1])
+	require.NoError(t, err)
+
+	// create product_subscription to satisfy product_license foreign key constraint
+	subStore := ps.NewDbSubscription(db)
+	subId, err := subStore.Create(ctx, user.ID, user.Username)
+	require.NoError(t, err)
+
+	// license can now be created
+	licensesStore := ps.NewDbLicense(db)
+	licenseId, err := licensesStore.Create(ctx, subId, "12345", 5, license.Info{
+		UserCount: 3,
+		ExpiresAt: time.Now().Add(14 * 24 * time.Hour),
+	})
+	require.NoError(t, err)
+
+	t.Run("should return the id of exactly 1 active license", func(t *testing.T) {
+		actual, err := getActiveLicense(ctx, db)
+		require.NoError(t, err)
+		expected := licenseId
+		assert.Equal(t, expected, actual)
+	})
+
+}
+
+func TestUserCountWithinLimit(t *testing.T) {
+	cases := []struct {
+		name      string
+		expected  bool
+		userCount int
+		userLimit int
+	}{
+		{name: "should return true if within user limit", expected: true, userCount: 13, userLimit: 26},
+		{name: "should return true if within user limit", expected: true, userCount: 3, userLimit: 5},
+		{name: "should return false if not within user limit", expected: false, userCount: 4, userLimit: 5},
+		{name: "should return false if not within user limit", expected: false, userCount: 132, userLimit: 140},
+		{name: "should return false if not within user limit", expected: false, userCount: 91, userLimit: 100},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := userCountWithinLimit(tc.userCount, tc.userLimit)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
+func TestUserCountIncreased(t *testing.T) {
+	cases := []struct {
+		name             string
+		expected         bool
+		currentUserCount int
+		lastUserCount    int
+	}{
+		{name: "should return true if count increased", expected: true, currentUserCount: 4, lastUserCount: 2},
+		{name: "should return true if count increased", expected: true, currentUserCount: 3, lastUserCount: 2},
+		{name: "should return false if count increased", expected: false, currentUserCount: 3, lastUserCount: 3},
+		{name: "should return false if count increased", expected: false, currentUserCount: 1, lastUserCount: 2},
+		{name: "should return false if count increased", expected: false, currentUserCount: 5, lastUserCount: 10},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := userCountIncreased(tc.currentUserCount, tc.lastUserCount)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
+func TestGetPercentage(t *testing.T) {
 	cases := []struct {
 		expected  int
 		userCount int
@@ -141,7 +232,7 @@ func TestGetPercentOfLimit(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("should calculate correct percentage", func(t *testing.T) {
-			actual := getPercentOfLimit(tc.userCount, tc.userLimit)
+			actual := getPercentage(tc.userCount, tc.userLimit)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
@@ -273,6 +364,57 @@ func TestGetUserEmail(t *testing.T) {
 	}
 }
 
+func TestEmailRecentlySent(t *testing.T) {
+	cases := []struct {
+		name        string
+		timeToCheck *time.Time
+		expected    bool
+	}{
+		{
+			name:        "should return true; email sent less than seven days ago",
+			timeToCheck: subtractDays(time.Now(), 5),
+			expected:    true,
+		},
+		{
+			name:        "should return true; email sent less than seven days ago",
+			timeToCheck: subtractDays(time.Now(), 2),
+			expected:    true,
+		},
+		{
+			name:        "should return true; email sent less than seven days ago",
+			timeToCheck: subtractDays(time.Now(), 1),
+			expected:    true,
+		},
+		{
+			name:        "should return false; email sent more than seven days ago",
+			timeToCheck: subtractDays(time.Now(), 14),
+			expected:    false,
+		},
+		{
+			name:        "should return false; email sent more than seven days ago",
+			timeToCheck: subtractDays(time.Now(), 9),
+			expected:    false,
+		},
+		{
+			name:        "should return false; email sent more than seven days ago",
+			timeToCheck: subtractDays(time.Now(), 7),
+			expected:    false,
+		},
+		{
+			name:        "should return false; email sent more than seven days ago",
+			timeToCheck: nil,
+			expected:    false,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			actual := emailRecentlySent(tc.timeToCheck)
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+}
+
 var users = []database.NewUser{
 	{
 		Email:                 "test@test.com",
@@ -365,4 +507,9 @@ var licensesToCreate = []struct {
 			ExpiresAt: time.Date(2022, 1, 1, 0, 0, 0, 0, time.UTC),
 		},
 	},
+}
+
+func subtractDays(t time.Time, days int) *time.Time {
+	testDate := t.AddDate(0, 0, -days)
+	return &testDate
 }

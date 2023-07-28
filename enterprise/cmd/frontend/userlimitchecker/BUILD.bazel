@@ -5,12 +5,14 @@ go_library(
     name = "userlimitchecker",
     srcs = [
         "limitchecker.go",
+        "msgs.go",
         "template.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/userlimitchecker",
     visibility = ["//visibility:public"],
     deps = [
         "//enterprise/cmd/frontend/internal/dotcom/productsubscription",
+        "//enterprise/cmd/frontend/internal/dotcom/userlimitchecker",
         "//internal/api/internalapi",
         "//internal/database",
         "//internal/txemail",
@@ -26,6 +28,7 @@ go_test(
     embed = [":userlimitchecker"],
     deps = [
         "//enterprise/cmd/frontend/internal/dotcom/productsubscription",
+        "//enterprise/cmd/frontend/internal/dotcom/userlimitchecker",
         "//internal/api/internalapi",
         "//internal/database",
         "//internal/database/dbtest",

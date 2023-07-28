@@ -33,7 +33,6 @@ type dbLicense struct {
 	RevokeReason             *string
 	SalesforceSubscriptionID *string
 	SalesforceOpportunityID  *string
-	UserCountAlertSentAt     time.Time
 }
 
 func NewDbLicense(db database.DB) dbLicenses {
@@ -245,8 +244,7 @@ SELECT
 	revoked_at,
 	revoke_reason,
 	salesforce_sub_id,
-	salesforce_opp_id,
-	user_count_alert_sent_at
+	salesforce_opp_id
 FROM product_licenses
 WHERE (%s)
 ORDER BY created_at DESC
@@ -280,7 +278,6 @@ ORDER BY created_at DESC
 			&v.RevokeReason,
 			&v.SalesforceSubscriptionID,
 			&v.SalesforceOpportunityID,
-			&dbutil.NullTime{Time: &v.UserCountAlertSentAt},
 		); err != nil {
 			return nil, err
 		}
@@ -317,42 +314,6 @@ func (s dbLicenses) Revoke(ctx context.Context, id, reason string) error {
 		return errLicenseNotFound
 	}
 	return err
-}
-
-func (s dbLicenses) GetUserCountAlertSentAt(ctx context.Context, id string) (time.Time, error) {
-	q := sqlf.Sprintf(
-		"SELECT user_count_alert_sent_at FROM product_licenses WHERE id = %s",
-		id,
-	)
-
-	var userCountAlertSentAt time.Time
-	err := s.db.QueryRowContext(
-		ctx,
-		q.Query(sqlf.PostgresBindVar),
-		q.Args()...,
-	).Scan(&dbutil.NullTime{Time: &userCountAlertSentAt})
-
-	return userCountAlertSentAt, err
-}
-
-func (s dbLicenses) UpdateUserCountAlertSentAt(ctx context.Context, id string, t time.Time) error {
-	q := sqlf.Sprintf(
-		"UPDATE product_licenses SET user_count_alert_sent_at = %s WHERE id = %s",
-		t,
-		id,
-	)
-	res, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		return errors.Wrap(err, "could not execContext")
-	}
-	nrows, err := res.RowsAffected()
-	if err != nil {
-		return err
-	}
-	if nrows == 0 {
-		return errLicenseNotFound
-	}
-	return nil
 }
 
 func (s dbLicenses) UpdateUserCount(ctx context.Context, id string, newUserCount string) error {
