@@ -7,7 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/sourcegraph"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/paths"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -45,7 +46,8 @@ func EmbedRepo(
 	client client.EmbeddingsClient,
 	contextService ContextService,
 	readLister FileReadLister,
-	ranks types.RepoPathRanks,
+	repo types.RepoIDName,
+	ranks citypes.RepoPathRanks,
 	opts EmbedRepoOpts,
 	logger log.Logger,
 	reportProgress func(*bgrepo.EmbedRepoStats),

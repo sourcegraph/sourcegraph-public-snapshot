@@ -84,6 +84,13 @@ type Repo struct {
 	KeyValuePairs map[string]*string `json:",omitempty"`
 }
 
+func (r *Repo) IDName() RepoIDName {
+	return RepoIDName{
+		ID:   r.ID,
+		Name: r.Name,
+	}
+}
+
 type GitHubAppDomain string
 
 func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }

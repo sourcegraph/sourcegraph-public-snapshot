@@ -143,6 +143,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		embeddingsClient,
 		h.contextService,
 		fetcher,
+		repo.IDName(),
 		ranks,
 		opts,
 		logger,
