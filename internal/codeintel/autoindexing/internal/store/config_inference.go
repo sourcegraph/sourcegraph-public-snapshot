@@ -40,7 +40,7 @@ func (s *store) SetInferenceScript(ctx context.Context, script string) (err erro
 	}})
 	defer endObservation(1, observation.Args{})
 
-	_, error := luaParse.Parse(strings.NewReader(script), "<script>")
+	_, error := luaParse.Parse(strings.NewReader(script), "(inference script)")
 	if error != nil {
 		return error
 	}
