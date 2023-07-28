@@ -36,61 +36,63 @@ export const CodyRecipesWidget: React.FC<IProps> = ({ editor, codyChatStore }) =
     }
 
     return (
-        <Recipes>
-            <Recipe title="Explain" icon={mdiCardBulletedOutline}>
-                <RecipeAction
-                    title="Detailed"
-                    onClick={() => void executeRecipe('explain-code-detailed', { scope: { editor } })}
-                    disabled={isMessageInProgress}
-                />
-                <RecipeAction
-                    title="High level"
-                    onClick={() => void executeRecipe('explain-code-high-level', { scope: { editor } })}
-                    disabled={isMessageInProgress}
-                />
-            </Recipe>
-
-            <Recipe title="Generate" icon={mdiProgressPencil}>
-                <RecipeAction
-                    title="A unit test"
-                    onClick={() => void executeRecipe('generate-unit-test', { scope: { editor } })}
-                    disabled={isMessageInProgress}
-                />
-                <RecipeAction
-                    title="A docstring"
-                    onClick={() => void executeRecipe('generate-docstring', { scope: { editor } })}
-                    disabled={isMessageInProgress}
-                />
-            </Recipe>
-
-            <Recipe title="Transpile" icon={mdiShuffleVariant}>
-                {TranslateToLanguage.options.map(language => (
+        <div style={{ position: 'absolute', top: '100px', left: '100px' }}>
+            <Recipes>
+                <Recipe title="Explain" icon={mdiCardBulletedOutline}>
                     <RecipeAction
-                        key={language}
-                        title={language}
+                        title="Detailed"
+                        onClick={() => void executeRecipe('explain-code-detailed', { scope: { editor } })}
                         disabled={isMessageInProgress}
-                        onClick={() =>
-                            void executeRecipe('translate-to-language', {
-                                prefilledOptions: [[TranslateToLanguage.options, language]],
-                                scope: { editor },
-                            })
-                        }
                     />
-                ))}
-            </Recipe>
+                    <RecipeAction
+                        title="High level"
+                        onClick={() => void executeRecipe('explain-code-high-level', { scope: { editor } })}
+                        disabled={isMessageInProgress}
+                    />
+                </Recipe>
 
-            <Recipe icon={mdiDotsVertical}>
-                <RecipeAction
-                    title="Improve variable names"
-                    disabled={isMessageInProgress}
-                    onClick={() => void executeRecipe('improve-variable-names', { scope: { editor } })}
-                />
-                <RecipeAction
-                    title="Smell code"
-                    onClick={() => void executeRecipe('find-code-smells', { scope: { editor } })}
-                    disabled={isMessageInProgress}
-                />
-            </Recipe>
-        </Recipes>
+                <Recipe title="Generate" icon={mdiProgressPencil}>
+                    <RecipeAction
+                        title="A unit test"
+                        onClick={() => void executeRecipe('generate-unit-test', { scope: { editor } })}
+                        disabled={isMessageInProgress}
+                    />
+                    <RecipeAction
+                        title="A docstring"
+                        onClick={() => void executeRecipe('generate-docstring', { scope: { editor } })}
+                        disabled={isMessageInProgress}
+                    />
+                </Recipe>
+
+                <Recipe title="Transpile" icon={mdiShuffleVariant}>
+                    {TranslateToLanguage.options.map(language => (
+                        <RecipeAction
+                            key={language}
+                            title={language}
+                            disabled={isMessageInProgress}
+                            onClick={() =>
+                                void executeRecipe('translate-to-language', {
+                                    prefilledOptions: [[TranslateToLanguage.options, language]],
+                                    scope: { editor },
+                                })
+                            }
+                        />
+                    ))}
+                </Recipe>
+
+                <Recipe icon={mdiDotsVertical}>
+                    <RecipeAction
+                        title="Improve variable names"
+                        disabled={isMessageInProgress}
+                        onClick={() => void executeRecipe('improve-variable-names', { scope: { editor } })}
+                    />
+                    <RecipeAction
+                        title="Smell code"
+                        onClick={() => void executeRecipe('find-code-smells', { scope: { editor } })}
+                        disabled={isMessageInProgress}
+                    />
+                </Recipe>
+            </Recipes>
+        </div>
     )
 }

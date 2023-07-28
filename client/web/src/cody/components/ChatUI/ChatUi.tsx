@@ -12,6 +12,7 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
+import { Popover } from 'react-text-selection-popover'
 import useResizeObserver from 'use-resize-observer'
 
 import {
@@ -30,6 +31,7 @@ import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
+import { CodyRecipesWidget } from '../../widgets/CodyRecipesWidget'
 import { ScopeSelector } from '../ScopeSelector'
 
 import styles from './ChatUi.module.scss'
@@ -137,10 +139,45 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 abortMessageInProgressComponent={AbortMessageInProgress}
                 onAbortMessageInProgress={abortMessageInProgress}
                 isCodyEnabled={isCodyEnabled()}
+                RecipeWidgetWrapper={RecipeWidgetWrapper}
             />
         </>
     )
 }
+
+interface RecipeWidgetWrapperProps {
+    targetRef: any
+    children: any
+}
+
+const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = React.memo(
+    function CodyRecipeWidgetWrapper({ targetRef, children }) {
+        const [show, setShow] = useState(false)
+
+        return (
+            <>
+                {children}
+
+                <Popover
+                    target={targetRef.current}
+                    render={({ clientRect, isCollapsed, textContent }) => {
+                        useEffect(() => {
+                            setShow(!isCollapsed)
+                        }, [isCollapsed, setShow])
+
+                        console.log(clientRect, textContent, targetRef.current?.innerText)
+
+                        if (!clientRect || isCollapsed || !targetRef || !show) {
+                            return null
+                        }
+
+                        return <CodyRecipesWidget />
+                    }}
+                />
+            </>
+        )
+    }
+)
 
 interface IAbortMessageInProgressProps {
     onAbortMessageInProgress: () => void
