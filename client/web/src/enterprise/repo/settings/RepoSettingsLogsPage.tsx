@@ -41,7 +41,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
         }
     }, [location.search])
 
-    const handleActiveTab = (index: number): void => setActiveTab(index)
+    const setActiveTabIndex = (index: number): void => setActiveTab(index)
 
     return (
         <>
@@ -54,7 +54,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
                     lazy={true}
                     className={styles.tabContainer}
                     index={activeTab}
-                    onChange={handleActiveTab}
+                    onChange={setActiveTabIndex}
                 >
                     <TabList>
                         <Tab>Last repo commands</Tab>
@@ -82,6 +82,13 @@ interface LastRepoCommandsProps {
 }
 
 const LastRepoCommands: FC<LastRepoCommandsProps> = ({ recordedCommands, mirrorInfo }) => {
+    // {loading ? (
+    //     <LoadingSpinner className="bg-transparent ml-3" />
+    // ) : (
+    //     <Button size="sm" className={styles.stepOutputShowMoreBtn} onClick={fetchMore}>
+    //         Load more ...
+    //     </Button>
+    // )}
     if (recordedCommands.nodes.length === 0) {
         return <Text className="my-3">No recorded commands for repository.</Text>
     }
