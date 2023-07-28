@@ -1,4 +1,4 @@
-import { gql } from '@sourcegraph/http-client'
+import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
 
 export const RepoPermissionsInfoQuery = gql`
     query RepoPermissionsInfo($repoID: ID!, $first: Int, $last: Int, $after: String, $before: String, $query: String) {
@@ -43,3 +43,26 @@ export const RepoPermissionsInfoQuery = gql`
         }
     }
 `
+
+export const useExternalServicesConnection = (
+    vars: ExternalServicesVariables
+): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
+    useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
+        query: EXTERNAL_SERVICES,
+        variables: { after: vars.after, first: vars.first ?? 10 },
+        getConnection: result => {
+            const { externalServices } = dataOrThrowErrors(result)
+            return externalServices
+        },
+        options: {
+            fetchPolicy: 'cache-and-network',
+            pollInterval: 15000,
+        },
+        getConnection: result => {
+            const { node } = dataOrThrowErrors(result)
+
+            if (!node) {
+                throw new Error('Repository not found')
+            }
+        },
+    })
