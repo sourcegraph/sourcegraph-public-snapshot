@@ -14,9 +14,9 @@ func init() {
 		cpuid.AVX512VNNI, // required by VPDPBUSD
 	)
 
-	if simdEnabled && hasVNNI {
+	if simdEnabled && hasVNNI && !useWGPU {
 		dotArch = dotVNNI
-	} else if simdEnabled && hasAVX2 {
+	} else if simdEnabled && hasAVX2 && !useWGPU {
 		dotArch = dotAVX2
 	}
 }

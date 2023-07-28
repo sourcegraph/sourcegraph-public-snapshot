@@ -142,4 +142,6 @@ mkShell {
   # https://sourcegraph.com/github.com/bazelbuild/bazel@1a4da7f331c753c92e2c91efcad434dc29d10d43/-/blob/scripts/packages/bazel.sh?L23-28
   USE_BAZEL_VERSION =
     if hostPlatform.isMacOS then "" else pkgs.bazel_6.version;
+
+  LD_LIBRARY_PATH = with pkgs; lib.optionalString (!hostPlatform.isMacOS) lib.makeLibraryPath [ vulkan-loader ];
 }

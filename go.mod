@@ -281,6 +281,12 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20230717213848-3f92550aa753
 )
 
+require github.com/rajveermalviya/go-webgpu/wgpu v0.16.2
+
+replace (
+	github.com/rajveermalviya/go-webgpu/wgpu => ../../Go/go-webgpu/wgpu
+)
+
 require (
 	cloud.google.com/go/compute/metadata v0.2.4-0.20230617002413-005d2dfb6b68 // indirect
 	cloud.google.com/go/trace v1.10.1 // indirect

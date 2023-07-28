@@ -1,0 +1,46 @@
+#version 450 core
+
+layout (local_size_x = 4) in;
+layout(std430, binding = 0) readonly buffer Data {
+    int a[];
+};
+
+layout(std430, binding = 1) readonly buffer Data2 {
+    int b[];
+};
+
+layout(binding = 2) writeonly buffer Data3 {
+    int output;
+};
+
+ivec4 unpack(int data) {
+    return ivec4(
+        (data & 0xff),
+        (data >> 8) & 0xff,
+        (data >> 16) & 0xff,
+        (data >> 24) & 0xff
+    );
+}
+
+int pack(ivec4 data) {
+    int r = data.x;
+    int g = data.y;
+    int b = data.z;
+    int a = data.w;
+
+    return (a << 24) | (b << 16) | (g << 8) | r;
+}
+
+shared ivec4 reduce[16];
+
+void main() {
+    int id = ivec3(gl_GlobalInvocationID).x;
+    reduce[id] = unpack(a[id]) * unpack(b[id]);
+    if (id == 0) {
+        int acc = 0;
+        for (int i = 0; i < gl_NumWorkGroups.x; i++) {
+            acc += reduce[i].x + reduce[i].y + reduce[i].z + reduce[i].w;
+        }
+        output = acc;
+    }
+}
