@@ -1886,7 +1886,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	}
 
 	conds := []*sqlf.Query{authzParams.ToAuthzQuery()}
-	order := sqlf.Sprintf("repo.id ASC")
+	order := sqlf.Sprintf("es.id, ar.name ASC")
 	limit := sqlf.Sprintf("")
 
 	if args != nil {
@@ -1914,12 +1914,10 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	reposQuery := sqlf.Sprintf(
 		reposPermissionsInfoQueryFmt,
 		sqlf.Join(conds, " AND "),
-		order,
 		limit,
 		userID,
+		order,
 	)
-
-	fmt.Printf("QUERY %v", reposQuery)
 
 	return scanRepoPermissionsInfo(authzParams)(s.Query(ctx, reposQuery))
 }
@@ -1934,7 +1932,6 @@ WITH accessible_repos AS (
 	WHERE
 		repo.deleted_at IS NULL
 		AND %s -- Authz Conds, Pagination Conds, Search
-	ORDER BY %s
 	%s -- Limit
 )
 SELECT
@@ -1948,7 +1945,7 @@ FROM
 		AND urp.repo_id = ar.id
 	LEFT JOIN external_service_repos AS esr ON esr.repo_id = ar.id
 	LEFT JOIN external_services AS es ON esr.external_service_id = es.id
-ORDER BY es.id, ar.name ASC
+ORDER BY %s
 `
 
 var scanRepoPermissionsInfo = func(authzParams *AuthzQueryParameters) func(basestore.Rows, error) ([]*UserPermission, error) {
