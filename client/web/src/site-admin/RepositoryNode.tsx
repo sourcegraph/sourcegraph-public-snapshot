@@ -4,6 +4,7 @@ import {
     mdiBrain,
     mdiClose,
     mdiCog,
+    mdiConnection,
     mdiDatabaseRefresh,
     mdiDotsVertical,
     mdiInformation,
@@ -271,12 +272,23 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
-                                    disabled={!repoClonedAndHealthy(node)}
+                                    disabled={!repoCloned(node)}
                                     onSelect={() => navigate(`/${node.name}/-/settings`)}
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiCog} className="mr-1" />
                                     Settings
+                                </MenuItem>
+                                <MenuItem
+                                    as={Button}
+                                    disabled={node.externalServices.nodes?.length === 0}
+                                    onSelect={() =>
+                                        navigate(`/site-admin/external-services/${node.externalServices.nodes[0].id}`)
+                                    }
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
+                                    Code host connection
                                 </MenuItem>
                             </MenuList>
                         </Menu>
