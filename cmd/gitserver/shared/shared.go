@@ -653,7 +653,7 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 
 		repoMatch := false
 		// If repos contains a single "*" element, it means to record commands
-		// for all repositories. In that case, always return true.
+		// for all repositories.
 		if len(repos) == 1 && repos[0] == "*" {
 			repoMatch = true
 		} else {
