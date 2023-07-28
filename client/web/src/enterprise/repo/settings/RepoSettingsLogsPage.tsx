@@ -1,25 +1,15 @@
 import { FC, useEffect, useState } from 'react'
 
 import { mdiCalendar, mdiClockAlertOutline } from '@mdi/js'
+import { parseISO } from 'date-fns'
 import { useLocation } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import {
-    Text,
-    PageHeader,
-    Container,
-    Tabs,
-    Tab,
-    TabList,
-    TabPanels,
-    TabPanel,
-    Input,
-    Icon,
-} from '@sourcegraph/wildcard'
+import { Text, PageHeader, Container, Tabs, Tab, TabList, TabPanels, TabPanel, Icon } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../../components/LogOutput'
 import { PageTitle } from '../../../components/PageTitle'
-import { SettingsAreaRepositoryFields } from '../../../graphql-operations'
+import { SettingsAreaRepositoryFields, RepositoryRecordedCommandFields } from '../../../graphql-operations'
 import { LogsPageTabs } from '../../../repo/constants'
 import { eventLogger } from '../../../tracking/eventLogger'
 
@@ -59,10 +49,6 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
             <PageHeader path={[{ text: 'Logs and activities' }]} headingElement="h2" className="mb-3" />
 
             <Container>
-                <div className="form-group">
-                    <Input value={repo.name} readOnly={true} className="mb-0" />
-                </div>
-
                 <Tabs
                     size="medium"
                     lazy={true}
@@ -96,13 +82,13 @@ interface LastRepoCommandsProps {
 }
 
 const LastRepoCommands: FC<LastRepoCommandsProps> = ({ recordedCommands, mirrorInfo }) => {
-    if (recordedCommands.length === 0) {
+    if (recordedCommands.nodes.length === 0) {
         return <Text className="my-3">No recorded commands for repository.</Text>
     }
 
     return (
         <div className="mt-2">
-            {recordedCommands.map((command, index) => (
+            {recordedCommands.nodes.map((command, index) => (
                 // We use the index as key here because commands don't have the concept
                 // of IDs and there's nothing really unique about each command.
                 //
@@ -114,12 +100,12 @@ const LastRepoCommands: FC<LastRepoCommandsProps> = ({ recordedCommands, mirrorI
 }
 
 interface LastRepoCommandNodeProps {
-    command: SettingsAreaRepositoryFields['recordedCommands'][0]
+    command: RepositoryRecordedCommandFields
     mirrorInfo: SettingsAreaRepositoryFields['mirrorInfo']
 }
 
 const LastRepoCommandNode: FC<LastRepoCommandNodeProps> = ({ command, mirrorInfo }) => {
-    const startDate = new Date(command.start)
+    const startDate = parseISO(command.start)
 
     let duration: string
     if (command.duration > 1) {

@@ -19,6 +19,14 @@ export const settingsAreaRepositoryFragment = gql`
         supportsRepoExclusion
     }
 
+    fragment RepositoryRecordedCommandFields on RecordedCommand {
+        path
+        start
+        duration
+        command
+        dir
+    }
+
     fragment SettingsAreaRepositoryFields on Repository {
         id
         name
@@ -59,12 +67,14 @@ export const settingsAreaRepositoryFragment = gql`
             key
             value
         }
-        recordedCommands {
-            path
-            start
-            duration
-            command
-            dir
+        recordedCommands(limit: 3) {
+            nodes {
+                ...RepositoryRecordedCommandFields
+            }
+            totalCount
+            pageInfo {
+                hasNextPage
+            }
         }
     }
 `
