@@ -118,7 +118,7 @@ Think of Cody as your personal dedicated AI coding assistant, equipped with a co
 
 Cody helps you answer questions, write code, and offer suggestions for code improvement.
 
-## Getting Started
+## Getting started
 
 To start using Cody, pick one of the following:
 
@@ -149,7 +149,7 @@ To start using Cody, pick one of the following:
   </li>
 </ul>
 
-## Main Features
+## Main features
 
 Some of the main Cody features include:
 
@@ -162,7 +162,7 @@ Some of the main Cody features include:
 | Recipes         | Cody uses its codebase awareness to produce unit tests, documentation, and more. Use our pre-built recipes to simplify development with a few clicks.                                       |
 | Autocomplete    | Cody provides context-based code auto-completion while typing. Predictions make coding easier.                                                                                              |
 
-## Join our Community
+## Join our community
 
 If you have any questions regarding Cody, you can always ask our community on [GitHub Discussions](https://github.com/sourcegraph/cody/discussions), [Discord](https://discord.com/invite/s2qDtYGnAE), or [Twitter](https://twitter.com/sourcegraph).
 
