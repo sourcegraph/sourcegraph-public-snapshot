@@ -372,13 +372,23 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					fmt.Println("THIS is the CONTENT", documentAndText.Content)
 					c := strings.Split(string(documentAndText.Content), "\n")
 					snippet := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
+					ex, err := symbols.NewExplodedSymbol(pd.scipSymbolName)
+					if err != nil {
+						return nil, err
+					}
+					fex, err := symbols.NewExplodedSymbol(pd.fuzzyName)
+					if err != nil {
+						return nil, err
+					}
 
 					preciseResponse = append(preciseResponse, &types.PreciseContext{
-						ScipSymbolName:  pd.scipSymbolName,
-						FuzzySymbolName: pd.fuzzyName,
-						RepositoryName:  l.Dump.RepositoryName,
-						Text:            snippet,
-						FilePath:        l.Path,
+						ScipSymbolName:        pd.scipSymbolName,
+						FuzzySymbolName:       pd.fuzzyName,
+						ScipDescriptorSuffix:  ex.DescriptorSuffix,
+						FuzzyDescriptorSuffix: fex.FuzzyDescriptorSuffix,
+						RepositoryName:        l.Dump.RepositoryName,
+						Text:                  snippet,
+						FilePath:              l.Path,
 					})
 
 					// TODO - move this out of the nested loop

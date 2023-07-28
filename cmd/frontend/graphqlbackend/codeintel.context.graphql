@@ -76,6 +76,14 @@ type PreciseContext {
     """
     fuzzySymbolName: String!
     """
+    The descriptor suffix of the scip symbol name.
+    """
+    scipDescriptorSuffix: String!
+    """
+    The fuzzy descriptor suffix created by Syntect and TreeSitter.
+    """
+    fuzzyDescriptorSuffix: String!
+    """
     The repository name.
     """
     repositoryName: String!
