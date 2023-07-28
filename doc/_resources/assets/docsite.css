@@ -1000,6 +1000,8 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
   color: var(--text-color);
   border-radius: 4px;
   border: 1px solid var(--sidebar-nav-active-bg);
+  padding: 1.5rem;
+  padding-top: 1.25rem;
 }
 
 .markdown-body .getting-started .btn:hover {
