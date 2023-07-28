@@ -1935,7 +1935,7 @@
           "maximum": 10000
         },
         "repos": {
-          "description": "List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in a wildcard as the only item in the array.",
+          "description": "List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.",
           "type": "array",
           "items": {
             "type": "string"
