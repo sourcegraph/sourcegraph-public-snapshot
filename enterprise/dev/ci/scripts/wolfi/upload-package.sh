@@ -11,7 +11,7 @@ TARGET_ARCH="x86_64"
 MAIN_BRANCH="main"
 BRANCH="${BUILDKITE_BRANCH:-'default-branch'}"
 # shellcheck disable=SC2001
-BRANCH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
+BRANCH_PATH=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9_-]/-/g')
 IS_MAIN=$([ "$BRANCH" = "$MAIN_BRANCH" ] && echo "true" || echo "false")
 
 cd wolfi-packages/packages/$TARGET_ARCH
@@ -26,7 +26,6 @@ for apk in "${apks[@]}"; do
   echo " * Processing $apk"
 
   # Generate the branch-specific path to upload the package to
-  BRANCH_PATH="$BRANCH"
   if [[ "$IS_MAIN" != "true" ]]; then
     BRANCH_PATH="branches/$BRANCH"
   fi
@@ -53,8 +52,6 @@ for apk in "${apks[@]}"; do
   else
     echo "   * File does not exist, uploading..."
   fi
-
-  continue
 
   # no-cache to avoid index/packages getting out of sync
   echo "   * Uploading package and index fragment to repo"
