@@ -872,19 +872,20 @@ func (s *Syncer) MaybePrepareForDeduplication(ctx context.Context, repo *types.R
 		BaseRepository: metadata.Parent,
 	}
 
-	// FIXME: Breaks for repositoryPathPattern.
-
-	// HACK: The current API is not making it easy to retrieve the "originalHostname" here. Revisit
+	// NOTE: This currently breaks for repositoryPathPattern. This is not in scope in the first PoC
+	// and we will iterate on this to support this use case.
+	//
+	// The current API is not making it easy to retrieve the "originalHostname" here. Revisit
 	// and find a better way. But we only support "github.com" repositories for the time being so
 	// it's okay for now until this changes.
 	//
-	// NOTE: GitHubRepoName without an empty repositoryPathPattern is the repo URI. We use the repo
+	// GitHubRepoName without an empty repositoryPathPattern is the repo URI. We use the repo
 	// URI since we want users to add the repo names as they are on their code host and not the
 	// representation that we store in Sourcegraph. If a repositoryPathPattern is set on the code
 	// host config, the repo name may be different than the URI. But the URI will always be the name
 	// of the repo as it appears on the code host.
-
-	// TODO: Decrypt and read repositoryPathPattern from config svc.Config.
+	//
+	// When we want to support repositoryPathPattern we will have to decrypt svc.Config here.
 	poolRepoName := reposource.GitHubRepoName("", "github.com", parentRepo.NameWithOwner)
 
 	if !s.DeduplicatedForksSet.Contains(string(poolRepoName)) {
