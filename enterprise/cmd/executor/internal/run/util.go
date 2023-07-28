@@ -227,7 +227,8 @@ func kubernetesOptions(c *config.Config) runner.KubernetesOptions {
 			},
 			NodeName:         c.KubernetesNodeName,
 			NodeSelector:     nodeSelector,
-			Annotations:      c.KubernetesJobAnnotations,
+			JobAnnotations:   c.KubernetesJobAnnotations,
+			PodAnnotations:   c.KubernetesJobPodAnnotations,
 			ImagePullSecrets: imagePullSecrets,
 			RequiredNodeAffinity: command.KubernetesNodeAffinity{
 				MatchExpressions: c.KubernetesNodeRequiredAffinityMatchExpressions,
