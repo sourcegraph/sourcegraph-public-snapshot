@@ -17,6 +17,7 @@ write_source_files(
         "//doc/dev/background-information/sg:write_cli_reference_doc",
         "//enterprise/cmd/frontend/internal/guardrails/dotcom:write_genql_yaml",
         "//internal/batches/search/syntax:write_token_type",
+        "//lib/batches/schema:write_generated_code",
         "//lib/codeintel/lsif/protocol:write_symbol_kind",
         "//lib/codeintel/lsif/protocol:write_symbol_tag",
     ],

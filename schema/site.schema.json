@@ -1924,7 +1924,7 @@
       ]
     },
     "gitRecorder": {
-      "description": "Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.",
+      "description": "Record git operations that are executed on configured repositories.",
       "type": "object",
       "properties": {
         "size": {
@@ -1935,7 +1935,7 @@
           "maximum": 10000
         },
         "repos": {
-          "description": "List of repositories whose git operations should be recorded.",
+          "description": "List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.",
           "type": "array",
           "items": {
             "type": "string"

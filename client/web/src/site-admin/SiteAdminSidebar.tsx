@@ -14,15 +14,14 @@ import styles from './SiteAdminSidebar.module.scss'
 export interface SiteAdminSideBarGroupContext extends BatchChangesProps {
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
+    codeInsightsEnabled: boolean
 }
 
 export interface SiteAdminSideBarGroup extends NavGroupDescriptor<SiteAdminSideBarGroupContext> {}
 
 export type SiteAdminSideBarGroups = readonly SiteAdminSideBarGroup[]
 
-export interface SiteAdminSidebarProps extends BatchChangesProps {
-    isSourcegraphDotCom: boolean
-    isSourcegraphApp: boolean
+export interface SiteAdminSidebarProps extends SiteAdminSideBarGroupContext {
     /** The items for the side bar, by group */
     groups: SiteAdminSideBarGroups
     className?: string

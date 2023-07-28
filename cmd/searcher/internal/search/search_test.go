@@ -51,6 +51,7 @@ func TestSearch(t *testing.T) {
 
 Hello world example in go`, typeFile},
 		"file++.plus": {`filename contains regex metachars`, typeFile},
+		"nonutf8.txt": {"file contains invalid utf8 \xC0 characters", typeFile},
 		"main.go": {`package main
 
 import "fmt"
@@ -256,6 +257,7 @@ filename contains regex metachars
 abc.txt
 file++.plus
 milton.png
+nonutf8.txt
 symlink
 `},
 
@@ -264,6 +266,7 @@ abc.txt
 file++.plus
 main.go
 milton.png
+nonutf8.txt
 symlink
 `},
 
@@ -272,6 +275,7 @@ README.md
 abc.txt
 file++.plus
 milton.png
+nonutf8.txt
 symlink
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: true}, `
@@ -285,6 +289,10 @@ abc.txt
 `},
 		{protocol.PatternInfo{Pattern: "abc", PatternMatchesPath: true, PatternMatchesContent: false}, `
 abc.txt
+`},
+		{protocol.PatternInfo{Pattern: "utf8", PatternMatchesPath: false, PatternMatchesContent: true}, `
+nonutf8.txt:1:1:
+file contains invalid utf8 � characters
 `},
 	}
 

@@ -32,7 +32,8 @@
     "archived": false,
     "star_count": 0,
     "forks_count": 0,
-    "empty_repo": false
+    "empty_repo": false,
+    "default_branch": "main"
    }
   }
  ]

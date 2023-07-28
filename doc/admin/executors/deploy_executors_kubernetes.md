@@ -8,7 +8,7 @@
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-> NOTE: This feature is available in Sourcegraph 5.1.4 and later.
+> NOTE: This feature is available in Sourcegraph 5.1.5 and later.
 
 [Kubernetes manifests](https://github.com/sourcegraph/deploy-sourcegraph-k8s) are provided to deploy Sourcegraph Executors on a running Kubernetes cluster. If you are deploying Sourcegraph with helm, charts are available [here](https://github.com/sourcegraph/deploy-sourcegraph-helm).
 
@@ -75,6 +75,7 @@ set on the Executor `Deployment` and will configure the `Job`s that it spawns.
 | KUBERNETES_FS_GROUP                                          | `1000`            | The group ID to run all containers in the Kubernetes jobs as.                                                                                                                                          |
 | KUBERNETES_KEEP_JOBS                                         | `false`           | If true, Kubernetes jobs will not be deleted after they complete. Useful for debugging.                                                                                                                |
 | KUBERNETES_JOB_ANNOTATIONS                                   | N/A               | The JSON encoded annotations to add to the Kubernetes Jobs. e.g. `{"foo": "bar", "faz": "baz"}`                                                                                                        |
+| KUBERNETES_JOB_POD_ANNOTATIONS                               | N/A               | The JSON encoded annotations to add to the Kubernetes Job Pods. e.g. `{"foo": "bar", "faz": "baz"}`                                                                                                    |
 | KUBERNETES_IMAGE_PULL_SECRETS                                | N/A               | The names of Kubernetes image pull secrets to use for pulling images. e.g. my-secret,my-other-secret                                                                                                   |
 
 <!--
@@ -132,7 +133,7 @@ The following are Firewall rules that are _highly recommended_ when running Exec
 Environment.
 
 - Disable access to internal resources.
-- Disable access to `5.1.4.254` (AWS / GCP Instance Metadata Service).
+- Disable access to `5.1.5.254` (AWS / GCP Instance Metadata Service).
 
 ### Batch Changes
 
