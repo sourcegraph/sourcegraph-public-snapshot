@@ -20,12 +20,13 @@ func TestRateLimiter(t *testing.T) {
 	}
 
 	// Set up the test by initializing the bucket with some initial capacity and replenishment rate
+	ctx := context.Background()
 	bucketName := "github.com:api_tokens"
 	bucketCapacity := 100
 	bucketReplenishRateSeconds := 10
 
 	// Try to get tokens before rate limiter config is set in Redis
-	_, _, err := rl.GetTokensFromBucket(context.Background(), bucketName, 1)
+	_, _, err := rl.GetTokensFromBucket(ctx, bucketName, 1)
 	if err == nil {
 		t.Fatalf("Expected error getting tokens from bucket without config")
 	}
@@ -34,14 +35,14 @@ func TestRateLimiter(t *testing.T) {
 		t.Fatalf("Expected rate limiter config not created error, got: %+v", err)
 	}
 
-	err = rl.SetTokenBucketReplenishment(context.Background(), bucketName, bucketCapacity, bucketReplenishRateSeconds)
+	err = rl.SetTokenBucketReplenishment(ctx, bucketName, bucketCapacity, bucketReplenishRateSeconds)
 	if err != nil {
 		t.Fatalf("Error setting token bucket configuration: %v", err)
 	}
 
 	// Get tokens from the bucket
 	requestedTokens := 10
-	allowed, remTokens, err := rl.GetTokensFromBucket(context.Background(), bucketName, requestedTokens)
+	allowed, remTokens, err := rl.GetTokensFromBucket(ctx, bucketName, requestedTokens)
 	if err != nil {
 		t.Fatalf("Error getting tokens from bucket: %v", err)
 	}
@@ -55,7 +56,7 @@ func TestRateLimiter(t *testing.T) {
 
 	// Get more tokens
 	requestedTokens2 := 30
-	allowed, remTokens, err = rl.GetTokensFromBucket(context.Background(), bucketName, requestedTokens2)
+	allowed, remTokens, err = rl.GetTokensFromBucket(ctx, bucketName, requestedTokens2)
 	if err != nil {
 		t.Fatalf("Error getting tokens from bucket: %v", err)
 	}
@@ -69,7 +70,7 @@ func TestRateLimiter(t *testing.T) {
 
 	// Try to get more tokens than the remaining capacity
 	requestedTokens = remTokens + 1
-	allowed, remTokens, err = rl.GetTokensFromBucket(context.Background(), bucketName, requestedTokens)
+	allowed, remTokens, err = rl.GetTokensFromBucket(ctx, bucketName, requestedTokens)
 	if err != nil {
 		t.Fatalf("Error getting tokens from bucket: %v", err)
 	}

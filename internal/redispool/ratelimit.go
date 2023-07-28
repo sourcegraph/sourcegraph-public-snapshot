@@ -16,12 +16,12 @@ var (
 
 type RateLimiter interface {
 	// GetTokensFromBucket gets tokens from the specified rate limit token bucket.
-	// bucketName: the name of the bucket where the tokens are, i.e. github.com:api_tokens
+	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
 	// tokensWanted: the number of tokens you want from the bucket; if the number is greater than the remaining capacity, no tokens will be given.
 	GetTokensFromBucket(ctx context.Context, bucketName string, tokensWanted int) (allowed bool, remainingTokens int, err error)
 
 	// SetTokenBucketReplenishment sets the configuration for the specified token bucket.
-	// bucketName: the name of the bucket where the tokens are, i.e. github.com:api_tokens
+	// bucketName: the name of the bucket where the tokens are, e.g. github.com:api_tokens
 	// bucketCapacity: the number of tokens the bucket can hold.
 	// bucketReplenishRateSeconds: how often (in seconds) the bucket should be completely replenished.
 	SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishRateSeconds int) error
@@ -87,11 +87,11 @@ func (r *rateLimiter) SetTokenBucketReplenishment(ctx context.Context, bucketNam
 }
 
 func (r *rateLimiter) getRateLimiterKeys(bucketName string) (string, string, string) {
-	// i.e. v2:rate_limiters:github.com:api_tokens
+	// e.g. v2:rate_limiters:github.com:api_tokens
 	bucketKey := fmt.Sprintf("%s:%s", r.prefix, bucketName)
-	// i.e. v2:rate_limiters:github.com:api_tokens:config:bucket_capacity
+	// e.g. v2:rate_limiters:github.com:api_tokens:config:bucket_capacity
 	bucketCapacity := fmt.Sprintf("%s:%s", bucketKey, bucketCapacityConfigKeySuffix)
-	// i.e. v2:rate_limiters:github.com:api_tokens:config:bucket_replenishment_interval_seconds
+	// e.g.. v2:rate_limiters:github.com:api_tokens:config:bucket_replenishment_interval_seconds
 	bucketReplenishIntervalSeconds := fmt.Sprintf("%s:%s", bucketKey, bucketReplenishmentConfigKeySuffix)
 	return bucketKey, bucketCapacity, bucketReplenishIntervalSeconds
 }
