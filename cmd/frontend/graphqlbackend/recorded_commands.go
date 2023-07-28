@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"regexp"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -101,8 +102,11 @@ func (r *recordedCommandResolver) Duration() float64 {
 	return r.command.Duration
 }
 
+var urlRegex = regexp.MustCompile(`((https?|ssh|git)://[^:@]+:)[^@]+(@)`)
+
 func (r *recordedCommandResolver) Command() string {
-	return strings.Join(r.command.Args, " ")
+	redacted := urlRegex.ReplaceAllString(strings.Join(r.command.Args, " "), "$1<REDACTED>$3")
+	return redacted
 }
 
 func (r *recordedCommandResolver) Dir() string {
