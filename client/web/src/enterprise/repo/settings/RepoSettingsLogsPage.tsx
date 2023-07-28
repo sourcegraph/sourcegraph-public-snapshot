@@ -103,16 +103,20 @@ const LastRepoCommands: FC<LastRepoCommandsProps> = ({ repo }) => {
     return (
         <>
             {error && <ErrorAlert error={error} />}
-            <div aria-label="recorded commands">
-                {recordedCommands.map((command, index) => (
-                    // We use the index as key here because commands don't have the concept
-                    // of IDs and there's nothing really unique about each command.
-                    //
-                    // eslint-disable-next-line react/no-array-index-key
-                    <LastRepoCommandNode mirrorInfo={repo.mirrorInfo} command={command} key={index} />
-                ))}
-            </div>
-            {loading && <LoadingSpinner />}
+            {loading ? (
+                <LoadingSpinner />
+            ) : (
+                <div aria-label="recorded commands">
+                    {recordedCommands.length === 0 && <Text className="my-2">No recorded commands yet.</Text>}
+                    {recordedCommands.map((command, index) => (
+                        // We use the index as key here because commands don't have the concept
+                        // of IDs and there's nothing really unique about each command.
+                        //
+                        // eslint-disable-next-line react/no-array-index-key
+                        <LastRepoCommandNode mirrorInfo={repo.mirrorInfo} command={command} key={index} />
+                    ))}
+                </div>
+            )}
             {hasNextPage && (
                 <div className="d-flex justify-content-center">
                     <Button onClick={() => fetchMore(recordedCommands.length)}>Show more</Button>
