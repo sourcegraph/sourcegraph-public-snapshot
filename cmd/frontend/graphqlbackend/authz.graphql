@@ -363,6 +363,10 @@ type PermissionsInfo {
     """
     updatedAt: DateTime
     """
+    What was the source of the last permission update. The value is updated whenever different source last touched the database row (i.e. permission sync or explicit permissions update)
+    """
+    source: String
+    """
     If true for a repo, it indicates access to the repo is allowed for all users.
     It will always be false for users.
     """
