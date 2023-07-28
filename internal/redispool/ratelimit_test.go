@@ -2,6 +2,8 @@ package redispool
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"os"
 	"testing"
 	"time"
@@ -10,9 +12,11 @@ import (
 )
 
 func TestRateLimiter(t *testing.T) {
-	pool := redisPoolForTest(t)
+	prefix := "__test__" + t.Name()
+	pool := redisPoolForTest(t, prefix)
 	rl := rateLimiter{
-		pool: pool,
+		pool:   pool,
+		prefix: prefix,
 	}
 
 	// Set up the test by initializing the bucket with some initial capacity and replenishment rate
@@ -20,14 +24,26 @@ func TestRateLimiter(t *testing.T) {
 	bucketConfigKey := "api"
 	bucketCapacity := 100
 	bucketReplenishRateSeconds := 10
-	err := rl.SetTokenBucketReplenishment(context.Background(), bucketName, bucketConfigKey, bucketCapacity, bucketReplenishRateSeconds)
+
+	// Try to get tokens before rate limiter config is set in Redis
+	allowed, remTokens, err := rl.GetTokensFromBucket(context.Background(), bucketName, bucketConfigKey, 1)
+	fmt.Println(allowed, remTokens, err)
+	if err == nil {
+		t.Fatalf("Expected error getting tokens from bucket without config")
+	}
+	var configErr *RateLimiterConfigNotCreatedError
+	if !errors.As(err, &configErr) {
+		t.Fatalf("Expected rate limiter config not created error")
+	}
+
+	err = rl.SetTokenBucketReplenishment(context.Background(), bucketName, bucketConfigKey, bucketCapacity, bucketReplenishRateSeconds)
 	if err != nil {
 		t.Fatalf("Error setting token bucket configuration: %v", err)
 	}
 
 	// Get tokens from the bucket
 	requestedTokens := 10
-	allowed, remTokens, err := rl.GetTokensFromBucket(context.Background(), bucketName, bucketConfigKey, requestedTokens)
+	allowed, remTokens, err = rl.GetTokensFromBucket(context.Background(), bucketName, bucketConfigKey, requestedTokens)
 	if err != nil {
 		t.Fatalf("Error getting tokens from bucket: %v", err)
 	}
@@ -68,7 +84,7 @@ func TestRateLimiter(t *testing.T) {
 
 // Mostly copy-pasta from rache. Will clean up later as the relationship
 // between the two packages becomes cleaner.
-func redisPoolForTest(t *testing.T) *redis.Pool {
+func redisPoolForTest(t *testing.T, prefix string) *redis.Pool {
 	t.Helper()
 
 	pool := &redis.Pool{
@@ -83,7 +99,6 @@ func redisPoolForTest(t *testing.T) *redis.Pool {
 		},
 	}
 
-	prefix := "__test__" + t.Name()
 	c := pool.Get()
 	defer c.Close()
 
