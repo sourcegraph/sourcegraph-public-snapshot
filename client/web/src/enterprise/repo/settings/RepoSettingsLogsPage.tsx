@@ -5,13 +5,28 @@ import { parseISO } from 'date-fns'
 import { useLocation } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
-import { Text, PageHeader, Container, Tabs, Tab, TabList, TabPanels, TabPanel, Icon } from '@sourcegraph/wildcard'
+import {
+    Text,
+    PageHeader,
+    Container,
+    Tabs,
+    Tab,
+    TabList,
+    TabPanels,
+    TabPanel,
+    Icon,
+    LoadingSpinner,
+    ErrorAlert,
+    Button,
+} from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../../components/LogOutput'
 import { PageTitle } from '../../../components/PageTitle'
 import { SettingsAreaRepositoryFields, RepositoryRecordedCommandFields } from '../../../graphql-operations'
 import { LogsPageTabs } from '../../../repo/constants'
 import { eventLogger } from '../../../tracking/eventLogger'
+
+import { useFetchRecordedCommands } from './backend'
 
 import styles from './RepoSettingsLogsPage.module.scss'
 
@@ -29,12 +44,14 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
 
     useEffect(() => {
         const searchParams = new URLSearchParams(location.search)
-        if (searchParams.has('activeTab')) {
-            switch (searchParams.get('activeTab')) {
-                case LogsPageTabs.SYNCLOGS.toString():
+        const tab = searchParams.get('activeTab')
+        if (tab) {
+            const activeTabIdx = parseInt(tab, 10)
+            switch (activeTabIdx) {
+                case LogsPageTabs.SYNCLOGS:
                     setActiveTab(LogsPageTabs.SYNCLOGS)
                     break
-                case LogsPageTabs.COMMANDS.toString():
+                case LogsPageTabs.COMMANDS:
                 default:
                     setActiveTab(LogsPageTabs.COMMANDS)
             }
@@ -63,7 +80,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
 
                     <TabPanels>
                         <TabPanel>
-                            <LastRepoCommands mirrorInfo={repo.mirrorInfo} recordedCommands={repo.recordedCommands} />
+                            <LastRepoCommands repo={repo} />
                         </TabPanel>
 
                         <TabPanel>
@@ -77,32 +94,31 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
 }
 
 interface LastRepoCommandsProps {
-    recordedCommands: SettingsAreaRepositoryFields['recordedCommands']
-    mirrorInfo: SettingsAreaRepositoryFields['mirrorInfo']
+    repo: SettingsAreaRepositoryFields
 }
 
-const LastRepoCommands: FC<LastRepoCommandsProps> = ({ recordedCommands, mirrorInfo }) => {
-    // {loading ? (
-    //     <LoadingSpinner className="bg-transparent ml-3" />
-    // ) : (
-    //     <Button size="sm" className={styles.stepOutputShowMoreBtn} onClick={fetchMore}>
-    //         Load more ...
-    //     </Button>
-    // )}
-    if (recordedCommands.nodes.length === 0) {
-        return <Text className="my-3">No recorded commands for repository.</Text>
-    }
+const LastRepoCommands: FC<LastRepoCommandsProps> = ({ repo }) => {
+    const { recordedCommands, loading, error, fetchMore, hasNextPage } = useFetchRecordedCommands(repo.id)
 
     return (
-        <div className="mt-2">
-            {recordedCommands.nodes.map((command, index) => (
-                // We use the index as key here because commands don't have the concept
-                // of IDs and there's nothing really unique about each command.
-                //
-                // eslint-disable-next-line react/no-array-index-key
-                <LastRepoCommandNode mirrorInfo={mirrorInfo} command={command} key={index} />
-            ))}
-        </div>
+        <>
+            {error && <ErrorAlert error={error} />}
+            <div aria-label="recorded commands">
+                {recordedCommands.map((command, index) => (
+                    // We use the index as key here because commands don't have the concept
+                    // of IDs and there's nothing really unique about each command.
+                    //
+                    // eslint-disable-next-line react/no-array-index-key
+                    <LastRepoCommandNode mirrorInfo={repo.mirrorInfo} command={command} key={index} />
+                ))}
+            </div>
+            {loading && <LoadingSpinner />}
+            {hasNextPage && (
+                <div className="d-flex justify-content-center">
+                    <Button onClick={() => fetchMore(recordedCommands.length)}>Show more</Button>
+                </div>
+            )}
+        </>
     )
 }
 

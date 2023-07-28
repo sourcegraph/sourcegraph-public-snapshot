@@ -1,4 +1,14 @@
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { useState, useEffect, useCallback } from 'react'
+
+import { ApolloError } from '@apollo/client'
+
+import { gql, useLazyQuery } from '@sourcegraph/http-client'
+
+import {
+    RepositoryRecordedCommandsResult,
+    RepositoryRecordedCommandsVariables,
+    RepositoryRecordedCommandFields,
+} from '../../../graphql-operations'
 
 export const RepoPermissionsInfoQuery = gql`
     query RepoPermissionsInfo($repoID: ID!, $first: Int, $last: Int, $after: String, $before: String, $query: String) {
@@ -44,25 +54,87 @@ export const RepoPermissionsInfoQuery = gql`
     }
 `
 
-export const useExternalServicesConnection = (
-    vars: ExternalServicesVariables
-): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
-    useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
-        query: EXTERNAL_SERVICES,
-        variables: { after: vars.after, first: vars.first ?? 10 },
-        getConnection: result => {
-            const { externalServices } = dataOrThrowErrors(result)
-            return externalServices
-        },
-        options: {
-            fetchPolicy: 'cache-and-network',
-            pollInterval: 15000,
-        },
-        getConnection: result => {
-            const { node } = dataOrThrowErrors(result)
+export const REPOSITORY_RECORDED_COMMANDS_QUERY = gql`
+    query RepositoryRecordedCommands($id: ID!, $offset: Int!, $limit: Int) {
+        node(id: $id) {
+            __typename
+            ... on Repository {
+                recordedCommands(offset: $offset, limit: $limit) {
+                    nodes {
+                        ...RepositoryRecordedCommandFields
+                    }
+                    totalCount
+                    pageInfo {
+                        hasNextPage
+                    }
+                }
+            }
+        }
+    }
+
+    fragment RepositoryRecordedCommandFields on RecordedCommand {
+        path
+        start
+        duration
+        command
+        dir
+    }
+`
+
+const REPOSITORY_RECORDED_COMMANDS_LIMIT = 40
+
+interface UseFetchRecordedCommandsResult {
+    loading: boolean
+    error: ApolloError | undefined
+    recordedCommands: RepositoryRecordedCommandFields[]
+    hasNextPage: boolean
+    fetchMore: (offset: number) => void
+}
+
+export const useFetchRecordedCommands = (repoId: string): UseFetchRecordedCommandsResult => {
+    const [recordedCommands, setRecordedCommands] = useState<RepositoryRecordedCommandFields[]>([])
+    const [hasNextPage, setHasNextPage] = useState(false)
+
+    const [fetchRecordedCommands, { loading, error }] = useLazyQuery<
+        RepositoryRecordedCommandsResult,
+        RepositoryRecordedCommandsVariables
+    >(REPOSITORY_RECORDED_COMMANDS_QUERY, {
+        onCompleted: data => {
+            const { node } = data
 
             if (!node) {
-                throw new Error('Repository not found')
+                throw new Error(`Repository with ID ${repoId} does not exist`)
             }
+
+            if (node.__typename !== 'Repository') {
+                throw new Error(`Node is a ${node.__typename}, not a Repository`)
+            }
+
+            setRecordedCommands(prev => [...prev, ...node.recordedCommands.nodes])
+            setHasNextPage(node.recordedCommands.pageInfo.hasNextPage)
+            return node.recordedCommands
         },
     })
+
+    const getRecordedCommands = useCallback(
+        (offset: number) => {
+            fetchRecordedCommands({ variables: { id: repoId, offset, limit: REPOSITORY_RECORDED_COMMANDS_LIMIT } })
+                // we'll catch the error in the tuple returned from `useLazyQuery`
+                .catch(() => {})
+        },
+        [fetchRecordedCommands, repoId]
+    )
+
+    useEffect(() => {
+        // We fetch the first set of recordedCommannds on mount
+        getRecordedCommands(0)
+    }, [fetchRecordedCommands, getRecordedCommands])
+
+    return {
+        recordedCommands,
+        loading,
+        error,
+        hasNextPage,
+        fetchMore: getRecordedCommands,
+    }
+}
