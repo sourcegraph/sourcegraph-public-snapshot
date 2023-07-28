@@ -25,6 +25,7 @@ cd wolfi-packages/packages/$TARGET_ARCH
 echo " * Uploading package to repository"
 
 # List all .apk files under wolfi-packages/packages/$TARGET_ARCH/
+error="false"
 apks=(*.apk)
 for apk in "${apks[@]}"; do
   echo " * Processing $apk"
@@ -47,9 +48,9 @@ for apk in "${apks[@]}"; do
   echo "   * Checking if this package version already exists in the production repo..."
   if gsutil -q -u "$GCP_PROJECT" stat "${dest_path_main}${apk}"; then
     echo "The production package repository already contains a package with this version: $apk" >&2
-    echo "   -> Production repository file path: ${dest_path_main}${apk}"
+    echo "   -> Production repository file path: ${dest_path_main}${apk}" >&2
     echo "Resolve this issue by incrementing the \`epoch\` field in the package's YAML file." >&2
-    exit 1
+    error="true"
   else
     echo "   * File does not exist, uploading..."
   fi
@@ -58,3 +59,7 @@ for apk in "${apks[@]}"; do
   echo "   * Uploading package and index fragment to repo"
   gsutil -u "$GCP_PROJECT" -h "Cache-Control:no-cache" cp "$apk" "$index_fragment" "$dest_path"
 done
+
+if [[ "$error" == "true" ]]; then
+  exit 222
+fi
