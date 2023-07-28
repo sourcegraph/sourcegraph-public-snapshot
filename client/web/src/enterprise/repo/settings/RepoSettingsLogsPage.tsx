@@ -162,9 +162,11 @@ const LastRepoCommandNode: FC<LastRepoCommandNodeProps> = ({ command, mirrorInfo
                 <small className="mt-2 mb-0">
                     <span className="font-weight-bold">Shard:</span> {mirrorInfo.shard}
                 </small>
-                <small className="mt-2 mb-0">
-                    <span className="font-weight-bold">Path:</span> {command.dir}
-                </small>
+                {command.dir && (
+                    <small className="mt-2 mb-0">
+                        <span className="font-weight-bold">Path:</span> {command.dir}
+                    </small>
+                )}
             </div>
         </div>
     )
