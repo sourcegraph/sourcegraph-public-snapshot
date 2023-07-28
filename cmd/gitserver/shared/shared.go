@@ -642,14 +642,6 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 		ignoredGitCommands = append(ignoredGitCommands, defaultIgnoredGitCommands...)
 	}
 
-	// If repos contains a single "*" element, it means to record commands
-	// for all repositories. In that case, always return true.
-	if len(repos) == 1 && repos[0] == "*" {
-		return func(ctx context.Context, c *exec.Cmd) bool {
-			return true
-		}
-	}
-
 	// we won't record any git commands with these commands since they are considered to be not destructive
 	var ignoredGitCommandsMap = collections.NewSet(ignoredGitCommands...)
 
@@ -660,14 +652,20 @@ func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.S
 		}
 
 		repoMatch := false
-		for _, repo := range repos {
-			// We need to check the suffix, because we can have some common parts in
-			// different repo names. E.g. "sourcegraph/sourcegraph" and
-			// "sourcegraph/sourcegraph-code-ownership" will both be allowed even if only the
-			// first name is included in the config.
-			if strings.HasSuffix(cmd.Dir, repo+"/.git") {
-				repoMatch = true
-				break
+		// If repos contains a single "*" element, it means to record commands
+		// for all repositories. In that case, always return true.
+		if len(repos) == 1 && repos[0] == "*" {
+			repoMatch = true
+		} else {
+			for _, repo := range repos {
+				// We need to check the suffix, because we can have some common parts in
+				// different repo names. E.g. "sourcegraph/sourcegraph" and
+				// "sourcegraph/sourcegraph-code-ownership" will both be allowed even if only the
+				// first name is included in the config.
+				if strings.HasSuffix(cmd.Dir, repo+"/.git") {
+					repoMatch = true
+					break
+				}
 			}
 		}
 
