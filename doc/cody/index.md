@@ -164,7 +164,7 @@ Some of the main Cody features include:
 
 ## Join our Community
 
-If you have any questions regarding Cody, you can always ask our community on [GitHub Discussions](https://github.com/sourcegraph/sourcegraph/discussions), [Discord](https://discord.com/invite/s2qDtYGnAE), or [Twitter](https://twitter.com/sourcegraph).
+If you have any questions regarding Cody, you can always ask our community on [GitHub Discussions](https://github.com/sourcegraph/cody/discussions), [Discord](https://discord.com/invite/s2qDtYGnAE), or [Twitter](https://twitter.com/sourcegraph).
 
 ## Explanations
 
