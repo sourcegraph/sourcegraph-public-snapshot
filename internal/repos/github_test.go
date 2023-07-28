@@ -470,6 +470,18 @@ func TestGithubSource_makeRepo(t *testing.T) {
 				Url:                   "https://github.com",
 				RepositoryPathPattern: "{nameWithOwner}",
 			},
+		}, {
+			name: "internal-repo-visibility-public",
+			schema: &schema.GitHubConnection{
+				Url:                    "https://github.com",
+				InternalRepoVisibility: "public",
+			},
+		}, {
+			name: "internal-repo-visibility-private",
+			schema: &schema.GitHubConnection{
+				Url:                    "https://github.com",
+				InternalRepoVisibility: "private",
+			},
 		},
 	}
 	for _, test := range tests {

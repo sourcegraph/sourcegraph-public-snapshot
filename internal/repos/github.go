@@ -389,6 +389,19 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	// so we don't want to store it.
 	metadata.ViewerPermission = ""
 	metadata.Description = sanitizeToUTF8(metadata.Description)
+
+	isPrivate := r.IsPrivate
+	if r.Visibility == "internal" {
+		switch s.config.InternalRepoVisibility {
+		case "public":
+			isPrivate = false
+		case "private":
+			isPrivate = true
+		default:
+			isPrivate = true
+		}
+	}
+
 	return &types.Repo{
 		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,
@@ -405,7 +418,7 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 		Fork:         r.IsFork,
 		Archived:     r.IsArchived,
 		Stars:        r.StargazerCount,
-		Private:      r.IsPrivate,
+		Private:      isPrivate,
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,

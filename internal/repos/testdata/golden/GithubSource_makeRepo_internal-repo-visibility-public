@@ -84,7 +84,7 @@
    "Description": "This vegeta is made with secret sauce from Sourcegraph.",
    "Fork": false,
    "Archived": false,
-   "Private": true,
+   "Private": false,
    "CreatedAt": "0001-01-01T00:00:00Z",
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",

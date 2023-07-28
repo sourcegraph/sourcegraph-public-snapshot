@@ -206,6 +206,18 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 				Url:                   "https://gitlab.com",
 				RepositoryPathPattern: "gl/{pathWithNamespace}",
 			},
+		}, {
+			name: "internal-repo-visibility-public",
+			schema: &schema.GitLabConnection{
+				Url:                    "https://gitlab.com",
+				InternalRepoVisibility: "public",
+			},
+		}, {
+			name: "internal-repo-visibility-private",
+			schema: &schema.GitLabConnection{
+				Url:                    "https://gitlab.com",
+				InternalRepoVisibility: "private",
+			},
 		},
 	}
 	for _, test := range tests {

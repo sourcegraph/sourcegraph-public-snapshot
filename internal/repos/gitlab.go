@@ -38,10 +38,12 @@ type GitLabSource struct {
 	logger              log.Logger
 }
 
-var _ Source = &GitLabSource{}
-var _ UserSource = &GitLabSource{}
-var _ AffiliatedRepositorySource = &GitLabSource{}
-var _ VersionSource = &GitLabSource{}
+var (
+	_ Source                     = &GitLabSource{}
+	_ UserSource                 = &GitLabSource{}
+	_ AffiliatedRepositorySource = &GitLabSource{}
+	_ VersionSource              = &GitLabSource{}
+)
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
 func NewGitLabSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
@@ -190,7 +192,6 @@ func (s GitLabSource) GetRepo(ctx context.Context, pathWithNamespace string) (*t
 		PathWithNamespace: pathWithNamespace,
 		CommonOp:          gitlab.CommonOp{NoCache: true},
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -205,6 +206,19 @@ func (s GitLabSource) ExternalServices() types.ExternalServices {
 
 func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 	urn := s.svc.URN()
+
+	isPrivate := proj.Visibility == "private"
+	if proj.Visibility == "internal" {
+		switch s.config.InternalRepoVisibility {
+		case "public":
+			isPrivate = false
+		case "private":
+			isPrivate = true
+		default:
+			isPrivate = true
+		}
+	}
+
 	return &types.Repo{
 		Name: reposource.GitLabRepoName(
 			s.config.RepositoryPathPattern,
@@ -223,7 +237,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 		Fork:         proj.ForkedFromProject != nil,
 		Archived:     proj.Archived,
 		Stars:        proj.StarCount,
-		Private:      proj.Visibility == "private" || proj.Visibility == "internal",
+		Private:      isPrivate,
 		Sources: map[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,

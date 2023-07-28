@@ -20,5 +20,17 @@
     "IsFork": false,
     "IsArchived": false,
     "ViewerPermission": "ADMIN"
+  },
+  {
+    "ID": "MDEwOlJlcG9zaXRvcnkxMjA4MDU1Mw==",
+    "DatabaseID": 12080552,
+    "NameWithOwner": "sourcegraph/secret-internal-vegeta",
+    "Description": "This vegeta is made with secret sauce from Sourcegraph.",
+    "URL": "https://github.com/sourcegraph/secret-internal-vegeta",
+    "IsPrivate": false,
+    "Visibility": "internal",
+    "IsFork": false,
+    "IsArchived": false,
+    "ViewerPermission": "ADMIN"
   }
 ]
