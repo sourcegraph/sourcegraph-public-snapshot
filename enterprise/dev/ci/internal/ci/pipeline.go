@@ -136,16 +136,29 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		updateBaseImages := c.Diff.Has(changed.WolfiBaseImages) || updatePackages
 
 		var numUpdatedPackages int
+		var updatedPackages []string
 
 		if updatePackages {
 			var packageOps *operations.Set
-			packageOps, numUpdatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
+			packageOps, numUpdatedPackages, updatedPackages = WolfiPackagesOperations(c.ChangedFiles[changed.WolfiPackages])
 			ops.Merge(packageOps)
+
 		}
+
+		// Inspect package dependencies to work out which base images need to be rebuilt
+		imagesToUpdate, err := GetDependenciesOfPackages(updatedPackages, "sourcegraph")
+		if err != nil {
+			panic(err)
+		}
+
+		// TODO: Resolve mix of image names and file names
+		// TODO: This list needs to be uniqed
+		imagesToRebuild := append(imagesToUpdate, c.ChangedFiles[changed.WolfiBaseImages]...)
+
 		if updateBaseImages {
 			var baseImageOps *operations.Set
 			baseImageOps, _ = WolfiBaseImagesOperations(
-				c.ChangedFiles[changed.WolfiBaseImages], // TODO: If packages have changed need to update all base images. Requires a list of all base images
+				imagesToRebuild,
 				c.Version,
 				(numUpdatedPackages > 0),
 			)
