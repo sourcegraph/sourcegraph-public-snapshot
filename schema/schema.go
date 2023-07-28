@@ -1316,7 +1316,7 @@ type GitLabWebhook struct {
 type GitRecorder struct {
 	// IgnoredGitCommands description: List of git commands that should be ignored and not recorded.
 	IgnoredGitCommands []string `json:"ignoredGitCommands,omitempty"`
-	// Repos description: List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in a wildcard as the only item in the array.
+	// Repos description: List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.
 	Repos []string `json:"repos,omitempty"`
 	// Size description: Defines how many recordings to keep. Once this size is reached, the oldest entry will be removed.
 	Size int `json:"size,omitempty"`
