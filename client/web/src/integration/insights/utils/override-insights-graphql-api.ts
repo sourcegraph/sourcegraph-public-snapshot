@@ -81,6 +81,7 @@ export function overrideInsightsGraphQLApi(props: OverrideGraphQLExtensionsProps
                 url: '/users/test',
                 settingsURL: '/users/test/settings',
                 hasVerifiedEmail: true,
+                completedPostSignup: true,
                 organizations: {
                     nodes: [
                         {

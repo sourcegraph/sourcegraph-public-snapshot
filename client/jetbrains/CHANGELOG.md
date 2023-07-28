@@ -12,10 +12,28 @@
 
 ### Fixed
 
-- Improved the auto-scrolling of the Cody chat [#55150](https://github.com/sourcegraph/sourcegraph/pull/55150)
-- Fixed mouse wheel and mouse drag scrolling in the Cody chat [#55199](https://github.com/sourcegraph/sourcegraph/pull/55199)
+### Security
+
+## [3.0.8]
+
+### Added
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
 
 ### Security
+
+## [3.0.8]
+
+### Fixed
+
+- Improved the auto-scrolling of the Cody chat [#55150](https://github.com/sourcegraph/sourcegraph/pull/55150)
+- Fixed mouse wheel and mouse drag scrolling in the Cody chat [#55199](https://github.com/sourcegraph/sourcegraph/pull/55199)
 
 ## [3.0.7]
 

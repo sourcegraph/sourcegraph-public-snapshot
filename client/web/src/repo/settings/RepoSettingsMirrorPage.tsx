@@ -294,8 +294,9 @@ const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
         <BaseActionContainer
             title="Last sync log"
             titleAs="h3"
+            className="mb-0"
             description={<H4>Output from this repository's most recent sync</H4>}
-            details={<LogOutput text={output} logDescription="Job output:" />}
+            details={<LogOutput className="w-100" text={output} logDescription="Job output:" />}
         />
     )
 }

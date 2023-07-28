@@ -119,10 +119,12 @@ export const otherSiteAdminRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/code-insights',
         render: () => <AnalyticsCodeInsightsPage />,
+        condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
     },
     {
         path: '/analytics/batch-changes',
         render: () => <AnalyticsBatchChangesPage />,
+        condition: ({ batchChangesEnabled }) => batchChangesEnabled,
     },
     {
         path: '/analytics/notebooks',

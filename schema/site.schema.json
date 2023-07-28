@@ -1924,7 +1924,7 @@
       ]
     },
     "gitRecorder": {
-      "description": "Record git operations that are executed on configured repositories. The following commands are not recorded: show, log, rev-parse and diff.",
+      "description": "Record git operations that are executed on configured repositories.",
       "type": "object",
       "properties": {
         "size": {
@@ -1935,7 +1935,7 @@
           "maximum": 10000
         },
         "repos": {
-          "description": "List of repositories whose git operations should be recorded.",
+          "description": "List of repositories whose git operations should be recorded. To record commands on all repositories, simply pass in an asterisk as the only item in the array.",
           "type": "array",
           "items": {
             "type": "string"
@@ -2465,7 +2465,7 @@
         "provider": {
           "type": "string",
           "description": "The provider to use for generating embeddings. Defaults to sourcegraph.",
-          "enum": ["openai", "sourcegraph"]
+          "enum": ["openai", "azure-openai", "sourcegraph"]
         },
         "endpoint": {
           "type": "string",
@@ -2628,7 +2628,7 @@
           "type": "string",
           "description": "The external completions provider. Defaults to 'sourcegraph'.",
           "default": "anthropic",
-          "enum": ["anthropic", "openai", "sourcegraph"]
+          "enum": ["anthropic", "openai", "sourcegraph", "azure-openai"]
         },
         "endpoint": {
           "type": "string",

@@ -775,7 +775,10 @@ cc @${release.captainGitHubUsername}
                         head: `publish-${release.version.version}`,
                         commitMessage: defaultPRMessage,
                         title: defaultPRMessage,
-                        edits: [`sg ops update-images -pin-tag ${release.version.version} base/`],
+                        edits: [
+                            `sg ops update-images -pin-tag ${release.version.version} base/`,
+                            `sg ops update-images -pin-tag ${release.version.version} components/executors/`,
+                        ],
                         ...prBodyAndDraftState([]),
                     },
                     {

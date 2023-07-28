@@ -16,10 +16,10 @@ if [[ "$BUILDKITE_AGENT_META_DATA_QUEUE" == "bazel" ]]; then
   for db in $(psql -c '\l' | grep "sourcegraph-" | cut -d '|' -f 1); do psql -c "drop database \"$db\""; done
 
   # Remove any hanging containers and/or volumes to ensure the next tests are able to run.
-  if $(docker ps -aq | wc -l) -gt 0; then
+  if [[ $(docker ps -aq | wc -l) -gt 0 ]]; then
     docker rm -f "$(docker ps -aq)"
   fi
-  if $(docker volume ls -q) -gt 0; then
+  if [[ $(docker volume ls -q) -gt 0 ]]; then
     docker volume rm "$(docker volume ls -q)"
   fi
 

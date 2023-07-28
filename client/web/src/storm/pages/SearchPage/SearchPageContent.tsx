@@ -83,7 +83,8 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                             id="simpleSearchToggle"
                             value={simpleSearch}
                             onToggle={val => {
-                                telemetryService.log('SimpleSearchToggle', { state: val })
+                                const arg = { state: val }
+                                telemetryService.log('SimpleSearchToggle', arg, arg)
                                 setSimpleSearch(val)
                             }}
                         />
