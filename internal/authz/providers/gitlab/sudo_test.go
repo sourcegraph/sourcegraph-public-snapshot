@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -258,73 +259,148 @@ func TestSudoProvider_FetchUserPerms(t *testing.T) {
 		}
 	})
 
-	// The OAuthProvider uses the gitlab.Client under the hood,
-	// which uses rcache, a caching layer that uses Redis.
-	// We need to clear the cache before we run the tests
-	rcache.SetupForTest(t)
+	t.Run("feature flag disabled", func(t *testing.T) {
+		// The OAuthProvider uses the gitlab.Client under the hood,
+		// which uses rcache, a caching layer that uses Redis.
+		// We need to clear the cache before we run the tests
+		rcache.SetupForTest(t)
 
-	p := newSudoProvider(
-		SudoProviderOp{
-			BaseURL:   mustURL(t, "https://gitlab.com"),
-			SudoToken: "admin_token",
-		},
-		&mockDoer{
-			do: func(r *http.Request) (*http.Response, error) {
-				visibility := r.URL.Query().Get("visibility")
-				if visibility != "private" && visibility != "internal" {
-					return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
-				}
-				want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
-				if r.URL.String() != want {
-					return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
-				}
-
-				want = "admin_token"
-				got := r.Header.Get("Private-Token")
-				if got != want {
-					return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
-				}
-
-				want = "999"
-				got = r.Header.Get("Sudo")
-				if got != want {
-					return nil, errors.Errorf("HTTP Sudo: want %q but got %q", want, got)
-				}
-
-				body := `[{"id": 1}, {"id": 2}]`
-				if visibility == "internal" {
-					body = `[{"id": 3}]`
-				}
-				return &http.Response{
-					Status:     http.StatusText(http.StatusOK),
-					StatusCode: http.StatusOK,
-					Body:       io.NopCloser(bytes.NewReader([]byte(body))),
-				}, nil
+		p := newSudoProvider(
+			SudoProviderOp{
+				BaseURL:   mustURL(t, "https://gitlab.com"),
+				SudoToken: "admin_token",
 			},
-		},
-	)
+			&mockDoer{
+				do: func(r *http.Request) (*http.Response, error) {
+					visibility := r.URL.Query().Get("visibility")
+					if visibility != "private" && visibility != "internal" {
+						return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
+					}
+					want := fmt.Sprintf("https://gitlab.com/api/v4/projects?min_access_level=20&per_page=100&visibility=%s", visibility)
+					if r.URL.String() != want {
+						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
+					}
 
-	accountData := json.RawMessage(`{"id": 999}`)
-	repoIDs, err := p.FetchUserPerms(context.Background(),
-		&extsvc.Account{
-			AccountSpec: extsvc.AccountSpec{
-				ServiceType: "gitlab",
-				ServiceID:   "https://gitlab.com/",
-			},
-			AccountData: extsvc.AccountData{
-				Data: extsvc.NewUnencryptedData(accountData),
-			},
-		},
-		authz.FetchPermsOptions{},
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+					want = "admin_token"
+					got := r.Header.Get("Private-Token")
+					if got != want {
+						return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
+					}
 
-	expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
-	if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
-		t.Fatal(diff)
-	}
+					want = "999"
+					got = r.Header.Get("Sudo")
+					if got != want {
+						return nil, errors.Errorf("HTTP Sudo: want %q but got %q", want, got)
+					}
+
+					body := `[{"id": 1, "default_branch": "main"}, {"id": 2, "default_branch": "main"}]`
+					if visibility == "internal" {
+						body = `[{"id": 3, "default_branch": "main"}, {"id": 4}]`
+					}
+					return &http.Response{
+						Status:     http.StatusText(http.StatusOK),
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+					}, nil
+				},
+			},
+		)
+
+		accountData := json.RawMessage(`{"id": 999}`)
+		repoIDs, err := p.FetchUserPerms(context.Background(),
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "gitlab",
+					ServiceID:   "https://gitlab.com/",
+				},
+				AccountData: extsvc.AccountData{
+					Data: extsvc.NewUnencryptedData(accountData),
+				},
+			},
+			authz.FetchPermsOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expRepoIDs := []extsvc.RepoID{"1", "2", "3", "4"}
+		if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+
+	t.Run("feature flag enabled", func(t *testing.T) {
+		// The OAuthProvider uses the gitlab.Client under the hood,
+		// which uses rcache, a caching layer that uses Redis.
+		// We need to clear the cache before we run the tests
+		rcache.SetupForTest(t)
+		ctx := context.Background()
+		flags := map[string]bool{"gitLabProjectVisibilityExperimental": true}
+		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
+
+		p := newSudoProvider(
+			SudoProviderOp{
+				BaseURL:   mustURL(t, "https://gitlab.com"),
+				SudoToken: "admin_token",
+			},
+			&mockDoer{
+				do: func(r *http.Request) (*http.Response, error) {
+					visibility := r.URL.Query().Get("visibility")
+					if visibility != "private" && visibility != "internal" {
+						return nil, errors.Errorf("URL visibility: want private or internal, got %s", visibility)
+					}
+					want := fmt.Sprintf("https://gitlab.com/api/v4/projects?per_page=100&visibility=%s", visibility)
+					if r.URL.String() != want {
+						return nil, errors.Errorf("URL: want %q but got %q", want, r.URL)
+					}
+
+					want = "admin_token"
+					got := r.Header.Get("Private-Token")
+					if got != want {
+						return nil, errors.Errorf("HTTP Private-Token: want %q but got %q", want, got)
+					}
+
+					want = "999"
+					got = r.Header.Get("Sudo")
+					if got != want {
+						return nil, errors.Errorf("HTTP Sudo: want %q but got %q", want, got)
+					}
+
+					body := `[{"id": 1, "default_branch": "main"}, {"id": 2, "default_branch": "main"}]`
+					if visibility == "internal" {
+						body = `[{"id": 3, "default_branch": "main"}, {"id": 4}]`
+					}
+					return &http.Response{
+						Status:     http.StatusText(http.StatusOK),
+						StatusCode: http.StatusOK,
+						Body:       io.NopCloser(bytes.NewReader([]byte(body))),
+					}, nil
+				},
+			},
+		)
+
+		accountData := json.RawMessage(`{"id": 999}`)
+		repoIDs, err := p.FetchUserPerms(ctx,
+			&extsvc.Account{
+				AccountSpec: extsvc.AccountSpec{
+					ServiceType: "gitlab",
+					ServiceID:   "https://gitlab.com/",
+				},
+				AccountData: extsvc.AccountData{
+					Data: extsvc.NewUnencryptedData(accountData),
+				},
+			},
+			authz.FetchPermsOptions{},
+		)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
+		if diff := cmp.Diff(expRepoIDs, repoIDs.Exacts); diff != "" {
+			t.Fatal(diff)
+		}
+	})
 }
 
 func TestSudoProvider_FetchRepoPerms(t *testing.T) {

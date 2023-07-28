@@ -6,9 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	azuredevops2 "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -683,6 +687,7 @@ func TestComputeExternalState(t *testing.T) {
 		repo      *types.Repo
 		history   []changesetStatesAtTime
 		want      btypes.ChangesetExternalState
+		wantErr   error
 	}{
 		{
 			name:      "github - no events",
@@ -859,9 +864,39 @@ func TestComputeExternalState(t *testing.T) {
 			},
 			want: btypes.ChangesetExternalStateReadOnly,
 		},
+		{
+			name:      "perforce closed - no events",
+			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateClosed),
+			history:   []changesetStatesAtTime{},
+			want:      btypes.ChangesetExternalStateClosed,
+		},
+		{
+			name:      "perforce submitted - no events",
+			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateSubmitted),
+			history:   []changesetStatesAtTime{},
+			want:      btypes.ChangesetExternalStateMerged,
+		},
+		{
+			name:      "perforce pending - no events",
+			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStatePending),
+			history:   []changesetStatesAtTime{},
+			want:      btypes.ChangesetExternalStateOpen,
+		},
+		{
+			name:      "perforce shelved - no events",
+			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateShelved),
+			history:   []changesetStatesAtTime{},
+			want:      btypes.ChangesetExternalStateOpen,
+		},
+		{
+			name:      "perforce unknown state",
+			changeset: perforceChangeset(daysAgo(10), "foobar"),
+			history:   []changesetStatesAtTime{},
+			wantErr:   errors.New("unknown Perforce Change state: foobar"),
+		},
 	}
 
-	for i, tc := range tests {
+	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			changeset := tc.changeset
 
@@ -871,12 +906,14 @@ func TestComputeExternalState(t *testing.T) {
 			}
 
 			have, err := computeExternalState(changeset, tc.history, repo)
-			if err != nil {
-				t.Fatalf("got error: %s", err)
-			}
 
-			if have, want := have, tc.want; have != want {
-				t.Errorf("%d: wrong external state. have=%s, want=%s", i, have, want)
+			if tc.wantErr != nil {
+				require.Error(t, err)
+				assert.Equal(t, tc.wantErr.Error(), err.Error())
+				assert.Empty(t, have)
+			} else {
+				require.NoError(t, err)
+				assert.Equal(t, tc.want, have)
 			}
 		})
 	}
@@ -1009,6 +1046,16 @@ func gitLabChangeset(updatedAt time.Time, state gitlab.MergeRequestState, notes 
 		UpdatedAt:           updatedAt,
 		Metadata: &gitlab.MergeRequest{
 			Notes: notes,
+			State: state,
+		},
+	}
+}
+
+func perforceChangeset(updatedAt time.Time, state protocol.PerforceChangelistState) *btypes.Changeset {
+	return &btypes.Changeset{
+		ExternalServiceType: extsvc.TypePerforce,
+		UpdatedAt:           updatedAt,
+		Metadata: &protocol.PerforceChangelist{
 			State: state,
 		},
 	}
