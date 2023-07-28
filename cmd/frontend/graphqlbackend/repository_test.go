@@ -279,3 +279,41 @@ func TestRepository_DefaultBranch(t *testing.T) {
 		})
 	}
 }
+
+func TestRepository_ExternalServiceIDs(t *testing.T) {
+	users := database.NewMockUserStore()
+	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+
+	repos := database.NewMockRepoStore()
+	sources := map[string]*types.SourceInfo{
+		"extSvc1": {ID: "extsvc:github.com:1"},
+		"extSvc2": {ID: "extsvc:github.com:2"},
+		"extSvc3": {ID: "extsvc:gitlab.com:3"},
+	}
+	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux", Sources: sources}, nil)
+	db := database.NewMockDB()
+	db.UsersFunc.SetDefaultReturn(users)
+	db.ReposFunc.SetDefaultReturn(repos)
+	expectedID1 := MarshalExternalServiceID(1)
+	expectedID2 := MarshalExternalServiceID(2)
+	expectedID3 := MarshalExternalServiceID(3)
+
+	RunTest(t, &Test{
+		Schema: mustParseGraphQLSchema(t, db),
+		Label:  "Read all external services",
+		Query: `
+			{
+				repository(name: "github.com/gorilla/mux") {
+					externalServiceIDs
+				}
+			}
+		`,
+		ExpectedResult: fmt.Sprintf(`
+			{
+				"repository": {
+					"externalServiceIDs": ["%s", "%s", "%s"]
+				}
+			}
+		`, expectedID1, expectedID2, expectedID3),
+	})
+}
