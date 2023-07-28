@@ -189,7 +189,7 @@ func (s *Service) inferIndexJobOrHints(
 	overrideScript string,
 	invocationContextMethods invocationFunctionTable,
 ) (_ []indexJobOrHint, logs string, _ error) {
-	sandbox, err := s.createSandbox(ctx)
+	sandbox, err := s.CreateSandbox(ctx)
 	if err != nil {
 		return nil, "", err
 	}
@@ -217,7 +217,7 @@ func (s *Service) inferIndexJobOrHints(
 }
 
 // createSandbox creates a Lua sandbox wih the modules loaded for use with auto indexing inference.
-func (s *Service) createSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err error) {
+func (s *Service) CreateSandbox(ctx context.Context) (_ *luasandbox.Sandbox, err error) {
 	ctx, _, endObservation := s.operations.createSandbox.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 

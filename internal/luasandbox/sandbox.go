@@ -33,9 +33,21 @@ func (s *Sandbox) Close() {
 	s.state.Close()
 }
 
+// ValidateScript parses the Lua script in a sandbox, but does not execute it
+func (s *Sandbox) ValidateScript(ctx context.Context, script string) (err error) {
+	ctx, _, endObservation := s.operations.runScript.With(ctx, &err, observation.Args{})
+
+	defer endObservation(1, observation.Args{})
+
+	_, error := s.state.LoadString(script)
+
+	return error
+}
+
 // RunScript runs the given Lua script text in the sandbox.
 func (s *Sandbox) RunScript(ctx context.Context, opts RunOptions, script string) (retValue lua.LValue, err error) {
 	ctx, _, endObservation := s.operations.runScript.With(ctx, &err, observation.Args{})
+
 	defer endObservation(1, observation.Args{})
 
 	return s.RunScriptNamed(ctx, opts, singleScriptFS{script}, "main.lua")
