@@ -3987,12 +3987,12 @@ func TestPermsStore_ListUserPermissions(t *testing.T) {
 			},
 			WantResults: []*listUserPermissionsResult{
 				{
-					RepoId: 4,
-					Reason: UserRepoPermissionReasonUnrestricted,
-				},
-				{
 					RepoId: 1,
 					Reason: UserRepoPermissionReasonPermissionsSync,
+				},
+				{
+					RepoId: 4,
+					Reason: UserRepoPermissionReasonUnrestricted,
 				},
 			},
 		},

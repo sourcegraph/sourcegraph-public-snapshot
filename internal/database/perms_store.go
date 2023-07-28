@@ -1886,7 +1886,7 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	}
 
 	conds := []*sqlf.Query{authzParams.ToAuthzQuery()}
-	order := sqlf.Sprintf("es.id, ar.name ASC")
+	order := sqlf.Sprintf("es.id, repo.name ASC")
 	limit := sqlf.Sprintf("")
 
 	if args != nil {
@@ -1914,9 +1914,9 @@ func (s *permsStore) ListUserPermissions(ctx context.Context, userID int32, args
 	reposQuery := sqlf.Sprintf(
 		reposPermissionsInfoQueryFmt,
 		sqlf.Join(conds, " AND "),
+		order,
 		limit,
 		userID,
-		order,
 	)
 
 	return scanRepoPermissionsInfo(authzParams)(s.Query(ctx, reposQuery))
@@ -1927,25 +1927,30 @@ WITH accessible_repos AS (
 	SELECT
 		repo.id,
 		repo.name,
-		repo.private
+		repo.private,
+		es.unrestricted,
+		row_number() OVER() as row_id
 	FROM repo
+	LEFT JOIN external_service_repos AS esr ON esr.repo_id = repo.id
+	LEFT JOIN external_services AS es ON esr.external_service_id = es.id
 	WHERE
 		repo.deleted_at IS NULL
 		AND %s -- Authz Conds, Pagination Conds, Search
+	ORDER BY %s
 	%s -- Limit
 )
 SELECT
-	ar.*,
+	ar.id,
+	ar.name,
+	ar.private,
+	ar.unrestricted,
 	urp.updated_at AS permission_updated_at,
-	urp.source,
-	es.unrestricted
+	urp.source
 FROM
 	accessible_repos AS ar
 	LEFT JOIN user_repo_permissions AS urp ON urp.user_id = %d
 		AND urp.repo_id = ar.id
-	LEFT JOIN external_service_repos AS esr ON esr.repo_id = ar.id
-	LEFT JOIN external_services AS es ON esr.external_service_id = es.id
-ORDER BY %s
+	ORDER BY row_id
 `
 
 var scanRepoPermissionsInfo = func(authzParams *AuthzQueryParameters) func(basestore.Rows, error) ([]*UserPermission, error) {
@@ -1960,9 +1965,9 @@ var scanRepoPermissionsInfo = func(authzParams *AuthzQueryParameters) func(bases
 			&repo.ID,
 			&repo.Name,
 			&repo.Private,
+			&unrestricted,
 			&dbutil.NullTime{Time: &updatedAt},
 			&source,
-			&unrestricted,
 		); err != nil {
 			return nil, err
 		}
