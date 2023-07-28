@@ -18,6 +18,25 @@ var deployCommand = &cli.Command{
 	Description: `Internal deployments live in the sourcegraph/infra repository.`,
 	UsageText: `
 sg deploy --values <path to values file>
+
+Example:
+
+name: my-app
+image: gcr.io/sourcegraph-dev/my-app:latest
+replicas: 1
+envvars:
+  - name: ricky
+    value: foo
+  - name: julian
+    value: bar
+containerPorts:
+  - name: frontend
+    port: 80
+servicePorts:
+  - name: http
+    port: 80
+    targetPort: test # Set to the name or port number of the containerPort you want to expose
+dns: dave-app.sgdev.org
 `,
 	Category: CategoryDev,
 	Flags: []cli.Flag{
