@@ -37,10 +37,12 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
         {
             label: 'Insights',
             to: '/site-admin/analytics/code-insights',
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
         },
         {
             label: 'Batch changes',
             to: '/site-admin/analytics/batch-changes',
+            condition: ({ batchChangesEnabled }) => batchChangesEnabled,
         },
         {
             label: 'Notebooks',

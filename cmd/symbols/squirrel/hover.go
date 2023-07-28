@@ -5,8 +5,6 @@ import (
 	"strings"
 )
 
-const utf8ReplacementChar = "\xFF\xFD"
-
 // Returns the markdown hover message for the given node if it exists.
 func findHover(node Node) string {
 	style := node.LangSpec.commentStyle
@@ -80,5 +78,5 @@ func findHover(node Node) string {
 		hover = hover + "\n\n---\n\n" + strings.Join(comments, "\n") + "\n"
 	}
 
-	return strings.ToValidUTF8(hover, utf8ReplacementChar)
+	return strings.ToValidUTF8(hover, "�")
 }
