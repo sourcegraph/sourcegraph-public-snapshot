@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
@@ -29,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -108,6 +108,7 @@ type CurrentUser struct {
 	TosAccepted         bool       `json:"tosAccepted"`
 	Searchable          bool       `json:"searchable"`
 	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
+	CompletedPostSignUp bool       `json:"completedPostSignup"`
 
 	Organizations  *UserOrganizationsConnection `json:"organizations"`
 	Session        *UserSession                 `json:"session"`
@@ -207,6 +208,8 @@ type JSContext struct {
 
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 
+	HashedLicenseKey string `json:"hashedLicenseKey"`
+
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
 	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
@@ -239,7 +242,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		headers["Cache-Control"] = "no-cache"
 	}
 
-	siteID := siteid.Get()
+	siteID := siteid.Get(db)
 
 	// Show the site init screen?
 	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)
@@ -390,6 +393,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		LicenseInfo: licenseInfo,
 
+		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics(),
+
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 
 		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
@@ -437,6 +442,11 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
+	completedPostSignup, err := userResolver.CompletedPostSignup(ctx)
+	if err != nil {
+		return nil
+	}
+
 	return &CurrentUser{
 		GraphQLTypename:     "User",
 		AvatarURL:           userResolver.AvatarURL(),
@@ -456,6 +466,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		ViewerCanAdminister: canAdminister,
 		Permissions:         resolveUserPermissions(ctx, userResolver),
 		HasVerifiedEmail:    hasVerifiedEmail,
+		CompletedPostSignUp: completedPostSignup,
 	}
 }
 

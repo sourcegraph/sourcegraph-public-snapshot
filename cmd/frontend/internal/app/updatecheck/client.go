@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegraph/sourcegraph/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -448,7 +448,7 @@ func limitedUpdateBody(ctx context.Context, logger log.Logger, db database.DB) (
 	logFunc := logger.Debug
 
 	r := &pingRequest{
-		ClientSiteID:        siteid.Get(),
+		ClientSiteID:        siteid.Get(db),
 		DeployType:          deploy.Type(),
 		ClientVersionString: version.Version(),
 	}
@@ -507,7 +507,7 @@ func updateBody(ctx context.Context, logger log.Logger, db database.DB) (io.Read
 	logFuncWarn := scopedLog.Warn
 
 	r := &pingRequest{
-		ClientSiteID:                  siteid.Get(),
+		ClientSiteID:                  siteid.Get(db),
 		DeployType:                    deploy.Type(),
 		ClientVersionString:           version.Version(),
 		LicenseKey:                    conf.Get().LicenseKey,

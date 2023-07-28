@@ -23,12 +23,12 @@ import (
 )
 
 type Service struct {
-	store           store.Store
-	repoStore       database.RepoStore
-	gitserverClient gitserver.Client
-	indexEnqueuer   *enqueuer.IndexEnqueuer
-	jobSelector     *jobselector.JobSelector
-	operations      *operations
+	store            store.Store
+	repoStore        database.RepoStore
+	gitserverClient  gitserver.Client
+	indexEnqueuer    *enqueuer.IndexEnqueuer
+	jobSelector      *jobselector.JobSelector
+	operations       *operations
 }
 
 func newService(

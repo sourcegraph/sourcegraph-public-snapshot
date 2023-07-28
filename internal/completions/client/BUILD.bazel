@@ -11,6 +11,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/completions/client/anthropic",
+        "//internal/completions/client/azureopenai",
         "//internal/completions/client/codygateway",
         "//internal/completions/client/openai",
         "//internal/completions/types",

@@ -90,33 +90,33 @@ func TestSet(t *testing.T) {
 	})
 
 	t.Run("Intersection creates a new set with values that are in both sets", func(t *testing.T) {
-		itrsc := Intersection(a, b).Sorted(cmp)
-		require.Equal(t, []int{2, 3}, itrsc)
+		intersection := Intersection(a, b).Sorted(cmp)
+		require.Equal(t, []int{2, 3}, intersection)
 
 		// intersection with self is the same set as self
-		itrsc = Intersection(a, a).Sorted(cmp)
-		require.Equal(t, []int{1, 2, 3}, itrsc)
+		intersection = Intersection(a, a).Sorted(cmp)
+		require.Equal(t, []int{1, 2, 3}, intersection)
 
 		// intersection with empty set is empty set
-		itrsc = Intersection(a, NewSet[int]()).Sorted(cmp)
-		require.Equal(t, []int{}, itrsc)
+		intersection = Intersection(a, NewSet[int]()).Sorted(cmp)
+		require.Equal(t, []int{}, intersection)
 
 		// intersection with set that has no common values is empty set
-		itrsc = Intersection(a, NewSet(4, 5, 6)).Sorted(cmp)
-		require.Equal(t, []int{}, itrsc)
+		intersection = Intersection(a, NewSet(4, 5, 6)).Sorted(cmp)
+		require.Equal(t, []int{}, intersection)
 	})
 
 	t.Run("Difference returns values that are in current set but not the other", func(t *testing.T) {
-		itrsc := a.Difference(b)
-		require.Equal(t, []int{1}, itrsc.Values())
+		difference := a.Difference(b)
+		require.Equal(t, []int{1}, difference.Values())
 
 		// difference with self is empty set
-		itrsc = a.Difference(a)
-		require.Equal(t, []int{}, itrsc.Values())
+		difference = a.Difference(a)
+		require.Equal(t, []int{}, difference.Values())
 
 		// difference with empty set is the same set
-		itrsc = a.Difference(NewSet[int]())
-		require.Equal(t, a.Sorted(cmp), itrsc.Sorted(cmp))
+		difference = a.Difference(NewSet[int]())
+		require.Equal(t, a.Sorted(cmp), difference.Sorted(cmp))
 	})
 	t.Run("String returns string representation", func(t *testing.T) {
 		require.Regexp(t, regexp.MustCompile(`Set\[[1-3] [1-3] [1-3]]`), a)

@@ -68,6 +68,12 @@ func TestConfig_Load(t *testing.T) {
 			return `[{"name": "foo", "mountPath": "/foo"}]`
 		case "KUBERNETES_SINGLE_JOB_STEP_IMAGE":
 			return "sourcegraph/step-image:latest"
+		case "KUBERNETES_JOB_ANNOTATIONS":
+			return `{"foo": "bar", "faz": "baz"}`
+		case "KUBERNETES_JOB_POD_ANNOTATIONS":
+			return `{"foo": "bar", "faz": "baz"}`
+		case "KUBERNETES_IMAGE_PULL_SECRETS":
+			return "foo,bar"
 		default:
 			return name
 		}
@@ -168,6 +174,16 @@ func TestConfig_Load(t *testing.T) {
 		cfg.KubernetesAdditionalJobVolumeMounts,
 	)
 	assert.Equal(t, "sourcegraph/step-image:latest", cfg.KubernetesSingleJobStepImage)
+
+	assert.Len(t, cfg.KubernetesJobAnnotations, 2)
+	assert.Equal(t, "bar", cfg.KubernetesJobAnnotations["foo"])
+	assert.Equal(t, "baz", cfg.KubernetesJobAnnotations["faz"])
+
+	assert.Len(t, cfg.KubernetesJobPodAnnotations, 2)
+	assert.Equal(t, "bar", cfg.KubernetesJobPodAnnotations["foo"])
+	assert.Equal(t, "baz", cfg.KubernetesJobPodAnnotations["faz"])
+
+	assert.Equal(t, "foo,bar", cfg.KubernetesImagePullSecrets)
 }
 
 func TestConfig_Load_Defaults(t *testing.T) {
@@ -220,6 +236,9 @@ func TestConfig_Load_Defaults(t *testing.T) {
 	assert.Empty(t, cfg.KubernetesAdditionalJobVolumes)
 	assert.Empty(t, cfg.KubernetesAdditionalJobVolumeMounts)
 	assert.Equal(t, "sourcegraph/batcheshelper:insiders", cfg.KubernetesSingleJobStepImage)
+	assert.Nil(t, cfg.KubernetesJobAnnotations)
+	assert.Nil(t, cfg.KubernetesJobPodAnnotations)
+	assert.Empty(t, cfg.KubernetesImagePullSecrets)
 }
 
 func TestConfig_Validate(t *testing.T) {
