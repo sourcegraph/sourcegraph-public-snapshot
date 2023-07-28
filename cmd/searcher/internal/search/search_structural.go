@@ -95,7 +95,7 @@ func combyChunkMatchesToFileMatch(combyMatch *comby.FileMatchWithChunks) protoco
 		}
 
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
-			Content: cm.Content,
+			Content: strings.ToValidUTF8(cm.Content, "�"),
 			ContentStart: protocol.Location{
 				Offset: int32(cm.Start.Offset),
 				Line:   int32(cm.Start.Line) - 1,
@@ -189,7 +189,7 @@ func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
 			// NOTE: we must copy the content here because the reference
 			// must not outlive the backing mmap, which may be cleaned
 			// up before the match is serialized for the network.
-			Content: string(buf[firstLineStart:lastLineEnd]),
+			Content: string(bytes.ToValidUTF8(buf[firstLineStart:lastLineEnd], []byte("�"))),
 			ContentStart: protocol.Location{
 				Offset: firstLineStart,
 				Line:   chunk.cover.Start.Line,
