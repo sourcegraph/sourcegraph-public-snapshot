@@ -440,7 +440,11 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
                     )}
                     <ul className="list-group list-group-flush mt-4">
                         {(connection?.nodes || []).map(node => (
-                            <RepositoryNode key={node.id} node={node} />
+                            <RepositoryNode
+                                key={node.id}
+                                node={node}
+                                externalServiceName={findExtSvcName(node.externalServiceIDs, extSvcs)}
+                            />
                         ))}
                     </ul>
                     <PageSwitcher
@@ -454,3 +458,8 @@ export const SiteAdminRepositoriesContainer: React.FunctionComponent<{ alwaysPol
         </>
     )
 }
+
+const findExtSvcName = (repoExtSvcIDs: Array<string>, extSvcs: ExternalServiceIDsAndNamesResult): string | undefined =>
+    repoExtSvcIDs.length === 0
+        ? undefined
+        : extSvcs.externalServices.nodes.find(svc => svc.id === repoExtSvcIDs[0])?.displayName ?? undefined

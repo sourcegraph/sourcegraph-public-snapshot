@@ -83,6 +83,7 @@ const repoCloned = (repo: SiteAdminRepositoryFields): boolean =>
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
+    externalServiceName?: string
 }
 
 const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined): void => {
@@ -96,7 +97,10 @@ const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaR
     }
 }
 
-export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
+    node,
+    externalServiceName,
+}) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const navigate = useNavigate()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
@@ -267,18 +271,16 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiSecurity} className="mr-1" />
                                     Permissions
                                 </MenuItem>
-                                {node.externalServices.nodes?.length !== 0 && (
+                                {externalServiceName && (
                                     <MenuItem
                                         as={Button}
                                         onSelect={() =>
-                                            navigate(
-                                                `/site-admin/external-services/${node.externalServices.nodes[0].id}`
-                                            )
+                                            navigate(`/site-admin/external-services/${node.externalServiceIDs[0]}`)
                                         }
                                         className="p-2"
                                     >
                                         <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
-                                        Connection: {truncateName(node.externalServices.nodes[0].displayName)}
+                                        Connection: {truncateName(externalServiceName)}
                                     </MenuItem>
                                 )}
                                 <MenuItem
