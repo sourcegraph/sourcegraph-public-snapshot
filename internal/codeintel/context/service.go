@@ -302,10 +302,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 	// PHASE 4: Read the files that contain a definition
 
-	type DocumentAndText struct {
-		Content string
-		SCIP    *scip.Document
-	}
 	cache := map[string]DocumentAndText{}
 	for _, pd := range preciseDataList {
 		for _, l := range pd.location {
@@ -336,10 +332,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			if err != nil {
 				return nil, err
 			}
-			cache[key] = DocumentAndText{
-				Content: string(file),
-				SCIP:    syntectDocs,
-			}
+			cache[key] = NewDocumentAndText(string(file), syntectDocs)
 		}
 	}
 
@@ -366,12 +359,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				if occ.Symbol != pd.fuzzyName && pd.fuzzyName != "" {
 					continue
 				}
-				fmt.Println("THIS is the EnclosingRange", occ.EnclosingRange)
 				if len(occ.EnclosingRange) > 0 {
-					r := scip.NewRange(occ.EnclosingRange)
-					fmt.Println("THIS is the CONTENT", documentAndText.Content)
-					c := strings.Split(string(documentAndText.Content), "\n")
-					snippet := extractSnippet(c, r.Start.Line, r.End.Line, r.Start.Character, r.End.Character)
 					ex, err := symbols.NewExplodedSymbol(pd.scipSymbolName)
 					if err != nil {
 						return nil, err
@@ -380,14 +368,13 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					if err != nil {
 						return nil, err
 					}
-
 					preciseResponse = append(preciseResponse, &types.PreciseContext{
 						ScipSymbolName:        pd.scipSymbolName,
 						FuzzySymbolName:       pd.fuzzyName,
 						ScipDescriptorSuffix:  ex.DescriptorSuffix,
 						FuzzyDescriptorSuffix: fex.FuzzyDescriptorSuffix,
 						RepositoryName:        l.Dump.RepositoryName,
-						Text:                  snippet,
+						Text:                  documentAndText.Extract(scip.NewRange(occ.EnclosingRange)),
 						FilePath:              l.Path,
 					})
 
@@ -407,61 +394,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	// DEBUGGING
 	lap("PHASE 5: generated %s context items\n", len(preciseResponse))
 	return preciseResponse, nil
-}
-
-// func extractSnippet(file string, startLine, endLine, startChar, endChar int32) string {
-// 	lines := strings.Split(file, "\n")
-
-// 	if startLine > endLine || startLine < 0 || endLine >= int32(len(lines)) {
-// 		return ""
-// 	}
-
-// 	c := make([]string, endLine-startLine+1)
-// 	copy(c, lines[startLine:endLine+1])
-
-// 	n := len(c) - 1
-// 	if n == 0 {
-// 		endChar -= startChar
-// 	}
-// 	c[0] = c[0][startChar:]
-// 	c[n] = c[n][:endChar]
-
-// 	return strings.Join(c, "\n")
-// }
-
-func extractSnippet(lines []string, startLine, endLine, startChar, endChar int32) string {
-	if startLine > endLine || startLine < 0 || endLine >= int32(len(lines)) {
-		return ""
-	}
-	result := make([]string, 0)
-	for i := startLine; i <= endLine; i++ {
-		line := lines[i]
-		if startChar == 0 && endChar == 0 {
-			result = append(result, line)
-			continue
-		}
-		if i == startLine {
-			if startChar < 0 || startChar >= int32(len(line)) {
-				return ""
-			}
-			if i == endLine {
-				if endChar < startChar || endChar > int32(len(line)) {
-					return ""
-				}
-				result = append(result, line[startChar:endChar])
-			} else {
-				result = append(result, line[startChar:])
-			}
-		} else if i == endLine {
-			if endChar < 0 || endChar > int32(len(line)) {
-				return ""
-			}
-			result = append(result, line[:endChar])
-		} else {
-			result = append(result, line)
-		}
-	}
-	return strings.Join(result, "\n")
 }
 
 func (s *Service) getSCIPDocumentByContent(ctx context.Context, content, fileName string) (*scip.Document, error) {
