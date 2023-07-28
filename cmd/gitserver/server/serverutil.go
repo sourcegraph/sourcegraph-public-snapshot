@@ -36,7 +36,7 @@ func (s *Server) dir(name api.RepoName) common.GitDir {
 func (s *Server) poolDir(name api.RepoName) common.GitDir {
 	p := string(protocol.NormalizeRepo(name))
 
-	return common.GitDir(filepath.Join(s.ReposDir, ".pool", filepath.FromSlash(p), ".git"))
+	return common.GitDir(filepath.Join(s.ReposDir, poolDirName, filepath.FromSlash(p), ".git"))
 }
 
 func (s *Server) name(dir common.GitDir) api.RepoName {

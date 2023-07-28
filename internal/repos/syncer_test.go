@@ -17,6 +17,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -676,6 +677,99 @@ func TestSyncerSync(t *testing.T) {
 
 			typestest.Assert.ReposEqual(want...)(t, have)
 		}))
+	}
+}
+
+func TestSyncer_maybePrepareForDeduplication(t *testing.T) {
+	ctx := context.Background()
+
+	syncer := &repos.Syncer{
+		ObsvCtx: observation.TestContextTB(t),
+		DeduplicatedForksSet: types.NewRepoURISet(collections.Set[string]{
+			"github.com/sourcegraph/sourcegraph": {},
+		}),
+		Store: getTestRepoStore(t),
+	}
+
+	repo := &types.Repo{
+		Name: "github.com/sourcegraph/sourcegraph",
+		URI:  "github.com/sourcegraph/sourcegraph",
+	}
+
+	forkedDeduplicatedRepo := &types.Repo{
+		Name: "github.com/forked/sourcegraph",
+		URI:  "github.com/forked/sourcegraph",
+		Fork: true,
+		Metadata: &github.Repository{
+			Parent: &github.BaseRepository{
+				NameWithOwner: "sourcegraph/sourcegraph",
+			},
+		},
+	}
+
+	forkedRepo := &types.Repo{
+		Name: "github.com/forked/foo",
+		URI:  "github.com/forked/foo",
+		Fork: true,
+		Metadata: &github.Repository{
+			Parent: &github.BaseRepository{
+				NameWithOwner: string("foo"),
+			},
+		},
+	}
+
+	gitlabRepo := &types.Repo{
+		Name:     "gitlab.com/sourcegraph/sourcegraph",
+		URI:      "gitlab.com/sourcegraph/sourcegraph",
+		Fork:     true,
+		Metadata: new(gitlab.Project),
+	}
+
+	err := syncer.Store.RepoStore().Create(ctx, repo, forkedDeduplicatedRepo, forkedRepo, gitlabRepo)
+	require.NoError(t, err)
+
+	testCases := []struct {
+		name                 string
+		inputRepo            *types.Repo
+		expectedPoolRepoName api.RepoName
+		expectedOK           bool
+	}{
+		{
+			name:                 "not a fork",
+			inputRepo:            repo,
+			expectedPoolRepoName: api.RepoName(""),
+			expectedOK:           false,
+		},
+		{
+			name:                 "fork, but not a github repo",
+			inputRepo:            gitlabRepo,
+			expectedPoolRepoName: api.RepoName(""),
+			expectedOK:           false,
+		},
+		{
+			name:                 "fork, github repo but parent not in dedulicateForks config",
+			inputRepo:            forkedRepo,
+			expectedPoolRepoName: api.RepoName(""),
+			expectedOK:           false,
+		},
+		{
+			name:                 "fork, github repo parent in deduplicateForks config",
+			inputRepo:            forkedDeduplicatedRepo,
+			expectedPoolRepoName: repo.Name,
+			expectedOK:           true,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			err := syncer.MaybePrepareForDeduplication(ctx, tc.inputRepo)
+			require.NoError(t, err)
+
+			poolRepoName, ok, err := syncer.Store.GitserverReposStore().GetPoolRepoName(ctx, tc.inputRepo.Name)
+			require.NoError(t, err)
+			require.Equal(t, tc.expectedOK, ok)
+			require.Equal(t, tc.expectedPoolRepoName, poolRepoName)
+		})
 	}
 }
 

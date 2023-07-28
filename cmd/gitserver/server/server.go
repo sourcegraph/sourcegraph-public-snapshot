@@ -66,12 +66,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// tempDirName is the name used for the temporary directory under ReposDir.
-const tempDirName = ".tmp"
+const (
+	// tempDirName is the name used for the temporary directory under ReposDir.
+	tempDirName = ".tmp"
 
-// P4HomeName is the name used for the directory that git p4 will use as $HOME
-// and where it will store cache data.
-const P4HomeName = ".p4home"
+	// P4HomeName is the name used for the directory that git p4 will use as $HOME
+	// and where it will store cache data.
+	P4HomeName = ".p4home"
+
+	// poolDirName is the name used to store pool repos under ReposDir.
+	poolDirName = ".pool"
+)
 
 // traceLogs is controlled via the env SRC_GITSERVER_TRACE. If true we trace
 // logs to stderr
@@ -845,11 +850,12 @@ func tempDir(reposDir, prefix string) (name string, err error) {
 
 func (s *Server) ignorePath(path string) bool {
 	// We ignore any path which starts with .tmp or .p4home in ReposDir
+	fmt.Println(filepath.Dir(path))
 	if filepath.Dir(path) != s.ReposDir {
 		return false
 	}
 	base := filepath.Base(path)
-	return strings.HasPrefix(base, tempDirName) || strings.HasPrefix(base, P4HomeName) || strings.HasPrefix(base, ".pool")
+	return strings.HasPrefix(base, tempDirName) || strings.HasPrefix(base, P4HomeName) || strings.HasPrefix(base, poolDirName)
 }
 
 func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
@@ -2101,6 +2107,10 @@ func (d *deduplicatedCloneOptions) DeepCopy() *deduplicatedCloneOptions {
 func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *types.Repo) *deduplicatedCloneOptions {
 	logger := s.ObservationCtx.Logger.Scoped("deduplicateRepoClone", "").With(log.String("repo", string(repo.Name)))
 
+	if s.DeduplicatedForksSet == nil || s.DeduplicatedForksSet.IsEmpty() {
+		return nil
+	}
+
 	// We only ask users to list the name of the source repository. If this repository is a parent
 	// that is configured to be deduplicated, we can return early. We check against the repo.URI
 	// because we want this to work for customers that may use a repositoryPathPattern in their code
@@ -2115,10 +2125,9 @@ func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *typ
 	// Thus, checking against the repo.URI is safe for both the usecases where repositoryPathPattern
 	// may or may not have been used in the code host config.
 	if s.DeduplicatedForksSet.Contains(repo.URI) {
-		poolDir := s.poolDir(repo.Name)
 		return &deduplicatedCloneOptions{
 			dedupeCloneType: dedupeSource,
-			poolDir:         poolDir,
+			poolDir:         s.poolDir(repo.Name),
 			poolRepoName:    repo.Name,
 		}
 	}

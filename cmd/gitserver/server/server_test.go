@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math/rand"
 	"net/http"
 	"net/http/httptest"
@@ -33,6 +34,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/collections"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -284,6 +287,111 @@ func TestExecRequest(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestServer_poolDir(t *testing.T) {
+	ctx := context.Background()
+	reposDir := t.TempDir()
+	remote := t.TempDir()
+	db := database.NewMockDB()
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+	got := s.poolDir(repoName)
+	want := common.GitDir(filepath.Join(reposDir, ".pool/github.com/sourcegraph/sourcegraph/.git"))
+	require.Equal(t, got, want)
+}
+
+func TestServer_maybeGetDeduplicatedCloneOptions(t *testing.T) {
+	ctx := context.Background()
+	reposDir := t.TempDir()
+	remote := t.TempDir()
+	db := database.NewMockDB()
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	repoName := api.RepoName("github.com/sourcegraph/sourcegraph")
+
+	gs := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gs)
+
+	t.Run("empty deduplicateForks config", func(t *testing.T) {
+		s.DeduplicatedForksSet = types.NewEmptyRepoURISet()
+		got := s.maybeGetDeduplicatedCloneOptions(ctx, &types.Repo{Name: repoName})
+		require.Nil(t, got)
+	})
+
+	t.Run("repo name in deduplicateForks config", func(t *testing.T) {
+		s.DeduplicatedForksSet.Overwrite(collections.Set[string]{
+			string(repoName): {}},
+		)
+
+		got := s.maybeGetDeduplicatedCloneOptions(ctx, &types.Repo{Name: repoName, URI: string(repoName)})
+		require.NotNil(t, got)
+
+		want := &deduplicatedCloneOptions{
+			dedupeCloneType: dedupeSource,
+			poolDir:         s.poolDir(repoName),
+			poolRepoName:    repoName,
+		}
+
+		require.Equal(t, want, got)
+	})
+
+	t.Run("fork repo with non-empty deduplicateForks config", func(t *testing.T) {
+		s.DeduplicatedForksSet.Overwrite(collections.Set[string]{
+			string(repoName): {}},
+		)
+
+		forkedRepoName := api.RepoName("github.com/forked/sourcegrap")
+		forkedRepo := &types.Repo{
+			Name: forkedRepoName,
+			URI:  string(forkedRepoName),
+			Fork: true,
+		}
+
+		t.Run("pool repo relation does not exist", func(t *testing.T) {
+			gs.GetPoolRepoNameFunc.SetDefaultReturn(repoName, false, nil)
+			got := s.maybeGetDeduplicatedCloneOptions(ctx, forkedRepo)
+			require.Nil(t, got)
+		})
+
+		t.Run("pool repo relation exists", func(t *testing.T) {
+			gs.GetPoolRepoNameFunc.SetDefaultReturn(repoName, true, nil)
+
+			got := s.maybeGetDeduplicatedCloneOptions(ctx, forkedRepo)
+			require.NotNil(t, got)
+
+			want := &deduplicatedCloneOptions{
+				dedupeCloneType: dedupeFork,
+				poolDir:         s.poolDir(repoName),
+				poolRepoName:    repoName,
+			}
+
+			require.Equal(t, want, got)
+		})
+	})
+}
+
+func TestServer_configureRepoAsGitAlternate(t *testing.T) {
+	ctx := context.Background()
+	reposDir := t.TempDir()
+	remote := t.TempDir()
+	db := database.NewMockDB()
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	_, tmpPath := gitserver.MakeGitRepositoryAndReturnDir(t)
+	tmpPath = filepath.Join(tmpPath, ".git")
+
+	poolRepoName := "github.com/sourcegrap/sourcegraph"
+	err := s.configureRepoAsGitAlternate(tmpPath, api.RepoName(poolRepoName))
+	require.NoError(t, err)
+
+	alternatesFile := filepath.Join(tmpPath, "objects/info/alternates")
+	data, err := ioutil.ReadFile(alternatesFile)
+	require.NoError(t, err)
+
+	want := filepath.Join(reposDir, poolDirName, poolRepoName, ".git/objects")
+	require.Equal(t, want, string(data))
 }
 
 func TestServer_handleP4Exec(t *testing.T) {
@@ -848,6 +956,89 @@ func TestCloneRepo(t *testing.T) {
 	if gitserverRepo.CloningProgress == "" {
 		t.Error("want non-empty CloningProgress")
 	}
+}
+
+func TestCloneRepo_Deduplication(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	remote := t.TempDir()
+	repoName := api.RepoName("example.com/foo/bar")
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	dbRepo := &types.Repo{
+		Name:        repoName,
+		Description: "Test",
+		URI:         string(repoName),
+	}
+
+	// Insert the repo into our database
+	if err := db.Repos().Create(ctx, dbRepo); err != nil {
+		t.Fatal(err)
+	}
+
+	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
+		t.Helper()
+		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, status, fromDB.CloneStatus)
+		assert.Equal(t, size, fromDB.RepoSizeBytes)
+		var errString string
+		if wantErr != nil {
+			errString = wantErr.Error()
+		}
+		assert.Equal(t, errString, fromDB.LastError)
+	}
+
+	// Verify the gitserver repo entry exists.
+	assertRepoState(types.CloneStatusNotCloned, 0, nil)
+
+	repo := remote
+	cmd := func(name string, arg ...string) string {
+		t.Helper()
+		return runCmd(t, repo, name, arg...)
+	}
+	wantCommit := makeSingleCommitRepo(cmd)
+
+	reposDir := t.TempDir()
+	s := makeTestServer(ctx, t, reposDir, remote, db)
+
+	s.DeduplicatedForksSet.Overwrite(collections.Set[string]{
+		string(repoName): {},
+	})
+
+	// Not setting this blocks when trying to debug this test with delve. But works fine otherwise.
+	authz.SetProviders(true, nil)
+	_, err := s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
+	require.NoError(t, err)
+
+	dst := s.dir(repoName)
+
+	wantRepoSize := dirSize(dst.Path("."))
+	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
+
+	repo = filepath.Dir(string(dst))
+	gotCommit := cmd("git", "rev-parse", "HEAD")
+	if wantCommit != gotCommit {
+		t.Fatal("failed to clone:", gotCommit)
+	}
+
+	// Verify that the repo also exists in pool dir and has the same commit.
+	poolRepoDir := s.poolDir(repoName)
+	gotCommit = runCmd(t, string(poolRepoDir), "git", "rev-parse", "HEAD")
+	if wantCommit != gotCommit {
+		t.Fatal("failed to clone:", gotCommit)
+	}
+
+	// Finally verify that the alternates file in the cloned repo points to the pool repo.
+	alternatesFile := filepath.Join(string(dst), "objects/info/alternates")
+	data, err := ioutil.ReadFile(alternatesFile)
+	require.NoError(t, err)
+
+	want := filepath.Join(reposDir, poolDirName, string(repoName), ".git/objects")
+	require.Equal(t, want, string(data))
 }
 
 func TestCloneRepoRecordsFailures(t *testing.T) {
@@ -1976,11 +2167,67 @@ func TestIgnorePath(t *testing.T) {
 		// Double check handling of trailing space
 		{path: filepath.Join(reposDir, P4HomeName+"   "), shouldIgnore: true},
 		{path: filepath.Join(reposDir, "sourcegraph/sourcegraph"), shouldIgnore: false},
+		{path: filepath.Join(reposDir, poolDirName), shouldIgnore: true},
 	} {
-		t.Run("", func(t *testing.T) {
+		t.Run(tc.path, func(t *testing.T) {
 			assert.Equal(t, tc.shouldIgnore, s.ignorePath(tc.path))
 		})
 	}
+}
+
+// A naive test, but something is better than nothing. At least we can verify our command execution
+// works.
+func TestOptimizeForGitAlternateRepo(t *testing.T) {
+	_, tmpPath := gitserver.MakeGitRepositoryAndReturnDir(t)
+	tmpPath = filepath.Join(tmpPath, ".git")
+	err := optimizeForGitAlternateRepo(context.Background(), common.GitDir(tmpPath))
+	require.NoError(t, err)
+}
+
+func TestCloneOptions_DeepCopy(t *testing.T) {
+	t.Run("nil dedupeoptions", func(t *testing.T) {
+		old := &cloneOptions{}
+		new := old.DeepCopy()
+
+		if old == new {
+			t.Error("address should be different")
+		}
+
+		require.Equal(t, *old, *new)
+	})
+
+	t.Run("non-nil dedupeoptions", func(t *testing.T) {
+		old := &cloneOptions{
+			DeduplicatedCloneOptions: &deduplicatedCloneOptions{},
+		}
+		new := old.DeepCopy()
+
+		if old == new {
+			t.Error("address should be different")
+		}
+
+		if old.DeduplicatedCloneOptions == new.DeduplicatedCloneOptions {
+			t.Error("address of DeduplicatedCloneOptions attribute should be different")
+		}
+
+		require.Equal(t, *old, *new)
+	})
+}
+
+func TestDeduplicatedCloneOptions_DeepCopy(t *testing.T) {
+	old := &deduplicatedCloneOptions{
+		dedupeCloneType: dedupeSource,
+		poolDir:         common.GitDir("foo"),
+		poolRepoName:    api.RepoName("foo"),
+	}
+
+	new := old.DeepCopy()
+
+	if old == new {
+		t.Error("address should be different")
+	}
+
+	require.Equal(t, *old, *new)
 }
 
 func TestMain(m *testing.M) {

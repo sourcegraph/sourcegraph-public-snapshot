@@ -806,7 +806,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			}
 		}
 
-		if err := s.maybePrepareForDeduplication(ctx, sourced); err != nil {
+		if err := s.MaybePrepareForDeduplication(ctx, sourced); err != nil {
 			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
 		}
 
@@ -836,7 +836,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 			return Diff{}, errors.Wrapf(err, "syncer: failed to create external service repo: %s", sourced.Name)
 		}
 
-		if err := s.maybePrepareForDeduplication(ctx, sourced); err != nil {
+		if err := s.MaybePrepareForDeduplication(ctx, sourced); err != nil {
 			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
 		} else {
 			s.ObsvCtx.Logger.Warn("no error in maybePrepareForDeduplication", log.String("repo", string(sourced.Name)))
@@ -852,10 +852,10 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 	return d, nil
 }
 
-// maybePrepareForDeduplication will:
+// MaybePrepareForDeduplication will:
 // 1. Get the repo_id of the parent repo
 // 2. Insert that as the pool_id into gitserver_repos table
-func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, repo *types.Repo) error {
+func (s *Syncer) MaybePrepareForDeduplication(ctx context.Context, repo *types.Repo) error {
 	// Nothing special needs to be done for non-forks.
 	if !repo.Fork {
 		return nil
@@ -863,7 +863,9 @@ func (s *Syncer) maybePrepareForDeduplication(ctx context.Context, repo *types.R
 
 	metadata, ok := repo.Metadata.(*github.Repository)
 	if !ok {
-		return errors.New("only GitHub repositories are supported for deduplication")
+		// Only GitHub repositories are supported for deduplication. But do not return an error here
+		// because this will lead to a spur of errors for all non GitHub repositories.
+		return nil
 	}
 
 	parentRepo := github.Repository{

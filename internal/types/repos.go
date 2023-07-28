@@ -21,6 +21,10 @@ func NewRepoURISet(index collections.Set[string]) *RepoURISet {
 	}
 }
 
+func (c *RepoURISet) IsEmpty() bool {
+	return c.index.IsEmpty()
+}
+
 func (c *RepoURISet) Contains(name string) bool {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
