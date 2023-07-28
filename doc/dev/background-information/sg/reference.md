@@ -1156,6 +1156,22 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--url, -u="<value>"`: Run the evaluation against this endpoint (default: http://localhost:9991/search)
 
+## sg deploy
+
+Generate a Kubernetes manifest for a Sourcegraph deployment.
+
+Internal deployments live in the sourcegraph/infra repository.
+
+```sh
+$ sg deploy --values <path to values file>
+```
+
+Flags:
+
+* `--dry-run`: Write the manifest to stdout instead of writing to a file
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--values="<value>"`: The path to the values file
+
 ## sg secret
 
 Manipulate secrets stored in memory and in file.
