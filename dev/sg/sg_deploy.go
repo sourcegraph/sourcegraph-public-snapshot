@@ -76,19 +76,19 @@ spec:
         app: {{.Name}}
     spec:
       containers:
-      - name: {{.Name}}
-        image: {{.Image}}
-        imagePullPolicy: Always
-        env:
-          {{- range $i, $envvar := .Envvars }}
-        - name: {{ $envvar.Name }}
-          value: {{ $envvar.Value }}
-          {{- end }}
-        ports:
-          {{- range $i, $port := .ContainerPorts }}
-        - containerPort: {{ $port.Port }}
-          name: {{ $port.Name }}
-          {{- end }}
+        - name: {{.Name}}
+          image: {{.Image}}
+          imagePullPolicy: Always
+          env:
+            {{- range $i, $envvar := .Envvars }}
+            - name: {{ $envvar.Name }}
+              value: {{ $envvar.Value }}
+            {{- end }}
+          ports:
+            {{- range $i, $port := .ContainerPorts }}
+            - containerPort: {{ $port.Port }}
+              name: {{ $port.Name }}
+            {{- end }}
 {{ if .ServicePorts -}}
 ---
 apiVersion: v1
@@ -118,7 +118,7 @@ metadata:
 spec:
   tls:
     - hosts:
-      - {{.Dns}}
+        - {{.Dns}}
       secretName: sgdev-tls-secret
   rules:
     - host: {{.Dns}}
