@@ -20,9 +20,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/limiter"
@@ -89,7 +89,7 @@ func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_
 	c.langMappingOnce.Do(func() {
 		var mappings map[string][]string
 
-		if internalgrpc.IsGRPCEnabled(ctx) {
+		if conf.IsGRPCEnabled(ctx) {
 			mappings, err = c.listLanguageMappingsGRPC(ctx, repo)
 		} else {
 			mappings, err = c.listLanguageMappingsJSON(ctx, repo)
@@ -179,7 +179,7 @@ func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (sym
 
 	var response search.SymbolsResponse
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		response, err = c.searchGRPC(ctx, args)
 	} else {
 		response, err = c.searchJSON(ctx, args)
@@ -277,7 +277,7 @@ func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) 
 		attribute.String("commitID", args.Commit))
 	defer tr.EndWithErr(&err)
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		return c.localCodeIntelGRPC(ctx, args)
 	}
 
@@ -366,7 +366,7 @@ func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint)
 		attribute.String("commitID", args.Commit))
 	defer tr.EndWithErr(&err)
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		result, err = c.symbolInfoGRPC(ctx, args)
 	} else {
 		result, err = c.symbolInfoJSON(ctx, args)
