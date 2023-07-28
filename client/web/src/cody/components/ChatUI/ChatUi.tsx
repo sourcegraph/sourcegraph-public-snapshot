@@ -107,6 +107,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
             <RecipeWidgetWrapper {...props} codyChatStore={codyChatStore} />,
         [codyChatStore]
     )
+
     return (
         <>
             <Chat
@@ -144,7 +145,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 abortMessageInProgressComponent={AbortMessageInProgress}
                 onAbortMessageInProgress={abortMessageInProgress}
                 isCodyEnabled={isCodyEnabled()}
-                RecipeWidgetWrapper={RecipeWidgetWrapper}
+                RecipeWidgetWrapper={RecipeWidgetWrapperWithProps}
             />
         </>
     )
@@ -155,9 +156,9 @@ interface RecipeWidgetWrapperProps {
     targetRef: any
     children: any
     codyChatStore: any
-    fileName?: string
-    repoName?: string
-    revision?: string
+    // fileName?: string
+    // repoName?: string
+    // revision?: string
 }
 
 // TODO: move the component to a separete file inside cody/components
@@ -187,9 +188,9 @@ const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = R
                         return (
                             <CodyRecipesWidget
                                 codyChatStore={codyChatStore}
-                                editor={
-                                    null /* TODO: create an editor implementation using the textContent & targetRef.current?.innerText*/
-                                }
+                                // editor={
+                                //     null /* TODO: create an editor implementation using the textContent & targetRef.current?.innerText*/
+                                // }
                             />
                         )
                     }}
