@@ -124,19 +124,19 @@ td:first-child {
 <ul class="limg">
   <li>
     <a class="card text-left" target="_blank" href="https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai">
-    <h3><img alt="VS Code" src="vscode.svg"/> Cody: VS Code Extension</h3>
+    <h3><img alt="VS Code" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/vscode.svg"/> Cody: VS Code Extension</h3>
     <p>Install Cody's free and open source extension for VS Code.</p>
     </a>
   </li>
   <li>
     <a class="card text-left" target="_blank" href="https://plugins.jetbrains.com/plugin/9682-cody-ai-by-sourcegraph">
-      <h3><img alt="JetBrains" src="jb_beam.svg" />JetBrains Extension (experimental)</h3>
+      <h3><img alt="JetBrains" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/jb_beam.svg" />JetBrains Extension (experimental)</h3>
       <p>Install Cody's free and open source extension for JetBrains.</p>
     </a>
   </li>
   <li>
      <a class="card text-left" target="_blank" href="https://sourcegraph.com/get-cody">
-      <h3><img alt="VS Code" src="cody-logomark-default.svg"/>Cody App</h3>
+      <h3><img alt="VS Code" src="https://storage.googleapis.com/sourcegraph-assets/docs/images/cody/cody-logomark-default.svg"/>Cody App</h3>
       <p>Free Cody desktop app to try Cody with your local codebase.</p>
       </a>
   </li>
