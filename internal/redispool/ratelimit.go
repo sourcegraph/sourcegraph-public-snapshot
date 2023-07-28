@@ -9,19 +9,29 @@ import (
 )
 
 var (
-	tokenBucketGlobablPrefix           = "v2:rate_limiters"
-	bucketCapacityConfigKeySuffix      = "bucket_capacity"
-	bucketReplenishmentConfigKeySuffix = "bucket_replenishment_interval_seconds"
+	tokenBucketGlobalPrefix            = "v2:rate_limiters"
+	bucketCapacityConfigKeySuffix      = "config:bucket_capacity"
+	bucketReplenishmentConfigKeySuffix = "config:bucket_replenishment_interval_seconds"
 )
 
 type RateLimiter interface {
-	GetTokensFromBucket(ctx context.Context, bucketName, bucketConfigKey string, tokensWanted int) (allowed bool, remianingTokens int, err error)
-	SetTokenBucketReplenishment(ctx context.Context, bucketName, bucketConfigKey string, bucketCapacity, bucketReplenishRateSeconds int) error
+	// GetTokensFromBucket gets tokens from the specified rate limit token bucket.
+	// bucketName: the name of the bucket where the tokens are, i.e. github.com:api_tokens
+	// tokensWanted: the number of tokens you want from the bucket; if the number is greater than the remaining capacity, no tokens will be given.
+	GetTokensFromBucket(ctx context.Context, bucketName string, tokensWanted int) (allowed bool, remainingTokens int, err error)
+
+	// SetTokenBucketReplenishment sets the configuration for the specified token bucket.
+	// bucketName: the name of the bucket where the tokens are, i.e. github.com:api_tokens
+	// bucketCapacity: the number of tokens the bucket can hold.
+	// bucketReplenishRateSeconds: how often (in seconds) the bucket should be completely replenished.
+	SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishRateSeconds int) error
 }
 
 type rateLimiter struct {
-	prefix string
-	pool   *redis.Pool
+	prefix                 string
+	pool                   *redis.Pool
+	getTokensScript        redis.Script
+	setReplenishmentScript redis.Script
 }
 
 func NewRateLimiter() (RateLimiter, error) {
@@ -33,55 +43,56 @@ func NewRateLimiter() (RateLimiter, error) {
 	}
 
 	return &rateLimiter{
-		prefix: tokenBucketGlobablPrefix,
+		prefix: tokenBucketGlobalPrefix,
 		pool:   pool,
+		// 3 is the key count, keys are arguments passed to the lua script that will be used to get values from Redis KV.
+		getTokensScript:        *redis.NewScript(3, getTokensFromBucketLuaScript),
+		setReplenishmentScript: *redis.NewScript(3, setTokenBucketReplenishmentLuaScript),
 	}, err
 }
 
-func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, bucketName, bucketConfigKey string, tokensWanted int) (allowed bool, remianingTokens int, err error) {
-	bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey := r.getRateLimiterKeys(bucketName, bucketConfigKey)
-	result, err := redis.NewScript(3, getTokensFromBucketLuaScript).DoContext(ctx, r.pool.Get(), bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey, tokensWanted)
+func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, bucketName string, tokensWanted int) (allowed bool, remianingTokens int, err error) {
+	bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey := r.getRateLimiterKeys(bucketName)
+	result, err := r.getTokensScript.DoContext(ctx, r.pool.Get(), bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey, tokensWanted)
 	if err != nil {
-		return false, 0, errors.Wrapf(err, "error while getting tokens from bucket %s", bucketName)
+		return false, 0, errors.Wrapf(err, "error while getting tokens from bucket %s", bucketKey)
 	}
 
 	response, ok := result.([]interface{})
 	if !ok || len(response) != 2 {
-		return false, 0, errors.New("unexpected response from Lua script")
+		return false, 0, errors.Newf("unexpected response from Redis when getting tokens from bucket: %s, response: %+v", bucketKey, response)
 	}
 
-	allwd, ok := response[0].(int64)
+	allowedInt, ok := response[0].(int64)
 	if !ok {
-		return false, 0, errors.New("unexpected response for allowed")
-	} else if allwd == -2 {
-		// The config keys for the bucket don't exist
+		return false, 0, errors.Newf("unexpected response for allowed, expected int64 but got %T", allowedInt)
+	} else if allowedInt == -2 {
+		// -2 is a custom return from the script that we use to indicate that the config (at keys: bucketCapacityKey and bucketReplenishIntervalSecondsKey)
+		// for the specified bucket that we are trying to get tokens from doesn't exist in Redis.
 		return false, 0, &RateLimiterConfigNotCreatedError{tokenBucketKey: bucketKey}
 	}
 
 	remTokens, ok := response[1].(int64)
 	if !ok {
-		return false, 0, errors.New("unexpected response for tokens left")
+		return false, 0, errors.Newf("unexpected response for tokens left, expected int64, got %T", remTokens)
 	}
 
-	return allwd == 1, int(remTokens), nil
+	return allowedInt == 1, int(remTokens), nil
 }
 
-func (r *rateLimiter) SetTokenBucketReplenishment(ctx context.Context, bucketName, bucketConfigKey string, bucketCapacity, bucketReplenishRateSeconds int) error {
-	bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey := r.getRateLimiterKeys(bucketName, bucketConfigKey)
-	_, err := redis.NewScript(3, setTokenBucketReplenishmentLuaScript).DoContext(ctx, r.pool.Get(), bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey, bucketCapacity, bucketReplenishRateSeconds)
-	if err != nil {
-		return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", bucketName)
-	}
-	return nil
+func (r *rateLimiter) SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishRateSeconds int) error {
+	bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey := r.getRateLimiterKeys(bucketName)
+	_, err := r.setReplenishmentScript.DoContext(ctx, r.pool.Get(), bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey, bucketCapacity, bucketReplenishRateSeconds)
+	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", bucketName)
 }
 
-func (r *rateLimiter) getRateLimiterKeys(bucketName, bucketConfigKey string) (string, string, string) {
-	// i.e. v2:rate_limiters:github.com
+func (r *rateLimiter) getRateLimiterKeys(bucketName string) (string, string, string) {
+	// i.e. v2:rate_limiters:github.com:api_tokens
 	bucketKey := fmt.Sprintf("%s:%s", r.prefix, bucketName)
-	// i.e. v2:rate_limiters:github.com:config:api:bucket_capacit
-	bucketCapacity := fmt.Sprintf("%s:config:%s:%s", bucketKey, bucketConfigKey, bucketCapacityConfigKeySuffix)
-	// i.e. v2:rate_limiters:github.com:config:api:bucket_replenishment_interval_seconds
-	bucketReplenishIntervalSeconds := fmt.Sprintf("%s:config:%s:%s", bucketKey, bucketConfigKey, bucketReplenishmentConfigKeySuffix)
+	// i.e. v2:rate_limiters:github.com:api_tokens:config:bucket_capacity
+	bucketCapacity := fmt.Sprintf("%s:%s", bucketKey, bucketCapacityConfigKeySuffix)
+	// i.e. v2:rate_limiters:github.com:api_tokens:config:bucket_replenishment_interval_seconds
+	bucketReplenishIntervalSeconds := fmt.Sprintf("%s:%s", bucketKey, bucketReplenishmentConfigKeySuffix)
 	return bucketKey, bucketCapacity, bucketReplenishIntervalSeconds
 }
 
