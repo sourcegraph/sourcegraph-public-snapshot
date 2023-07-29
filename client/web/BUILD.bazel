@@ -8,18 +8,19 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
-# gazelle:js_resolve **/rbac/constants //client/web/src/rbac:constants.ts
 
 # Non-ts imports
 # gazelle:js_ignore_imports **/*.batch.yaml
 # gazelle:js_ignore_imports **/*.worker.ts
 # gazelle:js_ignore_imports **/SourcegraphWebApp.scss
+# gazelle:js_ignore_imports **/rbac/constants
 
 # Ignores added with update to Apsect CLI 5.5.2
 # TODO(bazel): remove these once the underlying bug with tsconfig paths is fixed
@@ -1839,7 +1840,6 @@ ts_project(
         "//:node_modules/uuid",
         "//:node_modules/yaml-ast-parser",
         "//:node_modules/zustand",
-        "//client/web/src/rbac:constants.ts",
         "//schema:schema-json",
     ],
 )
@@ -2020,7 +2020,6 @@ ts_project(
         "//:node_modules/wildcard-mock-link",
         "//:node_modules/zustand",
         "//client/shared:graphql_operations",
-        "//client/web/src/rbac:constants.ts",
     ],
 )
 
