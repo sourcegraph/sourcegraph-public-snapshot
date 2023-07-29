@@ -6,7 +6,6 @@ go_library(
     name = "rbac",
     srcs = [
         "constants.go",
-        "gen.go",
         "parser.go",
         "permission.go",
         "permissions.go",
@@ -85,4 +84,7 @@ write_generated_to_source_files(
     tags = ["go_generate"],
 )
 
-exports_files(["schema.yaml"], visibility=["//internal/rbac:__subpackages__"])
+exports_files(
+    ["schema.yaml"],
+    visibility = ["//internal/rbac:__subpackages__"],
+)
