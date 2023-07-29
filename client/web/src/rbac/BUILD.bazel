@@ -1,0 +1,12 @@
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
+
+exports_files(["constants.ts"])
+
+write_generated_to_source_files(
+    name = "write_generated",
+    src = "//internal/rbac:generate_constants",
+    files = ["internal/rbac/constants.ts"],
+    # have to strip the pkg prefix, since that is where the file is outputed in the bazel tree
+    strip_prefix = "internal/rbac/",
+    tags = ["go_generate"],
+)
