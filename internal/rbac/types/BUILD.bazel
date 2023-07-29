@@ -1,4 +1,5 @@
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 go_library(
     name = "types",
@@ -16,7 +17,7 @@ GENERATED_FILES = [
 ]
 
 genrule(
-    name = "generate_go_types",
+    name = "generate_go",
     srcs = [
         "//internal/rbac:schema.yaml",
     ],
@@ -40,8 +41,8 @@ genrule(
 )
 
 write_generated_to_source_files(
-    name = "write_generated_go",
-    src = ":generate_go_types",
+    name = "write_generated",
+    src = ":generate_go",
     files = GENERATED_FILES,
     tags = ["go_generate"],
 )

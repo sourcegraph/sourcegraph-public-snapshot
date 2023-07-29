@@ -84,3 +84,5 @@ write_generated_to_source_files(
     files = ["constants.go"],
     tags = ["go_generate"],
 )
+
+exports_files(["schema.yaml"], visibility=["//internal/rbac:__subpackages__"])
