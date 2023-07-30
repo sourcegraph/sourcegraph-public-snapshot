@@ -40,19 +40,23 @@ func Dot(a, b []int8) int32 {
 		panic("mismatched lengths")
 	}
 
-	// dotArch requires 64-byte chunks.
-	rem := len(a) % 64
-	blockA := a[:len(a)-rem]
-	blockB := b[:len(b)-rem]
+	if useWGPU {
+		return dotArch(a, b)
+	} else {
+		// dotArch requires 64-byte chunks.
+		rem := len(a) % 64
+		blockA := a[:len(a)-rem]
+		blockB := b[:len(b)-rem]
 
-	sum := dotArch(blockA, blockB)
+		sum := dotArch(blockA, blockB)
 
-	// add the remaining elements separately
-	for i := len(a) - rem; i < len(a); i++ {
-		sum += int32(a[i]) * int32(b[i])
+		// add the remaining elements separately
+		for i := len(a) - rem; i < len(a); i++ {
+			sum += int32(a[i]) * int32(b[i])
+		}
+
+		return sum
 	}
-
-	return sum
 }
 
 func DotFloat32(row []float32, query []float32) float32 {

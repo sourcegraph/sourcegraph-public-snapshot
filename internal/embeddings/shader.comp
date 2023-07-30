@@ -1,46 +1,80 @@
 #version 450 core
 
-layout (local_size_x = 4) in;
-layout(std430, binding = 0) readonly buffer Data {
-    int a[];
+// CUDA to GLSL magic constants:
+// ----------------------------------
+// CUDA      | GLSL                 |
+// ----------------------------------
+// blockIdx  | gl_WorkGroupID       |
+// blockDim  | gl_WorkGroupSize     |
+// threadIdx | gl_LocalInvocationID |
+// ----------------------------------
+
+// GLSL magic constants
+// gl_GlobalInovocationID: global among all workgroups
+//     = gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID
+// gl_LocalInvocationIndex: local within workgroup
+// gl_WorkGroupID: ID of current workgroup, useful for offsets within workgroup-shared data
+// gl_WorkGroupSize: size of workgroup, as defined in the below layout declaration
+
+layout (/* gl_WorkGroupSize.x */ local_size_x = 1024) in;
+
+layout(std430, binding = 0) /* readonly */ buffer A {
+    uint a[];
 };
 
-layout(std430, binding = 1) readonly buffer Data2 {
-    int b[];
+layout(std430, binding = 1) /* readonly */ buffer B {
+    uint b[];
 };
 
-layout(binding = 2) writeonly buffer Data3 {
-    int output;
+layout(binding = 2) writeonly buffer C {
+    int result;
 };
 
-ivec4 unpack(int data) {
-    return ivec4(
-        (data & 0xff),
-        (data >> 8) & 0xff,
-        (data >> 16) & 0xff,
-        (data >> 24) & 0xff
-    );
+// unpacks 4 twos-complement int8s from a uint
+ivec4 unpack(uint data) {
+  int a = int(data & 0xFF);
+  a = a - (a >> 7) * 256;
+
+  int b = int((data >> 8) & 0xFF);
+  b = b - (b >> 7) * 256;
+
+  int c = int((data >> 16) & 0xFF);
+  c = c - (c >> 7) * 256;
+
+  int d = int((data >> 24) & 0xFF);
+  d = d - (d >> 7) * 256;
+
+  return ivec4(a, b, c, d);
 }
 
-int pack(ivec4 data) {
-    int r = data.x;
-    int g = data.y;
-    int b = data.z;
-    int a = data.w;
-
-    return (a << 24) | (b << 16) | (g << 8) | r;
-}
-
-shared ivec4 reduce[16];
+shared int reduce[gl_WorkGroupSize.x];
+// shared ivec4 reduce[gl_WorkGroupSize.x];
 
 void main() {
     int id = ivec3(gl_GlobalInvocationID).x;
-    reduce[id] = unpack(a[id]) * unpack(b[id]);
+
+    if (id >= a.length()) return;
+    ivec4 mult = unpack(a[id]) * unpack(b[id]);
+    reduce[id] = mult.x + mult.y + mult.z + mult.w;
+    barrier();
+
     if (id == 0) {
         int acc = 0;
-        for (int i = 0; i < gl_NumWorkGroups.x; i++) {
-            acc += reduce[i].x + reduce[i].y + reduce[i].z + reduce[i].w;
+        for (int i = 0; i < a.length().x; i++) {
+            // acc += reduce[i].x + reduce[i].y + reduce[i].z + reduce[i].w;
+            acc += reduce[i];
         }
-        output = acc;
+        result = acc;
     }
+
+    // for (uint i = gl_WorkGroupSize.x / 4; i > 0; i >>= 1) {
+    //     if (gl_LocalInvocationID.x < i) {
+    //         reduce[gl_LocalInvocationID.x] += reduce[gl_LocalInvocationID.x + i];
+    //         // ivec4 partial = reduce[gl_LocalInvocationID.x];
+    //         // reduce[gl_LocalInvocationID.x] = partial + reduce[gl_LocalInvocationID.x + i]
+    //     }
+    //     barrier();
+    // }
+
+    // if (id == 0) result = reduce[0];
 }

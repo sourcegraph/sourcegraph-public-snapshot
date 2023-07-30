@@ -113,6 +113,8 @@ mkShell {
     (if hostPlatform.isLinux then bazel-fhs else bazel-wrapper)
     bazel-watcher
     bazel-buildtools
+
+    shaderc
   ];
 
   # Startup postgres, redis & set nixos specific stuff
