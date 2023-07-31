@@ -39,14 +39,14 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 	require.NoError(t, err)
 
 	// license can now be created
-	licensesStore := ps.NewDbLicense(db)
+	licensesStore := ps.NewDbLicenseStore(db)
 	licenseID, err := licensesStore.Create(ctx, subId, "12345", 5, license.Info{
 		UserCount: 3,
 		ExpiresAt: time.Now().Add(14 * 24 * time.Hour),
 	})
 	require.NoError(t, err)
 
-	checkerStore := userlimitchecker.NewUserLimitChecker(db)
+	checkerStore := userlimitchecker.NewUserLimitCheckerStore(db)
 	_, err = checkerStore.Create(ctx, licenseID, 1)
 	require.NoError(t, err)
 
@@ -152,7 +152,7 @@ func TestGetActiveLicense(t *testing.T) {
 	require.NoError(t, err)
 
 	// license can now be created
-	licensesStore := ps.NewDbLicense(db)
+	licensesStore := ps.NewDbLicenseStore(db)
 	licenseId, err := licensesStore.Create(ctx, subId, "12345", 5, license.Info{
 		UserCount: 3,
 		ExpiresAt: time.Now().Add(14 * 24 * time.Hour),
@@ -212,7 +212,7 @@ func TestUserCountIncreased(t *testing.T) {
 	}
 }
 
-func TestGetPercentage(t *testing.T) {
+func TestCalculateUsagePercentage(t *testing.T) {
 	cases := []struct {
 		expected  int
 		userCount int
@@ -232,7 +232,7 @@ func TestGetPercentage(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run("should calculate correct percentage", func(t *testing.T) {
-			actual := getPercentage(tc.userCount, tc.userLimit)
+			actual := calculateUsagePercentage(tc.userCount, tc.userLimit)
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
@@ -253,7 +253,7 @@ func TestGetLicenseUserLimit(t *testing.T) {
 	subId, err := subStore.Create(ctx, user.ID, user.Username)
 	require.NoError(t, err)
 
-	licensesStore := ps.NewDbLicense(db)
+	licensesStore := ps.NewDbLicenseStore(db)
 	for _, license := range licensesToCreate {
 		_, err = licensesStore.Create(
 			ctx,

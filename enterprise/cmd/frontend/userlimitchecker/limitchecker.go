@@ -2,12 +2,12 @@ package userlimitchecker
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	ps "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/productsubscription"
 	lc "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/dotcom/userlimitchecker"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
@@ -17,13 +17,15 @@ import (
 
 // send email to site admins if approaching user limit on active license
 func SendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
+	logger := log.Scoped(LC_LOGGER_SCOPE, LC_LOGGER_DESC)
+
 	licenseID, err := getActiveLicense(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, ACTIVE_LICENSE_ERR)
 	}
 
-	checkerStore := lc.NewUserLimitChecker(db)
-	c, err := checkerStore.GetByLicenseID(ctx, licenseID)
+	checkerStore := lc.NewUserLimitCheckerStore(db)
+	checker, err := checkerStore.GetByLicenseID(ctx, licenseID)
 	if err != nil {
 		return errors.Wrap(err, ACTIVE_CHECKER_ERR)
 	}
@@ -39,12 +41,13 @@ func SendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	}
 
 	if userCountWithinLimit(userCount, userLimit) {
-		fmt.Println(WITHIN_LIMIT_MSG)
+		logger.Info(WITHIN_LIMIT_MSG)
 		return nil
 	}
 
-	if emailRecentlySent(c.UserCountAlertSentAt) && !userCountIncreased(userCount, c.UserCountWhenEmailLastSent) {
-		fmt.Println(EMAIL_RECENTLY_SENT_MSG)
+	// if an email was recently sent and the userCount has not increased since the last email, do not alert
+	if emailRecentlySent(checker.UserCountAlertSentAt) && !userCountIncreased(userCount, checker.UserCountWhenEmailLastSent) {
+		logger.Info(EMAIL_RECENTLY_SENT_MSG)
 		return nil
 	}
 
@@ -56,7 +59,7 @@ func SendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	messageId := "approaching_user_limit"
 	replyTo := "support@sourcegraph.com"
 
-	if err := internalapi.Client.SendEmail(ctx, "approaching_user_limit", txemail.Message{
+	if err := internalapi.Client.SendEmail(ctx, messageId, txemail.Message{
 		To:        siteAdminEmails,
 		Template:  approachingUserLimitEmailTemplate,
 		MessageID: &messageId,
@@ -66,18 +69,18 @@ func SendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 			Percent        int
 		}{
 			RemainingUsers: userLimit - userCount,
-			Percent:        getPercentage(userCount, userLimit),
+			Percent:        calculateUsagePercentage(userCount, userLimit),
 		},
 	}); err != nil {
 		return errors.Wrap(err, EMAIL_SEND_ERR)
 	}
 
-	updateLicenseUserLimitCheckerFields(ctx, db, c.ID)
+	updateLicenseUserLimitCheckerFields(ctx, db, checker.ID)
 	return nil
 }
 
 func getActiveLicense(ctx context.Context, db database.DB) (string, error) {
-	licenseStore := ps.NewDbLicense(db)
+	licenseStore := ps.NewDbLicenseStore(db)
 	licenses, err := licenseStore.List(ctx, ps.DbLicencesListNoOpt())
 	if err != nil {
 		return "", errors.Wrap(err, LICENSES_ERR)
@@ -93,8 +96,8 @@ func getActiveLicense(ctx context.Context, db database.DB) (string, error) {
 }
 
 func userCountWithinLimit(count int, limit int) bool {
-	limitUsed := getPercentage(count, limit)
-	if limitUsed < 90 && count <= limit-2 {
+	limitUsed := calculateUsagePercentage(count, limit)
+	if limitUsed < NINETY_PERCENT && count <= limit-2 {
 		return true
 	}
 	return false
@@ -109,7 +112,7 @@ func emailRecentlySent(lastSent *time.Time) bool {
 		return false
 	}
 	now := time.Now()
-	return now.Before(lastSent.Add(7 * 24 * time.Hour))
+	return now.Before(lastSent.Add(ONE_WEEK))
 }
 
 func updateLicenseUserLimitCheckerFields(ctx context.Context, db database.DB, checkerId string) error {
@@ -118,7 +121,7 @@ func updateLicenseUserLimitCheckerFields(ctx context.Context, db database.DB, ch
 		return errors.Wrap(err, USER_COUNT_ERR)
 	}
 
-	checkerStore := lc.NewUserLimitChecker(db)
+	checkerStore := lc.NewUserLimitCheckerStore(db)
 	err = checkerStore.Update(ctx, checkerId, currentUserCount)
 	if err != nil {
 		return errors.Wrap(err, USER_LIMIT_ERR)
@@ -126,7 +129,7 @@ func updateLicenseUserLimitCheckerFields(ctx context.Context, db database.DB, ch
 	return nil
 }
 
-func getPercentage(userCount, userLimit int) int {
+func calculateUsagePercentage(userCount, userLimit int) int {
 	if userCount == 0 {
 		return 0
 	}
@@ -146,7 +149,7 @@ func getUserCount(ctx context.Context, db database.DB) (int, error) {
 }
 
 func getLicenseUserLimit(ctx context.Context, db database.DB) (int, error) {
-	licenses, err := ps.NewDbLicense(db).List(ctx, ps.DbLicencesListNoOpt())
+	licenses, err := ps.NewDbLicenseStore(db).List(ctx, ps.DbLicencesListNoOpt())
 	if err != nil {
 		return 0, errors.Wrap(err, LICENSES_ERR)
 	}

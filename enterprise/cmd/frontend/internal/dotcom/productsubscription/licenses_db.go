@@ -35,7 +35,7 @@ type dbLicense struct {
 	SalesforceOpportunityID  *string
 }
 
-func NewDbLicense(db database.DB) dbLicenses {
+func NewDbLicenseStore(db database.DB) dbLicenses {
 	return dbLicenses{db: db}
 }
 

@@ -25,7 +25,7 @@ type dbUserLimitCheckers struct {
 	db database.DB
 }
 
-func NewUserLimitChecker(db database.DB) dbUserLimitCheckers {
+func NewUserLimitCheckerStore(db database.DB) dbUserLimitCheckers {
 	return dbUserLimitCheckers{db: db}
 }
 

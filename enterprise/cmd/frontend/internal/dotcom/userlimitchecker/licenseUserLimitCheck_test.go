@@ -42,14 +42,14 @@ func TestCreate(t *testing.T) {
 	require.NoError(t, err)
 
 	// create license
-	licensesStore := ps.NewDbLicense(db)
+	licensesStore := ps.NewDbLicenseStore(db)
 	licenseId, err := licensesStore.Create(ctx, subId, "12345", 5, license.Info{
 		UserCount: 2,
 		ExpiresAt: time.Now().Add(14 * 24 * time.Hour),
 	})
 	require.NoError(t, err)
 
-	checkerStore := NewUserLimitChecker(db)
+	checkerStore := NewUserLimitCheckerStore(db)
 	checkerId, err := checkerStore.Create(ctx, licenseId, 20)
 	require.NoError(t, err)
 	assert.NotNil(t, checkerId)
@@ -82,14 +82,14 @@ func TestGetByLicenseID(t *testing.T) {
 	require.NoError(t, err)
 
 	// create license
-	licensesStore := ps.NewDbLicense(db)
+	licensesStore := ps.NewDbLicenseStore(db)
 	licenseId, err := licensesStore.Create(ctx, subId, "12345", 5, license.Info{
 		UserCount: 20,
 		ExpiresAt: time.Now().Add(14 * 24 * time.Hour),
 	})
 	require.NoError(t, err)
 
-	checkerStore := NewUserLimitChecker(db)
+	checkerStore := NewUserLimitCheckerStore(db)
 	checkerId, err := checkerStore.Create(ctx, licenseId, 20)
 	require.NoError(t, err)
 
