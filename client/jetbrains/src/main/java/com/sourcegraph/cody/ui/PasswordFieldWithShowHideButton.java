@@ -22,7 +22,11 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
   // A function that retrieves the current password from storage.
   private final Supplier<String> passwordLoader;
 
-  public PasswordFieldWithShowHideButton(@NotNull JBPasswordField passwordField, Supplier<String> passwordLoader, int placeholderLength) {
+  public PasswordFieldWithShowHideButton(@NotNull JBPasswordField passwordField, Supplier<String> passwordLoader) {
+    this(passwordField, passwordLoader, 40);
+  }
+
+  private PasswordFieldWithShowHideButton(@NotNull JBPasswordField passwordField, Supplier<String> passwordLoader, int placeholderLength) {
     super(passwordField);
     this.passwordField = passwordField;
     this.echoChar = passwordField.getEchoChar();
