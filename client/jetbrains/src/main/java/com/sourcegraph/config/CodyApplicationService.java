@@ -18,12 +18,14 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public String instanceType;
   @Nullable public String url;
 
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
   @Deprecated(since = "3.0.7", forRemoval = true)
   @Nullable
   public String dotComAccessToken;
 
   public boolean isDotComAccessTokenSet;
 
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
   @Deprecated(since = "3.0.7", forRemoval = true)
   @Nullable
   public String enterpriseAccessToken;
@@ -36,6 +38,7 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
 
+  // Use isCodyAutoCompleteEnabled instead. Remove this after 2024-01-01.
   @Deprecated(since = "3.0.4")
   @Nullable
   public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility

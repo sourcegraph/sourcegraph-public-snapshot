@@ -10,6 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class AccessTokenStorage {
+  private static String cachedEnterpriseAccessToken = null;
+  private static String cachedDotComAccessToken = null;
 
   private static final List<String> enterpriseAccessTokenKeyParts =
       List.of("accessToken", "enterprise");
@@ -18,20 +20,32 @@ public class AccessTokenStorage {
 
   @NotNull
   public static Optional<String> getEnterpriseAccessToken() {
-    return getApplicationLevelSecureConfig(enterpriseAccessTokenKeyParts);
+    if (cachedEnterpriseAccessToken != null) {
+      return Optional.of(cachedEnterpriseAccessToken);
+    }
+    Optional<String> token = getApplicationLevelSecureConfig(enterpriseAccessTokenKeyParts);
+    token.ifPresent(t -> cachedEnterpriseAccessToken = t);
+    return token;
   }
 
   public static void setApplicationEnterpriseAccessToken(@NotNull String accessToken) {
     setApplicationLevelSecureConfig(enterpriseAccessTokenKeyParts, accessToken);
+    cachedEnterpriseAccessToken = accessToken;
   }
 
   @NotNull
   public static Optional<String> getDotComAccessToken() {
-    return getApplicationLevelSecureConfig(dotComAccessTokenKeyParts);
+    if (cachedDotComAccessToken != null) {
+      return Optional.of(cachedDotComAccessToken);
+    }
+    Optional<String> token = getApplicationLevelSecureConfig(dotComAccessTokenKeyParts);
+    token.ifPresent(t -> cachedDotComAccessToken = t);
+    return token;
   }
 
   public static void setApplicationDotComAccessToken(@NotNull String accessToken) {
     setApplicationLevelSecureConfig(dotComAccessTokenKeyParts, accessToken);
+    cachedDotComAccessToken = accessToken;
   }
 
   @NotNull
