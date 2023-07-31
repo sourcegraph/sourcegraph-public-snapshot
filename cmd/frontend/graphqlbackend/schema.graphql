@@ -3730,6 +3730,10 @@ type Repository implements Node & GenericSearchResultInterface {
         Returns the first n external services from the list.
         """
         first: Int
+        """
+        If true, only external service IDs are returned, without querying the database.
+        """
+        onlyID: Boolean = false
     ): ExternalServiceConnection!
     """
     Whether the repository is currently being cloned.
