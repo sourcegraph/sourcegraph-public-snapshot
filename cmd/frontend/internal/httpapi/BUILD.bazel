@@ -54,7 +54,6 @@ go_library(
         "//internal/gitserver",
         "//internal/gitserver/gitdomain",
         "//internal/httpcli",
-        "//internal/jsonc",
         "//internal/repoupdater",
         "//internal/search",
         "//internal/search/backend",

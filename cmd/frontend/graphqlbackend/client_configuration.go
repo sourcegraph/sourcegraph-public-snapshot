@@ -6,6 +6,10 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type clientConfigurationResolver struct {
@@ -30,48 +34,47 @@ func (r *parentSourcegraphResolver) URL() string {
 }
 
 func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfigurationResolver, error) {
-	cfg := conf.Get()
+	services, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		Kinds: []string{
+			extsvc.KindGitHub,
+			extsvc.KindBitbucketServer,
+			extsvc.KindGitLab,
+			extsvc.KindPhabricator,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
 
-	// The following code makes serial database calls.
-	// Ideally these could be done in parallel, but the table is small
-	// and I don't think real world perf is going to be bad.
-
-	// TODO: This could become an issue once we have a large number of external services. At that point
-	// we can update the code below to instead extract the URL's in one SQL query.
-
-	// We could have multiple services with the same URL so we dedupe them
 	urlMap := make(map[string]struct{})
-
-	githubs, err := conf.GitHubConfigs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, gh := range githubs {
-		urlMap[gh.Url] = struct{}{}
-	}
-
-	bitbucketservers, err := conf.BitbucketServerConfigs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, bb := range bitbucketservers {
-		urlMap[bb.Url] = struct{}{}
-	}
-
-	gitlabs, err := conf.GitLabConfigs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, gl := range gitlabs {
-		urlMap[gl.Url] = struct{}{}
-	}
-
-	phabricators, err := conf.PhabricatorConfigs(ctx)
-	if err != nil {
-		return nil, err
-	}
-	for _, ph := range phabricators {
-		urlMap[ph.Url] = struct{}{}
+	for _, service := range services {
+		rawConfig, err := service.Config.Decrypt(ctx)
+		if err != nil {
+			return nil, err
+		}
+		var url string
+		switch service.Kind {
+		case extsvc.KindGitHub:
+			var ghConfig schema.GitHubConnection
+			err = jsonc.Unmarshal(rawConfig, &ghConfig)
+			url = ghConfig.Url
+		case extsvc.KindBitbucketServer:
+			var bbsConfig schema.BitbucketServerConnection
+			err = jsonc.Unmarshal(rawConfig, &bbsConfig)
+			url = bbsConfig.Url
+		case extsvc.KindGitLab:
+			var glConfig schema.GitLabConnection
+			err = jsonc.Unmarshal(rawConfig, &glConfig)
+			url = glConfig.Url
+		case extsvc.KindPhabricator:
+			var phConfig schema.PhabricatorConnection
+			err = jsonc.Unmarshal(rawConfig, &phConfig)
+			url = phConfig.Url
+		}
+		if err != nil {
+			return nil, err
+		}
+		urlMap[url] = struct{}{}
 	}
 
 	contentScriptUrls := make([]string, 0, len(urlMap))
@@ -79,6 +82,7 @@ func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfig
 		contentScriptUrls = append(contentScriptUrls, k)
 	}
 
+	cfg := conf.Get()
 	var parentSourcegraph parentSourcegraphResolver
 	if cfg.ParentSourcegraph != nil {
 		parentSourcegraph.url = cfg.ParentSourcegraph.Url
