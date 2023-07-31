@@ -12,6 +12,11 @@ export const enterpriseRepoSettingsSidebarGroups: RepoSettingsSideBarGroups =
                     items: [
                         ...group.items,
                         {
+                            to: '/logs',
+                            exact: true,
+                            label: 'Logs',
+                        },
+                        {
                             to: '/permissions',
                             exact: true,
                             label: 'Permissions',

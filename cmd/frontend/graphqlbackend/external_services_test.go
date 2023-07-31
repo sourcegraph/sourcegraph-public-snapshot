@@ -622,7 +622,7 @@ func TestExternalServices(t *testing.T) {
 
 	externalServices := database.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-		if opt.AfterID > 0 {
+		if opt.AfterID > 0 || opt.RepoID == 42 {
 			return []*types.ExternalService{
 				{ID: 4, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindAWSCodeCommit},
 				{ID: 5, Config: extsvc.NewEmptyConfig(), Kind: extsvc.KindGerrit},
@@ -690,6 +690,29 @@ func TestExternalServices(t *testing.T) {
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjE="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjI="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjM="},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
+						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
+                    ]
+                }
+			}
+		`,
+		},
+		{
+			Schema: mustParseGraphQLSchema(t, db),
+			Label:  "Read all external services for a given repo",
+			Query: fmt.Sprintf(`
+			{
+				externalServices(repoID: "%s") {
+					nodes {
+						id
+					}
+				}
+			}
+		`, MarshalRepositoryID(42)),
+			ExpectedResult: `
+			{
+				"externalServices": {
+					"nodes": [
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjQ="},
 						{"id":"RXh0ZXJuYWxTZXJ2aWNlOjU="}
                     ]
