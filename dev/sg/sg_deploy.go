@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path"
 	"text/template"
 
 	"github.com/urfave/cli/v2"
@@ -68,14 +69,12 @@ dns: dave-app.sgdev.org
 	Before: func(c *cli.Context) error {
 		if dryRun && infraRepo != "" {
 			return errors.New("cannot specify both --infra-repo and --dry-run")
-		} else if !dryRun && infraRepo == "" {
-			return errors.New("Please specify the location of the sourcegraph/infrastructure repository with --infra-repo")
 		}
 
 		return nil
 	},
 	Action: func(c *cli.Context) error {
-		err := generateConfig(c.String("values"), c.Bool("dry-run"), infraRepo)
+		err := generateConfig(valuesFile, dryRun, infraRepo)
 		if err != nil {
 			return errors.Wrap(err, "generate manifest")
 		}
@@ -222,23 +221,31 @@ func generateConfig(valuesFile string, dryRun bool, path string) error {
 	return nil
 }
 
-func WriteDnsConfig(values Values, dryRun bool, path string) error {
+func WriteDnsConfig(values Values, dryRun bool, dest string) error {
 	var dnsOutput *os.File
 	var dnsPath string
+	var err error
 	if dryRun {
 		dnsOutput = os.Stdout
-	} else {
+	} else if dest != "" {
 		var err error
-		dnsPath = fmt.Sprintf("%s/dns/%s.sgdev.tf", path, values.Name)
+		dnsPath = path.Join(dest, "dns/", fmt.Sprintf("%s.sgdev.tf", values.Name))
 		dnsOutput, err = os.Create(dnsPath)
 		if err != nil {
 			return errors.Wrap(err, "create file")
 		}
-		std.Out.WriteSuccessf("Created %s", dnsPath)
+		std.Out.WriteSuccessf("Created %s", dnsOutput.Name())
+		defer dnsOutput.Close()
+	} else {
+		dnsOutput, err = os.Create(fmt.Sprintf("%s.sgdev.tf", values.Name))
+		if err != nil {
+			return errors.Wrap(err, "create file")
+		}
 		defer dnsOutput.Close()
 	}
+
 	t := template.Must(template.New("dns").Parse(dnsTemplate))
-	err := t.Execute(dnsOutput, &values)
+	err = t.Execute(dnsOutput, &values)
 	if err != nil {
 		return errors.Wrap(err, "execute dns template")
 	}
@@ -248,13 +255,15 @@ func WriteDnsConfig(values Values, dryRun bool, path string) error {
 	return nil
 }
 
-func WriteK8sConfig(values Values, dryRun bool, path string) error {
+func WriteK8sConfig(values Values, dryRun bool, dest string) error {
 	var k8sOutput *os.File
+	var k8sPath string
+	var err error
 	if dryRun {
 		k8sOutput = os.Stdout
-	} else {
+	} else if dest != "" {
 		var err error
-		k8sPath := fmt.Sprintf("%s/dogfood/kubernetes/tooling/%s", path, values.Name)
+		k8sPath = path.Join(dest, "dogfood/kubernetes/tooling/", values.Name)
 		err = os.MkdirAll(k8sPath, 0755)
 		if err != nil {
 			return errors.Wrap(err, "create app directory")
@@ -265,10 +274,15 @@ func WriteK8sConfig(values Values, dryRun bool, path string) error {
 			return errors.Wrap(err, "create app file")
 		}
 		defer k8sOutput.Close()
+	} else {
+		k8sOutput, err = os.Create(fmt.Sprintf("%s.yaml", values.Name))
+		if err != nil {
+			return errors.Wrap(err, "create app file")
+		}
 	}
 
 	t := template.Must(template.New("k8s").Parse(k8sTemplate))
-	err := t.Execute(k8sOutput, &values)
+	err = t.Execute(k8sOutput, &values)
 	if err != nil {
 		return errors.Wrap(err, "execute k8s template")
 	}
