@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -92,36 +91,4 @@ func namespaceURL(orgID int32, namespaceName string) string {
 	}
 
 	return prefix + namespaceName
-}
-
-type InternalClient interface {
-	ExternalURL(context.Context) (string, error)
-}
-
-// internalClient is here for mocking reasons.
-var internalClient InternalClient = internalapi.Client
-
-func MockInternalClient(mock InternalClient) {
-	internalClient = mock
-}
-
-func MockInternalClientError(err error) {
-	internalClient = &mockInternalClient{err: err}
-}
-
-func MockInternalClientExternalURL(url string) {
-	internalClient = &mockInternalClient{externalURL: url}
-}
-
-func ResetInternalClient() {
-	internalClient = internalapi.Client
-}
-
-type mockInternalClient struct {
-	externalURL string
-	err         error
-}
-
-func (c *mockInternalClient) ExternalURL(ctx context.Context) (string, error) {
-	return c.externalURL, c.err
 }
