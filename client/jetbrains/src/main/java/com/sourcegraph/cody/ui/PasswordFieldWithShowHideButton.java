@@ -1,7 +1,6 @@
 package com.sourcegraph.cody.ui;
 
 import com.intellij.icons.AllIcons;
-import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBPasswordField;
 import com.sourcegraph.cody.Icons;
 import java.awt.event.ActionListener;

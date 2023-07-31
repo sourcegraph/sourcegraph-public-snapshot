@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Supplier;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -83,19 +82,19 @@ public class ConfigUtil {
   public static String getEnterpriseUrl(@NotNull Project project) {
     // Project level
     String projectLevelUrl = getProjectLevelConfig(project).getSourcegraphUrl();
-    if (projectLevelUrl != null && projectLevelUrl.length() > 0) {
+    if (projectLevelUrl != null && !projectLevelUrl.isEmpty()) {
       return addSlashIfNeeded(projectLevelUrl);
     }
 
     // Application level
     String applicationLevelUrl = getApplicationLevelConfig().getSourcegraphUrl();
-    if (applicationLevelUrl != null && applicationLevelUrl.length() > 0) {
+    if (applicationLevelUrl != null && !applicationLevelUrl.isEmpty()) {
       return addSlashIfNeeded(applicationLevelUrl);
     }
 
     // User level or default
     String userLevelUrl = UserLevelConfig.getSourcegraphUrl();
-    return !userLevelUrl.equals("") ? addSlashIfNeeded(userLevelUrl) : "";
+    return !userLevelUrl.isEmpty() ? addSlashIfNeeded(userLevelUrl) : "";
   }
 
   public static Map<String, String> getCustomRequestHeadersAsMap(@NotNull Project project) {
@@ -112,7 +111,7 @@ public class ConfigUtil {
     // Project level
     String projectLevelCustomRequestHeaders =
         getProjectLevelConfig(project).getCustomRequestHeaders();
-    if (projectLevelCustomRequestHeaders != null && projectLevelCustomRequestHeaders.length() > 0) {
+    if (projectLevelCustomRequestHeaders != null && !projectLevelCustomRequestHeaders.isEmpty()) {
       return projectLevelCustomRequestHeaders;
     }
 
@@ -120,7 +119,7 @@ public class ConfigUtil {
     String applicationLevelCustomRequestHeaders =
         getApplicationLevelConfig().getCustomRequestHeaders();
     if (applicationLevelCustomRequestHeaders != null
-        && applicationLevelCustomRequestHeaders.length() > 0) {
+        && !applicationLevelCustomRequestHeaders.isEmpty()) {
       return applicationLevelCustomRequestHeaders;
     }
 
@@ -132,14 +131,14 @@ public class ConfigUtil {
   public static String getDefaultBranchName(@NotNull Project project) {
     // Project level
     String projectLevelDefaultBranchName = getProjectLevelConfig(project).getDefaultBranchName();
-    if (projectLevelDefaultBranchName != null && projectLevelDefaultBranchName.length() > 0) {
+    if (projectLevelDefaultBranchName != null && !projectLevelDefaultBranchName.isEmpty()) {
       return projectLevelDefaultBranchName;
     }
 
     // Application level
     String applicationLevelDefaultBranchName = getApplicationLevelConfig().getDefaultBranchName();
     if (applicationLevelDefaultBranchName != null
-        && applicationLevelDefaultBranchName.length() > 0) {
+        && !applicationLevelDefaultBranchName.isEmpty()) {
       return applicationLevelDefaultBranchName;
     }
 
@@ -152,13 +151,13 @@ public class ConfigUtil {
   public static String getRemoteUrlReplacements(@NotNull Project project) {
     // Project level
     String projectLevelReplacements = getProjectLevelConfig(project).getRemoteUrlReplacements();
-    if (projectLevelReplacements != null && projectLevelReplacements.length() > 0) {
+    if (projectLevelReplacements != null && !projectLevelReplacements.isEmpty()) {
       return projectLevelReplacements;
     }
 
     // Application level
     String applicationLevelReplacements = getApplicationLevelConfig().getRemoteUrlReplacements();
-    if (applicationLevelReplacements != null && applicationLevelReplacements.length() > 0) {
+    if (applicationLevelReplacements != null && !applicationLevelReplacements.isEmpty()) {
       return applicationLevelReplacements;
     }
 
@@ -345,15 +344,5 @@ public class ConfigUtil {
       getApplicationLevelConfig().dotComAccessToken = null;
     }
     return unsafeApplicationLevelAccessToken;
-  }
-
-  public static boolean isDotComAccessTokenSet(Project project) {
-    return getProjectLevelConfig(project).getDotComAccessToken() != null
-        || getApplicationLevelConfig().isDotComAccessTokenSet;
-  }
-
-  public static boolean isEnterpriseAccessTokenSet(Project project) {
-    return getProjectLevelConfig(project).getEnterpriseAccessToken() != null
-        || getApplicationLevelConfig().isEnterpriseAccessTokenSet;
   }
 }
