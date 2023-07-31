@@ -18,8 +18,9 @@ public class AccessTokenStorage {
 
   private static final List<String> dotComAccessTokenKeyParts = List.of("accessToken", "dotcom");
 
+  // Empty string means empty or no token. No value means user denied access to token.
   @NotNull
-  public static Optional<String> getEnterpriseAccessToken() throws AccessDeniedException {
+  public static Optional<String> getEnterpriseAccessToken() {
     if (cachedEnterpriseAccessToken != null) {
       return Optional.of(cachedEnterpriseAccessToken);
     }
@@ -33,8 +34,9 @@ public class AccessTokenStorage {
     cachedEnterpriseAccessToken = accessToken;
   }
 
+  // Empty string means empty or no token. No value means user denied access to token.
   @NotNull
-  public static Optional<String> getDotComAccessToken() throws AccessDeniedException {
+  public static Optional<String> getDotComAccessToken() {
     if (cachedDotComAccessToken != null) {
       return Optional.of(cachedDotComAccessToken);
     }
@@ -48,17 +50,18 @@ public class AccessTokenStorage {
     cachedDotComAccessToken = accessToken;
   }
 
+  // Empty string means empty or no password. No value means user denied access to password.
   @NotNull
-  private static Optional<String> getApplicationLevelSecureConfig(@NotNull List<String> keyParts) throws AccessDeniedException {
+  private static Optional<String> getApplicationLevelSecureConfig(@NotNull List<String> keyParts) {
     CredentialAttributes credentialAttributes = createCredentialAttributes(createKey(keyParts));
     Credentials credentials = PasswordSafe.getInstance().get(credentialAttributes);
     // No credentials found
     if (credentials == null) {
-      return Optional.empty();
+      return Optional.of("");
     }
     String password = credentials.getPasswordAsString();
     if (password == null) { // User denied access to password
-      throw new AccessDeniedException("User denied access to password.");
+      return Optional.empty();
     }
     return Optional.of(password);
   }

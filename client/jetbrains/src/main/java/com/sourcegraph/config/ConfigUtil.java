@@ -280,18 +280,20 @@ public class ConfigUtil {
     return System.getProperty("user.home");
   }
 
+  // Null means user denied access to token storage. Empty string means no token found.
   @Nullable
   public static String getProjectAccessToken(@NotNull Project project) {
     SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
     if (instanceType == SettingsComponent.InstanceType.ENTERPRISE) {
-      return getEnterpriseAccessToken(project);
+        return getEnterpriseAccessToken(project);
     } else if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
-      return LocalAppManager.getLocalAppAccessToken().orElse(null);
+      return LocalAppManager.getLocalAppAccessToken().orElse("");
     } else {
       return getDotComAccessToken(project);
     }
   }
 
+  // Null means user denied access to token storage. Empty string means no token found.
   @Nullable
   public static String getEnterpriseAccessToken(Project project) {
     // Project level overrides secure storage
@@ -300,27 +302,25 @@ public class ConfigUtil {
       return unsafeProjectLevelAccessToken;
     }
 
-    try {
-      // Get token from secure storage
-      Optional<String> securelyStoredAccessToken = AccessTokenStorage.getEnterpriseAccessToken();
-      if (securelyStoredAccessToken.isPresent()) {
-        return securelyStoredAccessToken.get();
-      }
-
-      // No secure token found, so use app-level token and migrate it to secure storage.
-      String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().enterpriseAccessToken;
-      if (unsafeApplicationLevelAccessToken != null) {
-        AccessTokenStorage.setApplicationEnterpriseAccessToken(unsafeApplicationLevelAccessToken);
-        getApplicationLevelConfig().enterpriseAccessToken = null;
-      }
-      return unsafeApplicationLevelAccessToken;
-
-    } catch (AccessDeniedException e) {
-      // The user denied access to secure storage. Can't do anything about it, return null.
-      return null;
+    // Get token from secure storage
+    Optional<String> securelyStoredAccessToken = AccessTokenStorage.getEnterpriseAccessToken();
+    if (securelyStoredAccessToken.isEmpty()) {
+      return null; // Uer denied access to token storage
     }
+    if (!securelyStoredAccessToken.get().isEmpty()) {
+      return securelyStoredAccessToken.get();
+    }
+
+    // No secure token found, so use app-level token and migrate it to secure storage.
+    String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().enterpriseAccessToken;
+    if (unsafeApplicationLevelAccessToken != null) {
+      AccessTokenStorage.setApplicationEnterpriseAccessToken(unsafeApplicationLevelAccessToken);
+      getApplicationLevelConfig().enterpriseAccessToken = null;
+    }
+    return unsafeApplicationLevelAccessToken != null ? unsafeApplicationLevelAccessToken : "";
   }
 
+  // Null means user denied access to token storage. Empty string means no token found.
   @Nullable
   public static String getDotComAccessToken(@NotNull Project project) {
     // Project level overrides secure storage
@@ -329,25 +329,22 @@ public class ConfigUtil {
       return projectLevelAccessToken;
     }
 
-    try {
-      // Get token from secure storage
-      Optional<String> securelyStoredAccessToken = AccessTokenStorage.getDotComAccessToken();
-      if (securelyStoredAccessToken.isPresent()) {
-        return securelyStoredAccessToken.get();
-      }
-
-      // No secure token found, so use app-level token and migrate it to secure storage.
-      String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().dotComAccessToken;
-      if (unsafeApplicationLevelAccessToken != null) {
-        AccessTokenStorage.setApplicationDotComAccessToken(unsafeApplicationLevelAccessToken);
-        getApplicationLevelConfig().dotComAccessToken = null;
-      }
-      return unsafeApplicationLevelAccessToken;
-
-    } catch (AccessDeniedException e) {
-      // The user denied access to secure storage. Can't do anything about it, return null.
-      return null;
+    // Get token from secure storage
+    Optional<String> securelyStoredAccessToken = AccessTokenStorage.getDotComAccessToken();
+    if (securelyStoredAccessToken.isEmpty()) {
+      return null; // Uer denied access to token storage
     }
+    if (!securelyStoredAccessToken.get().isEmpty()) {
+      return securelyStoredAccessToken.get();
+    }
+
+    // No secure token found, so use app-level token and migrate it to secure storage.
+    String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().dotComAccessToken;
+    if (unsafeApplicationLevelAccessToken != null) {
+      AccessTokenStorage.setApplicationDotComAccessToken(unsafeApplicationLevelAccessToken);
+      getApplicationLevelConfig().dotComAccessToken = null;
+    }
+    return unsafeApplicationLevelAccessToken;
   }
 
   public static boolean isDotComAccessTokenSet(Project project) {

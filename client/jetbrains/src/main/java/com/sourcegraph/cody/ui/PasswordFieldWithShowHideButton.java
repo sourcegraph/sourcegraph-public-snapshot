@@ -1,6 +1,7 @@
 package com.sourcegraph.cody.ui;
 
 import com.intellij.icons.AllIcons;
+import com.intellij.ui.JBColor;
 import com.intellij.ui.components.JBPasswordField;
 import com.sourcegraph.cody.Icons;
 import java.awt.event.ActionListener;
@@ -21,6 +22,7 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
   private boolean passwordLoaded = false;
   private boolean passwordVisible = false;
   private boolean passwordChanged = false;
+  private boolean errorState = false;
   @NotNull
   private final JBPasswordField passwordField;
 
@@ -93,7 +95,23 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
     passwordChanged = false;
     passwordVisible = false;
     passwordLoaded = false;
+    setErrorState(false);
     update();
+  }
+
+  @Override
+  public void setEnabled(boolean enabled) {
+    if (!errorState) {
+      super.setEnabled(enabled);
+    }
+  }
+
+  private void setErrorState(boolean errorState) {
+    this.errorState = errorState;
+    if (errorState) {
+      passwordField.setText("Access was denied to secure storage.");
+      setEnabled(false);
+    }
   }
 
   /**
@@ -105,8 +123,13 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
     setButtonIcon(passwordVisible ? AllIcons.Actions.Show : Icons.Actions.Hide);
     if (!passwordLoaded) {
       if (passwordVisible) {
-        passwordField.setText(passwordLoader.get());
-        passwordLoaded = true;
+        String storedPassword = passwordLoader.get();
+        if (storedPassword != null) {
+          passwordField.setText(storedPassword);
+          passwordLoaded = true;
+        } else {
+          setErrorState(true);
+        }
       } else {
         passwordField.setText(placeholder);
       }
@@ -128,7 +151,7 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
         .orElse("");
     // Known edge case: if the user's password is exactly the placeholder, we will think there's no password.
     // We won't fix it because we currently only use the component for access tokens where this is not a problem.
-    return password.equals(placeholder) ? null : password;
+    return password.equals(placeholder) || errorState ? null : password;
   }
 
   @NotNull
