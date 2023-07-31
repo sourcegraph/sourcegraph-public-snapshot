@@ -78,7 +78,7 @@ type Values struct {
 	Dns string
 }
 
-var k8sTemplate = `# This file is geneated by sg deploy.
+var k8sTemplate = `# This file was geneated by sg deploy.
 
 apiVersion: apps/v1
 kind: Deployment
