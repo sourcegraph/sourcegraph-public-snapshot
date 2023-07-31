@@ -3,6 +3,9 @@ package com.sourcegraph.cody.ui;
 import com.intellij.icons.AllIcons;
 import com.intellij.ui.components.JBPasswordField;
 import com.sourcegraph.cody.Icons;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.swing.event.DocumentEvent;
@@ -36,24 +39,35 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
     // Disable the password field by default so that the user can't type into it.
     setComponentDisabledOverride(true);
 
-    addButtonActionListener(
-        e -> {
-          // Toggle password visibility
-          passwordVisible = !passwordVisible;
-          update();
+    ActionListener buttonActionListener = e -> {
+      // Toggle password visibility
+      passwordVisible = !passwordVisible;
+      update();
 
-          // If the password hasn't been changed, load the old password from storage.
-          if (!passwordChanged && passwordVisible) {
-            String oldPassword = passwordLoader.get();
-            if (oldPassword != null) {
-              setPassword(oldPassword);
-            }
-          }
-        });
+      // If the password hasn't been changed, load the password from storage.
+      if (!passwordChanged && passwordVisible) {
+        String storedPassword = passwordLoader.get();
+        if (storedPassword != null) {
+          setPassword(storedPassword);
+        }
+      }
+    };
+    addButtonActionListener(buttonActionListener);
 
     // Mark the password as changed whenever the user types into the field.
     DocumentListener documentListener = createDocumentListener();
     passwordField.getDocument().addDocumentListener(documentListener);
+
+    // Handle click events on passwordField
+    passwordField.addMouseListener(
+        new MouseAdapter() {
+          @Override
+          public void mouseClicked(MouseEvent e) {
+            if (!passwordVisible) {
+              buttonActionListener.actionPerformed(null);
+            }
+          }
+        });
 
     // Update UI
     update();
