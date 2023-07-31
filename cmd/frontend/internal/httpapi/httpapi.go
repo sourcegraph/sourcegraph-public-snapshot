@@ -214,8 +214,6 @@ func RegisterInternalServices(
 		WriteErrBody: true,
 	})
 
-	m.Get(apirouter.ExternalServiceConfigs).Handler(trace.Route(handler(serveExternalServiceConfigs(db))))
-
 	// zoekt-indexserver endpoints
 	gsClient := gitserver.NewClient()
 	indexer := &searchIndexerServer{

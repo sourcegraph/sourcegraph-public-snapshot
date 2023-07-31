@@ -32,7 +32,6 @@ go_library(
         "//internal/conf/deploy",
         "//internal/dotcomuser",
         "//internal/env",
-        "//internal/extsvc",
         "//internal/hashutil",
         "//internal/httpcli",
         "//internal/jsonc",
