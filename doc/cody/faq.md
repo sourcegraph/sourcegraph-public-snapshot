@@ -33,7 +33,7 @@ Yes. Sourcegraph is needed both to retrieve context and as a proxy for the LLM p
 
 #### What programming languages Cody supports?
 
-- JavaScript (including Node.js)
+- JavaScript
 - TypeScript
 - PHP
 - Python
@@ -53,7 +53,7 @@ Yes. Sourcegraph is needed both to retrieve context and as a proxy for the LLM p
 - Groovy
 - R
 - MATLAB
-- Dart (gaining popularity due to Flutter)
+- Dart
 - Lua
 - Julia
 - Cobol
