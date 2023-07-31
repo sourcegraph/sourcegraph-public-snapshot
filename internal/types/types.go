@@ -2107,6 +2107,7 @@ type PerforceChangelist struct {
 	ChangelistID int64
 }
 
+// CodeHost represents a signle code source, usually defined by url e.g. github.com, gitlab.com, bitbucket.sgdev.org.
 type CodeHost struct {
 	ID                          int32
 	Kind                        string

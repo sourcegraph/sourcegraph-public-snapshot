@@ -1689,8 +1689,7 @@ func ensureCodeHost(ctx context.Context, tx *externalServiceStore, kind string, 
 		ch.GitRateLimitIntervalSeconds = pointers.Ptr(int32(1))
 	}
 	chstore := CodeHostsWith(tx)
-	// TODO: Don't fail when it already exists, this should be a noop.
-	if err := chstore.CreateCodeHost(ctx, ch); err != nil {
+	if err := chstore.Create(ctx, ch); err != nil {
 		return 0, errors.Wrap(err, "failed to create code host")
 	}
 	return ch.ID, nil

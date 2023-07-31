@@ -17,6 +17,8 @@ type ListCodeHostsOpts struct {
 
 	// Only list code hosts with the given ID. This makes if effectively a getByID.
 	ID int32
+	// Only list code hosts with the given URL. This makes if effectively a getByURL.
+	URL string
 	// Cursor is used for pagination, it's the ID of the next code host to look at.
 	Cursor int32
 	// IncludeDeleted makes to so that we return deleted code hosts as well. Note:
@@ -34,9 +36,20 @@ type CodeHostStore interface {
 	With(other basestore.ShareableStore) CodeHostStore
 	WithTransact(context.Context, func(CodeHostStore) error) error
 
-	GetCodeHostByID(ctx context.Context, id int32) (*types.CodeHost, error)
-	ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (chs []*types.CodeHost, next int32, err error)
-	CreateCodeHost(ctx context.Context, ch *types.CodeHost) error
+	// GetByID gets the code host matching the specified ID.
+	GetByID(ctx context.Context, id int32) (*types.CodeHost, error)
+	// GetByURL gets the code host matching the specified url.
+	GetByURL(ctx context.Context, url string) (*types.CodeHost, error)
+	// List lists all code hosts matching the specified options.
+	List(ctx context.Context, opts ListCodeHostsOpts) (chs []*types.CodeHost, next int32, err error)
+	// Create creates a new code host in the db.
+	//
+	// If a code host with the given url already exists, it returns the existing code host.
+	Create(ctx context.Context, ch *types.CodeHost) error
+	// Update updates a code host, it uses the id field to match.
+	Update(ctx context.Context, ch *types.CodeHost) error
+	// Delete deletes the code host specified by the id.
+	Delete(ctx context.Context, id int32) error
 }
 
 // CodeHostsWith instantiates and returns a new CodeHostStore using the other stores
@@ -94,8 +107,8 @@ func (errCodeHostNotFound) NotFound() bool {
 	return true
 }
 
-func (s *codeHostStore) GetCodeHostByID(ctx context.Context, id int32) (*types.CodeHost, error) {
-	chs, _, err := s.ListCodeHosts(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, ID: id})
+func (s *codeHostStore) GetByID(ctx context.Context, id int32) (*types.CodeHost, error) {
+	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, ID: id})
 	if err != nil {
 		return nil, err
 	}
@@ -105,15 +118,25 @@ func (s *codeHostStore) GetCodeHostByID(ctx context.Context, id int32) (*types.C
 	return chs[0], nil
 }
 
-func (s *codeHostStore) CreateCodeHost(ctx context.Context, ch *types.CodeHost) error {
+func (s *codeHostStore) GetByURL(ctx context.Context, url string) (*types.CodeHost, error) {
+	// We would normally parse the URL here to verify its valid, but some code hosts have connections that
+	// have multiple URLs and in the code host table, they are represented by a code_hosts.url of:
+	// python/gomodules/etc...
+	chs, _, err := s.List(ctx, ListCodeHostsOpts{LimitOffset: LimitOffset{Limit: 1}, URL: url})
+	if err != nil {
+		return nil, err
+	}
+	if len(chs) != 1 {
+		return nil, errCodeHostNotFound{}
+	}
+	return chs[0], nil
+}
+
+func (s *codeHostStore) Create(ctx context.Context, ch *types.CodeHost) error {
 	query := createCodeHostQuery(ch)
 
 	row := s.QueryRow(ctx, query)
 	if err := scanCodeHost(row, ch); err != nil {
-		if err == sql.ErrNoRows {
-			// TODO: ch should still contain the latest database values when we return here.
-			return nil
-		}
 		return err
 	}
 
@@ -153,7 +176,7 @@ FROM code_hosts
 WHERE url = %s
 `
 
-func (s *codeHostStore) ListCodeHosts(ctx context.Context, opts ListCodeHostsOpts) (chs []*types.CodeHost, next int32, err error) {
+func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs []*types.CodeHost, next int32, err error) {
 	query := listCodeHostsQuery(opts)
 
 	rows, err := s.Query(ctx, query)
@@ -187,12 +210,20 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("code_hosts.id = %s", opts.ID))
 	}
 
+	if opts.URL != "" {
+		conds = append(conds, sqlf.Sprintf("code_hosts.url = %s", opts.URL))
+	}
+
 	if opts.Cursor > 0 {
 		conds = append(conds, sqlf.Sprintf("code_hosts.id >= %s", opts.Cursor))
 	}
 
 	if opts.Search != "" {
 		conds = append(conds, sqlf.Sprintf("(code_hosts.kind ILIKE %s OR code_hosts.url ILIKE %s)", "%"+opts.Search+"%", "%"+opts.Search+"%"))
+	}
+
+	if len(conds) == 0 {
+		return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Sprintf("TRUE"), opts.LimitOffset.SQL())
 	}
 
 	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
@@ -207,6 +238,75 @@ WHERE
 	%s
 ORDER BY id ASC
 %s
+`
+
+func (s *codeHostStore) Update(ctx context.Context, ch *types.CodeHost) error {
+	query := updateCodeHostQuery(ch)
+
+	row := s.QueryRow(ctx, query)
+	if err := scanCodeHost(row, ch); err != nil {
+		if err == sql.ErrNoRows {
+			return errCodeHostNotFound{ch.ID}
+		}
+		return err
+	}
+
+	return nil
+}
+
+func updateCodeHostQuery(ch *types.CodeHost) *sqlf.Query {
+	return sqlf.Sprintf(
+		updateCodeHostQueryFmtstr,
+		ch.Kind,
+		ch.URL,
+		ch.APIRateLimitQuota,
+		ch.APIRateLimitIntervalSeconds,
+		ch.GitRateLimitQuota,
+		ch.GitRateLimitIntervalSeconds,
+		ch.ID,
+		sqlf.Join(codeHostColumnExpressions, ","),
+	)
+}
+
+const updateCodeHostQueryFmtstr = `
+UPDATE code_hosts
+	SET
+		kind = %s,
+		url = %s,
+		api_rate_limit_quota = %s,
+		api_rate_limit_interval_seconds = %s,
+		git_rate_limit_quota = %s,
+		git_rate_limit_interval_seconds = %s
+	WHERE
+		id = %s
+	RETURNING
+		%s`
+
+func (s *codeHostStore) Delete(ctx context.Context, id int32) error {
+	query := deleteCodeHostQuery(id)
+
+	row := s.QueryRow(ctx, query)
+	if err := scanCodeHost(row, &types.CodeHost{}); err != nil {
+		if err == sql.ErrNoRows {
+			return nil
+		}
+		return err
+	}
+
+	return nil
+}
+
+func deleteCodeHostQuery(id int32) *sqlf.Query {
+	return sqlf.Sprintf(
+		deleteCodeHostQueryFmtstr,
+		id,
+	)
+}
+
+const deleteCodeHostQueryFmtstr = `
+	DELETE FROM code_hosts
+	WHERE
+		id = %s
 `
 
 func scanCodeHost(rows dbutil.Scanner, ch *types.CodeHost) error {
