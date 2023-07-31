@@ -39,7 +39,7 @@ export interface RepoSettingsLogsPageProps {
  */
 export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) => {
     const [activeTab, setActiveTab] = useState<number>(LogsPageTabs.COMMANDS)
-    useEffect(() => eventLogger.logPageView('RepoSettingsLogs'))
+    useEffect(() => eventLogger.logPageView('RepoSettingsLogs'), [])
     const location = useLocation()
 
     useEffect(() => {
