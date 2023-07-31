@@ -33,10 +33,8 @@ import org.jetbrains.annotations.Nullable;
  * @see com.intellij.openapi.ui.ComponentWithBrowseButton
  */
 public class ComponentWithButton<Comp extends JComponent> extends JPanel implements Disposable {
-  @NotNull
-  private final Comp component;
-  @Nullable
-  private final FixedSizeButton button;
+  @NotNull private final Comp component;
+  @Nullable private final FixedSizeButton button;
   protected boolean componentDisabledOverride = false;
 
   public ComponentWithButton(@NotNull Comp component) {
@@ -96,9 +94,7 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
     }
   }
 
-  /**
-   * Adds specified {@code listener} to the button.
-   */
+  /** Adds specified {@code listener} to the button. */
   public void addButtonActionListener(ActionListener listener) {
     if (button != null) {
       button.addActionListener(listener);
@@ -136,15 +132,16 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
    * otherwise the event is dispatched to the parent component, which is the panel, and the event is
    * not dispatched to the component.
    *
-   * @param ks        The <code>KeyStroke</code> queried
-   * @param e         The <code>KeyEvent</code> forwarded to the focused component
+   * @param ks The <code>KeyStroke</code> queried
+   * @param e The <code>KeyEvent</code> forwarded to the focused component
    * @param condition one of the following values:
-   *                  <ul>
-   *                  <li>JComponent.WHEN_FOCUSED
-   *                  <li>JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
-   *                  <li>JComponent.WHEN_IN_FOCUSED_WINDOW
-   *                  </ul>
-   * @param pressed   true if the key is pressed
+   *     <ul>
+   *       <li>JComponent.WHEN_FOCUSED
+   *       <li>JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+   *       <li>JComponent.WHEN_IN_FOCUSED_WINDOW
+   *     </ul>
+   *
+   * @param pressed true if the key is pressed
    * @return true if there was a binding to the event, false otherwise.
    */
   @Override

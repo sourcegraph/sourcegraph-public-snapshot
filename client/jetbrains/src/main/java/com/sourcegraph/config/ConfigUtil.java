@@ -137,8 +137,7 @@ public class ConfigUtil {
 
     // Application level
     String applicationLevelDefaultBranchName = getApplicationLevelConfig().getDefaultBranchName();
-    if (applicationLevelDefaultBranchName != null
-        && !applicationLevelDefaultBranchName.isEmpty()) {
+    if (applicationLevelDefaultBranchName != null && !applicationLevelDefaultBranchName.isEmpty()) {
       return applicationLevelDefaultBranchName;
     }
 
@@ -284,7 +283,7 @@ public class ConfigUtil {
   public static String getProjectAccessToken(@NotNull Project project) {
     SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
     if (instanceType == SettingsComponent.InstanceType.ENTERPRISE) {
-        return getEnterpriseAccessToken(project);
+      return getEnterpriseAccessToken(project);
     } else if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
       return LocalAppManager.getLocalAppAccessToken().orElse("");
     } else {
@@ -296,7 +295,8 @@ public class ConfigUtil {
   @Nullable
   public static String getEnterpriseAccessToken(Project project) {
     // Project level overrides secure storage
-    String unsafeProjectLevelAccessToken = getProjectLevelConfig(project).getEnterpriseAccessToken();
+    String unsafeProjectLevelAccessToken =
+        getProjectLevelConfig(project).getEnterpriseAccessToken();
     if (unsafeProjectLevelAccessToken != null) {
       return unsafeProjectLevelAccessToken;
     }

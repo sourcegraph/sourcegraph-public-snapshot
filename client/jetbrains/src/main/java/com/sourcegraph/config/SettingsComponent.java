@@ -41,9 +41,7 @@ import javax.swing.text.JTextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Supports creating and managing a {@link JPanel} for the Settings Dialog.
- */
+/** Supports creating and managing a {@link JPanel} for the Settings Dialog. */
 public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
@@ -160,9 +158,9 @@ public class SettingsComponent implements Disposable {
     // Create dotcom access token field
     JBLabel dotComAccessTokenComment =
         new JBLabel(
-            "(optional) To use Cody, you will need an access token to sign in.",
-            UIUtil.ComponentStyle.SMALL,
-            UIUtil.FontColor.BRIGHTER)
+                "(optional) To use Cody, you will need an access token to sign in.",
+                UIUtil.ComponentStyle.SMALL,
+                UIUtil.FontColor.BRIGHTER)
             .withBorder(JBUI.Borders.emptyLeft(10));
     JBLabel dotComAccessTokenLabel = new JBLabel("Access token:");
     dotComAccessTokenTextField =
@@ -368,8 +366,8 @@ public class SettingsComponent implements Disposable {
   }
 
   /**
-   * @return Null means we don't know the token because it wasn't loaded from the secure storage.
-   *         An empty token means the user has explicitly set it to empty.
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage. An
+   *     empty token means the user has explicitly set it to empty.
    */
   @Nullable
   public String getDotComAccessToken() {
@@ -385,8 +383,8 @@ public class SettingsComponent implements Disposable {
   }
 
   /**
-   * @return Null means we don't know the token because it wasn't loaded from the secure storage.
-   *         An empty token means the user has explicitly set it to empty.
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage. An
+   *     empty token means the user has explicitly set it to empty.
    */
   @Nullable
   public String getEnterpriseAccessToken() {
@@ -527,10 +525,10 @@ public class SettingsComponent implements Disposable {
     enterpriseAccessTokenLinkComment.setText(
         isUrlValid(baseUrl)
             ? "<html><body>or go to <a href=\""
-            + settingsUrl
-            + "\">"
-            + settingsUrl
-            + "</a> | \"Access tokens\" to create one.</body></html>"
+                + settingsUrl
+                + "\">"
+                + settingsUrl
+                + "</a> | \"Access tokens\" to create one.</body></html>"
             : "");
   }
 
@@ -557,9 +555,9 @@ public class SettingsComponent implements Disposable {
         remoteUrlReplacementsTextField,
         () ->
             (!remoteUrlReplacementsTextField.getText().isEmpty()
-                && remoteUrlReplacementsTextField.getText().split(",").length % 2 != 0)
+                    && remoteUrlReplacementsTextField.getText().split(",").length % 2 != 0)
                 ? new ValidationInfo(
-                "Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
+                    "Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
                 : null);
 
     isUrlNotificationDismissedCheckBox =
@@ -610,6 +608,5 @@ public class SettingsComponent implements Disposable {
   }
 
   @Override
-  public void dispose() {
-  }
+  public void dispose() {}
 }
