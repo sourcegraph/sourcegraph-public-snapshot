@@ -19,7 +19,7 @@ var deployCommand = &cli.Command{
 	UsageText: `
 sg deploy --values <path to values file>
 
-Example:
+Example of a values.yaml file:
 
 name: my-app
 image: gcr.io/sourcegraph-dev/my-app:latest
