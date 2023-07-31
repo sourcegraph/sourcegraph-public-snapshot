@@ -19,14 +19,14 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public String url;
 
   // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
-  @Deprecated(since = "3.0.7", forRemoval = true)
+  @Deprecated(since = "3.0.7")
   @Nullable
   public String dotComAccessToken;
 
   public boolean isDotComAccessTokenSet;
 
   // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
-  @Deprecated(since = "3.0.7", forRemoval = true)
+  @Deprecated(since = "3.0.7")
   @Nullable
   public String enterpriseAccessToken;
 
@@ -69,14 +69,6 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return url;
   }
 
-  // Use ConfigUtil::getDotComAccessToken instead.
-  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
-  @Deprecated(since = "3.0.7")
-  @Nullable
-  public String getDotComAccessToken() {
-    return dotComAccessToken;
-  }
-
   @Transient
   public void setSafeDotComAccessToken(@NotNull String accessToken) {
     AccessTokenStorage.setApplicationDotComAccessToken(accessToken);
@@ -104,27 +96,9 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return null;
   }
 
-  // Use ConfigUtil::getEnterpriseAccessToken instead.
-  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
-  @Deprecated(since = "3.0.7")
-  @Nullable
-  public String getEnterpriseAccessToken() {
-    return enterpriseAccessToken;
-  }
-
   @Transient
   public void setSafeEnterpriseAccessToken(@NotNull String accessToken) {
     AccessTokenStorage.setApplicationEnterpriseAccessToken(accessToken);
-  }
-
-  public boolean areChatPredictionsEnabled() {
-    // TODO
-    return false;
-  }
-
-  public String getCodebase() {
-    // TODO
-    return null;
   }
 
   @Nullable
@@ -138,10 +112,6 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
 
   public boolean isUrlNotificationDismissed() {
     return isUrlNotificationDismissed;
-  }
-
-  public boolean isCodyEnabled() {
-    return isCodyEnabled;
   }
 
   public void setCodyEnabled(boolean enabled) {

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -216,11 +217,11 @@ public class ConfigUtil {
   }
 
   public static boolean isCodyEnabled() {
-    return getApplicationLevelConfig().isCodyEnabled();
+    return getApplicationLevelConfig().isCodyEnabled;
   }
 
   public static boolean isCodyAutoCompleteEnabled() {
-    return getApplicationLevelConfig().isCodyEnabled()
+    return getApplicationLevelConfig().isCodyEnabled
         && getApplicationLevelConfig().isCodyAutoCompleteEnabled();
   }
 
@@ -293,38 +294,60 @@ public class ConfigUtil {
 
   @Nullable
   public static String getEnterpriseAccessToken(Project project) {
-    // project level → application level secure storage -> application level
-    return Optional.ofNullable(getProjectLevelConfig(project).getEnterpriseAccessToken())
-        .or(AccessTokenStorage::getEnterpriseAccessToken)
-        .orElseGet(
-            () -> {
-              // Save the application level access token to the secure storage
-              String unsafeApplicationLevelAccessToken =
-                  getApplicationLevelConfig().getEnterpriseAccessToken();
-              if (unsafeApplicationLevelAccessToken != null) {
-                AccessTokenStorage.setApplicationEnterpriseAccessToken(
-                    unsafeApplicationLevelAccessToken);
-              }
-              return unsafeApplicationLevelAccessToken;
-            });
+    // Project level overrides secure storage
+    String unsafeProjectLevelAccessToken = getProjectLevelConfig(project).getEnterpriseAccessToken();
+    if (unsafeProjectLevelAccessToken != null) {
+      return unsafeProjectLevelAccessToken;
+    }
+
+    try {
+      // Get token from secure storage
+      Optional<String> securelyStoredAccessToken = AccessTokenStorage.getEnterpriseAccessToken();
+      if (securelyStoredAccessToken.isPresent()) {
+        return securelyStoredAccessToken.get();
+      }
+
+      // No secure token found, so use app-level token and migrate it to secure storage.
+      String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().enterpriseAccessToken;
+      if (unsafeApplicationLevelAccessToken != null) {
+        AccessTokenStorage.setApplicationEnterpriseAccessToken(unsafeApplicationLevelAccessToken);
+        getApplicationLevelConfig().enterpriseAccessToken = null;
+      }
+      return unsafeApplicationLevelAccessToken;
+
+    } catch (AccessDeniedException e) {
+      // The user denied access to secure storage. Can't do anything about it, return null.
+      return null;
+    }
   }
 
   @Nullable
   public static String getDotComAccessToken(@NotNull Project project) {
-    // project level → application level secure storage -> application level
-    return Optional.ofNullable(getProjectLevelConfig(project).getDotComAccessToken())
-        .or(AccessTokenStorage::getDotComAccessToken)
-        .orElseGet(
-            () -> {
-              // Save the application level access token to the secure storage
-              String unsafeApplicationLevelAccessToken =
-                  getApplicationLevelConfig().getDotComAccessToken();
-              if (unsafeApplicationLevelAccessToken != null) {
-                AccessTokenStorage.setApplicationDotComAccessToken(
-                    unsafeApplicationLevelAccessToken);
-              }
-              return unsafeApplicationLevelAccessToken;
-            });
+    // Project level overrides secure storage
+    String projectLevelAccessToken = getProjectLevelConfig(project).getDotComAccessToken();
+    if (projectLevelAccessToken != null) {
+      return projectLevelAccessToken;
+    }
+
+    try {
+      // Get token from secure storage
+      Optional<String> securelyStoredAccessToken = AccessTokenStorage.getDotComAccessToken();
+      if (securelyStoredAccessToken.isPresent()) {
+        return securelyStoredAccessToken.get();
+      }
+
+      // No secure token found, so use app-level token and migrate it to secure storage.
+      String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().dotComAccessToken;
+      if (unsafeApplicationLevelAccessToken != null) {
+        AccessTokenStorage.setApplicationDotComAccessToken(unsafeApplicationLevelAccessToken);
+        getApplicationLevelConfig().dotComAccessToken = null;
+      }
+      return unsafeApplicationLevelAccessToken;
+
+    } catch (AccessDeniedException e) {
+      // The user denied access to secure storage. Can't do anything about it, return null.
+      return null;
+    }
   }
 
   public static boolean isDotComAccessTokenSet(Project project) {

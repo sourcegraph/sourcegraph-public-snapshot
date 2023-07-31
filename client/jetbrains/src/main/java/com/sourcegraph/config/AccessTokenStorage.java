@@ -19,7 +19,7 @@ public class AccessTokenStorage {
   private static final List<String> dotComAccessTokenKeyParts = List.of("accessToken", "dotcom");
 
   @NotNull
-  public static Optional<String> getEnterpriseAccessToken() {
+  public static Optional<String> getEnterpriseAccessToken() throws AccessDeniedException {
     if (cachedEnterpriseAccessToken != null) {
       return Optional.of(cachedEnterpriseAccessToken);
     }
@@ -34,7 +34,7 @@ public class AccessTokenStorage {
   }
 
   @NotNull
-  public static Optional<String> getDotComAccessToken() {
+  public static Optional<String> getDotComAccessToken() throws AccessDeniedException {
     if (cachedDotComAccessToken != null) {
       return Optional.of(cachedDotComAccessToken);
     }
@@ -49,9 +49,18 @@ public class AccessTokenStorage {
   }
 
   @NotNull
-  private static Optional<String> getApplicationLevelSecureConfig(@NotNull List<String> keyParts) {
-    return Optional.ofNullable(
-        PasswordSafe.getInstance().getPassword(createCredentialAttributes(createKey(keyParts))));
+  private static Optional<String> getApplicationLevelSecureConfig(@NotNull List<String> keyParts) throws AccessDeniedException {
+    CredentialAttributes credentialAttributes = createCredentialAttributes(createKey(keyParts));
+    Credentials credentials = PasswordSafe.getInstance().get(credentialAttributes);
+    // No credentials found
+    if (credentials == null) {
+      return Optional.empty();
+    }
+    String password = credentials.getPasswordAsString();
+    if (password == null) { // User denied access to password
+      throw new AccessDeniedException("User denied access to password.");
+    }
+    return Optional.of(password);
   }
 
   private static void setApplicationLevelSecureConfig(

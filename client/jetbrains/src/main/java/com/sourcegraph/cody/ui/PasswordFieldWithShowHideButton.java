@@ -98,6 +98,8 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
   @Nullable
   public String getPassword() {
     String password = Optional.ofNullable(passwordField.getPassword()).map(String::copyValueOf).orElse("");
+    // Known edge case: if the user's password is exactly the placeholder, we will think there's no password.
+    // We won't fix it because we currently only use the component for access tokens where this is not a problem.
     return password.equals(placeholder) ? null : password;
   }
 
