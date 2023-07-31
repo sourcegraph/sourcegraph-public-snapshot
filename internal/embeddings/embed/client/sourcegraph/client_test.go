@@ -161,7 +161,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: dimensions, ExcludeChunkOnError: true})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b", "c"})
 		require.NoError(t, err)
 		var expected []float32
 		{
