@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func ScheduleRepositoriesForEmbedding(
@@ -23,12 +24,15 @@ func ScheduleRepositoriesForEmbedding(
 	}
 	defer func() { err = tx.Done(err) }()
 
+	var errs error
+
 	repoStore := db.Repos()
 	for _, repoName := range repoNames {
 		// Scope the iteration to an anonymous function, so we can capture all errors and properly rollback tx in defer above.
 		err = func() error {
 			r, err := repoStore.GetByName(ctx, repoName)
 			if err != nil {
+				errs = errors.Append(errs, errors.Newf("Repo not found: %v", repoName))
 				return nil
 			}
 
@@ -44,8 +48,16 @@ func ScheduleRepositoriesForEmbedding(
 				job, _ := tx.GetLastRepoEmbeddingJobForRevision(ctx, r.ID, latestRevision)
 
 				// if job previously failed then only resubmit if revision is non-empty
-				if job.IsRepoEmbeddingJobScheduledOrCompleted() || job.EmptyRepoEmbeddingJob() {
+				if job.EmptyRepoEmbeddingJob() {
+					errs = errors.Append(errs, errors.Newf("Embedding job cannot be scheduled because the latest revision or default branch cannot be resolved for repo: %v", repoName))
 					return nil
+					//return errors.Newf("Embedding job cannot be scheduled because the latest revision or default branch cannot be resolved for %v", repoName)
+				}
+
+				if job.IsRepoEmbeddingJobScheduledOrCompleted() {
+					errs = errors.Append(errs, errors.Newf("Embedding job is already scheduled or completed for repo %v at the latest revision %v", repoName, latestRevision))
+					return nil
+					//return errors.Newf("Embedding job is already scheduled or completed for the latest revision %v", latestRevision)
 				}
 			}
 
@@ -56,5 +68,5 @@ func ScheduleRepositoriesForEmbedding(
 			return err
 		}
 	}
-	return nil
+	return errs
 }
