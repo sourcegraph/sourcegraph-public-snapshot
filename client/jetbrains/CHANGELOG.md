@@ -6,6 +6,8 @@
 
 ### Changed
 
+- Store application level access tokens in a safe way [#55251](https://github.com/sourcegraph/sourcegraph/pull/55251)
+
 ### Deprecated
 
 ### Removed
