@@ -128,7 +128,7 @@ public class SettingsComponent implements Disposable {
     addValidation(
         urlTextField,
         () ->
-            urlTextField.getText().length() == 0
+            urlTextField.getText().isEmpty()
                 ? new ValidationInfo("Missing URL", urlTextField)
                 : (!JsonSchemaConfigurable.isValidURL(urlTextField.getText())
                     ? new ValidationInfo("This is an invalid URL", urlTextField)
@@ -290,7 +290,7 @@ public class SettingsComponent implements Disposable {
     addValidation(
         customRequestHeadersTextField,
         () -> {
-          if (customRequestHeadersTextField.getText().length() == 0) {
+          if (customRequestHeadersTextField.getText().isEmpty()) {
             return null;
           }
           String[] pairs = customRequestHeadersTextField.getText().split(",");
@@ -535,7 +535,7 @@ public class SettingsComponent implements Disposable {
     addValidation(
         remoteUrlReplacementsTextField,
         () ->
-            (remoteUrlReplacementsTextField.getText().length() > 0
+            (!remoteUrlReplacementsTextField.getText().isEmpty()
                     && remoteUrlReplacementsTextField.getText().split(",").length % 2 != 0)
                 ? new ValidationInfo(
                     "Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
