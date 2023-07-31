@@ -66,7 +66,9 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return url;
   }
 
-  @Deprecated(since = "3.0.7", forRemoval = true)
+  // Use ConfigUtil::getDotComAccessToken instead.
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
+  @Deprecated(since = "3.0.7")
   @Nullable
   public String getDotComAccessToken() {
     return dotComAccessToken;
@@ -99,7 +101,9 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return null;
   }
 
-  @Deprecated(since = "3.0.7", forRemoval = true)
+  // Use ConfigUtil::getEnterpriseAccessToken instead.
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
+  @Deprecated(since = "3.0.7")
   @Nullable
   public String getEnterpriseAccessToken() {
     return enterpriseAccessToken;
