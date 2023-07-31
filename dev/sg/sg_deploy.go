@@ -181,7 +181,7 @@ func generateConfig(configFile string, dryRun bool) error {
 
 	err = yaml.Unmarshal(v, &values)
 	if err != nil {
-		return errors.Wrap(err, "error rendering values")
+		return errors.Wrapf(err, "error unmarshalling values from %q", valuesFile)
 	}
 
 	if dryRun {
