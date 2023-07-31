@@ -3,7 +3,6 @@ package messagesize
 import (
 	"context"
 	"io"
-	"strconv"
 	"sync"
 	"sync/atomic"
 
@@ -16,6 +15,44 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var (
+	metricServerSingleMessageSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_grpc_server_sent_individual_message_size_bytes_per_rpc",
+		Help:    "Size of individual messages sent by the server per RPC.",
+		Buckets: sizeBuckets,
+	}, []string{
+		"grpc_service", // e.g. "gitserver.v1.GitserverService"
+		"grpc_method",  // e.g. "Exec"
+	})
+
+	metricServerTotalSentPerRPCBytes = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_grpc_server_sent_bytes_per_rpc",
+		Help:    "Total size of all the messages sent by the server during the course of a single RPC call",
+		Buckets: sizeBuckets,
+	}, []string{
+		"grpc_service", // e.g. "gitserver.v1.GitserverService"
+		"grpc_method",  // e.g. "Exec"
+	})
+
+	metricClientSingleMessageSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_grpc_client_sent_individual_message_size_per_rpc_bytes",
+		Help:    "Size of individual messages sent by the client per RPC.",
+		Buckets: sizeBuckets,
+	}, []string{
+		"grpc_service", // e.g. "gitserver.v1.GitserverService"
+		"grpc_method",  // e.g. "Exec"
+	})
+
+	metricClientTotalSentPerRPCBytes = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Name:    "src_grpc_client_sent_bytes_per_rpc",
+		Help:    "Total size of all the messages sent by the client during the course of a single RPC call",
+		Buckets: sizeBuckets,
+	}, []string{
+		"grpc_service", // e.g. "gitserver.v1.GitserverService"
+		"grpc_method",  // e.g. "Exec"
+	})
+)
+
 const (
 	B  = 1
 	KB = 1024 * B
@@ -23,57 +60,23 @@ const (
 	GB = 1024 * MB
 )
 
-var metricSingleMessageSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "src_grpc_sent_individual_message_size_per_rpc_bytes",
-	Help: "Size of individual messages sent per RPC.",
-	Buckets: []float64{
-		0,
-		1 * KB,
-		10 * KB,
-		50 * KB,
-		100 * KB,
-		500 * KB,
-		1 * MB,
-		5 * MB,
-		10 * MB,
-		50 * MB,
-		100 * MB,
-		500 * MB,
-		1 * GB,
-		5 * GB,
-		10 * GB,
-	},
-}, []string{
-	"grpc_service", // e.g. "gitserver.v1.GitserverService"
-	"grpc_method",  // e.g. "Exec"
-	"is_server",    // e.g. "true"
-})
-
-var metricTotalSentPerRPCBytes = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name: "src_grpc_sent_bytes_per_rpc",
-	Help: "Total size of all the messages during the course of a single RPC call",
-	Buckets: []float64{
-		0,
-		1 * KB,
-		10 * KB,
-		50 * KB,
-		100 * KB,
-		500 * KB,
-		1 * MB,
-		5 * MB,
-		10 * MB,
-		50 * MB,
-		100 * MB,
-		500 * MB,
-		1 * GB,
-		5 * GB,
-		10 * GB,
-	},
-}, []string{
-	"grpc_service", // e.g. "gitserver.v1.GitserverService"
-	"grpc_method",  // e.g. "Exec"
-	"is_server",    // e.g. "true"
-})
+var sizeBuckets = []float64{
+	0,
+	1 * KB,
+	10 * KB,
+	50 * KB,
+	100 * KB,
+	500 * KB,
+	1 * MB,
+	5 * MB,
+	10 * MB,
+	50 * MB,
+	100 * MB,
+	500 * MB,
+	1 * GB,
+	5 * GB,
+	10 * GB,
+}
 
 // UnaryServerInterceptor is a grpc.UnaryServerInterceptor that records Prometheus metrics that observe the size of
 // the response message sent back by the server for a single RPC call.
@@ -88,7 +91,7 @@ func UnaryServerInterceptor(ctx context.Context, req any, info *grpc.UnaryServer
 		return r, nil
 	}
 
-	o := newMessageSizeObserver(info.FullMethod, true)
+	o := newServerMessageSizeObserver(info.FullMethod)
 
 	o.Observe(response)
 	o.FinishRPC()
@@ -100,7 +103,7 @@ func UnaryServerInterceptor(ctx context.Context, req any, info *grpc.UnaryServer
 // individual response messages and the cumulative response size of all the message sent back by the server over the course
 // of a single RPC call.
 func StreamServerInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	observer := newMessageSizeObserver(info.FullMethod, true)
+	observer := newServerMessageSizeObserver(info.FullMethod)
 	wrappedStream := newObservingServerStream(ss, observer)
 
 	err := handler(srv, wrappedStream)
@@ -117,7 +120,7 @@ func StreamServerInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamSer
 // UnaryClientInterceptor is a grpc.UnaryClientInterceptor that records Prometheus metrics that observe the size of
 // the request message sent by client for a single RPC call.
 func UnaryClientInterceptor(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	o := newMessageSizeObserver(method, false)
+	o := newClientMessageSizeObserver(method)
 
 	err := invoker(ctx, method, req, reply, cc, opts...)
 	if err != nil {
@@ -141,7 +144,7 @@ func UnaryClientInterceptor(ctx context.Context, method string, req, reply any, 
 // individual request messages and the cumulative request size of all the message sent by the client over the course
 // of a single RPC call.
 func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	observer := newMessageSizeObserver(method, false)
+	observer := newClientMessageSizeObserver(method)
 
 	s, err := streamer(ctx, desc, cc, method, opts...)
 	if err != nil {
@@ -225,16 +228,32 @@ func (s *observingClientStream) RecvMsg(m any) error {
 	return err
 }
 
-func newMessageSizeObserver(fullMethod string, isServer bool) *messageSizeObserver {
+func newServerMessageSizeObserver(fullMethod string) *messageSizeObserver {
 	serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
-	isServerLabel := strconv.FormatBool(isServer)
 
 	onSingle := func(messageSize uint64) {
-		metricSingleMessageSize.WithLabelValues(serviceName, methodName, isServerLabel).Observe(float64(messageSize))
+		metricServerSingleMessageSize.WithLabelValues(serviceName, methodName).Observe(float64(messageSize))
 	}
 
-	onFinish := func(totalSize uint64) {
-		metricTotalSentPerRPCBytes.WithLabelValues(serviceName, methodName, isServerLabel).Observe(float64(totalSize))
+	onFinish := func(messageSize uint64) {
+		metricServerTotalSentPerRPCBytes.WithLabelValues(serviceName, methodName).Observe(float64(messageSize))
+	}
+
+	return &messageSizeObserver{
+		onSingleFunc: onSingle,
+		onFinishFunc: onFinish,
+	}
+}
+
+func newClientMessageSizeObserver(fullMethod string) *messageSizeObserver {
+	serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
+
+	onSingle := func(messageSize uint64) {
+		metricClientSingleMessageSize.WithLabelValues(serviceName, methodName).Observe(float64(messageSize))
+	}
+
+	onFinish := func(messageSize uint64) {
+		metricClientTotalSentPerRPCBytes.WithLabelValues(serviceName, methodName).Observe(float64(messageSize))
 	}
 
 	return &messageSizeObserver{
