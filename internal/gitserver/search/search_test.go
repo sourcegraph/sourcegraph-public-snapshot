@@ -257,6 +257,7 @@ func TestSearch(t *testing.T) {
 		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
 			matches = append(matches, match)
 		})
+		require.NoError(t, err)
 
 		require.Len(t, matches, 1)
 		match := matches[0]
