@@ -8,6 +8,7 @@ load("//dev:defs.bzl", "jest_test", "npm_package", "sass", "ts_project")
 load("//dev:webpack.bzl", "webpack_bundle", "webpack_devserver", "webpack_web_app")
 load("@aspect_rules_ts//ts:defs.bzl", "ts_config")
 load("//dev:eslint.bzl", "eslint_config_and_lint_root", "eslint_test_with_types")
+load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_files")
 
 # TODO(bazel): storybook build
 # gazelle:exclude **/*.story.{ts,tsx}
@@ -1234,7 +1235,6 @@ ts_project(
         "src/person/PersonLink.tsx",
         "src/platform/context.ts",
         "src/productSubscription/helpers.ts",
-        "src/rbac/constants.ts",
         "src/repo/DirectImportRepoAlert.tsx",
         "src/repo/FilePathBreadcrumbs.tsx",
         "src/repo/GitReference.tsx",
@@ -1839,6 +1839,7 @@ ts_project(
         "//:node_modules/uuid",
         "//:node_modules/yaml-ast-parser",
         "//:node_modules/zustand",
+        "//client/web/src/rbac:constants",
         "//schema:schema-json",
     ],
 )
@@ -2019,6 +2020,7 @@ ts_project(
         "//:node_modules/wildcard-mock-link",
         "//:node_modules/zustand",
         "//client/shared:graphql_operations",
+        "//client/web/src/rbac:constants",
     ],
 )
 
