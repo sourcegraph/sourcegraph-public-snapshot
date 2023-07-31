@@ -483,11 +483,6 @@ func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName
 	return c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
 }
 
-// TODO: Looks like this is not used anywhere.
-func (c *clientImplementor) ConnForRepo(ctx context.Context, repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.clientSource.ConnForRepo(ctx, c.userAgent, repo)
-}
-
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
 	Treeish   string               // the tree or commit to produce an archive for
