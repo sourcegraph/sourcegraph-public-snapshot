@@ -15,6 +15,7 @@ load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_fil
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
+# gazelle:js_resolve **/rbac/constants //client/web/src/rbac:constants:ts
 
 # Non-ts imports
 # gazelle:js_ignore_imports **/*.batch.yaml
