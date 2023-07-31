@@ -37,6 +37,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 5.1.5
 
+### Known Issues
+
+- Standard and multi-version upgrades are not currently working from Sourcegraph versions 5.0.X to 5.1.5. As a temporary workaround, please upgrade 5.0.X to 5.1.0, then 5.1.0 to 5.1.5.
+
 ### Fixed
 
 - Fixed an embeddings job scheduler bug where if we cannot resolve one of the repositories or its default branch then all repositories submitted will not have their respective embeddings job enqueued. Embeddings job scheduler will now continue to schedule jobs for subsequent repositories in the submitted repositories set. [#54701](https://github.com/sourcegraph/sourcegraph/pull/54701)

@@ -126,7 +126,7 @@ export const SearchPageContent: FC<SearchPageContentProps> = props => {
                     </>
                 )}
             </div>
-            {!simpleSearch && (
+            {(!simpleSearchEnabled || !simpleSearch) && (
                 <div className={classNames(styles.panelsContainer)}>
                     {(!!authenticatedUser || isSourcegraphDotCom) && (
                         <QueryExamples

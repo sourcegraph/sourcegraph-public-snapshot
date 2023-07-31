@@ -12,6 +12,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/tidwall/gjson"
 	"github.com/xeipuuv/gojsonschema"
 	"golang.org/x/time/rate"
@@ -257,6 +258,8 @@ type ExternalServicesListOptions struct {
 	// When true, will only return services that have the cloud_default flag set to
 	// true.
 	OnlyCloudDefault bool
+	// When specified, only include external services which contain repository with a given ID.
+	RepoID api.RepoID
 
 	// Only include external services that belong to the given CodeHost.
 	CodeHostID int32
@@ -289,6 +292,9 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.CodeHostID != 0 {
 		conds = append(conds, sqlf.Sprintf("code_host_id = %s", o.CodeHostID))
+  }
+	if o.RepoID > 0 {
+		conds = append(conds, sqlf.Sprintf("id IN (SELECT external_service_id FROM external_service_repos WHERE repo_id = %s)", o.RepoID))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
