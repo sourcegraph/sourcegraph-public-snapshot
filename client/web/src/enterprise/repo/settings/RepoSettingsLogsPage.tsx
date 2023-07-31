@@ -1,8 +1,8 @@
-import { FC, useEffect, useState } from 'react'
+import { FC, useCallback, useEffect, useState } from 'react'
 
 import { mdiCalendar, mdiClockAlertOutline } from '@mdi/js'
 import { parseISO } from 'date-fns'
-import { useLocation } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
@@ -39,27 +39,32 @@ export interface RepoSettingsLogsPageProps {
  * The repository settings log page.
  */
 export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) => {
-    const [activeTab, setActiveTab] = useState<number>(LogsPageTabs.COMMANDS)
+    const [activeTabIndex, setActiveTabIndex] = useState<number>(LogsPageTabs.COMMANDS)
     useEffect(() => eventLogger.logPageView('RepoSettingsLogs'), [])
-    const location = useLocation()
+    const [searchParams, setSearchParams] = useSearchParams()
+    const activeTab = searchParams.get('activeTab') ?? LogsPageTabs.COMMANDS.toString()
+
+    const setActiveTab = useCallback(
+        (tabIndex: number): void => {
+            setActiveTabIndex(tabIndex)
+            searchParams.set('activeTab', tabIndex.toString())
+            // We set `replace` to true here because we don't want to get pushing
+            // to history when navigating between tabs.
+            setSearchParams(searchParams, { replace: true })
+        },
+        [searchParams, setSearchParams]
+    )
 
     useEffect(() => {
-        const searchParams = new URLSearchParams(location.search)
-        const tab = searchParams.get('activeTab')
-        if (tab) {
-            const activeTabIdx = parseInt(tab, 10)
-            switch (activeTabIdx) {
-                case LogsPageTabs.SYNCLOGS:
-                    setActiveTab(LogsPageTabs.SYNCLOGS)
-                    break
-                case LogsPageTabs.COMMANDS:
-                default:
-                    setActiveTab(LogsPageTabs.COMMANDS)
-            }
+        const numericTabIdx = parseInt(activeTab, 10)
+        switch (numericTabIdx) {
+            case LogsPageTabs.SYNCLOGS:
+                setActiveTab(LogsPageTabs.SYNCLOGS)
+                break
+            default:
+                setActiveTab(LogsPageTabs.COMMANDS)
         }
-    }, [location.search])
-
-    const setActiveTabIndex = (index: number): void => setActiveTab(index)
+    }, [setActiveTab, activeTab])
 
     return (
         <>
@@ -71,8 +76,8 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
                     size="medium"
                     lazy={true}
                     className={styles.tabContainer}
-                    index={activeTab}
-                    onChange={setActiveTabIndex}
+                    index={activeTabIndex}
+                    onChange={setActiveTab}
                 >
                     <TabList>
                         <Tab>Last repo commands</Tab>
