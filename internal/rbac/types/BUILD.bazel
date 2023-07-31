@@ -22,7 +22,7 @@ genrule(
         "//internal/rbac:schema.yaml",
     ],
     outs = GENERATED_FILES,
-    # cmd expects assumes this order of the files
+    # cmd assumes this order of the files
     cmd = """
     outs=($(OUTS))
 
