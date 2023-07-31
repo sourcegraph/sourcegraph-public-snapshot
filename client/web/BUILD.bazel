@@ -15,13 +15,11 @@ load("//dev:write_generated_to_source_files.bzl", "write_generated_to_source_fil
 
 # gazelle:js_resolve **/*.schema.json //schema:schema-json
 # gazelle:js_resolve **/*.module.scss :module_style_typings
-# gazelle:js_resolve **/rbac/constants //client/web/src/rbac:constants:ts
 
 # Non-ts imports
 # gazelle:js_ignore_imports **/*.batch.yaml
 # gazelle:js_ignore_imports **/*.worker.ts
 # gazelle:js_ignore_imports **/SourcegraphWebApp.scss
-# gazelle:js_ignore_imports **/rbac/constants
 
 # Ignores added with update to Apsect CLI 5.5.2
 # TODO(bazel): remove these once the underlying bug with tsconfig paths is fixed
@@ -1727,6 +1725,7 @@ ts_project(
     ],
     tsconfig = ":tsconfig",
     deps = [
+        "//client/web/src/rbac:constants",
         ":code_intel_schema",
         ":graphql_operations",
         ":module_style_typings",
