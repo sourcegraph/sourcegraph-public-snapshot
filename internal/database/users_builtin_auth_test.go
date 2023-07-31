@@ -312,7 +312,7 @@ func TestUsers_PasswordResetExpiry(t *testing.T) {
 			AuthPasswordResetLinkExpiry: 60,
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil)})
+	t.Cleanup(func() { conf.Mock(nil) })
 
 	users := db.Users()
 	user, err := users.Create(ctx, NewUser{
