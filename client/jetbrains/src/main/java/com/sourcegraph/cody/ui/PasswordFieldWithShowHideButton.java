@@ -63,7 +63,7 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
         new MouseAdapter() {
           @Override
           public void mouseClicked(MouseEvent e) {
-            if (!passwordVisible) {
+            if (!passwordVisible && !componentDisabledOverride) {
               buttonActionListener.actionPerformed(null);
             }
           }

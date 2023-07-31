@@ -37,7 +37,7 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
   private final Comp component;
   @Nullable
   private final FixedSizeButton button;
-  private boolean componentDisabledOverride = false;
+  protected boolean componentDisabledOverride = false;
 
   public ComponentWithButton(@NotNull Comp component) {
     // Mac and Darcula have no horizontal gap, while other themes have a 2px gap.
