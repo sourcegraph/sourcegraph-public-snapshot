@@ -12,7 +12,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -82,19 +81,6 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err
-}
-
-var MockExternalServiceConfigs func(kind string, result any) error
-
-// ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
-// which should be a slice of the expected config type.
-func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result any) error {
-	if MockExternalServiceConfigs != nil {
-		return MockExternalServiceConfigs(kind, result)
-	}
-	return c.postInternal(ctx, "external-services/configs", api.ExternalServiceConfigsRequest{
-		Kind: kind,
-	}, &result)
 }
 
 func (c *internalClient) LogTelemetry(ctx context.Context, reqBody any) error {
