@@ -15,7 +15,7 @@ write_generated_to_source_files(
 # single file. So we make a project out it and then add it as a DEPENDENCY target to where it originally
 # appeared in the `srcs` target, ie. //client/web:build-enterprise
 ts_project(
-    srcs = ["constants.ts"],
     name = "constants",
+    srcs = ["constants.ts"],
     tsconfig = "//client/web:tsconfig",
 )
