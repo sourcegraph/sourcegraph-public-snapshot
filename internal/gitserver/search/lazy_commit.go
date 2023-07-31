@@ -69,6 +69,9 @@ func (l *LazyCommit) Diff() ([]*godiff.FileDiff, error) {
 }
 
 func (l *LazyCommit) ParentIDs() ([]api.CommitID, error) {
+	if len(l.ParentHashes) == 0 {
+		return nil, nil
+	}
 	strs := strings.Split(string(l.ParentHashes), " ")
 	commitIDs := make([]api.CommitID, 0, len(strs))
 	for _, str := range strs {
