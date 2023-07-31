@@ -21,7 +21,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -91,8 +90,6 @@ var _ Client = &clientImplementor{}
 type ClientSource interface {
 	// ClientForRepo returns a Client for the given repo.
 	ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
-	// ConnForRepo returns a grpc.ClientConn for the given repo.
-	ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
