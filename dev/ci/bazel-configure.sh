@@ -3,7 +3,7 @@
 set -eu
 
 # We run :gazelle since currently `bazel configure` tries to execute something with go and it doesn't exist on the bazel agent
-echo "--- Running bazel configure"
+echo "--- :bazel: Running bazel configure"
 bazel --bazelrc=.bazelrc --bazelrc=.aspect/bazelrc/ci.bazelrc --bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc configure
 
 # We disable exit on error here, since we want to catch the exit code and interpret it
@@ -29,23 +29,23 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 END
 fi
 
+echo "--- :bazel::go: Running gofmt"
 unformatted=$(bazel run @go_sdk//:bin/gofmt -- -l . 2>/dev/null)
 
 if [[ $unformatted != "" ]]; then
-  echo -e "The following files are not formatted:\n$unformatted"
   mkdir -p ./anntations
-  cat <<-"END" > ./annotations/bazel-gofmt.md
+  cat <<-END > ./annotations/bazel-gofmt.md
   The following files were found to not be formatted according to `gofmt`:
 
-  ```
+  \`\`\`
   ${unformatted}
-  ```
+  \`\`\`
 
   To automatically format these files run:
 
-  ```
+  \`\`\`
   bazel run @go_sdk//:bin/gofmt -- -w .
-  ```
+  \`\`\`
 END
   EXIT_CODE=1
 fi
