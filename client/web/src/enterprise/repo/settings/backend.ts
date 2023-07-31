@@ -81,7 +81,7 @@ export const REPOSITORY_RECORDED_COMMANDS_QUERY = gql`
     }
 `
 
-const REPOSITORY_RECORDED_COMMANDS_LIMIT = 40
+export const REPOSITORY_RECORDED_COMMANDS_LIMIT = 40
 
 interface UseFetchRecordedCommandsResult {
     loading: boolean

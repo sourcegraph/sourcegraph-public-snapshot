@@ -1,0 +1,364 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`RepoSettingsLogsPage should render correctly 1`] = `
+<DocumentFragment>
+  <div
+    class="container mb-3"
+  >
+    <div>
+      <h2
+        class="h2 heading"
+      >
+        <span
+          class="wrapper breadcrumb"
+        >
+          <span
+            class="path"
+          >
+            <span
+              class="text"
+            >
+              Logs and activities
+            </span>
+          </span>
+        </span>
+      </h2>
+    </div>
+  </div>
+  <div
+    class="container"
+  >
+    <div
+      class="wildcardTabs tabContainer"
+      data-orientation="horizontal"
+      data-reach-tabs=""
+      data-testid="wildcard-tabs"
+    >
+      <div
+        class="tablistWrapper"
+      >
+        <div
+          aria-orientation="horizontal"
+          class="tabList"
+          data-reach-tab-list=""
+          data-testid="wildcard-tab-list"
+          role="tablist"
+        >
+          <button
+            aria-controls="tabs--1--panel--0"
+            aria-selected="true"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-selected=""
+            data-testid="wildcard-tab"
+            id="tabs--1--tab--0"
+            role="tab"
+            tabindex="0"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Last repo commands
+            </span>
+          </button>
+          <button
+            aria-controls="tabs--1--panel--1"
+            aria-selected="false"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-testid="wildcard-tab"
+            id="tabs--1--tab--1"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Last sync output
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        data-reach-tab-panels=""
+        data-testid="wildcard-tab-panel-list"
+      >
+        <div
+          aria-labelledby="tabs--1--tab--0"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          id="tabs--1--panel--0"
+          role="tabpanel"
+          tabindex="0"
+        >
+          <div
+            aria-label="recorded commands"
+          />
+          <div
+            aria-label="Loading"
+            aria-live="polite"
+            class="mdi-icon iconInline loadingSpinner"
+            data-loading-spinner="true"
+            role="img"
+          />
+        </div>
+        <div
+          aria-labelledby="tabs--1--tab--1"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          hidden=""
+          id="tabs--1--panel--1"
+          role="tabpanel"
+          tabindex="-1"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`RepoSettingsLogsPage should render correctly when there are no recorded commands 1`] = `
+<DocumentFragment>
+  <div
+    class="container mb-3"
+  >
+    <div>
+      <h2
+        class="h2 heading"
+      >
+        <span
+          class="wrapper breadcrumb"
+        >
+          <span
+            class="path"
+          >
+            <span
+              class="text"
+            >
+              Logs and activities
+            </span>
+          </span>
+        </span>
+      </h2>
+    </div>
+  </div>
+  <div
+    class="container"
+  >
+    <div
+      class="wildcardTabs tabContainer"
+      data-orientation="horizontal"
+      data-reach-tabs=""
+      data-testid="wildcard-tabs"
+    >
+      <div
+        class="tablistWrapper"
+      >
+        <div
+          aria-orientation="horizontal"
+          class="tabList"
+          data-reach-tab-list=""
+          data-testid="wildcard-tab-list"
+          role="tablist"
+        >
+          <button
+            aria-controls="tabs--7--panel--0"
+            aria-selected="true"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-selected=""
+            data-testid="wildcard-tab"
+            id="tabs--7--tab--0"
+            role="tab"
+            tabindex="0"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Last repo commands
+            </span>
+          </button>
+          <button
+            aria-controls="tabs--7--panel--1"
+            aria-selected="false"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-testid="wildcard-tab"
+            id="tabs--7--tab--1"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Last sync output
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        data-reach-tab-panels=""
+        data-testid="wildcard-tab-panel-list"
+      >
+        <div
+          aria-labelledby="tabs--7--tab--0"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          id="tabs--7--panel--0"
+          role="tabpanel"
+          tabindex="0"
+        >
+          <div
+            aria-label="recorded commands"
+          />
+          <div
+            aria-label="Loading"
+            aria-live="polite"
+            class="mdi-icon iconInline loadingSpinner"
+            data-loading-spinner="true"
+            role="img"
+          />
+        </div>
+        <div
+          aria-labelledby="tabs--7--tab--1"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          hidden=""
+          id="tabs--7--panel--1"
+          role="tabpanel"
+          tabindex="-1"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
+
+exports[`RepoSettingsLogsPage should render correctly when there are recorded commands 1`] = `
+<DocumentFragment>
+  <div
+    class="container mb-3"
+  >
+    <div>
+      <h2
+        class="h2 heading"
+      >
+        <span
+          class="wrapper breadcrumb"
+        >
+          <span
+            class="path"
+          >
+            <span
+              class="text"
+            >
+              Logs and activities
+            </span>
+          </span>
+        </span>
+      </h2>
+    </div>
+  </div>
+  <div
+    class="container"
+  >
+    <div
+      class="wildcardTabs tabContainer"
+      data-orientation="horizontal"
+      data-reach-tabs=""
+      data-testid="wildcard-tabs"
+    >
+      <div
+        class="tablistWrapper"
+      >
+        <div
+          aria-orientation="horizontal"
+          class="tabList"
+          data-reach-tab-list=""
+          data-testid="wildcard-tab-list"
+          role="tablist"
+        >
+          <button
+            aria-controls="tabs--1--panel--0"
+            aria-selected="true"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-selected=""
+            data-testid="wildcard-tab"
+            id="tabs--1--tab--0"
+            role="tab"
+            tabindex="0"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Last repo commands
+            </span>
+          </button>
+          <button
+            aria-controls="tabs--1--panel--1"
+            aria-selected="false"
+            class="medium"
+            data-orientation="horizontal"
+            data-reach-tab=""
+            data-testid="wildcard-tab"
+            id="tabs--1--tab--1"
+            role="tab"
+            tabindex="-1"
+            type="button"
+          >
+            <span
+              class="tabLabel"
+            >
+              Last sync output
+            </span>
+          </button>
+        </div>
+      </div>
+      <div
+        data-reach-tab-panels=""
+        data-testid="wildcard-tab-panel-list"
+      >
+        <div
+          aria-labelledby="tabs--1--tab--0"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          id="tabs--1--panel--0"
+          role="tabpanel"
+          tabindex="0"
+        >
+          <div
+            aria-label="recorded commands"
+          />
+          <div
+            aria-label="Loading"
+            aria-live="polite"
+            class="mdi-icon iconInline loadingSpinner"
+            data-loading-spinner="true"
+            role="img"
+          />
+        </div>
+        <div
+          aria-labelledby="tabs--1--tab--1"
+          data-reach-tab-panel=""
+          data-testid="wildcard-tab-panel"
+          hidden=""
+          id="tabs--1--panel--1"
+          role="tabpanel"
+          tabindex="-1"
+        />
+      </div>
+    </div>
+  </div>
+</DocumentFragment>
+`;
