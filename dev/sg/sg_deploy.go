@@ -237,7 +237,6 @@ func generateConfig(valuesFile string, dryRun bool) error {
 }
 
 func checkCurrentDir(expected string) error {
-
 	cwd, err := os.Getwd()
 	if err != nil {
 		return errors.Wrap(err, "error getting current directory")
