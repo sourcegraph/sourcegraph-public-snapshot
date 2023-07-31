@@ -27,7 +27,6 @@ const (
 
 	RepoShield  = "repo.shield"
 	RepoRefresh = "repo.refresh"
-	Telemetry   = "telemetry"
 
 	Webhooks                = "webhooks"
 	GitHubWebhooks          = "github.webhooks"
@@ -114,7 +113,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/ranks/{RepoName:.*}").Methods("GET").Name(RepoRank)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
 	base.Path("/search/index-status").Methods("POST").Name(UpdateIndexStatus)
-	base.Path("/telemetry").Methods("POST").Name(Telemetry)
 	base.Path("/lsif/upload").Methods("POST").Name(LSIFUpload)
 	base.Path("/scip/upload").Methods("POST").Name(SCIPUpload)
 	base.Path("/scip/upload").Methods("HEAD").Name(SCIPUploadExists)
