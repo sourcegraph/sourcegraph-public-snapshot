@@ -1908,13 +1908,10 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		IsLocked:         restRepo.Locked,
 		IsDisabled:       restRepo.Disabled,
 		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
+		Visibility:       Visibility(restRepo.Visibility),
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
 		RepositoryTopics: RepositoryTopics{topics},
-	}
-
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
-		repo.Visibility = Visibility(restRepo.Visibility)
 	}
 
 	return &repo

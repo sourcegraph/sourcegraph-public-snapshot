@@ -105,7 +105,7 @@
     "NameWithOwner": "sourcegraph/secret-internal-vegeta",
     "Description": "This vegeta is made with secret sauce from Sourcegraph.",
     "URL": "https://github.com/sourcegraph/secret-internal-vegeta",
-    "IsPrivate": true,
+    "IsPrivate": false,
     "IsFork": false,
     "IsArchived": false,
     "IsLocked": false,
