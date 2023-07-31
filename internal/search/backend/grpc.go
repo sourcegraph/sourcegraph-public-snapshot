@@ -4,17 +4,18 @@ import (
 	"context"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/zoekt"
 	v1 "github.com/sourcegraph/zoekt/grpc/v1"
 	"github.com/sourcegraph/zoekt/query"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 )
 
 func IsZoektGRPCEnabled(ctx context.Context) bool {
-	return grpc.IsGRPCEnabled(ctx) && featureflag.FromContext(ctx).GetBoolOr("grpc-zoekt", false)
+	return conf.IsGRPCEnabled(ctx) && featureflag.FromContext(ctx).GetBoolOr("grpc-zoekt", false)
 }
 
 // switchableZoektGRPCClient is a zoekt.Streamer that can switch between

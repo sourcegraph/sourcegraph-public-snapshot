@@ -267,6 +267,7 @@ Supported run types when providing an argument for 'sg ci build [runtype]':
 * docker-images-patch - Patch image
 * docker-images-patch-notest - Patch image without testing
 * executor-patch-notest - Build executor without testing
+* docker-images-candidates-notest - Build all candidates without testing
 * backend-integration - Backend integration tests
 * bazel-do - Bazel command
 
@@ -1154,6 +1155,72 @@ Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--url, -u="<value>"`: Run the evaluation against this endpoint (default: http://localhost:9991/search)
+
+## sg wolfi
+
+Automate Wolfi related tasks.
+
+Build Wolfi packages and images locally, and update base image hashes
+
+```sh
+# Update base image hashes
+$ sg wolfi update-hashes
+
+# Build a specific package using a manifest from wolfi-packages/
+$ sg wolfi package jaeger
+$ sg wolfi package jaeger.yaml
+
+# Build a base image using a manifest from wolfi-images/
+$ sg wolfi image gitserver
+$ sg wolfi image gitserver.yaml
+```
+
+### sg wolfi package
+
+Build a package locally using a manifest from sourcegraph/wolfi-packages/.
+
+```sh
+$ Build a Wolfi package locally by running Melange against a provided Melange manifest file, which can be found in sourcegraph/wolfi-packages.
+
+$ This is convenient for testing package changes locally before pushing to the Wolfi registry.
+$ Base images containing locally-built packages can then be built using 'sg wolfi image'.
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg wolfi image
+
+Build a base image locally using a manifest from sourcegraph/wolfi-images/.
+
+```sh
+$ Build a base image locally by running apko against a provided apko manifest file, which can be found in sourcegraph/wolfi-images.
+
+$ Any packages built locally using 'sg wolfi package' can be included in the base image using the 'package@local' syntax in the base image manifest.
+$ This is convenient for testing package changes locally before publishing them.
+
+$ Once built, the base image is loaded into Docker and can be run locally.
+$ It can also be used for local development by updating its path and hash in the 'dev/oci_deps.bzl' file.
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+
+### sg wolfi update-hashes
+
+Update Wolfi base images hashes to the latest versions.
+
+```sh
+$ Update the hash references for all Wolfi base images in the 'dev/oci_deps.bzl' file.
+
+$ This is done by fetching the ':latest' tag for each base image from the registry, and updating the corresponding hash in 'dev/oci_deps.bzl'.
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
 
 ## sg secret
 

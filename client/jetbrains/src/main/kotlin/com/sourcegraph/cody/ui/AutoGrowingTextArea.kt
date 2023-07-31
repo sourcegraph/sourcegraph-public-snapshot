@@ -20,6 +20,8 @@ import javax.swing.plaf.basic.BasicTextAreaUI
 import javax.swing.text.AttributeSet
 import javax.swing.text.Document
 import javax.swing.text.PlainDocument
+import kotlin.math.max
+import kotlin.math.min
 
 class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JPanel) {
   val textArea: JBTextArea
@@ -34,7 +36,7 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JP
     initialPreferredSize = scrollPane.preferredSize
     val document: Document =
         object : PlainDocument() {
-          override fun insertString(offs: Int, str: String, a: AttributeSet) {
+          override fun insertString(offs: Int, str: String?, a: AttributeSet?) {
             super.insertString(offs, str, a)
             updateTextAreaSize()
             outerPanel.revalidate()
@@ -86,8 +88,8 @@ class AutoGrowingTextArea(private val minRows: Int, maxRows: Int, outerPanel: JP
     // Limit the number of rows to maxRows
     val fontMetrics = textArea.getFontMetrics(textArea.font)
     val maxTextAreaHeight = fontMetrics.height * autoGrowUpToRow
-    var preferredHeight = Math.min(preferredSize.height, maxTextAreaHeight)
-    preferredHeight = Math.max(preferredHeight, initialPreferredSize.height)
+    var preferredHeight = min(preferredSize.height, maxTextAreaHeight)
+    preferredHeight = max(preferredHeight, initialPreferredSize.height)
 
     // Set the preferred size of the JScrollPane to accommodate the JTextArea
     val scrollPaneSize = scrollPane.size

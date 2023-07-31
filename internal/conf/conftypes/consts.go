@@ -24,6 +24,7 @@ type CompletionsProviderName string
 const (
 	CompletionsProviderNameAnthropic   CompletionsProviderName = "anthropic"
 	CompletionsProviderNameOpenAI      CompletionsProviderName = "openai"
+	CompletionsProviderNameAzureOpenAI CompletionsProviderName = "azure-openai"
 	CompletionsProviderNameSourcegraph CompletionsProviderName = "sourcegraph"
 )
 
@@ -46,6 +47,7 @@ type EmbeddingsProviderName string
 
 const (
 	EmbeddingsProviderNameOpenAI      EmbeddingsProviderName = "openai"
+	EmbeddingsProviderNameAzureOpenAI EmbeddingsProviderName = "azure-openai"
 	EmbeddingsProviderNameSourcegraph EmbeddingsProviderName = "sourcegraph"
 )
 

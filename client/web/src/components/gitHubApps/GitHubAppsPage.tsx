@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { ButtonLink, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { ButtonLink, Container, ErrorAlert, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { GitHubAppsResult, GitHubAppsVariables, GitHubAppDomain } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -62,7 +62,7 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
                 description={
                     <>
                         Create and connect a GitHub App to better manage GitHub code host connections.{' '}
-                        <Link to="/help/admin/external_service/github#using-a-github-app">
+                        <Link to="/help/admin/external_service/github#using-a-github-app" target="_blank">
                             See how GitHub App configuration works.
                         </Link>
                         {batchChangesEnabled && (
@@ -85,32 +85,35 @@ export const GitHubAppsPage: React.FC<Props> = ({ batchChangesEnabled }) => {
                     </ButtonLink>
                 }
             />
-            {!success && setupError && <GitHubAppFailureAlert error={setupError} />}
-            <ConnectionContainer>
-                {error && <ErrorAlert error={error} />}
-                {loading && !data && <ConnectionLoading />}
-                <ConnectionList as="ul" className="list-group mt-3" aria-label="GitHub Apps">
-                    {!gitHubApps || gitHubApps.length === 0 ? (
-                        <div className="text-center">You haven't created any GitHub Apps yet.</div>
-                    ) : (
-                        gitHubApps?.map(app => <GitHubAppCard key={app.id} app={app} refetch={reloadApps} />)
-                    )}
-                </ConnectionList>
-                <SummaryContainer className="mt-2" centered={true}>
-                    <ConnectionSummary
-                        noSummaryIfAllNodesVisible={false}
-                        first={gitHubApps?.length ?? 0}
-                        centered={true}
-                        connection={{
-                            nodes: gitHubApps ?? [],
-                            totalCount: gitHubApps?.length ?? 0,
-                        }}
-                        noun="GitHub App"
-                        pluralNoun="GitHub Apps"
-                        hasNextPage={false}
-                    />
-                </SummaryContainer>
-            </ConnectionContainer>
+            <Container className="mb-3">
+                {!success && setupError && <GitHubAppFailureAlert error={setupError} />}
+                <ConnectionContainer>
+                    {error && <ErrorAlert error={error} />}
+                    {loading && !data && <ConnectionLoading />}
+                    <ConnectionList as="ul" className="list-group" aria-label="GitHub Apps">
+                        {gitHubApps?.map(app => (
+                            <GitHubAppCard key={app.id} app={app} refetch={reloadApps} />
+                        ))}
+                    </ConnectionList>
+                    <SummaryContainer className="mt-2" centered={true}>
+                        <ConnectionSummary
+                            emptyElement={
+                                <div className="text-center text-muted">You haven't created any GitHub Apps yet.</div>
+                            }
+                            noSummaryIfAllNodesVisible={false}
+                            first={gitHubApps?.length ?? 0}
+                            centered={true}
+                            connection={{
+                                nodes: gitHubApps ?? [],
+                                totalCount: gitHubApps?.length ?? 0,
+                            }}
+                            noun="GitHub App"
+                            pluralNoun="GitHub Apps"
+                            hasNextPage={false}
+                        />
+                    </SummaryContainer>
+                </ConnectionContainer>
+            </Container>
         </>
     )
 }
