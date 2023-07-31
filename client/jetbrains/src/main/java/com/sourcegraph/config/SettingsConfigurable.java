@@ -152,10 +152,8 @@ public class SettingsConfigurable implements Configurable {
   public void reset() {
     mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
     mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
-    boolean dotComAccessTokenSet = ConfigUtil.isDotComAccessTokenSet(project);
-    mySettingsComponent.resetDotComAccessToken(dotComAccessTokenSet);
-    boolean enterpriseAccessTokenSet = ConfigUtil.isEnterpriseAccessTokenSet(project);
-    mySettingsComponent.resetEnterpriseAccessToken(enterpriseAccessTokenSet);
+    mySettingsComponent.resetDotComAccessToken();
+    mySettingsComponent.resetEnterpriseAccessToken();
     mySettingsComponent.setCustomRequestHeaders(ConfigUtil.getCustomRequestHeaders(project));
     String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
     mySettingsComponent.setDefaultBranchName(defaultBranchName);

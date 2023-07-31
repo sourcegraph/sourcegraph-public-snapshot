@@ -18,18 +18,22 @@ import org.jetbrains.annotations.Nullable;
 public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPasswordField> {
   private final String placeholder;
   private final char echoChar;
+  private boolean passwordLoaded = false;
   private boolean passwordVisible = false;
   private boolean passwordChanged = false;
-  @NotNull private final JBPasswordField passwordField;
+  @NotNull
+  private final JBPasswordField passwordField;
 
   // A function that retrieves the current password from storage.
   private final Supplier<String> passwordLoader;
 
-  public PasswordFieldWithShowHideButton(@NotNull JBPasswordField passwordField, Supplier<String> passwordLoader) {
+  public PasswordFieldWithShowHideButton(@NotNull JBPasswordField passwordField,
+      Supplier<String> passwordLoader) {
     this(passwordField, passwordLoader, 40);
   }
 
-  private PasswordFieldWithShowHideButton(@NotNull JBPasswordField passwordField, Supplier<String> passwordLoader, int placeholderLength) {
+  private PasswordFieldWithShowHideButton(@NotNull JBPasswordField passwordField,
+      Supplier<String> passwordLoader, int placeholderLength) {
     super(passwordField);
     this.passwordField = passwordField;
     this.echoChar = passwordField.getEchoChar();
@@ -43,14 +47,6 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
       // Toggle password visibility
       passwordVisible = !passwordVisible;
       update();
-
-      // If the password hasn't been changed, load the password from storage.
-      if (!passwordChanged && passwordVisible) {
-        String storedPassword = passwordLoader.get();
-        if (storedPassword != null) {
-          setPassword(storedPassword);
-        }
-      }
     };
     addButtonActionListener(buttonActionListener);
 
@@ -93,15 +89,28 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
     };
   }
 
-  @Override
-  public void updateUI() {
-    super.updateUI();
+  public void resetUI() {
+    passwordChanged = false;
+    passwordVisible = false;
+    passwordLoaded = false;
+    update();
   }
 
+  /**
+   * This should be called "updateUI" but that was already taken. :shrug:
+   */
   private void update() {
     setComponentDisabledOverride(!passwordVisible);
     passwordField.setEchoChar(passwordVisible ? (char) 0 : echoChar);
     setButtonIcon(passwordVisible ? AllIcons.Actions.Show : Icons.Actions.Hide);
+    if (!passwordLoaded) {
+      if (passwordVisible) {
+        passwordField.setText(passwordLoader.get());
+        passwordLoaded = true;
+      } else {
+        passwordField.setText(placeholder);
+      }
+    }
     setIconTooltip(passwordVisible ? "Hide" : "Show");
   }
 
@@ -110,37 +119,21 @@ public class PasswordFieldWithShowHideButton extends ComponentWithButton<JBPassw
   }
 
   /**
-   * @return Null means we don't know the token because it wasn't loaded from the secure storage.
-   *         An empty value means the user has explicitly set it to empty.
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage. An
+   * empty value means the user has explicitly set it to empty.
    */
   @Nullable
   public String getPassword() {
-    String password = Optional.ofNullable(passwordField.getPassword()).map(String::copyValueOf).orElse("");
+    String password = Optional.ofNullable(passwordField.getPassword()).map(String::copyValueOf)
+        .orElse("");
     // Known edge case: if the user's password is exactly the placeholder, we will think there's no password.
     // We won't fix it because we currently only use the component for access tokens where this is not a problem.
     return password.equals(placeholder) ? null : password;
   }
 
-  private void setPassword(@NotNull String password) {
-    passwordField.setText(password);
-  }
-
   @NotNull
   public Document getDocument() {
     return passwordField.getDocument();
-  }
-
-  /**
-   * Resets the password field to the old password if it was set, or to the mock token if it wasn't.
-   */
-  public void resetPassword(boolean storedPasswordExists) {
-    if (storedPasswordExists) {
-      setPassword(passwordVisible ? passwordLoader.get() : placeholder);
-    } else {
-      setPassword("");
-    }
-
-    passwordChanged = false;
   }
 
   public boolean hasPasswordChanged() {

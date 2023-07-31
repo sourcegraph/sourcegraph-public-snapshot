@@ -376,8 +376,8 @@ public class SettingsComponent implements Disposable {
     return dotComAccessTokenTextField.getPassword();
   }
 
-  public void resetDotComAccessToken(boolean isAccessTokenSet) {
-    dotComAccessTokenTextField.resetPassword(isAccessTokenSet);
+  public void resetDotComAccessToken() {
+    dotComAccessTokenTextField.resetUI();
   }
 
   public boolean isDotComAccessTokenChanged() {
@@ -393,8 +393,8 @@ public class SettingsComponent implements Disposable {
     return enterpriseAccessTokenTextField.getPassword();
   }
 
-  public void resetEnterpriseAccessToken(boolean isAccessTokenSet) {
-    enterpriseAccessTokenTextField.resetPassword(isAccessTokenSet);
+  public void resetEnterpriseAccessToken() {
+    enterpriseAccessTokenTextField.resetUI();
   }
 
   public boolean isEnterpriseAccessTokenChanged() {
