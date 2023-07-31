@@ -22,10 +22,8 @@ import {
     Collapse,
     CollapsePanel,
     Label,
-    H4,
 } from '@sourcegraph/wildcard'
 
-import { LogOutput } from '../../components/LogOutput'
 import { PageTitle } from '../../components/PageTitle'
 import {
     CheckMirrorRepositoryConnectionResult,
@@ -281,26 +279,6 @@ const CorruptionLogsContainer: FC<CorruptionLogProps> = props => {
     )
 }
 
-interface LastSyncOutputProps {
-    repo: SettingsAreaRepositoryFields
-}
-
-const LastSyncOutputContainer: FC<LastSyncOutputProps> = props => {
-    const output =
-        (props.repo.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
-        props.repo.mirrorInfo.lastSyncOutput ||
-        'No logs yet.'
-    return (
-        <BaseActionContainer
-            title="Last sync log"
-            titleAs="h3"
-            className="mb-0"
-            description={<H4>Output from this repository's most recent sync</H4>}
-            details={<LogOutput className="w-100" text={output} logDescription="Job output:" />}
-        />
-    )
-}
-
 interface RepoSettingsMirrorPageProps {
     repo: SettingsAreaRepositoryFields
 }
@@ -429,7 +407,6 @@ export const RepoSettingsMirrorPage: FC<RepoSettingsMirrorPageProps> = props => 
                     </Alert>
                 )}
                 <CorruptionLogsContainer repo={repo} />
-                <LastSyncOutputContainer repo={repo} />
             </Container>
         </>
     )

@@ -5,7 +5,7 @@ Sourcegraph makes it easy to read, write, and fix code—even in big, complex co
 - **Code search:** Search all of your repositories across all branches and all code hosts.
 - **Code intelligence:** Navigate code, find references, see code owners, trace history, & more.
 - **Fix & refactor:** Roll out & track large-scale changes & migrations across repos at once.
-- **AI code assistant:** Use Cody to read, write, and understand entire codebas faster.
+- **AI code assistant:** Use Cody to read, write, and understand entire codebase faster.
 
 ## Usage
 

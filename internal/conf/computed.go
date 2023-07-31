@@ -605,7 +605,7 @@ func HashedLicenseKeyForAnalytics(licenseKey string) string {
 
 // HashedLicenseKeyWithPrefix provides a sha256 hashed license key with a prefix (to ensure unique hashed values by use case).
 func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
-	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix+licenseKey)))
+	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
 }
 
 func GetDeduplicatedForksIndex() collections.Set[string] {

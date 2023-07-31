@@ -172,7 +172,7 @@ go_test(
 # reference.md to the correct directory.
 #
 # Alternatively, if you just want to generate the doc:
-# bazel run /doc/dev/background-information/sg:write_cli_reference_doc
+# bazel run //doc/dev/background-information/sg:write_cli_reference_doc
 genrule(
     name = "generate_reference_doc",
     srcs = ["//:sg.config.yaml"],

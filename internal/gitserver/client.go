@@ -21,7 +21,6 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
@@ -32,11 +31,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -91,8 +90,6 @@ var _ Client = &clientImplementor{}
 type ClientSource interface {
 	// ClientForRepo returns a Client for the given repo.
 	ClientForRepo(ctx context.Context, userAgent string, repo api.RepoName) (proto.GitserverServiceClient, error)
-	// ConnForRepo returns a grpc.ClientConn for the given repo.
-	ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error)
 	// AddrForRepo returns the address of the gitserver for the given repo.
 	AddrForRepo(ctx context.Context, userAgent string, repo api.RepoName) string
 	// Address the current list of gitserver addresses.
@@ -483,11 +480,6 @@ func (c *clientImplementor) ClientForRepo(ctx context.Context, repo api.RepoName
 	return c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
 }
 
-// TODO: Looks like this is not used anywhere.
-func (c *clientImplementor) ConnForRepo(ctx context.Context, repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.clientSource.ConnForRepo(ctx, c.userAgent, repo)
-}
-
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
 	Treeish   string               // the tree or commit to produce an archive for
@@ -621,7 +613,7 @@ func (c *RemoteGitCommand) sendExec(ctx context.Context) (_ io.ReadCloser, err e
 		return nil, err
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.execer.ClientForRepo(ctx, repoName)
 		if err != nil {
 			return nil, err
@@ -778,7 +770,7 @@ func (c *clientImplementor) Search(ctx context.Context, args *protocol.SearchReq
 
 	repoName := protocol.NormalizeRepo(args.Repo)
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, repoName)
 		if err != nil {
 			return false, err
@@ -899,7 +891,7 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 		P4Passwd: password,
 		Args:     args,
 	}
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, "")
 		if err != nil {
 			return nil, nil, err
@@ -1026,7 +1018,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 
 		var response protocol.BatchLogResponse
 
-		if internalgrpc.IsGRPCEnabled(ctx) {
+		if conf.IsGRPCEnabled(ctx) {
 			client, err := grpcClient.client, grpcClient.dialErr
 			if err != nil {
 				return err
@@ -1183,7 +1175,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		Since: since,
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
 			return nil, err
@@ -1221,7 +1213,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 
 // RequestRepoClone requests that the gitserver does an asynchronous clone of the repository.
 func (c *clientImplementor) RequestRepoClone(ctx context.Context, repo api.RepoName) (*protocol.RepoCloneResponse, error) {
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
 			return nil, err
@@ -1274,7 +1266,7 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 
 	var resp protocol.IsRepoCloneableResponse
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
 			return err
@@ -1352,7 +1344,7 @@ func (e *RepoNotCloneableErr) Error() string {
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 	numPossibleShards := len(c.Addrs())
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		shards := make(map[proto.GitserverServiceClient]*proto.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
 		for _, r := range repos {
 			client, err := c.ClientForRepo(ctx, r)
@@ -1474,7 +1466,7 @@ func (c *clientImplementor) ReposStats(ctx context.Context) (map[string]*protoco
 	stats := map[string]*protocol.ReposStats{}
 	var allErr error
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		for _, addr := range c.clientSource.Addresses() {
 			client, err := addr.GRPCClient()
 			if err != nil {
@@ -1526,7 +1518,7 @@ func (c *clientImplementor) Remove(ctx context.Context, repo api.RepoName) error
 	// In case the repo has already been deleted from the database we need to pass
 	// the old name in order to land on the correct gitserver instance
 	repo = api.UndeletedRepoName(repo)
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, repo)
 		if err != nil {
 			return err
@@ -1617,7 +1609,7 @@ func (c *clientImplementor) do(ctx context.Context, repoForTracing api.RepoName,
 }
 
 func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, req.Repo)
 		if err != nil {
 			return nil, err
@@ -1672,7 +1664,7 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		Repo:       repo,
 		ObjectName: objectName,
 	}
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.ClientForRepo(ctx, req.Repo)
 		if err != nil {
 			return nil, err
