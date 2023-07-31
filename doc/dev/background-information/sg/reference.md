@@ -1156,6 +1156,42 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
 * `--url, -u="<value>"`: Run the evaluation against this endpoint (default: http://localhost:9991/search)
 
+## sg deploy
+
+Generate a Kubernetes manifest for a Sourcegraph deployment.
+
+Internal deployments live in the sourcegraph/infra repository.
+
+```sh
+$ sg deploy --values <path to values file>
+
+$ Example of a values.yaml file:
+
+$ name: my-app
+$ image: gcr.io/sourcegraph-dev/my-app:latest
+$ replicas: 1
+$ envvars:
+$ - name: ricky
+$ value: foo
+$ - name: julian
+$ value: bar
+$ containerPorts:
+$ - name: frontend
+$ port: 80
+$ servicePorts:
+$ - name: http
+$ port: 80
+$ targetPort: test # Set to the name or port number of the containerPort you want to expose
+$ dns: dave-app.sgdev.org
+```
+
+Flags:
+
+* `--dry-run`: Write the manifest to stdout instead of writing to a file
+* `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--infra-repo="<value>"`: The location of the sourcegraph/infrastructure repository. If undefined the currect directory will be used.
+* `--values="<value>"`: The path to the values file
+
 ## sg wolfi
 
 Automate Wolfi related tasks.
