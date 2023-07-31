@@ -428,26 +428,19 @@ WHERE m.id = ANY(%s)
 ORDER BY m.id ASC, e.created DESC
 `
 
-// ReturnEnterpriseMigrations is set by the enterprise application to enable the
-// inclusion of enterprise-only migration records in the output of oobmigration.List.
-var ReturnEnterpriseMigrations = false
-
 // List returns the complete list of out-of-band migrations.
 //
 // This method will use a fallback query to support an older version of the table (prior to 3.29)
 // so that upgrades of historic instances work with the migrator. This is true of select methods
 // in this store, but not all methods.
 func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
-	conds := make([]*sqlf.Query, 0, 2)
-	if !ReturnEnterpriseMigrations {
-		conds = append(conds, sqlf.Sprintf("NOT m.is_enterprise"))
+	conds := []*sqlf.Query{
+		// Syncing metadata does not remove unknown migration fields. If we've removed them,
+		// we want to block them from returning from old instances. We also want to ignore
+		// any database content that we don't have metadata for. Similar checks should not
+		// be necessary on the other access methods, as they use ids returned by this method.
+		sqlf.Sprintf("m.id = ANY(%s)", pq.Array(yamlMigrationIDs)),
 	}
-
-	// Syncing metadata does not remove unknown migration fields. If we've removed them,
-	// we want to block them from returning from old instances. We also want to ignore
-	// any database content that we don't have metadata for. Similar checks should not
-	// be necessary on the other access methods, as they use ids returned by this method.
-	conds = append(conds, sqlf.Sprintf("m.id = ANY(%s)", pq.Array(yamlMigrationIDs)))
 
 	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
 	if err != nil {

@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//cmd/migrator/shared",
         "//internal/env",
-        "//internal/oobmigration",
         "//internal/oobmigration/migrations/register",
         "//internal/sanitycheck",
         "//internal/version",
