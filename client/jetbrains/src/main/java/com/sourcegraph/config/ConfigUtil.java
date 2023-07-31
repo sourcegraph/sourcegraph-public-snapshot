@@ -343,6 +343,6 @@ public class ConfigUtil {
       AccessTokenStorage.setApplicationDotComAccessToken(unsafeApplicationLevelAccessToken);
       getApplicationLevelConfig().dotComAccessToken = null;
     }
-    return unsafeApplicationLevelAccessToken;
+    return unsafeApplicationLevelAccessToken != null ? unsafeApplicationLevelAccessToken : "";
   }
 }
