@@ -1,5 +1,3 @@
-import type { EditorView } from '@codemirror/view'
-
 import {
     ActiveTextEditor,
     ActiveTextEditorSelection,
@@ -8,14 +6,14 @@ import {
 } from '@sourcegraph/cody-shared/dist/editor'
 
 export interface EditorStore {
+    content: string
+    fullText: string
     filename: string
     repo: string
     revision: string
-    content: string
-    view: EditorView
 }
 
-export class CodeMirrorEditor implements Editor {
+export class ChatEditor implements Editor {
     private editor?: EditorStore | null
     constructor(editor?: EditorStore | null) {
         this.editor = editor
@@ -53,33 +51,29 @@ export class CodeMirrorEditor implements Editor {
     public getActiveTextEditorSelection(): ActiveTextEditorSelection | null {
         const editor = this.editor
 
-        if (!editor || editor.view.state.selection.main.empty) {
+        if (!editor || !editor.fullText) {
             return null
         }
 
-        const selection = editor.view.state.selection.main
-        const { head, anchor } = selection
+        const splitText = editor.fullText.split(editor.content)
+        const precedingText = splitText[0]
+        const selectedText = editor.content
+        const followingText = splitText[1]
 
-        if (head !== anchor) {
-            const precedingText = editor.view.state.sliceDoc(undefined, selection.from)
-            const selectedText = editor.view.state.sliceDoc(selection.from, selection.to)
-            const followingText = editor.view.state.sliceDoc(selection.to, undefined)
+        // TODO: If there's multiple, how do we split at the right spot?
 
-            console.log('P:', precedingText)
-            console.log('S:', selectedText)
-            console.log('F:', followingText)
+        console.log('P:', precedingText)
+        console.log('S:', selectedText)
+        console.log('F:', followingText)
 
-            return {
-                fileName: editor.filename,
-                repoName: this.repoName,
-                revision: this.revision,
-                precedingText,
-                selectedText,
-                followingText,
-            }
+        return {
+            fileName: editor.filename,
+            repoName: this.repoName,
+            revision: this.revision,
+            precedingText,
+            selectedText,
+            followingText,
         }
-
-        return null
     }
 
     public getActiveTextEditorSelectionOrEntireFile(): ActiveTextEditorSelection | null {
@@ -102,6 +96,7 @@ export class CodeMirrorEditor implements Editor {
         return null
     }
 
+    // TODO: Update this method
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         const editor = this.editor
         if (editor) {

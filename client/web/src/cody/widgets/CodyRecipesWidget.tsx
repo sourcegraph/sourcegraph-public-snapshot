@@ -8,6 +8,7 @@ import { TranslateToLanguage } from '@sourcegraph/cody-shared/dist/chat/recipes/
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { EventName } from '../../util/constants'
+import { ChatEditor } from '../components/ChatEditor'
 import { CodeMirrorEditor } from '../components/CodeMirrorEditor'
 import { CodyChatStore } from '../useCodyChat'
 
@@ -17,7 +18,7 @@ import { Recipes } from './components/Recipes'
 
 interface IProps {
     // TODO: change to Editor type
-    editor?: CodeMirrorEditor
+    editor?: CodeMirrorEditor | ChatEditor
     codyChatStore?: CodyChatStore | null
 }
 

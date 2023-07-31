@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 
+import { EditorView } from '@codemirror/view'
 import {
     mdiClose,
     mdiSend,
@@ -28,6 +29,7 @@ import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourceg
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
+import { CodeMirrorEditor } from '../../components/CodeMirrorEditor'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
@@ -102,9 +104,12 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         return <></>
     }
 
+    /** Attempt to use CodeMirror for sliceDoc() method */
+    const editorRef = useRef<EditorView | null>(null)
+
     const RecipeWidgetWrapperWithProps = useMemo(
-        () => (props: { targetRef: any; children: any }) =>
-            <RecipeWidgetWrapper {...props} codyChatStore={codyChatStore} />,
+        () => (props: { targetRef: EditorView; children: any }) =>
+            <RecipeWidgetWrapper {...props} targetRef={editorRef} codyChatStore={codyChatStore} />,
         [codyChatStore]
     )
 
@@ -153,12 +158,12 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
 
 // TODO: fix the types
 interface RecipeWidgetWrapperProps {
-    targetRef: any
+    targetRef: EditorView | null
     children: any
     codyChatStore: any
-    // fileName?: string
-    // repoName?: string
-    // revision?: string
+    fileName?: string
+    repoName?: string
+    revision?: string
 }
 
 // TODO: move the component to a separete file inside cody/components
@@ -178,19 +183,57 @@ const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = R
                             setShow(!isCollapsed)
                         }, [isCollapsed, setShow])
 
-                        console.log(clientRect, textContent, targetRef.current?.innerText)
+                        console.log(targetRef?.current)
 
                         if (!clientRect || isCollapsed || !targetRef || !show) {
                             return null
                         }
 
+                        /** Attempt to find offset index */
+
+                        // var offset = 0
+                        // var selection = window.getSelection()
+                        // var range = selection.getRangeAt(0)
+                        // var start = range.startOffset
+                        // var end = range.endOffset
+
+                        // if (selection.baseNode.parentNode.hasChildNodes()) {
+                        //     for (var i = 0; selection.baseNode.parentNode.childNodes.length > i; i++) {
+                        //         var cnode = selection.baseNode.parentNode.childNodes[i]
+                        //         if (cnode.nodeType == document.TEXT_NODE) {
+                        //             if (offset + cnode.length > start) {
+                        //                 break
+                        //             }
+                        //             offset = offset + cnode.length
+                        //         }
+                        //         if (cnode.nodeType == document.ELEMENT_NODE) {
+                        //             if (offset + cnode.textContent.length > start) {
+                        //                 break
+                        //             }
+                        //             offset = offset + cnode.textContent.length
+                        //         }
+                        //     }
+                        // }
+
+                        // start = start + offset
+                        // end = end + offset
+                        // console.log(start, end)
+
                         // TODO: pass editor and codyChatStore to the widget
                         return (
                             <CodyRecipesWidget
                                 codyChatStore={codyChatStore}
-                                // editor={
-                                //     null /* TODO: create an editor implementation using the textContent & targetRef.current?.innerText*/
-                                // }
+                                // TODO: Use ChatEditor() or CodeMirrorEditor()
+                                editor={
+                                    new CodeMirrorEditor({
+                                        view: targetRef.current,
+                                        content: targetRef?.current?.innerText || '',
+                                        filename: '',
+                                        repo: '',
+                                        revision: '',
+                                    })
+                                    // null /* TODO: create an editor implementation using the textContent & targetRef.current?.innerText*/
+                                }
                             />
                         )
                     }}
