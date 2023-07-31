@@ -7322,6 +7322,14 @@ type Site implements SettingsSubject {
     If Cody is enabled, this returns how Cody is configured to talk to the LLM.
     """
     codyLLMConfiguration: CodyLLMConfiguration
+
+    """
+    Returns the status of the Cody Rate limits when using the `sourcegraph` provider.
+    If the instance is not using the Cody Gateway there will be no rate limits.
+
+    Site-admin only.
+    """
+    codyGatewayRateLimitStatus: [CodyGatewayRateLimitStatus!]
 }
 
 """
@@ -7353,6 +7361,41 @@ type CodyLLMConfiguration {
     Maximum number of tokens client should use when talking to the completionModel.
     """
     completionModelMaxTokens: Int
+}
+
+"""
+CodyGatewayRateLimitStatus current status of a rate limit.
+"""
+type CodyGatewayRateLimitStatus {
+    """
+    The feature that the rate limit applies to.
+    """
+    feature: String!
+
+    """
+    The limit allowed.
+    """
+    limit: BigInt!
+
+    """
+    The number of usages in current period.
+    """
+    usage: BigInt!
+
+    """
+    The percentage of the rate limit used.
+    """
+    percentUsed: Int!
+
+    """
+    The time interval for the rate limit.
+    """
+    interval: String!
+
+    """
+    When the rate limit next resets if an interval has already started.
+    """
+    nextLimitReset: DateTime
 }
 
 """
