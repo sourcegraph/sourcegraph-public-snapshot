@@ -29,4 +29,26 @@ if [[ $EXIT_CODE -ne 0 ]]; then
 END
 fi
 
+unformatted=$(bazel run @go_sdk//:bin/gofmt -- -l . 2>/dev/null)
+
+if [[ $unformatted != "" ]]; then
+  echo -e "The following files are not formatted:\n$unformatted"
+  mkdir -p ./anntations
+  cat <<-"END" > ./annotations/bazel-gofmt.md
+  The following files were found to not be formatted according to `gofmt`:
+
+  ```
+  ${unformatted}
+  ```
+
+  To automatically format these files run:
+
+  ```
+  bazel run @go_sdk//:bin/gofmt -- -w .
+  ```
+END
+  EXIT_CODE=1
+fi
+
+
 exit "$EXIT_CODE"
