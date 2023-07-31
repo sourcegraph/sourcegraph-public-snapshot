@@ -136,7 +136,7 @@ public class SettingsComponent implements Disposable {
     addDocumentListener(
         urlTextField, urlTextField.getDocument(), e -> updateAccessTokenLinkCommentText());
 
-    // Create access token field
+    // Create enterprise access token field
     JBLabel accessTokenLabel = new JBLabel("Access token:");
     enterpriseAccessTokenTextField =
         new PasswordWithPreviewField(
@@ -148,7 +148,8 @@ public class SettingsComponent implements Disposable {
             !AuthorizationUtil.isValidAccessToken(enterpriseAccessTokenTextField.getPassword())
                 ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
                 : null);
-    // Create access token field
+
+    // Create dotcom access token field
     JBLabel dotComAccessTokenComment =
         new JBLabel(
                 "(optional) To use Cody, you will need an access token to sign in.",
@@ -166,6 +167,7 @@ public class SettingsComponent implements Disposable {
             !AuthorizationUtil.isValidAccessToken(dotComAccessTokenTextField.getPassword())
                 ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
                 : null);
+
     // Create comments
     userDocsLinkComment =
         new JBLabel(

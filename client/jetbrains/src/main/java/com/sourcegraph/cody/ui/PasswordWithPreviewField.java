@@ -17,15 +17,16 @@ public class PasswordWithPreviewField extends ComponentWithButton<JBPasswordFiel
   private final char echoChar;
   private boolean passwordVisible = false;
   private boolean passwordChanged = false;
-  private final JBPasswordField component;
+  private final JBPasswordField passwordField;
 
-  private final Supplier<String> oldPasswordLoader;
+  // A function that retrieves the current password from storage.
+  private final Supplier<String> passwordLoader;
 
-  public PasswordWithPreviewField(JBPasswordField component, Supplier<String> oldPasswordLoader) {
+  public PasswordWithPreviewField(JBPasswordField component, Supplier<String> passwordLoader) {
     super(component, null);
-    this.component = component;
+    this.passwordField = component;
     this.echoChar = component.getEchoChar();
-    this.oldPasswordLoader = oldPasswordLoader;
+    this.passwordLoader = passwordLoader;
 
     hidePassword(component);
     addActionListener(
@@ -71,7 +72,7 @@ public class PasswordWithPreviewField extends ComponentWithButton<JBPasswordFiel
     addActionListener(
         e -> {
           if (!passwordChanged) {
-            String oldPassword = oldPasswordLoader.get();
+            String oldPassword = passwordLoader.get();
             if (oldPassword != null) {
               setPassword(oldPassword);
               passwordChanged = false;
@@ -93,27 +94,27 @@ public class PasswordWithPreviewField extends ComponentWithButton<JBPasswordFiel
   }
 
   public void setEmptyText(@NotNull String emptyText) {
-    component.getEmptyText().setText(emptyText);
+    passwordField.getEmptyText().setText(emptyText);
   }
 
   @NotNull
   public String getPassword() {
-    return Optional.ofNullable(component.getPassword()).map(String::copyValueOf).orElse("");
+    return Optional.ofNullable(passwordField.getPassword()).map(String::copyValueOf).orElse("");
   }
 
   private void setPassword(@NotNull String password) {
-    component.setText(password);
+    passwordField.setText(password);
   }
 
   @NotNull
   public Document getDocument() {
-    return component.getDocument();
+    return passwordField.getDocument();
   }
 
   public void resetPassword(boolean isOldPasswordSet, String mockToken) {
     if (passwordVisible) {
       if (isOldPasswordSet) {
-        setPassword(oldPasswordLoader.get());
+        setPassword(passwordLoader.get());
       } else {
         setPassword("");
       }

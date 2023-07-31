@@ -13,11 +13,16 @@ import com.intellij.openapi.wm.IdeFocusManager;
 import com.intellij.util.ui.StartupUiUtil;
 import com.intellij.util.ui.update.Activatable;
 import com.intellij.util.ui.update.UiNotifyConnector;
-import java.awt.*;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.lang.ref.WeakReference;
-import javax.swing.*;
+import javax.swing.Icon;
+import javax.swing.JComponent;
+import javax.swing.JPanel;
+import javax.swing.KeyStroke;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -28,64 +33,69 @@ import org.jetbrains.annotations.Nullable;
  * @see com.intellij.openapi.ui.ComponentWithBrowseButton
  */
 public class ComponentWithButton<Comp extends JComponent> extends JPanel implements Disposable {
-  private final Comp myComponent;
-  private final FixedSizeButton myBrowseButton;
+  private final Comp component;
+  private final FixedSizeButton button;
 
-  public ComponentWithButton(
-      @NotNull Comp component, @Nullable ActionListener browseActionListener) {
+  public ComponentWithButton(@NotNull Comp component, @Nullable ActionListener actionListener) {
+    // Mac and Darcula have no horizontal gap, while other themes have a 2px gap.
     super(new BorderLayout(SystemInfo.isMac || StartupUiUtil.isUnderDarcula() ? 0 : 2, 0));
 
-    myComponent = component;
-    // required! otherwise JPanel will occasionally gain focus instead of the component
+    // Required! Otherwise, the JPanel will occasionally gain focus instead of the component.
     setFocusable(false);
-    add(myComponent, BorderLayout.CENTER);
 
-    myBrowseButton = new FixedSizeButton(myComponent);
+    // Add the component to the panel.
+    this.component = component;
+    add(this.component, BorderLayout.CENTER);
+
+    // Create a button with a fixed size, add event listener, and add it to the panel.
+    button = new FixedSizeButton(this.component);
     if (isBackgroundSet()) {
-      myBrowseButton.setBackground(getBackground());
+      button.setBackground(getBackground());
     }
-    if (browseActionListener != null) {
-      myBrowseButton.addActionListener(browseActionListener);
+    if (actionListener != null) {
+      button.addActionListener(actionListener);
     }
-    add(myBrowseButton, BorderLayout.EAST);
+    add(button, BorderLayout.EAST);
 
     new LazyDisposable(this);
   }
 
   public void setIconTooltip(@NotNull String tooltip) {
-    myBrowseButton.setToolTipText(tooltip);
+    button.setToolTipText(tooltip);
   }
 
   @Override
   public void setEnabled(boolean enabled) {
     super.setEnabled(enabled);
-    myBrowseButton.setEnabled(enabled);
-    myComponent.setEnabled(enabled);
+    button.setEnabled(enabled);
+    component.setEnabled(enabled);
   }
 
   public void setButtonIcon(@NotNull Icon icon) {
-    myBrowseButton.setIcon(icon);
-    myBrowseButton.setDisabledIcon(IconLoader.getDisabledIcon(icon));
+    button.setIcon(icon);
+    button.setDisabledIcon(IconLoader.getDisabledIcon(icon));
   }
 
   @Override
   public void setBackground(Color color) {
     super.setBackground(color);
-    if (myBrowseButton != null) {
-      myBrowseButton.setBackground(color);
+    if (button != null) {
+      button.setBackground(color);
     }
   }
 
-  /** Adds specified {@code listener} to the browse button. */
+  /**
+   * Adds specified {@code listener} to the browse button.
+   */
   public void addActionListener(ActionListener listener) {
-    myBrowseButton.addActionListener(listener);
+    button.addActionListener(listener);
   }
 
   @Override
   public void dispose() {
-    ActionListener[] listeners = myBrowseButton.getActionListeners();
+    ActionListener[] listeners = button.getActionListeners();
     for (ActionListener listener : listeners) {
-      myBrowseButton.removeActionListener(listener);
+      button.removeActionListener(listener);
     }
   }
 
@@ -93,33 +103,56 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
   public final void requestFocus() {
     IdeFocusManager.getGlobalInstance()
         .doWhenFocusSettlesDown(
-            () -> IdeFocusManager.getGlobalInstance().requestFocus(myComponent, true));
+            () -> IdeFocusManager.getGlobalInstance().requestFocus(component, true));
   }
 
   @SuppressWarnings("deprecation")
   @Override
   public final void setNextFocusableComponent(Component aComponent) {
     super.setNextFocusableComponent(aComponent);
-    myComponent.setNextFocusableComponent(aComponent);
+    component.setNextFocusableComponent(aComponent);
   }
 
-  private KeyEvent myCurrentEvent = null;
+  private KeyEvent currentEvent = null;
 
+  /**
+   * This method is overridden to dispatch the event to the component. This is necessary because
+   * otherwise the event is dispatched to the parent component, which is the panel, and the event is
+   * not dispatched to the component.
+   *
+   * @param ks        The <code>KeyStroke</code> queried
+   * @param e         The <code>KeyEvent</code> forwarded to the focused component
+   * @param condition one of the following values:
+   *                  <ul>
+   *                  <li>JComponent.WHEN_FOCUSED
+   *                  <li>JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+   *                  <li>JComponent.WHEN_IN_FOCUSED_WINDOW
+   *                  </ul>
+   * @param pressed   true if the key is pressed
+   * @return true if there was a binding to the event, false otherwise.
+   */
   @Override
   protected final boolean processKeyBinding(
       KeyStroke ks, KeyEvent e, int condition, boolean pressed) {
-    if (condition == WHEN_FOCUSED && myCurrentEvent != e) {
+    if (condition == WHEN_FOCUSED && currentEvent != e) {
       try {
-        myCurrentEvent = e;
-        myComponent.dispatchEvent(e);
+        currentEvent = e;
+        component.dispatchEvent(e);
       } finally {
-        myCurrentEvent = null;
+        currentEvent = null;
       }
     }
-    if (e.isConsumed()) return true;
+    if (e.isConsumed()) {
+      return true;
+    }
     return super.processKeyBinding(ks, e, condition, pressed);
   }
 
+  /**
+   * We need to register this component in the parent disposable. But we can't do it in the
+   * constructor because the parent disposable is not yet available. So we do it lazily when the
+   * component is shown.
+   */
   private static final class LazyDisposable implements Activatable {
     private final WeakReference<ComponentWithButton<?>> reference;
 
@@ -131,12 +164,16 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
     @Override
     public void showNotify() {
       ComponentWithButton<?> component = reference.get();
-      if (component == null) return; // component is collected
+      if (component == null) {
+        return; // component is collected
+      }
       Disposable disposable =
           ApplicationManager.getApplication() == null
               ? null
               : UI_DISPOSABLE.getData(DataManager.getInstance().getDataContext(component));
-      if (disposable == null) return; // parent disposable not found
+      if (disposable == null) {
+        return; // parent disposable not found
+      }
       Disposer.register(disposable, component);
     }
   }
