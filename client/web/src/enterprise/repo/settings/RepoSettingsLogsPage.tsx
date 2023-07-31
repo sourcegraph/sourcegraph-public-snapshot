@@ -27,6 +27,7 @@ import { LogsPageTabs } from '../../../repo/constants'
 import { eventLogger } from '../../../tracking/eventLogger'
 
 import { useFetchRecordedCommands } from './backend'
+import { formatDuration } from './utils'
 
 import styles from './RepoSettingsLogsPage.module.scss'
 
@@ -104,7 +105,7 @@ const LastRepoCommands: FC<LastRepoCommandsProps> = ({ repo }) => {
         <>
             {error && <ErrorAlert error={error} />}
             <div aria-label="recorded commands">
-                {(!loading && recordedCommands.length === 0) && <Text className="my-2">No recorded commands yet.</Text>}
+                {!loading && recordedCommands.length === 0 && <Text className="my-2">No recorded commands yet.</Text>}
                 {recordedCommands.map((command, index) => (
                     // We use the index as key here because commands don't have the concept
                     // of IDs and there's nothing really unique about each command.
@@ -130,14 +131,7 @@ interface LastRepoCommandNodeProps {
 
 const LastRepoCommandNode: FC<LastRepoCommandNodeProps> = ({ command, mirrorInfo }) => {
     const startDate = parseISO(command.start)
-
-    let duration: string
-    if (command.duration > 1) {
-        duration = `${command.duration.toFixed(2)}s`
-    } else {
-        const durationInMs = command.duration * 1000
-        duration = `${durationInMs.toFixed(2)}ms`
-    }
+    const duration = formatDuration(command.duration)
 
     return (
         <div className={styles.commandNode}>
