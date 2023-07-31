@@ -171,7 +171,7 @@ resource "cloudflare_record" "{{ .Name }}-sgdev-org" {
 {{- end }}
 `
 
-func generateConfig(configFile string, dryRun bool) error {
+func generateConfig(valuesFile string, dryRun bool) error {
 
 	var values Values
 	v, err := os.ReadFile(configFile)
