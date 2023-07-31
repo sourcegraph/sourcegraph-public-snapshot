@@ -209,14 +209,7 @@ func (s GitLabSource) makeRepo(proj *gitlab.Project) *types.Repo {
 
 	isPrivate := proj.Visibility == "private"
 	if proj.Visibility == "internal" {
-		switch s.config.InternalRepoVisibility {
-		case "public":
-			isPrivate = false
-		case "private":
-			isPrivate = true
-		default:
-			isPrivate = true
-		}
+		isPrivate = s.config.InternalRepoVisibility != "public" // Defaults to private if InternalRepoVisibility is unset
 	}
 
 	return &types.Repo{

@@ -392,14 +392,7 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 
 	isPrivate := r.IsPrivate
 	if r.Visibility == "internal" {
-		switch s.config.InternalRepoVisibility {
-		case "public":
-			isPrivate = false
-		case "private":
-			isPrivate = true
-		default:
-			isPrivate = true
-		}
+		isPrivate = s.config.InternalRepoVisibility != "public" // Defaults to private if InternalRepoVisibility is unset
 	}
 
 	return &types.Repo{
