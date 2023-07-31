@@ -6264,10 +6264,11 @@ def go_dependencies():
 
     go_repository(
         name = "com_github_sourcegraph_zoekt",
+        commit = "2550db71bd15ec9c4a24869142ab8b2b214cdbae",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:VWYAOJEy4iCY5ypRui6xgFGyUWhlq2AtPj3J7BYgzQk=",
-        version = "v0.0.0-20230724134010-f9b3ea5dcf46",
+        remote = "https://github.com/davejrt/zoekt",
+        vcs = "git",
     )
 
     go_repository(
