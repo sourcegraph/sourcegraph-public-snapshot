@@ -238,6 +238,7 @@ type ExternalServicesArgs struct {
 	graphqlutil.ConnectionArgs
 	After     *string
 	Namespace *graphql.ID
+	RepoID    *graphql.ID
 }
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
@@ -259,6 +260,14 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		AfterID: afterID,
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
+
+	if args.RepoID != nil {
+		repoID, err := UnmarshalRepositoryID(*args.RepoID)
+		if err != nil {
+			return nil, err
+		}
+		opt.RepoID = repoID
+	}
 	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 
