@@ -244,7 +244,7 @@ func checkCurrentDir(expected string) error {
 
 	current := path.Base(cwd)
 	if current != expected {
-		return errors.New("Incorrect directory. Please run from the sourcegraph/infrastructure repository")
+		return errors.New("incorrect directory - please run from the sourcegraph/infrastructure repository")
 	}
 	return nil
 }
