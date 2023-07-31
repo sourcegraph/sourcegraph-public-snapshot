@@ -33,18 +33,20 @@ import org.jetbrains.annotations.Nullable;
  * @see com.intellij.openapi.ui.ComponentWithBrowseButton
  */
 public class ComponentWithButton<Comp extends JComponent> extends JPanel implements Disposable {
+  @NotNull
   private final Comp component;
+  @Nullable
   private final FixedSizeButton button;
+  private boolean componentDisabledOverride = false;
 
   public ComponentWithButton(@NotNull Comp component, @Nullable ActionListener actionListener) {
     // Mac and Darcula have no horizontal gap, while other themes have a 2px gap.
     super(new BorderLayout(SystemInfo.isMac || StartupUiUtil.isUnderDarcula() ? 0 : 2, 0));
 
-    // Required! Otherwise, the JPanel will occasionally gain focus instead of the component.
-    setFocusable(false);
-
     // Add the component to the panel.
     this.component = component;
+    // Required! Otherwise, the JPanel will occasionally gain focus instead of the component.
+    setFocusable(false);
     add(this.component, BorderLayout.CENTER);
 
     // Create a button with a fixed size, add event listener, and add it to the panel.
@@ -61,19 +63,32 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
   }
 
   public void setIconTooltip(@NotNull String tooltip) {
-    button.setToolTipText(tooltip);
+    if (button != null) {
+      button.setToolTipText(tooltip);
+    }
   }
 
   @Override
   public void setEnabled(boolean enabled) {
     super.setEnabled(enabled);
-    button.setEnabled(enabled);
-    component.setEnabled(enabled);
+    if (button != null) {
+      button.setEnabled(enabled);
+    }
+    component.setEnabled(enabled && !componentDisabledOverride);
+  }
+
+  public void setComponentDisabledOverride(boolean disabled) {
+    componentDisabledOverride = disabled;
+    if (button != null) {
+      component.setEnabled(button.isEnabled() && !disabled);
+    }
   }
 
   public void setButtonIcon(@NotNull Icon icon) {
-    button.setIcon(icon);
-    button.setDisabledIcon(IconLoader.getDisabledIcon(icon));
+    if (button != null) {
+      button.setIcon(icon);
+      button.setDisabledIcon(IconLoader.getDisabledIcon(icon));
+    }
   }
 
   @Override
@@ -88,14 +103,18 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
    * Adds specified {@code listener} to the browse button.
    */
   public void addActionListener(ActionListener listener) {
-    button.addActionListener(listener);
+    if (button != null) {
+      button.addActionListener(listener);
+    }
   }
 
   @Override
   public void dispose() {
-    ActionListener[] listeners = button.getActionListeners();
-    for (ActionListener listener : listeners) {
-      button.removeActionListener(listener);
+    if (button != null) {
+      ActionListener[] listeners = button.getActionListeners();
+      for (ActionListener listener : listeners) {
+        button.removeActionListener(listener);
+      }
     }
   }
 

@@ -13,7 +13,6 @@ import javax.swing.text.Document;
 import org.jetbrains.annotations.NotNull;
 
 public class PasswordWithPreviewField extends ComponentWithButton<JBPasswordField> {
-
   private final char echoChar;
   private boolean passwordVisible = false;
   private boolean passwordChanged = false;
@@ -28,6 +27,9 @@ public class PasswordWithPreviewField extends ComponentWithButton<JBPasswordFiel
     this.echoChar = component.getEchoChar();
     this.passwordLoader = passwordLoader;
 
+    // Disable the password field by default so that the user can't type into it.
+    setComponentDisabledOverride(true);
+
     hidePassword(component);
     addActionListener(
         e -> {
@@ -39,25 +41,23 @@ public class PasswordWithPreviewField extends ComponentWithButton<JBPasswordFiel
           }
         });
 
-    component
-        .getDocument()
-        .addDocumentListener(
-            new DocumentListener() {
-              @Override
-              public void insertUpdate(DocumentEvent e) {
-                passwordChanged = true;
-              }
+    DocumentListener listener = new DocumentListener() {
+      @Override
+      public void insertUpdate(DocumentEvent e) {
+        passwordChanged = true;
+      }
 
-              @Override
-              public void removeUpdate(DocumentEvent e) {
-                passwordChanged = true;
-              }
+      @Override
+      public void removeUpdate(DocumentEvent e) {
+        passwordChanged = true;
+      }
 
-              @Override
-              public void changedUpdate(DocumentEvent e) {
-                passwordChanged = true;
-              }
-            });
+      @Override
+      public void changedUpdate(DocumentEvent e) {
+        passwordChanged = true;
+      }
+    };
+    component.getDocument().addDocumentListener(listener);
 
     component.addFocusListener(
         new FocusAdapter() {
@@ -82,12 +82,14 @@ public class PasswordWithPreviewField extends ComponentWithButton<JBPasswordFiel
   }
 
   private void showPassword(@NotNull JBPasswordField component) {
+    setComponentDisabledOverride(false);
     component.setEchoChar((char) 0);
     setButtonIcon(Icons.Actions.Hide);
     setIconTooltip("Hide");
   }
 
   private void hidePassword(@NotNull JBPasswordField component) {
+    setComponentDisabledOverride(true);
     component.setEchoChar(echoChar);
     setButtonIcon(AllIcons.Actions.Show);
     setIconTooltip("Show");
