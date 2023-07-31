@@ -10,9 +10,7 @@ public class PluginSettingChangeContext {
 
   @NotNull public final String newUrl;
   public final boolean isDotComAccessTokenChanged;
-  @Nullable public final String newDotComAccessToken;
   public final boolean isEnterpriseAccessTokenChanged;
-  @Nullable public final String newEnterpriseAccessToken;
 
   @Nullable public final String newCustomRequestHeaders;
   public final boolean newCodyEnabled;
@@ -24,9 +22,7 @@ public class PluginSettingChangeContext {
       @NotNull String oldUrl,
       @NotNull String newUrl,
       boolean isDotComAccessTokenChanged,
-      @Nullable String newDotComAccessToken,
       boolean isEnterpriseAccessTokenChanged,
-      @Nullable String newEnterpriseAccessToken,
       @Nullable String newCustomRequestHeaders,
       boolean newCodyEnabled,
       boolean newCodyAutoCompleteEnabled) {
@@ -35,9 +31,7 @@ public class PluginSettingChangeContext {
     this.oldUrl = oldUrl;
     this.newUrl = newUrl;
     this.isDotComAccessTokenChanged = isDotComAccessTokenChanged;
-    this.newDotComAccessToken = newDotComAccessToken;
     this.isEnterpriseAccessTokenChanged = isEnterpriseAccessTokenChanged;
-    this.newEnterpriseAccessToken = newEnterpriseAccessToken;
     this.newCustomRequestHeaders = newCustomRequestHeaders;
     this.newCodyEnabled = newCodyEnabled;
     this.newCodyAutoCompleteEnabled = newCodyAutoCompleteEnabled;

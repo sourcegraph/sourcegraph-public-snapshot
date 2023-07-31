@@ -13,8 +13,6 @@ import org.jetbrains.annotations.Nullable;
 
 /** Provides controller functionality for application settings. */
 public class SettingsConfigurable implements Configurable {
-
-  private static final String MOCK_ACCESS_TOKEN = StringUtils.repeat("x", 40);
   private final Project project;
   private SettingsComponent mySettingsComponent;
 
@@ -94,9 +92,7 @@ public class SettingsConfigurable implements Configurable {
             oldUrl,
             newUrl,
             mySettingsComponent.isDotComAccessTokenChanged(),
-            newDotComAccessToken,
             mySettingsComponent.isEnterpriseAccessTokenChanged(),
-            newEnterpriseAccessToken,
             mySettingsComponent.getCustomRequestHeaders(),
             mySettingsComponent.isCodyEnabled(),
             mySettingsComponent.isCodyAutoCompleteEnabled());
@@ -113,24 +109,21 @@ public class SettingsConfigurable implements Configurable {
     } else {
       aSettings.url = enterpriseUrl;
     }
-    if (newInstanceType == SettingsComponent.InstanceType.DOTCOM) {
-      if (!newDotComAccessToken.equals(MOCK_ACCESS_TOKEN)) {
-        if (pSettings.dotComAccessToken != null) {
-          pSettings.dotComAccessToken = newDotComAccessToken;
-        } else {
-          aSettings.setSafeDotComAccessToken(newDotComAccessToken);
-          aSettings.isDotComAccessTokenSet = StringUtils.isNotEmpty(newDotComAccessToken);
-        }
+    if (newInstanceType == SettingsComponent.InstanceType.DOTCOM && newDotComAccessToken != null) {
+      if (pSettings.dotComAccessToken != null) {
+        pSettings.dotComAccessToken = newDotComAccessToken;
+      } else {
+        aSettings.setSafeDotComAccessToken(newDotComAccessToken);
+        aSettings.isDotComAccessTokenSet = StringUtils.isNotEmpty(newDotComAccessToken);
       }
     }
-    if (newInstanceType == SettingsComponent.InstanceType.ENTERPRISE) {
-      if (!newEnterpriseAccessToken.equals(MOCK_ACCESS_TOKEN)) {
-        if (pSettings.enterpriseAccessToken != null) {
-          pSettings.enterpriseAccessToken = newEnterpriseAccessToken;
-        } else {
-          aSettings.setSafeEnterpriseAccessToken(newEnterpriseAccessToken);
-          aSettings.isEnterpriseAccessTokenSet = StringUtils.isNotEmpty(newEnterpriseAccessToken);
-        }
+    if (newInstanceType == SettingsComponent.InstanceType.ENTERPRISE
+        && newEnterpriseAccessToken != null) {
+      if (pSettings.enterpriseAccessToken != null) {
+        pSettings.enterpriseAccessToken = newEnterpriseAccessToken;
+      } else {
+        aSettings.setSafeEnterpriseAccessToken(newEnterpriseAccessToken);
+        aSettings.isEnterpriseAccessTokenSet = StringUtils.isNotEmpty(newEnterpriseAccessToken);
       }
     }
     if (pSettings.customRequestHeaders != null) {
@@ -160,9 +153,9 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
     mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
     boolean dotComAccessTokenSet = ConfigUtil.isDotComAccessTokenSet(project);
-    mySettingsComponent.resetDotComAccessToken(dotComAccessTokenSet, MOCK_ACCESS_TOKEN);
+    mySettingsComponent.resetDotComAccessToken(dotComAccessTokenSet);
     boolean enterpriseAccessTokenSet = ConfigUtil.isEnterpriseAccessTokenSet(project);
-    mySettingsComponent.resetEnterpriseAccessToken(enterpriseAccessTokenSet, MOCK_ACCESS_TOKEN);
+    mySettingsComponent.resetEnterpriseAccessToken(enterpriseAccessTokenSet);
     mySettingsComponent.setCustomRequestHeaders(ConfigUtil.getCustomRequestHeaders(project));
     String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
     mySettingsComponent.setDefaultBranchName(defaultBranchName);

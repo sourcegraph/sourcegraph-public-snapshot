@@ -39,7 +39,7 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
   private final FixedSizeButton button;
   private boolean componentDisabledOverride = false;
 
-  public ComponentWithButton(@NotNull Comp component, @Nullable ActionListener actionListener) {
+  public ComponentWithButton(@NotNull Comp component) {
     // Mac and Darcula have no horizontal gap, while other themes have a 2px gap.
     super(new BorderLayout(SystemInfo.isMac || StartupUiUtil.isUnderDarcula() ? 0 : 2, 0));
 
@@ -49,13 +49,10 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
     setFocusable(false);
     add(this.component, BorderLayout.CENTER);
 
-    // Create a button with a fixed size, add event listener, and add it to the panel.
+    // Create a button with a fixed size and add it to the panel.
     button = new FixedSizeButton(this.component);
     if (isBackgroundSet()) {
       button.setBackground(getBackground());
-    }
-    if (actionListener != null) {
-      button.addActionListener(actionListener);
     }
     add(button, BorderLayout.EAST);
 
@@ -100,9 +97,9 @@ public class ComponentWithButton<Comp extends JComponent> extends JPanel impleme
   }
 
   /**
-   * Adds specified {@code listener} to the browse button.
+   * Adds specified {@code listener} to the button.
    */
-  public void addActionListener(ActionListener listener) {
+  public void addButtonActionListener(ActionListener listener) {
     if (button != null) {
       button.addActionListener(listener);
     }

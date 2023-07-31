@@ -7,13 +7,17 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.ComponentValidator;
 import com.intellij.openapi.ui.ValidationInfo;
 import com.intellij.ui.IdeBorderFactory;
-import com.intellij.ui.components.*;
+import com.intellij.ui.components.ActionLink;
+import com.intellij.ui.components.JBCheckBox;
+import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.components.JBPasswordField;
+import com.intellij.ui.components.JBTextField;
 import com.intellij.util.ui.FormBuilder;
 import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import com.sourcegraph.cody.localapp.LocalAppManager;
-import com.sourcegraph.cody.ui.PasswordWithPreviewField;
+import com.sourcegraph.cody.ui.PasswordFieldWithShowHideButton;
 import com.sourcegraph.common.AuthorizationUtil;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -37,13 +41,15 @@ import javax.swing.text.JTextComponent;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/** Supports creating and managing a {@link JPanel} for the Settings Dialog. */
+/**
+ * Supports creating and managing a {@link JPanel} for the Settings Dialog.
+ */
 public class SettingsComponent implements Disposable {
   private final JPanel panel;
   private ButtonGroup instanceTypeButtonGroup;
   private JBTextField urlTextField;
-  private PasswordWithPreviewField enterpriseAccessTokenTextField;
-  private PasswordWithPreviewField dotComAccessTokenTextField;
+  private PasswordFieldWithShowHideButton enterpriseAccessTokenTextField;
+  private PasswordFieldWithShowHideButton dotComAccessTokenTextField;
   private JBLabel userDocsLinkComment;
   private JBLabel enterpriseAccessTokenLinkComment;
   private JBTextField customRequestHeadersTextField;
@@ -139,34 +145,38 @@ public class SettingsComponent implements Disposable {
     // Create enterprise access token field
     JBLabel accessTokenLabel = new JBLabel("Access token:");
     enterpriseAccessTokenTextField =
-        new PasswordWithPreviewField(
-            new JBPasswordField(), () -> ConfigUtil.getEnterpriseAccessToken(project));
+        new PasswordFieldWithShowHideButton(
+            new JBPasswordField(), () -> ConfigUtil.getEnterpriseAccessToken(project), 40);
     enterpriseAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         enterpriseAccessTokenTextField,
-        () ->
-            !AuthorizationUtil.isValidAccessToken(enterpriseAccessTokenTextField.getPassword())
-                ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
-                : null);
+        () -> {
+          String password = enterpriseAccessTokenTextField.getPassword();
+          return password != null && !AuthorizationUtil.isValidAccessToken(password)
+              ? new ValidationInfo("Invalid access token", enterpriseAccessTokenTextField)
+              : null;
+        });
 
     // Create dotcom access token field
     JBLabel dotComAccessTokenComment =
         new JBLabel(
-                "(optional) To use Cody, you will need an access token to sign in.",
-                UIUtil.ComponentStyle.SMALL,
-                UIUtil.FontColor.BRIGHTER)
+            "(optional) To use Cody, you will need an access token to sign in.",
+            UIUtil.ComponentStyle.SMALL,
+            UIUtil.FontColor.BRIGHTER)
             .withBorder(JBUI.Borders.emptyLeft(10));
     JBLabel dotComAccessTokenLabel = new JBLabel("Access token:");
     dotComAccessTokenTextField =
-        new PasswordWithPreviewField(
-            new JBPasswordField(), () -> ConfigUtil.getDotComAccessToken(project));
+        new PasswordFieldWithShowHideButton(
+            new JBPasswordField(), () -> ConfigUtil.getDotComAccessToken(project), 40);
     dotComAccessTokenTextField.setEmptyText("Paste your access token here");
     addValidation(
         dotComAccessTokenTextField,
-        () ->
-            !AuthorizationUtil.isValidAccessToken(dotComAccessTokenTextField.getPassword())
-                ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
-                : null);
+        () -> {
+          String password = dotComAccessTokenTextField.getPassword();
+          return password != null && !AuthorizationUtil.isValidAccessToken(password)
+              ? new ValidationInfo("Invalid access token", dotComAccessTokenTextField)
+              : null;
+        });
 
     // Create comments
     userDocsLinkComment =
@@ -357,26 +367,34 @@ public class SettingsComponent implements Disposable {
     urlTextField.setText(value != null ? value : "");
   }
 
-  @NotNull
+  /**
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage.
+   *         An empty token means the user has explicitly set it to empty.
+   */
+  @Nullable
   public String getDotComAccessToken() {
     return dotComAccessTokenTextField.getPassword();
   }
 
-  public void resetDotComAccessToken(boolean isAccessTokenSet, @NotNull String mockToken) {
-    dotComAccessTokenTextField.resetPassword(isAccessTokenSet, mockToken);
+  public void resetDotComAccessToken(boolean isAccessTokenSet) {
+    dotComAccessTokenTextField.resetPassword(isAccessTokenSet);
   }
 
   public boolean isDotComAccessTokenChanged() {
     return dotComAccessTokenTextField.hasPasswordChanged();
   }
 
-  @NotNull
+  /**
+   * @return Null means we don't know the token because it wasn't loaded from the secure storage.
+   *         An empty token means the user has explicitly set it to empty.
+   */
+  @Nullable
   public String getEnterpriseAccessToken() {
     return enterpriseAccessTokenTextField.getPassword();
   }
 
-  public void resetEnterpriseAccessToken(boolean isAccessTokenSet, @NotNull String mockToken) {
-    enterpriseAccessTokenTextField.resetPassword(isAccessTokenSet, mockToken);
+  public void resetEnterpriseAccessToken(boolean isAccessTokenSet) {
+    enterpriseAccessTokenTextField.resetPassword(isAccessTokenSet);
   }
 
   public boolean isEnterpriseAccessTokenChanged() {
@@ -474,7 +492,8 @@ public class SettingsComponent implements Disposable {
   }
 
   private void addValidation(
-      @NotNull PasswordWithPreviewField component, @NotNull Supplier<ValidationInfo> validator) {
+      @NotNull PasswordFieldWithShowHideButton component,
+      @NotNull Supplier<ValidationInfo> validator) {
     new ComponentValidator(this).withValidator(validator).installOn(component);
     addDocumentListener(component, component.getDocument(), ComponentValidator::revalidate);
   }
@@ -508,10 +527,10 @@ public class SettingsComponent implements Disposable {
     enterpriseAccessTokenLinkComment.setText(
         isUrlValid(baseUrl)
             ? "<html><body>or go to <a href=\""
-                + settingsUrl
-                + "\">"
-                + settingsUrl
-                + "</a> | \"Access tokens\" to create one.</body></html>"
+            + settingsUrl
+            + "\">"
+            + settingsUrl
+            + "</a> | \"Access tokens\" to create one.</body></html>"
             : "");
   }
 
@@ -538,9 +557,9 @@ public class SettingsComponent implements Disposable {
         remoteUrlReplacementsTextField,
         () ->
             (!remoteUrlReplacementsTextField.getText().isEmpty()
-                    && remoteUrlReplacementsTextField.getText().split(",").length % 2 != 0)
+                && remoteUrlReplacementsTextField.getText().split(",").length % 2 != 0)
                 ? new ValidationInfo(
-                    "Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
+                "Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
                 : null);
 
     isUrlNotificationDismissedCheckBox =
@@ -591,5 +610,6 @@ public class SettingsComponent implements Disposable {
   }
 
   @Override
-  public void dispose() {}
+  public void dispose() {
+  }
 }
