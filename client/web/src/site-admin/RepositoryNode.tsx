@@ -83,7 +83,6 @@ const repoCloned = (repo: SiteAdminRepositoryFields): boolean =>
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
-    externalServiceName?: string
 }
 
 const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined): void => {
@@ -97,10 +96,7 @@ const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaR
     }
 }
 
-export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
-    node,
-    externalServiceName,
-}) => {
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const navigate = useNavigate()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
@@ -271,18 +267,14 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     <Icon aria-hidden={true} svgPath={mdiSecurity} className="mr-1" />
                                     Permissions
                                 </MenuItem>
-                                {externalServiceName && (
-                                    <MenuItem
-                                        as={Button}
-                                        onSelect={() =>
-                                            navigate(`/site-admin/external-services/${node.externalServiceIDs[0]}`)
-                                        }
-                                        className="p-2"
-                                    >
-                                        <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
-                                        Connection: {truncateName(externalServiceName)}
-                                    </MenuItem>
-                                )}
+                                <MenuItem
+                                    as={Button}
+                                    onSelect={() => navigate(`/site-admin/external-services?repoID=${node.id}`)}
+                                    className="p-2"
+                                >
+                                    <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
+                                    Code host connection
+                                </MenuItem>
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoCloned(node)}
@@ -313,5 +305,3 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         </li>
     )
 }
-
-const truncateName = (name: string): string => (name.length >= 25 ? `${name.slice(0, 25)}...` : name)

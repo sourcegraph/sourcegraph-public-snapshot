@@ -214,8 +214,8 @@ export const FETCH_EXTERNAL_SERVICE = gql`
 `
 
 export const EXTERNAL_SERVICES = gql`
-    query ExternalServices($first: Int, $after: String) {
-        externalServices(first: $first, after: $after) {
+    query ExternalServices($first: Int, $after: String, $repoID: ID) {
+        externalServices(first: $first, after: $after, repoID: $repoID) {
             nodes {
                 ...ListExternalServiceFields
             }
@@ -246,7 +246,7 @@ export const useExternalServicesConnection = (
 ): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
     useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
         query: EXTERNAL_SERVICES,
-        variables: { after: vars.after, first: vars.first ?? 10 },
+        variables: { after: vars.after, first: vars.first ?? 10, repoID: vars.repoID },
         getConnection: result => {
             const { externalServices } = dataOrThrowErrors(result)
             return externalServices
@@ -340,11 +340,13 @@ export const useFetchExternalService = (
             }
         },
     })
+
 export interface GitHubAppDetails {
     appID: number
     baseURL: string
     installationID: number
 }
+
 export interface ExternalServiceFieldsWithConfig extends ExternalServiceFields {
     parsedConfig?: {
         gitHubAppDetails?: GitHubAppDetails

@@ -3736,10 +3736,6 @@ type Repository implements Node & GenericSearchResultInterface {
         first: Int
     ): ExternalServiceConnection!
     """
-    Lists all external service IDs of a given repository.
-    """
-    externalServiceIDs: [ID!]!
-    """
     Whether the repository is currently being cloned.
     """
     cloneInProgress: Boolean! @deprecated(reason: "use Repository.mirrorInfo.cloneInProgress instead")

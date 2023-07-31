@@ -3,8 +3,6 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -81,17 +79,4 @@ func (r *RepositoryResolver) ExternalServices(ctx context.Context, args *struct 
 		args:             args.ConnectionArgs,
 		externalServices: svcs,
 	}, nil
-}
-
-func (r *RepositoryResolver) ExternalServiceIDs(ctx context.Context) ([]graphql.ID, error) {
-	repo, err := r.repo(ctx)
-	if err != nil {
-		return nil, err
-	}
-	svcIDs := repo.ExternalServiceIDs()
-	ids := make([]graphql.ID, len(svcIDs))
-	for i, svcID := range svcIDs {
-		ids[i] = MarshalExternalServiceID(svcID)
-	}
-	return ids, nil
 }
