@@ -3,13 +3,19 @@ package main
 import (
 	"fmt"
 	"os"
-	"path"
 	"text/template"
 
 	"github.com/urfave/cli/v2"
 	"gopkg.in/yaml.v3"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
+
+var (
+	valuesFile string
+	dryRun     bool
+	infraRepo  string
 )
 
 var deployCommand = &cli.Command{
@@ -41,17 +47,35 @@ dns: dave-app.sgdev.org
 	Category: CategoryDev,
 	Flags: []cli.Flag{
 		&cli.StringFlag{
-			Name:     "values",
-			Usage:    "The path to the values file",
-			Required: true,
+			Name:        "values",
+			Usage:       "The path to the values file",
+			Required:    true,
+			Destination: &valuesFile,
 		},
 		&cli.BoolFlag{
-			Name:     "dry-run",
-			Usage:    "Write the manifest to stdout instead of writing to a file",
-			Required: false,
-		}},
+			Name:        "dry-run",
+			Usage:       "Write the manifest to stdout instead of writing to a file",
+			Required:    false,
+			Destination: &dryRun,
+		},
+		&cli.StringFlag{
+			Name:        "infra-repo",
+			Usage:       "The location of the sourcegraph/infrastructure repository. If undefined the currect directory will be used.",
+			Required:    false,
+			Destination: &infraRepo,
+		},
+	},
+	Before: func(c *cli.Context) error {
+		if dryRun && infraRepo != "" {
+			return errors.New("cannot specify both --infra-repo and --dry-run")
+		} else if !dryRun && infraRepo == "" {
+			return errors.New("Please specify the location of the sourcegraph/infrastructure repository with --infra-repo")
+		}
+
+		return nil
+	},
 	Action: func(c *cli.Context) error {
-		err := generateConfig(c.String("values"), c.Bool("dry-run"))
+		err := generateConfig(c.String("values"), c.Bool("dry-run"), infraRepo)
 		if err != nil {
 			return errors.Wrap(err, "generate manifest")
 		}
@@ -171,80 +195,83 @@ resource "cloudflare_record" "{{ .Name }}-sgdev-org" {
 {{- end }}
 `
 
-func generateConfig(valuesFile string, dryRun bool) error {
+func generateConfig(valuesFile string, dryRun bool, path string) error {
 
 	var values Values
-	v, err := os.ReadFile(configFile)
+	v, err := os.ReadFile(valuesFile)
 	if err != nil {
 		return errors.Wrap(err, "read values file")
 	}
-
 	err = yaml.Unmarshal(v, &values)
 	if err != nil {
 		return errors.Wrapf(err, "error unmarshalling values from %q", valuesFile)
 	}
 
 	if dryRun {
-
-		fmt.Printf("This is a dry run. The following files would be created:\n\n")
-		t := template.Must(template.New("k8s").Parse(k8sTemplate))
-		err = t.Execute(os.Stdout, &values)
-		if err != nil {
-			return errors.Wrap(err, "execute k8s template")
-		}
-		t = template.Must(template.New("dns").Parse(dnsTemplate))
-		err = t.Execute(os.Stdout, &values)
-		if err != nil {
-			return errors.Wrap(err, "execute dns template")
-		}
-		return nil
+		std.Out.WriteNoticef("This is a dry run. The following files would be created:\n")
 	}
-
-	err = checkCurrentDir("infrastructure")
+	err = WriteK8sConfig(values, dryRun, path)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "write k8s config")
 	}
-
-	k8sPath := fmt.Sprintf("dogfood/kubernetes/tooling/%s", values.Name)
-	err = os.MkdirAll(k8sPath, 0755)
+	err = WriteDnsConfig(values, dryRun, path)
 	if err != nil {
-		return errors.Wrap(err, "create directory")
-	}
-	k8sOutput, err := os.Create(fmt.Sprintf("%s/%s.yaml", k8sPath, values.Name))
-	if err != nil {
-		return errors.Wrap(err, "create file")
-	}
-	defer k8sOutput.Close()
-
-	dnsPath := fmt.Sprintf("dns/%s.sgdev.tf", values.Name)
-	dnsOutput, err := os.Create(dnsPath)
-	if err != nil {
-		return errors.Wrap(err, "create file")
-	}
-	defer dnsOutput.Close()
-	t := template.Must(template.New("k8s").Parse(k8sTemplate))
-	err = t.Execute(k8sOutput, &values)
-	if err != nil {
-		return errors.Wrap(err, "execute k8s template")
-	}
-	t = template.Must(template.New("dns").Parse(dnsTemplate))
-	err = t.Execute(dnsOutput, &values)
-	if err != nil {
-		return errors.Wrap(err, "execute dns template")
+		return errors.Wrap(err, "write dns config")
 	}
 
 	return nil
 }
 
-func checkCurrentDir(expected string) error {
-	cwd, err := os.Getwd()
+func WriteDnsConfig(values Values, dryRun bool, path string) error {
+	var dnsOutput *os.File
+	var dnsPath string
+	if dryRun {
+		dnsOutput = os.Stdout
+	} else {
+		var err error
+		dnsPath = fmt.Sprintf("%s/dns/%s.sgdev.tf", path, values.Name)
+		dnsOutput, err = os.Create(dnsPath)
+		if err != nil {
+			return errors.Wrap(err, "create file")
+		}
+		std.Out.WriteSuccessf("Created %s", dnsPath)
+		defer dnsOutput.Close()
+	}
+	t := template.Must(template.New("dns").Parse(dnsTemplate))
+	err := t.Execute(dnsOutput, &values)
 	if err != nil {
-		return errors.Wrap(err, "error getting current directory")
+		return errors.Wrap(err, "execute dns template")
 	}
 
-	current := path.Base(cwd)
-	if current != expected {
-		return errors.New("incorrect directory - please run from the sourcegraph/infrastructure repository")
+	std.Out.WriteSuccessf("Finished writing dns at %s", dnsOutput.Name())
+
+	return nil
+}
+
+func WriteK8sConfig(values Values, dryRun bool, path string) error {
+	var k8sOutput *os.File
+	if dryRun {
+		k8sOutput = os.Stdout
+	} else {
+		var err error
+		k8sPath := fmt.Sprintf("%s/dogfood/kubernetes/tooling/%s", path, values.Name)
+		err = os.MkdirAll(k8sPath, 0755)
+		if err != nil {
+			return errors.Wrap(err, "create app directory")
+		}
+		std.Out.WriteSuccessf("Created %s", k8sPath)
+		k8sOutput, err = os.Create(fmt.Sprintf("%s/%s.yaml", k8sPath, values.Name))
+		if err != nil {
+			return errors.Wrap(err, "create app file")
+		}
+		defer k8sOutput.Close()
 	}
+
+	t := template.Must(template.New("k8s").Parse(k8sTemplate))
+	err := t.Execute(k8sOutput, &values)
+	if err != nil {
+		return errors.Wrap(err, "execute k8s template")
+	}
+	std.Out.WriteSuccessf("Finished writing k8s manifest at %s", k8sOutput.Name())
 	return nil
 }

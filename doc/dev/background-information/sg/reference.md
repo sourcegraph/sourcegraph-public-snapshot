@@ -1165,7 +1165,7 @@ Internal deployments live in the sourcegraph/infra repository.
 ```sh
 $ sg deploy --values <path to values file>
 
-$ Example:
+$ Example of a values.yaml file:
 
 $ name: my-app
 $ image: gcr.io/sourcegraph-dev/my-app:latest
@@ -1189,6 +1189,7 @@ Flags:
 
 * `--dry-run`: Write the manifest to stdout instead of writing to a file
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
+* `--infra-repo="<value>"`: The location of the sourcegraph/infrastructure repository. If undefined the currect directory will be used.
 * `--values="<value>"`: The path to the values file
 
 ## sg wolfi
