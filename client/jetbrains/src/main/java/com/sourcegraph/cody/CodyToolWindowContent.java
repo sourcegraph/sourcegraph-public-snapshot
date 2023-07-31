@@ -29,11 +29,12 @@ import com.sourcegraph.cody.api.CodyLLMConfiguration;
 import com.sourcegraph.cody.api.Message;
 import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
 import com.sourcegraph.cody.chat.Chat;
-import com.sourcegraph.cody.chat.ChatBubble;
 import com.sourcegraph.cody.chat.ChatMessage;
 import com.sourcegraph.cody.chat.ChatScrollPane;
+import com.sourcegraph.cody.chat.ChatUIConstants;
 import com.sourcegraph.cody.chat.ContextFilesMessage;
 import com.sourcegraph.cody.chat.Interaction;
+import com.sourcegraph.cody.chat.MessagePanel;
 import com.sourcegraph.cody.chat.Transcript;
 import com.sourcegraph.cody.context.ContextGetter;
 import com.sourcegraph.cody.context.ContextMessage;
@@ -362,18 +363,23 @@ public class CodyToolWindowContent implements UpdatableChat {
         .invokeLater(
             () -> {
               // Bubble panel
-              ChatBubble bubble = new ChatBubble(message, project, messagesPanel);
-              addComponentToChat(bubble);
+              MessagePanel messagePanel =
+                  new MessagePanel(
+                      message,
+                      project,
+                      messagesPanel,
+                      ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+              addComponentToChat(messagePanel);
             });
   }
 
-  private void addComponentToChat(@NotNull JPanel message) {
+  private void addComponentToChat(@NotNull JPanel messageContent) {
 
-    var bubblePanel = new JPanel();
-    bubblePanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
+    var wrapperPanel = new JPanel();
+    wrapperPanel.setLayout(new VerticalFlowLayout(VerticalFlowLayout.TOP, 0, 0, true, false));
     // Chat message
-    bubblePanel.add(message, VerticalFlowLayout.TOP);
-    messagesPanel.add(bubblePanel);
+    wrapperPanel.add(messageContent, VerticalFlowLayout.TOP);
+    messagesPanel.add(wrapperPanel);
     messagesPanel.revalidate();
     messagesPanel.repaint();
   }
@@ -427,13 +433,13 @@ public class CodyToolWindowContent implements UpdatableChat {
                     .map(mp -> mp.getComponent(mp.getComponentCount() - 1))
                     .filter(component -> component instanceof JPanel)
                     .map(component -> (JPanel) component)
-                    .map(lastBubblePanel -> lastBubblePanel.getComponent(0))
-                    .filter(component -> component instanceof ChatBubble)
-                    .map(component -> (ChatBubble) component)
+                    .map(lastWrapperPanel -> lastWrapperPanel.getComponent(0))
+                    .filter(component -> component instanceof MessagePanel)
+                    .map(component -> (MessagePanel) component)
                     .ifPresent(
-                        lastBubble -> {
+                        lastMessage -> {
                           transcript.addAssistantResponse(message);
-                          lastBubble.incrementallyUpdateText(message, messagesPanel);
+                          lastMessage.updateContentWith(message);
                         }));
   }
 
