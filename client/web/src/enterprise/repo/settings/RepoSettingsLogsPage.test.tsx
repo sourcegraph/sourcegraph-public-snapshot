@@ -1,5 +1,5 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { render } from '@testing-library/react'
+import { render, waitFor, screen } from '@testing-library/react'
 import { BrowserRouter } from 'react-router-dom'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -57,7 +57,7 @@ const mockRepo: SettingsAreaRepositoryFields = {
 }
 
 describe('RepoSettingsLogsPage', () => {
-    test('should render correctly when there are recorded commands', () => {
+    test('should render correctly when there are recorded commands', async () => {
         const mockRecordedCommandsQuery: MockedResponse<RepositoryRecordedCommandsResult> = {
             request: {
                 query: getDocumentNode(REPOSITORY_RECORDED_COMMANDS_QUERY),
@@ -100,19 +100,23 @@ describe('RepoSettingsLogsPage', () => {
             },
         }
 
-        expect(
-            render(
-                <BrowserRouter>
-                    <MockedTestProvider mocks={[mockRecordedCommandsQuery]}>
-                        <RepoSettingsLogsPage repo={mockRepo} />
-                    </MockedTestProvider>
-                </BrowserRouter>
-            ).asFragment()
-        ).toMatchSnapshot()
+        const cmp = render(
+            <BrowserRouter>
+                <MockedTestProvider mocks={[mockRecordedCommandsQuery]}>
+                    <RepoSettingsLogsPage repo={mockRepo} />
+                </MockedTestProvider>
+            </BrowserRouter>
+        )
+
+        await waitFor(() => {
+            expect(screen.queryByRole('img', { name: /loading/i })).not.toBeInTheDocument()
+        })
+        expect(cmp.asFragment()).toMatchSnapshot()
     })
 
-    test('should render correctly when there are no recorded commands', () => {
+    test('should render correctly when there are no recorded commands', async () => {
         const mockRecordedCommandsQuery: MockedResponse<RepositoryRecordedCommandsResult> = {
+            delay: 0,
             request: {
                 query: getDocumentNode(REPOSITORY_RECORDED_COMMANDS_QUERY),
                 variables: {
@@ -137,14 +141,17 @@ describe('RepoSettingsLogsPage', () => {
             },
         }
 
-        expect(
-            render(
-                <BrowserRouter>
-                    <MockedTestProvider mocks={[mockRecordedCommandsQuery]}>
-                        <RepoSettingsLogsPage repo={mockRepo} />
-                    </MockedTestProvider>
-                </BrowserRouter>
-            ).asFragment()
-        ).toMatchSnapshot()
+        const cmp = render(
+            <BrowserRouter>
+                <MockedTestProvider mocks={[mockRecordedCommandsQuery]}>
+                    <RepoSettingsLogsPage repo={mockRepo} />
+                </MockedTestProvider>
+            </BrowserRouter>
+        )
+        await waitFor(() => {
+            expect(screen.queryByRole('img', { name: /loading/i })).not.toBeInTheDocument()
+        })
+
+        expect(cmp.asFragment()).toMatchSnapshot()
     })
 })
