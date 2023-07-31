@@ -9,7 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -166,11 +166,7 @@ func getExternalURL(ctx context.Context) (*url.URL, error) {
 	}
 
 	externalURLOnce.Do(func() {
-		externalURLStr, err := internalapi.Client.ExternalURL(ctx)
-		if err != nil {
-			externalURLError = err
-			return
-		}
+		externalURLStr := conf.Get().ExternalURL
 		externalURLValue, externalURLError = url.Parse(externalURLStr)
 	})
 	return externalURLValue, externalURLError

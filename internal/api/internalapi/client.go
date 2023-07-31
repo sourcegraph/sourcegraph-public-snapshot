@@ -41,20 +41,6 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
 
-// TODO(slimsag): In the future, once we're no longer using environment
-// variables to build ExternalURL, remove this in favor of services just reading it
-// directly from the configuration file.
-//
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
-	var externalURL string
-	err := c.postInternal(ctx, "app-url", nil, &externalURL)
-	if err != nil {
-		return "", err
-	}
-	return externalURL, nil
-}
-
 // MockClientConfiguration mocks (*internalClient).Configuration.
 var MockClientConfiguration func() (conftypes.RawUnified, error)
 
