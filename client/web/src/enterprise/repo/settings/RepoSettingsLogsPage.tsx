@@ -104,7 +104,7 @@ const LastRepoCommands: FC<LastRepoCommandsProps> = ({ repo }) => {
         <>
             {error && <ErrorAlert error={error} />}
             <div aria-label="recorded commands">
-                {(!loading && recordedCommands.length) === 0 && <Text className="my-2">No recorded commands yet.</Text>}
+                {(!loading && recordedCommands.length === 0) && <Text className="my-2">No recorded commands yet.</Text>}
                 {recordedCommands.map((command, index) => (
                     // We use the index as key here because commands don't have the concept
                     // of IDs and there's nothing really unique about each command.
