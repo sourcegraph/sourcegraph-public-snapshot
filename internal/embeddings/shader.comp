@@ -18,16 +18,16 @@
 
 layout (/* gl_WorkGroupSize.x */ local_size_x = 1024) in;
 
-layout(std430, binding = 0) /* readonly */ buffer A {
+layout(std430, binding = 0) readonly buffer A {
     uint a[];
 };
 
-layout(std430, binding = 1) /* readonly */ buffer B {
+layout(std430, binding = 1) readonly buffer B {
     uint b[];
 };
 
 layout(binding = 2) writeonly buffer C {
-    int result;
+    int result[];
 };
 
 // unpacks 4 twos-complement int8s from a uint
@@ -48,33 +48,26 @@ ivec4 unpack(uint data) {
 }
 
 shared int reduce[gl_WorkGroupSize.x];
-// shared ivec4 reduce[gl_WorkGroupSize.x];
 
 void main() {
-    int id = ivec3(gl_GlobalInvocationID).x;
+    uint global_id = gl_GlobalInvocationID.x;
+    uint local_id  = gl_LocalInvocationID.x;
 
-    if (id >= a.length()) return;
-    ivec4 mult = unpack(a[id]) * unpack(b[id]);
-    reduce[id] = mult.x + mult.y + mult.z + mult.w;
+    if (global_id >= a.length()) return;
+
+    ivec4 mult = unpack(a[global_id]) * unpack(b[global_id]);
+    reduce[local_id] = mult.x + mult.y + mult.z + mult.w;
+
     barrier();
 
-    if (id == 0) {
-        int acc = 0;
-        for (int i = 0; i < a.length().x; i++) {
-            // acc += reduce[i].x + reduce[i].y + reduce[i].z + reduce[i].w;
-            acc += reduce[i];
+    // from pages 14-16 of the great "Optimizing Parallel Reduction in CUDA" paper by NVIDIA
+    // https://developer.download.nvidia.com/assets/cuda/files/reduction.pdf
+    for (uint i = gl_WorkGroupSize.x / 2; i > 0; i >>= 1) {
+        if (local_id < i) {
+            reduce[local_id] += reduce[local_id + i];
         }
-        result = acc;
+        barrier();
     }
 
-    // for (uint i = gl_WorkGroupSize.x / 4; i > 0; i >>= 1) {
-    //     if (gl_LocalInvocationID.x < i) {
-    //         reduce[gl_LocalInvocationID.x] += reduce[gl_LocalInvocationID.x + i];
-    //         // ivec4 partial = reduce[gl_LocalInvocationID.x];
-    //         // reduce[gl_LocalInvocationID.x] = partial + reduce[gl_LocalInvocationID.x + i]
-    //     }
-    //     barrier();
-    // }
-
-    // if (id == 0) result = reduce[0];
+    if (local_id == 0) result[gl_WorkGroupID.x] = reduce[0];
 }
