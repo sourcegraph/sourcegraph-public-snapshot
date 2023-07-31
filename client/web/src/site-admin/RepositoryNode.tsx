@@ -47,6 +47,7 @@ import {
     UpdateMirrorRepositoryResult,
     UpdateMirrorRepositoryVariables,
 } from '../graphql-operations'
+import { LogsPageTabs } from '../repo/constants'
 import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from '../repo/settings/backend'
 
 import { RECLONE_REPOSITORY_MUTATION, UPDATE_MIRROR_REPOSITORY } from './backend'
@@ -219,7 +220,9 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 <MenuItem
                                     as={Button}
                                     disabled={!repoCloned(node)}
-                                    onSelect={() => navigate(`/${node.name}/-/settings/mirror`)}
+                                    onSelect={() =>
+                                        navigate(`/${node.name}/-/settings/logs?activeTab=${LogsPageTabs.SYNCLOGS}`)
+                                    }
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiListStatus} className="mr-1" />
