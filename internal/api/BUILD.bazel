@@ -22,4 +22,5 @@ go_test(
     timeout = "short",
     srcs = ["api_test.go"],
     embed = [":api"],
+    deps = ["@com_github_stretchr_testify//require"],
 )
