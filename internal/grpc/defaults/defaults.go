@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/contextconv"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -22,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/internalerrs"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/messagesize"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
 	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
@@ -58,6 +58,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithChainStreamInterceptor(
 			grpc_prometheus.StreamClientInterceptor(metrics),
+			messagesize.StreamClientInterceptor,
 			propagator.StreamClientPropagator(actor.ActorPropagator{}),
 			propagator.StreamClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.StreamClientPropagator(requestclient.Propagator{}),
@@ -68,6 +69,7 @@ func DialOptions(logger log.Logger, additionalOptions ...grpc.DialOption) []grpc
 		),
 		grpc.WithChainUnaryInterceptor(
 			grpc_prometheus.UnaryClientInterceptor(metrics),
+			messagesize.UnaryClientInterceptor,
 			propagator.UnaryClientPropagator(actor.ActorPropagator{}),
 			propagator.UnaryClientPropagator(policy.ShouldTracePropagator{}),
 			propagator.UnaryClientPropagator(requestclient.Propagator{}),
@@ -115,6 +117,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 			internalgrpc.NewStreamPanicCatcher(logger),
 			internalerrs.LoggingStreamServerInterceptor(logger),
 			grpc_prometheus.StreamServerInterceptor(metrics),
+			messagesize.StreamServerInterceptor,
 			propagator.StreamServerPropagator(requestclient.Propagator{}),
 			propagator.StreamServerPropagator(actor.ActorPropagator{}),
 			propagator.StreamServerPropagator(policy.ShouldTracePropagator{}),
@@ -125,6 +128,7 @@ func ServerOptions(logger log.Logger, additionalOptions ...grpc.ServerOption) []
 			internalgrpc.NewUnaryPanicCatcher(logger),
 			internalerrs.LoggingUnaryServerInterceptor(logger),
 			grpc_prometheus.UnaryServerInterceptor(metrics),
+			messagesize.UnaryServerInterceptor,
 			propagator.UnaryServerPropagator(requestclient.Propagator{}),
 			propagator.UnaryServerPropagator(actor.ActorPropagator{}),
 			propagator.UnaryServerPropagator(policy.ShouldTracePropagator{}),
