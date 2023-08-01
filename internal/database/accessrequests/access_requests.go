@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"testing"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -91,8 +92,21 @@ type accessRequestStore struct {
 	logger log.Logger
 }
 
+var mockStore *MockAccessRequestStore
+
+func WithMock(t *testing.T, store *MockAccessRequestStore) {
+	currentStore := mockStore
+	mockStore = store
+	t.Cleanup(func() {
+		mockStore = currentStore
+	})
+}
+
 // With instantiates and returns a new accessRequestStore using the other store handle.
 func With(other basestore.ShareableStore, logger log.Logger) AccessRequestStore {
+	if mockStore != nil {
+		return mockStore
+	}
 	return &accessRequestStore{Store: basestore.NewWithHandle(other.Handle()), logger: logger}
 }
 

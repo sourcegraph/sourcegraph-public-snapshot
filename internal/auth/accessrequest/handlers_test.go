@@ -104,7 +104,7 @@ func TestRequestAccess(t *testing.T) {
 		handler(res, req)
 		assert.Equal(t, http.StatusCreated, res.Code)
 
-		_, err = accessrequests.With(db.Store).GetByEmail(context.Background(), newUser.Email)
+		_, err = accessrequests.With(db.GetStore(), logger).GetByEmail(context.Background(), newUser.Email)
 		require.Error(t, err)
 		require.Equal(t, errcode.IsNotFound(err), true)
 	})
@@ -115,8 +115,8 @@ func TestRequestAccess(t *testing.T) {
 			Name:  "a1",
 			Email: "a1@example.com",
 		}
-		db.AccessRequests().Create(context.Background(), &accessRequest)
-		_, err := db.AccessRequests().GetByEmail(context.Background(), accessRequest.Email)
+		accessrequests.With(db.GetStore(), logger).Create(context.Background(), &accessRequest)
+		_, err := accessrequests.With(db.GetStore(), logger).GetByEmail(context.Background(), accessRequest.Email)
 		require.NoError(t, err)
 
 		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(fmt.Sprintf(`{"email": "%s", "name": "%s", "additionalInfo": "%s"}`, accessRequest.Email, accessRequest.Name, accessRequest.AdditionalInfo)))
@@ -135,7 +135,7 @@ func TestRequestAccess(t *testing.T) {
 		handler(res, req)
 		assert.Equal(t, http.StatusCreated, res.Code)
 
-		accessRequest, err := db.AccessRequests().GetByEmail(context.Background(), "a2@example.com")
+		accessRequest, err := accessrequests.With(db.GetStore(), logger).GetByEmail(context.Background(), "a2@example.com")
 		require.NoError(t, err)
 		assert.Equal(t, "a2", accessRequest.Name)
 		assert.Equal(t, "a2@example.com", accessRequest.Email)
