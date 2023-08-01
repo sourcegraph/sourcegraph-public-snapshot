@@ -6,7 +6,7 @@
 
     export let placement: Placement = 'bottom'
 
-    const {update, popover} = createPopover()
+    const { update, popover } = createPopover()
 
     let isOpen = false
     let trigger: HTMLElement | null
@@ -30,7 +30,7 @@
 
 <slot {toggle} {registerTrigger} />
 {#if trigger && isOpen}
-    <div use:popover={{target: trigger, options: {placement}}} use:onClickOutside on:click-outside={clickOutside}>
+    <div use:popover={{ target: trigger, options: { placement } }} use:onClickOutside on:click-outside={clickOutside}>
         <slot name="content" {toggle} />
     </div>
 {/if}

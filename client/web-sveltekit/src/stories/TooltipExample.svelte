@@ -1,5 +1,5 @@
 <script lang="ts">
-    import Tooltip, {type Placement} from "$lib/Tooltip.svelte"
+    import Tooltip, { type Placement } from '$lib/Tooltip.svelte'
 
     const placements: Placement[] = ['auto', 'top', 'left', 'bottom', 'right']
     let count = 0
@@ -23,16 +23,17 @@
 
 <h2>Tooltip placement</h2>
 <table>
-{#each placements as placement }
-    <tr>
-        <th>{placement}</th>
-        <td><Tooltip tooltip="Tooltip" {placement} alwaysVisible><span>Trigger</span></Tooltip></td>
-    </tr>
-{/each}
+    {#each placements as placement}
+        <tr>
+            <th>{placement}</th>
+            <td><Tooltip tooltip="Tooltip" {placement} alwaysVisible><span>Trigger</span></Tooltip></td>
+        </tr>
+    {/each}
 </table>
 
 <style lang="scss">
-    td, th {
+    td,
+    th {
         padding: 2rem;
     }
 </style>

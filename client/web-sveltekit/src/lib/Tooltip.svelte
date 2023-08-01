@@ -1,9 +1,9 @@
 <script lang="ts" context="module">
     import type { Placement } from '@popperjs/core'
-    import {placements} from '@popperjs/core'
+    import { placements } from '@popperjs/core'
 
-    export type {Placement}
-    export {placements}
+    export type { Placement }
+    export { placements }
 </script>
 
 <script lang="ts">
@@ -25,7 +25,7 @@
     export let alwaysVisible = false
 
     const id = uniqueID('tooltip')
-    const {update, popover} = createPopover()
+    const { update, popover } = createPopover()
 
     let visible = false
     let container: HTMLElement
@@ -75,19 +75,18 @@
     <slot />
 </div>
 {#if (alwaysVisible || visible) && target}
-    <div role="tooltip" {id} use:popover={{target, options}}>
+    <div role="tooltip" {id} use:popover={{ target, options }}>
         {tooltip}
         <div data-popper-arrow />
     </div>
 {/if}
-
 
 <style lang="scss">
     .container {
         display: contents;
     }
 
-    [role="tooltip"] {
+    [role='tooltip'] {
         --tooltip-font-size: 0.75rem; // 12px
         --tooltip-line-height: 1.02rem; // 16.32px / 16px, per Figma
         --tooltip-max-width: 256px;

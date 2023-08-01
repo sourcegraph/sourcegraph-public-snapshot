@@ -17,7 +17,10 @@
     </td>
     <td colspan={behind || ahead ? 1 : 2}>
         <a href={ref.url}>
-            <small>Updated {#if authorDate}<Timestamp date={authorDate} strict/>{/if} by {authorName}</small></a>
+            <small
+                >Updated {#if authorDate}<Timestamp date={authorDate} strict />{/if} by {authorName}</small
+            ></a
+        >
     </td>
     {#if ahead || behind}
         <td class="diff">
