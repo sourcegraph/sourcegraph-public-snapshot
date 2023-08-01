@@ -133,6 +133,8 @@ func TestEmbedRepo(t *testing.T) {
 		MaxCodeEmbeddings: 100000,
 		MaxTextEmbeddings: 100000,
 		BatchSize:         512,
+		// initially this was the default behavior, before this flag was added.
+		ExcludeChunks: false,
 	}
 
 	logger := log.NoOp()
@@ -333,11 +335,38 @@ func TestEmbedRepo(t *testing.T) {
 		erroringClient := &erroringEmbeddingsClient{embeddingsClient, errors.New("whoops")} // normal error
 		_, _, _, err = EmbedRepo(ctx, erroringClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "whoops")
+	})
 
-		erroringClient = &erroringEmbeddingsClient{embeddingsClient, errors.Newf("batch failed on file %q", "c.java")} // error with file name
-		_, _, _, err = EmbedRepo(ctx, erroringClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+	t.Run("Fail a single chunk from code index", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.BatchSize = 512
+		rl := newReadLister("a.go", "b.md")
+		failed := make(map[int]struct{})
+
+		// fail on second chunk of the first code file
+		failed[1] = struct{}{}
+
+		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
+		_, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+
 		require.ErrorContains(t, err, "batch failed on file")
-		require.ErrorContains(t, err, "c.java", "for a partial error, the error message should contain the file name")
+		require.ErrorContains(t, err, "a.go", "for a chunk error, the error message should contain the file name")
+	})
+
+	t.Run("Fail a single chunk from code index", func(t *testing.T) {
+		optsCopy := opts
+		optsCopy.BatchSize = 512
+		rl := newReadLister("a.go", "b.md")
+		failed := make(map[int]struct{})
+
+		// fail on second chunk of the first text file
+		failed[3] = struct{}{}
+
+		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
+		_, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+
+		require.ErrorContains(t, err, "batch failed on file")
+		require.ErrorContains(t, err, "b.md", "for a chunk error, the error message should contain the file name")
 	})
 }
 
@@ -414,15 +443,14 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: 100000,
 		MaxTextEmbeddings: 100000,
+		BatchSize:         512,
+		ExcludeChunks:     true,
 	}
 
 	logger := log.NoOp()
 	noopReport := func(*bgrepo.EmbedRepoStats) {}
 
 	t.Run("Exclude single chunk from each index", func(t *testing.T) {
-		optsCopy := opts
-		optsCopy.BatchSize = 512
-		optsCopy.ExcludeChunks = true
 		rl := newReadLister("a.go", "b.md", "c.java")
 		failed := make(map[int]struct{})
 
@@ -433,7 +461,7 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		failed[7] = struct{}{}
 
 		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
-		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
 
 		require.NoError(t, err)
 
@@ -469,9 +497,6 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		require.Equal(t, expectedStats, stats)
 	})
 	t.Run("Exclude chunks multiple files", func(t *testing.T) {
-		optsCopy := opts
-		optsCopy.BatchSize = 512
-		optsCopy.ExcludeChunks = true
 		rl := newReadLister("a.go", "b.md", "c.java")
 		failed := make(map[int]struct{})
 
@@ -486,7 +511,7 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		failed[8] = struct{}{}
 
 		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
-		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
 
 		require.NoError(t, err)
 
@@ -524,7 +549,6 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 	t.Run("Exclude chunks multiple files and multiple batches", func(t *testing.T) {
 		optsCopy := opts
 		optsCopy.BatchSize = 2
-		optsCopy.ExcludeChunks = true
 		rl := newReadLister("a.go", "b.md", "c.java")
 		failed := make(map[int]struct{})
 
