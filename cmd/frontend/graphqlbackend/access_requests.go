@@ -18,7 +18,7 @@ import (
 )
 
 type AccessRequestsArgs struct {
-	accessrequests.AccessRequestsFilterArgs
+	accessrequests.FilterArgs
 	graphqlutil.ConnectionResolverArgs
 }
 
@@ -30,13 +30,13 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 
 	connectionStore := &accessRequestConnectionStore{
 		db:   r.db,
-		args: &args.AccessRequestsFilterArgs,
+		args: &args.FilterArgs,
 	}
 
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
-		OrderBy:   database.OrderBy{{Field: string(accessrequests.AccessRequestListID)}},
+		OrderBy:   database.OrderBy{{Field: string(accessrequests.ListID)}},
 		Ascending: false,
 	}
 	return graphqlutil.NewConnectionResolver[*accessRequestResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
@@ -44,7 +44,7 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 
 type accessRequestConnectionStore struct {
 	db     database.DB
-	args   *accessrequests.AccessRequestsFilterArgs
+	args   *accessrequests.FilterArgs
 	logger log.Logger
 }
 

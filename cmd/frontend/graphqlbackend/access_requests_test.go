@@ -26,7 +26,7 @@ func TestAccessRequestNode(t *testing.T) {
 	}
 	db := database.NewMockDB()
 
-	accessRequestStore := accessrequests.NewMockAccessRequestStore()
+	accessRequestStore := accessrequests.NewMockStore()
 	accessRequestStore.GetByIDFunc.SetDefaultReturn(mockAccessRequest, nil)
 	accessrequests.WithMock(t, accessRequestStore)
 
@@ -87,7 +87,7 @@ func TestAccessRequestsQuery(t *testing.T) {
 	userStore := database.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(userStore)
 
-	accessRequestStore := accessrequests.NewMockAccessRequestStore()
+	accessRequestStore := accessrequests.NewMockStore()
 	accessrequests.WithMock(t, accessRequestStore)
 
 	t.Parallel()
@@ -192,7 +192,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	t.Parallel()
 
 	t.Run("non-admin user", func(t *testing.T) {
-		accessRequestStore := accessrequests.NewMockAccessRequestStore()
+		accessRequestStore := accessrequests.NewMockStore()
 		accessrequests.WithMock(t, accessRequestStore)
 
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
@@ -219,7 +219,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	})
 
 	t.Run("existing access request", func(t *testing.T) {
-		accessRequestStore := accessrequests.NewMockAccessRequestStore()
+		accessRequestStore := accessrequests.NewMockStore()
 		accessrequests.WithMock(t, accessRequestStore)
 
 		createdAtTime, _ := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
@@ -246,7 +246,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	})
 
 	t.Run("non-existing access request", func(t *testing.T) {
-		accessRequestStore := accessrequests.NewMockAccessRequestStore()
+		accessRequestStore := accessrequests.NewMockStore()
 		accessrequests.WithMock(t, accessRequestStore)
 
 		notFoundErr := &accessrequests.ErrAccessRequestNotFound{ID: 1}
