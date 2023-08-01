@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/dustin/go-humanize"
+	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
@@ -49,7 +50,7 @@ func LoggingUnaryClientInterceptor(l log.Logger) grpc.UnaryClientInterceptor {
 	return func(ctx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 		err := invoker(ctx, fullMethod, req, reply, cc, opts...)
 		if err != nil {
-			serviceName, methodName := splitMethodName(fullMethod)
+			serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
 
 			var initialRequest proto.Message
 			if m, ok := req.(proto.Message); ok {
@@ -77,7 +78,7 @@ func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
 	logger = logger.Scoped("streamingMethod", "errors that originated from a streaming method")
 
 	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		serviceName, methodName := splitMethodName(fullMethod)
+		serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
 
 		stream, err := streamer(ctx, desc, cc, fullMethod, opts...)
 		if err != nil {
@@ -111,7 +112,7 @@ func LoggingUnaryServerInterceptor(l log.Logger) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		response, err := handler(ctx, req)
 		if err != nil {
-			serviceName, methodName := splitMethodName(info.FullMethod)
+			serviceName, methodName := grpcutil.SplitMethodName(info.FullMethod)
 
 			var initialRequest proto.Message
 			if m, ok := req.(proto.Message); ok {
@@ -139,7 +140,7 @@ func LoggingStreamServerInterceptor(l log.Logger) grpc.StreamServerInterceptor {
 	logger = logger.Scoped("streamingMethod", "errors that originated from a streaming method")
 
 	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		serviceName, methodName := splitMethodName(info.FullMethod)
+		serviceName, methodName := grpcutil.SplitMethodName(info.FullMethod)
 
 		stream := newLoggingServerStream(ss, logger, serviceName, methodName)
 		return handler(srv, stream)

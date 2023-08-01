@@ -1,8 +1,8 @@
 package bitbucketserver
 
 import (
-	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"

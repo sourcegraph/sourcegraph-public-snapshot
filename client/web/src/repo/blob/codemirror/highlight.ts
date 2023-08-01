@@ -4,8 +4,6 @@ import { Decoration, DecorationSet, EditorView, PluginValue, ViewPlugin, ViewUpd
 import { logger } from '@sourcegraph/common'
 import { Occurrence, SyntaxKind } from '@sourcegraph/shared/src/codeintel/scip'
 
-import type { BlobInfo } from '../CodeMirrorBlob'
-
 import { positionToOffset } from './utils'
 
 /**
@@ -18,12 +16,17 @@ export interface HighlightIndex {
     lineIndex: (number | undefined)[]
 }
 
+interface HighlightData {
+    content: string
+    lsif?: string
+}
+
 /**
  * Parses JSON-encoded SCIP syntax highlighting data and creates a line index.
  * NOTE: This assumes that the data is sorted and does not contain overlapping
  * ranges.
  */
-export function createHighlightTable(info: BlobInfo): HighlightIndex {
+export function createHighlightTable(info: HighlightData): HighlightIndex {
     const lineIndex: (number | undefined)[] = []
 
     if (!info.lsif) {
@@ -147,10 +150,9 @@ class SyntaxHighlightManager implements PluginValue {
  * Facet for providing syntax highlighting information from a {@link BlobInfo}
  * object.
  */
-export const syntaxHighlight = Facet.define<BlobInfo, HighlightIndex>({
+export const syntaxHighlight = Facet.define<HighlightData, HighlightIndex>({
     static: true,
-    compareInput: (blobInfoA, blobInfoB) => blobInfoA.lsif === blobInfoB.lsif,
-    combine: blobInfos =>
-        blobInfos[0]?.lsif ? createHighlightTable(blobInfos[0]) : { occurrences: [], lineIndex: [] },
+    compareInput: (inputA, inputB) => inputA.lsif === inputB.lsif,
+    combine: values => (values[0]?.lsif ? createHighlightTable(values[0]) : { occurrences: [], lineIndex: [] }),
     enables: ViewPlugin.fromClass(SyntaxHighlightManager, { decorations: plugin => plugin.decorations }),
 })

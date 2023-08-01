@@ -31,7 +31,7 @@ type ProductLicenseInfo struct {
 	SalesforceOpportunityIDValue  *string
 	IsValidValue                  bool
 	LicenseInvalidityReasonValue  *string
-	HashedKeyValue  *string
+	HashedKeyValue                *string
 }
 
 func (r ProductLicenseInfo) ProductNameWithBrand() string {
