@@ -28,7 +28,7 @@ func TestAccessRequestNode(t *testing.T) {
 
 	accessRequestStore := accessrequests.NewMockStore()
 	accessRequestStore.GetByIDFunc.SetDefaultReturn(mockAccessRequest, nil)
-	accessrequests.WithMock(t, accessRequestStore)
+	accessrequests.MockWith(t, accessRequestStore)
 
 	userStore := database.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(userStore)
@@ -88,7 +88,7 @@ func TestAccessRequestsQuery(t *testing.T) {
 	db.UsersFunc.SetDefaultReturn(userStore)
 
 	accessRequestStore := accessrequests.NewMockStore()
-	accessrequests.WithMock(t, accessRequestStore)
+	accessrequests.MockWith(t, accessRequestStore)
 
 	t.Run("non-admin user", func(t *testing.T) {
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
@@ -189,7 +189,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 
 	t.Run("non-admin user", func(t *testing.T) {
 		accessRequestStore := accessrequests.NewMockStore()
-		accessrequests.WithMock(t, accessRequestStore)
+		accessrequests.MockWith(t, accessRequestStore)
 
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -216,7 +216,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 
 	t.Run("existing access request", func(t *testing.T) {
 		accessRequestStore := accessrequests.NewMockStore()
-		accessrequests.WithMock(t, accessRequestStore)
+		accessrequests.MockWith(t, accessRequestStore)
 
 		createdAtTime, _ := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
 		mockAccessRequest := &types.AccessRequest{ID: 1, Email: "a1@example.com", Name: "a1", CreatedAt: createdAtTime, AdditionalInfo: "af1", Status: types.AccessRequestStatusPending}
@@ -243,7 +243,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		accessRequestStore := accessrequests.NewMockStore()
-		accessrequests.WithMock(t, accessRequestStore)
+		accessrequests.MockWith(t, accessRequestStore)
 
 		notFoundErr := &accessrequests.ErrAccessRequestNotFound{ID: 1}
 		accessRequestStore.GetByIDFunc.SetDefaultReturn(nil, notFoundErr)

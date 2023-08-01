@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"testing"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
@@ -90,16 +89,6 @@ type Store interface {
 type store struct {
 	*basestore.Store
 	logger log.Logger
-}
-
-var mockStore Store
-
-func WithMock(t *testing.T, store Store) {
-	currentStore := mockStore
-	mockStore = store
-	t.Cleanup(func() {
-		mockStore = currentStore
-	})
 }
 
 // With instantiates and returns a new accessRequestStore using the other store handle.

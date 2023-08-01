@@ -13,6 +13,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
+var mockStore Store
+
+func mockWith(t *testing.T, store Store) {
+	currentStore := mockStore
+	mockStore = store
+	t.Cleanup(func() {
+		mockStore = currentStore
+	})
+}
+
+var MockWith = mockWith
+
 func TestAccessRequests_Create(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
