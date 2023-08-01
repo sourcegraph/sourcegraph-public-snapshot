@@ -179,7 +179,7 @@ const LastSyncOutput: FC<LastSyncOutputProps> = props => {
     const output =
         (props.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
         props.mirrorInfo.lastSyncOutput ||
-        'No logs yet.'
+        'No logs yet'
     return (
         <div className="mt-2">
             <Text>Output from this repository's most recent sync</Text>

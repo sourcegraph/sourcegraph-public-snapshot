@@ -1939,8 +1939,11 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 }
 
 func (s *Server) setLastOutput(ctx context.Context, name api.RepoName, output string) {
-	if err := s.DB.GitserverRepos().SetLastOutput(ctx, name, output); err != nil {
-		s.Logger.Warn("Setting last output in DB", log.Error(err))
+	// If there are no new changes, we don't want to overwrite the last output.
+	if output != "" {
+		if err := s.DB.GitserverRepos().SetLastOutput(ctx, name, output); err != nil {
+			s.Logger.Warn("Setting last output in DB", log.Error(err))
+		}
 	}
 }
 
