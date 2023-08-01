@@ -12570,9 +12570,6 @@ type MockDB struct {
 	// FeatureFlagsFunc is an instance of a mock function object controlling
 	// the behavior of the method FeatureFlags.
 	FeatureFlagsFunc *DBFeatureFlagsFunc
-	// GetStoreFunc is an instance of a mock function object controlling the
-	// behavior of the method GetStore.
-	GetStoreFunc *DBGetStoreFunc
 	// GitHubAppsFunc is an instance of a mock function object controlling
 	// the behavior of the method GitHubApps.
 	GitHubAppsFunc *DBGitHubAppsFunc
@@ -12798,11 +12795,6 @@ func NewMockDB() *MockDB {
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: func() (r0 FeatureFlagStore) {
-				return
-			},
-		},
-		GetStoreFunc: &DBGetStoreFunc{
-			defaultHook: func() (r0 basestore.ShareableStore) {
 				return
 			},
 		},
@@ -13128,11 +13120,6 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.FeatureFlags")
 			},
 		},
-		GetStoreFunc: &DBGetStoreFunc{
-			defaultHook: func() basestore.ShareableStore {
-				panic("unexpected invocation of MockDB.GetStore")
-			},
-		},
 		GitHubAppsFunc: &DBGitHubAppsFunc{
 			defaultHook: func() store.GitHubAppsStore {
 				panic("unexpected invocation of MockDB.GitHubApps")
@@ -13422,9 +13409,6 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		FeatureFlagsFunc: &DBFeatureFlagsFunc{
 			defaultHook: i.FeatureFlags,
-		},
-		GetStoreFunc: &DBGetStoreFunc{
-			defaultHook: i.GetStore,
 		},
 		GitHubAppsFunc: &DBGitHubAppsFunc{
 			defaultHook: i.GitHubApps,
@@ -15165,104 +15149,6 @@ func (c DBFeatureFlagsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBFeatureFlagsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// DBGetStoreFunc describes the behavior when the GetStore method of the
-// parent MockDB instance is invoked.
-type DBGetStoreFunc struct {
-	defaultHook func() basestore.ShareableStore
-	hooks       []func() basestore.ShareableStore
-	history     []DBGetStoreFuncCall
-	mutex       sync.Mutex
-}
-
-// GetStore delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockDB) GetStore() basestore.ShareableStore {
-	r0 := m.GetStoreFunc.nextHook()()
-	m.GetStoreFunc.appendCall(DBGetStoreFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the GetStore method of
-// the parent MockDB instance is invoked and the hook queue is empty.
-func (f *DBGetStoreFunc) SetDefaultHook(hook func() basestore.ShareableStore) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetStore method of the parent MockDB instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *DBGetStoreFunc) PushHook(hook func() basestore.ShareableStore) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBGetStoreFunc) SetDefaultReturn(r0 basestore.ShareableStore) {
-	f.SetDefaultHook(func() basestore.ShareableStore {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBGetStoreFunc) PushReturn(r0 basestore.ShareableStore) {
-	f.PushHook(func() basestore.ShareableStore {
-		return r0
-	})
-}
-
-func (f *DBGetStoreFunc) nextHook() func() basestore.ShareableStore {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBGetStoreFunc) appendCall(r0 DBGetStoreFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBGetStoreFuncCall objects describing the
-// invocations of this function.
-func (f *DBGetStoreFunc) History() []DBGetStoreFuncCall {
-	f.mutex.Lock()
-	history := make([]DBGetStoreFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBGetStoreFuncCall is an object that describes an invocation of method
-// GetStore on an instance of MockDB.
-type DBGetStoreFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 basestore.ShareableStore
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBGetStoreFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBGetStoreFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
