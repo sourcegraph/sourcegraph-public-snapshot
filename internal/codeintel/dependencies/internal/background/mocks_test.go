@@ -12,7 +12,6 @@ import (
 
 	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 

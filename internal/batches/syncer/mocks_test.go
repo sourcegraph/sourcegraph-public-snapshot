@@ -14,7 +14,6 @@ import (
 	store "github.com/sourcegraph/sourcegraph/internal/batches/store"
 	types "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	store1 "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
