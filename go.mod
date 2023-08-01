@@ -51,8 +51,6 @@ replace (
 	github.com/prometheus/common => github.com/prometheus/common v0.32.1
 	// Pending: https://github.com/shurcooL/httpgzip/pull/9
 	github.com/shurcooL/httpgzip => github.com/sourcegraph/httpgzip v0.0.0-20211015085752-0bad89b3b4df
-
-	github.com/sourcegraph/zoekt => github.com/davejrt/zoekt v1.0.0
 )
 
 // Status unclear replace directives
