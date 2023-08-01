@@ -111,7 +111,7 @@ func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cm
 	val := RecordedCommand{
 		Start:    rc.start,
 		Duration: time.Since(rc.start).Seconds(),
-		Args:     cmd.Args,
+		Args:     redactor.RedactCommandArgs(cmd.Args),
 		Dir:      cmd.Dir,
 		Path:     cmd.Path,
 	}
@@ -157,9 +157,7 @@ func (rf *RecordingCommandFactory) Disable() {
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
 func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, repoName, cmdName string, args ...string) *RecordingCmd {
 	store := rcache.NewFIFOList(GetFIFOListKey(repoName), rf.maxSize)
-	fmt.Println("args =====> ", args)
-	redactedArgs := redactor.RedactCommandArgs(args)
-	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, redactedArgs...)
+	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, args...)
 }
 
 // Wrap constructs a new RecordingCommand based of an existing os/exec.Cmd, while also setting up the ShouldRecordFunc
