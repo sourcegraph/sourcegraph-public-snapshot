@@ -4,8 +4,11 @@ import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.Disposer;
 import com.intellij.util.messages.MessageBus;
+import com.sourcegraph.cody.localapp.LocalAppManager;
 import javax.swing.*;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nls;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /** Provides controller functionality for application settings. */
@@ -13,7 +16,7 @@ public class SettingsConfigurable implements Configurable {
   private final Project project;
   private SettingsComponent mySettingsComponent;
 
-  public SettingsConfigurable(Project project) {
+  public SettingsConfigurable(@NotNull Project project) {
     this.project = project;
   }
 
@@ -31,7 +34,7 @@ public class SettingsConfigurable implements Configurable {
   @Nullable
   @Override
   public JComponent createComponent() {
-    mySettingsComponent = new SettingsComponent();
+    mySettingsComponent = new SettingsComponent(project);
     Disposer.register(project, mySettingsComponent);
     return mySettingsComponent.getPanel();
   }
@@ -40,16 +43,8 @@ public class SettingsConfigurable implements Configurable {
   public boolean isModified() {
     return !mySettingsComponent.getInstanceType().equals(ConfigUtil.getInstanceType(project))
         || !mySettingsComponent.getEnterpriseUrl().equals(ConfigUtil.getEnterpriseUrl(project))
-        || !(mySettingsComponent
-                .getDotComAccessToken()
-                .equals(ConfigUtil.getDotComAccessToken(project))
-            || mySettingsComponent.getDotComAccessToken().isEmpty()
-                && ConfigUtil.getDotComAccessToken(project) == null)
-        || !(mySettingsComponent
-                .getEnterpriseAccessToken()
-                .equals(ConfigUtil.getEnterpriseAccessToken(project))
-            || mySettingsComponent.getEnterpriseAccessToken().isEmpty()
-                && ConfigUtil.getEnterpriseAccessToken(project) == null)
+        || mySettingsComponent.isDotComAccessTokenChanged()
+        || mySettingsComponent.isEnterpriseAccessTokenChanged()
         || !mySettingsComponent
             .getCustomRequestHeaders()
             .equals(ConfigUtil.getCustomRequestHeaders(project))
@@ -73,54 +68,63 @@ public class SettingsConfigurable implements Configurable {
         bus.syncPublisher(PluginSettingChangeActionNotifier.TOPIC);
 
     CodyApplicationService aSettings = CodyApplicationService.getInstance();
-    CodyProjectService pSettings = CodyService.getInstance(project);
+    CodyProjectService pSettings = CodyProjectService.getInstance(project);
 
     boolean oldCodyEnabled = ConfigUtil.isCodyEnabled();
     boolean oldCodyAutoCompleteEnabled = ConfigUtil.isCodyAutoCompleteEnabled();
     String oldUrl = ConfigUtil.getSourcegraphUrl(project);
-    String oldDotComAccessToken = ConfigUtil.getDotComAccessToken(project);
-    String oldEnterpriseAccessToken = ConfigUtil.getEnterpriseAccessToken(project);
-    String newUrl = mySettingsComponent.getEnterpriseUrl();
     String newDotComAccessToken = mySettingsComponent.getDotComAccessToken();
     String newEnterpriseAccessToken = mySettingsComponent.getEnterpriseAccessToken();
-    String newCustomRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
-    boolean newCodyEnabled = mySettingsComponent.isCodyEnabled();
-    boolean newCodyAutoCompleteEnabled = mySettingsComponent.isCodyAutoCompleteEnabled();
+    String enterpriseUrl = mySettingsComponent.getEnterpriseUrl();
+    SettingsComponent.InstanceType newInstanceType = mySettingsComponent.getInstanceType();
+    String newUrl;
+    if (newInstanceType.equals(SettingsComponent.InstanceType.DOTCOM)) {
+      newUrl = ConfigUtil.DOTCOM_URL;
+    } else if (newInstanceType.equals(SettingsComponent.InstanceType.ENTERPRISE)) {
+      newUrl = enterpriseUrl;
+    } else {
+      newUrl = LocalAppManager.getLocalAppUrl();
+    }
     PluginSettingChangeContext context =
         new PluginSettingChangeContext(
-            oldUrl,
-            oldDotComAccessToken,
-            oldEnterpriseAccessToken,
             oldCodyEnabled,
             oldCodyAutoCompleteEnabled,
+            oldUrl,
             newUrl,
-            newDotComAccessToken,
-            newEnterpriseAccessToken,
-            newCustomRequestHeaders,
-            newCodyEnabled,
-            newCodyAutoCompleteEnabled);
+            mySettingsComponent.isDotComAccessTokenChanged(),
+            mySettingsComponent.isEnterpriseAccessTokenChanged(),
+            mySettingsComponent.getCustomRequestHeaders(),
+            mySettingsComponent.isCodyEnabled(),
+            mySettingsComponent.isCodyAutoCompleteEnabled());
 
     publisher.beforeAction(context);
 
     if (pSettings.instanceType != null) {
-      pSettings.instanceType = mySettingsComponent.getInstanceType().name();
+      pSettings.instanceType = newInstanceType.name();
     } else {
-      aSettings.instanceType = mySettingsComponent.getInstanceType().name();
+      aSettings.instanceType = newInstanceType.name();
     }
     if (pSettings.url != null) {
-      pSettings.url = newUrl;
+      pSettings.url = enterpriseUrl;
     } else {
-      aSettings.url = newUrl;
+      aSettings.url = enterpriseUrl;
     }
-    if (pSettings.dotComAccessToken != null) {
-      pSettings.dotComAccessToken = newDotComAccessToken;
-    } else {
-      aSettings.dotComAccessToken = newDotComAccessToken;
+    if (newInstanceType == SettingsComponent.InstanceType.DOTCOM && newDotComAccessToken != null) {
+      if (pSettings.dotComAccessToken != null) {
+        pSettings.dotComAccessToken = newDotComAccessToken;
+      } else {
+        aSettings.setSafeDotComAccessToken(newDotComAccessToken);
+        aSettings.isDotComAccessTokenSet = StringUtils.isNotEmpty(newDotComAccessToken);
+      }
     }
-    if (pSettings.enterpriseAccessToken != null) {
-      pSettings.enterpriseAccessToken = newEnterpriseAccessToken;
-    } else {
-      aSettings.enterpriseAccessToken = newEnterpriseAccessToken;
+    if (newInstanceType == SettingsComponent.InstanceType.ENTERPRISE
+        && newEnterpriseAccessToken != null) {
+      if (pSettings.enterpriseAccessToken != null) {
+        pSettings.enterpriseAccessToken = newEnterpriseAccessToken;
+      } else {
+        aSettings.setSafeEnterpriseAccessToken(newEnterpriseAccessToken);
+        aSettings.isEnterpriseAccessTokenSet = StringUtils.isNotEmpty(newEnterpriseAccessToken);
+      }
     }
     if (pSettings.customRequestHeaders != null) {
       pSettings.customRequestHeaders = mySettingsComponent.getCustomRequestHeaders();
@@ -138,8 +142,8 @@ public class SettingsConfigurable implements Configurable {
       aSettings.remoteUrlReplacements = mySettingsComponent.getRemoteUrlReplacements();
     }
     aSettings.isUrlNotificationDismissed = mySettingsComponent.isUrlNotificationDismissed();
-    aSettings.setCodyEnabled(newCodyEnabled);
-    aSettings.isCodyAutoCompleteEnabled = newCodyAutoCompleteEnabled;
+    aSettings.setCodyEnabled(mySettingsComponent.isCodyEnabled());
+    aSettings.isCodyAutoCompleteEnabled = mySettingsComponent.isCodyAutoCompleteEnabled();
 
     publisher.afterAction(context);
   }
@@ -148,11 +152,8 @@ public class SettingsConfigurable implements Configurable {
   public void reset() {
     mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
     mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
-    String dotComAccessToken = ConfigUtil.getDotComAccessToken(project);
-    mySettingsComponent.setDotComAccessToken(dotComAccessToken != null ? dotComAccessToken : "");
-    String enterpriseAccessToken = ConfigUtil.getEnterpriseAccessToken(project);
-    mySettingsComponent.setEnterpriseAccessToken(
-        enterpriseAccessToken != null ? enterpriseAccessToken : "");
+    mySettingsComponent.resetDotComAccessToken();
+    mySettingsComponent.resetEnterpriseAccessToken();
     mySettingsComponent.setCustomRequestHeaders(ConfigUtil.getCustomRequestHeaders(project));
     String defaultBranchName = ConfigUtil.getDefaultBranchName(project);
     mySettingsComponent.setDefaultBranchName(defaultBranchName);
@@ -161,6 +162,7 @@ public class SettingsConfigurable implements Configurable {
     mySettingsComponent.setUrlNotificationDismissedEnabled(ConfigUtil.isUrlNotificationDismissed());
     mySettingsComponent.setCodyEnabled(ConfigUtil.isCodyEnabled());
     mySettingsComponent.setCodyAutoCompleteEnabled(ConfigUtil.isCodyAutoCompleteEnabled());
+    mySettingsComponent.getPanel().requestFocusInWindow();
   }
 
   @Override

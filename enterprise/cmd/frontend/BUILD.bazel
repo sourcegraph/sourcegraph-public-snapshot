@@ -12,7 +12,6 @@ go_library(
     deps = [
         "//enterprise/cmd/frontend/shared",
         "//internal/conf",
-        "//internal/oobmigration",
         "//internal/sanitycheck",
         "//internal/service/svcmain",
         "//internal/tracer",

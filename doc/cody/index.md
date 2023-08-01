@@ -114,7 +114,7 @@ Think of Cody as your personal dedicated AI coding assistant, equipped with a co
 
 1. Your entire codebase
 2. Vast knowledge of open source code
-3. StackOverflow questions related to common problems you may encounter
+3. Extensive training data for code understanding and problem-solving
 
 Cody helps you answer questions, write code, and offer suggestions for code improvement.
 

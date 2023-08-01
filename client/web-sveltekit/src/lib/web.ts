@@ -25,6 +25,7 @@ export {
 
 export type RepoResolvedRevision = ResolvedRevision & Repo
 export { ResolvedRevision, Repo }
+export type { FeatureFlagName } from '@sourcegraph/web/src/featureFlags/featureFlags'
 
 // Copy of non-reusable code
 

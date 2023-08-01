@@ -1,20 +1,9 @@
 package com.sourcegraph.cody.chat;
 
-import com.intellij.openapi.project.Project;
-import com.intellij.ui.ColorUtil;
 import com.intellij.util.concurrency.annotations.RequiresEdt;
-import com.intellij.util.ui.SwingHelper;
-import com.intellij.util.ui.UIUtil;
-import com.sourcegraph.cody.api.Speaker;
-import com.sourcegraph.cody.ui.HtmlViewer;
-import java.awt.*;
-import java.util.List;
-import javax.swing.*;
-import org.commonmark.ext.gfm.tables.TablesExtension;
 import org.commonmark.node.*;
 import org.commonmark.node.Image;
 import org.commonmark.renderer.html.HtmlRenderer;
-import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,44 +13,14 @@ import org.jetbrains.annotations.Nullable;
  * single chat message to a JPanel and other Swing components inside it.
  */
 public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
-  private final HtmlRenderer htmlRenderer =
-      HtmlRenderer.builder()
-          .softbreak("<br />")
-          .extensions(List.of(TablesExtension.create()))
-          .build();
-  private final Project project;
-  private final JPanel messagePanel;
-  private final JPanel parentPanel;
-  private final Speaker speaker;
-  private final int gradientWidth;
+  private final HtmlRenderer htmlRenderer;
+  private final MessagePanel messagePanel;
   private StringBuilder htmlContent = new StringBuilder();
-  private int textPaneIndex = 0;
-  private JEditorPane textPane;
 
   public MessageContentCreatorFromMarkdownNodes(
-      @NotNull Project project,
-      @NotNull JPanel messagePanel,
-      @NotNull JPanel parentPanel,
-      @NotNull Speaker speaker,
-      int gradientWidth) {
-    this.project = project;
+      @NotNull MessagePanel messagePanel, @NotNull HtmlRenderer htmlRenderer) {
     this.messagePanel = messagePanel;
-    this.parentPanel = parentPanel;
-    this.speaker = speaker;
-    this.gradientWidth = gradientWidth;
-    createNewEmptyTextPane();
-  }
-
-  private void createNewEmptyTextPane() {
-    textPane = HtmlViewer.createHtmlViewer(getInlineCodeBackgroundColor(this.speaker));
-    messagePanel.add(textPane, textPaneIndex++);
-  }
-
-  @NotNull
-  private static Color getInlineCodeBackgroundColor(@NotNull Speaker speaker) {
-    return speaker == Speaker.ASSISTANT
-        ? ColorUtil.darker(UIUtil.getPanelBackground(), 3)
-        : ColorUtil.brighter(UIUtil.getPanelBackground(), 3);
+    this.htmlRenderer = htmlRenderer;
   }
 
   @Override
@@ -117,14 +76,8 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
 
   @RequiresEdt
   private void insertCodeEditor(@NotNull String codeContent, @Nullable String languageName) {
-    JComponent codeEditor =
-        new CodeEditorFactory(project, parentPanel, gradientWidth)
-            .createCodeEditor(codeContent, languageName);
-    messagePanel.add(codeEditor, BorderLayout.CENTER, textPaneIndex++);
-    messagePanel.revalidate();
-    messagePanel.repaint();
+    messagePanel.addOrUpdateCode(codeContent, languageName);
     htmlContent = new StringBuilder();
-    createNewEmptyTextPane();
   }
 
   @Override
@@ -199,14 +152,6 @@ public class MessageContentCreatorFromMarkdownNodes extends AbstractVisitor {
 
   private void addContentOfNodeAsHtml(@Nullable String renderedHtml) {
     htmlContent.append(renderedHtml);
-    textPane.setText(buildHtmlContent(htmlContent.toString()));
-  }
-
-  @NotNull
-  private static @Nls String buildHtmlContent(@NotNull String bodyContent) {
-    return SwingHelper.buildHtml(
-        UIUtil.getCssFontDeclaration(
-            UIUtil.getLabelFont(), UIUtil.getActiveTextColor(), null, null),
-        bodyContent);
+    messagePanel.addOrUpdateText(htmlContent.toString());
   }
 }
