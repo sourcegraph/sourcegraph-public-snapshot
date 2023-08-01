@@ -714,6 +714,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		FileFilters: conftypes.EmbeddingsFileFilters{
 			MaxFileSizeBytes: 1000000,
 		},
+		ExcludeChunkOnError: true,
 	}
 
 	testCases := []struct {
@@ -819,6 +820,41 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					IncludedFilePathPatterns: []string{"*.go"},
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
+				ExcludeChunkOnError: true,
+			},
+		},
+		{
+			name: "Disable exclude failed chunk during indexing",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						MaxFileSizeBytes:         200,
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+					ExcludeChunkOnError: pointers.Ptr(false),
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: false,
 			},
 		},
 		{
@@ -844,6 +880,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -881,6 +918,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -921,6 +959,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -946,6 +985,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -984,6 +1024,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -1010,6 +1051,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
