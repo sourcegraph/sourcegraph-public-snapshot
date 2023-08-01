@@ -61,6 +61,8 @@ const selectionChangedPlugin = (editor?: CodeMirrorEditor): Extension =>
 function computeCodyWidget(state: EditorState, editor?: CodeMirrorEditor): Tooltip | null {
     const { selection } = state
 
+    console.log('hit', selection.main)
+
     if (selection.main.empty) {
         return null
     }
@@ -73,6 +75,8 @@ function computeCodyWidget(state: EditorState, editor?: CodeMirrorEditor): Toolt
     // line. This is to avoid the tooltip from jumping around too much. Otherwise, anchor the
     // tooltip to the start of the selection
     const pos = isMultiline ? lineTo.from : selection.main.from
+
+    // TODO: Once created, this component never unmounts. Set timer or unmount function
 
     return {
         pos,

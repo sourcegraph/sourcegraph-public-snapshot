@@ -179,7 +179,6 @@ const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = R
                     target={targetRef.current}
                     mount={targetRef.current}
                     render={({ clientRect, isCollapsed, textContent }) => {
-                        // TODO: figure out if we can use useEffect here and if so, then handle linter issues
                         useEffect(() => {
                             setShow(!isCollapsed)
                         }, [isCollapsed, setShow])
@@ -188,15 +187,21 @@ const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = R
                             return null
                         }
 
-                        console.log(clientRect.top, clientRect.left)
+                        // Allow popover only on code content.
+                        // Hack because Cody's dangerouslySetInnerHTML forces us to use a ref on code block's wrapper text
+                        if (window.getSelection()?.anchorNode?.parentNode?.nodeName !== 'CODE') {
+                            return null
+                        }
+
+                        console.log(targetRef.current, clientRect)
 
                         return (
                             <CodyRecipesWidget
                                 style={{
+                                    // TODO: Move these styles
                                     position: 'absolute',
-                                    // TODO: Figure out top (dynamic)
-                                    top: `${clientRect.top - 203}px`,
-                                    left: `${clientRect.left - 1002}px`,
+                                    bottom: '-30px',
+                                    left: '0',
                                 }}
                                 codyChatStore={codyChatStore}
                                 editor={
