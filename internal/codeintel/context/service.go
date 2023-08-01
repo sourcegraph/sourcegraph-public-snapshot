@@ -204,13 +204,6 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					if !strings.HasSuffix(esn.DescriptorSuffix, ex.DescriptorSuffix) {
 						continue
 					}
-					// TODO - batch (move it out of the loop)
-					trace.AddEvent(
-						"scipNames DescriptorSuffix or DescriptorSuffix",
-						attribute.String("fuzzyName DescriptorSuffix", ex.DescriptorSuffix),
-						attribute.String("scipName DescriptorSuffix", esn.DescriptorSuffix),
-					)
-
 					explodedScipSymbols = append(explodedScipSymbols, esn)
 				}
 
@@ -233,6 +226,14 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 					explodedScipSymbolsByFuzzyName[fuzzyName] = explodedScipSymbols
 				}
 			}
+
+			trace.AddEvent(
+				"num of explodedScipSymbolsByFuzzyName",
+				attribute.Int(
+					"length of explodedScipSymbolsByFuzzyName",
+					len(explodedScipSymbolsByFuzzyName),
+				),
+			)
 			// DEBUGGING
 			fmt.Printf("\n\n")
 
@@ -293,14 +294,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 				scipSymbolName: symbol,
 				location:       ul,
 			})
-			// TODO - batch (move it out of the loop)
-			trace.AddEvent(
-				"preciseDataList",
-				attribute.String("fuzzyName", fzn),
-				attribute.String("symbolName", symbol),
-			)
 		}
 	}
+
+	trace.AddEvent("preciseDataList", attribute.Int("fuzzyName", len(preciseDataList)))
 
 	// DEBUGGING
 	lap("PHASE 3: %d matching precise symbols\n", len(fuzzyNameSetBySymbol))
@@ -382,19 +379,11 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 						Text:                  documentAndText.Extract(scip.NewRange(occ.EnclosingRange)),
 						FilePath:              l.Path,
 					})
-
-					// TODO - move this out of the nested loop
-					trace.AddEvent(
-						"preciseResponse",
-						attribute.String("symbolName", pd.scipSymbolName),
-						attribute.String("fuzzyName", pd.fuzzyName),
-						attribute.String("repository", l.Dump.RepositoryName),
-						attribute.String("filePath", l.Path),
-					)
 				}
 			}
 		}
 	}
+	trace.AddEvent("preciseResponse", attribute.Int("length of preciseResponse", len(preciseResponse)))
 
 	// DEBUGGING
 	lap("PHASE 5: generated %s context items\n", len(preciseResponse))
