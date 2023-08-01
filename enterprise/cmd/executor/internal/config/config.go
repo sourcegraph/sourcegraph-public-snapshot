@@ -75,6 +75,7 @@ type Config struct {
 	KubernetesSecurityContextRunAsGroup            int
 	KubernetesSecurityContextFSGroup               int
 	KubernetesJobAnnotations                       map[string]string
+	KubernetesJobPodAnnotations                    map[string]string
 	KubernetesImagePullSecrets                     string
 	// TODO remove in 5.2
 	KubernetesSingleJobPod              bool
@@ -104,6 +105,8 @@ type Config struct {
 	kubernetesAdditionalJobVolumesUnmarshalError                 error
 	kubernetesJobAnnotations                                     string
 	kubernetesJobAnnotationsUnmarshalError                       error
+	kubernetesJobPodAnnotations                                  string
+	kubernetesJobPodAnnotationsUnmarshalError                    error
 
 	defaultFrontendPassword string
 }
@@ -170,6 +173,7 @@ func (c *Config) Load() {
 	c.KubernetesSingleJobStepImage = c.Get("KUBERNETES_SINGLE_JOB_STEP_IMAGE", "sourcegraph/batcheshelper:insiders", "The image to use for intermediate steps in the single job. Defaults to sourcegraph/batcheshelper:latest.")
 	c.KubernetesGitCACert = c.GetOptional("KUBERNETES_GIT_CA_CERT", "The CA certificate to use for git operations. If not set, the system CA bundle will be used. e.g. /path/to/ca.crt")
 	c.kubernetesJobAnnotations = c.GetOptional("KUBERNETES_JOB_ANNOTATIONS", "The JSON encoded annotations to add to the Kubernetes Jobs. e.g. {\"foo\": \"bar\"}")
+	c.kubernetesJobPodAnnotations = c.GetOptional("KUBERNETES_JOB_POD_ANNOTATIONS", "The JSON encoded annotations to add to the Kubernetes Job Pods. e.g. {\"foo\": \"bar\"}")
 	c.KubernetesImagePullSecrets = c.GetOptional("KUBERNETES_IMAGE_PULL_SECRETS", "The names of Kubernetes image pull secrets to use for pulling images. e.g. my-secret,my-other-secret")
 
 	if c.QueueNamesStr != "" {
@@ -203,6 +207,9 @@ func (c *Config) Load() {
 	}
 	if c.kubernetesJobAnnotations != "" {
 		c.kubernetesJobAnnotationsUnmarshalError = json.Unmarshal([]byte(c.kubernetesJobAnnotations), &c.KubernetesJobAnnotations)
+	}
+	if c.kubernetesJobPodAnnotations != "" {
+		c.kubernetesJobPodAnnotationsUnmarshalError = json.Unmarshal([]byte(c.kubernetesJobPodAnnotations), &c.KubernetesJobPodAnnotations)
 	}
 
 	if c.KubernetesConfigPath == "" {
@@ -276,6 +283,10 @@ func (c *Config) Validate() error {
 
 	if c.kubernetesJobAnnotationsUnmarshalError != nil {
 		c.AddError(errors.Wrap(c.kubernetesJobAnnotationsUnmarshalError, "invalid KUBERNETES_JOB_ANNOTATIONS, failed to parse"))
+	}
+
+	if c.kubernetesJobPodAnnotationsUnmarshalError != nil {
+		c.AddError(errors.Wrap(c.kubernetesJobPodAnnotationsUnmarshalError, "invalid KUBERNETES_JOB_POD_ANNOTATIONS, failed to parse"))
 	}
 
 	if c.KubernetesJobVolumeType != "emptyDir" && c.KubernetesJobVolumeType != "pvc" {
