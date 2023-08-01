@@ -854,6 +854,11 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 // 1. Get the repo_id of the parent repo
 // 2. Insert that as the pool_id into gitserver_repos table
 func (s *Syncer) MaybePrepareForDeduplication(ctx context.Context, repo *types.Repo) error {
+	// We only support deduplication for github.com repos at the moment.
+	if !strings.HasPrefix(repo.URI, "github.com") {
+		return nil
+	}
+
 	// Nothing special needs to be done for non-forks.
 	if !repo.Fork {
 		return nil

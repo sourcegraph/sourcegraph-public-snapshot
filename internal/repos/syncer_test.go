@@ -680,13 +680,17 @@ func TestSyncerSync(t *testing.T) {
 	}
 }
 
-func TestSyncer_maybePrepareForDeduplication(t *testing.T) {
+func TestSyncer_MaybePrepareForDeduplication(t *testing.T) {
 	ctx := context.Background()
 
 	syncer := &repos.Syncer{
 		ObsvCtx: observation.TestContextTB(t),
 		DeduplicatedForksSet: types.NewRepoURISet(collections.Set[string]{
 			"github.com/sourcegraph/sourcegraph": {},
+			// GitHub enterprise is not supported at the moment. But we add this in the config to
+			// ensure that the test for gheRepo still passes and a pool repo is not set for ghe
+			// repos.
+			"ghe.sgdev.org/sourcegraph/sourcegraph": {},
 		}),
 		Store: getTestRepoStore(t),
 	}
@@ -725,6 +729,17 @@ func TestSyncer_maybePrepareForDeduplication(t *testing.T) {
 		Metadata: new(gitlab.Project),
 	}
 
+	gheRepo := &types.Repo{
+		Name: "ghe.sgdev.org/sourcegraph/sourcegraph",
+		URI:  "ghe.sgdev.org/sourcegrpah/sourcegraph",
+		Fork: true,
+		Metadata: &github.Repository{
+			Parent: &github.BaseRepository{
+				NameWithOwner: string("foo"),
+			},
+		},
+	}
+
 	err := syncer.Store.RepoStore().Create(ctx, repo, forkedDeduplicatedRepo, forkedRepo, gitlabRepo)
 	require.NoError(t, err)
 
@@ -743,6 +758,12 @@ func TestSyncer_maybePrepareForDeduplication(t *testing.T) {
 		{
 			name:                 "fork, but not a github repo",
 			inputRepo:            gitlabRepo,
+			expectedPoolRepoName: api.RepoName(""),
+			expectedOK:           false,
+		},
+		{
+			name:                 "fork, but ghe repo",
+			inputRepo:            gheRepo,
 			expectedPoolRepoName: api.RepoName(""),
 			expectedOK:           false,
 		},
