@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -103,7 +104,7 @@ func TestRequestAccess(t *testing.T) {
 		handler(res, req)
 		assert.Equal(t, http.StatusCreated, res.Code)
 
-		_, err = db.AccessRequests().GetByEmail(context.Background(), newUser.Email)
+		_, err = accessrequests.With(db.Store).GetByEmail(context.Background(), newUser.Email)
 		require.Error(t, err)
 		require.Equal(t, errcode.IsNotFound(err), true)
 	})

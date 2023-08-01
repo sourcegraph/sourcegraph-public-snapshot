@@ -1,4 +1,4 @@
-package database
+package accessrequests
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -18,9 +19,9 @@ func TestAccessRequests_Create(t *testing.T) {
 	}
 	t.Parallel()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	store := db.AccessRequests()
+	store := With(db.GetStore(), logger)
 
 	t.Run("valid input", func(t *testing.T) {
 		accessRequest, err := store.Create(ctx, &types.AccessRequest{
@@ -53,12 +54,11 @@ func TestAccessRequests_Create(t *testing.T) {
 	})
 
 	t.Run("existing verified user email", func(t *testing.T) {
-		_, err := db.Users().Create(ctx, NewUser{
+		_, err := db.Users().Create(ctx, database.NewUser{
 			Username:        "u",
 			Email:           "u@example.com",
 			EmailIsVerified: true,
 		})
-
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -82,10 +82,10 @@ func TestAccessRequests_Update(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestsStore := db.AccessRequests()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	accessRequestsStore := With(db.GetStore(), logger)
 	usersStore := db.Users()
-	user, _ := usersStore.Create(ctx, NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
+	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
 	t.Run("non-existent access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
@@ -119,8 +119,8 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.AccessRequests()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := With(db.GetStore(), logger)
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
@@ -146,8 +146,8 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.AccessRequests()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := With(db.GetStore(), logger)
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistingAccessRequestEmail := "non-existing@example"
@@ -173,11 +173,11 @@ func TestAccessRequests_Count(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := db.AccessRequests()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	accessRequestStore := With(db.GetStore(), logger)
 
 	usersStore := db.Users()
-	user, _ := usersStore.Create(ctx, NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
+	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
 	ar1, err := accessRequestStore.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 	assert.NoError(t, err)
@@ -221,11 +221,11 @@ func TestAccessRequests_List(t *testing.T) {
 	t.Parallel()
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := db.AccessRequests()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	accessRequestStore := With(db.GetStore(), logger)
 
 	usersStore := db.Users()
-	user, _ := usersStore.Create(ctx, NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
+	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
 	ar1, err := accessRequestStore.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 	assert.NoError(t, err)
@@ -249,7 +249,7 @@ func TestAccessRequests_List(t *testing.T) {
 	})
 
 	t.Run("order", func(t *testing.T) {
-		accessRequests, err := accessRequestStore.List(ctx, nil, &PaginationArgs{OrderBy: OrderBy{{Field: "name"}}, Ascending: true})
+		accessRequests, err := accessRequestStore.List(ctx, nil, &database.PaginationArgs{OrderBy: database.OrderBy{{Field: "name"}}, Ascending: true})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -264,7 +264,7 @@ func TestAccessRequests_List(t *testing.T) {
 
 	t.Run("limit & pagination", func(t *testing.T) {
 		one := 1
-		accessRequests, err := accessRequestStore.List(ctx, nil, &PaginationArgs{First: &one})
+		accessRequests, err := accessRequestStore.List(ctx, nil, &database.PaginationArgs{First: &one})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
@@ -278,7 +278,7 @@ func TestAccessRequests_List(t *testing.T) {
 
 		after := strconv.Itoa(int(accessRequests[0].ID))
 		two := int(2)
-		accessRequests, err = accessRequestStore.List(ctx, nil, &PaginationArgs{First: &two, After: &after, OrderBy: OrderBy{{Field: string(AccessRequestListID)}}})
+		accessRequests, err = accessRequestStore.List(ctx, nil, &database.PaginationArgs{First: &two, After: &after, OrderBy: database.OrderBy{{Field: string(AccessRequestListID)}}})
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(accessRequests))
 
