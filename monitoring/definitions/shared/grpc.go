@@ -222,7 +222,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p99_9_invididual_sent_message_size_per_method", opts.HumanServiceName),
 					Description: "99.9th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metricNoNamespace("src_grpc_server_sent_individual_message_size_bytes_per_rpc", methodLabelFilter, instanceLabelFilter, serverLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(%s[2m])))", metricNoNamespace("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter, serverLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -233,7 +233,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p90_invididual_sent_message_size_per_method", opts.HumanServiceName),
 					Description: "90th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metricNoNamespace("src_grpc_server_sent_individual_message_size_bytes_per_rpc", methodLabelFilter, instanceLabelFilter, serverLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(%s[2m])))", metricNoNamespace("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter, serverLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
@@ -244,7 +244,7 @@ func NewGRPCServerMetricsGroup(opts GRPCServerMetricsOptions, owner monitoring.O
 				monitoring.Observable{
 					Name:        fmt.Sprintf("%s_p75_invididual_sent_message_size_per_method", opts.HumanServiceName),
 					Description: "75th percentile individual sent message size per method over 2m",
-					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metricNoNamespace("src_grpc_server_sent_individual_message_size_bytes_per_rpc", methodLabelFilter, instanceLabelFilter, serverLabelFilter)),
+					Query:       fmt.Sprintf("histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(%s[2m])))", metricNoNamespace("src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket", methodLabelFilter, instanceLabelFilter, serverLabelFilter)),
 					Panel: monitoring.Panel().LegendFormat("{{grpc_method}}").
 						Unit(monitoring.Bytes).
 						With(monitoring.PanelOptions.LegendOnRight()),
