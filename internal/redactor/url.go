@@ -6,8 +6,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 )
 
-// urlRedactor redacts all sensitive strings from a message.
-type urlRedactor struct {
+// UrlRedactor redacts all sensitive strings from a message.
+type UrlRedactor struct {
 	// sensitive are sensitive strings to be redacted.
 	// The strings should not be empty.
 	sensitive []string
@@ -15,7 +15,7 @@ type urlRedactor struct {
 
 // NewURLRedactor returns a new urlRedactor that redacts
 // credentials found in rawurl, and the rawurl itself.
-func NewURLRedactor(parsedURL *vcs.URL) *urlRedactor {
+func NewURLRedactor(parsedURL *vcs.URL) *UrlRedactor {
 	var sensitive []string
 	pw, _ := parsedURL.User.Password()
 	u := parsedURL.User.Username()
@@ -32,12 +32,12 @@ func NewURLRedactor(parsedURL *vcs.URL) *urlRedactor {
 		}
 	}
 	sensitive = append(sensitive, parsedURL.String())
-	return &urlRedactor{sensitive: sensitive}
+	return &UrlRedactor{sensitive: sensitive}
 }
 
 // redact returns a redacted version of message.
 // Sensitive strings are replaced with "<redacted>".
-func (r *urlRedactor) Redact(message string) string {
+func (r *UrlRedactor) Redact(message string) string {
 	for _, s := range r.sensitive {
 		message = strings.ReplaceAll(message, s, "<redacted>")
 	}

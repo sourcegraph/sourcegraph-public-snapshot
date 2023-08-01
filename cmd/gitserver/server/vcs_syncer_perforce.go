@@ -14,7 +14,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/redactor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -181,7 +183,8 @@ func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ a
 	// something for p4?
 	output, err := runCommandCombinedOutput(ctx, cmd)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to update with output %q", newURLRedactor(remoteURL).redact(string(output)))
+		redactedOutput := redactor.NewURLRedactor(remoteURL).Redact(string(output))
+		return nil, errors.Wrapf(err, "failed to update with output %q", redactedOutput)
 	}
 
 	if !s.FusionConfig.Enabled {

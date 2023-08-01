@@ -11,8 +11,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/redactor"
 )
 
 // KeyPrefix is the prefix that will be used to initialise the redis database with.
@@ -154,16 +154,12 @@ func (rf *RecordingCommandFactory) Disable() {
 	rf.Update(nil, 0)
 }
 
-var urlRegex = lazyregexp.New(`((https?|ssh|git)://[^:@]+:)[^@]+(@)`)
-
 // Command returns a new RecordingCommand with the ShouldRecordFunc already set.
 func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, repoName, cmdName string, args ...string) *RecordingCmd {
 	store := rcache.NewFIFOList(GetFIFOListKey(repoName), rf.maxSize)
-	var redactedArgs = make([]string, len(args))
-	for i, arg := range args {
-		redactedArgs[i] = urlRegex.ReplaceAllString(arg, "$1<REDACTED>$3")
-	}
-	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, args...)
+	fmt.Println("args =====> ", args)
+	redactedArgs := redactor.RedactCommandArgs(args)
+	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, redactedArgs...)
 }
 
 // Wrap constructs a new RecordingCommand based of an existing os/exec.Cmd, while also setting up the ShouldRecordFunc

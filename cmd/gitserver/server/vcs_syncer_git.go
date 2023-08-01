@@ -6,7 +6,9 @@ import (
 	"os/exec"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/redactor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
@@ -77,7 +79,8 @@ func (s *gitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, repoName 
 	dir.Set(cmd)
 	output, err := runRemoteGitCommand(ctx, s.recordingCommandFactory.WrapWithRepoName(ctx, log.NoOp(), repoName, cmd), configRemoteOpts, nil)
 	if err != nil {
-		return nil, &common.GitCommandError{Err: err, Output: newURLRedactor(remoteURL).redact(string(output))}
+		redactedOutput := redactor.NewURLRedactor(remoteURL).Redact(string(output))
+		return nil, &common.GitCommandError{Err: err, Output: redactedOutput}
 	}
 	return output, nil
 }

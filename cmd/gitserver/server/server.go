@@ -2186,10 +2186,10 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	pr, pw := io.Pipe()
 	defer pw.Close()
 
-	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(s.DB, logger, redactor.NewURLRedactor(remoteURL), lock, pr, repo)
 
 	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
-	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
+	redactedOutput := redactor.NewURLRedactor(remoteURL).Redact(string(output))
 	// best-effort update the output of the clone
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
@@ -2265,7 +2265,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
-func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
+func readCloneProgress(db database.DB, logger log.Logger, redactor *redactor.UrlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
 	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
@@ -2296,7 +2296,7 @@ func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor,
 		// $ git clone http://token@github.com/foo/bar
 		// Cloning into 'nick'...
 		// fatal: repository 'http://token@github.com/foo/bar/' not found
-		redactedProgress := redactor.redact(progress)
+		redactedProgress := redactor.Redact(progress)
 
 		lock.SetStatus(redactedProgress)
 
@@ -2544,7 +2544,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 	defer s.cleanTmpFiles(dir)
 
 	output, err := syncer.Fetch(ctx, remoteURL, repo, dir, revspec)
-	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
+	redactedOutput := redactor.NewURLRedactor(remoteURL).Redact(string(output))
 	// best-effort update the output of the fetch
 	go s.setLastOutput(context.Background(), repo, redactedOutput)
 
