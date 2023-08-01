@@ -3,6 +3,7 @@ package accessrequests
 import (
 	"context"
 	"strconv"
+	"sync"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -13,17 +14,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-var mockStore Store
+// Prevent race conditions when tests run in parallel
+var mockMu sync.Mutex
 
-func mockWith(t *testing.T, store Store) {
+func MockWith(t *testing.T, store Store) {
+	mockMu.Lock()
 	currentStore := mockStore
 	mockStore = store
 	t.Cleanup(func() {
 		mockStore = currentStore
+		mockMu.Unlock()
 	})
 }
-
-var MockWith = mockWith
 
 func TestAccessRequests_Create(t *testing.T) {
 	if testing.Short() {

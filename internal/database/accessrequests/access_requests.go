@@ -91,6 +91,8 @@ type store struct {
 	logger log.Logger
 }
 
+var mockStore Store
+
 // With instantiates and returns a new accessRequestStore using the other store handle.
 func With(other basestore.ShareableStore, logger log.Logger) Store {
 	if mockStore != nil {
