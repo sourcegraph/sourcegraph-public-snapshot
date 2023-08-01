@@ -1,7 +1,7 @@
 import { FC, useEffect } from 'react'
 
 import { mdiPlus } from '@mdi/js'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, ButtonLink, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
@@ -41,9 +41,14 @@ export const ExternalServicesPage: FC<Props> = ({
         telemetryService.logViewEvent('SiteAdminExternalServices')
     }, [telemetryService])
 
+    const location = useLocation()
+    const searchParameters = new URLSearchParams(location.search)
+    const repoID = searchParameters.get('repoID') || null
+
     const { loading, hasNextPage, fetchMore, connection, error } = useExternalServicesConnection({
         first: null,
         after: null,
+        repoID,
     })
 
     const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile
