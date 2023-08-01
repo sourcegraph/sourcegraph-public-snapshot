@@ -72,6 +72,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	filename := args.Input.ActiveFile
 	content := args.Input.ActiveFileContent
 	repoName := api.RepoName(args.Input.RepositoryName)
+	activeRangeSelection := translateToScipRange(args.Input.ActiveFileSelectionRange)
 
 	repo, err := s.repostore.GetByName(ctx, repoName)
 	if err != nil {
@@ -136,9 +137,8 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		trace.AddEvent("contextSvc.getSCIPDocumentByContent", attribute.String("filename", filename))
 
 		fuzzySymbolNameSet := precise.NewSet[string]()
-		rng := translateToScipRange(args.Input.ActiveFileSelectionRange)
 		for _, occurrence := range syntectDocument.Occurrences {
-			if rng == nil || precise.IsOccurrenceWithinRange(rng, occurrence) {
+			if activeRangeSelection == nil || precise.IsOccurrenceWithinRange(activeRangeSelection, occurrence) {
 				fuzzySymbolNameSet.Add(occurrence.Symbol)
 			}
 		}
@@ -259,7 +259,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	} else {
 		// TODO: we might have to strip the root active file
 		// TODO: if the file name starts with the root remove it
-		symbolsNames, err := s.codenavSvc.GetSymbolNamesByRange(ctx, requestArgs, filename, reqState, translateToScipRange(args.Input.ActiveFileSelectionRange))
+		symbolsNames, err := s.codenavSvc.GetSymbolNamesByRange(ctx, requestArgs, filename, reqState, activeRangeSelection)
 		if err != nil {
 			return nil, err
 		}
