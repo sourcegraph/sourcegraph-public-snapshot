@@ -22,8 +22,6 @@ type DB interface {
 	dbutil.DB
 	basestore.ShareableStore
 
-	GetStore() basestore.ShareableStore
-
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
@@ -366,8 +364,4 @@ func (d *db) AssignedTeams() AssignedTeamsStore {
 
 func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
 	return SignalConfigurationStoreWith(d.Store)
-}
-
-func (d *db) GetStore() basestore.ShareableStore {
-	return d.Store
 }
