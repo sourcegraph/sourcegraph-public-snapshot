@@ -32,6 +32,10 @@ const config = defineConfig(({ mode }) => ({
             'linguist-languages',
         ],
     },
+
+    test: {
+        setupFiles: './src/testing/setup.ts',
+    },
 }))
 
 export default config

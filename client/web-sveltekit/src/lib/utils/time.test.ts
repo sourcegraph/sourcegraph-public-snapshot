@@ -1,5 +1,7 @@
 import { faker } from '@faker-js/faker'
-import { it, vi, beforeAll, afterAll, expect, describe } from 'vitest'
+import { it, beforeEach, afterEach, expect, describe } from 'vitest'
+
+import { useFakeTimers, useRealTimers } from '$mocks'
 
 import { getRelativeTime } from './time'
 
@@ -17,16 +19,15 @@ function d(options?: Partial<typeof defaults>): Date {
     return new Date(combined.Y, combined.M, combined.D, combined.h, combined.m, combined.s)
 }
 
-beforeAll(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(d())
-})
-
-afterAll(() => {
-    vi.useRealTimers()
-})
-
 describe('getRelativeTime', () => {
+    beforeEach(() => {
+        useFakeTimers(d())
+    })
+
+    afterEach(() => {
+        useRealTimers()
+    })
+
     it('uses the current time as reference by default', () => {
         expect(getRelativeTime(d({ h: 3 }))).toMatchInlineSnapshot('"9 hours ago"')
     })
@@ -55,14 +56,8 @@ describe('getRelativeTime', () => {
     })
 
     it('random times', () => {
-        faker.seed(42)
-        faker.setDefaultRefDate(d())
-
         for (const date of faker.date.betweens({ from: d({ Y: 2021 }), to: d(), count: 10 })) {
             expect(getRelativeTime(date)).toMatchSnapshot()
         }
-
-        faker.seed()
-        faker.setDefaultRefDate()
     })
 })
