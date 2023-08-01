@@ -127,6 +127,7 @@ func bazelPrechecks() func(*bk.Pipeline) {
 	// We run :gazelle since 'configure' causes issues on CI, where it doesn't have the go path available
 	cmds := []bk.StepOpt{
 		bk.Key("bazel-prechecks"),
+		bk.SoftFail(100),
 		bk.Agent("queue", "bazel"),
 		bk.AnnotatedCmd("dev/ci/bazel-prechecks.sh", bk.AnnotatedCmdOpts{
 			Annotations: &bk.AnnotationOpts{

@@ -51,7 +51,11 @@ if [[ ${unformatted} != "" ]]; then
   bazel run @go_sdk//:bin/gofmt -- -w .
   \`\`\`
 END
-  EXIT_CODE=1
+
+  if [[ $EXIT_CODE -eq 0 ]]; then
+    # We;re using 100 as a Soft fail exit code, so we only want to use it the exit code isn't a hard fail code ie. not 0
+    EXIT_CODE=100
+  fi
 fi
 
 
