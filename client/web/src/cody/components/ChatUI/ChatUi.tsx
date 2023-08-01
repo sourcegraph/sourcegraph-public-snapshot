@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
 
-import { EditorView } from '@codemirror/view'
 import {
     mdiClose,
     mdiSend,
@@ -13,7 +12,6 @@ import {
 } from '@mdi/js'
 import classNames from 'classnames'
 import { useLocation } from 'react-router-dom'
-import { Popover } from 'react-text-selection-popover'
 import useResizeObserver from 'use-resize-observer'
 
 import {
@@ -29,11 +27,10 @@ import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourceg
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
-import { ChatEditor } from '../../components/ChatEditor'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
-import { CodyRecipesWidget } from '../../widgets/CodyRecipesWidget'
+import { RecipesWidgetWrapper } from '../../widgets/CodyRecipesWidgetWrapper'
 import { ScopeSelector } from '../ScopeSelector'
 
 import styles from './ChatUi.module.scss'
@@ -104,12 +101,9 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         return <></>
     }
 
-    /** Attempt to use CodeMirror for sliceDoc() method */
-    // const editorRef = useRef<EditorView | null>(null)
-
     const RecipeWidgetWrapperWithProps = useMemo(
         () => (props: { targetRef: any; children: any }) =>
-            <RecipeWidgetWrapper {...props} codyChatStore={codyChatStore} />,
+            <RecipesWidgetWrapper {...props} codyChatStore={codyChatStore} />,
         [codyChatStore]
     )
 
@@ -155,72 +149,6 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         </>
     )
 }
-
-// TODO: fix the types
-interface RecipeWidgetWrapperProps {
-    targetRef: any
-    children: any
-    codyChatStore: any
-    fileName?: string
-    repoName?: string
-    revision?: string
-}
-
-// TODO: move the component to a separete file inside cody/components
-const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = React.memo(
-    function CodyRecipeWidgetWrapper({ targetRef, children, codyChatStore }) {
-        const [show, setShow] = useState(false)
-
-        return (
-            <>
-                {children}
-
-                <Popover
-                    target={targetRef.current}
-                    mount={targetRef.current}
-                    render={({ clientRect, isCollapsed, textContent }) => {
-                        useEffect(() => {
-                            setShow(!isCollapsed)
-                        }, [isCollapsed, setShow])
-
-                        if (!clientRect || isCollapsed || !targetRef || !show) {
-                            return null
-                        }
-
-                        // Allow popover only on code content.
-                        // Hack because Cody's dangerouslySetInnerHTML forces us to use a ref on code block's wrapper text
-                        if (window.getSelection()?.anchorNode?.parentNode?.nodeName !== 'CODE') {
-                            return null
-                        }
-
-                        console.log(targetRef.current, clientRect)
-
-                        return (
-                            <CodyRecipesWidget
-                                style={{
-                                    // TODO: Move these styles
-                                    position: 'absolute',
-                                    bottom: '-30px',
-                                    left: '0',
-                                }}
-                                codyChatStore={codyChatStore}
-                                editor={
-                                    new ChatEditor({
-                                        content: textContent || '',
-                                        fullText: targetRef?.current?.innerText || '',
-                                        filename: '',
-                                        repo: '',
-                                        revision: '',
-                                    })
-                                }
-                            />
-                        )
-                    }}
-                />
-            </>
-        )
-    }
-)
 
 interface IAbortMessageInProgressProps {
     onAbortMessageInProgress: () => void

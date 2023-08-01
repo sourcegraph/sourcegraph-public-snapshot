@@ -1579,10 +1579,10 @@ importers:
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
         specifier: ^0.0.4
-        version: link:../../cody/lib/shared
+        version: 0.0.4
       '@sourcegraph/cody-ui':
         specifier: ^0.0.6
-        version: link:../../cody/lib/ui
+        version: 0.0.6
       '@sourcegraph/common':
         specifier: workspace:*
         version: link:../common
@@ -1603,7 +1603,7 @@ importers:
         version: link:../wildcard
       react-text-selection-popover:
         specifier: ^2.0.2
-        version: 2.0.2(postcss@8.4.24)(react-dom@18.1.0)(react@18.1.0)
+        version: 2.0.2(postcss@8.4.27)(react-dom@18.1.0)(react@18.1.0)
     devDependencies:
       '@sourcegraph/build-config':
         specifier: workspace:*
@@ -7563,7 +7563,7 @@ packages:
       - '@parcel/core'
     dev: false
 
-  /@parcel/config-default@2.9.3(@parcel/core@2.9.3)(postcss@8.4.24):
+  /@parcel/config-default@2.9.3(@parcel/core@2.9.3)(postcss@8.4.27):
     resolution: {integrity: sha512-tqN5tF7QnVABDZAu76co5E6N8mA9n8bxiWdK4xYyINYFIEHgX172oRTqXTnhEMjlMrdmASxvnGlbaPBaVnrCTw==}
     peerDependencies:
       '@parcel/core': ^2.9.3
@@ -7573,7 +7573,7 @@ packages:
       '@parcel/core': 2.9.3
       '@parcel/namer-default': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-css': 2.9.3(@parcel/core@2.9.3)
-      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.4.24)
+      '@parcel/optimizer-htmlnano': 2.9.3(@parcel/core@2.9.3)(postcss@8.4.27)
       '@parcel/optimizer-image': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-svgo': 2.9.3(@parcel/core@2.9.3)
       '@parcel/optimizer-swc': 2.9.3(@parcel/core@2.9.3)
@@ -7631,7 +7631,7 @@ packages:
       '@parcel/workers': 2.9.3(@parcel/core@2.9.3)
       abortcontroller-polyfill: 1.7.5
       base-x: 3.0.9
-      browserslist: 4.21.7
+      browserslist: 4.21.9
       clone: 2.1.2
       dotenv: 7.0.0
       dotenv-expand: 5.1.0
@@ -7735,19 +7735,19 @@ packages:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
       '@parcel/source-map': 2.1.1
       '@parcel/utils': 2.9.3
-      browserslist: 4.21.7
+      browserslist: 4.21.9
       lightningcss: 1.21.5
       nullthrows: 1.1.1
     transitivePeerDependencies:
       - '@parcel/core'
     dev: false
 
-  /@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.4.24):
+  /@parcel/optimizer-htmlnano@2.9.3(@parcel/core@2.9.3)(postcss@8.4.27):
     resolution: {integrity: sha512-9g/KBck3c6DokmJfvJ5zpHFBiCSolaGrcsTGx8C3YPdCTVTI9P1TDCwUxvAr4LjpcIRSa82wlLCI+nF6sSgxKA==}
     engines: {node: '>= 12.0.0', parcel: ^2.9.3}
     dependencies:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
-      htmlnano: 2.0.4(postcss@8.4.24)(svgo@2.8.0)
+      htmlnano: 2.0.4(postcss@8.4.27)(svgo@2.8.0)
       nullthrows: 1.1.1
       posthtml: 0.16.6
       svgo: 2.8.0
@@ -8004,7 +8004,7 @@ packages:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
       '@parcel/source-map': 2.1.1
       '@parcel/utils': 2.9.3
-      browserslist: 4.21.7
+      browserslist: 4.21.9
       json5: 2.2.3
       nullthrows: 1.1.1
       semver: 7.5.4
@@ -8020,7 +8020,7 @@ packages:
       '@parcel/plugin': 2.9.3(@parcel/core@2.9.3)
       '@parcel/source-map': 2.1.1
       '@parcel/utils': 2.9.3
-      browserslist: 4.21.7
+      browserslist: 4.21.9
       lightningcss: 1.21.5
       nullthrows: 1.1.1
     transitivePeerDependencies:
@@ -8070,7 +8070,7 @@ packages:
       '@parcel/utils': 2.9.3
       '@parcel/workers': 2.9.3(@parcel/core@2.9.3)
       '@swc/helpers': 0.5.1
-      browserslist: 4.21.7
+      browserslist: 4.21.9
       nullthrows: 1.1.1
       regenerator-runtime: 0.13.11
       semver: 7.5.4
@@ -22088,7 +22088,7 @@ packages:
       webpack: 5.75.0(esbuild@0.17.14)(webpack-cli@5.0.1)
     dev: true
 
-  /htmlnano@2.0.4(postcss@8.4.24)(svgo@2.8.0):
+  /htmlnano@2.0.4(postcss@8.4.27)(svgo@2.8.0):
     resolution: {integrity: sha512-WGCkyGFwjKW1GeCBsPYacMvaMnZtFJ0zIRnC2NCddkA+IOEhTqskXrS7lep+3yYZw/nQ3dW1UAX4yA/GJyR8BA==}
     peerDependencies:
       cssnano: ^6.0.0
@@ -22118,7 +22118,7 @@ packages:
         optional: true
     dependencies:
       cosmiconfig: 8.2.0
-      postcss: 8.4.24
+      postcss: 8.4.27
       posthtml: 0.16.6
       svgo: 2.8.0
       timsort: 0.3.0
@@ -27526,7 +27526,7 @@ packages:
       dot-case: 3.0.4
       tslib: 2.1.0
 
-  /parcel@2.9.3(postcss@8.4.24):
+  /parcel@2.9.3(postcss@8.4.27):
     resolution: {integrity: sha512-2GTVocFkwblV/TIg9AmT7TI2fO4xdWkyN8aFUEVtiVNWt96GTR3FgQyHFValfCbcj1k9Xf962Ws2hYXYUr9k1Q==}
     engines: {node: '>= 12.0.0'}
     hasBin: true
@@ -27534,7 +27534,7 @@ packages:
       '@parcel/core':
         optional: true
     dependencies:
-      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(postcss@8.4.24)
+      '@parcel/config-default': 2.9.3(@parcel/core@2.9.3)(postcss@8.4.27)
       '@parcel/core': 2.9.3
       '@parcel/diagnostic': 2.9.3
       '@parcel/events': 2.9.3
@@ -29666,7 +29666,7 @@ packages:
       scheduler: 0.20.2
     dev: true
 
-  /react-text-selection-popover@2.0.2(postcss@8.4.24)(react-dom@18.1.0)(react@18.1.0):
+  /react-text-selection-popover@2.0.2(postcss@8.4.27)(react-dom@18.1.0)(react@18.1.0):
     resolution: {integrity: sha512-VbQnJMHX6GrMRS5QGQnb8YuFL45JRcosraTJjdmjib4Xt9MOcTHXmuIyI12xbG2QZv2Tsa+aOZvYgTlo8I00dA==}
     peerDependencies:
       react: ^16.8.0,^17.x,^18.x
@@ -29674,7 +29674,7 @@ packages:
     dependencies:
       react: 18.1.0
       react-dom: 18.1.0(react@18.1.0)
-      use-text-selection: 1.1.5(postcss@8.4.24)(react@18.1.0)
+      use-text-selection: 1.1.5(postcss@8.4.27)(react@18.1.0)
     transitivePeerDependencies:
       - '@swc/helpers'
       - cssnano
@@ -33654,12 +33654,12 @@ packages:
       react: 18.1.0
     dev: false
 
-  /use-text-selection@1.1.5(postcss@8.4.24)(react@18.1.0):
+  /use-text-selection@1.1.5(postcss@8.4.27)(react@18.1.0):
     resolution: {integrity: sha512-JOuQYG0vKHRj0dfax0dy/HxyF31MN0Q2UP1rl1LtFA0qnQ0Uw4XGh4BucHA9g8kxlnVFv+JTlJQ4B+TwXCGxOg==}
     peerDependencies:
       react: ^17.0.1
     dependencies:
-      parcel: 2.9.3(postcss@8.4.24)
+      parcel: 2.9.3(postcss@8.4.27)
       react: 18.1.0
     transitivePeerDependencies:
       - '@swc/helpers'
