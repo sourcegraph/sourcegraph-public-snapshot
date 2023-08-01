@@ -38,8 +38,10 @@ func Symbols() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:    containerName,
-					MetricNamespace:     containerName,
+					HumanServiceName:   containerName,
+					MetricNamespace:    containerName,
+					RawGRPCServiceName: "symbols.v1.SymbolsService",
+
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${instance:regex}`,
 				}, monitoring.ObservableOwnerCodeIntel),

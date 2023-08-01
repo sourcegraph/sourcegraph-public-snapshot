@@ -12,6 +12,7 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/env",
+        "//internal/grpc/grpcutil",
         "//lib/errors",
         "@com_github_dustin_go_humanize//:go-humanize",
         "@com_github_prometheus_client_golang//prometheus",
