@@ -32,9 +32,9 @@ fi
 echo "--- :bazel::go: Running gofmt"
 unformatted=$(bazel run @go_sdk//:bin/gofmt -- -l .)
 
-if [[ $unformatted != "" ]]; then
+if [[ ${unformatted} != "" ]]; then
   mkdir -p ./anntations
-  cat <<-END > ./annotations/bazel-gofmt.md
+  cat <<'END' > ./annotations/bazel-gofmt.md
   The following files were found to not be formatted according to `gofmt`:
 
   \`\`\`
@@ -43,9 +43,9 @@ if [[ $unformatted != "" ]]; then
 
   To automatically format these files run:
 
-  \`\`\`
-  bazel run @go_sdk//:bin/gofmt -- -w .
-  \`\`\`
+  # \`\`\`
+  # bazel run @go_sdk//:bin/gofmt -- -w .
+  # \`\`\`
 END
   EXIT_CODE=1
 fi
