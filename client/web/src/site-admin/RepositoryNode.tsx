@@ -273,7 +273,7 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                     className="p-2"
                                 >
                                     <Icon aria-hidden={true} svgPath={mdiConnection} className="mr-1" />
-                                    Code host connection
+                                    Code host connections
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
