@@ -56,14 +56,14 @@ unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
           fetchzip {
             name = "helix-core-api";
             url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12x86_64/p4api-openssl3.tgz";
-            hash = "sha256-E5oK/uvRRNuEC5b8h5zQVdfZOieUgV2T8aPISEWgSY8=";
+            hash = "sha256-/Ia9R+H95Yx4Sx7+Grke0d3QskuZ2YtH4LZOS7vRMZc=";
           }
       else if targetPlatform.isLinux then
         fetchzip
           {
             name = "helix-core-api";
             url = "https://cdist2.perforce.com/perforce/r22.2/bin.linux26x86_64/p4api-glibc2.3-openssl3.tgz";
-            hash = "sha256-wovk38lk4cjrC6pTa9dSwmYM1RN1nzmzdl8VIwf2BLY=";
+            hash = "sha256-tqWhdQQdOVAiGa6HiRajw4emoYRRRgZf6pZVEIf1qqU=";
           }
       else throw "unsupported platform ${stdenv.targetPlatform.parsed.kernel.name}"
     )
