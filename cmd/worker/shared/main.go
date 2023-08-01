@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
@@ -59,6 +60,7 @@ func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigra
 		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
 		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
 		"license-check":             licensecheck.NewJob(),
+		"rate-limit-config":         ratelimit.NewRateLimitConfigJob(),
 	}
 
 	var config Config
