@@ -2567,6 +2567,14 @@
             "pointer": true
           },
           "default": "5000"
+        },
+        "excludeChunkOnError": {
+          "description": "Whether to cancel indexing a repo if embedding a single file fails. If true, the chunk that cannot generate embeddings is not indexed and the remainder of the repository proceeds with indexing.",
+          "type": "boolean",
+          "!go": {
+            "pointer": true
+          },
+          "default": true
         }
       },
       "examples": [

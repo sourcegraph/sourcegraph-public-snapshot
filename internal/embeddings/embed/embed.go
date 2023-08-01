@@ -35,7 +35,6 @@ func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsC
 
 const (
 	getEmbeddingsMaxRetries = 5
-	embeddingsBatchSize     = 512
 )
 
 // EmbedRepo embeds file contents from the given file names for a repository.
@@ -129,10 +128,18 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, insertCode, reportCodeProgress)
+	codeIndexStats, err := embedFiles(ctx, logger, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, opts.BatchSize, opts.ExcludeChunks, insertCode, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
+
+	if codeIndexStats.ChunksExcluded > 0 {
+		logger.Warn("error getting embeddings for chunks",
+			log.Int("count", codeIndexStats.ChunksExcluded),
+			log.String("file_type", "code"),
+		)
+	}
+
 	stats.CodeIndexStats = codeIndexStats
 
 	textIndex := newIndex(len(textFileNames))
@@ -146,10 +153,18 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, insertText, reportTextProgress)
+	textIndexStats, err := embedFiles(ctx, logger, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, opts.BatchSize, opts.ExcludeChunks, insertText, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
+
+	if textIndexStats.ChunksExcluded > 0 {
+		logger.Warn("error getting embeddings for chunks",
+			log.Int("count", textIndexStats.ChunksExcluded),
+			log.String("file_type", "text"),
+		)
+	}
+
 	stats.TextIndexStats = textIndexStats
 
 	embeddingsModel := client.GetModelIdentifier()
@@ -171,6 +186,8 @@ type EmbedRepoOpts struct {
 	SplitOptions      codeintelContext.SplitOptions
 	MaxCodeEmbeddings int
 	MaxTextEmbeddings int
+	BatchSize         int
+	ExcludeChunks     bool
 
 	// If set, we already have an index for a previous commit.
 	IndexedRevision api.CommitID
@@ -184,11 +201,17 @@ type FileFilters struct {
 
 type batchInserter func(metadata []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error
 
+type FlushResults struct {
+	size  int
+	count int
+}
+
 // embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
 // entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
+	logger log.Logger,
 	files []FileEntry,
 	embeddingsClient client.EmbeddingsClient,
 	contextService ContextService,
@@ -196,6 +219,8 @@ func embedFiles(
 	splitOptions codeintelContext.SplitOptions,
 	reader FileReader,
 	maxEmbeddingVectors int,
+	batchSize int,
+	excludeChunksOnError bool,
 	insert batchInserter,
 	reportProgress func(bgrepo.EmbedFilesStats),
 ) (bgrepo.EmbedFilesStats, error) {
@@ -208,49 +233,91 @@ func embedFiles(
 
 	var batch []codeintelContext.EmbeddableChunk
 
-	flush := func() error {
+	flush := func() (*FlushResults, error) {
 		if len(batch) == 0 {
-			return nil
+			return nil, nil
 		}
 
 		batchChunks := make([]string, len(batch))
-		metadata := make([]embeddings.RepoEmbeddingRowMetadata, len(batch))
 		for idx, chunk := range batch {
 			batchChunks[idx] = chunk.Content
-			metadata[idx] = embeddings.RepoEmbeddingRowMetadata{
-				FileName:  chunk.FileName,
-				StartLine: chunk.StartLine,
-				EndLine:   chunk.EndLine,
-			}
 		}
 
 		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
 		if err != nil {
-			if partErr := (client.PartialError{}); errors.As(err, &partErr) {
-				return errors.Wrapf(partErr.Err, "batch failed on file %q", batch[partErr.Index].FileName)
-			}
-			return errors.Wrap(err, "error while getting embeddings")
-		}
-		if expected := len(batchChunks) * dimensions; len(batchEmbeddings) != expected {
-			return errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings))
+			return nil, errors.Wrap(err, "error while getting embeddings")
 		}
 
-		if err := insert(metadata, batchEmbeddings); err != nil {
-			return err
+		if expected := len(batchChunks) * dimensions; len(batchEmbeddings.Embeddings) != expected {
+			return nil, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
+		}
+
+		if !excludeChunksOnError && len(batchEmbeddings.Failed) > 0 {
+			// if at least one chunk failed then return an error instead of completing the embedding indexing
+			return nil, errors.Newf("batch failed on file %q", batch[batchEmbeddings.Failed[0]].FileName)
+		}
+
+		// When excluding failed chunks we
+		// (1) report total chunks failed at the end and
+		// (2) log filenames that have failed chunks
+		excludedBatches := make(map[int]struct{}, len(batchEmbeddings.Failed))
+		filesFailedChunks := make(map[string]int, len(batchEmbeddings.Failed))
+		for _, batchIdx := range batchEmbeddings.Failed {
+
+			if batchIdx < 0 || batchIdx >= len(batch) {
+				continue
+			}
+			excludedBatches[batchIdx] = struct{}{}
+
+			if chunks, ok := filesFailedChunks[batch[batchIdx].FileName]; ok {
+				filesFailedChunks[batch[batchIdx].FileName] = chunks + 1
+			} else {
+				filesFailedChunks[batch[batchIdx].FileName] = 1
+			}
+		}
+
+		// log filenames at most once per flush
+		for fileName, count := range filesFailedChunks {
+			logger.Warn("failed to generate one or more chunks for file",
+				log.String("file", fileName),
+				log.Int("count", count),
+			)
+		}
+
+		rowsCount := len(batch) - len(batchEmbeddings.Failed)
+		metadata := make([]embeddings.RepoEmbeddingRowMetadata, 0, rowsCount)
+		var size int
+		cursor := 0
+		for idx, chunk := range batch {
+			if _, ok := excludedBatches[idx]; ok {
+				continue
+			}
+			copy(batchEmbeddings.Row(cursor), batchEmbeddings.Row(idx))
+			metadata = append(metadata, embeddings.RepoEmbeddingRowMetadata{
+				FileName:  chunk.FileName,
+				StartLine: chunk.StartLine,
+				EndLine:   chunk.EndLine,
+			})
+			size += len(chunk.Content)
+			cursor++
+		}
+
+		if err := insert(metadata, batchEmbeddings.Embeddings[:cursor*dimensions]); err != nil {
+			return nil, err
 		}
 
 		batch = batch[:0] // reset batch
 		reportProgress(stats)
-		return nil
+		return &FlushResults{size, rowsCount}, nil
 	}
 
-	addToBatch := func(chunk codeintelContext.EmbeddableChunk) error {
+	addToBatch := func(chunk codeintelContext.EmbeddableChunk) (*FlushResults, error) {
 		batch = append(batch, chunk)
-		if len(batch) >= embeddingsBatchSize {
+		if len(batch) >= batchSize {
 			// Flush if we've hit batch size
 			return flush()
 		}
-		return nil
+		return nil, nil
 	}
 
 	for _, file := range files {
@@ -294,18 +361,25 @@ func embedFiles(
 		if err != nil {
 			return bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
 		}
+
 		for _, chunk := range chunks {
-			if err := addToBatch(chunk); err != nil {
+			if results, err := addToBatch(chunk); err != nil {
 				return bgrepo.EmbedFilesStats{}, err
+			} else if results != nil {
+				stats.AddChunks(results.count, results.size)
+				stats.ExcludeChunks(batchSize - results.count)
 			}
-			stats.AddChunk(len(chunk.Content))
 		}
 		stats.AddFile()
 	}
 
 	// Always do a final flush
-	if err := flush(); err != nil {
+	currentBatch := len(batch)
+	if results, err := flush(); err != nil {
 		return bgrepo.EmbedFilesStats{}, err
+	} else if results != nil {
+		stats.AddChunks(results.count, results.size)
+		stats.ExcludeChunks(currentBatch - results.count)
 	}
 
 	return stats, nil
