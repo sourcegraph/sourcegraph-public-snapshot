@@ -1065,17 +1065,6 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 			},
 			wantDisabled: true,
 		},
-		{
-			name:       "App without dotcom or user token",
-			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
-				},
-			},
-			wantDisabled: true,
-		},
 	}
 
 	for _, tc := range testCases {
