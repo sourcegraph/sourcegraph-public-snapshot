@@ -54,6 +54,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		onlyCloudDefault bool
 		includeDeleted   bool
 		wantArgs         []any
+		repoID           api.RepoID
 	}{
 		{
 			name:      "no condition",
@@ -93,6 +94,12 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			includeDeleted: true,
 			wantQuery:      "TRUE",
 		},
+		{
+			name:      "has repoID",
+			repoID:    10,
+			wantQuery: "deleted_at IS NULL AND id IN (SELECT external_service_id FROM external_service_repos WHERE repo_id = $1)",
+			wantArgs:  []any{api.RepoID(10)},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -102,6 +109,7 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				UpdatedAfter:     test.updatedAfter,
 				OnlyCloudDefault: test.onlyCloudDefault,
 				IncludeDeleted:   test.includeDeleted,
+				RepoID:           test.repoID,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
 			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
@@ -1600,6 +1608,18 @@ func TestExternalServicesStore_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Creating a repo which will be bound to GITHUB #1 and GITHUB #2 external
+	// services. We cannot use repos.Store because of import cycles, the simplest way
+	// is to run a raw query.
+	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "repo1"})
+	require.NoError(t, err)
+	q := sqlf.Sprintf(`
+INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+VALUES (1, 1, ''), (2, 1, '')
+`)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	require.NoError(t, err)
+
 	t.Run("list all external services", func(t *testing.T) {
 		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{})
 		if err != nil {
@@ -1685,7 +1705,7 @@ func TestExternalServicesStore_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find all cloud default services
 		if len(ess) != 1 {
 			t.Fatalf("Want 0 external services but got %d", len(ess))
 		}
@@ -1698,9 +1718,22 @@ func TestExternalServicesStore_List(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find all services including deleted
 		if len(ess) != 4 {
 			t.Fatalf("Want 4 external services but got %d", len(ess))
+		}
+	})
+
+	t.Run("list for repoID", func(t *testing.T) {
+		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+			RepoID: 1,
+		})
+		require.NoError(t, err)
+		// We should find all services which have repoID=1 (GITHUB #1, GITHUB #2).
+		assert.Len(t, ess, 2)
+		sort.Slice(ess, func(i, j int) bool { return ess[i].ID < ess[j].ID })
+		for idx, es := range ess {
+			assert.Equal(t, fmt.Sprintf("GITHUB #%d", idx+1), es.DisplayName)
 		}
 	})
 }

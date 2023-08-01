@@ -12,9 +12,9 @@ import java.awt.*;
 import javax.swing.*;
 import org.jetbrains.annotations.NotNull;
 
-public class AssistantMessageWithSettingsButton extends MessagePanel {
+public class AssistantMessageWithSettingsButton extends PanelWithGradientBorder {
   public AssistantMessageWithSettingsButton(@NotNull String htmlTextContent) {
-    super(Speaker.ASSISTANT, ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+    super(ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH, Speaker.ASSISTANT);
     this.setLayout(new BorderLayout());
     JEditorPane jEditorPane = SwingHelper.createHtmlViewer(true, null, null, null);
     jEditorPane.addHyperlinkListener(BrowserHyperlinkListener.INSTANCE);

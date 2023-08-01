@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -14,11 +13,6 @@ import (
 
 	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
 )
-
-func init() {
-	// TODO(sqs): TODO(single-binary): could we move this out of init?
-	oobmigration.ReturnEnterpriseMigrations = true
-}
 
 func main() {
 	sanitycheck.Pass()

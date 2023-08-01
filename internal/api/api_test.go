@@ -2,6 +2,8 @@ package api
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestUndeletedRepoName(t *testing.T) {
@@ -37,5 +39,31 @@ func TestUndeletedRepoName(t *testing.T) {
 				t.Errorf("got %q, want %q", got, tt.want)
 			}
 		})
+	}
+}
+
+func TestNewCommitID(t *testing.T) {
+	noErrorCases := []string{
+		"8b25feac0dda3bbe66851794d0552773b6b5aa2b",
+		"8B25FEAC0DDA3BBE66851794D0552773B6B5AA2B",
+	}
+
+	for _, s := range noErrorCases {
+		_, err := NewCommitID(s)
+		require.NoError(t, err)
+	}
+
+	errorCases := []string{
+		"",
+		"8B25FEA",
+		"ZZZ5FEAC0DDA3BBE66851794D0552773B6B5AA2B",
+		"8b25feac0dda3bbe66851794d0552773b6b5aa2b 8b25feac0dda3bbe66851794d0552773b6b5aa2b",
+		" 8b25feac0dda3bbe66851794d0552773b6b5aa2b",
+		"8b25feac0dda3bbe66851794d0552773b6b5aa2b ",
+	}
+
+	for _, s := range errorCases {
+		_, err := NewCommitID(s)
+		require.Error(t, err)
 	}
 }

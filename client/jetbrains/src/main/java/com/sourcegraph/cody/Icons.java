@@ -10,4 +10,8 @@ public interface Icons {
     Icon Indexed = IconLoader.getIcon("/icons/repositoryIndexed.svg", Icons.class);
     Icon Missing = IconLoader.getIcon("/icons/repositoryMissing.svg", Icons.class);
   }
+
+  interface Actions {
+    Icon Hide = IconLoader.getIcon("/icons/actions/hide.svg", Icons.class);
+  }
 }

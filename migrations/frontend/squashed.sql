@@ -1652,6 +1652,28 @@ CREATE SEQUENCE cm_webhooks_id_seq
 
 ALTER SEQUENCE cm_webhooks_id_seq OWNED BY cm_webhooks.id;
 
+CREATE TABLE code_hosts (
+    id integer NOT NULL,
+    kind text NOT NULL,
+    url text NOT NULL,
+    api_rate_limit_quota integer,
+    api_rate_limit_interval_seconds integer,
+    git_rate_limit_quota integer,
+    git_rate_limit_interval_seconds integer,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
+);
+
+CREATE SEQUENCE code_hosts_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE code_hosts_id_seq OWNED BY code_hosts.id;
+
 CREATE TABLE codeintel_autoindex_queue (
     id integer NOT NULL,
     repository_id integer NOT NULL,
@@ -2512,6 +2534,7 @@ CREATE TABLE external_services (
     namespace_org_id integer,
     has_webhooks boolean,
     token_expires_at timestamp with time zone,
+    code_host_id integer,
     CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text)),
     CONSTRAINT external_services_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );
@@ -4938,6 +4961,8 @@ ALTER TABLE ONLY cm_trigger_jobs ALTER COLUMN id SET DEFAULT nextval('cm_trigger
 
 ALTER TABLE ONLY cm_webhooks ALTER COLUMN id SET DEFAULT nextval('cm_webhooks_id_seq'::regclass);
 
+ALTER TABLE ONLY code_hosts ALTER COLUMN id SET DEFAULT nextval('code_hosts_id_seq'::regclass);
+
 ALTER TABLE ONLY codeintel_autoindex_queue ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindex_queue_id_seq'::regclass);
 
 ALTER TABLE ONLY codeintel_autoindexing_exceptions ALTER COLUMN id SET DEFAULT nextval('codeintel_autoindexing_exceptions_id_seq'::regclass);
@@ -5231,6 +5256,12 @@ ALTER TABLE ONLY cm_trigger_jobs
 
 ALTER TABLE ONLY cm_webhooks
     ADD CONSTRAINT cm_webhooks_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY code_hosts
+    ADD CONSTRAINT code_hosts_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY code_hosts
+    ADD CONSTRAINT code_hosts_url_key UNIQUE (url);
 
 ALTER TABLE ONLY codeintel_autoindex_queue
     ADD CONSTRAINT codeintel_autoindex_queue_pkey PRIMARY KEY (id);
@@ -6497,6 +6528,9 @@ ALTER TABLE ONLY external_service_repos
 
 ALTER TABLE ONLY external_service_repos
     ADD CONSTRAINT external_service_repos_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY external_services
+    ADD CONSTRAINT external_services_code_host_id_fkey FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY external_service_sync_jobs
     ADD CONSTRAINT external_services_id_fk FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE;
