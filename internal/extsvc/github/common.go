@@ -1839,7 +1839,7 @@ type Repository struct {
 	// This field will always be blank on repos stored in our database because the value will be different
 	// depending on which token was used to fetch it
 	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
-	//
+	// Parent is non-nil for forks and contains details of the parent repository.
 	Parent *BaseRepository
 }
 
