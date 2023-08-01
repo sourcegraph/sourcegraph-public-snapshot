@@ -147,6 +147,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		sort.Strings(fuzzySymbolNames)
 		trace.AddEvent("fuzzySymbolNames", attribute.StringSlice("fuzzyNames", fuzzySymbolNames))
 
+		uploadIDs := make([]int, len(uploads))
+		for i, upload := range uploads {
+			uploadIDs[i] = upload.ID
+		}
 		// DEBUGGING
 		lap("PHASE 1: %d symbols from %s: %v\n", len(fuzzySymbolNames), filename, fuzzySymbolNames)
 
@@ -164,9 +168,7 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 		// transformation.
 
 		scipNamesByFuzzyName, err := func() (map[string][]*symbols.ExplodedSymbol, error) {
-			// TODO: Either pass a slice of uploads or loop thru uploads and pass the ids to fix this hardcoding of the first
-			// TODO: does it make more sense to return a map to avoid having to loop thru them on line 189?
-			explodedScipNames, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, []int{uploads[0].ID}, fuzzySymbolNames)
+			explodedScipNames, err := s.codenavSvc.GetFullSCIPNameByDescriptor(ctx, uploadIDs, fuzzySymbolNames)
 			if err != nil {
 				return nil, err
 			}
@@ -179,7 +181,11 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 			}
 			for _, fuzzyName := range fuzzySymbolNames {
 				if strings.Contains(fuzzyName, "Runner") {
-					ex, _ := symbols.NewExplodedSymbol(fuzzyName)
+					ex, err := symbols.NewExplodedSymbol(fuzzyName)
+					if err != nil {
+						trace.AddEvent("NewExplodedSymbol error in scipNamesByFuzzyName", attribute.String("exploded symbol err", err.Error()))
+						continue
+					}
 					fmt.Printf("\tSYNTECT: %q -> %q\n", fuzzyName, ex.DescriptorSuffix)
 				}
 			}
@@ -187,11 +193,10 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 
 			explodedScipSymbolsByFuzzyName := map[string][]*symbols.ExplodedSymbol{}
 			for _, fuzzyName := range fuzzySymbolNames {
-				// TODO: Don't swallow error
 				ex, err := symbols.NewExplodedSymbol(fuzzyName)
 				if err != nil {
+					trace.AddEvent("NewExplodedSymbol error", attribute.String("exploded symbol err", err.Error()))
 					continue
-					// add debug logging
 				}
 				var explodedScipSymbols []*symbols.ExplodedSymbol
 				for _, esn := range explodedScipNames {
