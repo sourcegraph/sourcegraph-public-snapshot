@@ -11,10 +11,7 @@ interface ExampleData {
 }
 
 class ExampleProvider implements TreeProvider<ExampleData> {
-    constructor(
-        private nodes: ExampleData[],
-        private parentPath: string = ''
-    ) {}
+    constructor(private nodes: ExampleData[], private parentPath: string = '') {}
     isSelectable(_entry: ExampleData): boolean {
         return true
     }
