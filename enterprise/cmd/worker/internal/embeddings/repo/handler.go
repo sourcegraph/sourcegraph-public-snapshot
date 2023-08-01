@@ -119,6 +119,7 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		BatchSize:         embeddingsBatchSize,
+		ExcludeChunks:     embeddingsConfig.ExcludeChunkOnError,
 	}
 
 	if previousIndex != nil {

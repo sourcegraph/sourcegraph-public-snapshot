@@ -128,13 +128,13 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	codeIndexStats, err := embedFiles(ctx, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, opts.BatchSize, insertCode, reportCodeProgress)
+	codeIndexStats, err := embedFiles(ctx, logger, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, opts.BatchSize, opts.ExcludeChunks, insertCode, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	if codeIndexStats.ChunksExcluded > 0 {
-		logger.Debug("error getting embeddings for chunks",
+		logger.Warn("error getting embeddings for chunks",
 			log.Int("count", codeIndexStats.ChunksExcluded),
 			log.String("file_type", "code"),
 		)
@@ -153,13 +153,13 @@ func EmbedRepo(
 		reportProgress(&stats)
 	}
 
-	textIndexStats, err := embedFiles(ctx, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, opts.BatchSize, insertText, reportTextProgress)
+	textIndexStats, err := embedFiles(ctx, logger, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, opts.BatchSize, opts.ExcludeChunks, insertText, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	if textIndexStats.ChunksExcluded > 0 {
-		logger.Debug("error getting embeddings for chunks",
+		logger.Warn("error getting embeddings for chunks",
 			log.Int("count", textIndexStats.ChunksExcluded),
 			log.String("file_type", "text"),
 		)
@@ -187,6 +187,7 @@ type EmbedRepoOpts struct {
 	MaxCodeEmbeddings int
 	MaxTextEmbeddings int
 	BatchSize         int
+	ExcludeChunks     bool
 
 	// If set, we already have an index for a previous commit.
 	IndexedRevision api.CommitID
@@ -210,6 +211,7 @@ type FlushResults struct {
 // the embeddings and metadata about the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
+	logger log.Logger,
 	files []FileEntry,
 	embeddingsClient client.EmbeddingsClient,
 	contextService ContextService,
@@ -218,6 +220,7 @@ func embedFiles(
 	reader FileReader,
 	maxEmbeddingVectors int,
 	batchSize int,
+	excludeChunksOnError bool,
 	insert batchInserter,
 	reportProgress func(bgrepo.EmbedFilesStats),
 ) (bgrepo.EmbedFilesStats, error) {
@@ -242,9 +245,6 @@ func embedFiles(
 
 		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
 		if err != nil {
-			if partErr := (client.PartialError{}); errors.As(err, &partErr) {
-				return nil, errors.Wrapf(partErr.Err, "batch failed on file %q", batch[partErr.Index].FileName)
-			}
 			return nil, errors.Wrap(err, "error while getting embeddings")
 		}
 
@@ -252,12 +252,36 @@ func embedFiles(
 			return nil, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
 		}
 
+		if !excludeChunksOnError && len(batchEmbeddings.Failed) > 0 {
+			// if at least one chunk failed then return an error instead of completing the embedding indexing
+			return nil, errors.Newf("batch failed on file %q", batch[batchEmbeddings.Failed[0]].FileName)
+		}
+
+		// When excluding failed chunks we
+		// (1) report total chunks failed at the end and
+		// (2) log filenames that have failed chunks
 		excludedBatches := make(map[int]struct{}, len(batchEmbeddings.Failed))
+		filesFailedChunks := make(map[string]int, len(batchEmbeddings.Failed))
 		for _, batchIdx := range batchEmbeddings.Failed {
+
 			if batchIdx < 0 || batchIdx >= len(batch) {
 				continue
 			}
 			excludedBatches[batchIdx] = struct{}{}
+
+			if chunks, ok := filesFailedChunks[batch[batchIdx].FileName]; ok {
+				filesFailedChunks[batch[batchIdx].FileName] = chunks + 1
+			} else {
+				filesFailedChunks[batch[batchIdx].FileName] = 1
+			}
+		}
+
+		// log filenames at most once per flush
+		for fileName, count := range filesFailedChunks {
+			logger.Warn("failed to generate one or more chunks for file",
+				log.String("file", fileName),
+				log.Int("count", count),
+			)
 		}
 
 		rowsCount := len(batch) - len(batchEmbeddings.Failed)

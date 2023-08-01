@@ -17,22 +17,20 @@ import (
 
 func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *azureOpenaiEmbeddingsClient {
 	return &azureOpenaiEmbeddingsClient{
-		httpClient:    httpClient,
-		dimensions:    config.Dimensions,
-		accessToken:   config.AccessToken,
-		model:         config.Model,
-		endpoint:      config.Endpoint,
-		excludeChunks: config.ExcludeChunkOnError,
+		httpClient:  httpClient,
+		dimensions:  config.Dimensions,
+		accessToken: config.AccessToken,
+		model:       config.Model,
+		endpoint:    config.Endpoint,
 	}
 }
 
 type azureOpenaiEmbeddingsClient struct {
-	httpClient    *http.Client
-	model         string
-	dimensions    int
-	endpoint      string
-	accessToken   string
-	excludeChunks bool
+	httpClient  *http.Client
+	model       string
+	dimensions  int
+	endpoint    string
+	accessToken string
 }
 
 func (c *azureOpenaiEmbeddingsClient) GetDimensions() (int, error) {
@@ -71,16 +69,11 @@ func (c *azureOpenaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 		// for each of the texts individually.
 		resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, input, 3)
 		if err != nil {
-			// if exclude files is enabled then do not return error
-			if c.excludeChunks {
-				failed = append(failed, i)
+			failed = append(failed, i)
 
-				// reslice to provide zero value embedding for failed chunk
-				embeddings = embeddings[:len(embeddings)+c.dimensions]
-				continue
-			}
-			// fail the entire repo embed job
-			return nil, client.PartialError{Err: err, Index: i}
+			// reslice to provide zero value embedding for failed chunk
+			embeddings = embeddings[:len(embeddings)+c.dimensions]
+			continue
 		}
 		embeddings = append(embeddings, resp.Data[0].Embedding...)
 	}

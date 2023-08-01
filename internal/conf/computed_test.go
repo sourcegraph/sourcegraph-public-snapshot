@@ -959,6 +959,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{

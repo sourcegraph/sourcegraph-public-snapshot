@@ -17,22 +17,20 @@ import (
 
 func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
 	return &openaiEmbeddingsClient{
-		httpClient:    httpClient,
-		dimensions:    config.Dimensions,
-		accessToken:   config.AccessToken,
-		model:         config.Model,
-		endpoint:      config.Endpoint,
-		excludeChunks: config.ExcludeChunkOnError,
+		httpClient:  httpClient,
+		dimensions:  config.Dimensions,
+		accessToken: config.AccessToken,
+		model:       config.Model,
+		endpoint:    config.Endpoint,
 	}
 }
 
 type openaiEmbeddingsClient struct {
-	httpClient    *http.Client
-	model         string
-	dimensions    int
-	endpoint      string
-	accessToken   string
-	excludeChunks bool
+	httpClient  *http.Client
+	model       string
+	dimensions  int
+	endpoint    string
+	accessToken string
 }
 
 func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
@@ -92,15 +90,11 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 			// response. Try it again a few times and hope for the best.
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
 			if err != nil {
-				// if exclude files is enabled then do not return error, just exclude the chunk
-				if c.excludeChunks {
-					failed = append(failed, embedding.Index)
+				failed = append(failed, embedding.Index)
 
-					// reslice to provide zero value embedding for failed chunk
-					embeddings = embeddings[:len(embeddings)+dimensionality]
-					continue
-				}
-				return nil, client.PartialError{Err: err, Index: embedding.Index}
+				// reslice to provide zero value embedding for failed chunk
+				embeddings = embeddings[:len(embeddings)+dimensionality]
+				continue
 			}
 			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}

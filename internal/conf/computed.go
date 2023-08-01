@@ -865,11 +865,6 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		embeddingsConfig.Incremental = pointers.Ptr(true)
 	}
 
-	// The default value for ExcludeChunkOnError is true.
-	if embeddingsConfig.ExcludeChunkOnError == nil {
-		embeddingsConfig.ExcludeChunkOnError = pointers.Ptr(true)
-	}
-
 	// Set default values for max embeddings counts.
 	embeddingsConfig.MaxCodeEmbeddingsPerRepo = defaultTo(embeddingsConfig.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo)
 	embeddingsConfig.MaxTextEmbeddingsPerRepo = defaultTo(embeddingsConfig.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo)
@@ -990,7 +985,7 @@ func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.Embeddi
 		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
 		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
-		ExcludeChunkOnError:        *embeddingsConfig.ExcludeChunkOnError,
+		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
 	}
 	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
 	if err != nil {
