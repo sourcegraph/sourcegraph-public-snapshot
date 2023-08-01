@@ -292,7 +292,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.CodeHostID != 0 {
 		conds = append(conds, sqlf.Sprintf("code_host_id = %s", o.CodeHostID))
-  }
+	}
 	if o.RepoID > 0 {
 		conds = append(conds, sqlf.Sprintf("id IN (SELECT external_service_id FROM external_service_repos WHERE repo_id = %s)", o.RepoID))
 	}
@@ -728,6 +728,7 @@ func (e *externalServiceStore) Upsert(ctx context.Context, svcs ...*types.Extern
 			&svcs[i].CloudDefault,
 			&keyID,
 			&dbutil.NullBool{B: svcs[i].HasWebhooks},
+			&svcs[i].CodeHostID,
 		)
 		if err != nil {
 			return err
@@ -762,6 +763,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 			s.Unrestricted,
 			s.CloudDefault,
 			s.HasWebhooks,
+			s.CodeHostID,
 		))
 	}
 
@@ -772,7 +774,7 @@ func (e *externalServiceStore) upsertExternalServicesQuery(ctx context.Context, 
 }
 
 const upsertExternalServicesQueryValueFmtstr = `
-  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+  (COALESCE(NULLIF(%s, 0), (SELECT nextval('external_services_id_seq'))), UPPER(%s), %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 
 const upsertExternalServicesQueryFmtstr = `
@@ -789,7 +791,8 @@ INSERT INTO external_services (
   next_sync_at,
   unrestricted,
   cloud_default,
-  has_webhooks
+  has_webhooks,
+  code_host_id
 )
 VALUES %s
 ON CONFLICT(id) DO UPDATE
@@ -805,7 +808,8 @@ SET
   next_sync_at       = excluded.next_sync_at,
   unrestricted       = excluded.unrestricted,
   cloud_default      = excluded.cloud_default,
-  has_webhooks       = excluded.has_webhooks
+  has_webhooks       = excluded.has_webhooks,
+  code_host_id       = excluded.code_host_id
 RETURNING
 	id,
 	kind,
@@ -819,7 +823,8 @@ RETURNING
 	unrestricted,
 	cloud_default,
 	encryption_key_id,
-	has_webhooks
+	has_webhooks,
+	code_host_id
 `
 
 // ExternalServiceUpdate contains optional fields to update.
