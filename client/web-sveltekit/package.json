@@ -37,6 +37,7 @@
     "prettier-plugin-svelte": "^3.0.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "signale": "^1.4.0",
     "storybook": "^7.1.1",
     "storybook-dark-mode": "^3.0.0",
     "svelte": "^4.1.1",

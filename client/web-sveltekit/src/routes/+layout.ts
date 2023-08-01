@@ -1,4 +1,5 @@
 import { browser } from '$app/environment'
+import { fetchEvaluatedFeatureFlags } from '$lib/featureflags'
 import type { CurrentAuthStateResult } from '$lib/graphql/shared'
 import { getDocumentNode } from '$lib/http-client'
 import { currentAuthStateQuery } from '$lib/loader/auth'
@@ -31,5 +32,6 @@ export const load: LayoutLoad = () => {
             .then(result => result.data.currentUser),
         // Initial user settings
         settings: graphqlClient.then(fetchUserSettings),
+        featureFlags: graphqlClient.then(fetchEvaluatedFeatureFlags),
     }
 }

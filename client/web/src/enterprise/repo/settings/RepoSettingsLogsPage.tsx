@@ -80,7 +80,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
                     onChange={setActiveTab}
                 >
                     <TabList>
-                        <Tab>Last repo commands</Tab>
+                        <Tab>Last executed commands</Tab>
                         <Tab>Last sync output</Tab>
                     </TabList>
 

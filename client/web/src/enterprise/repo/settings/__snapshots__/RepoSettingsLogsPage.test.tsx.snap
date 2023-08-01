@@ -60,7 +60,7 @@ exports[`RepoSettingsLogsPage should render correctly when there are no recorded
             <span
               class="tabLabel"
             >
-              Last repo commands
+              Last executed commands
             </span>
           </button>
           <button
@@ -180,7 +180,7 @@ exports[`RepoSettingsLogsPage should render correctly when there are recorded co
             <span
               class="tabLabel"
             >
-              Last repo commands
+              Last executed commands
             </span>
           </button>
           <button
