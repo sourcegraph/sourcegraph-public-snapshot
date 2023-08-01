@@ -7,24 +7,20 @@ import com.intellij.openapi.fileEditor.FileEditorManagerListener;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.serviceContainer.AlreadyDisposedException;
-import com.intellij.ui.ColorUtil;
 import com.intellij.ui.SimpleColoredComponent;
 import com.intellij.ui.SimpleTextAttributes;
 import com.intellij.ui.components.JBLabel;
 import com.intellij.util.concurrency.EdtExecutorService;
 import com.intellij.util.ui.JBUI;
-import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.context.embeddings.EmbeddingsStatusLoader;
 import com.sourcegraph.cody.editor.EditorUtil;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.vcs.RepoUtil;
 import java.awt.FlowLayout;
 import java.util.concurrent.TimeUnit;
-import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.Icon;
 import javax.swing.JPanel;
-import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import org.apache.commons.lang.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -41,10 +37,6 @@ public class EmbeddingStatusView extends JPanel {
     super();
     this.project = project;
     this.setLayout(new FlowLayout(FlowLayout.LEFT));
-    Border topBorder =
-        BorderFactory.createMatteBorder(
-            1, 0, 0, 0, ColorUtil.brighter(UIUtil.getPanelBackground(), 3));
-    this.setBorder(topBorder);
     Box innerPanel = Box.createHorizontalBox();
     embeddingStatusContent = new SimpleColoredComponent();
     openedFileContent = new JBLabel();

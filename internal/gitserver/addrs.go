@@ -141,10 +141,6 @@ func (c *testGitserverConns) ClientForRepo(ctx context.Context, userAgent string
 	return c.clientFunc(conn), nil
 }
 
-func (c *testGitserverConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	return c.conns.ConnForRepo(ctx, userAgent, repo)
-}
-
 type testConnAndErr struct {
 	address    string
 	conn       *grpc.ClientConn
@@ -378,10 +374,6 @@ func (a *atomicGitServerConns) ClientForRepo(ctx context.Context, userAgent stri
 		return nil, err
 	}
 	return proto.NewGitserverServiceClient(conn), nil
-}
-
-func (a *atomicGitServerConns) ConnForRepo(ctx context.Context, userAgent string, repo api.RepoName) (*grpc.ClientConn, error) {
-	return a.get().ConnForRepo(ctx, userAgent, repo)
 }
 
 func (a *atomicGitServerConns) Addresses() []AddressWithClient {
