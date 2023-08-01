@@ -34,7 +34,7 @@ END
 fi
 
 echo "--- :bazel::go: Running gofmt"
-unformatted=$(bazel ${bazelrc} run @go_sdk//:bin/gofmt -- -l .)
+unformatted=$(bazel "${bazelrc}" run @go_sdk//:bin/gofmt -- -l .)
 
 if [[ ${unformatted} != "" ]]; then
   mkdir -p ./annotations
