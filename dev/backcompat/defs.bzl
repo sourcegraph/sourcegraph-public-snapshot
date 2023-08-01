@@ -44,6 +44,26 @@ PATCH_GO_TEST_CMDS = [
     for test in FLAKES[MINIMUM_UPGRADEABLE_VERSION]
 ]
 
+def patch_target():
+    sed_template = '$$_sed_binary -i "s/func {prefix}/func _{prefix}/g" {path}/*.go'
+    patch_cmds = [ sed_template.format(**item) for item in FLAKES[MINIMUM_UPGRADEABLE_VERSION] ]
+    native.genrule(
+        name = "flake_patch_cmd",
+        outs = ["flake_patch_cmd.sh"],
+        executable = True,
+        cmd = """
+cat <<-'END' > $@
+#/usr/bin/env bash
+_sed_binary="sed"
+if [ "$$(uname)" == "Darwin" ]; then
+    _sed_binary="gsed"
+fi
+
+{patch_cmds}
+END
+        """.format(patch_cmds = "\n".join(patch_cmds)),
+    )
+
 # Join all individual go test patches into a single shell snippet.
 PATCH_ALL_GO_TESTS_CMD = "\n".join(PATCH_GO_TEST_CMDS)
 

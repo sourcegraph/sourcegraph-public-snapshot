@@ -13,17 +13,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
 )
 
-func BazelOperations() []operations.Operation {
+func BazelOperations(buildOpts bk.BuildOptions, isMain bool) []operations.Operation {
 	ops := []operations.Operation{}
-	ops = append(ops, bazelConfigure())
-	ops = append(ops, bazelTest("//...", "//client/web:test"))
-	ops = append(ops, bazelBackCompatTest(
-		"@sourcegraph_back_compat//cmd/...",
-		"@sourcegraph_back_compat//lib/...",
-		"@sourcegraph_back_compat//internal/...",
-		"@sourcegraph_back_compat//enterprise/cmd/...",
-		"@sourcegraph_back_compat//enterprise/internal/...",
-	))
+	ops = append(ops, bazelPrechecks())
+	if isMain {
+		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
+	} else {
+		ops = append(ops, bazelTest("//...", "//client/web:test"))
+	}
+
+	ops = append(ops, triggerBackCompatTest(buildOpts))
 	return ops
 }
 
@@ -168,25 +167,19 @@ func bazelTest(targets ...string) func(*bk.Pipeline) {
 	}
 }
 
-func bazelBackCompatTest(targets ...string) func(*bk.Pipeline) {
-	cmds := []bk.StepOpt{
-		bk.DependsOn("bazel-configure"),
-		bk.Agent("queue", "bazel"),
-
-		// Generate a patch that backports the migration from the new code into the old one.
-		// Ignore space is because of https://github.com/bazelbuild/bazel/issues/17376
-		bk.Cmd("git diff --ignore-space-at-eol origin/ci/backcompat-v5.0.0..HEAD -- migrations/ > dev/backcompat/patches/back_compat_migrations.patch"),
-	}
-
-	bazelCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
-	cmds = append(
-		cmds,
-		bk.Cmd(bazelCmd),
-	)
-
+func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
+	// backCompatOpts := bk.BuildOptions{
+	// 	Message: "Back Compatibility tests",
+	// 	Commit:  "c691c3f50c0a288fbc8e796327417136459fa35f",
+	// 	MetaData: map[string]any{
+	// 		"target_commit": buildOpts.Commit,
+	// 	},
+	// }
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: BackCompat Tests",
-			cmds...,
+		pipeline.AddTrigger(":bazel::snail: Async BackCompat Tests", "sourcegraph-backcompat",
+			bk.Key("trigger-backcompat"),
+			bk.DependsOn("bazel-prechecks"),
+			bk.Build(buildOpts),
 		)
 	}
 }
