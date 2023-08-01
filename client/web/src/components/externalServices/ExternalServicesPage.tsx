@@ -48,7 +48,7 @@ export const ExternalServicesPage: FC<Props> = ({
     const { loading, hasNextPage, fetchMore, connection, error } = useExternalServicesConnection({
         first: null,
         after: null,
-        repoID,
+        repo: repoID,
     })
 
     const editingDisabled = externalServicesFromFile && !allowEditExternalServicesWithFile

@@ -27,7 +27,7 @@ export const WebhookCreatePage: Story = () => {
         {
             request: {
                 query: getDocumentNode(EXTERNAL_SERVICES),
-                variables: { first: null, after: null, repoID: null },
+                variables: { first: null, after: null, repo: null },
             },
             result: {
                 data: {
@@ -70,7 +70,7 @@ export const WebhookCreatePageWithError: Story = () => {
         {
             request: {
                 query: getDocumentNode(EXTERNAL_SERVICES),
-                variables: { first: null, after: null, repoID: null },
+                variables: { first: null, after: null, repo: null },
             },
             error: new Error('oops'),
         },
