@@ -50,7 +50,7 @@ unNixifyDylibs pkgs (pkgsStatic.gccStdenv.mkDerivation rec {
             {
               name = "helix-core-api";
               url = "https://cdist2.perforce.com/perforce/r22.2/bin.macosx12arm64/p4api-openssl3.tgz";
-              hash = "sha256-gKSBdSZru+91a55sw9JvZkU0Q3U5kdkQ252wJgDlclg=";
+              hash = "sha256-6Bz26+1RixsK+zq6qeU3hbT8w+mNT7KBvqZ3Gnrkke4=";
             }
         else
           fetchzip {
