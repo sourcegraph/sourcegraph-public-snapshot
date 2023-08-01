@@ -93,9 +93,9 @@ http_archive(
 
 http_archive(
     name = "container_structure_test",
-    sha256 = "42edb647b51710cb917b5850380cc18a6c925ad195986f16e3b716887267a2d7",
-    strip_prefix = "container-structure-test-104a53ede5f78fff72172639781ac52df9f5b18f",
-    urls = ["https://github.com/GoogleContainerTools/container-structure-test/archive/104a53ede5f78fff72172639781ac52df9f5b18f.zip"],
+    sha256 = "413418573d1c7d82776f7e4f0e63ae0d7afb45701ce1f5f876cc6109b8ff9d16",
+    strip_prefix = "container-structure-test-d97b69d644f676448a23dad27e97eeb2ef615dcf",
+    urls = ["https://github.com/GoogleContainerTools/container-structure-test/archive/d97b69d644f676448a23dad27e97eeb2ef615dcf.zip"],
 )
 
 # hermetic_cc_toolchain setup ================================
