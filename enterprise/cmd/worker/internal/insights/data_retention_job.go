@@ -7,9 +7,9 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	insightsdb "github.com/sourcegraph/sourcegraph/internal/insights/database"
 	"github.com/sourcegraph/sourcegraph/internal/insights"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background"
+	insightsdb "github.com/sourcegraph/sourcegraph/internal/insights/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
