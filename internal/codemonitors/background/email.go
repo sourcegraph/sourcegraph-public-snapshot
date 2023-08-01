@@ -160,7 +160,7 @@ var (
 	externalURLError error
 )
 
-func getExternalURL(ctx context.Context) (*url.URL, error) {
+func getExternalURL() (*url.URL, error) {
 	if MockExternalURL != nil {
 		return MockExternalURL(), nil
 	}
