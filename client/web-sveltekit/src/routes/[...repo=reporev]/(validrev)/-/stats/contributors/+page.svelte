@@ -3,9 +3,9 @@
     import { page } from '$app/stores'
     import LoadingSpinner from '$lib/LoadingSpinner.svelte'
     import Paginator from '$lib/Paginator.svelte'
-    import { currentDate } from '$lib/stores'
+    import Timestamp from '$lib/Timestamp.svelte'
     import UserAvatar from '$lib/UserAvatar.svelte'
-    import { createPromiseStore, getRelativeTime } from '$lib/utils'
+    import { createPromiseStore } from '$lib/utils'
     import { Button, ButtonGroup } from '$lib/wildcard'
 
     import type { PageData } from './$types'
@@ -80,7 +80,7 @@
                                 ></td
                             >
                             <td
-                                >{getRelativeTime(new Date(commit.author.date), $currentDate)}:
+                                ><Timestamp date={new Date(commit.author.date)} strict />:
                                 <a href={commit.url}>{commit.subject}</a></td
                             >
                             <td>{contributor.count}&nbsp;commits</td>

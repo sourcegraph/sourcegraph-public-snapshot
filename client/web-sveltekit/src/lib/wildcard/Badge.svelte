@@ -1,5 +1,5 @@
 <script lang="ts" context="module">
-    import classNames from "classnames"
+    import classNames from 'classnames'
     import styles from './Badge.module.scss'
 
     export const BADGE_VARIANTS = [
@@ -13,10 +13,10 @@
         'outlineSecondary',
     ] as const
 
-    export type BadgeVariantType = typeof BADGE_VARIANTS[number]
+    export type BadgeVariantType = (typeof BADGE_VARIANTS)[number]
 
     export function badgeClassName(variant: BadgeVariantType, small?: boolean, pill?: boolean): string {
-        return classNames(styles.badge, styles[variant], {[styles.small]: small, [styles.pill]: pill})
+        return classNames(styles.badge, styles[variant], { [styles.small]: small, [styles.pill]: pill })
     }
 </script>
 
@@ -28,11 +28,11 @@
     /**
      * Allows modifying the size of the badge. Supports a smaller variant.
      */
-    export let small: boolean|undefined = undefined
+    export let small: boolean | undefined = undefined
     /**
      * Render the badge as a rounded pill
      */
-    export let pill: boolean|undefined = undefined
+    export let pill: boolean | undefined = undefined
 
     $: cls = badgeClassName(variant, small, pill)
 </script>

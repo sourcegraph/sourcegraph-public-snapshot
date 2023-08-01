@@ -8,6 +8,7 @@ const config = defineConfig(({ mode }) => ({
             ? {}
             : {
                   'process.platform': '"browser"',
+                  'process.env.VITEST': 'undefined',
                   'process.env': '{}',
               },
     css: {
