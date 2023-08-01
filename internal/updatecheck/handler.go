@@ -19,7 +19,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -291,7 +290,7 @@ func readPingRequestFromQuery(q url.Values) (*pingRequest, error) {
 }
 
 func readPingRequestFromBody(body io.ReadCloser) (*pingRequest, error) {
-	defer body.Close()
+	defer func() { _ = body.Close() }()
 	contents, err := io.ReadAll(body)
 	if err != nil {
 		return nil, err
@@ -406,7 +405,7 @@ func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool
 	}
 
 	// Sync the initial administrator email in HubSpot.
-	if pr.InitialAdminEmail != "" && strings.Contains(pr.InitialAdminEmail, "@") {
+	if strings.Contains(pr.InitialAdminEmail, "@") {
 		// Hubspot requires the timestamp to be rounded to the nearest day at midnight.
 		now := time.Now().UTC()
 		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
@@ -474,7 +473,7 @@ func marshalPing(pr *pingRequest, hasUpdate bool, clientAddr string, now time.Ti
 		EverFindRefs:                  strconv.FormatBool(pr.EverFindRefs),
 		ActiveToday:                   strconv.FormatBool(pr.ActiveToday),
 		Timestamp:                     now.UTC().Format(time.RFC3339),
-		HasCodyEnabled:                strconv.FormatBool(conf.CodyEnabled()),
+		HasCodyEnabled:                strconv.FormatBool(pr.HasCodyEnabled),
 		CodyUsage:                     codyUsage,
 		RepoMetadataUsage:             pr.RepoMetadataUsage,
 	})
