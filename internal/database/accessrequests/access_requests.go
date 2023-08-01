@@ -93,12 +93,12 @@ type store struct {
 
 var mockStore Store
 
-// With instantiates and returns a new accessRequestStore using the other store handle.
+// With instantiates and returns a new store using the other store handle.
 func With(other basestore.ShareableStore, logger log.Logger) Store {
 	if mockStore != nil {
 		return mockStore
 	}
-	return &store{Store: basestore.NewWithHandle(other.Handle()), logger: logger}
+	return &store{Store: basestore.NewWithHandle(other.Handle()), logger: logger.Scoped("Store", "")}
 }
 
 const (

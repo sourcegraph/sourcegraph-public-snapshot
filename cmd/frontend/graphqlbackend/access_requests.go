@@ -31,6 +31,7 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 	connectionStore := &accessRequestConnectionStore{
 		db:   r.db,
 		args: &args.FilterArgs,
+		logger: r.logger.Scoped("accessRequestConnectionStore", ""),
 	}
 
 	reverse := false
