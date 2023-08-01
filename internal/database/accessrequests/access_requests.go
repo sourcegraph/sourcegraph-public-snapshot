@@ -91,14 +91,11 @@ type store struct {
 	logger log.Logger
 }
 
-var mockStore Store
-
-// With instantiates and returns a new store using the other store handle.
-func With(other basestore.ShareableStore, logger log.Logger) Store {
-	if mockStore != nil {
-		return mockStore
+func NewStore(db database.DB) Store {
+	if mock := database.GetMock[Store](db); mock != nil {
+		return mock
 	}
-	return &store{Store: basestore.NewWithHandle(other.Handle()), logger: logger.Scoped("Store", "")}
+	return &store{Store: basestore.NewWithHandle(db.Handle()), logger: db.Logger()}
 }
 
 const (

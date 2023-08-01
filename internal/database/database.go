@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"reflect"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -82,6 +83,8 @@ type DB interface {
 	OwnSignalConfigurations() SignalConfigurationStore
 
 	WithTransact(context.Context, func(tx DB) error) error
+
+	Logger() log.Logger
 }
 
 var _ DB = (*db)(nil)
@@ -99,6 +102,39 @@ func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
 type db struct {
 	*basestore.Store
 	logger log.Logger
+}
+
+type mockedDB struct {
+	DB
+	mockedStore reflect.Value
+}
+
+func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx DB) error) error {
+	return mdb.DB.WithTransact(ctx, func(tx DB) error {
+		return f(&mockedDB{DB: tx, mockedStore: mdb.mockedStore})
+	})
+}
+
+func GetMock[T basestore.ShareableStore](db DB) (t T) {
+	switch v := db.(type) {
+	case *mockedDB:
+		if v.mockedStore.Type().Implements(reflect.TypeOf((*T)(nil)).Elem()) {
+			return v.mockedStore.Interface().(T)
+		}
+		return GetMock[T](v.DB)
+	}
+	return t
+}
+
+func Mock[T basestore.ShareableStore](db DB, val T) *mockedDB {
+	return &mockedDB{
+		DB:          db,
+		mockedStore: reflect.ValueOf(val),
+	}
+}
+
+func (d *db) Logger() log.Logger {
+	return d.logger
 }
 
 func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {

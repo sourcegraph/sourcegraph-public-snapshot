@@ -14,6 +14,7 @@ import (
 
 	uuid "github.com/google/uuid"
 	sqlf "github.com/keegancsmith/sqlf"
+	log "github.com/sourcegraph/log"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	conf "github.com/sourcegraph/sourcegraph/internal/conf"
@@ -12585,6 +12586,9 @@ type MockDB struct {
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *DBHandleFunc
+	// LoggerFunc is an instance of a mock function object controlling the
+	// behavior of the method Logger.
+	LoggerFunc *DBLoggerFunc
 	// NamespacePermissionsFunc is an instance of a mock function object
 	// controlling the behavior of the method NamespacePermissions.
 	NamespacePermissionsFunc *DBNamespacePermissionsFunc
@@ -12820,6 +12824,11 @@ func NewMockDB() *MockDB {
 		},
 		HandleFunc: &DBHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		LoggerFunc: &DBLoggerFunc{
+			defaultHook: func() (r0 log.Logger) {
 				return
 			},
 		},
@@ -13145,6 +13154,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Handle")
 			},
 		},
+		LoggerFunc: &DBLoggerFunc{
+			defaultHook: func() log.Logger {
+				panic("unexpected invocation of MockDB.Logger")
+			},
+		},
 		NamespacePermissionsFunc: &DBNamespacePermissionsFunc{
 			defaultHook: func() NamespacePermissionStore {
 				panic("unexpected invocation of MockDB.NamespacePermissions")
@@ -13424,6 +13438,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		HandleFunc: &DBHandleFunc{
 			defaultHook: i.Handle,
+		},
+		LoggerFunc: &DBLoggerFunc{
+			defaultHook: i.Logger,
 		},
 		NamespacePermissionsFunc: &DBNamespacePermissionsFunc{
 			defaultHook: i.NamespacePermissions,
@@ -15641,6 +15658,104 @@ func (c DBHandleFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBLoggerFunc describes the behavior when the Logger method of the parent
+// MockDB instance is invoked.
+type DBLoggerFunc struct {
+	defaultHook func() log.Logger
+	hooks       []func() log.Logger
+	history     []DBLoggerFuncCall
+	mutex       sync.Mutex
+}
+
+// Logger delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Logger() log.Logger {
+	r0 := m.LoggerFunc.nextHook()()
+	m.LoggerFunc.appendCall(DBLoggerFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Logger method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBLoggerFunc) SetDefaultHook(hook func() log.Logger) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Logger method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBLoggerFunc) PushHook(hook func() log.Logger) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBLoggerFunc) SetDefaultReturn(r0 log.Logger) {
+	f.SetDefaultHook(func() log.Logger {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBLoggerFunc) PushReturn(r0 log.Logger) {
+	f.PushHook(func() log.Logger {
+		return r0
+	})
+}
+
+func (f *DBLoggerFunc) nextHook() func() log.Logger {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBLoggerFunc) appendCall(r0 DBLoggerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBLoggerFuncCall objects describing the
+// invocations of this function.
+func (f *DBLoggerFunc) History() []DBLoggerFuncCall {
+	f.mutex.Lock()
+	history := make([]DBLoggerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBLoggerFuncCall is an object that describes an invocation of method
+// Logger on an instance of MockDB.
+type DBLoggerFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 log.Logger
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBLoggerFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBLoggerFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

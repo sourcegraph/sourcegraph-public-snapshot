@@ -3,7 +3,6 @@ package accessrequests
 import (
 	"context"
 	"strconv"
-	"sync"
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
@@ -14,19 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// Prevent race conditions when tests run in parallel
-var mockMu sync.Mutex
-
-func MockWith(t *testing.T, store Store) {
-	mockMu.Lock()
-	currentStore := mockStore
-	mockStore = store
-	t.Cleanup(func() {
-		mockStore = currentStore
-		mockMu.Unlock()
-	})
-}
-
 func TestAccessRequests_Create(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
@@ -35,7 +21,7 @@ func TestAccessRequests_Create(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	store := With(db, logger)
+	store := NewStore(db)
 
 	t.Run("valid input", func(t *testing.T) {
 		accessRequest, err := store.Create(ctx, &types.AccessRequest{
@@ -97,7 +83,7 @@ func TestAccessRequests_Update(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestsStore := With(db, logger)
+	accessRequestsStore := NewStore(db)
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
@@ -134,7 +120,7 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := With(db, logger)
+	store := NewStore(db)
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
@@ -161,7 +147,7 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := With(db, logger)
+	store := NewStore(db)
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistingAccessRequestEmail := "non-existing@example"
@@ -188,7 +174,7 @@ func TestAccessRequests_Count(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := With(db, logger)
+	accessRequestStore := NewStore(db)
 
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
@@ -236,7 +222,7 @@ func TestAccessRequests_List(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := With(db, logger)
+	accessRequestStore := NewStore(db)
 
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
