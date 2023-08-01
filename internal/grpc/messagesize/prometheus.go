@@ -84,7 +84,7 @@ func UnaryServerInterceptor(ctx context.Context, req any, info *grpc.UnaryServer
 	return unaryServerInterceptor(observer, req, ctx, info, handler)
 }
 
-func unaryServerInterceptor(observer *messageSizeObserver, req any, ctx context.Context, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+func unaryServerInterceptor(observer *messageSizeObserver, req any, ctx context.Context, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 	defer observer.FinishRPC()
 
 	r, err := handler(ctx, req)
@@ -110,7 +110,7 @@ func StreamServerInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamSer
 	return streamServerInterceptor(observer, srv, ss, info, handler)
 }
 
-func streamServerInterceptor(observer *messageSizeObserver, srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+func streamServerInterceptor(observer *messageSizeObserver, srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	defer observer.FinishRPC()
 
 	wrappedStream := newObservingServerStream(ss, observer)
