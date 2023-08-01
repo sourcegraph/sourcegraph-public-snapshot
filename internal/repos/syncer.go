@@ -838,8 +838,6 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		if err := s.MaybePrepareForDeduplication(ctx, sourced); err != nil {
 			s.ObsvCtx.Logger.Error("deduplication skipped", log.Error(err), log.String("repo", string(sourced.Name)))
-		} else {
-			s.ObsvCtx.Logger.Warn("no error in maybePrepareForDeduplication", log.String("repo", string(sourced.Name)))
 		}
 
 		d.Added = append(d.Added, sourced)

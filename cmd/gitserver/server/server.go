@@ -850,7 +850,6 @@ func tempDir(reposDir, prefix string) (name string, err error) {
 
 func (s *Server) ignorePath(path string) bool {
 	// We ignore any path which starts with .tmp, .p4home or .pool in ReposDir
-	fmt.Println(filepath.Dir(path))
 	if filepath.Dir(path) != s.ReposDir {
 		return false
 	}
