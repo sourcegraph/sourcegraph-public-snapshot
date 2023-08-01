@@ -17,7 +17,9 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/redactor"
 
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -117,13 +119,13 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 		return http.StatusInternalServerError, resp
 	}
 
-	redactor := newURLRedactor(remoteURL)
+	r := redactor.NewURLRedactor(remoteURL)
 	defer func() {
 		if resp.Error != nil {
-			resp.Error.Command = redactor.redact(resp.Error.Command)
-			resp.Error.CombinedOutput = redactor.redact(resp.Error.CombinedOutput)
+			resp.Error.Command = r.Redact(resp.Error.Command)
+			resp.Error.CombinedOutput = r.Redact(resp.Error.CombinedOutput)
 			if resp.Error.InternalError != "" {
-				resp.Error.InternalError = redactor.redact(resp.Error.InternalError)
+				resp.Error.InternalError = r.Redact(resp.Error.InternalError)
 			}
 		}
 	}()
@@ -151,10 +153,10 @@ func (s *Server) createCommitFromPatch(ctx context.Context, req protocol.CreateC
 
 		// runRemoteGitCommand since one of our commands could be git push
 		out, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.Wrap(ctx, s.Logger, cmd), true, nil)
-		redactor := newURLRedactor(remoteURL)
+		r := redactor.NewURLRedactor(remoteURL)
 		logger := logger.With(
 			log.String("prefix", prefix),
-			log.String("command", redactor.redact(argsToString(cmd.Args))),
+			log.String("command", r.Redact(argsToString(cmd.Args))),
 			log.Duration("duration", time.Since(t)),
 			log.String("output", string(out)),
 		)
