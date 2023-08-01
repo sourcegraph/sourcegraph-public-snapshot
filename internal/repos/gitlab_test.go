@@ -111,10 +111,11 @@ func TestGitLabSource_GetRepo(t *testing.T) {
 							HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
 							SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
 						},
-						Visibility: "",
-						Archived:   false,
-						StarCount:  168,
-						ForksCount: 76,
+						Visibility:    "",
+						Archived:      false,
+						StarCount:     168,
+						ForksCount:    76,
+						DefaultBranch: "master",
 					},
 				}
 
@@ -210,7 +211,6 @@ func TestGitLabSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GitLabSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-
 			s, err := newGitLabSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
