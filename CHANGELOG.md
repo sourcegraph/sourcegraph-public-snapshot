@@ -30,6 +30,8 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
+- Fixed a bug where user account requests could not be approved even though the license would permit user creation otherwise. [#55482[(https://github.com/sourcegraph/sourcegraph/pull/55482)
+
 ### Removed
 
 - indexed-search has removed the deprecated environment variable ZOEKT_ENABLE_LAZY_DOC_SECTIONS [zoekt#620](https://github.com/sourcegraph/zoekt/pull/620)
