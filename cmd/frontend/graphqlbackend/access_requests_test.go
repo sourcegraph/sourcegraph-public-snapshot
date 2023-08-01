@@ -90,8 +90,6 @@ func TestAccessRequestsQuery(t *testing.T) {
 	accessRequestStore := accessrequests.NewMockStore()
 	accessrequests.WithMock(t, accessRequestStore)
 
-	t.Parallel()
-
 	t.Run("non-admin user", func(t *testing.T) {
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
@@ -188,8 +186,6 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 
 	userStore := database.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(userStore)
-
-	t.Parallel()
 
 	t.Run("non-admin user", func(t *testing.T) {
 		accessRequestStore := accessrequests.NewMockStore()
