@@ -138,7 +138,7 @@ func bazelPrechecks() func(*bk.Pipeline) {
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Ensure buildfiles are up to date",
+		pipeline.AddStep(":bazel: Perform bazel prechecks",
 			cmds...,
 		)
 	}
