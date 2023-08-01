@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -37,7 +37,7 @@ func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (li
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 
 		client, err := c.grpcClient.ClientForRepo(c.userAgent, "")
 		if err != nil {

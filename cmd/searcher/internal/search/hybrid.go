@@ -1,6 +1,7 @@
 package search
 
 import (
+	"bytes"
 	"context"
 	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
 	"time"
@@ -348,7 +349,7 @@ func zoektChunkMatches(chunkMatches []zoekt.ChunkMatch) []protocol.ChunkMatch {
 		}
 
 		cms = append(cms, protocol.ChunkMatch{
-			Content: string(cm.Content),
+			Content: string(bytes.ToValidUTF8(cm.Content, []byte("�"))),
 			ContentStart: protocol.Location{
 				Offset: int32(cm.ContentStart.ByteOffset),
 				Line:   int32(cm.ContentStart.LineNumber) - 1,
