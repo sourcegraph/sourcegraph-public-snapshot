@@ -2,7 +2,6 @@ package messagesize
 
 import (
 	"context"
-	"io"
 	"sync"
 	"sync/atomic"
 
@@ -12,7 +11,6 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var (
@@ -81,9 +79,17 @@ var sizeBuckets = []float64{
 // UnaryServerInterceptor is a grpc.UnaryServerInterceptor that records Prometheus metrics that observe the size of
 // the response message sent back by the server for a single RPC call.
 func UnaryServerInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+	observer := newServerMessageSizeObserver(info.FullMethod)
+
+	return unaryServerInterceptor(observer, req, ctx, info, handler)
+}
+
+func unaryServerInterceptor(observer *messageSizeObserver, req any, ctx context.Context, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
+	defer observer.FinishRPC()
+
 	r, err := handler(ctx, req)
 	if err != nil {
-		return nil, err
+		return r, err
 	}
 
 	response, ok := r.(proto.Message)
@@ -91,11 +97,7 @@ func UnaryServerInterceptor(ctx context.Context, req any, info *grpc.UnaryServer
 		return r, nil
 	}
 
-	o := newServerMessageSizeObserver(info.FullMethod)
-
-	o.Observe(response)
-	o.FinishRPC()
-
+	observer.Observe(response)
 	return response, nil
 }
 
@@ -104,23 +106,27 @@ func UnaryServerInterceptor(ctx context.Context, req any, info *grpc.UnaryServer
 // of a single RPC call.
 func StreamServerInterceptor(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
 	observer := newServerMessageSizeObserver(info.FullMethod)
+
+	return streamServerInterceptor(observer, srv, ss, info, handler)
+}
+
+func streamServerInterceptor(observer *messageSizeObserver, srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+	defer observer.FinishRPC()
+
 	wrappedStream := newObservingServerStream(ss, observer)
 
-	err := handler(srv, wrappedStream)
-	if err != nil {
-		// Don't record the total size of the messages if there was an error sending them, since they may not have been sent.
-		return err
-	}
-
-	// Record the total size of the messages sent during the course of the RPC call.
-	observer.FinishRPC()
-	return nil
+	return handler(srv, wrappedStream)
 }
 
 // UnaryClientInterceptor is a grpc.UnaryClientInterceptor that records Prometheus metrics that observe the size of
 // the request message sent by client for a single RPC call.
 func UnaryClientInterceptor(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
 	o := newClientMessageSizeObserver(method)
+	return unaryClientInterceptor(o, ctx, method, req, reply, cc, invoker, opts...)
+}
+
+func unaryClientInterceptor(observer *messageSizeObserver, ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	defer observer.FinishRPC()
 
 	err := invoker(ctx, method, req, reply, cc, opts...)
 	if err != nil {
@@ -134,9 +140,7 @@ func UnaryClientInterceptor(ctx context.Context, method string, req, reply any, 
 		return nil
 	}
 
-	o.Observe(request)
-	o.FinishRPC()
-
+	observer.Observe(request)
 	return nil
 }
 
@@ -146,6 +150,10 @@ func UnaryClientInterceptor(ctx context.Context, method string, req, reply any, 
 func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	observer := newClientMessageSizeObserver(method)
 
+	return streamClientInterceptor(observer, ctx, desc, cc, method, streamer, opts...)
+}
+
+func streamClientInterceptor(observer *messageSizeObserver, ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
 	s, err := streamer(ctx, desc, cc, method, opts...)
 	if err != nil {
 		return nil, err
@@ -172,6 +180,10 @@ func (s *observingServerStream) SendMsg(m any) error {
 	err := s.ServerStream.SendMsg(m)
 	if err != nil {
 		// Don't record the size of the message if there was an error sending it, since it may not have been sent.
+		//
+		// However, the stream aborts on an error,
+		// so we need to record the total size of the messages sent during the course of the RPC call.
+		s.observer.FinishRPC()
 		return err
 	}
 
@@ -202,6 +214,10 @@ func (s *observingClientStream) SendMsg(m any) error {
 	err := s.ClientStream.SendMsg(m)
 	if err != nil {
 		// Don't record the size of the message if there was an error sending it, since it may not have been sent.
+		//
+		// However, the stream aborts on an error,
+		// so we need to record the total size of the messages sent during the course of the RPC call.
+		s.observer.FinishRPC()
 		return err
 	}
 
@@ -215,16 +231,20 @@ func (s *observingClientStream) SendMsg(m any) error {
 	return nil
 }
 
+func (s *observingClientStream) CloseSend() error {
+	err := s.ClientStream.CloseSend()
+
+	s.observer.FinishRPC()
+	return err
+}
+
 func (s *observingClientStream) RecvMsg(m any) error {
 	err := s.ClientStream.RecvMsg(m)
-	if errors.Is(err, io.EOF) { // EOF indicates a successful end of stream.
-
-		// Record the total size of the messages sent during the course of the RPC call.
+	if err != nil {
+		// Record the total size of the messages sent during the course of the RPC call, even if there was an error.
 		s.observer.FinishRPC()
 	}
 
-	// Note: we don't call FinishRPC() if there was a real error, since the total size of the messages sent during the
-	// course of the RPC call may not be accurate.
 	return err
 }
 
