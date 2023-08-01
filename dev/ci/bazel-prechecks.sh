@@ -16,8 +16,10 @@ EXIT_CODE=$?
 
 # if we get a non-zero exit code, bazel configure updated files
 if [[ $EXIT_CODE -ne 0 ]]; then
-  mkdir -p ./anntations
-  cat <<-'END' > ./annotations/bazel-configure.md
+  mkdir -p ./annotations
+  cat <<-'END' > ./annotations/bazel-prechecks.md
+  ### Missing BUILD.bazel files
+
   BUILD.bazel files need to be updated to match the repository state. You should run the following command and commit the result
 
   ```
@@ -33,19 +35,21 @@ echo "--- :bazel::go: Running gofmt"
 unformatted=$(bazel run @go_sdk//:bin/gofmt -- -l .)
 
 if [[ ${unformatted} != "" ]]; then
-  mkdir -p ./anntations
-  cat <<'END' > ./annotations/bazel-gofmt.md
-  The following files were found to not be formatted according to `gofmt`:
+  mkdir -p ./annotations
+  tee -a ./annotations/bazel-prechecks.md <<-END
+  ### Unformatted Go files
+
+  The following files were found to not be formatted according to \`gofmt\`:
 
   \`\`\`
-  "${unformatted}"
+  ${unformatted}
   \`\`\`
 
   To automatically format these files run:
 
-  # \`\`\`
-  # bazel run @go_sdk//:bin/gofmt -- -w .
-  # \`\`\`
+  \`\`\`
+  bazel run @go_sdk//:bin/gofmt -- -w .
+  \`\`\`
 END
   EXIT_CODE=1
 fi
