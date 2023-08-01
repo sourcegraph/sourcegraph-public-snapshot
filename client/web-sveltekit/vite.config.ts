@@ -8,6 +8,7 @@ const config = defineConfig(({ mode }) => ({
             ? {}
             : {
                   'process.platform': '"browser"',
+                  'process.env.VITEST': 'undefined',
                   'process.env': '{}',
               },
     css: {
@@ -31,6 +32,10 @@ const config = defineConfig(({ mode }) => ({
             // Without addings this Vite throws an error
             'linguist-languages',
         ],
+    },
+
+    test: {
+        setupFiles: './src/testing/setup.ts',
     },
 }))
 

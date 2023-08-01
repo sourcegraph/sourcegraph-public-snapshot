@@ -37,13 +37,6 @@ For each of the following repositories you have made changes to, cherry-pick (se
 - [ ] `sourcegraph/deploy-sourcegraph-docker` ([`$MAJOR.$MINOR` release branch](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/$MAJOR.$MINOR) [CI](https://buildkite.com/sourcegraph/deploy-sourcegraph-docker/builds?branch=$MAJOR.$MINOR))
 - [ ] `sourcegraph/deploy-sourcegraph-helm` ([`$MAJOR.$MINOR` release branch](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/release/$MAJOR.$MINOR) [CI](https://buildkite.com/sourcegraph/deploy-sourcegraph-helm/builds?branch=release/$MAJOR.$MINOR))
 
-```sh
-git checkout $MAJOR.$MINOR
-git pull
-git cherry-pick <commit0> <commit1> ... # all relevant commits from the default branch
-git push origin $MAJOR.$MINOR
-```
-
 - [ ] Ensure CI passes on all release branches listed above.
 
 Create and test the first release candidate:
@@ -81,7 +74,7 @@ Once there is a release candidate available:
   ```
 - [ ] Ensure that the pipeline for the `v$MAJOR.$MINOR.$PATCH` tag has passed: [Sourcegraph pipeline](https://buildkite.com/sourcegraph/sourcegraph/builds?branch=v$MAJOR.$MINOR.$PATCH)
 - [ ] Wait for the `v$MAJOR.$MINOR.$PATCH` release Docker images to be available in [Docker Hub](https://hub.docker.com/r/sourcegraph/server/tags)
-- [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes)):
+- [ ] Open PRs that publish the new release and address any action items required to finalize draft PRs (track PR status via the [generated release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes/release-sourcegraph-$MAJOR.$MINOR.$PATCH)):
   ```sh
   pnpm run release release:stage
   ```
@@ -90,7 +83,7 @@ Once there is a release candidate available:
 
 <!-- Keep in sync with release_issue_template's "Finalize release" section, except no blog post -->
 
-- [ ] From the [release batch change](https:/sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes), merge the release-publishing PRs created previously. Note: some PRs require certain actions performed before merging.
+- [ ] From the [release batch change](https://sourcegraph.sourcegraph.com/organizations/sourcegraph/batch-changes/release-sourcegraph-$MAJOR.$MINOR.$PATCHs), merge the release-publishing PRs created previously. Note: some PRs require certain actions performed before merging.
 - [ ] **After all the PRs are merged**, perform following checks/actions
   - For [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph)
     - [ ] Ensure the [release tag](https://github.com/sourcegraph/deploy-sourcegraph/tags) has been created

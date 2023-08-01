@@ -274,6 +274,9 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.Referrer,
 			ensureUuid(event.DeviceID),
 			ensureUuid(event.InsertID),
+			event.Client,
+			event.BillingProductCategory,
+			event.BillingEventID,
 		}
 	}
 	close(rowValues)
@@ -300,6 +303,9 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			"referrer",
 			"device_id",
 			"insert_id",
+			"client",
+			"billing_product_category",
+			"billing_event_id",
 		},
 		rowValues,
 	)
@@ -1789,13 +1795,13 @@ END
 // (and many parts of the world) which start the week on Monday.
 func makeDateTruncExpression(unit, expr string) string {
 	if unit == "week" {
-		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval))`, expr)
+		return fmt.Sprintf(`(DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval)`, expr)
 	}
 	if unit == "rolling_month" {
-		return fmt.Sprintf(`TIMEZONE('UTC', (DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval))`, expr)
+		return fmt.Sprintf(`(DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval)`, expr)
 	}
 
-	return fmt.Sprintf(`TIMEZONE('UTC', DATE_TRUNC('%s', TIMEZONE('UTC', %s)))`, unit, expr)
+	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
 }
 
 // RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.

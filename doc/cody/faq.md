@@ -25,11 +25,38 @@ In particular, this means the Sourcegraph instance needs to be able to access th
 
 #### Is there a public facing Cody API?
 
-Not at the moment. 
+Not at the moment.
 
 #### Does Cody require Sourcegraph to function?
 
 Yes. Sourcegraph is needed both to retrieve context and as a proxy for the LLM provider.
+
+#### What programming languages Cody supports?
+
+- JavaScript
+- TypeScript
+- PHP
+- Python
+- Java
+- C/C++
+- C#
+- Ruby
+- Go
+- Shell scripting languages (Bash, PowerShell, etc.)
+- SQL
+- Swift
+- Objective-C
+- Perl
+- Rust
+- Kotlin
+- Scala
+- Groovy
+- R
+- MATLAB
+- Dart
+- Lua
+- Julia
+- Cobol
 
 ### Embeddings
 
@@ -86,4 +113,3 @@ See our [terms](https://about.sourcegraph.com/terms/cody-notice).
 #### Can I use my own API keys?
 
 Yes!
-

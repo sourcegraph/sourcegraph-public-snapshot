@@ -45,7 +45,7 @@ func (c *azureOpenaiEmbeddingsClient) GetModelIdentifier() string {
 }
 
 // GetEmbeddings tries to embed the given texts using the external service specified in the config.
-func (c *azureOpenaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+func (c *azureOpenaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The Azure OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -62,18 +62,23 @@ func (c *azureOpenaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 	}
 
 	embeddings := make([]float32, 0, len(augmentedTexts)*c.dimensions)
+	failed := make([]int, 0)
 	for i, input := range augmentedTexts {
 		// This is a difference to the OpenAI implementation: Azure OpenAI currently
 		// only supports a single input at a time, so we will need to fire off a request
 		// for each of the texts individually.
 		resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, input, 3)
 		if err != nil {
-			return nil, client.PartialError{Err: err, Index: i}
+			failed = append(failed, i)
+
+			// reslice to provide zero value embedding for failed chunk
+			embeddings = embeddings[:len(embeddings)+c.dimensions]
+			continue
 		}
 		embeddings = append(embeddings, resp.Data[0].Embedding...)
 	}
 
-	return embeddings, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: c.dimensions}, nil
 }
 
 func (c *azureOpenaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {

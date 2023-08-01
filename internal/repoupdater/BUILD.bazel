@@ -11,8 +11,8 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/api",
+        "//internal/conf",
         "//internal/conf/deploy",
-        "//internal/grpc",
         "//internal/grpc/defaults",
         "//internal/httpcli",
         "//internal/repoupdater/protocol",
