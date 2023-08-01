@@ -8,17 +8,17 @@ exports[`getRelativeTime > random times 3`] = `"last year"`;
 
 exports[`getRelativeTime > random times 4`] = `"last year"`;
 
-exports[`getRelativeTime > random times 5`] = `"10 months ago"`;
+exports[`getRelativeTime > random times 5`] = `"last year"`;
 
-exports[`getRelativeTime > random times 6`] = `"10 months ago"`;
+exports[`getRelativeTime > random times 6`] = `"12 months ago"`;
 
-exports[`getRelativeTime > random times 7`] = `"6 months ago"`;
+exports[`getRelativeTime > random times 7`] = `"7 months ago"`;
 
-exports[`getRelativeTime > random times 8`] = `"5 months ago"`;
+exports[`getRelativeTime > random times 8`] = `"29 days ago"`;
 
-exports[`getRelativeTime > random times 9`] = `"5 months ago"`;
+exports[`getRelativeTime > random times 9`] = `"12 days ago"`;
 
-exports[`getRelativeTime > random times 10`] = `"last month"`;
+exports[`getRelativeTime > random times 10`] = `"2 hours ago"`;
 
 exports[`getRelativeTime > specific times > days 1`] = `"12 days ago"`;
 
