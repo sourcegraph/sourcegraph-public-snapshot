@@ -63,7 +63,7 @@ export const WebhookCreateUpdatePage: FC<WebhookCreateUpdatePageProps> = ({ exis
         variables: {
             first: null,
             after: null,
-            repoID: null,
+            repo: null,
         },
     })
     useMemo(() => {

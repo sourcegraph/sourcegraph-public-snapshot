@@ -214,8 +214,8 @@ export const FETCH_EXTERNAL_SERVICE = gql`
 `
 
 export const EXTERNAL_SERVICES = gql`
-    query ExternalServices($first: Int, $after: String, $repoID: ID) {
-        externalServices(first: $first, after: $after, repoID: $repoID) {
+    query ExternalServices($first: Int, $after: String, $repo: ID) {
+        externalServices(first: $first, after: $after, repo: $repo) {
             nodes {
                 ...ListExternalServiceFields
             }
@@ -246,7 +246,7 @@ export const useExternalServicesConnection = (
 ): UseShowMorePaginationResult<ExternalServicesResult, ListExternalServiceFields> =>
     useShowMorePagination<ExternalServicesResult, ExternalServicesVariables, ListExternalServiceFields>({
         query: EXTERNAL_SERVICES,
-        variables: { after: vars.after, first: vars.first ?? 10, repoID: vars.repoID },
+        variables: { after: vars.after, first: vars.first ?? 10, repo: vars.repo },
         getConnection: result => {
             const { externalServices } = dataOrThrowErrors(result)
             return externalServices
