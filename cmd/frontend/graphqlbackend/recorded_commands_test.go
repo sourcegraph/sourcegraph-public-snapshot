@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
@@ -25,7 +26,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 	startTime, err := time.Parse(timeFormat, "2023-07-20T15:04:05Z")
 	require.NoError(t, err)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 
 	repoName := "github.com/sourcegraph/sourcegraph"
 	backend.Mocks.Repos.GetByName = func(context.Context, api.RepoName) (*types.Repo, error) {
@@ -79,7 +80,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
 		t.Cleanup(func() { conf.Mock(nil) })
 
-		repos := database.NewMockRepoStore()
+		repos := databasemocks.NewMockRepoStore()
 		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
@@ -125,7 +126,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
 		t.Cleanup(func() { conf.Mock(nil) })
 
-		repos := database.NewMockRepoStore()
+		repos := databasemocks.NewMockRepoStore()
 		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 
@@ -212,7 +213,7 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
 		t.Cleanup(func() { conf.Mock(nil) })
 
-		repos := database.NewMockRepoStore()
+		repos := databasemocks.NewMockRepoStore()
 		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
 		db.ReposFunc.SetDefaultReturn(repos)
 

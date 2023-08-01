@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
@@ -115,13 +116,13 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := databasemocks.NewMockUserStore()
 			users.CheckAndDecrementInviteQuotaFunc.SetDefaultReturn(test.hasQuote, nil)
 
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := databasemocks.NewMockUserEmailsStore()
 			userEmails.ListByUserFunc.SetDefaultReturn(test.mockEmails, nil)
 
-			db := database.NewMockDB()
+			db := databasemocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
@@ -176,13 +177,13 @@ func TestSendUserEmailOnFieldUpdate(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := databasemocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
 
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
 	logger := logtest.Scoped(t)
@@ -224,13 +225,13 @@ func TestSendUserEmailOnTokenChange(t *testing.T) {
 	}
 	defer func() { txemail.MockSend = nil }()
 
-	userEmails := database.NewMockUserEmailsStore()
+	userEmails := databasemocks.NewMockUserEmailsStore()
 	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
 
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.UserEmailsFunc.SetDefaultReturn(userEmails)
 	db.UsersFunc.SetDefaultReturn(users)
 	logger := logtest.Scoped(t)

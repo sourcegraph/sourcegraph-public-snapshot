@@ -25,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -77,7 +78,7 @@ func TestCleanup_computeStats(t *testing.T) {
 		ReposDir:       root,
 		Logger:         logger,
 		ObservationCtx: observation.TestContextTB(t),
-		DB:             database.NewMockDB(),
+		DB:             databasemocks.NewMockDB(),
 	}
 	s.testSetup(t)
 
@@ -151,7 +152,7 @@ func TestCleanupInactive(t *testing.T) {
 		ReposDir:       root,
 		Logger:         logtest.Scoped(t),
 		ObservationCtx: observation.TestContextTB(t),
-		DB:             database.NewMockDB(),
+		DB:             databasemocks.NewMockDB(),
 	}
 	s.testSetup(t)
 	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
@@ -186,7 +187,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			ReposDir:       root,
 			Logger:         logger,
 			ObservationCtx: observation.TestContextTB(t),
-			DB:             database.NewMockDB(),
+			DB:             databasemocks.NewMockDB(),
 		}
 		s.testSetup(t)
 		s.Hostname = "does-not-exist"
@@ -219,7 +220,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			ReposDir:       root,
 			Logger:         logger,
 			ObservationCtx: observation.TestContextTB(t),
-			DB:             database.NewMockDB(),
+			DB:             databasemocks.NewMockDB(),
 		}
 		s.testSetup(t)
 		s.Hostname = "gitserver-0"
@@ -252,7 +253,7 @@ func TestCleanupWrongShard(t *testing.T) {
 			ReposDir:       root,
 			Logger:         logger,
 			ObservationCtx: observation.TestContextTB(t),
-			DB:             database.NewMockDB(),
+			DB:             databasemocks.NewMockDB(),
 		}
 		s.testSetup(t)
 		wrongShardReposDeleteLimit = -1
@@ -321,7 +322,7 @@ func TestGitGCAuto(t *testing.T) {
 		ReposDir:       root,
 		Logger:         logtest.Scoped(t),
 		ObservationCtx: observation.TestContextTB(t),
-		DB:             database.NewMockDB(),
+		DB:             databasemocks.NewMockDB(),
 	}
 	s.testSetup(t)
 	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
@@ -377,7 +378,7 @@ func TestCleanupExpired(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
 		},
-		DB: database.NewMockDB(),
+		DB: databasemocks.NewMockDB(),
 	}
 	s.testSetup(t)
 
@@ -500,7 +501,7 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 		return repoExists, repoNotExists
 	}
 
-	mockGitServerRepos := database.NewMockGitserverRepoStore()
+	mockGitServerRepos := databasemocks.NewMockGitserverRepoStore()
 	mockGitServerRepos.GetByNameFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) (*types.GitserverRepo, error) {
 		if strings.Contains(string(name), "repo-exists") {
 			return &types.GitserverRepo{}, nil
@@ -508,10 +509,10 @@ func TestCleanup_RemoveNonExistentRepos(t *testing.T) {
 			return nil, &database.ErrGitserverRepoNotFound{}
 		}
 	})
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := databasemocks.NewMockRepoStore()
 	mockRepos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 
-	mockDB := database.NewMockDB()
+	mockDB := databasemocks.NewMockDB()
 	mockDB.GitserverReposFunc.SetDefaultReturn(mockGitServerRepos)
 	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
 
@@ -701,7 +702,7 @@ func TestCleanupOldLocks(t *testing.T) {
 		}
 	}
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: databasemocks.NewMockDB()}
 	s.testSetup(t)
 	s.cleanupRepos(context.Background(), gitserver.GitserverAddresses{Addresses: []string{"gitserver-0"}})
 
@@ -725,7 +726,7 @@ func TestCleanupOldLocks(t *testing.T) {
 func TestSetupAndClearTmp(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: databasemocks.NewMockDB()}
 
 	// All non .git paths should become .git
 	mkFiles(t, root,
@@ -787,7 +788,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 func TestSetupAndClearTmp_Empty(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), ObservationCtx: observation.TestContextTB(t), DB: databasemocks.NewMockDB()}
 
 	_, err := s.SetupAndClearTmp()
 	if err != nil {
@@ -904,8 +905,8 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
 	)
-	db := database.NewMockDB()
-	gr := database.NewMockGitserverRepoStore()
+	db := databasemocks.NewMockDB()
+	gr := databasemocks.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gr)
 	logger := logtest.Scoped(t)
 	s := &Server{
@@ -990,7 +991,7 @@ func TestHowManyBytesToFree(t *testing.T) {
 		Logger:             logger,
 		ObservationCtx:     observation.TestContextTB(t),
 		DesiredPercentFree: 10,
-		DB:                 database.NewMockDB(),
+		DB:                 databasemocks.NewMockDB(),
 	}
 
 	tcs := []struct {
@@ -1132,13 +1133,13 @@ func isEmptyDir(path string) (bool, error) {
 func TestFreeUpSpace(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logger, ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logger, ObservationCtx: observation.TestContextTB(t), DB: databasemocks.NewMockDB()}
 		if err := s.freeUpSpace(logger, 0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logger, ObservationCtx: observation.TestContextTB(t), DB: database.NewMockDB()}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logger, ObservationCtx: observation.TestContextTB(t), DB: databasemocks.NewMockDB()}
 		if err := s.freeUpSpace(logger, 1); err == nil {
 			t.Fatal("want error")
 		}
@@ -1165,8 +1166,8 @@ func TestFreeUpSpace(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		db := database.NewMockDB()
-		gr := database.NewMockGitserverRepoStore()
+		db := databasemocks.NewMockDB()
+		gr := databasemocks.NewMockGitserverRepoStore()
 		db.GitserverReposFunc.SetDefaultReturn(gr)
 		// Run.
 		s := Server{
@@ -1529,7 +1530,7 @@ func TestPruneIfNeeded(t *testing.T) {
 		ReposDir:       "",
 		Logger:         logtest.NoOp(t),
 		ObservationCtx: observation.TestContextTB(t),
-		DB:             database.NewMockDB(),
+		DB:             databasemocks.NewMockDB(),
 	}
 	s.testSetup(t)
 

@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -61,7 +62,7 @@ func TestAllowSignup(t *testing.T) {
 			}
 			_, _, err := getOrCreateUser(
 				context.Background(),
-				database.NewStrictMockDB(),
+				databasemocks.NewStrictMockDB(),
 				p,
 				&oidc.IDToken{},
 				&oidc.UserInfo{

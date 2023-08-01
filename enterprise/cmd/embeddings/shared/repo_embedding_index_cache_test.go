@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -17,7 +18,7 @@ import (
 
 func TestGetCachedRepoEmbeddingIndex(t *testing.T) {
 	mockRepoEmbeddingJobsStore := repo.NewMockRepoEmbeddingJobsStore()
-	mockRepoStore := database.NewMockRepoStore()
+	mockRepoStore := databasemocks.NewMockRepoStore()
 
 	mockRepoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) { return &types.Repo{ID: 1}, nil })
 
@@ -141,7 +142,7 @@ func TestConcurrentGetCachedRepoEmbeddingIndex(t *testing.T) {
 	t.Parallel()
 
 	mockRepoEmbeddingJobsStore := repo.NewMockRepoEmbeddingJobsStore()
-	mockRepoStore := database.NewMockRepoStore()
+	mockRepoStore := databasemocks.NewMockRepoStore()
 
 	mockRepoStore.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name api.RepoName) (*types.Repo, error) { return &types.Repo{ID: 1}, nil })
 

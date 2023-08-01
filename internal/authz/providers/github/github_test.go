@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -48,7 +49,7 @@ func newMockClientWithTokenMock() *MockClient {
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	t.Run("nil account", func(t *testing.T) {
 		p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
@@ -1280,7 +1281,7 @@ func TestProvider_ValidateConnection(t *testing.T) {
 }
 
 func setupProvider(t *testing.T, mc *MockClient) *Provider {
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
 	p.client = mockClientFunc(mc)
 	p.groupsCache = memGroupsCache()

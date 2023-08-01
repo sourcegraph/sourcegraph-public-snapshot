@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
 )
 
@@ -83,7 +84,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	}
 	clock := func() time.Time { return now }
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	workerBaseStore := basestore.NewWithHandle(db.Handle())
 	ie := NewInsightEnqueuer(clock, workerBaseStore, logtest.Scoped(t))
 	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob

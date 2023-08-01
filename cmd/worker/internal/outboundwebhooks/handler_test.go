@@ -15,6 +15,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -52,10 +53,10 @@ func TestHandler_Handle(t *testing.T) {
 			Secret: encryption.NewUnencrypted(secret),
 		}
 
-		store := database.NewMockOutboundWebhookStore()
+		store := databasemocks.NewMockOutboundWebhookStore()
 		store.ListFunc.SetDefaultReturn([]*types.OutboundWebhook{happyWebhook, sadWebhook}, nil)
 
-		logStore := database.NewMockOutboundWebhookLogStore()
+		logStore := databasemocks.NewMockOutboundWebhookLogStore()
 		webhooksSeen := newSeen[int64]()
 		logStore.CreateFunc.SetDefaultHook(func(ctx context.Context, log *types.OutboundWebhookLog) error {
 			assert.Equal(t, job.ID, log.JobID)
@@ -116,12 +117,12 @@ func TestHandler_Handle(t *testing.T) {
 			Secret: encryption.NewUnencrypted(secret),
 		}
 
-		store := database.NewMockOutboundWebhookStore()
+		store := databasemocks.NewMockOutboundWebhookStore()
 		store.ListFunc.SetDefaultReturn([]*types.OutboundWebhook{webhook}, nil)
 
 		want := errors.New("connection error")
 
-		logStore := database.NewMockOutboundWebhookLogStore()
+		logStore := databasemocks.NewMockOutboundWebhookLogStore()
 		logStore.CreateFunc.SetDefaultHook(func(ctx context.Context, log *types.OutboundWebhookLog) error {
 			have, err := log.Error.Decrypt(ctx)
 			require.NoError(t, err)

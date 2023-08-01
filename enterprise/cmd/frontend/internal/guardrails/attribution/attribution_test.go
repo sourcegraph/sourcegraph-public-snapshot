@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/guardrails/dotcom"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
@@ -63,11 +64,11 @@ func genRepoNames(prefix string, count int) []string {
 // more of the search code path to give a bit more confidence we are correctly
 // calling Plan and Execute vs a dumb SearchClient mock.
 func mockSearchClient(t testing.TB, repoNames []string) client.SearchClient {
-	repos := database.NewMockRepoStore()
+	repos := databasemocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{}, nil)
 	repos.CountFunc.SetDefaultReturn(0, nil)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	var matches []zoekt.FileMatch

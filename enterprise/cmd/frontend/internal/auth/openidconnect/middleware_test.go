@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -138,15 +139,15 @@ func TestMiddleware(t *testing.T) {
 	defer func() { auth.MockGetAndSaveUser = nil }()
 	mockGetProviderValue.config.Issuer = oidcIDServer.URL
 
-	users := database.NewStrictMockUserStore()
+	users := databasemocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: time.Now()}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := databasemocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
-	securityLogs := database.NewStrictMockSecurityEventLogsStore()
+	securityLogs := databasemocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
 	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
 		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)
@@ -357,15 +358,15 @@ func TestMiddleware_NoOpenRedirect(t *testing.T) {
 		}
 	}
 
-	users := database.NewStrictMockUserStore()
+	users := databasemocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: time.Now()}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := databasemocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
-	securityLogs := database.NewStrictMockSecurityEventLogsStore()
+	securityLogs := databasemocks.NewStrictMockSecurityEventLogsStore()
 	db.SecurityEventLogsFunc.SetDefaultReturn(securityLogs)
 	securityLogs.LogEventFunc.SetDefaultHook(func(_ context.Context, event *database.SecurityEvent) {
 		assert.Equal(t, "/.auth/openidconnect/callback", event.URL)

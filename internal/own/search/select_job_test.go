@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -22,15 +23,15 @@ import (
 )
 
 func TestGetCodeOwnersFromMatches(t *testing.T) {
-	setupDB := func() *database.MockDB {
-		codeownersStore := database.NewMockCodeownersStore()
+	setupDB := func() *databasemocks.MockDB {
+		codeownersStore := databasemocks.NewMockCodeownersStore()
 		codeownersStore.GetCodeownersForRepoFunc.SetDefaultReturn(nil, nil)
-		repoStore := database.NewMockRepoStore()
+		repoStore := databasemocks.NewMockRepoStore()
 		repoStore.GetFunc.SetDefaultReturn(&types.Repo{ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}}, nil)
-		db := database.NewMockDB()
+		db := databasemocks.NewMockDB()
 		db.CodeownersFunc.SetDefaultReturn(codeownersStore)
-		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
-		db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
+		db.AssignedOwnersFunc.SetDefaultReturn(databasemocks.NewMockAssignedOwnersStore())
+		db.AssignedTeamsFunc.SetDefaultReturn(databasemocks.NewMockAssignedTeamsStore())
 		db.ReposFunc.SetDefaultReturn(repoStore)
 		return db
 	}
@@ -92,16 +93,16 @@ func TestGetCodeOwnersFromMatches(t *testing.T) {
 			// code.go is owner by another user and an unknown entity.
 			return []byte("README.md @testUserHandle @testTeamHandle\ncode.go user@email.com @unknown"), nil
 		})
-		mockUserStore := database.NewMockUserStore()
-		mockTeamStore := database.NewMockTeamStore()
-		mockEmailStore := database.NewMockUserEmailsStore()
+		mockUserStore := databasemocks.NewMockUserStore()
+		mockTeamStore := databasemocks.NewMockTeamStore()
+		mockEmailStore := databasemocks.NewMockUserEmailsStore()
 		db := setupDB()
 		db.UsersFunc.SetDefaultReturn(mockUserStore)
 		db.UserEmailsFunc.SetDefaultReturn(mockEmailStore)
 		db.TeamsFunc.SetDefaultReturn(mockTeamStore)
-		db.AssignedOwnersFunc.SetDefaultReturn(database.NewMockAssignedOwnersStore())
-		db.AssignedTeamsFunc.SetDefaultReturn(database.NewMockAssignedTeamsStore())
-		db.UserExternalAccountsFunc.SetDefaultReturn(database.NewMockUserExternalAccountsStore())
+		db.AssignedOwnersFunc.SetDefaultReturn(databasemocks.NewMockAssignedOwnersStore())
+		db.AssignedTeamsFunc.SetDefaultReturn(databasemocks.NewMockAssignedTeamsStore())
+		db.UserExternalAccountsFunc.SetDefaultReturn(databasemocks.NewMockUserExternalAccountsStore())
 
 		personOwnerByHandle := newTestUser("testUserHandle")
 		personOwnerByEmail := newTestUser("user@email.com")

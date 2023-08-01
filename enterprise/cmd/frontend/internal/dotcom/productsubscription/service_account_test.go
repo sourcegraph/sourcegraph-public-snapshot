@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -85,8 +86,8 @@ func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
 			tc := tc
 			t.Parallel()
 
-			db := database.NewMockDB()
-			mockUsers := database.NewMockUserStore()
+			db := databasemocks.NewMockDB()
+			mockUsers := databasemocks.NewMockUserStore()
 
 			user := &types.User{ID: actorID, SiteAdmin: tc.actorSiteAdmin}
 			mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)

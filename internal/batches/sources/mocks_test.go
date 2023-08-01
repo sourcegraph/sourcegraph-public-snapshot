@@ -21,6 +21,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/internal/batches/store"
 	types1 "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	auth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	azuredevops "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
 	bitbucketcloud "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"

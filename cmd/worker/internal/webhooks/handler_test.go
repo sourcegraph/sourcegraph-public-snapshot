@@ -8,13 +8,14 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestHandler(t *testing.T) {
 	t.Run("store error", func(t *testing.T) {
 		want := errors.New("error")
-		store := database.NewMockWebhookLogStore()
+		store := databasemocks.NewMockWebhookLogStore()
 		store.DeleteStaleFunc.SetDefaultReturn(want)
 
 		ph := &handler{
@@ -27,7 +28,7 @@ func TestHandler(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		store := database.NewMockWebhookLogStore()
+		store := databasemocks.NewMockWebhookLogStore()
 		ph := &handler{
 			store: store,
 		}

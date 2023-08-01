@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 )
 
 func Test_MonitorStartsAndStops(t *testing.T) {
@@ -25,7 +25,7 @@ func Test_MonitorStartsAndStops(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*1)
 	defer cancel()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	repos := database.NewMockRepoStore()
+	repos := databasemocks.NewMockRepoStore()
 	config := JobMonitorConfig{
 		InsightsDB:     insightsDB,
 		RepoStore:      repos,
@@ -40,7 +40,7 @@ func TestScheduler_InitialBackfill(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	repos := database.NewMockRepoStore()
+	repos := databasemocks.NewMockRepoStore()
 	insightsStore := store.NewInsightStore(insightsDB)
 	config := JobMonitorConfig{
 		InsightsDB:     insightsDB,

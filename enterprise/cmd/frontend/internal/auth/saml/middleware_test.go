@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -208,12 +209,12 @@ func TestMiddleware(t *testing.T) {
 	}
 	defer func() { auth.MockGetAndSaveUser = nil }()
 
-	users := database.NewStrictMockUserStore()
+	users := databasemocks.NewStrictMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{ID: id, CreatedAt: time.Now()}, nil
 	})
 
-	db := database.NewStrictMockDB()
+	db := databasemocks.NewStrictMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	// Set up the test handler.

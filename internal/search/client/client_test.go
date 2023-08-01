@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -154,21 +155,21 @@ func TestSanitizeSearchPatterns(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			conf.DefaultClient().Mock(tc.conf)
 
-			mockUserStore := database.NewMockUserStore()
+			mockUserStore := databasemocks.NewMockUserStore()
 			if tc.userDBError {
 				mockUserStore.GetByIDFunc.SetDefaultReturn(nil, errors.New("test error"))
 			} else {
 				mockUserStore.GetByIDFunc.SetDefaultReturn(tc.user, nil)
 			}
 
-			mockOrgStore := database.NewMockOrgStore()
+			mockOrgStore := databasemocks.NewMockOrgStore()
 			if tc.orgDBError {
 				mockOrgStore.GetByUserIDFunc.SetDefaultReturn(nil, errors.New("test error"))
 			} else {
 				mockOrgStore.GetByUserIDFunc.SetDefaultReturn(tc.userOrgs, nil)
 			}
 
-			mockDB := database.NewMockDB()
+			mockDB := databasemocks.NewMockDB()
 			mockDB.UsersFunc.SetDefaultReturn(mockUserStore)
 			mockDB.OrgsFunc.SetDefaultReturn(mockOrgStore)
 

@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -36,10 +37,10 @@ func TestReverseProxyRequestPaths(t *testing.T) {
 		return
 	}
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := databasemocks.NewMockFeatureFlagStore()
 	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
 
-	db := database.NewStrictMockDB()
+	db := databasemocks.NewStrictMockDB()
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
@@ -84,7 +85,7 @@ func TestIndexLinks(t *testing.T) {
 
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
 	displayName := displayNameFromEndpoint(ep)
-	rph.Populate(database.NewMockDB(), []Endpoint{ep})
+	rph.Populate(databasemocks.NewMockDB(), []Endpoint{ep})
 
 	ctx := actor.WithInternalActor(context.Background())
 
@@ -94,10 +95,10 @@ func TestIndexLinks(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
-	featureFlags := database.NewMockFeatureFlagStore()
+	featureFlags := databasemocks.NewMockFeatureFlagStore()
 	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
 
-	db := database.NewStrictMockDB()
+	db := databasemocks.NewStrictMockDB()
 	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
 	rtr := mux.NewRouter()
@@ -150,17 +151,17 @@ func TestDisplayNameFromEndpoint(t *testing.T) {
 func TestAdminOnly(t *testing.T) {
 	tests := []struct {
 		name             string
-		mockUsers        func(users *database.MockUserStore)
-		mockFeatureFlags func(featureFlags *database.MockFeatureFlagStore)
+		mockUsers        func(users *databasemocks.MockUserStore)
+		mockFeatureFlags func(featureFlags *databasemocks.MockFeatureFlagStore)
 		mockActor        *actor.Actor
 		wantStatus       int
 	}{
 		{
 			name: "not an admin",
-			mockUsers: func(users *database.MockUserStore) {
+			mockUsers: func(users *databasemocks.MockUserStore) {
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *database.MockFeatureFlagStore) {
+			mockFeatureFlags: func(featureFlags *databasemocks.MockFeatureFlagStore) {
 				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
 			},
 			mockActor:  &actor.Actor{},
@@ -168,10 +169,10 @@ func TestAdminOnly(t *testing.T) {
 		},
 		{
 			name: "no feature flag",
-			mockUsers: func(users *database.MockUserStore) {
+			mockUsers: func(users *databasemocks.MockUserStore) {
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *database.MockFeatureFlagStore) {
+			mockFeatureFlags: func(featureFlags *databasemocks.MockFeatureFlagStore) {
 				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
 			},
 			mockActor:  &actor.Actor{},
@@ -179,10 +180,10 @@ func TestAdminOnly(t *testing.T) {
 		},
 		{
 			name: "has feature flag but not enabled",
-			mockUsers: func(users *database.MockUserStore) {
+			mockUsers: func(users *databasemocks.MockUserStore) {
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *database.MockFeatureFlagStore) {
+			mockFeatureFlags: func(featureFlags *databasemocks.MockFeatureFlagStore) {
 				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: false}}, nil)
 			},
 			mockActor:  &actor.Actor{},
@@ -190,10 +191,10 @@ func TestAdminOnly(t *testing.T) {
 		},
 		{
 			name: "feature flag enabled but not Sourcegraph operator",
-			mockUsers: func(users *database.MockUserStore) {
+			mockUsers: func(users *databasemocks.MockUserStore) {
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *database.MockFeatureFlagStore) {
+			mockFeatureFlags: func(featureFlags *databasemocks.MockFeatureFlagStore) {
 				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: true}}, nil)
 			},
 			mockActor:  &actor.Actor{},
@@ -201,10 +202,10 @@ func TestAdminOnly(t *testing.T) {
 		},
 		{
 			name: "feature flag enabled and Sourcegraph operator",
-			mockUsers: func(users *database.MockUserStore) {
+			mockUsers: func(users *databasemocks.MockUserStore) {
 				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *database.MockFeatureFlagStore) {
+			mockFeatureFlags: func(featureFlags *databasemocks.MockFeatureFlagStore) {
 				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: true}}, nil)
 			},
 			mockActor:  &actor.Actor{SourcegraphOperator: true},
@@ -213,13 +214,13 @@ func TestAdminOnly(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			users := database.NewMockUserStore()
+			users := databasemocks.NewMockUserStore()
 			test.mockUsers(users)
 
-			featureFlags := database.NewMockFeatureFlagStore()
+			featureFlags := databasemocks.NewMockFeatureFlagStore()
 			test.mockFeatureFlags(featureFlags)
 
-			db := database.NewMockDB()
+			db := databasemocks.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 			db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 

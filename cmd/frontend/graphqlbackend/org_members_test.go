@@ -7,14 +7,15 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestAutocompleteMembersSearch(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-	orgMembers := database.NewMockOrgMemberStore()
+	orgMembers := databasemocks.NewMockOrgMemberStore()
 	autocompleteResults := []*types.OrgMemberAutocompleteSearchItem{
 		{
 			ID:    1,
@@ -31,7 +32,7 @@ func TestAutocompleteMembersSearch(t *testing.T) {
 	}
 	orgMembers.AutocompleteMembersSearchFunc.SetDefaultReturn(autocompleteResults, nil)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	//db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgMembersFunc.SetDefaultReturn(orgMembers)

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
@@ -101,7 +102,7 @@ func TestNewBeforeCreateExternalServiceHook(t *testing.T) {
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
-			externalServices := database.NewMockExternalServiceStore()
+			externalServices := databasemocks.NewMockExternalServiceStore()
 			externalServices.CountFunc.SetDefaultReturn(test.externalServiceCount, nil)
 			got := NewBeforeCreateExternalServiceHook()(context.Background(), externalServices, test.externalService)
 			assert.Equal(t, test.wantErr, got != nil)

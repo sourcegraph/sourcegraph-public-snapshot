@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"math/rand"
 	"sort"
 	"sync"

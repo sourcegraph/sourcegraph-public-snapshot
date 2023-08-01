@@ -14,6 +14,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -62,9 +63,9 @@ func TestNewLicenseCheckHandler(t *testing.T) {
 		return fmt.Sprintf(`{"siteID": "%s"}`, s)
 	}
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 
-	mockedEventLogs := database.NewStrictMockEventLogStore()
+	mockedEventLogs := databasemocks.NewStrictMockEventLogStore()
 	mockedEventLogs.InsertFunc.SetDefaultReturn(nil)
 	db.EventLogsFunc.SetDefaultReturn(mockedEventLogs)
 

@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
@@ -271,8 +272,8 @@ func daysAgo(now time.Time, n int) time.Time {
 	return now.Add(-time.Hour * 24 * time.Duration(n))
 }
 
-func defaultMockRepoStore() *database.MockRepoStore {
-	repoStore := database.NewMockRepoStore()
+func defaultMockRepoStore() *databasemocks.MockRepoStore {
+	repoStore := databasemocks.NewMockRepoStore()
 	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
 		return &internaltypes.Repo{
 			ID:   id,

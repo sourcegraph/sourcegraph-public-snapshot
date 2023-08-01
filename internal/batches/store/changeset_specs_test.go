@@ -402,7 +402,6 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 	t.Run("DeleteChangesetSpecs", func(t *testing.T) {
 		t.Run("ByBatchSpecID", func(t *testing.T) {
-
 			for i := 0; i < 3; i++ {
 				spec := &btypes.ChangesetSpec{
 					BatchSpecID: int64(i + 1),
@@ -642,7 +641,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 		user := bt.CreateTestUser(t, s.DatabaseDB(), true)
 		ctx = actor.WithInternalActor(ctx)
 		batchSpec := bt.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID, 0)
-		var mappings = make(btypes.RewirerMappings, 3)
+		mappings := make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
 			spec := bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{

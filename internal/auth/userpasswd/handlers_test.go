@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -70,9 +71,9 @@ func TestCheckEmailAbuse(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := databasemocks.NewMockUserEmailsStore()
 			userEmails.GetLatestVerificationSentEmailFunc.SetDefaultReturn(test.mockEmail, test.mockErr)
-			db := database.NewMockDB()
+			db := databasemocks.NewMockDB()
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 			abused, reason, err := checkEmailAbuse(context.Background(), db, "fake@localhost")
@@ -126,17 +127,17 @@ func TestHandleSignIn_Lockout(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	gss := database.NewMockGlobalStateStore()
+	gss := databasemocks.NewMockGlobalStateStore()
 	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)
 	db.UsersFunc.SetDefaultReturn(users)
-	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
-	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
-	db.UserEmailsFunc.SetDefaultReturn(database.NewMockUserEmailsStore())
+	db.EventLogsFunc.SetDefaultReturn(databasemocks.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefaultReturn(databasemocks.NewMockSecurityEventLogsStore())
+	db.UserEmailsFunc.SetDefaultReturn(databasemocks.NewMockUserEmailsStore())
 
 	lockout := NewMockLockoutStore()
 	logger := logtest.NoOp(t)
@@ -186,9 +187,9 @@ func TestHandleAccount_Unlock(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	db := database.NewMockDB()
-	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
-	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+	db := databasemocks.NewMockDB()
+	db.EventLogsFunc.SetDefaultReturn(databasemocks.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefaultReturn(databasemocks.NewMockSecurityEventLogsStore())
 
 	lockout := NewMockLockoutStore()
 	logger := logtest.NoOp(t)
@@ -249,10 +250,10 @@ func TestHandleAccount_UnlockByAdmin(t *testing.T) {
 	})
 	defer conf.Mock(nil)
 
-	db := database.NewMockDB()
-	db.EventLogsFunc.SetDefaultReturn(database.NewMockEventLogStore())
-	db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
-	users := database.NewMockUserStore()
+	db := databasemocks.NewMockDB()
+	db.EventLogsFunc.SetDefaultReturn(databasemocks.NewMockEventLogStore())
+	db.SecurityEventLogsFunc.SetDefaultReturn(databasemocks.NewMockSecurityEventLogsStore())
+	users := databasemocks.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	lockout := NewMockLockoutStore()
@@ -346,7 +347,7 @@ func TestHandleSignUp(t *testing.T) {
 		})
 		defer conf.Mock(nil)
 
-		db := database.NewMockDB()
+		db := databasemocks.NewMockDB()
 		logger := logtest.NoOp(t)
 		if testing.Verbose() {
 			logger = logtest.Scoped(t)
@@ -379,7 +380,7 @@ func TestHandleSignUp(t *testing.T) {
 		})
 		defer conf.Mock(nil)
 
-		db := database.NewMockDB()
+		db := databasemocks.NewMockDB()
 		logger := logtest.NoOp(t)
 		if testing.Verbose() {
 			logger = logtest.Scoped(t)
@@ -418,7 +419,7 @@ func TestHandleSignUp(t *testing.T) {
 		cleanup := session.ResetMockSessionStore(t)
 		defer cleanup()
 
-		users := database.NewMockUserStore()
+		users := databasemocks.NewMockUserStore()
 		users.CreateFunc.SetDefaultHook(func(ctx context.Context, nu database.NewUser) (*types.User, error) {
 			if nu.EmailIsVerified == true {
 				t.Fatal("expected newUser.EmailIsVerified to be false but got true")
@@ -429,13 +430,13 @@ func TestHandleSignUp(t *testing.T) {
 			return &types.User{ID: 1, SiteAdmin: false, CreatedAt: time.Now()}, nil
 		})
 
-		authz := database.NewMockAuthzStore()
+		authz := databasemocks.NewMockAuthzStore()
 		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-		eventLogs := database.NewMockEventLogStore()
+		eventLogs := databasemocks.NewMockEventLogStore()
 		eventLogs.BulkInsertFunc.SetDefaultReturn(nil)
 
-		db := database.NewMockDB()
+		db := databasemocks.NewMockDB()
 		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 			return f(db)
 		})
@@ -472,7 +473,7 @@ func TestHandleSignUp(t *testing.T) {
 
 func TestHandleSiteInit(t *testing.T) {
 	t.Run("unsupported request method", func(t *testing.T) {
-		db := database.NewMockDB()
+		db := databasemocks.NewMockDB()
 		logger := logtest.NoOp(t)
 		if testing.Verbose() {
 			logger = logtest.Scoped(t)
@@ -494,7 +495,7 @@ func TestHandleSiteInit(t *testing.T) {
 		cleanup := session.ResetMockSessionStore(t)
 		defer cleanup()
 
-		users := database.NewMockUserStore()
+		users := databasemocks.NewMockUserStore()
 		users.CreateFunc.SetDefaultHook(func(ctx context.Context, nu database.NewUser) (*types.User, error) {
 			if nu.EmailIsVerified == false {
 				t.Fatal("expected newUser.EmailIsVerified to be true but got false")
@@ -505,13 +506,13 @@ func TestHandleSiteInit(t *testing.T) {
 			return &types.User{ID: 1, SiteAdmin: true, CreatedAt: time.Now()}, nil
 		})
 
-		authz := database.NewMockAuthzStore()
+		authz := databasemocks.NewMockAuthzStore()
 		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-		eventLogs := database.NewMockEventLogStore()
+		eventLogs := databasemocks.NewMockEventLogStore()
 		eventLogs.BulkInsertFunc.SetDefaultReturn(nil)
 
-		db := database.NewMockDB()
+		db := databasemocks.NewMockDB()
 		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 			return f(db)
 		})

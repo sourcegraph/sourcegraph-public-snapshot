@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 )
 
@@ -62,8 +63,8 @@ func TestHandleSetPasswordEmail(t *testing.T) {
 
 	for _, tst := range tests {
 		t.Run(tst.name, func(t *testing.T) {
-			db := database.NewMockDB()
-			userEmails := database.NewMockUserEmailsStore()
+			db := databasemocks.NewMockDB()
+			userEmails := databasemocks.NewMockUserEmailsStore()
 			db.UserEmailsFunc.SetDefaultReturn(userEmails)
 
 			var gotEmail txemail.Message

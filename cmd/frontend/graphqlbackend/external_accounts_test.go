@@ -20,6 +20,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
@@ -72,13 +73,13 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 }
 
 func TestExternalAccounts_AddExternalAccount(t *testing.T) {
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	db.UsersFunc.SetDefaultReturn(users)
-	extservices := database.NewMockExternalServiceStore()
+	extservices := databasemocks.NewMockExternalServiceStore()
 	db.ExternalServicesFunc.SetDefaultReturn(extservices)
-	userextaccts := database.NewMockUserExternalAccountsStore()
+	userextaccts := databasemocks.NewMockUserExternalAccountsStore()
 	db.UserExternalAccountsFunc.SetDefaultReturn(userextaccts)
 
 	gerritURL := "https://gerrit.mycorp.com/"

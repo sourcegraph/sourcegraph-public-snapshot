@@ -16,6 +16,7 @@ import (
 
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -82,7 +83,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 		return nil, nil
 	})
 
-	mockRepos := database.NewMockRepoStore()
+	mockRepos := databasemocks.NewMockRepoStore()
 	mockRepos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) ([]*types.SearchedRepo, error) {
 		out := make([]*types.SearchedRepo, 0, len(ids))
 		for _, id := range ids {
@@ -91,7 +92,7 @@ func TestServeStream_chunkMatches(t *testing.T) {
 		return out, nil
 	})
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 
 	ts := httptest.NewServer(&streamHandler{
@@ -199,7 +200,7 @@ func TestDisplayLimit(t *testing.T) {
 				return nil, nil
 			})
 
-			repos := database.NewStrictMockRepoStore()
+			repos := databasemocks.NewStrictMockRepoStore()
 			repos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
 				res := make([]*types.SearchedRepo, 0, len(ids))
 				for _, id := range ids {
@@ -209,7 +210,7 @@ func TestDisplayLimit(t *testing.T) {
 				}
 				return res, nil
 			})
-			db := database.NewStrictMockDB()
+			db := databasemocks.NewStrictMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			ts := httptest.NewServer(&streamHandler{

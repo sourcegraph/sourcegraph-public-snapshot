@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -19,10 +20,10 @@ func TestToPerforceChangelistResolver(t *testing.T) {
 		ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
 	}
 
-	repos := database.NewMockRepoStore()
+	repos := databasemocks.NewMockRepoStore()
 	repos.GetFunc.SetDefaultReturn(repo, nil)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	repoResolver := NewRepositoryResolver(db, nil, repo)

@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -15,7 +16,7 @@ import (
 func TestReposourceCloneURLToRepoName(t *testing.T) {
 	ctx := context.Background()
 
-	externalServices := database.NewMockExternalServiceStore()
+	externalServices := databasemocks.NewMockExternalServiceStore()
 	externalServices.ListFunc.SetDefaultReturn(
 		[]*types.ExternalService{{
 			ID:          1,
@@ -26,9 +27,9 @@ func TestReposourceCloneURLToRepoName(t *testing.T) {
 		nil,
 	)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(database.NewMockRepoStore())
+	db.ReposFunc.SetDefaultReturn(databasemocks.NewMockRepoStore())
 
 	tests := []struct {
 		name         string

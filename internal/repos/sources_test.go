@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -623,7 +624,7 @@ func TestSources_ListRepos(t *testing.T) {
 
 				logger := logtest.Scoped(t)
 				obs := ObservedSource(logger, NewSourceMetrics())
-				src, err := NewSourcer(logtest.Scoped(t), database.NewMockDB(), cf, obs)(tc.ctx, svc)
+				src, err := NewSourcer(logtest.Scoped(t), databasemocks.NewMockDB(), cf, obs)(tc.ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}

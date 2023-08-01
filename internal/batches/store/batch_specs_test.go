@@ -21,6 +21,7 @@ import (
 
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 

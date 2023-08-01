@@ -15,17 +15,18 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestClientSource_AddrMatchesTarget(t *testing.T) {
-	db := database.NewMockDB()
-	repos := database.NewMockRepoStore()
+	db := databasemocks.NewMockDB()
+	repos := databasemocks.NewMockRepoStore()
 	repos.GetByNameFunc.SetDefaultReturn(nil, nil)
 
-	gs := database.NewMockGitserverRepoStore()
+	gs := databasemocks.NewMockGitserverRepoStore()
 	gs.GetPoolRepoNameFunc.SetDefaultReturn(api.RepoName(""), false, nil)
 
 	db.ReposFunc.SetDefaultReturn(repos)
@@ -90,7 +91,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 		},
 	})
 
-	client := NewClient(database.NewMockDB())
+	client := NewClient(databasemocks.NewMockDB())
 	_, _ = client.ResolveRevision(context.Background(), "a", "HEAD", ResolveRevisionOptions{})
 
 	if !(m1.called && !m2.called) {
@@ -106,7 +107,7 @@ func TestClient_GRPCRouting(t *testing.T) {
 }
 
 func TestClient_AddrForRepo_UsesConfToRead_PinnedRepos(t *testing.T) {
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	client := NewClient(db)
 
 	cfg := newConfig(

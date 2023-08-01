@@ -19,6 +19,7 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
 )
 
@@ -26,13 +27,13 @@ func TestRepositoryMetadata(t *testing.T) {
 	ctx := context.Background()
 
 	logger := logtest.Scoped(t)
-	db := database.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := databasemocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
 	db.UsersFunc.SetDefaultReturn(users)
 
-	permissions := database.NewMockPermissionStore()
+	permissions := databasemocks.NewMockPermissionStore()
 	permissions.GetPermissionForUserFunc.SetDefaultReturn(&types.Permission{
 		ID:        1,
 		Namespace: rtypes.RepoMetadataNamespace,

@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -576,7 +577,7 @@ func newStore(t *testing.T, files map[string]struct {
 	}
 
 	return &search.Store{
-		GitserverClient: gitserver.NewClient(database.NewMockDB()),
+		GitserverClient: gitserver.NewClient(databasemocks.NewMockDB()),
 		FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 			r, w := io.Pipe()
 			go func() {

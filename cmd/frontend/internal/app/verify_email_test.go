@@ -10,29 +10,30 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestServeVerifyEmail(t *testing.T) {
 	t.Run("primary email is already set", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := databasemocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := databasemocks.NewMockUserEmailsStore()
 		userEmails.GetFunc.SetDefaultReturn("alice@example.com", false, nil)
 		userEmails.VerifyFunc.SetDefaultReturn(true, nil)
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@example.com", true, nil)
 		userEmails.SetPrimaryEmailFunc.SetDefaultReturn(nil)
 
-		authz := database.NewMockAuthzStore()
+		authz := databasemocks.NewMockAuthzStore()
 		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-		db := database.NewMockDB()
+		db := databasemocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 		db.AuthzFunc.SetDefaultReturn(authz)
-		db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+		db.SecurityEventLogsFunc.SetDefaultReturn(databasemocks.NewMockSecurityEventLogsStore())
 
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
@@ -48,23 +49,23 @@ func TestServeVerifyEmail(t *testing.T) {
 	})
 
 	t.Run("primary email is not set", func(t *testing.T) {
-		users := database.NewMockUserStore()
+		users := databasemocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := databasemocks.NewMockUserEmailsStore()
 		userEmails.GetFunc.SetDefaultReturn("alice@example.com", false, nil)
 		userEmails.VerifyFunc.SetDefaultReturn(true, nil)
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("", false, errors.New("primary email not found"))
 		userEmails.SetPrimaryEmailFunc.SetDefaultReturn(nil)
 
-		authz := database.NewMockAuthzStore()
+		authz := databasemocks.NewMockAuthzStore()
 		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
 
-		db := database.NewMockDB()
+		db := databasemocks.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.UserEmailsFunc.SetDefaultReturn(userEmails)
 		db.AuthzFunc.SetDefaultReturn(authz)
-		db.SecurityEventLogsFunc.SetDefaultReturn(database.NewMockSecurityEventLogsStore())
+		db.SecurityEventLogsFunc.SetDefaultReturn(databasemocks.NewMockSecurityEventLogsStore())
 
 		ctx := context.Background()
 		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})

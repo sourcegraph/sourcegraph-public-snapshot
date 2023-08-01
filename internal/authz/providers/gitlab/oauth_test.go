@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
@@ -75,7 +76,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 			OAuthProviderOp{
 				BaseURL: mustURL(t, "https://gitlab.com"),
 				Token:   "admin_token",
-				DB:      database.NewMockDB(),
+				DB:      databasemocks.NewMockDB(),
 			},
 			&mockDoer{
 				do: func(r *http.Request) (*http.Response, error) {
@@ -156,7 +157,7 @@ func TestOAuthProvider_FetchUserPerms(t *testing.T) {
 			OAuthProviderOp{
 				BaseURL: mustURL(t, "https://gitlab.com"),
 				Token:   "admin_token",
-				DB:      database.NewMockDB(),
+				DB:      databasemocks.NewMockDB(),
 			},
 			&mockDoer{
 				do: func(r *http.Request) (*http.Response, error) {

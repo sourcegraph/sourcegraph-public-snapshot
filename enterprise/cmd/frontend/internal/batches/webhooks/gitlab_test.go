@@ -21,6 +21,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -483,9 +484,9 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 			// This test is separate from the other unit tests for this
 			// function above because it needs to set up a bad database
 			// connection on the repo store.
-			externalServices := database.NewMockExternalServiceStore()
+			externalServices := databasemocks.NewMockExternalServiceStore()
 			externalServices.ListFunc.SetDefaultReturn(nil, errors.New("foo"))
-			mockDB := database.NewMockDBFrom(database.NewDB(logger, db))
+			mockDB := databasemocks.NewMockDBFrom(database.NewDB(logger, db))
 			mockDB.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 			store := gitLabTestSetup(t, db).With(mockDB)

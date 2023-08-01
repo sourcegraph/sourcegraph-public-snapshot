@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -100,16 +101,16 @@ func TestSearch(t *testing.T) {
 			settings.MockCurrentUserFinal = &schema.Settings{}
 			defer func() { settings.MockCurrentUserFinal = nil }()
 
-			repos := database.NewMockRepoStore()
+			repos := databasemocks.NewMockRepoStore()
 			repos.ListFunc.SetDefaultHook(tc.reposListMock)
 
-			ext := database.NewMockExternalServiceStore()
+			ext := databasemocks.NewMockExternalServiceStore()
 			ext.ListFunc.SetDefaultHook(tc.externalServicesListMock)
 
-			phabricator := database.NewMockPhabricatorStore()
+			phabricator := databasemocks.NewMockPhabricatorStore()
 			phabricator.GetByNameFunc.SetDefaultHook(tc.phabricatorGetRepoByNameMock)
 
-			db := database.NewMockDB()
+			db := databasemocks.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
@@ -337,9 +338,9 @@ func BenchmarkSearchResults(b *testing.B) {
 	})
 
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 
-	repos := database.NewMockRepoStore()
+	repos := databasemocks.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultReturn(minimalRepos, nil)
 	repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
 	db.ReposFunc.SetDefaultReturn(repos)

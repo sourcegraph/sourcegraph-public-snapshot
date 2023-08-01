@@ -6,11 +6,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func defaultMockRepoStore() *database.MockRepoStore {
-	repoStore := database.NewMockRepoStore()
+func defaultMockRepoStore() *databasemocks.MockRepoStore {
+	repoStore := databasemocks.NewMockRepoStore()
 	repoStore.GetReposSetByIDsFunc.SetDefaultHook(func(ctx context.Context, ids ...api.RepoID) (map[api.RepoID]*internaltypes.Repo, error) {
 		m := map[api.RepoID]*internaltypes.Repo{}
 		for _, id := range ids {

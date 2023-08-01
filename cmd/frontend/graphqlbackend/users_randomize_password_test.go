@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -31,7 +32,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 			}}
 	)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	t.Run("Errors when resetting passwords is not enabled", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
@@ -92,13 +93,13 @@ func TestRandomizeUserPassword(t *testing.T) {
 			conf.Mock(smtpEnabledConf)
 			defer conf.Mock(nil)
 
-			users := database.NewMockUserStore()
+			users := databasemocks.NewMockUserStore()
 			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 			users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
 			users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
 			users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "alice"}, nil)
 
-			userEmails := database.NewMockUserEmailsStore()
+			userEmails := databasemocks.NewMockUserEmailsStore()
 			userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@foo.bar", false, nil)
 
 			db.UsersFunc.SetDefaultReturn(users)
@@ -136,7 +137,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 		conf.Mock(smtpDisabledConf)
 		defer conf.Mock(nil)
 
-		users := database.NewMockUserStore()
+		users := databasemocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -166,7 +167,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 		conf.Mock(smtpDisabledConf)
 		defer conf.Mock(nil)
 
-		users := database.NewMockUserStore()
+		users := databasemocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 		db.UsersFunc.SetDefaultReturn(users)
 
@@ -196,7 +197,7 @@ func TestRandomizeUserPassword(t *testing.T) {
 		conf.Mock(smtpDisabledConf)
 		defer conf.Mock(nil)
 
-		users := database.NewMockUserStore()
+		users := databasemocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 		users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
 		users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
@@ -226,13 +227,13 @@ func TestRandomizeUserPassword(t *testing.T) {
 		conf.Mock(smtpEnabledConf)
 		defer conf.Mock(nil)
 
-		users := database.NewMockUserStore()
+		users := databasemocks.NewMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 		users.RandomizePasswordAndClearPasswordResetRateLimitFunc.SetDefaultReturn(nil)
 		users.RenewPasswordResetCodeFunc.SetDefaultReturn("code", nil)
 		users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "alice"}, nil)
 
-		userEmails := database.NewMockUserEmailsStore()
+		userEmails := databasemocks.NewMockUserEmailsStore()
 		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@foo.bar", false, nil)
 
 		db.UsersFunc.SetDefaultReturn(users)

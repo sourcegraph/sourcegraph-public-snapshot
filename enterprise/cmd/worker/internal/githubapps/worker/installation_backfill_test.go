@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -42,7 +43,7 @@ func TestGitHubInstallationWorker(t *testing.T) {
 		return nil
 	})
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.GitHubAppsFunc.SetDefaultReturn(ghStore)
 
 	logger := logtest.Scoped(t)

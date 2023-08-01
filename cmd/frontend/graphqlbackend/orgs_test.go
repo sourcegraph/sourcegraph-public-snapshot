@@ -7,18 +7,19 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestOrgs(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	orgs := database.NewMockOrgStore()
+	orgs := databasemocks.NewMockOrgStore()
 	orgs.ListFunc.SetDefaultReturn([]*types.Org{{Name: "org1"}, {Name: "org2"}}, nil)
 	orgs.CountFunc.SetDefaultReturn(2, nil)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgsFunc.SetDefaultReturn(orgs)
 
@@ -57,13 +58,13 @@ func TestListOrgsForCloud(t *testing.T) {
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(orig)
 
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
-	orgs := database.NewMockOrgStore()
+	orgs := databasemocks.NewMockOrgStore()
 	orgs.CountFunc.SetDefaultReturn(42, nil)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 	db.OrgsFunc.SetDefaultReturn(orgs)
 

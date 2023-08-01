@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -91,8 +92,8 @@ func TestGetCommitsToInsert(t *testing.T) {
 
 	ctx := context.Background()
 	logger := logtest.NoOp(t)
-	db := database.NewMockDB()
-	repoCommitsStore := database.NewMockRepoCommitsChangelistsStore()
+	db := databasemocks.NewMockDB()
+	repoCommitsStore := databasemocks.NewMockRepoCommitsChangelistsStore()
 	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsStore)
 
 	s := &Service{
@@ -215,10 +216,10 @@ func TestServicePipeline(t *testing.T) {
 		},
 	}
 
-	repos := database.NewMockRepoStore()
+	repos := databasemocks.NewMockRepoStore()
 	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
 	logger := logtest.NoOp(t)

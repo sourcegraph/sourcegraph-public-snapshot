@@ -12,14 +12,15 @@ import (
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	apiclient "github.com/sourcegraph/sourcegraph/internal/executor/types"
 	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestTransformRecord(t *testing.T) {
-	db := database.NewMockDB()
-	db.ExecutorSecretsFunc.SetDefaultReturn(database.NewMockExecutorSecretStore())
+	db := databasemocks.NewMockDB()
+	db.ExecutorSecretsFunc.SetDefaultReturn(databasemocks.NewMockExecutorSecretStore())
 
 	for _, testCase := range []struct {
 		name             string
@@ -147,8 +148,8 @@ func TestTransformRecord(t *testing.T) {
 }
 
 func TestTransformRecordWithoutIndexer(t *testing.T) {
-	db := database.NewMockDB()
-	db.ExecutorSecretsFunc.SetDefaultReturn(database.NewMockExecutorSecretStore())
+	db := databasemocks.NewMockDB()
+	db.ExecutorSecretsFunc.SetDefaultReturn(databasemocks.NewMockExecutorSecretStore())
 
 	index := uploadsshared.Index{
 		ID:             42,
@@ -247,9 +248,9 @@ func TestTransformRecordWithoutIndexer(t *testing.T) {
 }
 
 func TestTransformRecordWithSecrets(t *testing.T) {
-	db := database.NewMockDB()
-	secs := database.NewMockExecutorSecretStore()
-	sal := database.NewMockExecutorSecretAccessLogStore()
+	db := databasemocks.NewMockDB()
+	secs := databasemocks.NewMockExecutorSecretStore()
+	sal := databasemocks.NewMockExecutorSecretAccessLogStore()
 	db.ExecutorSecretsFunc.SetDefaultReturn(secs)
 	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(sal)
 	secs.ListFunc.SetDefaultHook(func(ctx context.Context, ess database.ExecutorSecretScope, eslo database.ExecutorSecretsListOpts) ([]*database.ExecutorSecret, int, error) {
@@ -257,7 +258,7 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 			return nil, 0, nil
 		}
 		return []*database.ExecutorSecret{
-			database.NewMockExecutorSecret(&database.ExecutorSecret{
+			databasemocks.NewMockExecutorSecret(&database.ExecutorSecret{
 				Key:                    "NPM_TOKEN",
 				Scope:                  database.ExecutorSecretScopeCodeIntel,
 				OverwritesGlobalSecret: false,
@@ -379,17 +380,17 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 }
 
 func TestTransformRecordDockerAuthConfig(t *testing.T) {
-	db := database.NewMockDB()
-	secstore := database.NewMockExecutorSecretStore()
+	db := databasemocks.NewMockDB()
+	secstore := databasemocks.NewMockExecutorSecretStore()
 	db.ExecutorSecretsFunc.SetDefaultReturn(secstore)
 	secstore.ListFunc.PushReturn([]*database.ExecutorSecret{
-		database.NewMockExecutorSecret(&database.ExecutorSecret{
+		databasemocks.NewMockExecutorSecret(&database.ExecutorSecret{
 			Key:       "DOCKER_AUTH_CONFIG",
 			Scope:     database.ExecutorSecretScopeCodeIntel,
 			CreatorID: 1,
 		}, `{"auths": { "hub.docker.com": { "auth": "aHVudGVyOmh1bnRlcjI=" }}}`),
 	}, 0, nil)
-	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(database.NewMockExecutorSecretAccessLogStore())
+	db.ExecutorSecretAccessLogsFunc.SetDefaultReturn(databasemocks.NewMockExecutorSecretAccessLogStore())
 
 	job, err := transformRecord(context.Background(), db, uploadsshared.Index{ID: 42}, handler.ResourceMetadata{}, "hunter2")
 	if err != nil {

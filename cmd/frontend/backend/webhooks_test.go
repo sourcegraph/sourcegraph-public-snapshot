@@ -12,6 +12,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
@@ -21,15 +22,15 @@ import (
 )
 
 func TestCreateWebhook(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	webhookStore := database.NewMockWebhookStore()
+	webhookStore := databasemocks.NewMockWebhookStore()
 	whUUID, err := uuid.NewUUID()
 	assert.NoError(t, err)
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.WebhooksFunc.SetDefaultReturn(webhookStore)
 	db.UsersFunc.SetDefaultReturn(users)
 
@@ -125,7 +126,7 @@ func TestCreateUpdateDeleteWebhook(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
 	newUser := database.NewUser{Username: "testUser"}
 	createdUser, err := db.Users().Create(ctx, newUser)

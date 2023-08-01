@@ -9,12 +9,13 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func Test_manualPurgeHandler(t *testing.T) {
-	db := database.NewMockDB()
-	gsr := database.NewMockGitserverRepoStore()
+	db := databasemocks.NewMockDB()
+	gsr := databasemocks.NewMockGitserverRepoStore()
 	gsr.IterateRepoGitserverStatusFunc.SetDefaultHook(func(ctx context.Context, irgso database.IterateRepoGitserverStatusOptions) ([]types.RepoGitserverStatus, int, error) {
 		return []types.RepoGitserverStatus{}, 0, nil
 	})

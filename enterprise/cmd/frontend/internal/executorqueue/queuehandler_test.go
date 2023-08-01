@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -86,10 +87,10 @@ func TestJobAuthMiddleware(t *testing.T) {
 		name                 string
 		routeName            routeName
 		header               map[string]string
-		mockFunc             func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore)
+		mockFunc             func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore)
 		expectedStatusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore)
+		assertionFunc        func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore)
 	}{
 		{
 			name:      "Queue Authorized",
@@ -99,12 +100,12 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"X-Sourcegraph-Job-ID":        "42",
 				"X-Sourcegraph-Executor-Name": "test-executor",
 			},
-			mockFunc: func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			mockFunc: func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "test"}, nil)
 				executorStore.GetByHostnameFunc.PushReturn(types.Executor{}, true, nil)
 			},
 			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
 				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 1)
@@ -118,7 +119,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"Authorization": "token-executor hunter2",
 			},
 			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -131,12 +132,12 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"X-Sourcegraph-Job-ID":        "42",
 				"X-Sourcegraph-Executor-Name": "test-executor",
 			},
-			mockFunc: func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			mockFunc: func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Repo: "test"}, nil)
 				executorStore.GetByHostnameFunc.PushReturn(types.Executor{}, true, nil)
 			},
 			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
 				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 1)
@@ -150,7 +151,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"Authorization": "token-executor hunter2",
 			},
 			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -163,12 +164,12 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"X-Sourcegraph-Job-ID":        "42",
 				"X-Sourcegraph-Executor-Name": "test-executor",
 			},
-			mockFunc: func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			mockFunc: func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "batches"}, nil)
 				executorStore.GetByHostnameFunc.PushReturn(types.Executor{}, true, nil)
 			},
 			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
 				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 1)
@@ -182,7 +183,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"Authorization": "token-executor hunter2",
 			},
 			expectedStatusCode: http.StatusTeapot,
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -196,7 +197,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: "worker hostname cannot be empty\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -210,7 +211,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: "job ID not provided in header 'X-Sourcegraph-Job-ID'\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -225,7 +226,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: "failed to parse Job ID: strconv.Atoi: parsing \"abc\": invalid syntax\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -234,7 +235,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 			name:                 "No Authorized header",
 			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: "no token value in the HTTP Authorization request header\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -246,7 +247,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: "HTTP Authorization request header value must be of the following form: 'Bearer \"TOKEN\"' or 'token-executor TOKEN'\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -258,7 +259,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: "unrecognized HTTP Authorization request header scheme (supported values: \"Bearer\", \"token-executor\")\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -270,7 +271,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"Authorization": "token-executor hunter3",
 			},
 			expectedStatusCode: http.StatusForbidden,
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -284,7 +285,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 			},
 			expectedStatusCode:   http.StatusBadRequest,
 			expectedResponseBody: "unsupported route\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 0)
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
 			},
@@ -297,12 +298,12 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"X-Sourcegraph-Job-ID":        "42",
 				"X-Sourcegraph-Executor-Name": "test-executor",
 			},
-			mockFunc: func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			mockFunc: func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{}, errors.New("failed to find job token"))
 			},
 			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
 				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
@@ -316,12 +317,12 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"X-Sourcegraph-Job-ID":        "42",
 				"X-Sourcegraph-Executor-Name": "test-executor",
 			},
-			mockFunc: func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			mockFunc: func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 7, Queue: "test"}, nil)
 			},
 			expectedStatusCode:   http.StatusForbidden,
 			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
 				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
@@ -335,12 +336,12 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"X-Sourcegraph-Job-ID":        "42",
 				"X-Sourcegraph-Executor-Name": "test-executor",
 			},
-			mockFunc: func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			mockFunc: func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "test1"}, nil)
 			},
 			expectedStatusCode:   http.StatusForbidden,
 			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
 				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
@@ -354,13 +355,13 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"X-Sourcegraph-Job-ID":        "42",
 				"X-Sourcegraph-Executor-Name": "test-executor",
 			},
-			mockFunc: func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			mockFunc: func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Queue: "test"}, nil)
 				executorStore.GetByHostnameFunc.PushReturn(types.Executor{}, false, errors.New("executor does not exist"))
 			},
 			expectedStatusCode:   http.StatusUnauthorized,
 			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
 				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 1)
@@ -375,12 +376,12 @@ func TestJobAuthMiddleware(t *testing.T) {
 				"X-Sourcegraph-Job-ID":        "42",
 				"X-Sourcegraph-Executor-Name": "test-executor",
 			},
-			mockFunc: func(executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			mockFunc: func(executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				jobTokenStore.GetByTokenFunc.PushReturn(executorstore.JobToken{JobID: 42, Repo: "test1"}, nil)
 			},
 			expectedStatusCode:   http.StatusForbidden,
 			expectedResponseBody: "invalid token\n",
-			assertionFunc: func(t *testing.T, executorStore *database.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
+			assertionFunc: func(t *testing.T, executorStore *databasemocks.MockExecutorStore, jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, jobTokenStore.GetByTokenFunc.History(), 1)
 				assert.Equal(t, jobTokenStore.GetByTokenFunc.History()[0].Arg1, "somejobtoken")
 				require.Len(t, executorStore.GetByHostnameFunc.History(), 0)
@@ -389,7 +390,7 @@ func TestJobAuthMiddleware(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			executorStore := database.NewMockExecutorStore()
+			executorStore := databasemocks.NewMockExecutorStore()
 			jobTokenStore := executorstore.NewMockJobTokenStore()
 
 			router := mux.NewRouter()

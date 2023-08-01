@@ -20,6 +20,7 @@ import (
 	shared1 "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	executor "github.com/sourcegraph/sourcegraph/internal/executor"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	types "github.com/sourcegraph/sourcegraph/internal/types"

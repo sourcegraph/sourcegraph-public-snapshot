@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/batches/store"
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"

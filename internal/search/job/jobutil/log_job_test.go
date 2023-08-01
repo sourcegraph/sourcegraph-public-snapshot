@@ -9,6 +9,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
@@ -61,10 +62,10 @@ func TestOwnSearchEventNames(t *testing.T) {
 				Query:               q,
 			}
 
-			gss := database.NewMockGlobalStateStore()
+			gss := databasemocks.NewMockGlobalStateStore()
 			gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
-			db := database.NewMockDB()
+			db := databasemocks.NewMockDB()
 			eventStore := &fakeEventLogStore{}
 			db.GlobalStateFunc.SetDefaultReturn(gss)
 			db.EventLogsFunc.SetDefaultReturn(eventStore)

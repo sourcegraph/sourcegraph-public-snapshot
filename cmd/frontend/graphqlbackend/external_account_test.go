@@ -9,17 +9,18 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 func TestExternalAccountResolver_AccountData(t *testing.T) {
-	users := database.NewMockUserStore()
+	users := databasemocks.NewMockUserStore()
 	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{SiteAdmin: id == 1}, nil
 	})
 
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	db.UsersFunc.SetDefaultReturn(users)
 
 	tests := []struct {

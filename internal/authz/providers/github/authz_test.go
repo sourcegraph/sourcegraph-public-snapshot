@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -16,7 +17,7 @@ import (
 
 func TestNewAuthzProviders(t *testing.T) {
 	ctx := context.Background()
-	db := database.NewMockDB()
+	db := databasemocks.NewMockDB()
 	t.Run("no authorization", func(t *testing.T) {
 		initResults := NewAuthzProviders(
 			ctx,

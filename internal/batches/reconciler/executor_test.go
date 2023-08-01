@@ -36,6 +36,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -1211,7 +1212,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 func TestDecorateChangesetBody(t *testing.T) {
 	ctx := context.Background()
 
-	ns := database.NewMockNamespaceStore()
+	ns := databasemocks.NewMockNamespaceStore()
 	ns.GetByIDFunc.SetDefaultHook(func(_ context.Context, _ int32, user int32) (*database.Namespace, error) {
 		return &database.Namespace{Name: "my-user", User: user}, nil
 	})

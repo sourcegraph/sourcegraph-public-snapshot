@@ -15,6 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -113,13 +114,13 @@ func Test_prometheusValidator(t *testing.T) {
 
 func TestGrafanaLicensing(t *testing.T) {
 	t.Run("licensed requests succeed", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := databasemocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		featureFlags := database.NewMockFeatureFlagStore()
+		featureFlags := databasemocks.NewMockFeatureFlagStore()
 		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
 
-		db := database.NewStrictMockDB()
+		db := databasemocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
@@ -137,13 +138,13 @@ func TestGrafanaLicensing(t *testing.T) {
 	})
 
 	t.Run("non-licensed requests fail", func(t *testing.T) {
-		users := database.NewStrictMockUserStore()
+		users := databasemocks.NewStrictMockUserStore()
 		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		featureFlags := database.NewMockFeatureFlagStore()
+		featureFlags := databasemocks.NewMockFeatureFlagStore()
 		featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
 
-		db := database.NewStrictMockDB()
+		db := databasemocks.NewStrictMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
 		db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
 
