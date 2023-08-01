@@ -32,7 +32,7 @@ export const WebhookUpdatePage: Story = () => (
                         {
                             request: {
                                 query: getDocumentNode(EXTERNAL_SERVICES),
-                                variables: { first: null, after: null },
+                                variables: { first: null, after: null, repoID: null },
                             },
                             result: {
                                 data: {
