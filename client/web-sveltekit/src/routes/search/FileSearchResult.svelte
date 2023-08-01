@@ -71,7 +71,9 @@
         if (target.dataset.line) {
             const searchParams = formatSearchParameters(
                 addLineRangeQueryParameter(
-                    $page.url.searchParams,
+                    // We don't want to preserve the 'q' query parameter.
+                    // We might have to adjust this if we want to preserver other query parameters.
+                    new URLSearchParams(),
                     toPositionOrRangeQueryParameter({ position: { line: +target.dataset.line } })
                 )
             )
