@@ -187,7 +187,8 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 		webhookURN := "https://example.com"
 		appName := "TestApp"
 		domain := "batches"
-		req := httptest.NewRequest("GET", fmt.Sprintf("/githubapp/new-app-state?webhookURN=%s&appName=%s&domain=%s", webhookURN, appName, domain), nil)
+		baseURL := "https://ghe.example.org"
+		req := httptest.NewRequest("GET", fmt.Sprintf("/githubapp/new-app-state?webhookURN=%s&appName=%s&domain=%s&baseURL=%s", webhookURN, appName, domain, baseURL), nil)
 
 		t.Run("normal user", func(t *testing.T) {
 			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
@@ -245,6 +246,9 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 			if stateDetails.Domain != domain {
 				t.Fatal("expected domain in state details to match request param")
 			}
+			if stateDetails.BaseURL != baseURL {
+				t.Fatal("expected baseURL in state details to match request param")
+			}
 		})
 	})
 
@@ -256,6 +260,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 			t.Fatalf("unexpected error generating random state: %s", err.Error())
 		}
 		domain := types.BatchesGitHubAppDomain
+		stateBaseURL := "https://github.com"
 
 		t.Run("normal user", func(t *testing.T) {
 			req := httptest.NewRequest("GET", baseURL, nil)
@@ -304,7 +309,6 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 				return &ghtypes.GitHubApp{}, nil
 			}
 			req := httptest.NewRequest("GET", fmt.Sprintf("%s?state=%s&code=%s", baseURL, state, code), nil)
-			req.Header.Set("Referer", "https://example.com")
 			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
 				UID: 2,
 			}))
@@ -312,6 +316,7 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 			stateDeets, err := json.Marshal(gitHubAppStateDetails{
 				WebhookUUID: webhookUUID.String(),
 				Domain:      string(domain),
+				BaseURL:     stateBaseURL,
 			})
 			require.NoError(t, err)
 			cache.Set(state, stateDeets)

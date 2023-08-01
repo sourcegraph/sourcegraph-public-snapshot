@@ -31,10 +31,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/byteutils"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -2506,7 +2506,7 @@ func (c *clientImplementor) ArchiveReader(
 		return nil, err
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
 		if err != nil {
 			return nil, err

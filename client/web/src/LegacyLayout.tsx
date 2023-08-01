@@ -23,7 +23,7 @@ import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { useHandleSubmitFeedback } from './hooks'
 import { LegacyLayoutRouteContext } from './LegacyRouteContext'
-import { CodySurveyToast, SurveyToast } from './marketing/toast'
+import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { EnterprisePageRoutes, PageRoutes } from './routes.constants'
 import { parseSearchURLQuery } from './search'
@@ -106,6 +106,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
             PageRoutes.RequestAccess,
         ].includes(routeMatch as PageRoutes)
     const isGetCodyPage = location.pathname === PageRoutes.GetCody
+    const isPostSignUpPage = location.pathname === PageRoutes.PostSignUp
 
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
@@ -196,6 +197,15 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
         return <ApplicationRoutes routes={props.routes} />
     }
 
+    if (
+        props.isSourcegraphDotCom &&
+        props.authenticatedUser &&
+        !props.authenticatedUser.completedPostSignup &&
+        !isPostSignUpPage
+    ) {
+        return <Navigate to={PageRoutes.PostSignUp} replace={true} />
+    }
+
     return (
         <div
             className={classNames(
@@ -231,13 +241,7 @@ export const LegacyLayout: FC<LegacyLayoutProps> = props => {
                 !props.isSourcegraphDotCom &&
                 !disableFeedbackSurvey &&
                 !props.isSourcegraphApp && <SurveyToast authenticatedUser={props.authenticatedUser} />}
-            {props.isSourcegraphDotCom && props.authenticatedUser && (
-                <CodySurveyToast
-                    authenticatedUser={props.authenticatedUser}
-                    telemetryService={props.telemetryService}
-                />
-            )}
-            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && (
+            {!isSiteInit && !isSignInOrUp && !isGetCodyPage && !isPostSignUpPage && (
                 <GlobalNavbar
                     {...props}
                     showSearchBox={

@@ -35,7 +35,7 @@ body.theme-dark .markdown-body ul li:before {
 <a class="btn" href="https://github.com/sourcegraph/sourcegraph/issues">Issue Tracker</a>
 </div>
 
-## [Setup](setup/index.md)
+## Setup
 
 <p class="subtitle">Learn how to develop Sourcegraph on your machine.</p>
 
@@ -63,7 +63,7 @@ body.theme-dark .markdown-body ul li:before {
 
 Clarification and discussion about key concepts, architecture, and development stack.
 
-### [Architecture](background-information/architecture/index.md)
+### Architecture
 
 - [Overview](background-information/architecture/index.md)
 - [Introducing a new service](background-information/architecture/introducing_a_new_service.md)
@@ -117,7 +117,7 @@ Clarification and discussion about key concepts, architecture, and development s
 
 - [`git gc` and its modes of operations in Sourcegraph](background-information/git_gc.md)
 
-### [Languages](background-information/languages/index.md)
+### Languages
 
 - [Tech stack](background-information/tech_stack.md)
 - [Go](background-information/languages/go.md)
@@ -126,7 +126,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Bash](background-information/languages/bash.md)
 - [Terraform](background-information/languages/terraform.md)
 
-### [SQL](background-information/sql/index.md)
+### SQL
 
 - [Using PostgreSQL](background-information/postgresql.md)
 - [Migrations overview](background-information/sql/migrations_overview.md)
@@ -166,7 +166,7 @@ Clarification and discussion about key concepts, architecture, and development s
 - [Deploy Sourcegraph with Helm chart (BETA)](../../../admin/deploy/kubernetes/helm.md)
 - [GitHub API oddities](background-information/github-api-oddities.md)
 
-## [How-to guides](how-to/index.md)
+## How-to guides
 
 Guides to help with troubleshooting, configuring test instances, debugging, and more.
 
@@ -207,7 +207,7 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
   - [Test a Phabricator and Gitolite instance](how-to/test_phabricator.md)
   - [Sync repositories from gitolite.sgdev.org](how-to/sync_repositories_from_gitolite_sgdev_org.md)
 
-## [Contributing](./contributing/index.md)
+## Contributing
 
 - [Open source FAQ](https://handbook.sourcegraph.com/company-info-and-process/community/faq/)
 - [Code of conduct](https://handbook.sourcegraph.com/company-info-and-process/community/code_of_conduct/)

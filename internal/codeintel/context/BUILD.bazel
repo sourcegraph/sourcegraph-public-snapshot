@@ -9,6 +9,7 @@ go_library(
         "observability.go",
         "service.go",
         "split.go",
+        "text.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/internal/codeintel/context",
     visibility = ["//:__subpackages__"],
@@ -27,6 +28,7 @@ go_library(
         "//internal/gosyntect",
         "//internal/metrics",
         "//internal/observation",
+        "//lib/codeintel/precise",
         "@com_github_sourcegraph_scip//bindings/go/scip",
         "@io_opentelemetry_go_otel//attribute",
         "@org_golang_google_protobuf//proto",
@@ -38,8 +40,13 @@ go_test(
     srcs = [
         "service_test.go",
         "split_test.go",
+        "text_test.go",
     ],
     data = glob(["testdata/**"]),
     embed = [":context"],
-    deps = ["@com_github_hexops_autogold_v2//:autogold"],
+    deps = [
+        "@com_github_google_go_cmp//cmp",
+        "@com_github_hexops_autogold_v2//:autogold",
+        "@com_github_sourcegraph_scip//bindings/go/scip",
+    ],
 )

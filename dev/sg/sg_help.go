@@ -53,11 +53,11 @@ var helpCommand = &cli.Command{
 		}
 
 		if output := cmd.String("output"); output != "" {
-			root, err := root.RepositoryRoot()
+			rootDir, err := root.RepositoryRoot()
 			if err != nil {
 				return err
 			}
-			output = filepath.Join(root, output)
+			output = filepath.Join(rootDir, output)
 
 			if err := os.WriteFile(output, []byte(generatedSgReferenceHeader+"\n\n"+doc), 0644); err != nil {
 				return errors.Wrapf(err, "failed to write reference to %q", output)

@@ -823,6 +823,27 @@ Webhook actions configured on code monitors
 
 **url**: The webhook URL we send the code monitor event to
 
+# Table "public.code_hosts"
+```
+             Column              |           Type           | Collation | Nullable |                Default                 
+---------------------------------+--------------------------+-----------+----------+----------------------------------------
+ id                              | integer                  |           | not null | nextval('code_hosts_id_seq'::regclass)
+ kind                            | text                     |           | not null | 
+ url                             | text                     |           | not null | 
+ api_rate_limit_quota            | integer                  |           |          | 
+ api_rate_limit_interval_seconds | integer                  |           |          | 
+ git_rate_limit_quota            | integer                  |           |          | 
+ git_rate_limit_interval_seconds | integer                  |           |          | 
+ created_at                      | timestamp with time zone |           | not null | now()
+ updated_at                      | timestamp with time zone |           | not null | now()
+Indexes:
+    "code_hosts_pkey" PRIMARY KEY, btree (id)
+    "code_hosts_url_key" UNIQUE CONSTRAINT, btree (url)
+Referenced by:
+    TABLE "external_services" CONSTRAINT "external_services_code_host_id_fkey" FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
+
+```
+
 # Table "public.codeintel_autoindex_queue"
 ```
     Column     |           Type           | Collation | Nullable |                        Default                        
@@ -1656,6 +1677,7 @@ Foreign-key constraints:
  namespace_org_id  | integer                  |           |          | 
  has_webhooks      | boolean                  |           |          | 
  token_expires_at  | timestamp with time zone |           |          | 
+ code_host_id      | integer                  |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "external_services_unique_kind_org_id" UNIQUE, btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL
@@ -1668,6 +1690,7 @@ Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
     "external_services_max_1_namespace" CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
+    "external_services_code_host_id_fkey" FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
     "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
