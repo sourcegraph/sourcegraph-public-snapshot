@@ -30,7 +30,7 @@ go_test(
     embed = [":externallink"],
     deps = [
         "//internal/api",
-        "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/extsvc",
         "//internal/extsvc/github",
         "//internal/extsvc/gitlab",

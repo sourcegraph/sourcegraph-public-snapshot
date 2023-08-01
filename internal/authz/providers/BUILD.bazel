@@ -97,6 +97,7 @@ go_test(
         "//internal/authz/providers/gitlab",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/extsvc",
         "//internal/licensing",
         "//internal/types",

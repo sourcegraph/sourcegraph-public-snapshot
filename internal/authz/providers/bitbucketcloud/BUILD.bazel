@@ -34,7 +34,7 @@ go_test(
     embed = [":bitbucketcloud"],
     deps = [
         "//internal/authz",
-        "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/extsvc",
         "//internal/extsvc/bitbucketcloud",
         "//internal/licensing",

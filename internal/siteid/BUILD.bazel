@@ -17,6 +17,7 @@ go_test(
     deps = [
         "//internal/conf",
         "//internal/database",
+        "//internal/database/databasemocks",
         "//lib/errors",
     ],
 )

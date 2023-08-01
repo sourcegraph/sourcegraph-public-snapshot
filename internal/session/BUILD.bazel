@@ -36,6 +36,7 @@ go_test(
     deps = [
         "//internal/actor",
         "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/errcode",
         "//internal/types",
         "//lib/errors",

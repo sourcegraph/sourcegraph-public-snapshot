@@ -68,6 +68,7 @@ go_test(
         "//internal/batches/types",
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/databasemocks",
         "//internal/database/dbtest",
         "//internal/encryption/testing",
         "//internal/extsvc",

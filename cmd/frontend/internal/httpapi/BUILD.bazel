@@ -117,6 +117,7 @@ go_test(
         "//internal/conf",
         "//internal/ctags_config",
         "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/errcode",
         "//internal/featureflag",
         "//internal/gitserver",

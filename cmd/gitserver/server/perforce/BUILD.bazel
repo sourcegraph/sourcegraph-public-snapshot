@@ -9,7 +9,7 @@ go_test(
         "//cmd/gitserver/server/common",
         "//internal/api",
         "//internal/conf",
-        "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/database/dbutil",
         "//internal/extsvc",
         "//internal/gitserver",

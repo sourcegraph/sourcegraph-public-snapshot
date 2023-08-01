@@ -34,6 +34,7 @@ go_test(
         "//internal/actor",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/types",
         "//lib/errors",
         "//schema",

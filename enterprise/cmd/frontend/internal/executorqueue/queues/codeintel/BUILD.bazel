@@ -35,6 +35,7 @@ go_test(
         "//internal/codeintel/uploads/shared",
         "//internal/conf",
         "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/executor/types",
         "//internal/src-cli",
         "//schema",

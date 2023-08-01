@@ -70,7 +70,7 @@ go_test(
         "//cmd/gitserver/server",
         "//internal/api",
         "//internal/codeintel/dependencies",
-        "//internal/database",
+        "//internal/database/databasemocks",
         "//internal/extsvc",
         "//internal/types",
         "@com_github_google_go_cmp//cmp",
