@@ -281,6 +281,7 @@ var sg = &cli.App{
 		telemetryCommand,
 		monitoringCommand,
 		contextCommand,
+		deployCommand,
 		wolfiCommand,
 
 		// Dev environment
