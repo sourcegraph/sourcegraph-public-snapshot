@@ -30,6 +30,8 @@
     "@sveltejs/adapter-auto": "^2.1.0",
     "@sveltejs/adapter-static": "^2.0.3",
     "@sveltejs/kit": "^1.22.3",
+    "@testing-library/svelte": "^4.0.3",
+    "@testing-library/user-event": "^14.4.3",
     "@types/cookie": "^0.5.1",
     "@types/prismjs": "^1.26.0",
     "eslint-plugin-storybook": "^0.6.12",
