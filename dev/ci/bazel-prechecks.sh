@@ -18,7 +18,7 @@ EXIT_CODE=$?
 if [[ $EXIT_CODE -ne 0 ]]; then
   mkdir -p ./annotations
   cat <<-'END' > ./annotations/bazel-prechecks.md
-  ### Missing BUILD.bazel files
+  #### Missing BUILD.bazel files
 
   BUILD.bazel files need to be updated to match the repository state. You should run the following command and commit the result
 
@@ -37,7 +37,7 @@ unformatted=$(bazel run @go_sdk//:bin/gofmt -- -l .)
 if [[ ${unformatted} != "" ]]; then
   mkdir -p ./annotations
   tee -a ./annotations/bazel-prechecks.md <<-END
-  ### Unformatted Go files
+  #### Unformatted Go files
 
   The following files were found to not be formatted according to \`gofmt\`:
 
