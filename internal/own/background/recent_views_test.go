@@ -13,7 +13,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -139,7 +138,6 @@ func TestRecentViewsIndexer(t *testing.T) {
 	sortSummaries(got)
 	sortSummaries(want)
 	assert.Equal(t, want, got)
-
 }
 
 func insertEvents(ctx context.Context, t *testing.T, db database.DB) {
@@ -150,7 +148,8 @@ func insertEvents(ctx context.Context, t *testing.T, db database.DB) {
 			Name:   "SearchResultsQueried",
 			URL:    "http://sourcegraph.com",
 			Source: "test",
-		}, {
+		},
+		{
 			UserID: 1,
 			Name:   "codeintel",
 			URL:    "http://sourcegraph.com",

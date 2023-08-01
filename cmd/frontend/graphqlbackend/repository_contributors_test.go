@@ -6,7 +6,6 @@ import (
 	"github.com/hexops/autogold/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 )
 
 func TestOffsetBasedCursorSlice(t *testing.T) {

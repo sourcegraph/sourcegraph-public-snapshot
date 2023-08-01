@@ -18,7 +18,6 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
 	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"

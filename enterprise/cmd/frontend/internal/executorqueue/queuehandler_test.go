@@ -12,7 +12,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
 	"github.com/sourcegraph/sourcegraph/internal/types"

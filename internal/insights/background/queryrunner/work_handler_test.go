@@ -21,7 +21,6 @@ import (
 	"github.com/hexops/autogold/v2"
 
 	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/internal/insights/types"

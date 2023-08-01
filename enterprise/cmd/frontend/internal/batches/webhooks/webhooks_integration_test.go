@@ -7,7 +7,6 @@ import (
 
 	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 

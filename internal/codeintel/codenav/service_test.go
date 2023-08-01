@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
 )

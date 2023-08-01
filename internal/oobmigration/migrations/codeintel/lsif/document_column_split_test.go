@@ -13,7 +13,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 )
 
 func TestDocumentColumnSplitMigrator(t *testing.T) {

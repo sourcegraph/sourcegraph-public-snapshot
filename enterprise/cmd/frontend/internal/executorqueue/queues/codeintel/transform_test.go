@@ -258,7 +258,7 @@ func TestTransformRecordWithSecrets(t *testing.T) {
 			return nil, 0, nil
 		}
 		return []*database.ExecutorSecret{
-			databasemocks.NewMockExecutorSecret(&database.ExecutorSecret{
+			database.NewMockExecutorSecret(&database.ExecutorSecret{
 				Key:                    "NPM_TOKEN",
 				Scope:                  database.ExecutorSecretScopeCodeIntel,
 				OverwritesGlobalSecret: false,
@@ -384,7 +384,7 @@ func TestTransformRecordDockerAuthConfig(t *testing.T) {
 	secstore := databasemocks.NewMockExecutorSecretStore()
 	db.ExecutorSecretsFunc.SetDefaultReturn(secstore)
 	secstore.ListFunc.PushReturn([]*database.ExecutorSecret{
-		databasemocks.NewMockExecutorSecret(&database.ExecutorSecret{
+		database.NewMockExecutorSecret(&database.ExecutorSecret{
 			Key:       "DOCKER_AUTH_CONFIG",
 			Scope:     database.ExecutorSecretScopeCodeIntel,
 			CreatorID: 1,

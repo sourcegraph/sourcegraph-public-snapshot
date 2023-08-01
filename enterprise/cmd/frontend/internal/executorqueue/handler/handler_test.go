@@ -19,7 +19,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/databasemocks"
 	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
 	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
