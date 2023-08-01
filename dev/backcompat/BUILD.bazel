@@ -1,0 +1,3 @@
+load("defs.bzl", "patch_target")
+
+patch_target()

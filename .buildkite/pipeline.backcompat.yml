@@ -1,0 +1,6 @@
+steps:
+  - label: ':bazel: backcompat tests'
+    key: "bazel-backcompat"
+    agents: { queue: bazel }
+    commands:
+    - ./dev/ci/bazel-backcompat.sh
