@@ -1843,13 +1843,6 @@ type Repository struct {
 	Parent *BaseRepository
 }
 
-// TODO: Maybe we need all the fields from BaseRepository anyway.
-type RepositoryParent struct {
-	ID            string
-	DatabaseID    int64
-	NameWithOwner string
-}
-
 type RepositoryTopics struct {
 	Nodes []RepositoryTopic
 }

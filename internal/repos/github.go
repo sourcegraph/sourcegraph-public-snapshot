@@ -1286,7 +1286,3 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	}
 	return out, nil
 }
-
-func (s *GitHubSource) AbsoluteRepoName() string {
-	return ""
-}
