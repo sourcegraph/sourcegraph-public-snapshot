@@ -19,6 +19,7 @@ go_library(
         "sg_ci.go",
         "sg_cloud.go",
         "sg_db.go",
+        "sg_deploy.go",
         "sg_embeddings_qa.go",
         "sg_feedback.go",
         "sg_generate.go",

@@ -7,7 +7,6 @@ go_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//internal/actor",
-        "//internal/api",
         "//internal/conf/conftypes",
         "//internal/conf/deploy",
         "//internal/env",

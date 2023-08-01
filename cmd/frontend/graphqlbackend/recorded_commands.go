@@ -7,6 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 )
@@ -101,8 +102,11 @@ func (r *recordedCommandResolver) Duration() float64 {
 	return r.command.Duration
 }
 
+var urlRegex = lazyregexp.New(`((https?|ssh|git)://[^:@]+:)[^@]+(@)`)
+
 func (r *recordedCommandResolver) Command() string {
-	return strings.Join(r.command.Args, " ")
+	redacted := urlRegex.ReplaceAllString(strings.Join(r.command.Args, " "), "$1<REDACTED>$3")
+	return redacted
 }
 
 func (r *recordedCommandResolver) Dir() string {
