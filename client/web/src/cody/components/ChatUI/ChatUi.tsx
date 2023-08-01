@@ -105,11 +105,11 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
     }
 
     /** Attempt to use CodeMirror for sliceDoc() method */
-    const editorRef = useRef<EditorView | null>(null)
+    // const editorRef = useRef<EditorView | null>(null)
 
     const RecipeWidgetWrapperWithProps = useMemo(
-        () => (props: { targetRef: EditorView; children: any }) =>
-            <RecipeWidgetWrapper {...props} targetRef={editorRef} codyChatStore={codyChatStore} />,
+        () => (props: { targetRef: any; children: any }) =>
+            <RecipeWidgetWrapper {...props} codyChatStore={codyChatStore} />,
         [codyChatStore]
     )
 
@@ -158,7 +158,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
 
 // TODO: fix the types
 interface RecipeWidgetWrapperProps {
-    targetRef: EditorView | null
+    targetRef: any
     children: any
     codyChatStore: any
     fileName?: string
@@ -188,6 +188,13 @@ const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = R
                         if (!clientRect || isCollapsed || !targetRef || !show) {
                             return null
                         }
+
+                        /** This doesn't work, as I need the index of selected text in correlation to selection.anchorNode.parentNode */
+                        // var selection = window.getSelection()
+                        // var start = selection?.anchorOffset
+                        // var end = selection?.focusOffset
+                        // console.log('start at postion', start, 'in node', selection.anchorNode.wholeText)
+                        // console.log('stop at position', end, 'in node', selection.focusNode.wholeText)
 
                         /** Attempt to find offset index */
 
