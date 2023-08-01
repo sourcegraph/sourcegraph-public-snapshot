@@ -65,10 +65,6 @@ export class CodeMirrorEditor implements Editor {
             const selectedText = editor.view.state.sliceDoc(selection.from, selection.to)
             const followingText = editor.view.state.sliceDoc(selection.to, undefined)
 
-            console.log('P:', precedingText)
-            console.log('S:', selectedText)
-            console.log('F:', followingText)
-
             return {
                 fileName: editor.filename,
                 repoName: this.repoName,

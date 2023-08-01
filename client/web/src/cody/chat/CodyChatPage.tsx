@@ -189,48 +189,42 @@ export const CodyChatPage: React.FunctionComponent<CodyChatPageProps> = ({
                     />
                 </MarketingBlock>
             )}
-            <div onMouseUp={e => console.log(e, window.getSelection())}>
-                <span>Hello</span>
-                <span>World</span>
-                <span>Cody</span>
-                <span>Sourcegraph</span>
-                <PageHeader
-                    actions={
-                        <div className="d-flex">
-                            <Button variant="primary" onClick={initializeNewChat}>
-                                <Icon aria-hidden={true} svgPath={mdiPlus} />
-                                New chat
-                            </Button>
-                        </div>
-                    }
-                    description={
-                        <>
-                            Cody answers code questions and writes code for you by leveraging your entire codebase and
-                            the code graph.
-                            {!isSourcegraphDotCom && !isSourcegraphApp && isCTADismissed && (
-                                <>
-                                    {' '}
-                                    <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.
-                                </>
+            <PageHeader
+                actions={
+                    <div className="d-flex">
+                        <Button variant="primary" onClick={initializeNewChat}>
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
+                            New chat
+                        </Button>
+                    </div>
+                }
+                description={
+                    <>
+                        Cody answers code questions and writes code for you by leveraging your entire codebase and the
+                        code graph.
+                        {!isSourcegraphDotCom && !isSourcegraphApp && isCTADismissed && (
+                            <>
+                                {' '}
+                                <Link to="/help/cody#get-cody">Cody is more powerful in the IDE</Link>.
+                            </>
+                        )}
+                    </>
+                }
+                className={styles.pageHeader}
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={CodyColorIcon}>
+                        <div className="d-inline-flex align-items-center">
+                            Cody Chat
+                            {!isSourcegraphApp && (
+                                <Badge variant="info" className="ml-2">
+                                    Beta
+                                </Badge>
                             )}
-                        </>
-                    }
-                    className={styles.pageHeader}
-                >
-                    <PageHeader.Heading as="h2" styleAs="h1">
-                        <PageHeader.Breadcrumb icon={CodyColorIcon}>
-                            <div className="d-inline-flex align-items-center">
-                                Cody Chat
-                                {!isSourcegraphApp && (
-                                    <Badge variant="info" className="ml-2">
-                                        Beta
-                                    </Badge>
-                                )}
-                            </div>
-                        </PageHeader.Breadcrumb>
-                    </PageHeader.Heading>
-                </PageHeader>
-            </div>
+                        </div>
+                    </PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             {/* Page content */}
             <div className={classNames('row flex-1 overflow-hidden', styles.pageWrapper)}>
                 <div className={classNames('col-md-3', styles.sidebarWrapper)}>

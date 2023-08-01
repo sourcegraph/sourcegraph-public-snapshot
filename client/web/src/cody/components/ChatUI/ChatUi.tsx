@@ -29,7 +29,7 @@ import { Button, Icon, TextArea, Link, Tooltip, Alert, Text, H2 } from '@sourceg
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { CodyPageIcon } from '../../chat/CodyPageIcon'
-import { CodeMirrorEditor } from '../../components/CodeMirrorEditor'
+import { ChatEditor } from '../../components/ChatEditor'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
@@ -177,69 +177,36 @@ const RecipeWidgetWrapper: React.FunctionComponent<RecipeWidgetWrapperProps> = R
 
                 <Popover
                     target={targetRef.current}
+                    mount={targetRef.current}
                     render={({ clientRect, isCollapsed, textContent }) => {
                         // TODO: figure out if we can use useEffect here and if so, then handle linter issues
                         useEffect(() => {
                             setShow(!isCollapsed)
                         }, [isCollapsed, setShow])
 
-                        console.log(targetRef?.current)
-
                         if (!clientRect || isCollapsed || !targetRef || !show) {
                             return null
                         }
 
-                        /** This doesn't work, as I need the index of selected text in correlation to selection.anchorNode.parentNode */
-                        // var selection = window.getSelection()
-                        // var start = selection?.anchorOffset
-                        // var end = selection?.focusOffset
-                        // console.log('start at postion', start, 'in node', selection.anchorNode.wholeText)
-                        // console.log('stop at position', end, 'in node', selection.focusNode.wholeText)
+                        console.log(clientRect.top, clientRect.left)
 
-                        /** Attempt to find offset index */
-
-                        // var offset = 0
-                        // var selection = window.getSelection()
-                        // var range = selection.getRangeAt(0)
-                        // var start = range.startOffset
-                        // var end = range.endOffset
-
-                        // if (selection.baseNode.parentNode.hasChildNodes()) {
-                        //     for (var i = 0; selection.baseNode.parentNode.childNodes.length > i; i++) {
-                        //         var cnode = selection.baseNode.parentNode.childNodes[i]
-                        //         if (cnode.nodeType == document.TEXT_NODE) {
-                        //             if (offset + cnode.length > start) {
-                        //                 break
-                        //             }
-                        //             offset = offset + cnode.length
-                        //         }
-                        //         if (cnode.nodeType == document.ELEMENT_NODE) {
-                        //             if (offset + cnode.textContent.length > start) {
-                        //                 break
-                        //             }
-                        //             offset = offset + cnode.textContent.length
-                        //         }
-                        //     }
-                        // }
-
-                        // start = start + offset
-                        // end = end + offset
-                        // console.log(start, end)
-
-                        // TODO: pass editor and codyChatStore to the widget
                         return (
                             <CodyRecipesWidget
+                                style={{
+                                    position: 'absolute',
+                                    // TODO: Figure out top (dynamic)
+                                    top: `${clientRect.top - 203}px`,
+                                    left: `${clientRect.left - 1002}px`,
+                                }}
                                 codyChatStore={codyChatStore}
-                                // TODO: Use ChatEditor() or CodeMirrorEditor()
                                 editor={
-                                    new CodeMirrorEditor({
-                                        view: targetRef.current,
-                                        content: targetRef?.current?.innerText || '',
+                                    new ChatEditor({
+                                        content: textContent || '',
+                                        fullText: targetRef?.current?.innerText || '',
                                         filename: '',
                                         repo: '',
                                         revision: '',
                                     })
-                                    // null /* TODO: create an editor implementation using the textContent & targetRef.current?.innerText*/
                                 }
                             />
                         )

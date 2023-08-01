@@ -57,14 +57,11 @@ export class ChatEditor implements Editor {
 
         const splitText = editor.fullText.split(editor.content)
         const precedingText = splitText[0]
+        splitText.shift()
         const selectedText = editor.content
-        const followingText = splitText[1]
+        const followingText = splitText.join('')
 
-        // TODO: If there's multiple, how do we split at the right spot?
-
-        console.log('P:', precedingText)
-        console.log('S:', selectedText)
-        console.log('F:', followingText)
+        // TODO: Find exact precedingText & followingText in case of duplicates in large code snippets
 
         return {
             fileName: editor.filename,
@@ -96,19 +93,14 @@ export class ChatEditor implements Editor {
         return null
     }
 
-    // TODO: Update this method
     public getActiveTextEditorVisibleContent(): ActiveTextEditorVisibleContent | null {
         const editor = this.editor
         if (editor) {
-            const { from, to } = editor.view.viewport
-
-            const content = editor.view.state.sliceDoc(from, to)
-
             return {
                 fileName: editor.filename,
                 repoName: this.repoName,
                 revision: this.revision,
-                content,
+                content: editor.content,
             }
         }
 
