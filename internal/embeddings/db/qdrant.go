@@ -56,7 +56,7 @@ func (db *qdrantDB) Search(ctx context.Context, params SearchParams) ([]ChunkRes
 	textSearch := getSearchPoints(false)
 
 	resp, err := db.pointsClient.SearchBatch(ctx, &qdrant.SearchBatchPoints{
-		CollectionName: CollectionName(params.ModelID),
+		CollectionName: collectionName,
 		SearchPoints:   []*qdrant.SearchPoints{codeSearch, textSearch},
 	})
 	if err != nil {
