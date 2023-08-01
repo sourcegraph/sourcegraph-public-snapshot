@@ -4,7 +4,7 @@ import { faker } from '@faker-js/faker'
 import { render, screen } from '@testing-library/svelte'
 import userEvent from '@testing-library/user-event'
 import type { ComponentProps } from 'svelte'
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest'
+import { describe, test, expect, vi } from 'vitest'
 
 import { useFakeTimers, useRealTimers } from '$mocks'
 
@@ -24,33 +24,29 @@ describe('Timestamp.svelte', () => {
         expect(tooltip.textContent).toMatchInlineSnapshot('"2021-05-23 12:57:34 PM "')
     })
 
-    describe('props', () => {
-        beforeEach(() => {
+    test('automatically updates as time passes', async () => {
+        useFakeTimers()
+
+        renderTimestamp({ date: faker.defaultRefDate() })
+        const element = screen.getByTestId('timestamp')
+        expect(element.textContent).toMatchInlineSnapshot('"less than a minute ago"')
+
+        // Advance timer by 42 minutes
+        await vi.advanceTimersByTimeAsync(42 * 60 * 1000)
+        expect(element.textContent).toMatchInlineSnapshot('"42 minutes ago"')
+
+        useRealTimers()
+    })
+
+    test.each([{}, { addSuffix: false }, { strict: true }, { addSuffix: false, strict: true }, { showAbsolute: true }])(
+        'props: %o',
+        (_, options) => {
             useFakeTimers()
-        })
 
-        afterEach(() => {
-            useRealTimers()
-        })
-
-        test.each([
-            ['default options', {}],
-            ['no suffix', { addSuffix: false }],
-            ['strict', { strict: true }],
-            ['no suffix and strict', { addSuffix: false, strict: true }],
-            ['absolute time', { showAbsolute: true }],
-        ])('%s', (_, options) => {
             renderTimestamp(options)
             expect(screen.getByTestId('timestamp').textContent).toMatchSnapshot()
-        })
 
-        test('automatically updates as time passes', async () => {
-            renderTimestamp({ date: faker.defaultRefDate() })
-            const element = screen.getByTestId('timestamp')
-            expect(element.textContent).toMatchInlineSnapshot('"less than a minute ago"')
-
-            await vi.advanceTimersByTimeAsync(42 * 60 * 1000)
-            expect(element.textContent).toMatchInlineSnapshot('"42 minutes ago"')
-        })
-    })
+            useRealTimers()
+        }
+    )
 })
