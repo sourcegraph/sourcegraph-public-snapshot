@@ -102,7 +102,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
     }
 
     const RecipeWidgetWrapperWithProps = useMemo(
-        () => (props: { targetRef: RefObject<HTMLElement>; children: ReactNode | ReactNode[] }) =>
+        () => (props: { targetRef: RefObject<HTMLElement>; children: any }) =>
             <RecipesWidgetWrapper {...props} codyChatStore={codyChatStore} />,
         [codyChatStore]
     )

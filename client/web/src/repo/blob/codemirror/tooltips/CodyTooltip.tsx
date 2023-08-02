@@ -61,8 +61,6 @@ const selectionChangedPlugin = (editor?: CodeMirrorEditor): Extension =>
 function computeCodyWidget(state: EditorState, editor?: CodeMirrorEditor): Tooltip | null {
     const { selection } = state
 
-    console.log('hit', selection.main)
-
     if (selection.main.empty) {
         return null
     }

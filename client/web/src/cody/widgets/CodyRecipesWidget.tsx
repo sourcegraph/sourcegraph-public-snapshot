@@ -19,10 +19,10 @@ import { Recipes } from './components/Recipes'
 interface IProps {
     editor?: CodeMirrorEditor | ChatEditor
     codyChatStore?: CodyChatStore | null
-    className?: string
+    style?: any
 }
 
-export const CodyRecipesWidget: React.FC<IProps> = ({ editor, codyChatStore, className }) => {
+export const CodyRecipesWidget: React.FC<IProps> = ({ editor, codyChatStore, style }) => {
     useEffect(() => {
         eventLogger.log(EventName.CODY_CHAT_EDITOR_WIDGET_VIEWED)
     }, [])
@@ -38,7 +38,7 @@ export const CodyRecipesWidget: React.FC<IProps> = ({ editor, codyChatStore, cla
     }
 
     return (
-        <div className={className}>
+        <div style={style}>
             <Recipes>
                 <Recipe title="Explain" icon={mdiCardBulletedOutline}>
                     <RecipeAction
