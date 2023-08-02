@@ -18,6 +18,7 @@ import {
     LoadingSpinner,
     ErrorAlert,
     Button,
+    Code,
 } from '@sourcegraph/wildcard'
 
 import { LogOutput } from '../../../components/LogOutput'
@@ -163,7 +164,7 @@ const LastExecutedCommandNode: FC<LastExecutedCommandNodeProps> = ({ command, mi
                 </small>
                 {command.dir && (
                     <small className="mt-2 mb-0">
-                        <span className="font-weight-bold">Path:</span> {command.dir}
+                        <span className="font-weight-bold">Path:</span> <Code>{command.dir}</Code>
                     </small>
                 )}
             </div>
