@@ -2176,15 +2176,6 @@ func TestIgnorePath(t *testing.T) {
 	}
 }
 
-// A naive test, but something is better than nothing. At least we can verify our command execution
-// works.
-func TestOptimizeForGitAlternateRepo(t *testing.T) {
-	_, tmpPath := gitserver.MakeGitRepositoryAndReturnDir(t)
-	tmpPath = filepath.Join(tmpPath, ".git")
-	err := optimizeForGitAlternateRepo(context.Background(), common.GitDir(tmpPath))
-	require.NoError(t, err)
-}
-
 func TestCloneOptions_DeepCopy(t *testing.T) {
 	t.Run("nil dedupeoptions", func(t *testing.T) {
 		old := &cloneOptions{}

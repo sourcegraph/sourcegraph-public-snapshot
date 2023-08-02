@@ -2024,26 +2024,6 @@ func (s *Server) configureRepoAsGitAlternate(repoTmp common.GitDir, poolRepoName
 	return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
 }
 
-func optimizeForGitAlternateRepo(ctx context.Context, repoDir common.GitDir) error {
-	// Run in this in the repo and not the pool.
-	// NEVER run this in the pool repo.
-	cmd := exec.CommandContext(ctx, "git", "repack")
-	repoDir.Set(cmd)
-
-	if err := cmd.Run(); err != nil {
-		return errors.Wrap(err, "failed to run git repack in repo (deduplication will not work)")
-	}
-
-	cmd = exec.CommandContext(ctx, "git", "gc")
-	repoDir.Set(cmd)
-
-	if err := cmd.Run(); err != nil {
-		return errors.Wrap(err, "failed to run git gc in repo (deduplication will not work)")
-	}
-
-	return nil
-}
-
 // testRepoCorrupter is used by tests to disrupt a cloned repository (e.g. deleting
 // HEAD, zeroing it out, etc.)
 var testRepoCorrupter func(ctx context.Context, tmpDir common.GitDir)
@@ -2515,12 +2495,6 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	}
 	if err := fileutil.RenameAndSync(tmpPath, dstPath); err != nil {
 		return err
-	}
-
-	if isDedupeClone && opts.DeduplicatedCloneOptions.dedupeCloneType != dedupePool {
-		if err := optimizeForGitAlternateRepo(ctx, s.dir(repo)); err != nil {
-			logger.Error("failed to optimise repo, deduplicated storage will not be available", log.Error(err))
-		}
 	}
 
 	// Successfully updated, best-effort updating of db fetch state based on
