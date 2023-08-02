@@ -23402,6 +23402,19 @@
           "Comment": ""
         },
         {
+          "Name": "code_chunks_excluded",
+          "Index": 13,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "code_files_embedded",
           "Index": 4,
           "TypeName": "integer",
@@ -23482,6 +23495,19 @@
         {
           "Name": "text_chunks_embedded",
           "Index": 10,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "0",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "text_chunks_excluded",
+          "Index": 14,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",

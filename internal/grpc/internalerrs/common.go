@@ -185,17 +185,6 @@ func gRPCUnexpectedContentTypeChecker(s *status.Status) bool {
 	return s.Code() != codes.OK && strings.Contains(s.Message(), "transport: received unexpected content-type")
 }
 
-// splitMethodName splits a full gRPC method name in to its components (service, method)
-//
-// Copied from github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/reporter.go
-func splitMethodName(fullMethod string) (string, string) {
-	fullMethod = strings.TrimPrefix(fullMethod, "/") // remove leading slash
-	if i := strings.Index(fullMethod, "/"); i >= 0 {
-		return fullMethod[:i], fullMethod[i+1:]
-	}
-	return "unknown", "unknown"
-}
-
 // findNonUTF8StringFields returns a list of field names that contain invalid UTF-8 strings
 // in the given proto message.
 //

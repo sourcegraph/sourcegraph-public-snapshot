@@ -42,6 +42,7 @@ go_test(
         "//internal/api",
         "//internal/codeintel/context",
         "//internal/codeintel/types",
+        "//internal/embeddings",
         "//internal/embeddings/background/repo",
         "//internal/embeddings/embed/client",
         "//internal/paths",

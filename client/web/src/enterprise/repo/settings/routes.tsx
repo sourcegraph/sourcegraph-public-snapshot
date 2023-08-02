@@ -4,6 +4,7 @@ import { RedirectRoute } from '../../../components/RedirectRoute'
 import { RepoSettingsAreaRoute } from '../../../repo/settings/RepoSettingsArea'
 import { repoSettingsAreaRoutes } from '../../../repo/settings/routes'
 
+import { RepoSettingsLogsPageProps } from './RepoSettingsLogsPage'
 import { RepoSettingsPermissionsPageProps } from './RepoSettingsPermissionsPage'
 
 const RepoSettingsPermissionsPage = lazyComponent<RepoSettingsPermissionsPageProps, 'RepoSettingsPermissionsPage'>(
@@ -11,11 +12,20 @@ const RepoSettingsPermissionsPage = lazyComponent<RepoSettingsPermissionsPagePro
     'RepoSettingsPermissionsPage'
 )
 
+const RepoSettingsLogsPage = lazyComponent<RepoSettingsLogsPageProps, 'RepoSettingsLogsPage'>(
+    () => import('./RepoSettingsLogsPage'),
+    'RepoSettingsLogsPage'
+)
+
 export const enterpriseRepoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[] = [
     ...repoSettingsAreaRoutes,
     {
         path: '/permissions',
         render: props => <RepoSettingsPermissionsPage {...props} />,
+    },
+    {
+        path: '/logs',
+        render: props => <RepoSettingsLogsPage {...props} />,
     },
 
     // Legacy routes

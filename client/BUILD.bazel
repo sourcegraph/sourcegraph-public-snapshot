@@ -15,7 +15,7 @@
 # gazelle:js_test_files **/fixtures/**/*.{ts,tsx}
 # gazelle:js_test_files **/WebStory.{ts,tsx}
 # TODO(bazel): sveltekit tests
-# gazelle:exclude **/web-sveltekit/**/*.test.ts
+# gazelle:exclude **/web-sveltekit/**/*.ts
 
 # TODO(bazel): put fixtures + testutils + ? into own rules
 # js_{fixture}_files **/*.{fixture,fixtures}.{ts,tsx}

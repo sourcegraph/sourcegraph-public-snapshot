@@ -4,7 +4,14 @@
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
     import { getContext } from 'svelte'
 
-    import { pluralize } from '$lib/common'
+    import { goto } from '$app/navigation'
+    import { page } from '$app/stores'
+    import {
+        addLineRangeQueryParameter,
+        formatSearchParameters,
+        pluralize,
+        toPositionOrRangeQueryParameter,
+    } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
     import { resultToMatchItems } from '$lib/search/utils'
     import {
@@ -29,6 +36,7 @@
 
     $: repoName = result.repository
     $: repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
+    $: fileURL = getFileMatchUrl(result)
     $: [fileBase, fileName] = splitPath(result.path)
     $: items = resultToMatchItems(result)
     $: expandedMatchGroups = ranking.expandedResults(items, context)
@@ -57,17 +65,32 @@
             root.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
         }, 0)
     }
+
+    function handleLineClick(event: MouseEvent) {
+        const target = event.target as HTMLElement
+        if (target.dataset.line) {
+            const searchParams = formatSearchParameters(
+                addLineRangeQueryParameter(
+                    // We don't want to preserve the 'q' query parameter.
+                    // We might have to adjust this if we want to preserver other query parameters.
+                    new URLSearchParams(),
+                    toPositionOrRangeQueryParameter({ position: { line: +target.dataset.line } })
+                )
+            )
+            goto(`${fileURL}?${searchParams}`)
+        }
+    }
 </script>
 
 <SearchResult {result}>
     <div slot="title">
         <a href={repoAtRevisionURL}>{displayRepoName(repoName)}</a>
         <span aria-hidden={true}>›</span>
-        <a href={getFileMatchUrl(result)}>
+        <a href={fileURL}>
             {#if fileBase}{fileBase}/{/if}<strong>{fileName}</strong>
         </a>
     </div>
-    <div bind:this={root}>
+    <div class="matches" bind:this={root} on:click={handleLineClick}>
         <FileMatchChildren {result} grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped} />
     </div>
     {#if collapsible}
@@ -99,6 +122,16 @@
         &.expanded {
             position: sticky;
             bottom: 0;
+        }
+    }
+
+    .matches {
+        // TODO: Evaluate whether (and how) these should/can be convertd to links
+        :global(td[data-line]) {
+            cursor: pointer;
+            &:hover {
+                text-decoration: underline;
+            }
         }
     }
 </style>
