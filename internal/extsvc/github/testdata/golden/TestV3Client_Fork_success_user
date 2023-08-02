@@ -1,20 +1,16 @@
 {
-  "ID": "R_kgDOHF3Ktw",
-  "DatabaseID": 475908791,
-  "NameWithOwner": "sourcegraph-vcr/automation-testing",
+  "ID": "R_kgDOGmqtEg",
+  "DatabaseID": 443198738,
+  "NameWithOwner": "LawnGnome/automation-testing",
   "Description": "This repository is used to test opening and closing pull request with Automation",
-  "URL": "https://github.com/sourcegraph-vcr/automation-testing",
+  "URL": "https://github.com/LawnGnome/automation-testing",
   "IsPrivate": false,
   "IsFork": true,
   "IsArchived": false,
   "IsLocked": false,
   "IsDisabled": false,
+  "ViewerPermission": "ADMIN",
   "RepositoryTopics": {
    "Nodes": []
-  },
-  "ViewerPermission": "ADMIN",
-  "Parent": {
-   "NameWithOwner": "",
-   "IsFork": false
   }
  }

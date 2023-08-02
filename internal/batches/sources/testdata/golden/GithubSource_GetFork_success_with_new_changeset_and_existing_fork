@@ -31,13 +31,9 @@
    "IsArchived": false,
    "IsLocked": false,
    "IsDisabled": false,
+   "ViewerPermission": "ADMIN",
    "RepositoryTopics": {
     "Nodes": []
-   },
-   "ViewerPermission": "ADMIN",
-   "Parent": {
-    "NameWithOwner": "",
-    "IsFork": false
    }
   }
  }

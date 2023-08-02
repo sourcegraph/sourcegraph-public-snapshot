@@ -11,6 +11,7 @@
     "IsArchived": false,
     "IsLocked": false,
     "IsDisabled": false,
+    "ViewerPermission": "",
     "RepositoryTopics": {
      "Nodes": [
       {
@@ -20,8 +21,7 @@
       }
      ]
     },
-    "Visibility": "INTERNAL",
-    "ViewerPermission": ""
+    "Visibility": "INTERNAL"
    }
   ],
   "TotalCount": 1,

@@ -1,20 +1,16 @@
 {
-  "ID": "R_kgDOJ_oTGg",
-  "DatabaseID": 670700314,
-  "NameWithOwner": "sourcegraph-testing/sourcegraph-automation-testing",
+  "ID": "R_kgDOGmrbug",
+  "DatabaseID": 443210682,
+  "NameWithOwner": "sourcegraph-testing/automation-testing",
   "Description": "This repository is used to test opening and closing pull request with Automation",
-  "URL": "https://github.com/sourcegraph-testing/sourcegraph-automation-testing",
+  "URL": "https://github.com/sourcegraph-testing/automation-testing",
   "IsPrivate": false,
   "IsFork": true,
   "IsArchived": false,
   "IsLocked": false,
   "IsDisabled": false,
+  "ViewerPermission": "ADMIN",
   "RepositoryTopics": {
    "Nodes": []
-  },
-  "ViewerPermission": "ADMIN",
-  "Parent": {
-   "NameWithOwner": "",
-   "IsFork": false
   }
  }
