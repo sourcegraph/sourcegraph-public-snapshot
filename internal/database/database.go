@@ -128,12 +128,16 @@ func GetStore[T basestore.ShareableStore](db DB, f NewStoreFunc[T]) T {
 	return f(db)
 }
 
-func Mock[T basestore.ShareableStore](db DB, vals ...T) (mdb *mockedDB) {
-	mdb = &mockedDB{DB: db}
-	for val := range vals {
+func Mock[T basestore.ShareableStore](db DB, val T, vals ...T) (mdb *mockedDB) {
+	mdb = &mockedDB{
+		DB:          db,
+		mockedStore: reflect.ValueOf(val),
+	}
+
+	for v := range vals {
 		mdb = &mockedDB{
 			DB:          mdb,
-			mockedStore: reflect.ValueOf(val),
+			mockedStore: reflect.ValueOf(v),
 		}
 	}
 
