@@ -321,13 +321,11 @@ func TestServer_RepoLookup(t *testing.T) {
 			},
 		},
 		Metadata: &github.Repository{
-			BaseRepository: &github.BaseRepository{
-				ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-				URL:           "github.com/foo/bar",
-				DatabaseID:    1234,
-				Description:   "The description",
-				NameWithOwner: "foo/bar",
-			},
+			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:           "github.com/foo/bar",
+			DatabaseID:    1234,
+			Description:   "The description",
+			NameWithOwner: "foo/bar",
 		},
 	}
 

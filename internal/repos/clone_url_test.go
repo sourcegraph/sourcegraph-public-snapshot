@@ -172,7 +172,7 @@ func TestGitHubCloneURLs(t *testing.T) {
 		_, err := githubCloneURL(
 			context.Background(),
 			logger,
-			&github.Repository{BaseRepository: &github.BaseRepository{}},
+			&github.Repository{},
 			&schema.GitHubConnection{},
 		)
 
@@ -182,7 +182,7 @@ func TestGitHubCloneURLs(t *testing.T) {
 		}
 	})
 
-	repo := github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "foo/bar"}}
+	repo := github.Repository{NameWithOwner: "foo/bar"}
 
 	tests := []struct {
 		InstanceUrl string

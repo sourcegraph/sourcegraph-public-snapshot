@@ -40,10 +40,8 @@ func TestGithubSource_CreateChangeset(t *testing.T) {
 	// You can update just this test with `-update GithubSource_CreateChangeset`.
 	repo := &types.Repo{
 		Metadata: &github.Repository{
-			BaseRepository: &github.BaseRepository{
-				ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
-				NameWithOwner: "sourcegraph/automation-testing",
-			},
+			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+			NameWithOwner: "sourcegraph/automation-testing",
 		},
 	}
 
@@ -157,10 +155,8 @@ func TestGithubSource_CreateChangeset_CreationLimit(t *testing.T) {
 
 	repo := &types.Repo{
 		Metadata: &github.Repository{
-			BaseRepository: &github.BaseRepository{
-				ID:            "bLAhBLAh",
-				NameWithOwner: "some-org/some-repo",
-			},
+			ID:            "bLAhBLAh",
+			NameWithOwner: "some-org/some-repo",
 		},
 	}
 	cs := &Changeset{
@@ -246,10 +242,8 @@ func TestGithubSource_CloseChangeset_DeleteSourceBranch(t *testing.T) {
 	// provided this PR is open: https://github.com/sourcegraph/automation-testing/pull/468
 	repo := &types.Repo{
 		Metadata: &github.Repository{
-			BaseRepository: &github.BaseRepository{
-				ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
-				NameWithOwner: "sourcegraph/automation-testing",
-			},
+			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+			NameWithOwner: "sourcegraph/automation-testing",
 		},
 	}
 
@@ -448,8 +442,8 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 		{
 			name: "found",
 			cs: &Changeset{
-				RemoteRepo: &types.Repo{Metadata: &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/sourcegraph"}}},
-				TargetRepo: &types.Repo{Metadata: &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/sourcegraph"}}},
+				RemoteRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				TargetRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
 				Changeset:  &btypes.Changeset{ExternalID: "5550"},
 			},
 			err: "<nil>",
@@ -457,8 +451,8 @@ func TestGithubSource_LoadChangeset(t *testing.T) {
 		{
 			name: "not-found",
 			cs: &Changeset{
-				RemoteRepo: &types.Repo{Metadata: &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/sourcegraph"}}},
-				TargetRepo: &types.Repo{Metadata: &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/sourcegraph"}}},
+				RemoteRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
+				TargetRepo: &types.Repo{Metadata: &github.Repository{NameWithOwner: "sourcegraph/sourcegraph"}},
 				Changeset:  &btypes.Changeset{ExternalID: "100000"},
 			},
 			err: "Changeset with external ID 100000 not found",
@@ -526,10 +520,8 @@ func TestGithubSource_GetFork(t *testing.T) {
 		newGitHubRepo := func(urn, nameWithOwner, id string) *types.Repo {
 			return &types.Repo{
 				Metadata: &github.Repository{
-					BaseRepository: &github.BaseRepository{
-						ID:            id,
-						NameWithOwner: nameWithOwner,
-					},
+					ID:            id,
+					NameWithOwner: nameWithOwner,
 				},
 				Sources: map[string]*types.SourceInfo{
 					urn: {
@@ -698,7 +690,7 @@ func TestGithubSource_GetFork(t *testing.T) {
 			"invalid NameWithOwner": {
 				targetRepo: &types.Repo{
 					Metadata: &github.Repository{
-						BaseRepository: &github.BaseRepository{NameWithOwner: "foo"},
+						NameWithOwner: "foo",
 					},
 				},
 				client: nil,
@@ -706,7 +698,7 @@ func TestGithubSource_GetFork(t *testing.T) {
 			"client error": {
 				targetRepo: &types.Repo{
 					Metadata: &github.Repository{
-						BaseRepository: &github.BaseRepository{NameWithOwner: "foo/bar"},
+						NameWithOwner: "foo/bar",
 					},
 				},
 				client: &mockGithubClientFork{err: errors.New("hello!")},
@@ -737,7 +729,7 @@ func TestGithubSource_GetFork(t *testing.T) {
 			"no namespace": {
 				targetRepo: &types.Repo{
 					Metadata: &github.Repository{
-						BaseRepository: &github.BaseRepository{NameWithOwner: "foo/bar"},
+						NameWithOwner: "foo/bar",
 					},
 					Sources: map[string]*types.SourceInfo{
 						urn: {
@@ -747,22 +739,19 @@ func TestGithubSource_GetFork(t *testing.T) {
 					},
 				},
 				forkRepo: &github.Repository{
-					BaseRepository: &github.BaseRepository{
-						NameWithOwner: user + "/user-bar", IsFork: true},
+					NameWithOwner: user + "/user-bar", IsFork: true,
 				},
 				namespace:     nil,
 				wantNamespace: user,
 				wantName:      user + "-bar",
 				client: &mockGithubClientFork{fork: &github.Repository{
-					BaseRepository: &github.BaseRepository{NameWithOwner: user + "/user-bar", IsFork: true},
+					NameWithOwner: user + "/user-bar", IsFork: true,
 				}},
 			},
 			"with namespace": {
 				targetRepo: &types.Repo{
 					Metadata: &github.Repository{
-						BaseRepository: &github.BaseRepository{
-							NameWithOwner: "foo/bar",
-						},
+						NameWithOwner: "foo/bar",
 					},
 					Sources: map[string]*types.SourceInfo{
 						urn: {
@@ -771,19 +760,19 @@ func TestGithubSource_GetFork(t *testing.T) {
 						},
 					},
 				},
-				forkRepo:      &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: org + "/" + org + "-bar", IsFork: true}},
+				forkRepo:      &github.Repository{NameWithOwner: org + "/" + org + "-bar", IsFork: true},
 				namespace:     &org,
 				wantNamespace: org,
 				wantName:      org + "-bar",
 				client: &mockGithubClientFork{
-					fork:    &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: org + "/" + org + "-bar", IsFork: true}},
+					fork:    &github.Repository{NameWithOwner: org + "/" + org + "-bar", IsFork: true},
 					wantOrg: &org,
 				},
 			},
 			"with namespace and name": {
 				targetRepo: &types.Repo{
 					Metadata: &github.Repository{
-						BaseRepository: &github.BaseRepository{NameWithOwner: "foo/bar"},
+						NameWithOwner: "foo/bar",
 					},
 					Sources: map[string]*types.SourceInfo{
 						urn: {
@@ -792,13 +781,13 @@ func TestGithubSource_GetFork(t *testing.T) {
 						},
 					},
 				},
-				forkRepo:      &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: org + "/custom-bar", IsFork: true}},
+				forkRepo:      &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
 				namespace:     &org,
 				wantNamespace: org,
 				name:          pointers.Ptr("custom-bar"),
 				wantName:      "custom-bar",
 				client: &mockGithubClientFork{
-					fork:    &github.Repository{BaseRepository: &github.BaseRepository{NameWithOwner: org + "/custom-bar", IsFork: true}},
+					fork:    &github.Repository{NameWithOwner: org + "/custom-bar", IsFork: true},
 					wantOrg: &org,
 				},
 			},
@@ -827,10 +816,8 @@ func TestGithubSource_DuplicateCommit(t *testing.T) {
 	// You can update just this test with `-update GithubSource_DuplicateCommit`.
 	repo := &types.Repo{
 		Metadata: &github.Repository{
-			BaseRepository: &github.BaseRepository{
-				ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
-				NameWithOwner: "sourcegraph/automation-testing",
-			},
+			ID:            "MDEwOlJlcG9zaXRvcnkyMjExNDc1MTM=",
+			NameWithOwner: "sourcegraph/automation-testing",
 		},
 	}
 

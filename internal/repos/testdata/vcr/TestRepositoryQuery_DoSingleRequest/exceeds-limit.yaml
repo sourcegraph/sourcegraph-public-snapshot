@@ -19,21 +19,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"search":{"repositoryCount":35,"pageInfo":{"hasNextPage":true,"endCursor":"Y3Vyc29yOjEw"},"nodes":[{"id":"R_kgDOJTVMKw","databaseId":624249899,"nameWithOwner":"IDEA-Research/Grounded-Segment-Anything","description":"Grounded-SAM:
-      Marrying Grounding DINO with Segment Anything & Stable Diffusion & Recognize
-      Anything - Automatically Detect , Segment and Generate Anything","url":"https://github.com/IDEA-Research/Grounded-Segment-Anything","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10098,"forkCount":877,"repositoryTopics":{"nodes":[{"topic":{"name":"open-vocabulary-detection"}},{"topic":{"name":"open-vocabulary-segmentation"}},{"topic":{"name":"data-generation"}},{"topic":{"name":"automatic-labeling-system"}},{"topic":{"name":"caption"}},{"topic":{"name":"speech"}},{"topic":{"name":"3d-whole-body-pose-estimation"}},{"topic":{"name":"image-editing"}}]},"parent":null},{"id":"MDEwOlJlcG9zaXRvcnk0NTc4ODk4","databaseId":4578898,"nameWithOwner":"HabitRPG/habitica","description":"A
-      habit tracker app which treats your goals like a Role Playing Game.","url":"https://github.com/HabitRPG/habitica","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10097,"forkCount":3757,"repositoryTopics":{"nodes":[{"topic":{"name":"habitica"}},{"topic":{"name":"javascript"}},{"topic":{"name":"node"}},{"topic":{"name":"nodejs"}},{"topic":{"name":"mongodb"}},{"topic":{"name":"vue"}},{"topic":{"name":"vuejs"}},{"topic":{"name":"express"}},{"topic":{"name":"css"}},{"topic":{"name":"html"}},{"topic":{"name":"hacktoberfest"}}]},"parent":null},{"id":"MDEwOlJlcG9zaXRvcnkzNTIxMDI0Mw==","databaseId":35210243,"nameWithOwner":"ctjhoa/rust-learning","description":"A
-      bunch of links to blog posts, articles, videos, etc for learning Rust","url":"https://github.com/ctjhoa/rust-learning","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10095,"forkCount":689,"repositoryTopics":{"nodes":[{"topic":{"name":"rust"}},{"topic":{"name":"blog-article"}},{"topic":{"name":"video"}},{"topic":{"name":"tutorial"}},{"topic":{"name":"book"}},{"topic":{"name":"learn"}},{"topic":{"name":"teaching"}},{"topic":{"name":"hacktoberfest"}}]},"parent":null},{"id":"MDEwOlJlcG9zaXRvcnk4NjEzMjgzMg==","databaseId":86132832,"nameWithOwner":"learnbyexample/Command-line-text-processing","description":":zap:
-      From finding text to search and replace, from sorting to beautifying text and
-      more :art:","url":"https://github.com/learnbyexample/Command-line-text-processing","isPrivate":false,"isFork":false,"isArchived":true,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10094,"forkCount":726,"repositoryTopics":{"nodes":[{"topic":{"name":"command-line"}},{"topic":{"name":"linux"}},{"topic":{"name":"text-processing"}},{"topic":{"name":"ebook"}},{"topic":{"name":"sed"}},{"topic":{"name":"grep"}},{"topic":{"name":"perl"}},{"topic":{"name":"awk"}},{"topic":{"name":"ruby"}},{"topic":{"name":"regex"}}]},"parent":null},{"id":"MDEwOlJlcG9zaXRvcnkxODIwMzQ3NDg=","databaseId":182034748,"nameWithOwner":"MSWorkers/support.996.ICU","description":"Microsoft
-      and GitHub Workers Support 996.ICU","url":"https://github.com/MSWorkers/support.996.ICU","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10093,"forkCount":655,"repositoryTopics":{"nodes":[]},"parent":null},{"id":"MDEwOlJlcG9zaXRvcnkyMTc4MDU2Mg==","databaseId":21780562,"nameWithOwner":"JStumpp/awesome-android","description":"A
-      curated list of awesome Android packages and resources.","url":"https://github.com/JStumpp/awesome-android","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10091,"forkCount":1699,"repositoryTopics":{"nodes":[{"topic":{"name":"android-library"}},{"topic":{"name":"android-development"}},{"topic":{"name":"awesome-list-awesome-list"}},{"topic":{"name":"android-tutorial"}},{"topic":{"name":"awesome-list"}},{"topic":{"name":"awesome"}},{"topic":{"name":"list"}}]},"parent":null},{"id":"MDEwOlJlcG9zaXRvcnkxNTYzMzI0OTc=","databaseId":156332497,"nameWithOwner":"codota/TabNine","description":"AI
-      Code Completions","url":"https://github.com/codota/TabNine","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10090,"forkCount":473,"repositoryTopics":{"nodes":[{"topic":{"name":"ai"}},{"topic":{"name":"artificial-intelligence"}},{"topic":{"name":"gpt-2"}},{"topic":{"name":"jetbrains-plugin"}},{"topic":{"name":"vscode-extension"}},{"topic":{"name":"sublime-package"}},{"topic":{"name":"vim-plugin"}},{"topic":{"name":"javascript"}},{"topic":{"name":"typescript"}},{"topic":{"name":"rust"}},{"topic":{"name":"cpp"}},{"topic":{"name":"ruby"}},{"topic":{"name":"java"}},{"topic":{"name":"python"}},{"topic":{"name":"golang"}},{"topic":{"name":"lua"}},{"topic":{"name":"bash"}},{"topic":{"name":"swift"}},{"topic":{"name":"php"}},{"topic":{"name":"atom-package"}}]},"parent":null},{"id":"R_kgDOGx4Z8A","databaseId":454957552,"nameWithOwner":"AstroNvim/AstroNvim","description":"AstroNvim
-      is an aesthetic and feature-rich neovim config that is extensible and easy to
-      use with a great set of plugins ","url":"https://github.com/AstroNvim/AstroNvim","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10086,"forkCount":721,"repositoryTopics":{"nodes":[{"topic":{"name":"vim"}},{"topic":{"name":"lua"}},{"topic":{"name":"neovim"}},{"topic":{"name":"ide"}},{"topic":{"name":"nvim"}},{"topic":{"name":"neovim-configuration"}},{"topic":{"name":"neovim-config"}},{"topic":{"name":"neovim-lua"}},{"topic":{"name":"neovim-setup"}},{"topic":{"name":"astrovim"}},{"topic":{"name":"astronvim"}}]},"parent":null},{"id":"MDEwOlJlcG9zaXRvcnk5NzQ2NDc3","databaseId":9746477,"nameWithOwner":"sonic-pi-net/sonic-pi","description":"Code.
-      Music. Live.","url":"https://github.com/sonic-pi-net/sonic-pi","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10084,"forkCount":902,"repositoryTopics":{"nodes":[{"topic":{"name":"livecoding"}},{"topic":{"name":"music"}},{"topic":{"name":"education"}},{"topic":{"name":"schools"}},{"topic":{"name":"synthesis"}},{"topic":{"name":"synthesizer"}},{"topic":{"name":"instrument"}},{"topic":{"name":"live-coding"}},{"topic":{"name":"art"}},{"topic":{"name":"audio"}}]},"parent":null},{"id":"MDEwOlJlcG9zaXRvcnk2NzA0MzcxNA==","databaseId":67043714,"nameWithOwner":"heynickc/awesome-ddd","description":"A
-      curated list of Domain-Driven Design (DDD), Command Query Responsibility Segregation
-      (CQRS), Event Sourcing, and Event Storming resources","url":"https://github.com/heynickc/awesome-ddd","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":10083,"forkCount":1280,"repositoryTopics":{"nodes":[{"topic":{"name":"awesome"}},{"topic":{"name":"awesome-list"}},{"topic":{"name":"list"}}]},"parent":null}]}}}'
+    body: '{"message":"Bad credentials","documentation_url":"https://docs.github.com/graphql"}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -42,12 +28,14 @@ interactions:
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
         X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
         X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Length:
+      - "83"
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 28 Jul 2023 11:52:22 GMT
+      - Wed, 02 Aug 2023 10:54:57 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -63,19 +51,19 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - FBBC:1F995D:41FAFC:46AE9E:64C3ABF5
+      - EF3B:69EBB:3B75A6:3FAEE2:64CA3601
       X-Ratelimit-Limit:
-      - "5000"
+      - "0"
       X-Ratelimit-Remaining:
-      - "4997"
+      - "0"
       X-Ratelimit-Reset:
-      - "1690548565"
+      - "1690977297"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "3"
+      - "0"
       X-Xss-Protection:
       - "0"
-    status: 200 OK
-    code: 200
+    status: 401 Unauthorized
+    code: 401
     duration: ""

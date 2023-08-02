@@ -20,8 +20,7 @@ interactions:
     url: https://api.github.com/graphql
     method: POST
   response:
-    body: '{"data":{"search":{"repositoryCount":1,"pageInfo":{"hasNextPage":false,"endCursor":"Y3Vyc29yOjE="},"nodes":[{"id":"MDEwOlJlcG9zaXRvcnkxMjA4MDU1MQ==","databaseId":12080551,"nameWithOwner":"tsenart/vegeta","description":"HTTP
-      load testing tool and library. It''s over 9000!","url":"https://github.com/tsenart/vegeta","isPrivate":false,"isFork":false,"isArchived":false,"isLocked":false,"isDisabled":false,"viewerPermission":"READ","stargazerCount":21557,"forkCount":1296,"repositoryTopics":{"nodes":[{"topic":{"name":"load-testing"}},{"topic":{"name":"go"}},{"topic":{"name":"benchmarking"}},{"topic":{"name":"http"}}]},"parent":null}]}}}'
+    body: '{"message":"Bad credentials","documentation_url":"https://docs.github.com/graphql"}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -30,12 +29,14 @@ interactions:
         X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
         X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
         X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Length:
+      - "83"
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Fri, 28 Jul 2023 11:52:22 GMT
+      - Wed, 02 Aug 2023 10:54:27 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -51,19 +52,19 @@ interactions:
       X-Github-Media-Type:
       - github.v4; param=antiope-preview; format=json
       X-Github-Request-Id:
-      - FBBC:1F995D:41FB55:46AEFB:64C3ABF6
+      - ED62:5EA14:401694:444F8E:64CA35E2
       X-Ratelimit-Limit:
-      - "5000"
+      - "0"
       X-Ratelimit-Remaining:
-      - "4996"
+      - "0"
       X-Ratelimit-Reset:
-      - "1690548565"
+      - "1690977267"
       X-Ratelimit-Resource:
       - graphql
       X-Ratelimit-Used:
-      - "4"
+      - "0"
       X-Xss-Protection:
       - "0"
-    status: 200 OK
-    code: 200
+    status: 401 Unauthorized
+    code: 401
     duration: ""

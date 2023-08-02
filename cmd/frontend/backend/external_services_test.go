@@ -164,13 +164,11 @@ func makeBitbucketServerRepo() *types.Repo {
 func makeGithubRepo() *types.Repo {
 	repo := typestest.MakeRepo("github.com/sourcegraph/conc", "https://github.com/", extsvc.TypeGitHub)
 	repo.Metadata = &github.Repository{
-		BaseRepository: &github.BaseRepository{
-			ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			URL:           "github.com/sourcegraph/conc",
-			DatabaseID:    1234,
-			Description:   "The description",
-			NameWithOwner: "sourcegraph/conc",
-		},
+		ID:            "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+		URL:           "github.com/sourcegraph/conc",
+		DatabaseID:    1234,
+		Description:   "The description",
+		NameWithOwner: "sourcegraph/conc",
 	}
 	return repo
 }

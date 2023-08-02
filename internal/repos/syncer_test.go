@@ -705,7 +705,7 @@ func TestSyncer_MaybePrepareForDeduplication(t *testing.T) {
 		URI:  "github.com/forked/sourcegraph",
 		Fork: true,
 		Metadata: &github.Repository{
-			Parent: &github.BaseRepository{
+			Parent: &github.ParentRepository{
 				NameWithOwner: "sourcegraph/sourcegraph",
 			},
 		},
@@ -716,7 +716,7 @@ func TestSyncer_MaybePrepareForDeduplication(t *testing.T) {
 		URI:  "github.com/forked/foo",
 		Fork: true,
 		Metadata: &github.Repository{
-			Parent: &github.BaseRepository{
+			Parent: &github.ParentRepository{
 				NameWithOwner: string("foo"),
 			},
 		},
@@ -734,7 +734,7 @@ func TestSyncer_MaybePrepareForDeduplication(t *testing.T) {
 		URI:  "ghe.sgdev.org/sourcegrpah/sourcegraph",
 		Fork: true,
 		Metadata: &github.Repository{
-			Parent: &github.BaseRepository{
+			Parent: &github.ParentRepository{
 				NameWithOwner: string("foo"),
 			},
 		},
@@ -819,14 +819,12 @@ func TestSyncRepo(t *testing.T) {
 			},
 		},
 		Metadata: &github.Repository{
-			BaseRepository: &github.BaseRepository{
-				ID:             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-				URL:            "github.com/foo/bar",
-				DatabaseID:     1234,
-				Description:    "The description",
-				NameWithOwner:  "foo/bar",
-				StargazerCount: 100,
-			},
+			ID:             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+			URL:            "github.com/foo/bar",
+			DatabaseID:     1234,
+			Description:    "The description",
+			NameWithOwner:  "foo/bar",
+			StargazerCount: 100,
 		},
 	}
 

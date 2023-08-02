@@ -36,15 +36,11 @@ func TestCheckGitHubPermissions(t *testing.T) {
 	}
 
 	listInstallationRepositoriesHookMatchingRepository := func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {
-		return []*github.Repository{
-			{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/sourcegraph"}},
-		}, false, 1, nil
+		return []*github.Repository{{NameWithOwner: "sourcegraph/sourcegraph"}}, false, 1, nil
 	}
 
 	listInstallationRepositoriesHookNonMatchingRepository := func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {
-		return []*github.Repository{
-			{BaseRepository: &github.BaseRepository{NameWithOwner: "sourcegraph/not-sourcegraph"}},
-		}, false, 1, nil
+		return []*github.Repository{{NameWithOwner: "sourcegraph/not-sourcegraph"}}, false, 1, nil
 	}
 
 	listInstallationRepositoriesHookCalledWithUserToken := func(ctx context.Context, page int) ([]*github.Repository, bool, int, error) {

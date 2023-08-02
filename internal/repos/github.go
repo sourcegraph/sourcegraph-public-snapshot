@@ -390,10 +390,6 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	metadata.ViewerPermission = ""
 	metadata.Description = sanitizeToUTF8(metadata.Description)
 
-	if r.Parent != nil && r.Parent.ID == "" {
-		metadata.Parent = nil
-	}
-
 	return &types.Repo{
 		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,

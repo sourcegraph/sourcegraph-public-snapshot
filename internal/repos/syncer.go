@@ -871,8 +871,16 @@ func (s *Syncer) MaybePrepareForDeduplication(ctx context.Context, repo *types.R
 		return nil
 	}
 
-	parentRepo := github.Repository{
-		BaseRepository: metadata.Parent,
+	if metadata.Parent == nil {
+		// TODO: Test and remove this warn log.
+		s.ObsvCtx.Logger.Warn("metadata has no parent information, deduplication will not work")
+		return nil
+	}
+
+	// If the Parent of repo is a fork itself do not deduplciate at all, deduplication for second
+	// degree forks is not supported at the moment.
+	if metadata.Parent.IsFork {
+		return nil
 	}
 
 	// NOTE: This currently breaks for repositoryPathPattern. This is not in scope in the first PoC
@@ -889,7 +897,7 @@ func (s *Syncer) MaybePrepareForDeduplication(ctx context.Context, repo *types.R
 	// of the repo as it appears on the code host.
 	//
 	// When we want to support repositoryPathPattern we will have to decrypt svc.Config here.
-	poolRepoName := reposource.GitHubRepoName("", "github.com", parentRepo.NameWithOwner)
+	poolRepoName := reposource.GitHubRepoName("", "github.com", metadata.Parent.NameWithOwner)
 
 	if !s.DeduplicatedForksSet.Contains(string(poolRepoName)) {
 		return nil

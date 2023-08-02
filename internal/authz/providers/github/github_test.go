@@ -113,19 +113,12 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			switch page {
 			case 1:
 				return []*github.Repository{
-					{
-						BaseRepository: &github.BaseRepository{
-							ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE=",
-						},
-					},
-					{
-						BaseRepository: &github.BaseRepository{
-							ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
-					},
+					{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
+					{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1MzY="},
 				}, true, 1, nil
 			case 2:
 				return []*github.Repository{
-					{BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="}},
+					{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="},
 				}, false, 1, nil
 			}
 
@@ -162,26 +155,14 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				switch page {
 				case 1:
 					return []*github.Repository{
-						{
-							BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="},
-						}, // existing repo
-						{
-							BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234="},
-						},
+						{ID: "MDEwOlJlcG9zaXRvcnkyNTI0MjU2NzE="}, // existing repo
+						{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234="},
 					}, true, 1, nil
 				case 2:
-					return []*github.Repository{
-						{
-							BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTE5678="},
-						},
-					}, false, 1, nil
+					return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTE5678="}}, false, 1, nil
 				}
 			case mockOrgNoRead2.Login:
-				return []*github.Repository{
-					{
-						BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTadmin="},
-					},
-				}, false, 1, nil
+				return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTadmin="}}, false, 1, nil
 			}
 			t.Fatalf("unexpected call to ListOrgRepositories with org %q page %d", org, page)
 			return nil, false, 1, nil
@@ -340,19 +321,11 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 							switch page {
 							case 1:
 								return []*github.Repository{
-									{
-										BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="}, // existing repo
-									},
-									{
-										BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1="},
-									},
+									{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="}, // existing repo,
+									{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1="},
 								}, true, 1, nil
 							case 2:
-								return []*github.Repository{
-									{
-										BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam2="},
-									},
-								}, false, 1, nil
+								return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam2="}}, false, 1, nil
 							}
 						}
 					}
@@ -465,11 +438,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
 				func(_ context.Context, _, _ string, _ int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 					callsToListTeamRepos++
-					return []*github.Repository{
-						{
-							BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
-						},
-					}, false, 1, nil
+					return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="}}, false, 1, nil
 				})
 
 			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
@@ -560,7 +529,7 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
 				func(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 					return []*github.Repository{
-						{BaseRepository: &github.BaseRepository{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="}},
+						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
 					}, false, 1, nil
 				})
 
@@ -828,11 +797,9 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 
 		t.Run("internal repo in org", func(t *testing.T) {
 			mockInternalOrgRepo := github.Repository{
-				BaseRepository: &github.BaseRepository{
-					ID:         "github_repo_id",
-					IsPrivate:  true,
-					Visibility: github.VisibilityInternal,
-				},
+				ID:         "github_repo_id",
+				IsPrivate:  true,
+				Visibility: github.VisibilityInternal,
 			}
 
 			p := NewProvider("", ProviderOptions{
