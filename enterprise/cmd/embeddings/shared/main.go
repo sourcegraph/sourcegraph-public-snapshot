@@ -154,11 +154,16 @@ func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, er
 		return nil, "", errors.Wrap(err, "getting embeddings client")
 	}
 
-	floatQuery, err := client.GetEmbeddings(ctx, []string{query})
+	embeddings, err := client.GetEmbeddings(ctx, []string{query})
+
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting query embedding")
 	}
-	return floatQuery, client.GetModelIdentifier(), nil
+	if len(embeddings.Failed) > 0 {
+		return nil, "", errors.Newf("failed to get embeddings for query %s", query)
+	}
+
+	return embeddings.Embeddings, client.GetModelIdentifier(), nil
 }
 
 func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {

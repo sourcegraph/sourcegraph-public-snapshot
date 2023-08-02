@@ -82,19 +82,19 @@ public class ConfigUtil {
   public static String getEnterpriseUrl(@NotNull Project project) {
     // Project level
     String projectLevelUrl = getProjectLevelConfig(project).getSourcegraphUrl();
-    if (projectLevelUrl != null && projectLevelUrl.length() > 0) {
+    if (projectLevelUrl != null && !projectLevelUrl.isEmpty()) {
       return addSlashIfNeeded(projectLevelUrl);
     }
 
     // Application level
     String applicationLevelUrl = getApplicationLevelConfig().getSourcegraphUrl();
-    if (applicationLevelUrl != null && applicationLevelUrl.length() > 0) {
+    if (applicationLevelUrl != null && !applicationLevelUrl.isEmpty()) {
       return addSlashIfNeeded(applicationLevelUrl);
     }
 
     // User level or default
     String userLevelUrl = UserLevelConfig.getSourcegraphUrl();
-    return !userLevelUrl.equals("") ? addSlashIfNeeded(userLevelUrl) : "";
+    return !userLevelUrl.isEmpty() ? addSlashIfNeeded(userLevelUrl) : "";
   }
 
   public static Map<String, String> getCustomRequestHeadersAsMap(@NotNull Project project) {
@@ -111,7 +111,7 @@ public class ConfigUtil {
     // Project level
     String projectLevelCustomRequestHeaders =
         getProjectLevelConfig(project).getCustomRequestHeaders();
-    if (projectLevelCustomRequestHeaders != null && projectLevelCustomRequestHeaders.length() > 0) {
+    if (projectLevelCustomRequestHeaders != null && !projectLevelCustomRequestHeaders.isEmpty()) {
       return projectLevelCustomRequestHeaders;
     }
 
@@ -119,7 +119,7 @@ public class ConfigUtil {
     String applicationLevelCustomRequestHeaders =
         getApplicationLevelConfig().getCustomRequestHeaders();
     if (applicationLevelCustomRequestHeaders != null
-        && applicationLevelCustomRequestHeaders.length() > 0) {
+        && !applicationLevelCustomRequestHeaders.isEmpty()) {
       return applicationLevelCustomRequestHeaders;
     }
 
@@ -131,14 +131,13 @@ public class ConfigUtil {
   public static String getDefaultBranchName(@NotNull Project project) {
     // Project level
     String projectLevelDefaultBranchName = getProjectLevelConfig(project).getDefaultBranchName();
-    if (projectLevelDefaultBranchName != null && projectLevelDefaultBranchName.length() > 0) {
+    if (projectLevelDefaultBranchName != null && !projectLevelDefaultBranchName.isEmpty()) {
       return projectLevelDefaultBranchName;
     }
 
     // Application level
     String applicationLevelDefaultBranchName = getApplicationLevelConfig().getDefaultBranchName();
-    if (applicationLevelDefaultBranchName != null
-        && applicationLevelDefaultBranchName.length() > 0) {
+    if (applicationLevelDefaultBranchName != null && !applicationLevelDefaultBranchName.isEmpty()) {
       return applicationLevelDefaultBranchName;
     }
 
@@ -151,13 +150,13 @@ public class ConfigUtil {
   public static String getRemoteUrlReplacements(@NotNull Project project) {
     // Project level
     String projectLevelReplacements = getProjectLevelConfig(project).getRemoteUrlReplacements();
-    if (projectLevelReplacements != null && projectLevelReplacements.length() > 0) {
+    if (projectLevelReplacements != null && !projectLevelReplacements.isEmpty()) {
       return projectLevelReplacements;
     }
 
     // Application level
     String applicationLevelReplacements = getApplicationLevelConfig().getRemoteUrlReplacements();
-    if (applicationLevelReplacements != null && applicationLevelReplacements.length() > 0) {
+    if (applicationLevelReplacements != null && !applicationLevelReplacements.isEmpty()) {
       return applicationLevelReplacements;
     }
 
@@ -216,11 +215,11 @@ public class ConfigUtil {
   }
 
   public static boolean isCodyEnabled() {
-    return getApplicationLevelConfig().isCodyEnabled();
+    return getApplicationLevelConfig().isCodyEnabled;
   }
 
   public static boolean isCodyAutoCompleteEnabled() {
-    return getApplicationLevelConfig().isCodyEnabled()
+    return getApplicationLevelConfig().isCodyEnabled
         && getApplicationLevelConfig().isCodyAutoCompleteEnabled();
   }
 
@@ -265,7 +264,7 @@ public class ConfigUtil {
 
   @NotNull
   private static CodyProjectService getProjectLevelConfig(@NotNull Project project) {
-    return Objects.requireNonNull(CodyService.getInstance(project));
+    return Objects.requireNonNull(CodyProjectService.getInstance(project));
   }
 
   @Nullable
@@ -279,29 +278,71 @@ public class ConfigUtil {
     return System.getProperty("user.home");
   }
 
+  // Null means user denied access to token storage. Empty string means no token found.
   @Nullable
   public static String getProjectAccessToken(@NotNull Project project) {
     SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
     if (instanceType == SettingsComponent.InstanceType.ENTERPRISE) {
       return getEnterpriseAccessToken(project);
     } else if (instanceType == SettingsComponent.InstanceType.LOCAL_APP) {
-      return LocalAppManager.getLocalAppAccessToken().orElse(null);
+      return LocalAppManager.getLocalAppAccessToken().orElse("");
     } else {
       return getDotComAccessToken(project);
     }
   }
 
+  // Null means user denied access to token storage. Empty string means no token found.
   @Nullable
   public static String getEnterpriseAccessToken(Project project) {
-    // Project level → application level
-    return Optional.ofNullable(getProjectLevelConfig(project).getEnterpriseAccessToken())
-        .orElse(getApplicationLevelConfig().getEnterpriseAccessToken());
+    // Project level overrides secure storage
+    String unsafeProjectLevelAccessToken =
+        getProjectLevelConfig(project).getEnterpriseAccessToken();
+    if (unsafeProjectLevelAccessToken != null) {
+      return unsafeProjectLevelAccessToken;
+    }
+
+    // Get token from secure storage
+    Optional<String> securelyStoredAccessToken = AccessTokenStorage.getEnterpriseAccessToken();
+    if (securelyStoredAccessToken.isEmpty()) {
+      return null; // Uer denied access to token storage
+    }
+    if (!securelyStoredAccessToken.get().isEmpty()) {
+      return securelyStoredAccessToken.get();
+    }
+
+    // No secure token found, so use app-level token and migrate it to secure storage.
+    String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().enterpriseAccessToken;
+    if (unsafeApplicationLevelAccessToken != null) {
+      AccessTokenStorage.setApplicationEnterpriseAccessToken(unsafeApplicationLevelAccessToken);
+      getApplicationLevelConfig().enterpriseAccessToken = null;
+    }
+    return unsafeApplicationLevelAccessToken != null ? unsafeApplicationLevelAccessToken : "";
   }
 
+  // Null means user denied access to token storage. Empty string means no token found.
   @Nullable
   public static String getDotComAccessToken(@NotNull Project project) {
-    // Project level → application level
-    return Optional.ofNullable(getProjectLevelConfig(project).getDotComAccessToken())
-        .orElse(getApplicationLevelConfig().getDotComAccessToken());
+    // Project level overrides secure storage
+    String projectLevelAccessToken = getProjectLevelConfig(project).getDotComAccessToken();
+    if (projectLevelAccessToken != null) {
+      return projectLevelAccessToken;
+    }
+
+    // Get token from secure storage
+    Optional<String> securelyStoredAccessToken = AccessTokenStorage.getDotComAccessToken();
+    if (securelyStoredAccessToken.isEmpty()) {
+      return null; // Uer denied access to token storage
+    }
+    if (!securelyStoredAccessToken.get().isEmpty()) {
+      return securelyStoredAccessToken.get();
+    }
+
+    // No secure token found, so use app-level token and migrate it to secure storage.
+    String unsafeApplicationLevelAccessToken = getApplicationLevelConfig().dotComAccessToken;
+    if (unsafeApplicationLevelAccessToken != null) {
+      AccessTokenStorage.setApplicationDotComAccessToken(unsafeApplicationLevelAccessToken);
+      getApplicationLevelConfig().dotComAccessToken = null;
+    }
+    return unsafeApplicationLevelAccessToken != null ? unsafeApplicationLevelAccessToken : "";
   }
 }
