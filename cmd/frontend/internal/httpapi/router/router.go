@@ -43,7 +43,6 @@ const (
 
 	CodeInsightsDataExport = "insights.data.export"
 
-	ExternalURL         = "internal.app-url"
 	GitInfoRefs         = "internal.git.info-refs"
 	GitUploadPack       = "internal.git.upload-pack"
 	ReposIndex          = "internal.repos.index"
@@ -107,7 +106,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
-	base.Path("/app-url").Methods("POST").Name(ExternalURL)
 	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
