@@ -266,7 +266,7 @@ func TestCodeHostStore_List(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			var result []*types.CodeHost
+			result := []*types.CodeHost{}
 			ch, next, err := db.CodeHosts().List(ctx, test.listOpts)
 			if err != nil {
 				t.Fatal(err)

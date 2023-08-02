@@ -171,12 +171,11 @@ WHERE url = %s
 `
 
 func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs []*types.CodeHost, next int32, err error) {
-	// Return an empty list in case of no results
-	chs = []*types.CodeHost{}
 	query := listCodeHostsQuery(opts)
-	codehosts, err := basestore.NewSliceScanner(scanCodeHosts)(s.Query(ctx, query))
-	if codehosts != nil {
-		chs = codehosts
+	chs, err = basestore.NewSliceScanner(scanCodeHosts)(s.Query(ctx, query))
+	if err != nil || chs == nil {
+		// Return an empty list in case of no results
+		return []*types.CodeHost{}, 0, err
 	}
 
 	// Set the next value if we were able to fetch Limit + 1
