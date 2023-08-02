@@ -134,7 +134,7 @@ func checkPermissionsSyncing(
 	var syncCount int
 	var syncErrors []string
 	var seenProviders = make(map[string]map[string]string) // provider : state : message
-	for _, sync := range instanceHealth.PermissionSyncJobs.Nodes {
+	for _, sync := range instanceHealth.PermissionsSyncJobs.Nodes {
 		if sync.FinishedAt.Before(time.Now().Add(-since)) {
 			continue
 		}

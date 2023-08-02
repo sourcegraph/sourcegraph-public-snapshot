@@ -24,7 +24,7 @@ func TestCheckPermissionsSyncing(t *testing.T) {
 	}{{
 		name: "no jobs",
 		instanceHealth: Indicators{
-			PermissionSyncJobs: struct{ Nodes []permissionSyncJob }{
+			PermissionsSyncJobs: struct{ Nodes []permissionSyncJob }{
 				Nodes: nil,
 			},
 		},
@@ -33,7 +33,7 @@ func TestCheckPermissionsSyncing(t *testing.T) {
 	}, {
 		name: "healthy",
 		instanceHealth: Indicators{
-			PermissionSyncJobs: struct{ Nodes []permissionSyncJob }{
+			PermissionsSyncJobs: struct{ Nodes []permissionSyncJob }{
 				Nodes: []permissionSyncJob{{
 					FinishedAt: time.Now(),
 					State:      "SUCCESS",
@@ -50,7 +50,7 @@ func TestCheckPermissionsSyncing(t *testing.T) {
 	}, {
 		name: "unhealthy",
 		instanceHealth: Indicators{
-			PermissionSyncJobs: struct{ Nodes []permissionSyncJob }{
+			PermissionsSyncJobs: struct{ Nodes []permissionSyncJob }{
 				Nodes: []permissionSyncJob{{
 					FinishedAt:     time.Now(),
 					State:          "ERROR",

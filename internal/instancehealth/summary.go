@@ -40,7 +40,7 @@ type Indicators struct {
 			}
 		}
 	}
-	PermissionSyncJobs struct {
+	PermissionsSyncJobs struct {
 		Nodes []permissionSyncJob
 	}
 }
@@ -95,7 +95,7 @@ func GetIndicators(ctx context.Context, client api.Client) (*Indicators, error) 
 				}
 			}
 
-			permissionSyncJobs(first:500) {
+			permissionsSyncJobs(first:500) {
 				nodes {
 					state
 					finishedAt
