@@ -7,13 +7,15 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/paths"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -29,8 +31,13 @@ func defaultSplitter(ctx context.Context, text, fileName string, splitOptions co
 func TestEmbedRepo(t *testing.T) {
 	ctx := context.Background()
 	repoName := api.RepoName("repo/name")
+	repoIDName := types.RepoIDName{
+		ID:   0,
+		Name: repoName,
+	}
 	revision := api.CommitID("deadbeef")
 	embeddingsClient := NewMockEmbeddingsClient()
+	inserter := db.NewNoopInserter()
 	contextService := NewMockContextService()
 	contextService.SplitIntoEmbeddableChunksFunc.SetDefaultHook(defaultSplitter)
 	splitOptions := codeintelContext.SplitOptions{ChunkTokensThreshold: 8}
@@ -87,7 +94,7 @@ func TestEmbedRepo(t *testing.T) {
 		"binary.bin":       0.7,
 	}
 
-	mockRepoPathRanks := types.RepoPathRanks{
+	mockRepoPathRanks := citypes.RepoPathRanks{
 		MeanRank: 0,
 		Paths:    mockRanks,
 	}
@@ -141,7 +148,7 @@ func TestEmbedRepo(t *testing.T) {
 	noopReport := func(*bgrepo.EmbedRepoStats) {}
 
 	t.Run("no files", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, newReadLister(), mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, inserter, contextService, newReadLister(), repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 0)
@@ -158,7 +165,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("code files only", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, newReadLister("a.go"), mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, inserter, contextService, newReadLister("a.go"), repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.TextIndex.Embeddings, 0)
 		require.Len(t, index.CodeIndex.Embeddings, 6)
@@ -182,7 +189,7 @@ func TestEmbedRepo(t *testing.T) {
 	})
 
 	t.Run("text files only", func(t *testing.T) {
-		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, newReadLister("b.md"), mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, inserter, contextService, newReadLister("b.md"), repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 0)
 		require.Len(t, index.TextIndex.Embeddings, 6)
@@ -207,7 +214,7 @@ func TestEmbedRepo(t *testing.T) {
 
 	t.Run("mixed code and text files", func(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
-		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
@@ -243,7 +250,7 @@ func TestEmbedRepo(t *testing.T) {
 
 	t.Run("not included files", func(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin", "not_included.jl")
-		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, embeddingsClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 		require.NoError(t, err)
 		require.Len(t, index.CodeIndex.Embeddings, 15)
 		require.Len(t, index.CodeIndex.RowMetadata, 5)
@@ -286,7 +293,7 @@ func TestEmbedRepo(t *testing.T) {
 		countingReporter := func(*bgrepo.EmbedRepoStats) {
 			statReports++
 		}
-		_, _, _, err := EmbedRepo(ctx, embeddingsClient, contextService, rl, mockRepoPathRanks, opts, logger, countingReporter)
+		_, _, _, err := EmbedRepo(ctx, embeddingsClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, countingReporter)
 		require.NoError(t, err)
 		require.Equal(t, 2, statReports, `
 			Expected one update for flush. This is subject to change if the
@@ -301,7 +308,7 @@ func TestEmbedRepo(t *testing.T) {
 		optsCopy.MaxTextEmbeddings = 1
 
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
-		index, _, _, err := EmbedRepo(ctx, embeddingsClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		index, _, _, err := EmbedRepo(ctx, embeddingsClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.NoError(t, err)
 
 		// a.md has 2 chunks, c.java has 3 chunks
@@ -321,19 +328,19 @@ func TestEmbedRepo(t *testing.T) {
 		rl := newReadLister("a.go", "b.md", "c.java", "autogen.py", "empty.rb", "lines_too_long.c", "binary.bin")
 
 		misbehavingClient := &misbehavingEmbeddingsClient{embeddingsClient, 32} // too many dimensions
-		_, _, _, err := EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		_, _, _, err := EmbedRepo(ctx, misbehavingClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
 		misbehavingClient = &misbehavingEmbeddingsClient{embeddingsClient, 32} // too few dimensions
-		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		_, _, _, err = EmbedRepo(ctx, misbehavingClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
 		misbehavingClient = &misbehavingEmbeddingsClient{embeddingsClient, 0} // empty return
-		_, _, _, err = EmbedRepo(ctx, misbehavingClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		_, _, _, err = EmbedRepo(ctx, misbehavingClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "expected embeddings for batch to have length")
 
 		erroringClient := &erroringEmbeddingsClient{embeddingsClient, errors.New("whoops")} // normal error
-		_, _, _, err = EmbedRepo(ctx, erroringClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		_, _, _, err = EmbedRepo(ctx, erroringClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, optsCopy, logger, noopReport)
 		require.ErrorContains(t, err, "whoops")
 	})
 
@@ -347,7 +354,7 @@ func TestEmbedRepo(t *testing.T) {
 		failed[1] = struct{}{}
 
 		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
-		_, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		_, _, _, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, optsCopy, logger, noopReport)
 
 		require.ErrorContains(t, err, "batch failed on file")
 		require.ErrorContains(t, err, "a.go", "for a chunk error, the error message should contain the file name")
@@ -363,7 +370,7 @@ func TestEmbedRepo(t *testing.T) {
 		failed[3] = struct{}{}
 
 		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
-		_, _, _, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		_, _, _, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, optsCopy, logger, noopReport)
 
 		require.ErrorContains(t, err, "batch failed on file")
 		require.ErrorContains(t, err, "b.md", "for a chunk error, the error message should contain the file name")
@@ -374,8 +381,10 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 	ctx := context.Background()
 	repoName := api.RepoName("repo/name")
 	revision := api.CommitID("deadbeef")
+	repoIDName := types.RepoIDName{Name: repoName}
 	embeddingsClient := NewMockEmbeddingsClient()
 	contextService := NewMockContextService()
+	inserter := db.NewNoopInserter()
 	contextService.SplitIntoEmbeddableChunksFunc.SetDefaultHook(defaultSplitter)
 	splitOptions := codeintelContext.SplitOptions{ChunkTokensThreshold: 8}
 	mockFiles := map[string][]byte{
@@ -409,7 +418,7 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		"a.go":   0.1,
 		"b.java": 0.3,
 	}
-	mockRepoPathRanks := types.RepoPathRanks{
+	mockRepoPathRanks := citypes.RepoPathRanks{
 		MeanRank: 0,
 		Paths:    mockRanks,
 	}
@@ -461,7 +470,7 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		failed[7] = struct{}{}
 
 		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
-		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 
 		require.NoError(t, err)
 
@@ -511,7 +520,7 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		failed[8] = struct{}{}
 
 		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
-		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, opts, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, opts, logger, noopReport)
 
 		require.NoError(t, err)
 
@@ -563,7 +572,7 @@ func TestEmbedRepo_ExcludeChunkOnError(t *testing.T) {
 		failed[8] = struct{}{}
 
 		partialFailureClient := &partialFailureEmbeddingsClient{embeddingsClient, 0, failed}
-		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, contextService, rl, mockRepoPathRanks, optsCopy, logger, noopReport)
+		index, _, stats, err := EmbedRepo(ctx, partialFailureClient, inserter, contextService, rl, repoIDName, mockRepoPathRanks, optsCopy, logger, noopReport)
 
 		require.NoError(t, err)
 
