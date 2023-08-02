@@ -43,7 +43,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
+	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -80,6 +83,9 @@ func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterp
 	}
 
 	auth.Init(logger, db)
+	kr := keyring.Default()
+	ghAppStore := db.GitHubApps().WithEncryptionKey(kr.GitHubAppKey)
+	ghauth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppStore, kr.GitHubAppKey)
 
 	ctx := context.Background()
 	enterpriseServices := enterprise.DefaultServices()

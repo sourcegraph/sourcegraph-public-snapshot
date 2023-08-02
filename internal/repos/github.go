@@ -228,10 +228,14 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
 }
 
-func (s *GitHubSource) CheckConnection(ctx context.Context) error {
-	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+func (s *GitHubSource) CheckConnection(ctx context.Context) (err error) {
+	if s.config.GitHubAppDetails == nil {
+		_, err = s.v3Client.GetAuthenticatedUser(ctx)
+	} else {
+		_, _, _, err = s.v3Client.ListInstallationRepositories(ctx, 1)
+	}
 	if err != nil {
-		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+		return errors.Wrap(err, "connection check failed")
 	}
 	return nil
 }
