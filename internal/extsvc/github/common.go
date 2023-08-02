@@ -1865,6 +1865,11 @@ type restRepositoryPermissions struct {
 	Pull  bool `json:"pull"`
 }
 
+type restParentRepository struct {
+	FullName string `json:"full_name,omitempty"`
+	Fork     bool   `json:"is_fork,omitempty"`
+}
+
 type restRepository struct {
 	ID          string `json:"node_id"` // GraphQL ID
 	DatabaseID  int64  `json:"id"`
@@ -1881,7 +1886,7 @@ type restRepository struct {
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
 	Topics      []string                  `json:"topics"`
-	Parent      *ParentRepository         `json:"parent,omitempty"`
+	Parent      *restParentRepository     `json:"parent,omitempty"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1907,6 +1912,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 	for _, topic := range restRepo.Topics {
 		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
 	}
+
 	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
@@ -1922,7 +1928,13 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
 		RepositoryTopics: RepositoryTopics{topics},
-		Parent:           restRepo.Parent,
+	}
+
+	if restRepo.Parent != nil {
+		repo.Parent = &ParentRepository{
+			NameWithOwner: restRepo.Parent.FullName,
+			IsFork:        restRepo.Parent.Fork,
+		}
 	}
 
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {

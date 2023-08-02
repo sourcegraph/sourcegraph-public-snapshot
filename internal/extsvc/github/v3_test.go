@@ -493,6 +493,8 @@ func TestGetRepository(t *testing.T) {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
 
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+
 			remaining, _, _, _ = cli.ExternalRateLimiter().Get()
 		})
 
@@ -510,6 +512,8 @@ func TestGetRepository(t *testing.T) {
 			if repo.NameWithOwner != want {
 				t.Fatalf("expected NameWithOwner %s, but got %s", want, repo.NameWithOwner)
 			}
+
+			testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
 
 			remaining2, _, _, _ := cli.ExternalRateLimiter().Get()
 			if remaining2 < remaining {
@@ -529,6 +533,14 @@ func TestGetRepository(t *testing.T) {
 		if repo != nil {
 			t.Error("repo != nil")
 		}
+		testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
+	})
+
+	t.Run("forked repo", func(t *testing.T) {
+		repo, err := cli.GetRepository(context.Background(), "sgtest", "sourcegraph")
+		require.NoError(t, err)
+
+		testutil.AssertGolden(t, "testdata/golden/"+t.Name(), update("GetRepository"), repo)
 	})
 }
 
