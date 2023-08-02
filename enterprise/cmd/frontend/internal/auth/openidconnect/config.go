@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"path"
 
 	"github.com/sourcegraph/log"
@@ -13,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -63,8 +61,6 @@ func GetProviderAndRefresh(ctx context.Context, id string, getProvider func(id s
 }
 
 func Init() {
-	conf.ContributeValidator(validateConfig)
-
 	const pkgName = "openidconnect"
 	logger := log.Scoped(pkgName, "OpenID Connect config watch")
 	go func() {
@@ -106,29 +102,6 @@ func getProviders() []providers.Provider {
 		ps = append(ps, NewProvider(*cfg, authPrefix, path.Join(auth.AuthURLPrefix, "callback")))
 	}
 	return ps
-}
-
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	var loggedNeedsExternalURL bool
-	for _, p := range c.SiteConfig().AuthProviders {
-		if p.Openidconnect != nil && c.SiteConfig().ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, conf.NewSiteProblem("openidconnect auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
-			loggedNeedsExternalURL = true
-		}
-	}
-
-	seen := map[schema.OpenIDConnectAuthProvider]int{}
-	for i, p := range c.SiteConfig().AuthProviders {
-		if p.Openidconnect != nil {
-			if j, ok := seen[*p.Openidconnect]; ok {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("OpenID Connect auth provider at index %d is duplicate of index %d, ignoring", i, j)))
-			} else {
-				seen[*p.Openidconnect] = i
-			}
-		}
-	}
-
-	return problems
 }
 
 // providerConfigID produces a semi-stable identifier for an openidconnect auth provider config

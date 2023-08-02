@@ -10,8 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 // GetOIDCProvider looks up the registered Sourcegraph Operator authentication
@@ -37,8 +35,6 @@ func Init() {
 		return
 	}
 
-	conf.ContributeValidator(validateConfig)
-
 	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator)
 	logger := log.Scoped(auth.SourcegraphOperatorProviderType, "Sourcegraph Operator config watch")
 	go func() {
@@ -50,14 +46,4 @@ func Init() {
 
 	// Register enterprise handler implementation in OSS
 	osssourcegraphoperator.RegisterAddSourcegraphOperatorExternalAccountHandler(addSourcegraphOperatorExternalAccount)
-}
-
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	if c.SiteConfig().ExternalURL == "" {
-		problems = append(
-			problems,
-			conf.NewSiteProblem("Sourcegraph Operator authentication provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"),
-		)
-	}
-	return problems
 }

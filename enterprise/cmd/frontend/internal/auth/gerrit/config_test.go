@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -90,7 +91,7 @@ func TestParseConfig(t *testing.T) {
 
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
-			gotProviders, gotProblems := parseConfig(tc.cfg)
+			gotProviders, gotProblems := ParseConfig(tc.cfg)
 			if diff := cmp.Diff(tc.wantProviders, gotProviders); diff != "" {
 				t.Errorf("providers mismatch (-want +got):\n%s", diff)
 			}

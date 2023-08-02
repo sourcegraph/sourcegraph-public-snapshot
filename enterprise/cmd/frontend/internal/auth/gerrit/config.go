@@ -15,13 +15,9 @@ import (
 
 func Init() {
 	const pkgName = "gerrit"
-	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(cfg)
-		return problems
-	})
 
 	go conf.Watch(func() {
-		newProviders, _ := parseConfig(conf.Get())
+		newProviders, _ := ParseConfig(conf.Get())
 		newProviderList := make([]providers.Provider, len(newProviders))
 		for i := range newProviders {
 			newProviderList[i] = &newProviders[i]
@@ -35,7 +31,7 @@ type Provider struct {
 	ServiceType string
 }
 
-func parseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.Problems) {
+func ParseConfig(cfg conftypes.SiteConfigQuerier) (ps []Provider, problems conf.Problems) {
 	existingProviders := make(collections.Set[string])
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Gerrit == nil {

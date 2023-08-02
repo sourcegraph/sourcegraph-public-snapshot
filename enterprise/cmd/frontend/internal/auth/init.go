@@ -94,6 +94,8 @@ func Init(logger log.Logger, db database.DB) {
 				name = "OpenID Connect"
 			case p.Saml != nil:
 				name = "SAML"
+			case p.Gerrit != nil:
+				name = "Gerrit"
 			default:
 				name = "Other"
 			}

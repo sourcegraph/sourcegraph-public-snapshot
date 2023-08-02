@@ -18,14 +18,10 @@ import (
 func Init(logger log.Logger, db database.DB) {
 	const pkgName = "githuboauth"
 	logger = logger.Scoped(pkgName, "GitHub OAuth config watch")
-	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(logger, cfg, db)
-		return problems
-	})
 
 	go func() {
 		conf.Watch(func() {
-			newProviders, _ := parseConfig(logger, conf.Get(), db)
+			newProviders, _ := ParseConfig(logger, conf.Get(), db)
 			if len(newProviders) == 0 {
 				providers.Update(pkgName, nil)
 				return
@@ -51,7 +47,7 @@ type Provider struct {
 	providers.Provider
 }
 
-func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
+func ParseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
 	existingProviders := make(collections.Set[string])
 	for _, pr := range cfg.SiteConfig().AuthProviders {
 		if pr.Github == nil {

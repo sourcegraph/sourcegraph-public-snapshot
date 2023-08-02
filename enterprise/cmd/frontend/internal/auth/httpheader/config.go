@@ -5,7 +5,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -28,8 +27,6 @@ func getProviderConfig() (pc *schema.HTTPHeaderAuthProvider, multiple bool) {
 const pkgName = "httpheader"
 
 func Init() {
-	conf.ContributeValidator(validateConfig)
-
 	logger := log.Scoped(pkgName, "HTTP header authentication config watch")
 	go func() {
 		conf.Watch(func() {
@@ -47,17 +44,4 @@ func Init() {
 			providers.Update(pkgName, []providers.Provider{&provider{c: newPC}})
 		})
 	}()
-}
-
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	var httpHeaderAuthProviders int
-	for _, p := range c.SiteConfig().AuthProviders {
-		if p.HttpHeader != nil {
-			httpHeaderAuthProviders++
-		}
-	}
-	if httpHeaderAuthProviders >= 2 {
-		problems = append(problems, conf.NewSiteProblem(`at most 1 HTTP header auth provider may be set in site config`))
-	}
-	return problems
 }

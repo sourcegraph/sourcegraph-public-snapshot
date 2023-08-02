@@ -1,4 +1,4 @@
-package auth
+package confvalidators
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestValidateCustom(t *testing.T) {
+func TestValidateAuthProviders(t *testing.T) {
 	tests := map[string]struct {
 		input        conf.Unified
 		wantProblems conf.Problems
@@ -40,7 +40,7 @@ func TestValidateCustom(t *testing.T) {
 	}
 	for name, test := range tests {
 		t.Run(name, func(t *testing.T) {
-			conf.TestValidator(t, test.input, validateConfig, test.wantProblems)
+			conf.TestValidator(t, test.input, validateAuthProviders, test.wantProblems)
 		})
 	}
 }

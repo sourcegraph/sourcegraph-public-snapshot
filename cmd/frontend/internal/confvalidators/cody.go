@@ -1,18 +1,14 @@
-package conf
+package confvalidators
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
-func init() {
-	ContributeValidator(completionsConfigValidator)
-	ContributeValidator(embeddingsConfigValidator)
-}
-
-func completionsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
+func completionsConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	problems := []string{}
 	completionsConf := q.SiteConfig().Completions
 	if completionsConf == nil {
@@ -24,13 +20,13 @@ func completionsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
 	}
 
 	if len(problems) > 0 {
-		return NewSiteProblems(problems...)
+		return conf.NewSiteProblems(problems...)
 	}
 
 	return nil
 }
 
-func embeddingsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
+func embeddingsConfigValidator(q conftypes.SiteConfigQuerier) conf.Problems {
 	problems := []string{}
 	embeddingsConf := q.SiteConfig().Embeddings
 	if embeddingsConf == nil {
@@ -49,14 +45,14 @@ func embeddingsConfigValidator(q conftypes.SiteConfigQuerier) Problems {
 		problems = append(problems, fmt.Sprintf("Could not parse \"embeddings.minimumInterval: %s\". %s", minimumIntervalString, err))
 	}
 
-	if evaluatedConfig := GetEmbeddingsConfig(q.SiteConfig()); evaluatedConfig != nil {
+	if evaluatedConfig := conf.GetEmbeddingsConfig(q.SiteConfig()); evaluatedConfig != nil {
 		if evaluatedConfig.Dimensions <= 0 {
 			problems = append(problems, "Could not set a default \"embeddings.dimensions\", please configure one manually")
 		}
 	}
 
 	if len(problems) > 0 {
-		return NewSiteProblems(problems...)
+		return conf.NewSiteProblems(problems...)
 	}
 
 	return nil

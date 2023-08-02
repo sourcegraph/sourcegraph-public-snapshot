@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	stdlog "log"
 	"net/http"
 	"path"
@@ -17,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -65,8 +63,6 @@ func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) 
 }
 
 func Init() {
-	conf.ContributeValidator(validateConfig)
-
 	const pkgName = "saml"
 	logger := log.Scoped(pkgName, "SAML config watch")
 	go func() {
@@ -110,32 +106,6 @@ func getProviders() []providers.Provider {
 		ps = append(ps, p)
 	}
 	return ps
-}
-
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	var loggedNeedsExternalURL bool
-	for _, p := range c.SiteConfig().AuthProviders {
-		if p.Saml != nil && c.SiteConfig().ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, conf.NewSiteProblem("saml auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
-			loggedNeedsExternalURL = true
-		}
-	}
-
-	seen := map[string]int{}
-	for i, p := range c.SiteConfig().AuthProviders {
-		if p.Saml != nil {
-			// we can ignore errors: converting to JSON must work, as we parsed from JSON before
-			bytes, _ := json.Marshal(*p.Saml)
-			key := string(bytes)
-			if j, ok := seen[key]; ok {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j)))
-			} else {
-				seen[key] = i
-			}
-		}
-	}
-
-	return problems
 }
 
 func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {

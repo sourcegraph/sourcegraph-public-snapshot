@@ -8,7 +8,6 @@ import (
 
 	"github.com/xeipuuv/gojsonschema"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/hashutil"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -494,24 +493,4 @@ func (f jsonLoaderFactory) New(source string) gojsonschema.JSONLoader {
 		return gojsonschema.NewStringLoader(schema.SiteSchemaJSON)
 	}
 	return nil
-}
-
-// MustValidateDefaults should be called after all custom validators have been
-// registered. It will panic if any of the default deployment configurations
-// are invalid.
-func MustValidateDefaults() {
-	mustValidate("DevAndTesting", confdefaults.DevAndTesting)
-	mustValidate("DockerContainer", confdefaults.DockerContainer)
-	mustValidate("KubernetesOrDockerComposeOrPureDocker", confdefaults.KubernetesOrDockerComposeOrPureDocker)
-}
-
-// mustValidate panics if the configuration does not pass validation.
-func mustValidate(name string, cfg conftypes.RawUnified) {
-	problems, err := Validate(cfg)
-	if err != nil {
-		panic(fmt.Sprintf("Error with %q: %s", name, err))
-	}
-	if len(problems) > 0 {
-		panic(fmt.Sprintf("conf: problems with default configuration for %q:\n  %s", name, strings.Join(problems.Messages(), "\n  ")))
-	}
 }

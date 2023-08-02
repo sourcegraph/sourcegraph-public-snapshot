@@ -5,13 +5,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/log/logtest"
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"golang.org/x/oauth2"
 )
 
 func newOauthProvider(oauth2Config oauth2.Config) *oauth.Provider {
@@ -237,7 +238,7 @@ func TestParseConfig(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			gotProviders, gotProblems := parseConfig(logtest.Scoped(t), tc.config, db)
+			gotProviders, gotProblems := ParseConfig(logtest.Scoped(t), tc.config, db)
 			gotConfigs := make([]oauth2.Config, len(gotProviders))
 
 			for i, p := range gotProviders {
