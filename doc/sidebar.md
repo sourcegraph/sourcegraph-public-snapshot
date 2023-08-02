@@ -16,6 +16,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 <!-- - [Tutorials](tutorials/index.md) -->
 - [Cody (beta)](cody/index.md)
   - [Quickstart](cody/quickstart.md)
+  - [Capabilities](cody/capabilities.md)
   - [Explanations](cody/explanations/index.md)
   - [FAQ](cody/faq.md)
   - [Troubleshooting](cody/troubleshooting.md)
