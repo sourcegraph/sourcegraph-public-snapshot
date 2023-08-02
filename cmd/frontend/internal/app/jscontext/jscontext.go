@@ -564,13 +564,9 @@ func resolveLatestSettings(ctx context.Context, user *graphqlbackend.UserResolve
 // configuration that is necessary for the web app and is not sensitive/secret.
 func publicSiteConfiguration() schema.SiteConfiguration {
 	c := conf.Get()
-	updateChannel := c.UpdateChannel
-	if updateChannel == "" {
-		updateChannel = "release"
-	}
 	return schema.SiteConfiguration{
 		AuthPublic:                  c.AuthPublic,
-		UpdateChannel:               updateChannel,
+		UpdateChannel:               conf.UpdateChannel(),
 		AuthzEnforceForSiteAdmins:   c.AuthzEnforceForSiteAdmins,
 		DisableNonCriticalTelemetry: c.DisableNonCriticalTelemetry,
 	}
