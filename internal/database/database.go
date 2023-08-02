@@ -115,9 +115,9 @@ func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx DB) error) erro
 	})
 }
 
-type StoreGetterFunc[T basestore.ShareableStore] func(DB) T
+type NewStoreFunc[T basestore.ShareableStore] func(DB) T
 
-func GetStore[T basestore.ShareableStore](db DB, f StoreGetterFunc[T]) (t T) {
+func GetStore[T basestore.ShareableStore](db DB, f NewStoreFunc[T]) T {
 	switch v := db.(type) {
 	case *mockedDB:
 		if v.mockedStore.Type().Implements(reflect.TypeOf((*T)(nil)).Elem()) {
