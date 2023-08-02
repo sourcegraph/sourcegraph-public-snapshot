@@ -41,13 +41,13 @@ func TestCodeHostStore_CRUDCodeHost(t *testing.T) {
 		GitRateLimitIntervalSeconds: &twenty,
 	}
 
-	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "abc"}`)
 	err := db.CodeHosts().Create(ctx, codeHost)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Create the external service so that the code host appears when we GetByID after.
+	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "abc"}`)
 	es := &types.ExternalService{
 		CodeHostID: &codeHost.ID,
 		Kind:       codeHost.Kind,
@@ -263,7 +263,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			}
 
 			if diff := cmp.Diff(ch, test.results); diff != "" {
-				t.Fatalf("unexpected code host urls, got %+v\n", diff)
+				t.Fatalf("unexpected code host, got %+v\n", diff)
 			}
 		})
 	}

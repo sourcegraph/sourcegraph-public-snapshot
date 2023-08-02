@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
-
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -134,13 +133,8 @@ func (s *codeHostStore) GetByURL(ctx context.Context, url string) (*types.CodeHo
 
 func (s *codeHostStore) Create(ctx context.Context, ch *types.CodeHost) error {
 	query := createCodeHostQuery(ch)
-
 	row := s.QueryRow(ctx, query)
-	if err := scanCodeHost(row, ch); err != nil {
-		return err
-	}
-
-	return nil
+	return scan(row, ch)
 }
 
 func createCodeHostQuery(ch *types.CodeHost) *sqlf.Query {
@@ -180,23 +174,10 @@ func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs [
 	// Return an empty list in case of no results
 	chs = []*types.CodeHost{}
 	query := listCodeHostsQuery(opts)
-
-	rows, err := s.Query(ctx, query)
-	if err != nil {
-		return nil, 0, err
+	codehosts, err := basestore.NewSliceScanner(scanCodeHosts)(s.Query(ctx, query))
+	if codehosts != nil {
+		chs = codehosts
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	for rows.Next() {
-		var ch types.CodeHost
-		err = scanCodeHost(rows, &ch)
-		if err != nil {
-			return nil, 0, err
-		}
-
-		chs = append(chs, &ch)
-	}
-
 	return
 }
 
@@ -246,13 +227,13 @@ func (s *codeHostStore) Update(ctx context.Context, ch *types.CodeHost) error {
 	query := updateCodeHostQuery(ch)
 
 	row := s.QueryRow(ctx, query)
-	if err := scanCodeHost(row, ch); err != nil {
+	err := scan(row, ch)
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return errCodeHostNotFound{ch.ID}
 		}
 		return err
 	}
-
 	return nil
 }
 
@@ -308,8 +289,17 @@ WHERE
 	id = %s
 `
 
-func scanCodeHost(rows dbutil.Scanner, ch *types.CodeHost) error {
-	return rows.Scan(
+func scanCodeHosts(s dbutil.Scanner) (*types.CodeHost, error) {
+	var ch types.CodeHost
+	err := scan(s, &ch)
+	if err != nil {
+		return &types.CodeHost{}, err
+	}
+	return &ch, nil
+}
+
+func scan(s dbutil.Scanner, ch *types.CodeHost) error {
+	return s.Scan(
 		&ch.ID,
 		&ch.Kind,
 		&ch.URL,
