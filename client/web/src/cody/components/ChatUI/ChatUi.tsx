@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState, useMemo } from 'react'
+import React, { RefObject, useCallback, useEffect, useRef, useState, useMemo } from 'react'
 
 import {
     mdiClose,
@@ -102,7 +102,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
     }
 
     const RecipeWidgetWrapperWithProps = useMemo(
-        () => (props: { targetRef: any; children: any }) =>
+        () => (props: { targetRef: RefObject<HTMLElement>; children: ReactNode | ReactNode[] }) =>
             <RecipesWidgetWrapper {...props} codyChatStore={codyChatStore} />,
         [codyChatStore]
     )

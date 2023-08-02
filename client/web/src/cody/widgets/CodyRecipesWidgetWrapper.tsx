@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from 'react'
+import React, { RefObject, ReactNode, useEffect, useState } from 'react'
 
 import { Popover } from 'react-text-selection-popover'
 
 import { ChatEditor } from '../components/ChatEditor'
+import { CodyChatStore } from '../useCodyChat'
 
 import { CodyRecipesWidget } from './CodyRecipesWidget'
 
-// TODO: fix the types
+import styles from './CodyRecipesWidget.module.scss'
+
 interface RecipesWidgetWrapperProps {
-    targetRef: any
-    children: any
-    codyChatStore: any
+    targetRef: RefObject<HTMLElement>
+    children: ReactNode | ReactNode[]
+    codyChatStore: CodyChatStore
     fileName?: string
     repoName?: string
     revision?: string
@@ -23,10 +25,9 @@ export const RecipesWidgetWrapper: React.FunctionComponent<RecipesWidgetWrapperP
         return (
             <>
                 {children}
-
                 <Popover
-                    target={targetRef.current}
-                    mount={targetRef.current}
+                    target={targetRef.current || undefined}
+                    mount={targetRef.current || undefined}
                     render={({ clientRect, isCollapsed, textContent }) => {
                         useEffect(() => {
                             setShow(!isCollapsed)
@@ -36,7 +37,7 @@ export const RecipesWidgetWrapper: React.FunctionComponent<RecipesWidgetWrapperP
                             return null
                         }
 
-                        // Allow popover only on code content.
+                        // Restrict popover to only code content.
                         // Hack because Cody's dangerouslySetInnerHTML forces us to use a ref on code block's wrapper text
                         if (window.getSelection()?.anchorNode?.parentNode?.nodeName !== 'CODE') {
                             return null
@@ -46,12 +47,7 @@ export const RecipesWidgetWrapper: React.FunctionComponent<RecipesWidgetWrapperP
 
                         return (
                             <CodyRecipesWidget
-                                style={{
-                                    // TODO: Move these styles
-                                    position: 'absolute',
-                                    bottom: '-30px',
-                                    left: '0',
-                                }}
+                                className={styles.chatCodeSnippetPopover}
                                 codyChatStore={codyChatStore}
                                 editor={
                                     new ChatEditor({
