@@ -546,8 +546,9 @@ func GitServer() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName: "gitserver",
-					MetricNamespace:  "gitserver",
+					HumanServiceName:   "gitserver",
+					MetricNamespace:    "gitserver",
+					RawGRPCServiceName: "gitserver.v1.GitserverService",
 
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${shard:regex}`,
