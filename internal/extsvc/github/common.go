@@ -1820,7 +1820,11 @@ type Repository struct {
 	IsArchived    bool   // whether the repository is archived on the code host
 	IsLocked      bool   // whether the repository is locked on the code host
 	IsDisabled    bool   // whether the repository is disabled on the code host
-
+	// This field will always be blank on repos stored in our database because the value will be
+	// different depending on which token was used to fetch it.
+	//
+	// ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
+	ViewerPermission string
 	// a list of topics the repository is tagged with
 	RepositoryTopics RepositoryTopics
 
@@ -1832,12 +1836,6 @@ type Repository struct {
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
-
-	// This field will always be blank on repos stored in our database because the value will be
-	// different depending on which token was used to fetch it.
-	//
-	// ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
-	ViewerPermission string
 
 	// Parent is non-nil for forks and contains details of the parent repository.
 	Parent *ParentRepository `json:",omitempty"`
@@ -1872,20 +1870,18 @@ type restRepository struct {
 	DatabaseID  int64  `json:"id"`
 	FullName    string `json:"full_name"` // same as nameWithOwner
 	Description string
-	HTMLURL     string   `json:"html_url"` // web URL
-	Private     bool     `json:"private"`
-	Fork        bool     `json:"fork"`
-	Archived    bool     `json:"archived"`
-	Locked      bool     `json:"locked"`
-	Disabled    bool     `json:"disabled"`
-	Stars       int      `json:"stargazers_count"`
-	Forks       int      `json:"forks_count"`
-	Visibility  string   `json:"visibility"`
-	Topics      []string `json:"topics"`
-
+	HTMLURL     string                    `json:"html_url"` // web URL
+	Private     bool                      `json:"private"`
+	Fork        bool                      `json:"fork"`
+	Archived    bool                      `json:"archived"`
+	Locked      bool                      `json:"locked"`
+	Disabled    bool                      `json:"disabled"`
+	Stars       int                       `json:"stargazers_count"`
+	Forks       int                       `json:"forks_count"`
+	Visibility  string                    `json:"visibility"`
+	Topics      []string                  `json:"topics"`
 	Permissions restRepositoryPermissions `json:"permissions"`
-
-	Parent *ParentRepository `json:"parent,omitempty"`
+	Parent      *ParentRepository         `json:"parent,omitempty"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1923,10 +1919,10 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		IsArchived:       restRepo.Archived,
 		IsLocked:         restRepo.Locked,
 		IsDisabled:       restRepo.Disabled,
+		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
 		RepositoryTopics: RepositoryTopics{topics},
-		ViewerPermission: convertRestRepoPermissions(restRepo.Permissions),
 		Parent:           restRepo.Parent,
 	}
 
