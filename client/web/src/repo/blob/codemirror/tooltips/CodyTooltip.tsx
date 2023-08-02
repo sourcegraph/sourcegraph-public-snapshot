@@ -74,8 +74,6 @@ function computeCodyWidget(state: EditorState, editor?: CodeMirrorEditor): Toolt
     // tooltip to the start of the selection
     const pos = isMultiline ? lineTo.from : selection.main.from
 
-    // TODO: Once created, this component never unmounts. Set timer or unmount function
-
     return {
         pos,
         above: false,

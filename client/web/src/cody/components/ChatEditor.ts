@@ -61,8 +61,6 @@ export class ChatEditor implements Editor {
         const selectedText = editor.content
         const followingText = splitText.join('')
 
-        // TODO: Find exact precedingText & followingText in case of duplicates in large code snippets
-
         return {
             fileName: editor.filename,
             repoName: this.repoName,
