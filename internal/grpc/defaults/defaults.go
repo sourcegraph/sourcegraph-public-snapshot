@@ -6,7 +6,6 @@ package defaults
 
 import (
 	"context"
-	"strings"
 	"sync"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/openmetrics/v2"
@@ -20,7 +19,6 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/internalerrs"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/propagator"
@@ -166,10 +164,10 @@ var (
 func mustGetClientMetrics() *grpc_prometheus.ClientMetrics {
 	clientMetricsOnce.Do(func() {
 		clientMetrics = grpc_prometheus.NewRegisteredClientMetrics(prometheus.DefaultRegisterer,
-			grpc_prometheus.WithClientCounterOptions(setCounterNamespace),
-			grpc_prometheus.WithClientHandlingTimeHistogram(setHistogramNamespace), // record the overall request latency for a gRPC request
-			grpc_prometheus.WithClientStreamRecvHistogram(setHistogramNamespace),   // record how long it takes for a client to receive a message during a streaming RPC
-			grpc_prometheus.WithClientStreamSendHistogram(setHistogramNamespace),   // record how long it takes for a client to send a message during a streaming RPC
+			grpc_prometheus.WithClientCounterOptions(),
+			grpc_prometheus.WithClientHandlingTimeHistogram(), // record the overall request latency for a gRPC request
+			grpc_prometheus.WithClientStreamRecvHistogram(),   // record how long it takes for a client to receive a message during a streaming RPC
+			grpc_prometheus.WithClientStreamSendHistogram(),   // record how long it takes for a client to send a message during a streaming RPC
 		)
 	})
 
@@ -184,32 +182,10 @@ func mustGetClientMetrics() *grpc_prometheus.ClientMetrics {
 func mustGetServerMetrics() *grpc_prometheus.ServerMetrics {
 	serverMetricsOnce.Do(func() {
 		serverMetrics = grpc_prometheus.NewRegisteredServerMetrics(prometheus.DefaultRegisterer,
-			grpc_prometheus.WithServerCounterOptions(setCounterNamespace),
-			grpc_prometheus.WithServerHandlingTimeHistogram(setHistogramNamespace), // record the overall response latency for a gRPC request)
+			grpc_prometheus.WithServerCounterOptions(),
+			grpc_prometheus.WithServerHandlingTimeHistogram(), // record the overall response latency for a gRPC request)
 		)
 	})
 
 	return serverMetrics
-}
-
-// setCounterNamespace is prometheus option that sets the namespace for counter
-// metrics to the current process name.
-func setCounterNamespace(opts *prometheus.CounterOpts) {
-	opts.Namespace = processNamePrometheus()
-}
-
-// setHistogramNamespace is prometheus option that sets the namespace for histogram
-// metrics to the current process name.
-func setHistogramNamespace(opts *prometheus.HistogramOpts) {
-	opts.Namespace = processNamePrometheus()
-}
-
-// processNamePrometheus returns the name of the current binary (e.g. "frontend", "gitserver", "github_proxy"), with some
-// additional normalization so that it can be used as a Prometheus namespace.
-func processNamePrometheus() string {
-	base := env.MyName
-	base = strings.ReplaceAll(base, "-", "_")
-	base = strings.ReplaceAll(base, ".", "_")
-
-	return base
 }
