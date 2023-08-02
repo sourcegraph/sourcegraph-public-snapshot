@@ -86,7 +86,7 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
 
                     <TabPanels>
                         <TabPanel>
-                            <LastRepoCommands repo={repo} />
+                            <LastExecutedCommands repo={repo} />
                         </TabPanel>
 
                         <TabPanel>
@@ -99,11 +99,11 @@ export const RepoSettingsLogsPage: FC<RepoSettingsLogsPageProps> = ({ repo }) =>
     )
 }
 
-interface LastRepoCommandsProps {
+interface LastExecutedCommandsProps {
     repo: SettingsAreaRepositoryFields
 }
 
-const LastRepoCommands: FC<LastRepoCommandsProps> = ({ repo }) => {
+const LastExecutedCommands: FC<LastExecutedCommandsProps> = ({ repo }) => {
     const { recordedCommands, loading, error, fetchMore, hasNextPage } = useFetchRecordedCommands(repo.id)
 
     return (
@@ -116,7 +116,7 @@ const LastRepoCommands: FC<LastRepoCommandsProps> = ({ repo }) => {
                     // of IDs and there's nothing really unique about each command.
                     //
                     // eslint-disable-next-line react/no-array-index-key
-                    <LastRepoCommandNode mirrorInfo={repo.mirrorInfo} command={command} key={index} />
+                    <LastExecutedCommandNode mirrorInfo={repo.mirrorInfo} command={command} key={index} />
                 ))}
             </div>
             {loading && <LoadingSpinner />}
@@ -129,12 +129,12 @@ const LastRepoCommands: FC<LastRepoCommandsProps> = ({ repo }) => {
     )
 }
 
-interface LastRepoCommandNodeProps {
+interface LastExecutedCommandNodeProps {
     command: RepositoryRecordedCommandFields
     mirrorInfo: SettingsAreaRepositoryFields['mirrorInfo']
 }
 
-const LastRepoCommandNode: FC<LastRepoCommandNodeProps> = ({ command, mirrorInfo }) => {
+const LastExecutedCommandNode: FC<LastExecutedCommandNodeProps> = ({ command, mirrorInfo }) => {
     const startDate = parseISO(command.start)
     const duration = formatDuration(command.duration)
 
@@ -179,7 +179,7 @@ const LastSyncOutput: FC<LastSyncOutputProps> = props => {
     const output =
         (props.mirrorInfo.cloneInProgress && 'Cloning in progress...') ||
         props.mirrorInfo.lastSyncOutput ||
-        'No logs yet.'
+        'Last sync command did not produce any output'
     return (
         <div className="mt-2">
             <Text>Output from this repository's most recent sync</Text>

@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
@@ -262,6 +263,14 @@ func logLocalEvents(ctx context.Context, db database.DB, events []Event) error {
 func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 	databaseEvents := make([]*database.Event, 0, len(events))
 	for _, event := range events {
+		// If this event should only be logged to our remote data warehouse, simply exclude it
+		// from the serialized events for the local database.
+		for _, eventToOnlyLogRemotely := range eventlogger.OnlyLogRemotelyEvents {
+			if event.EventName == eventToOnlyLogRemotely {
+				continue
+			}
+		}
+
 		if event.EventName == "SearchResultsQueried" {
 			if err := logSiteSearchOccurred(); err != nil {
 				return nil, err

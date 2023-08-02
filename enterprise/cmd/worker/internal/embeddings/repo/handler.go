@@ -39,6 +39,7 @@ const (
 	embedEntireFileTokensThreshold          = 384
 	embeddingChunkTokensThreshold           = 256
 	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
+	embeddingsBatchSize                     = 512
 )
 
 var splitOptions = codeintelContext.SplitOptions{
@@ -117,6 +118,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		SplitOptions:      splitOptions,
 		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
 		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
+		BatchSize:         embeddingsBatchSize,
+		ExcludeChunks:     embeddingsConfig.ExcludeChunkOnError,
 	}
 
 	if previousIndex != nil {

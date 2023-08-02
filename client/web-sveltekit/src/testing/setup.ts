@@ -1,4 +1,5 @@
 import { faker } from '@faker-js/faker'
+import { cleanup } from '@testing-library/svelte'
 import { vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest'
 
 import { mockedContexts } from '$mocks'
@@ -47,6 +48,10 @@ beforeEach(() => {
 afterEach(() => {
     faker.setDefaultRefDate()
     faker.seed()
+
+    // We need to call this manually because we don't use global
+    // test functions.
+    cleanup()
 })
 
 afterAll(() => {

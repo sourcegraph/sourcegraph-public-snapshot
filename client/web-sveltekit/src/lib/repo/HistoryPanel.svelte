@@ -18,7 +18,7 @@
     import Scroller, { type Capture as ScrollerCapture } from '$lib/Scroller.svelte'
     import Tooltip from '$lib/Tooltip.svelte'
     import UserAvatar from '$lib/UserAvatar.svelte'
-    import { getRelativeTime } from '$lib/utils'
+    import Timestamp from '$lib/Timestamp.svelte'
 
     export let history: Promise<HistoryResult>
     export let fetchMoreHandler: (pageInfo: HistoryResult['pageInfo']) => Promise<HistoryResult>
@@ -65,7 +65,6 @@
         loadMore()
     }
 
-    const now = new Date()
     $: selectedRev = $page.url?.searchParams.get('rev')
     $: clearURL = getClearURL()
 
@@ -88,7 +87,7 @@
                         {commit.subject}
                     {/if}
                 </td>
-                <td>{getRelativeTime(new Date(commit.author.date), now)}</td>
+                <td><Timestamp date={new Date(commit.author.date)} /></td>
                 <td><a href={commit.url}>{commit.abbreviatedOID}</a></td>
                 <td>
                     {#if selected}

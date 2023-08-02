@@ -220,8 +220,9 @@ regularly above 0 it is a sign for further investigation.`,
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName:  "searcher",
-					MetricNamespace:   "searcher",
+					HumanServiceName:   "searcher",
+					RawGRPCServiceName: "searcher.v1.SearcherService",
+
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 
 					InstanceFilterRegex: `${instance:regex}`,
