@@ -13,22 +13,7 @@
    "RepositoryTopics": {
     "Nodes": []
    },
-   "ViewerPermission": "ADMIN",
-   "Parent": {
-    "ID": "",
-    "DatabaseID": 0,
-    "NameWithOwner": "",
-    "Description": "",
-    "URL": "",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "RepositoryTopics": {
-     "Nodes": []
-    }
-   }
+   "ViewerPermission": "ADMIN"
   },
   {
    "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
@@ -44,22 +29,7 @@
    "RepositoryTopics": {
     "Nodes": []
    },
-   "ViewerPermission": "ADMIN",
-   "Parent": {
-    "ID": "",
-    "DatabaseID": 0,
-    "NameWithOwner": "",
-    "Description": "",
-    "URL": "",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "RepositoryTopics": {
-     "Nodes": []
-    }
-   }
+   "ViewerPermission": "ADMIN"
   },
   {
    "ID": "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
@@ -75,21 +45,6 @@
    "RepositoryTopics": {
     "Nodes": []
    },
-   "ViewerPermission": "ADMIN",
-   "Parent": {
-    "ID": "",
-    "DatabaseID": 0,
-    "NameWithOwner": "",
-    "Description": "",
-    "URL": "",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "RepositoryTopics": {
-     "Nodes": []
-    }
-   }
+   "ViewerPermission": "ADMIN"
   }
  ]

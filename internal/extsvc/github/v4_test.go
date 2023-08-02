@@ -179,6 +179,7 @@ func TestV4Client_RateLimitRetry(t *testing.T) {
 }
 
 func TestV4Client_SearchRepos(t *testing.T) {
+	rcache.SetupForTest(t)
 	cli, save := newV4Client(t, "SearchRepos")
 	t.Cleanup(save)
 
@@ -930,38 +931,34 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 	}
 
 	grapherTutorialRepo := &Repository{
-		BaseRepository: &BaseRepository{
-			ID:            "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
-			DatabaseID:    14601798,
-			NameWithOwner: "sourcegraph/grapher-tutorial",
-			Description:   "monkey language",
-			URL:           "https://github.com/sourcegraph/grapher-tutorial",
-			IsPrivate:     true,
-			IsFork:        false,
-			IsArchived:    true,
-			IsLocked:      true,
-			Visibility:    "internal",
-			RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
-				{Topic: Topic{Name: "topic1"}},
-				{Topic: Topic{Name: "topic2"}},
-			}},
-		},
+		ID:            "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+		DatabaseID:    14601798,
+		NameWithOwner: "sourcegraph/grapher-tutorial",
+		Description:   "monkey language",
+		URL:           "https://github.com/sourcegraph/grapher-tutorial",
+		IsPrivate:     true,
+		IsFork:        false,
+		IsArchived:    true,
+		IsLocked:      true,
+		Visibility:    "internal",
+		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
+			{Topic: Topic{Name: "topic1"}},
+			{Topic: Topic{Name: "topic2"}},
+		}},
 		ViewerPermission: "ADMIN",
 	}
 
 	clojureGrapherRepo := &Repository{
-		BaseRepository: &BaseRepository{
-			ID:            "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
-			DatabaseID:    15756908,
-			NameWithOwner: "sourcegraph/clojure-grapher",
-			Description:   "clojure grapher",
-			URL:           "https://github.com/sourcegraph/clojure-grapher",
-			IsPrivate:     true,
-			IsFork:        false,
-			IsArchived:    true,
-			IsDisabled:    true,
-			Visibility:    "private",
-		},
+		ID:               "MDEwOlJlcG9zaXRvcnkxNTc1NjkwOA==",
+		DatabaseID:       15756908,
+		NameWithOwner:    "sourcegraph/clojure-grapher",
+		Description:      "clojure grapher",
+		URL:              "https://github.com/sourcegraph/clojure-grapher",
+		IsPrivate:        true,
+		IsFork:           false,
+		IsArchived:       true,
+		IsDisabled:       true,
+		Visibility:       "private",
 		ViewerPermission: "ADMIN",
 	}
 

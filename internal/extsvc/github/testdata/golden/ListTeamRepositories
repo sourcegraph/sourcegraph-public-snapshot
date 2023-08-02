@@ -13,21 +13,6 @@
    "RepositoryTopics": {
     "Nodes": []
    },
-   "ViewerPermission": "READ",
-   "Parent": {
-    "ID": "",
-    "DatabaseID": 0,
-    "NameWithOwner": "",
-    "Description": "",
-    "URL": "",
-    "IsPrivate": false,
-    "IsFork": false,
-    "IsArchived": false,
-    "IsLocked": false,
-    "IsDisabled": false,
-    "RepositoryTopics": {
-     "Nodes": []
-    }
-   }
+   "ViewerPermission": "READ"
   }
  ]

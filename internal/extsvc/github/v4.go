@@ -498,7 +498,7 @@ query($query: String!, $type: SearchType!, $after: String, $first: Int!) {
 	search(query: $query, type: $type, after: $after, first: $first) {
 		repositoryCount
 		pageInfo { hasNextPage,  endCursor }
-		nodes {... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
+		nodes {... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
 	}
 }`)
 	return b.String()

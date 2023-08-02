@@ -42,10 +42,6 @@ func newTestClientWithAuthenticator(t *testing.T, auth auth.Authenticator, cli h
 }
 
 func TestListAffiliatedRepositories(t *testing.T) {
-	emptyParent := &BaseRepository{
-		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-	}
-
 	tests := []struct {
 		name         string
 		visibility   Visibility
@@ -57,47 +53,36 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			visibility: VisibilityAll,
 			wantRepos: []*Repository{
 				{
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
-						DatabaseID:       263034151,
-						NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
-						IsPrivate:        true,
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+					DatabaseID:       263034151,
+					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+					IsPrivate:        true,
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				}, {
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-						DatabaseID:       263034073,
-						NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-						IsPrivate:        true,
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:       263034073,
+					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:        true,
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				}, {
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-						DatabaseID:       263033949,
-						NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:       263033949,
+					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				}, {
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
-						DatabaseID:       263033761,
-						NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+					DatabaseID:       263033761,
+					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				},
 			},
 		},
@@ -106,25 +91,19 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			visibility: VisibilityPublic,
 			wantRepos: []*Repository{
 				{
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-						DatabaseID:       263033949,
-						NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:       263033949,
+					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				}, {
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
-						DatabaseID:       263033761,
-						NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM3NjE=",
+					DatabaseID:       263033761,
+					NameWithOwner:    "sourcegraph-vcr-repos/public-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/public-org-repo-1",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				},
 			},
 		},
@@ -133,27 +112,21 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			visibility: VisibilityPrivate,
 			wantRepos: []*Repository{
 				{
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
-						DatabaseID:       263034151,
-						NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
-						IsPrivate:        true,
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQxNTE=",
+					DatabaseID:       263034151,
+					NameWithOwner:    "sourcegraph-vcr-repos/private-org-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr-repos/private-org-repo-1",
+					IsPrivate:        true,
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				}, {
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-						DatabaseID:       263034073,
-						NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-						IsPrivate:        true,
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:       263034073,
+					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:        true,
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				},
 			},
 		},
@@ -162,26 +135,20 @@ func TestListAffiliatedRepositories(t *testing.T) {
 			affiliations: []RepositoryAffiliation{AffiliationCollaborator, AffiliationOwner},
 			wantRepos: []*Repository{
 				{
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
-						DatabaseID:       263034073,
-						NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
-						IsPrivate:        true,
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzQwNzM=",
+					DatabaseID:       263034073,
+					NameWithOwner:    "sourcegraph-vcr/private-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/private-user-repo-1",
+					IsPrivate:        true,
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				}, {
-					BaseRepository: &BaseRepository{
-						ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
-						DatabaseID:       263033949,
-						NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
-						URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
-						RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
-					},
+					ID:               "MDEwOlJlcG9zaXRvcnkyNjMwMzM5NDk=",
+					DatabaseID:       263033949,
+					NameWithOwner:    "sourcegraph-vcr/public-user-repo-1",
+					URL:              "https://github.com/sourcegraph-vcr/public-user-repo-1",
+					RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{}},
 					ViewerPermission: "ADMIN",
-					Parent:           emptyParent,
 				},
 			},
 		},
