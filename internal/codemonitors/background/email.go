@@ -132,7 +132,7 @@ func sendEmail(ctx context.Context, db database.DB, userID int32, template txtyp
 		return errors.Newf("unable to send email to user ID %d's unverified primary email address", userID)
 	}
 
-	if err := internalapi.Client.SendEmail(ctx, "code-monitor", txtypes.Message{
+	if err := txemail.Send(ctx, "code-monitor", txtypes.Message{
 		To:       []string{email},
 		Template: template,
 		Data:     data,
