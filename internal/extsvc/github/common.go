@@ -1808,7 +1808,7 @@ func (r *Repository) Name() (string, error) {
 	}
 }
 
-// Rpoesitory is a GitHub repository.
+// Repository is a GitHub repository.
 type Repository struct {
 	ID            string // ID of repository (GitHub GraphQL ID, not GitHub database ID)
 	DatabaseID    int64  // The integer database id
@@ -1825,7 +1825,7 @@ type Repository struct {
 	//
 	// ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
 	ViewerPermission string
-	// a list of topics the repository is tagged with
+	// RepositoryTopics is a  list of topics the repository is tagged with.
 	RepositoryTopics RepositoryTopics
 
 	// Metadata retained for ranking
@@ -1876,11 +1876,11 @@ type restRepository struct {
 	Archived    bool                      `json:"archived"`
 	Locked      bool                      `json:"locked"`
 	Disabled    bool                      `json:"disabled"`
+	Permissions restRepositoryPermissions `json:"permissions"`
 	Stars       int                       `json:"stargazers_count"`
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
 	Topics      []string                  `json:"topics"`
-	Permissions restRepositoryPermissions `json:"permissions"`
 	Parent      *ParentRepository         `json:"parent,omitempty"`
 }
 
@@ -1907,7 +1907,6 @@ func convertRestRepo(restRepo restRepository) *Repository {
 	for _, topic := range restRepo.Topics {
 		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
 	}
-
 	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
