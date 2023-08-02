@@ -53,10 +53,6 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	return cfg, err
 }
 
-func (c *internalClient) LogTelemetry(ctx context.Context, reqBody any) error {
-	return c.postInternal(ctx, "telemetry", reqBody, nil)
-}
-
 // postInternal sends an HTTP post request to the internal route.
 func (c *internalClient) postInternal(ctx context.Context, route string, reqBody, respBody any) error {
 	return c.meteredPost(ctx, "/.internal/"+route, reqBody, respBody)
