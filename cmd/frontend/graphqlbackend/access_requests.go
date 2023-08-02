@@ -157,7 +157,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	return &EmptyResponse{}, nil
 }
 
-func accessRequestByID(ctx context.Context, logger log.Logger, db database.DB, id graphql.ID) (*accessRequestResolver, error) {
+func accessRequestByID(ctx context.Context, db database.DB, id graphql.ID) (*accessRequestResolver, error) {
 	// 🚨 SECURITY: Only site admins can see access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
