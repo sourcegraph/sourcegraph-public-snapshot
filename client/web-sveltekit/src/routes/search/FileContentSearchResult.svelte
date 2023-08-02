@@ -1,11 +1,15 @@
 <svelte:options immutable />
 
+<script lang="ts" context="module">
+    const BY_LINE_RANKING = 'by-line-number'
+    const DEFAULT_CONTEXT_LINES = 1
+    const MAX_LINE_MATCHES = 5
+    const MAX_ZOEKT_RESULTS = 3
+</script>
+
 <script lang="ts">
     import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
-    import { getContext } from 'svelte'
 
-    import { goto } from '$app/navigation'
-    import { page } from '$app/stores'
     import {
         addLineRangeQueryParameter,
         formatSearchParameters,
@@ -13,44 +17,33 @@
         toPositionOrRangeQueryParameter,
     } from '$lib/common'
     import Icon from '$lib/Icon.svelte'
-    import { resultToMatchItems } from '$lib/search/utils'
-    import {
-        displayRepoName,
-        splitPath,
-        getFileMatchUrl,
-        getRepositoryUrl,
-        type ContentMatch,
-        type MatchItem,
-        ZoektRanking,
-    } from '$lib/shared'
+    import { getFileMatchUrl, type ContentMatch, ZoektRanking, LineRanking } from '$lib/shared'
 
     import FileMatchChildren from './FileMatchChildren.svelte'
     import SearchResult from './SearchResult.svelte'
-    import type { Context } from './SearchResults.svelte'
+    import { getSearchResultsContext } from './SearchResults.svelte'
+    import CodeHostIcon from './CodeHostIcon.svelte'
+    import RepoStars from './RepoStars.svelte'
+    import { settings } from '$lib/stores'
+    import { rankContentMatch } from '$lib/search/results'
+    import { goto } from '$app/navigation'
+    import FileSearchResultHeader from './FileSearchResultHeader.svelte'
 
     export let result: ContentMatch
 
-    const ranking = new ZoektRanking(3)
-    // The number of lines of context to show before and after each match.
-    const context = 1
-
-    $: repoName = result.repository
-    $: repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
+    $: contextLines = $settings?.['search.contextLines'] ?? DEFAULT_CONTEXT_LINES
+    $: ranking =
+        $settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING
+            ? new LineRanking(MAX_LINE_MATCHES)
+            : new ZoektRanking(MAX_ZOEKT_RESULTS)
+    $: ({ expandedMatchGroups, collapsedMatchGroups, collapsible, hiddenMatchesCount } = rankContentMatch(
+        result,
+        ranking,
+        contextLines
+    ))
     $: fileURL = getFileMatchUrl(result)
-    $: [fileBase, fileName] = splitPath(result.path)
-    $: items = resultToMatchItems(result)
-    $: expandedMatchGroups = ranking.expandedResults(items, context)
-    $: collapsedMatchGroups = ranking.collapsedResults(items, context)
 
-    $: collapsible = items.length > collapsedMatchGroups.matches.length
-
-    const sumHighlightRanges = (count: number, item: MatchItem): number => count + item.highlightRanges.length
-
-    $: highlightRangesCount = items.reduce(sumHighlightRanges, 0)
-    $: collapsedHighlightRangesCount = collapsedMatchGroups.matches.reduce(sumHighlightRanges, 0)
-    $: hiddenMatchesCount = highlightRangesCount - collapsedHighlightRangesCount
-
-    const searchResultContext = getContext<Context>('search-results')
+    const searchResultContext = getSearchResultsContext()
     let expanded: boolean = searchResultContext?.isExpanded(result)
     $: searchResultContext.setExpanded(result, expanded)
     $: expandButtonText = expanded
@@ -82,15 +75,16 @@
     }
 </script>
 
-<SearchResult {result}>
-    <div slot="title">
-        <a href={repoAtRevisionURL}>{displayRepoName(repoName)}</a>
-        <span aria-hidden={true}>›</span>
-        <a href={fileURL}>
-            {#if fileBase}{fileBase}/{/if}<strong>{fileName}</strong>
-        </a>
-    </div>
-    <div class="matches" bind:this={root} on:click={handleLineClick}>
+<SearchResult>
+    <CodeHostIcon slot="icon" repository={result.repository} />
+    <FileSearchResultHeader slot="title" {result} />
+    <svelte:fragment slot="info">
+        {#if result.repoStars}
+            <RepoStars repoStars={result.repoStars} />
+        {/if}
+    </svelte:fragment>
+
+    <div bind:this={root} class="matches" on:click={handleLineClick}>
         <FileMatchChildren {result} grouped={expanded ? expandedMatchGroups.grouped : collapsedMatchGroups.grouped} />
     </div>
     {#if collapsible}
