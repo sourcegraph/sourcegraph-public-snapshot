@@ -14,6 +14,9 @@
     import type { PageData } from './$types'
     import FormatAction from './FormatAction.svelte'
     import WrapLinesAction, { lineWrap } from './WrapLinesAction.svelte'
+    import { parseQueryAndHash } from '$lib/shared'
+    import { goto } from '$app/navigation'
+    import { updateSearchParamsWithLineInformation } from '$lib/repo/blob'
 
     type Deferred = PageData['deferred']
 
@@ -27,6 +30,7 @@
     $: setHighlights(data.deferred.highlights)
     $: formatted = !!$blobData?.richHTML
     $: showRaw = $page.url.searchParams.get('view') === 'raw'
+    $: selectedPosition = parseQueryAndHash($page.url.search, $page.url.hash)
 </script>
 
 <FileHeader>
@@ -64,7 +68,15 @@
             </div>
         {:else}
             <!-- TODO: ensure that only the highlights for the currently loaded blob data are used -->
-            <CodeMirrorBlob blob={$blobData} highlights={$highlights || ''} wrapLines={$lineWrap} />
+            <CodeMirrorBlob
+                blob={$blobData}
+                highlights={$highlights || ''}
+                wrapLines={$lineWrap}
+                selectedLines={selectedPosition.line ? selectedPosition : null}
+                on:selectline={event => {
+                    goto('?' + updateSearchParamsWithLineInformation($page.url.searchParams, event.detail))
+                }}
+            />
         {/if}
     {/if}
 </div>
