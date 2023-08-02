@@ -1380,7 +1380,7 @@ EyAO2RYQG7mSE6w6CtTFiCjjmELpvdD2s1ygvPdCO1MJlCX264E3og==
 			}
 
 			ctx := context.Background()
-			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), database.NewMockDB(), svc, cf)
+			githubSrc, err := NewGitHubSource(ctx, logtest.Scoped(t), db, svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
