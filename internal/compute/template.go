@@ -273,7 +273,7 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 			Content: string(m.Name),
 		}
 	case *searchresult.FileMatch:
-		lang, _ := enry.GetLanguageByExtension(m.Path)
+		lang := enry.GetLanguage(m.Path, []byte(content))
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Path:    m.Path,
@@ -292,7 +292,7 @@ func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
 		}
 	case *searchresult.CommitDiffMatch:
 		path := m.Path()
-		lang, _ := enry.GetLanguageByExtension(path)
+		lang := enry.GetLanguage(path, []byte(content))
 		return &MetaEnvironment{
 			Repo:    string(m.Repo.Name),
 			Commit:  string(m.Commit.ID),

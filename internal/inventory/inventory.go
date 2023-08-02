@@ -132,6 +132,14 @@ func GetLanguageByFilename(name string) (language string, safe bool) {
 	return enry.GetLanguageByExtension(name)
 }
 
+func GetLanguageByContent(name string, content []byte) (language string, safe bool) {
+	return enry.GetLanguageByContent(name, content)
+}
+
+func GetLanguage(name string, content []byte) (language string) {
+	return enry.GetLanguage(name, content)
+}
+
 func init() {
 	// Treat .tsx and .jsx as TypeScript and JavaScript, respectively, instead of distinct languages
 	// called "TSX" and "JSX". This is more consistent with user expectations.

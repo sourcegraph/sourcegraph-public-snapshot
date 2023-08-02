@@ -93,9 +93,16 @@ func (s *SearchFilters) Update(event SearchEvent) {
 		}
 	}
 
-	addLangFilter := func(fileMatchPath string, lineMatchCount int32, limitHit bool) {
+	addLangFilter := func(fileMatch *result.FileMatch, lineMatchCount int32, limitHit bool) {
+		fileMatchPath := fileMatch.Path
 		if ext := path.Ext(fileMatchPath); ext != "" {
-			rawLanguage, _ := inventory.GetLanguageByFilename(fileMatchPath)
+			var content []byte
+			if fileMatch.ChunkMatches != nil && len(fileMatch.ChunkMatches) > 0 {
+				for _, c := range fileMatch.ChunkMatches {
+					content = append(content, []byte(c.Content)...)
+				}
+			}
+			rawLanguage := inventory.GetLanguage(fileMatchPath, content)
 			language := strings.ToLower(rawLanguage)
 			if language != "" {
 				if strings.Contains(language, " ") {
@@ -125,7 +132,7 @@ func (s *SearchFilters) Update(event SearchEvent) {
 			}
 			lines := int32(v.ResultCount())
 			addRepoFilter(v.Repo.Name, v.Repo.ID, rev, lines)
-			addLangFilter(v.Path, lines, v.LimitHit)
+			addLangFilter(v, lines, v.LimitHit)
 			addFileFilter(v.Path, lines, v.LimitHit)
 		case *result.RepoMatch:
 			// It should be fine to leave this blank since revision specifiers
