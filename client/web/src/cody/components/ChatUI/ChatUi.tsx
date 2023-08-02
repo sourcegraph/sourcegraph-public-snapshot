@@ -30,7 +30,7 @@ import { CodyPageIcon } from '../../chat/CodyPageIcon'
 import { isCodyEnabled, isEmailVerificationNeededForCody, isSignInRequiredForCody } from '../../isCodyEnabled'
 import { useCodySidebar } from '../../sidebar/Provider'
 import { CodyChatStore } from '../../useCodyChat'
-import { RecipesWidgetWrapper } from '../../widgets/CodyRecipesWidgetWrapper'
+import { CodyRecipesWidgetWrapper } from '../../widgets/CodyRecipesWidgetWrapper'
 import { ScopeSelector } from '../ScopeSelector'
 
 import styles from './ChatUi.module.scss'
@@ -101,9 +101,9 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
         return <></>
     }
 
-    const RecipeWidgetWrapperWithProps = useMemo(
+    const RecipesWidgetWrapperWithProps = useMemo(
         () => (props: { targetRef: RefObject<HTMLElement>; children: any }) =>
-            <RecipesWidgetWrapper {...props} codyChatStore={codyChatStore} />,
+            <CodyRecipesWidgetWrapper {...props} codyChatStore={codyChatStore} />,
         [codyChatStore]
     )
 
@@ -144,7 +144,7 @@ export const ChatUI: React.FC<IChatUIProps> = ({ codyChatStore, isSourcegraphApp
                 abortMessageInProgressComponent={AbortMessageInProgress}
                 onAbortMessageInProgress={abortMessageInProgress}
                 isCodyEnabled={isCodyEnabled()}
-                RecipeWidgetWrapper={RecipeWidgetWrapperWithProps}
+                RecipesWidgetWrapper={RecipesWidgetWrapperWithProps}
             />
         </>
     )
