@@ -1,6 +1,7 @@
 package updatecheck
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -9,6 +10,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/coreos/go-semver/semver"
@@ -375,6 +377,12 @@ type pingPayload struct {
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
+var (
+	pubsubClient     *pubsub.TopicClient
+	pubsubClientOnce sync.Once
+	pubsubClientErr  error
+)
+
 func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool) {
 	logger = logger.Scoped("logPing", "logs ping requests")
 	defer func() {
@@ -383,6 +391,28 @@ func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool
 			errorCounter.Inc()
 		}
 	}()
+
+	// Sync the initial administrator email in HubSpot.
+	if strings.Contains(pr.InitialAdminEmail, "@") {
+		// Hubspot requires the timestamp to be rounded to the nearest day at midnight.
+		now := time.Now().UTC()
+		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
+		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
+	}
+
+	if pubSubPingsTopicID == "" {
+		return
+	}
+
+	pubsubClientOnce.Do(func() {
+		pubsubClient, pubsubClientErr = pubsub.NewDefaultTopicClient(pubSubPingsTopicID)
+	})
+	if pubsubClientErr != nil {
+		errorCounter.Inc()
+		logger.Error("failed to create Pub/Sub client", log.Error(pubsubClientErr))
+		return
+	}
 
 	var clientAddr string
 	if v := r.Header.Get("x-forwarded-for"); v != "" {
@@ -394,23 +424,15 @@ func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool
 	message, err := marshalPing(pr, hasUpdate, clientAddr, time.Now())
 	if err != nil {
 		errorCounter.Inc()
-		logger.Warn("failed to Marshal payload", log.Error(err))
-	} else if pubsub.Enabled() {
-		err := pubsub.Publish(pubSubPingsTopicID, string(message))
-		if err != nil {
-			errorCounter.Inc()
-			logger.Scoped("pubsub.Publish", "").
-				Warn("failed to Publish", log.String("message", string(message)), log.Error(err))
-		}
+		logger.Error("failed to marshal payload", log.Error(err))
+		return
 	}
 
-	// Sync the initial administrator email in HubSpot.
-	if strings.Contains(pr.InitialAdminEmail, "@") {
-		// Hubspot requires the timestamp to be rounded to the nearest day at midnight.
-		now := time.Now().UTC()
-		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
-		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
-		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
+	err = pubsubClient.Publish(context.Background(), message)
+	if err != nil {
+		errorCounter.Inc()
+		logger.Error("failed to publish", log.String("message", string(message)), log.Error(err))
+		return
 	}
 }
 
