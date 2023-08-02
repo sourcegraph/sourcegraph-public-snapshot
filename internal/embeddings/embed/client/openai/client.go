@@ -45,7 +45,7 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 }
 
 // GetEmbeddings tries to embed the given texts using the external service specified in the config.
-func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -80,6 +80,7 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 
 	dimensionality := len(response.Data[0].Embedding)
 	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
+	failed := make([]int, 0)
 	for _, embedding := range response.Data {
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
@@ -89,13 +90,17 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 			// response. Try it again a few times and hope for the best.
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
 			if err != nil {
-				return nil, client.PartialError{Err: err, Index: embedding.Index}
+				failed = append(failed, embedding.Index)
+
+				// reslice to provide zero value embedding for failed chunk
+				embeddings = embeddings[:len(embeddings)+dimensionality]
+				continue
 			}
 			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}
 	}
 
-	return embeddings, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: dimensionality}, nil
 }
 
 var modelsWithoutNewlines = map[string]struct{}{

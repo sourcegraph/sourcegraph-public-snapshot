@@ -39,6 +39,14 @@ var NonActiveUserEvents = []string{
 	"CodyVSCodeExtension:CodySavedLogin:executed",
 }
 
+// List of events that shouldn't be logged in local (Postgres) databases.
+// These events are high volume and cause a lot of noise and pressure on the backend.
+// Since we only need them for debugging, we don't need to route them to custom instances.
+var OnlyLogRemotelyEvents = []string{
+	"CodyVSCodeExtension:completion:started",
+	"CodyVSCodeExtension:completion:networkRequestStarted",
+}
+
 // LogEvent sends a payload representing an event to the api/telemetry endpoint.
 //
 // This method should be invoked after the frontend service has started. It is

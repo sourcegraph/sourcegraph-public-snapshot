@@ -576,8 +576,8 @@ func RepoUpdater() *monitoring.Dashboard {
 
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
-					HumanServiceName: "repo_updater",
-					MetricNamespace:  "repo_updater",
+					HumanServiceName:   "repo_updater",
+					RawGRPCServiceName: "repoupdater.v1.RepoUpdaterService",
 
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${instance:regex}`,

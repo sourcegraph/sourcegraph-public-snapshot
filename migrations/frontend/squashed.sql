@@ -4250,7 +4250,9 @@ CREATE TABLE repo_embedding_job_stats (
     text_files_embedded integer DEFAULT 0 NOT NULL,
     text_chunks_embedded integer DEFAULT 0 NOT NULL,
     text_files_skipped jsonb DEFAULT '{}'::jsonb NOT NULL,
-    text_bytes_embedded integer DEFAULT 0 NOT NULL
+    text_bytes_embedded integer DEFAULT 0 NOT NULL,
+    code_chunks_excluded integer DEFAULT 0 NOT NULL,
+    text_chunks_excluded integer DEFAULT 0 NOT NULL
 );
 
 CREATE TABLE repo_embedding_jobs (

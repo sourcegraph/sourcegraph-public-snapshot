@@ -24,18 +24,22 @@ For upgrade procedures or general info about sourcegraph versioning see the link
 ## v5.1.3 ➔ v5.1.4
 
 #### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
 
 ## v5.1.2 ➔ v5.1.3
 
 #### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
 
 ## v5.1.1 ➔ v5.1.2
 
 #### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
 
 ## v5.1.0 ➔ v5.1.1
 
 #### Notes:
+- Migrator images were built without the `v5.1.x` tag in this version, as such multiversion upgrades using this image version will fail to upgrade to versions in `v5.1.x`. See [this issue](https://github.com/sourcegraph/sourcegraph/issues/55048) for more details.
 
 ## v5.0.6 ➔ v5.1.0
 
