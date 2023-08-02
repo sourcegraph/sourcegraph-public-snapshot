@@ -2086,7 +2086,7 @@ func (d *deduplicatedCloneOptions) DeepCopy() *deduplicatedCloneOptions {
 func (s *Server) maybeGetDeduplicatedCloneOptions(ctx context.Context, repo *types.Repo) *deduplicatedCloneOptions {
 	logger := s.ObservationCtx.Logger.Scoped("deduplicateRepoClone", "").With(log.String("repo", string(repo.Name)))
 
-	if s.DeduplicatedForksSet == nil || s.DeduplicatedForksSet.IsEmpty() {
+	if s.DeduplicatedForksSet.IsEmpty() {
 		return nil
 	}
 
