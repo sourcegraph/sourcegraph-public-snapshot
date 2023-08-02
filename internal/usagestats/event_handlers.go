@@ -178,11 +178,11 @@ func publishSourcegraphDotComEvents(events []Event) error {
 	if err != nil {
 		return err
 	}
-	return pubsubClient.Publish(pubsubEvents...)
+	return pubsubClient.Publish(context.Background(), pubsubEvents...)
 }
 
-func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
-	pubsubEvents := make([]string, 0, len(events))
+func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
+	pubsubEvents := make([][]byte, 0, len(events))
 	for _, event := range events {
 		firstSourceURL := ""
 		if event.FirstSourceURL != nil {
@@ -248,7 +248,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			return nil, err
 		}
 
-		pubsubEvents = append(pubsubEvents, string(pubsubEvent))
+		pubsubEvents = append(pubsubEvents, pubsubEvent)
 	}
 
 	return pubsubEvents, nil

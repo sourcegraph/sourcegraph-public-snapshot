@@ -1,6 +1,7 @@
 package updatecheck
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -427,7 +428,7 @@ func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool
 		return
 	}
 
-	err = pubsubClient.Publish(string(message))
+	err = pubsubClient.Publish(context.Background(), message)
 	if err != nil {
 		errorCounter.Inc()
 		logger.Error("failed to publish", log.String("message", string(message)), log.Error(err))

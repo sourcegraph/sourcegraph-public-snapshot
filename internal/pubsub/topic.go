@@ -54,11 +54,10 @@ func (c *TopicClient) Ping(ctx context.Context) error {
 }
 
 // Publish publishes messages and waits for all the results synchronously.
-func (c *TopicClient) Publish(messages ...string) error {
-	ctx := context.Background()
+func (c *TopicClient) Publish(ctx context.Context, messages ...[]byte) error {
 	results := make([]*pubsub.PublishResult, 0, len(messages))
 	for _, msg := range messages {
-		results = append(results, c.topic.Publish(ctx, &pubsub.Message{Data: []byte(msg)}))
+		results = append(results, c.topic.Publish(ctx, &pubsub.Message{Data: msg}))
 	}
 	for _, result := range results {
 		if _, err := result.Get(ctx); err != nil {
