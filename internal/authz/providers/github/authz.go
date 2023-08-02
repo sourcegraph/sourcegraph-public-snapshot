@@ -8,6 +8,7 @@ import (
 
 	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	eauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
@@ -130,7 +131,7 @@ func newAuthzProvider(
 
 	var auther eauth.Authenticator
 	if ghaDetails := c.GitHubConnection.GitHubAppDetails; ghaDetails != nil {
-		auther, err = auth.FromConnection(ctx, c.GitHubConnection.GitHubConnection)
+		auther, err = auth.FromConnection(ctx, c.GitHubConnection.GitHubConnection, db.GitHubApps(), keyring.Default().GitHubAppKey)
 		if err != nil {
 			return nil, err
 		}
