@@ -77,9 +77,7 @@ func Test_Handle(t *testing.T) {
 		redisKeyPrefix: prefix,
 		kv:             kv,
 	}
-	err = h.Handle(ctx, logger, &Job{
-		CodeHostURL: url,
-	})
+	err = h.Handle(ctx, obsCtx)
 	assert.NoError(t, err)
 	apiCapKey, apiReplenishmentKey, gitCapKey, gitReplenishmentKey := redispool.GetCodeHostRateLimiterConfigKeys(h.redisKeyPrefix, url)
 	assertValFromRedis(apiCapKey, ten, kv)
@@ -98,9 +96,7 @@ func Test_Handle(t *testing.T) {
 	codeHost.GitRateLimitIntervalSeconds = &oneHundred
 	err = db.CodeHosts().Update(ctx, codeHost)
 	assert.NoError(t, err)
-	err = h.Handle(ctx, logger, &Job{
-		CodeHostURL: url,
-	})
+	err = h.Handle(ctx, obsCtx)
 	assert.NoError(t, err)
 
 	//Check Updated values are in Redis

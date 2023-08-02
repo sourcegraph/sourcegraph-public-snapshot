@@ -2,104 +2,13 @@ package ratelimit
 
 import (
 	"context"
-	"strconv"
-	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var tableName = "rate_limit_config_jobs"
-
-type Job struct {
-	ID              int
-	State           string
-	FailureMessage  *string
-	QueuedAt        time.Time
-	StartedAt       *time.Time
-	FinishedAt      *time.Time
-	ProcessAfter    *time.Time
-	NumResets       int
-	NumFailures     int
-	LastHeartbeatAt time.Time
-	ExecutionLogs   []executor.ExecutionLogEntry
-	WorkerHostname  string
-	Cancel          bool
-	CodeHostURL     string
-}
-
-func (b *Job) RecordID() int {
-	return b.ID
-}
-
-func (b *Job) RecordUID() string {
-	return strconv.Itoa(b.ID)
-}
-
-var jobColumns = []*sqlf.Query{
-	sqlf.Sprintf("id"),
-	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("queued_at"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
-	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("num_failures"),
-	sqlf.Sprintf("last_heartbeat_at"),
-	sqlf.Sprintf("execution_logs"),
-	sqlf.Sprintf("worker_hostname"),
-	sqlf.Sprintf("cancel"),
-	sqlf.Sprintf("code_host_url"),
-}
-
-func scanJob(s dbutil.Scanner) (*Job, error) {
-	var job Job
-	var executionLogs []executor.ExecutionLogEntry
-
-	if err := s.Scan(
-		&job.ID,
-		&job.State,
-		&job.FailureMessage,
-		&job.QueuedAt,
-		&job.StartedAt,
-		&job.FinishedAt,
-		&job.ProcessAfter,
-		&job.NumResets,
-		&job.NumFailures,
-		&job.LastHeartbeatAt,
-		pq.Array(&executionLogs),
-		&job.WorkerHostname,
-		&job.Cancel,
-		&job.CodeHostURL,
-	); err != nil {
-		return nil, err
-	}
-	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
-	return &job, nil
-}
-
-func makeWorkerStore(db database.DB, observationCtx *observation.Context) dbworkerstore.Store[*Job] {
-	return dbworkerstore.New(observationCtx, db.Handle(), dbworkerstore.Options[*Job]{
-		Name:              "rate_limit_config_worker_store",
-		TableName:         tableName,
-		ColumnExpressions: jobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanJob),
-		OrderByExpression: sqlf.Sprintf("id"), // processes oldest records first
-		MaxNumResets:      10,
-		StalledMaxAge:     time.Second * 30,
-		RetryAfter:        time.Second * 30,
-		MaxNumRetries:     3,
-	})
-}
 
 type handler struct {
 	codeHostStore  database.CodeHostStore
@@ -107,11 +16,37 @@ type handler struct {
 	kv             redispool.KeyValue
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) error {
-	return h.process(ctx, record.CodeHostURL, logger)
+func (h *handler) Handle(ctx context.Context, observationCtx *observation.Context) error {
+	codeHosts, next, err := h.codeHostStore.List(ctx, database.ListCodeHostsOpts{
+		LimitOffset: database.LimitOffset{
+			Limit: 10,
+		},
+	})
+	for {
+		for _, codeHost := range codeHosts {
+			// only the last error gets recorded, but we don't want to stop on the first error, since other code hosts could be
+			// needing config updates.
+			err = h.processCodeHost(ctx, codeHost.URL)
+			if err != nil {
+				observationCtx.Logger.Error("error setting rate limit configuration", log.String("url", codeHost.URL), log.Error(err))
+			}
+		}
+		codeHosts, next, err = h.codeHostStore.List(ctx, database.ListCodeHostsOpts{
+			LimitOffset: database.LimitOffset{
+				Limit: 10,
+			},
+			Cursor: next,
+		})
+
+		// TODO: @varsanojidan fix this when next is fixed
+		if next <= 0 {
+			break
+		}
+	}
+	return err
 }
 
-func (h *handler) process(ctx context.Context, codeHostURL string, _ log.Logger) error {
+func (h *handler) processCodeHost(ctx context.Context, codeHostURL string) error {
 	// Retrieve all the code host rate limit config keys in Redis.
 	apiCapKey, apiReplenishmentKey, gitCapKey, gitReplenishmentKey := redispool.GetCodeHostRateLimiterConfigKeys(h.redisKeyPrefix, codeHostURL)
 

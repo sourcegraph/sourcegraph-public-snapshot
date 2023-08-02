@@ -3365,29 +3365,6 @@ Referenced by:
 
 ```
 
-# Table "public.rate_limit_config_jobs"
-```
-      Column       |           Type           | Collation | Nullable |                      Default                       
--------------------+--------------------------+-----------+----------+----------------------------------------------------
- id                | integer                  |           | not null | nextval('rate_limit_config_jobs_id_seq'::regclass)
- state             | text                     |           |          | 'queued'::text
- failure_message   | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | now()
- started_at        | timestamp with time zone |           |          | 
- finished_at       | timestamp with time zone |           |          | 
- process_after     | timestamp with time zone |           |          | 
- num_resets        | integer                  |           | not null | 0
- num_failures      | integer                  |           | not null | 0
- last_heartbeat_at | timestamp with time zone |           |          | 
- execution_logs    | json[]                   |           |          | 
- worker_hostname   | text                     |           | not null | ''::text
- cancel            | boolean                  |           | not null | false
- code_host_url     | text                     |           | not null | 
-Indexes:
-    "rate_limit_config_jobs_pkey" PRIMARY KEY, btree (id)
-
-```
-
 # Table "public.redis_key_value"
 ```
   Column   | Type  | Collation | Nullable | Default 

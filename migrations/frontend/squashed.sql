@@ -4088,33 +4088,6 @@ CREATE TABLE query_runner_state (
     exec_duration_ns bigint
 );
 
-CREATE TABLE rate_limit_config_jobs (
-    id integer NOT NULL,
-    state text DEFAULT 'queued'::text,
-    failure_message text,
-    queued_at timestamp with time zone DEFAULT now(),
-    started_at timestamp with time zone,
-    finished_at timestamp with time zone,
-    process_after timestamp with time zone,
-    num_resets integer DEFAULT 0 NOT NULL,
-    num_failures integer DEFAULT 0 NOT NULL,
-    last_heartbeat_at timestamp with time zone,
-    execution_logs json[],
-    worker_hostname text DEFAULT ''::text NOT NULL,
-    cancel boolean DEFAULT false NOT NULL,
-    code_host_url text NOT NULL
-);
-
-CREATE SEQUENCE rate_limit_config_jobs_id_seq
-    AS integer
-    START WITH 1
-    INCREMENT BY 1
-    NO MINVALUE
-    NO MAXVALUE
-    CACHE 1;
-
-ALTER SEQUENCE rate_limit_config_jobs_id_seq OWNED BY rate_limit_config_jobs.id;
-
 CREATE TABLE users (
     id integer NOT NULL,
     username citext NOT NULL,
@@ -5132,8 +5105,6 @@ ALTER TABLE ONLY permissions ALTER COLUMN id SET DEFAULT nextval('permissions_id
 
 ALTER TABLE ONLY phabricator_repos ALTER COLUMN id SET DEFAULT nextval('phabricator_repos_id_seq'::regclass);
 
-ALTER TABLE ONLY rate_limit_config_jobs ALTER COLUMN id SET DEFAULT nextval('rate_limit_config_jobs_id_seq'::regclass);
-
 ALTER TABLE ONLY registry_extension_releases ALTER COLUMN id SET DEFAULT nextval('registry_extension_releases_id_seq'::regclass);
 
 ALTER TABLE ONLY registry_extensions ALTER COLUMN id SET DEFAULT nextval('registry_extensions_id_seq'::regclass);
@@ -5591,9 +5562,6 @@ ALTER TABLE ONLY product_licenses
 
 ALTER TABLE ONLY product_subscriptions
     ADD CONSTRAINT product_subscriptions_pkey PRIMARY KEY (id);
-
-ALTER TABLE ONLY rate_limit_config_jobs
-    ADD CONSTRAINT rate_limit_config_jobs_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY redis_key_value
     ADD CONSTRAINT redis_key_value_pkey PRIMARY KEY (namespace, key) INCLUDE (value);
