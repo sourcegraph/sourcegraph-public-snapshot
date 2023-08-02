@@ -11,8 +11,12 @@ import (
 )
 
 func Frontend() *monitoring.Dashboard {
-	// frontend is sometimes called sourcegraph-frontend in various contexts
-	const containerName = "(frontend|sourcegraph-frontend)"
+	const (
+		// frontend is sometimes called sourcegraph-frontend in various contexts
+		containerName = "(frontend|sourcegraph-frontend)"
+
+		grpcZoektConfigurationServiceName = "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"
+	)
 
 	var sentinelSamplingIntervals []string
 	for _, d := range []time.Duration{
@@ -28,7 +32,7 @@ func Frontend() *monitoring.Dashboard {
 	}
 
 	defaultSamplingInterval := (90 * time.Minute).Round(time.Second)
-	grpcMethodVariable := shared.GRPCMethodVariable("frontend")
+	grpcMethodVariable := shared.GRPCMethodVariable(grpcZoektConfigurationServiceName)
 
 	orgMetricSpec := []struct{ name, route, description string }{
 		{"org_members", "OrganizationMembers", "API requests to list organisation members"},
@@ -405,7 +409,7 @@ func Frontend() *monitoring.Dashboard {
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
 					HumanServiceName:   "frontend",
-					RawGRPCServiceName: "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",
+					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${internalInstance:regex}`,
@@ -413,7 +417,7 @@ func Frontend() *monitoring.Dashboard {
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "frontend",
-					RawGRPCServiceName: "sourcegraph.zoekt.configuration.v1.ZoektConfigurationService",
+					RawGRPCServiceName: grpcZoektConfigurationServiceName,
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
