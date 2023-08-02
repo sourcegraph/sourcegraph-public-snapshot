@@ -738,15 +738,11 @@ func TestGithubSource_GetFork(t *testing.T) {
 						},
 					},
 				},
-				forkRepo: &github.Repository{
-					NameWithOwner: user + "/user-bar", IsFork: true,
-				},
+				forkRepo:      &github.Repository{NameWithOwner: user + "/user-bar", IsFork: true},
 				namespace:     nil,
 				wantNamespace: user,
 				wantName:      user + "-bar",
-				client: &mockGithubClientFork{fork: &github.Repository{
-					NameWithOwner: user + "/user-bar", IsFork: true,
-				}},
+				client:        &mockGithubClientFork{fork: &github.Repository{NameWithOwner: user + "/user-bar", IsFork: true}},
 			},
 			"with namespace": {
 				targetRepo: &types.Repo{
