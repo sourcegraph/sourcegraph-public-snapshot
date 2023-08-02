@@ -397,6 +397,10 @@ func embedFiles(
 }
 
 func batchToChunkPoints(repo types.RepoIDName, revision api.CommitID, batch []embeddings.RepoEmbeddingRowMetadata, embeddings []float32, isCode bool) []db.ChunkPoint {
+	if len(batch) == 0 {
+		return nil
+	}
+
 	dimensions := len(embeddings) / len(batch)
 	points := make([]db.ChunkPoint, 0, len(batch))
 	for i, chunk := range batch {
