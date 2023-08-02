@@ -782,6 +782,11 @@ var telemetryHTTPProxy = env.Get("TELEMETRY_HTTP_PROXY", "", "if set, HTTP proxy
 
 // check performs an update check and updates the global state.
 func check(logger log.Logger, db database.DB) {
+	// If the update channel is not set to release, we don't do a check.
+	if channel := conf.UpdateChannel(); channel != "release" {
+		return // no update check
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
 	defer cancel()
 
@@ -890,10 +895,6 @@ func Start(logger log.Logger, db database.DB) {
 		panic("already started")
 	}
 	started = true
-
-	if channel := conf.UpdateChannel(); channel != "release" {
-		return // no update check
-	}
 
 	const delay = 30 * time.Minute
 	scopedLog := logger.Scoped("updatecheck", "checks for updates of services and updates usage telemetry")
