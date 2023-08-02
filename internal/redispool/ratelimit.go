@@ -37,7 +37,7 @@ type rateLimiter struct {
 func NewRateLimiter() (RateLimiter, error) {
 	var err error
 
-	pool, ok := Cache.Pool()
+	pool, ok := Store.Pool()
 	if !ok {
 		err = errors.New("unable to get redis connection")
 	}

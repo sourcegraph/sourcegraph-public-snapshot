@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -56,7 +57,9 @@ func makeWorker(
 	codeHostStore database.CodeHostStore,
 ) *workerutil.Worker[*Job] {
 	handler := &handler{
-		codeHostStore: codeHostStore,
+		codeHostStore:  codeHostStore,
+		redisKeyPrefix: redispool.TokenBucketGlobalPrefix,
+		kv:             redispool.Store,
 	}
 
 	return dbworker.NewWorker[*Job](ctx, workerStore, handler, workerutil.WorkerOptions{

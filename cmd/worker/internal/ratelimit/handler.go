@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/executor"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -103,19 +102,18 @@ func makeWorkerStore(db database.DB, observationCtx *observation.Context) dbwork
 }
 
 type handler struct {
-	codeHostStore database.CodeHostStore
+	codeHostStore  database.CodeHostStore
+	redisKeyPrefix string
+	kv             redispool.KeyValue
 }
 
-var _ workerutil.Handler[*Job] = &handler{}
-
 func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) error {
-	logger.Info("STARTED THE STUFFS")
 	return h.process(ctx, record.CodeHostURL, logger)
 }
 
 func (h *handler) process(ctx context.Context, codeHostURL string, _ log.Logger) error {
 	// Retrieve all the code host rate limit config keys in Redis.
-	apiCapKey, apiReplenishmentKey, gitCapKey, gitReplenishmentKey := redispool.GetCodeHostRateLimiterConfigKeys(redispool.TokenBucketGlobalPrefix, codeHostURL)
+	apiCapKey, apiReplenishmentKey, gitCapKey, gitReplenishmentKey := redispool.GetCodeHostRateLimiterConfigKeys(h.redisKeyPrefix, codeHostURL)
 
 	// Retrieve the actual rate limit values from the source of truth (Postgres).
 	ch, err := h.codeHostStore.GetByURL(ctx, codeHostURL)
@@ -125,26 +123,26 @@ func (h *handler) process(ctx context.Context, codeHostURL string, _ log.Logger)
 
 	// Set all of the rate limit config options in Redis.
 	if ch.APIRateLimitQuota != nil {
-		err = redispool.Store.Set(apiCapKey, *ch.APIRateLimitQuota)
+		err = h.kv.Set(apiCapKey, *ch.APIRateLimitQuota)
 		if err != nil {
 			return errors.Wrapf(err, "rate limit config worker unable to set config key: %s for code host URL: %s", apiCapKey, codeHostURL)
 
 		}
 	}
 	if ch.APIRateLimitIntervalSeconds != nil {
-		err = redispool.Store.Set(apiReplenishmentKey, *ch.APIRateLimitIntervalSeconds)
+		err = h.kv.Set(apiReplenishmentKey, *ch.APIRateLimitIntervalSeconds)
 		if err != nil {
 			return errors.Wrapf(err, "rate limit config worker unable to set config key: %s for code host URL: %s", apiReplenishmentKey, codeHostURL)
 		}
 	}
 	if ch.GitRateLimitQuota != nil {
-		err = redispool.Store.Set(gitCapKey, *ch.GitRateLimitQuota)
+		err = h.kv.Set(gitCapKey, *ch.GitRateLimitQuota)
 		if err != nil {
 			return errors.Wrapf(err, "rate limit config worker unable to set config key: %s for code host URL: %s", gitCapKey, codeHostURL)
 		}
 	}
 	if ch.GitRateLimitIntervalSeconds != nil {
-		err = redispool.Store.Set(gitReplenishmentKey, *ch.GitRateLimitIntervalSeconds)
+		err = h.kv.Set(gitReplenishmentKey, *ch.GitRateLimitIntervalSeconds)
 		if err != nil {
 			return errors.Wrapf(err, "rate limit config worker unable to set config key: %s for code host URL: %s", gitReplenishmentKey, codeHostURL)
 		}
