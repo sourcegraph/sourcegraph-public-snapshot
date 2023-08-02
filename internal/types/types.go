@@ -680,6 +680,7 @@ type ExternalService struct {
 	CloudDefault   bool       // Whether this external service is our default public service on Cloud
 	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
 	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	CodeHostID     *int32
 }
 
 type ExternalServiceRepo struct {
@@ -2111,4 +2112,17 @@ const (
 type PerforceChangelist struct {
 	CommitSHA    api.CommitID
 	ChangelistID int64
+}
+
+// CodeHost represents a signle code source, usually defined by url e.g. github.com, gitlab.com, bitbucket.sgdev.org.
+type CodeHost struct {
+	ID                          int32
+	Kind                        string
+	URL                         string
+	APIRateLimitQuota           *int32
+	APIRateLimitIntervalSeconds *int32
+	GitRateLimitQuota           *int32
+	GitRateLimitIntervalSeconds *int32
+	CreatedAt                   time.Time
+	UpdatedAt                   time.Time
 }

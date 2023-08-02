@@ -131,52 +131,60 @@ func TestExtractToken(t *testing.T) {
 
 func TestExtractRateLimitConfig(t *testing.T) {
 	for _, tc := range []struct {
-		name   string
-		config string
-		kind   string
-		want   rate.Limit
+		name          string
+		config        string
+		kind          string
+		want          rate.Limit
+		expectDefault bool
 	}{
 		{
-			name:   "GitLab default",
-			config: `{"url": "https://example.com/"}`,
-			kind:   KindGitLab,
-			want:   rate.Inf,
+			name:          "GitLab default",
+			config:        `{"url": "https://example.com/"}`,
+			kind:          KindGitLab,
+			want:          rate.Inf,
+			expectDefault: true,
 		},
 		{
-			name:   "GitHub default",
-			config: `{"url": "https://example.com/"}`,
-			kind:   KindGitHub,
-			want:   rate.Inf,
+			name:          "GitHub default",
+			config:        `{"url": "https://example.com/"}`,
+			kind:          KindGitHub,
+			want:          rate.Inf,
+			expectDefault: true,
 		},
 		{
-			name:   "Bitbucket Server default",
-			config: `{"url": "https://example.com/"}`,
-			kind:   KindBitbucketServer,
-			want:   8.0,
+			name:          "Bitbucket Server default",
+			config:        `{"url": "https://example.com/"}`,
+			kind:          KindBitbucketServer,
+			want:          8.0,
+			expectDefault: true,
 		},
 		{
-			name:   "Bitbucket Cloud default",
-			config: `{"url": "https://example.com/"}`,
-			kind:   KindBitbucketCloud,
-			want:   2.0,
+			name:          "Bitbucket Cloud default",
+			config:        `{"url": "https://example.com/"}`,
+			kind:          KindBitbucketCloud,
+			want:          2.0,
+			expectDefault: true,
 		},
 		{
-			name:   "GitLab non-default",
-			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindGitLab,
-			want:   1.0,
+			name:          "GitLab non-default",
+			config:        `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindGitLab,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "GitHub non-default",
-			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindGitHub,
-			want:   1.0,
+			name:          "GitHub non-default",
+			config:        `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindGitHub,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "Bitbucket Server non-default",
-			config: `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindBitbucketServer,
-			want:   1.0,
+			name:          "Bitbucket Server non-default",
+			config:        `{"url": "https://example.com/", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindBitbucketServer,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
 			name:   "Bitbucket Cloud non-default",
@@ -185,46 +193,55 @@ func TestExtractRateLimitConfig(t *testing.T) {
 			want:   1.0,
 		},
 		{
-			name:   "NPM default",
-			config: `{"registry": "https://registry.npmjs.org"}`,
-			kind:   KindNpmPackages,
-			want:   6000.0 / 3600.0,
+			name:          "NPM default",
+			config:        `{"registry": "https://registry.npmjs.org"}`,
+			kind:          KindNpmPackages,
+			want:          6000.0 / 3600.0,
+			expectDefault: true,
 		},
 		{
-			name:   "NPM non-default",
-			config: `{"registry": "https://registry.npmjs.org", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindNpmPackages,
-			want:   1.0,
+			name:          "NPM non-default",
+			config:        `{"registry": "https://registry.npmjs.org", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindNpmPackages,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "Go mod default",
-			config: `{"urls": ["https://example.com"]}`,
-			kind:   KindGoPackages,
-			want:   57600.0 / 3600.0,
+			name:          "Go mod default",
+			config:        `{"urls": ["https://example.com"]}`,
+			kind:          KindGoPackages,
+			want:          57600.0 / 3600.0,
+			expectDefault: true,
 		},
 		{
-			name:   "Go mod non-default",
-			config: `{"urls": ["https://example.com"], "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindNpmPackages,
-			want:   1.0,
+			name:          "Go mod non-default",
+			config:        `{"urls": ["https://example.com"], "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindNpmPackages,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "No trailing slash",
-			config: `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
-			kind:   KindBitbucketCloud,
-			want:   1.0,
+			name:          "No trailing slash",
+			config:        `{"url": "https://example.com", "rateLimit": {"enabled": true, "requestsPerHour": 3600}}`,
+			kind:          KindBitbucketCloud,
+			want:          1.0,
+			expectDefault: false,
 		},
 		{
-			name:   "Empty JVM config",
-			config: "",
-			kind:   KindJVMPackages,
-			want:   2.0,
+			name:          "Empty JVM config",
+			config:        "",
+			kind:          KindJVMPackages,
+			want:          2.0,
+			expectDefault: true,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			rlc, err := ExtractRateLimit(tc.config, tc.kind)
+			rlc, isDefault, err := ExtractRateLimit(tc.config, tc.kind)
 			if err != nil {
 				t.Fatal(err)
+			}
+			if isDefault != tc.expectDefault {
+				t.Fatalf("expected default value: %+v, got: %+v", tc.expectDefault, isDefault)
 			}
 			if diff := cmp.Diff(tc.want, rlc); diff != "" {
 				t.Fatal(diff)
