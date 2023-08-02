@@ -2010,15 +2010,15 @@ func setGitAttributes(dir common.GitDir) error {
 	return nil
 }
 
-func (s *Server) configureRepoAsGitAlternate(repoTmpPath string, poolRepoName api.RepoName) error {
+func (s *Server) configureRepoAsGitAlternate(repoTmp common.GitDir, poolRepoName api.RepoName) error {
 	// Write "$REPO_DIR/.pool/$REPO_NAME/.git/objects" to the file at
 	// $REPOS_DIR/$REPO_NAME/.git/objects/info/alternates.
 
 	// For example, /data/repos/github.com/owner/this-repo/.git/objects/info/alternates.
-	repoAlternatesFilePath := filepath.Join(repoTmpPath, "objects/info/alternates")
+	repoAlternatesFilePath := repoTmp.Path("objects/info/alternates")
 
 	// For example /data/repos/.pool/github.com/owner/this-repo/.git/objects
-	poolRepoObjectsFilePath := filepath.Join(string(s.poolDir(poolRepoName)), "objects")
+	poolRepoObjectsFilePath := s.poolDir(poolRepoName).Path("objects")
 
 	err := os.WriteFile(repoAlternatesFilePath, []byte(poolRepoObjectsFilePath), os.FileMode(0644))
 	return errors.Wrap(err, "failed to configure alternates file (deduplication will not work)")
@@ -2451,7 +2451,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 			}
 		}
 
-		if err := s.configureRepoAsGitAlternate(tmpPath, opts.DeduplicatedCloneOptions.poolRepoName); err != nil {
+		if err := s.configureRepoAsGitAlternate(tmp, opts.DeduplicatedCloneOptions.poolRepoName); err != nil {
 			logger.Error("failed to configure reop as git-alternate, deduplicated storage will not be available for this repo", log.Error(err))
 		}
 	}

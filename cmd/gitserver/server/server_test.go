@@ -381,9 +381,10 @@ func TestServer_configureRepoAsGitAlternate(t *testing.T) {
 
 	_, tmpPath := gitserver.MakeGitRepositoryAndReturnDir(t)
 	tmpPath = filepath.Join(tmpPath, ".git")
+	tmp := common.GitDir(tmpPath)
 
 	poolRepoName := "github.com/sourcegrap/sourcegraph"
-	err := s.configureRepoAsGitAlternate(tmpPath, api.RepoName(poolRepoName))
+	err := s.configureRepoAsGitAlternate(tmp, api.RepoName(poolRepoName))
 	require.NoError(t, err)
 
 	alternatesFile := filepath.Join(tmpPath, "objects/info/alternates")
