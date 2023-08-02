@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -155,26 +156,29 @@ type bigQueryEvent struct {
 	HashedLicenseKey       *string `json:"hashed_license_key,omitempty"`
 }
 
+var (
+	pubsubClient     *pubsub.TopicClient
+	pubsubClientOnce sync.Once
+	pubsubClientErr  error
+)
+
 // publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
 func publishSourcegraphDotComEvents(events []Event) error {
-	if !envvar.SourcegraphDotComMode() {
+	if !envvar.SourcegraphDotComMode() || pubSubDotComEventsTopicID == "" {
 		return nil
 	}
-	if pubSubDotComEventsTopicID == "" {
-		return nil
+	pubsubClientOnce.Do(func() {
+		pubsubClient, pubsubClientErr = pubsub.NewDefaultTopicClient(pubSubDotComEventsTopicID)
+	})
+	if pubsubClientErr != nil {
+		return pubsubClientErr
 	}
+
 	pubsubEvents, err := serializePublishSourcegraphDotComEvents(events)
 	if err != nil {
 		return err
 	}
-
-	for _, event := range pubsubEvents {
-		if err := pubsub.Publish(pubSubDotComEventsTopicID, event); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return pubsubClient.Publish(pubsubEvents...)
 }
 
 func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
