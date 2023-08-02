@@ -590,6 +590,8 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		logger.Error("failed to get embeddings endpoints for service connections", log.Error(err))
 	}
 
+	qdrantAddr := computeQdrantEndpoint()
+
 	return conftypes.ServiceConnections{
 		GitServers:           gitAddrs,
 		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
@@ -598,6 +600,7 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 		Searchers:            searcherAddrs,
 		Symbols:              symbolsAddrs,
 		Embeddings:           embeddingsAddrs,
+		Qdrant:               qdrantAddr,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
@@ -615,6 +618,9 @@ var (
 
 	embeddingsURLsOnce sync.Once
 	embeddingsURLs     *endpoint.Map
+
+	qdrantEndpointOnce sync.Once
+	qdrantEndpoint     string
 
 	indexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
@@ -681,6 +687,20 @@ func embeddingsAddr(environ []string) (string, error) {
 
 	// Not set, use the default (non-service discovery on embeddings)
 	return "http://embeddings:9991", nil
+}
+
+func computeQdrantEndpoint() string {
+	qdrantEndpointOnce.Do(func() {
+		qdrantEndpoint = qdrantAddr(os.Environ())
+	})
+	return qdrantEndpoint
+}
+
+func qdrantAddr(environ []string) string {
+	if addr, ok := getEnv(environ, "QDRANT_ENDPOINT"); ok {
+		return addr
+	}
+	return ""
 }
 
 func LoadConfig() {
