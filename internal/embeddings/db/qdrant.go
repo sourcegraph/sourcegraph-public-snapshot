@@ -67,7 +67,9 @@ func (db *qdrantDB) Search(ctx context.Context, params SearchParams) ([]ChunkRes
 	for _, group := range resp.GetResult() {
 		for _, res := range group.GetResult() {
 			var cr ChunkResult
-			cr.FromQdrantResult(res)
+			if err := cr.FromQdrantResult(res); err != nil {
+				return nil, err
+			}
 			results = append(results, cr)
 		}
 	}

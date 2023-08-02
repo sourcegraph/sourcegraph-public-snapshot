@@ -16,17 +16,22 @@ type ChunkResult struct {
 	Score float32
 }
 
-func (c *ChunkResult) FromQdrantResult(res *qdrant.ScoredPoint) {
+func (c *ChunkResult) FromQdrantResult(res *qdrant.ScoredPoint) error {
+	u, err := uuid.Parse(res.GetId().GetUuid())
+	if err != nil {
+		return err
+	}
 	var payload ChunkPayload
 	payload.FromQdrantPayload(res.GetPayload())
 	*c = ChunkResult{
 		Point: ChunkPoint{
-			ID:      uuid.MustParse(res.GetId().GetUuid()),
+			ID:      u,
 			Payload: payload,
 			Vector:  res.GetVectors().GetVector().GetData(),
 		},
 		Score: res.GetScore(),
 	}
+	return nil
 }
 
 func NewChunkPoint(payload ChunkPayload, vector []float32) ChunkPoint {
