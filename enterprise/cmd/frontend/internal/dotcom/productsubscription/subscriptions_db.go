@@ -43,6 +43,10 @@ type dbSubscription struct {
 	CodyGatewayAccess dbCodyGatewayAccess
 }
 
+func NewDbSubscription(db database.DB) dbSubscriptions {
+	return dbSubscriptions{db: db}
+}
+
 var emailQueries = sqlf.Sprintf(`all_primary_emails AS (
 	SELECT user_id, FIRST_VALUE(email) over (PARTITION BY user_id ORDER BY created_at ASC) AS primary_email
 	FROM user_emails
@@ -109,6 +113,14 @@ type dbSubscriptionsListOptions struct {
 	Query           string
 	IncludeArchived bool
 	*database.LimitOffset
+}
+
+func DbSubscriptionsListOptions(userID int32) dbSubscriptionsListOptions {
+	return dbSubscriptionsListOptions{
+		UserID:          0,
+		Query:           "",
+		IncludeArchived: true,
+	}
 }
 
 func (o dbSubscriptionsListOptions) sqlConditions() []*sqlf.Query {

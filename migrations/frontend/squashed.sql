@@ -2853,6 +2853,15 @@ CREATE SEQUENCE insights_settings_migration_jobs_id_seq
 
 ALTER SEQUENCE insights_settings_migration_jobs_id_seq OWNED BY insights_settings_migration_jobs.id;
 
+CREATE TABLE license_user_limit_check (
+    id uuid NOT NULL,
+    license_id uuid NOT NULL,
+    user_count_alert_sent_at timestamp with time zone,
+    user_count_when_email_last_sent integer,
+    updated_at timestamp with time zone,
+    created_at timestamp with time zone
+);
+
 CREATE SEQUENCE lsif_configuration_policies_id_seq
     AS integer
     START WITH 1
@@ -5421,6 +5430,9 @@ ALTER TABLE ONLY insights_query_runner_jobs_dependencies
 ALTER TABLE ONLY insights_query_runner_jobs
     ADD CONSTRAINT insights_query_runner_jobs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY license_user_limit_check
+    ADD CONSTRAINT license_user_limit_check_pkey PRIMARY KEY (id);
+
 ALTER TABLE ONLY lsif_configuration_policies
     ADD CONSTRAINT lsif_configuration_policies_pkey PRIMARY KEY (id);
 
@@ -6590,6 +6602,9 @@ ALTER TABLE ONLY gitserver_repos_sync_output
 
 ALTER TABLE ONLY insights_query_runner_jobs_dependencies
     ADD CONSTRAINT insights_query_runner_jobs_dependencies_fk_job_id FOREIGN KEY (job_id) REFERENCES insights_query_runner_jobs(id) ON DELETE CASCADE;
+
+ALTER TABLE ONLY license_user_limit_check
+    ADD CONSTRAINT license_user_limit_check_license_id_fkey FOREIGN KEY (license_id) REFERENCES product_licenses(id);
 
 ALTER TABLE ONLY lsif_dependency_syncing_jobs
     ADD CONSTRAINT lsif_dependency_indexing_jobs_upload_id_fkey FOREIGN KEY (upload_id) REFERENCES lsif_uploads(id) ON DELETE CASCADE;

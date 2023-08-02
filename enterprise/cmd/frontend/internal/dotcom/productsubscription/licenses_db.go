@@ -35,6 +35,10 @@ type dbLicense struct {
 	SalesforceOpportunityID  *string
 }
 
+func NewDbLicenseStore(db database.DB) dbLicenses {
+	return dbLicenses{db: db}
+}
+
 // errLicenseNotFound occurs when a database operation expects a specific Sourcegraph
 // license to exist but it does not exist.
 var errLicenseNotFound = errors.New("product license not found")
@@ -150,6 +154,10 @@ type dbLicensesListOptions struct {
 	Revoked               *bool  // only return revoked or non-revoked licenses
 	Expired               *bool  // only return expired or non-expired licenses
 	*database.LimitOffset
+}
+
+func DbLicencesListNoOpt() dbLicensesListOptions {
+	return dbLicensesListOptions{}
 }
 
 func (o dbLicensesListOptions) sqlConditions() []*sqlf.Query {
@@ -306,6 +314,26 @@ func (s dbLicenses) Revoke(ctx context.Context, id, reason string) error {
 		return errLicenseNotFound
 	}
 	return err
+}
+
+func (s dbLicenses) UpdateUserCount(ctx context.Context, id string, newUserCount string) error {
+	q := sqlf.Sprintf(
+		"UPDATE product_licenses SET license_user_count = %s WHERE id = %s",
+		newUserCount,
+		id,
+	)
+	res, err := s.db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		return errors.Wrap(err, "could not execContext")
+	}
+	nrows, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if nrows == 0 {
+		return errLicenseNotFound
+	}
+	return nil
 }
 
 type mockLicenses struct {

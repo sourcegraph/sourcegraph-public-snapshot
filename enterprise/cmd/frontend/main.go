@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/shared"
+	_ "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/userlimitchecker"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
 	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
