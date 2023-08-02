@@ -252,17 +252,36 @@ func TestCodeHostStore_List(t *testing.T) {
 			},
 			results: []*types.CodeHost{},
 		},
+		{
+			name: "cursor test, use next",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				LimitOffset: LimitOffset{
+					Limit: 1,
+				},
+			},
+			results: []*types.CodeHost{codeHostOne, codeHostTwo},
+		},
 	}
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			// List by ID, must return 1
-			ch, _, err := db.CodeHosts().List(ctx, test.listOpts)
+			var result []*types.CodeHost
+			ch, next, err := db.CodeHosts().List(ctx, test.listOpts)
 			if err != nil {
 				t.Fatal(err)
 			}
+			result = append(result, ch...)
+			for next != 0 {
+				test.listOpts.Cursor = next
+				ch, next, err = db.CodeHosts().List(ctx, test.listOpts)
+				if err != nil {
+					t.Fatal(err)
+				}
+				result = append(result, ch...)
+			}
 
-			if diff := cmp.Diff(ch, test.results); diff != "" {
+			if diff := cmp.Diff(result, test.results); diff != "" {
 				t.Fatalf("unexpected code host, got %+v\n", diff)
 			}
 		})

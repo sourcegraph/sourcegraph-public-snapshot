@@ -178,6 +178,12 @@ func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs [
 	if codehosts != nil {
 		chs = codehosts
 	}
+
+	// Set the next value if we were able to fetch Limit + 1
+	if opts.Limit > 0 && len(chs) == opts.Limit+1 {
+		next = chs[len(chs)-1].ID
+		chs = chs[:len(chs)-1]
+	}
 	return
 }
 
@@ -205,11 +211,17 @@ func listCodeHostsQuery(opts ListCodeHostsOpts) *sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("(code_hosts.kind ILIKE %s OR code_hosts.url ILIKE %s)", "%"+opts.Search+"%", "%"+opts.Search+"%"))
 	}
 
-	if len(conds) == 0 {
-		return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Sprintf("TRUE"), opts.LimitOffset.SQL())
+	// We fetch an extra one so that we have the `next` value
+	newLimitOffset := opts.LimitOffset
+	if newLimitOffset.Limit > 0 {
+		newLimitOffset.Limit += 1
 	}
 
-	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Join(conds, "AND"), opts.LimitOffset.SQL())
+	if len(conds) == 0 {
+		return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Sprintf("TRUE"), newLimitOffset.SQL())
+	}
+
+	return sqlf.Sprintf(listCodeHostsQueryFmtstr, sqlf.Join(codeHostColumnExpressions, ","), sqlf.Join(conds, "AND"), newLimitOffset.SQL())
 }
 
 const listCodeHostsQueryFmtstr = `
