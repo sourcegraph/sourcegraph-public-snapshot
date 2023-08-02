@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	repoembeddingsbg "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
+	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -61,6 +62,7 @@ func (s *repoEmbeddingJob) Routines(_ context.Context, observationCtx *observati
 			db,
 			uploadStore,
 			gitserver.NewClient(db),
+			vdb.NewNoopInserter(),
 			services.ContextService,
 			repoembeddingsbg.NewRepoEmbeddingJobsStore(db),
 		),
@@ -74,6 +76,7 @@ func newRepoEmbeddingJobWorker(
 	db database.DB,
 	uploadStore uploadstore.Store,
 	gitserverClient gitserver.Client,
+	qdrantInserter vdb.VectorInserter,
 	contextService embed.ContextService,
 	repoEmbeddingJobsStore repoembeddingsbg.RepoEmbeddingJobsStore,
 ) *workerutil.Worker[*repoembeddingsbg.RepoEmbeddingJob] {
@@ -81,6 +84,7 @@ func newRepoEmbeddingJobWorker(
 		db:                     db,
 		uploadStore:            uploadStore,
 		gitserverClient:        gitserverClient,
+		qdrantInserter:         qdrantInserter,
 		contextService:         contextService,
 		repoEmbeddingJobsStore: repoEmbeddingJobsStore,
 	}
