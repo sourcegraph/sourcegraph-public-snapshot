@@ -115,15 +115,17 @@ func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx DB) error) erro
 	})
 }
 
-func GetMock[T basestore.ShareableStore](db DB) (t T) {
+type StoreGetterFunc[T basestore.ShareableStore] func(DB) T
+
+func GetStore[T basestore.ShareableStore](db DB, f StoreGetterFunc[T]) (t T) {
 	switch v := db.(type) {
 	case *mockedDB:
 		if v.mockedStore.Type().Implements(reflect.TypeOf((*T)(nil)).Elem()) {
 			return v.mockedStore.Interface().(T)
 		}
-		return GetMock[T](v.DB)
+		return GetStore[T](v.DB, f)
 	}
-	return t
+	return f(db)
 }
 
 func Mock[T basestore.ShareableStore](db DB, val T) *mockedDB {

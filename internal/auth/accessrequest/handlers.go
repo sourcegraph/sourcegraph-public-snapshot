@@ -64,7 +64,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 		Email:          data.Email,
 		AdditionalInfo: data.AdditionalInfo,
 	}
-	accessRequestStore := accessrequests.NewStore(db)
+	accessRequestStore := database.GetStore(db, accessrequests.NewStore)
 
 	_, err := accessRequestStore.Create(r.Context(), &accessRequest)
 	if err == nil {

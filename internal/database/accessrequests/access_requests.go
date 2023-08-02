@@ -92,9 +92,6 @@ type store struct {
 }
 
 func NewStore(db database.DB) Store {
-	if mock := database.GetMock[Store](db); mock != nil {
-		return mock
-	}
 	return &store{Store: basestore.NewWithHandle(db.Handle()), logger: db.Logger()}
 }
 
