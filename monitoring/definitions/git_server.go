@@ -9,7 +9,10 @@ import (
 )
 
 func GitServer() *monitoring.Dashboard {
-	const containerName = "gitserver"
+	const (
+		containerName   = "gitserver"
+		grpcServiceName = "gitserver.v1.GitserverService"
+	)
 
 	gitserverHighMemoryNoAlertTransformer := func(observable shared.Observable) shared.Observable {
 		return observable.WithNoAlerts(`Git Server is expected to use up all the memory it is provided.`)
@@ -20,7 +23,7 @@ func GitServer() *monitoring.Dashboard {
 		ShortTermMemoryUsage: gitserverHighMemoryNoAlertTransformer,
 	}
 
-	grpcMethodVariable := shared.GRPCMethodVariable(containerName)
+	grpcMethodVariable := shared.GRPCMethodVariable(grpcServiceName)
 
 	return &monitoring.Dashboard{
 		Name:        "gitserver",
@@ -535,7 +538,7 @@ func GitServer() *monitoring.Dashboard {
 			shared.NewGRPCServerMetricsGroup(
 				shared.GRPCServerMetricsOptions{
 					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: "gitserver.v1.GitserverService",
+					RawGRPCServiceName: grpcServiceName,
 
 					MethodFilterRegex:   fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 					InstanceFilterRegex: `${shard:regex}`,
@@ -544,7 +547,7 @@ func GitServer() *monitoring.Dashboard {
 			shared.NewGRPCInternalErrorMetricsGroup(
 				shared.GRPCInternalErrorMetricsOptions{
 					HumanServiceName:   "gitserver",
-					RawGRPCServiceName: "gitserver.v1.GitserverService",
+					RawGRPCServiceName: grpcServiceName,
 
 					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
 				}, monitoring.ObservableOwnerSearchCore),
