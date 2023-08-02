@@ -498,7 +498,7 @@ query($query: String!, $type: SearchType!, $after: String, $first: Int!) {
 	search(query: $query, type: $type, after: $after, first: $first) {
 		repositoryCount
 		pageInfo { hasNextPage,  endCursor }
-		nodes {... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+		nodes {... on Repository { ...RepositoryFields } }
 	}
 }`)
 	return b.String()
@@ -565,7 +565,7 @@ func (c *V4Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners 
 			return "", err
 		}
 		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
-		b.WriteString("... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }\n")
+		b.WriteString("... on Repository { ...RepositoryFields parent { ...nameWithOwner, isFork } } }\n")
 	}
 
 	b.WriteString("}")
