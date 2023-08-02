@@ -21,7 +21,7 @@ type ListCodeHostsOpts struct {
 	URL string
 	// Cursor is used for pagination, it's the ID of the next code host to look at.
 	Cursor int32
-	// IncludeDeleted makes to so that we return deleted code hosts as well. Note:
+	// IncludeDeleted causes deleted code hosts to be returned as well. Note:
 	// For now deletion is a virtual concept where we check if all referencing
 	// external services are soft or hard deleted.
 	IncludeDeleted bool
