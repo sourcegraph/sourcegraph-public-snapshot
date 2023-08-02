@@ -99,6 +99,9 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         ]
     }
 
+    // const temp = [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB, ExternalServiceKind.BITBUCKETCLOUD]
+    console.log(codeHostExternalServices)
+
     return (
         <>
             <PageTitle title="Add a code host connection" />
@@ -123,43 +126,9 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
             <Container className="mb-3">
                 <ChecklistInfo />
                 {!hasDismissedPrivacyWarning && (
-                    <Alert variant="info">
-                        <Text>
-                            This Sourcegraph installation will never send your code, repository names, file names, or
-                            any other specific code data to Sourcegraph.com or any other destination. Your code is kept
-                            private on this installation.
-                        </Text>
-                        <H3>This Sourcegraph installation will access your code host by:</H3>
-                        <ul>
-                            <li>
-                                Periodically fetching a list of repositories to ensure new, removed, and renamed
-                                repositories are accessible on Sourcegraph.
-                            </li>
-                            <li>Cloning the repositories you specify to create a local cache.</li>
-                            <li>Periodically pulling cloned repositories to ensure search results are current.</li>
-                            <li>
-                                Fetching{' '}
-                                <Link to="/help/admin/permissions" target="_blank" rel="noopener noreferrer">
-                                    user repository access permissions
-                                </Link>
-                                , if you have enabled this feature.
-                            </li>
-                            <li>
-                                Opening pull requests and syncing their metadata as part of{' '}
-                                <Link to="/help/batch_changes" target="_blank" rel="noopener noreferrer">
-                                    batch changes
-                                </Link>
-                                , if you have enabled this feature.
-                            </li>
-                        </ul>
-                        <div className="d-flex justify-content-end">
-                            <Button variant="secondary" onClick={dismissPrivacyWarning}>
-                                Do not show this again
-                            </Button>
-                        </div>
-                    </Alert>
+                    <ExternalServicesPrivacyAlert dismissPrivacyWarning={dismissPrivacyWarning} />
                 )}
-                {Object.entries(codeHostExternalServices)
+                {/* {Object.entries(codeHostExternalServices)
                     .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1]))
                     .sort(([, externalService1], [, externalService2]) =>
                         externalService1.title.localeCompare(externalService2.title)
@@ -168,8 +137,8 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                         <div className={styles.addExternalServicesPageCard} key={id}>
                             <ExternalServiceCard to={getAddURL(id)} {...externalService} />
                         </div>
-                    ))}
-                {allowedCodeHosts && (
+                    ))} */}
+                {/* {allowedCodeHosts && (
                     <>
                         <br />
                         <Text>
@@ -196,8 +165,8 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                                 </div>
                             ))}
                     </>
-                )}
-                {Object.entries(nonCodeHostExternalServices).length > 0 && (
+                )} */}
+                {/* {Object.entries(nonCodeHostExternalServices).length > 0 && (
                     <>
                         <br />
                         <H2>Other connections</H2>
@@ -208,7 +177,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                             </div>
                         ))}
                     </>
-                )}
+                )} */}
             </Container>
         </>
     )
@@ -219,3 +188,44 @@ function getAddURL(id: string): string {
     parameters.append('id', id)
     return `?${parameters.toString()}`
 }
+
+interface ExternalServicesPrivacyAlertProps {
+    dismissPrivacyWarning: () => void
+}
+
+const ExternalServicesPrivacyAlert: FC<ExternalServicesPrivacyAlertProps> = ({ dismissPrivacyWarning }) => (
+    <Alert variant="info">
+        <Text>
+            This Sourcegraph installation will never send your code, repository names, file names, or any other specific
+            code data to Sourcegraph.com or any other destination. Your code is kept private on this installation.
+        </Text>
+        <H3>This Sourcegraph installation will access your code host by:</H3>
+        <ul>
+            <li>
+                Periodically fetching a list of repositories to ensure new, removed, and renamed repositories are
+                accessible on Sourcegraph.
+            </li>
+            <li>Cloning the repositories you specify to create a local cache.</li>
+            <li>Periodically pulling cloned repositories to ensure search results are current.</li>
+            <li>
+                Fetching{' '}
+                <Link to="/help/admin/permissions" target="_blank" rel="noopener noreferrer">
+                    user repository access permissions
+                </Link>
+                , if you have enabled this feature.
+            </li>
+            <li>
+                Opening pull requests and syncing their metadata as part of{' '}
+                <Link to="/help/batch_changes" target="_blank" rel="noopener noreferrer">
+                    batch changes
+                </Link>
+                , if you have enabled this feature.
+            </li>
+        </ul>
+        <div className="d-flex justify-content-end">
+            <Button variant="secondary" onClick={dismissPrivacyWarning}>
+                Do not show this again
+            </Button>
+        </div>
+    </Alert>
+)
