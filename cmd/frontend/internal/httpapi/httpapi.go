@@ -239,7 +239,6 @@ func RegisterInternalServices(
 	zoektProto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
 	confProto.RegisterConfigServiceServer(s, &configServer{})
 
-	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
 	gitService := &gitServiceHandler{
 		Gitserver: gsClient,
 	}
