@@ -6,6 +6,7 @@ go_library(
     srcs = [
         "constants.go",
         "limitchecker.go",
+        "main.go",
         "template.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/userlimitchecker",
@@ -15,6 +16,8 @@ go_library(
         "//enterprise/cmd/frontend/internal/dotcom/userlimitchecker",
         "//internal/api/internalapi",
         "//internal/database",
+        "//internal/database/connections/live",
+        "//internal/observation",
         "//internal/txemail",
         "//internal/txemail/txtypes",
         "//internal/types",
