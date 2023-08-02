@@ -321,7 +321,6 @@ func addrForKey(key string, addrs []string) string {
 }
 
 type GitserverConns struct {
-	db database.DB
 	GitserverAddresses
 
 	logger log.Logger
