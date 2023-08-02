@@ -58,7 +58,7 @@ func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
 }
 
 // GetEmbeddings tries to embed the given texts using the external service specified in the config.
-func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	_, replaceNewlines := modelsWithoutNewlines[c.model]
 	augmentedTexts := texts
 	if replaceNewlines {
@@ -84,20 +84,26 @@ func (c *sourcegraphEmbeddingsClient) GetEmbeddings(ctx context.Context, texts [
 		return response.Embeddings[i].Index < response.Embeddings[j].Index
 	})
 
-	embeddings := make([]float32, 0, len(response.Embeddings)*response.ModelDimensions)
+	dimensionality := response.ModelDimensions
+	embeddings := make([]float32, 0, len(response.Embeddings)*dimensionality)
+	failed := make([]int, 0)
 	for _, embedding := range response.Embeddings {
 		if len(embedding.Data) > 0 {
 			embeddings = append(embeddings, embedding.Data...)
 		} else {
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, c.model, augmentedTexts[embedding.Index], 3)
 			if err != nil {
-				return nil, client.PartialError{err, embedding.Index}
+				failed = append(failed, embedding.Index)
+
+				// reslice to provide zero value embedding for failed chunk
+				embeddings = embeddings[:len(embeddings)+dimensionality]
+				continue
 			}
 			embeddings = append(embeddings, resp...)
 		}
 	}
 
-	return embeddings, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: response.ModelDimensions}, nil
 }
 
 func (c *sourcegraphEmbeddingsClient) do(ctx context.Context, request codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, error) {

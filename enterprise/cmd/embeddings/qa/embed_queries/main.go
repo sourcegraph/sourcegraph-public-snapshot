@@ -69,17 +69,19 @@ func embedQueries(queries []string, siteConfigPath string) error {
 		if err != nil {
 			return err
 		}
-		v, err := c.GetEmbeddings(ctx, []string{query})
+		result, err := c.GetEmbeddings(ctx, []string{query})
 		if err != nil {
 			return errors.Wrapf(err, "failed to get embeddings for query %s", query)
 		}
-
+		if len(result.Failed) > 0 {
+			return errors.Newf("failed to get embeddings for query %s", query)
+		}
 		err = enc.Encode(struct {
 			Query     string
 			Embedding []float32
 		}{
 			Query:     query,
-			Embedding: v,
+			Embedding: result.Embeddings,
 		})
 		if err != nil {
 			return err
