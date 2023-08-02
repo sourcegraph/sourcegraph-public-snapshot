@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -54,21 +53,6 @@ func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return externalURL, nil
-}
-
-// SendEmail issues a request to send an email. All services outside the frontend should
-// use this to send emails.  Source is used to categorize metrics, and should indicate the
-// product feature that is sending this email.
-//
-// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
-// the email should be verified or not, and conduct the appropriate checks before sending.
-// This helps reduce the chance that we damage email sender reputations when attempting to
-// send emails to nonexistent email addresses.
-func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
-	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{
-		Source:  source,
-		Message: message,
-	}, nil)
 }
 
 // MockClientConfiguration mocks (*internalClient).Configuration.
