@@ -270,18 +270,29 @@ exports[`RepoSettingsLogsPage should render correctly when there are recorded co
                   </p>
                 </div>
               </div>
-              <span
-                style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-              >
-                Command:
-              </span>
               <pre
-                class="logs rounded p-3 mb-0 commandNodeLogOutput"
+                class="bg-code rounded border p-3 position-relative"
               >
+                <button
+                  class="copyButton"
+                  type="button"
+                >
+                  <svg
+                    aria-label="Copy snippet"
+                    class="mdi-icon pr-2 pt-2"
+                    fill="currentColor"
+                    height="24"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                    />
+                  </svg>
+                </button>
                 <code
-                  class="code d-block"
-                  role="code"
-                  tabindex="0"
+                  class="code commandNodeSnippet"
                 >
                   git cat-file -t -- 4b825dc642cb6eb9a060e54bf8d69288fbee4904
                 </code>
@@ -307,7 +318,12 @@ exports[`RepoSettingsLogsPage should render correctly when there are recorded co
                   >
                     Path:
                   </span>
-                   /Users/randomuser/.sourcegraph/repos_1/gerrit.sgdev.org/a/gabe/repo/.git
+                   
+                  <code
+                    class="code"
+                  >
+                    /Users/randomuser/.sourcegraph/repos_1/gerrit.sgdev.org/a/gabe/repo/.git
+                  </code>
                 </small>
               </div>
             </div>
@@ -363,18 +379,29 @@ exports[`RepoSettingsLogsPage should render correctly when there are recorded co
                   </p>
                 </div>
               </div>
-              <span
-                style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
-              >
-                Command:
-              </span>
               <pre
-                class="logs rounded p-3 mb-0 commandNodeLogOutput"
+                class="bg-code rounded border p-3 position-relative"
               >
+                <button
+                  class="copyButton"
+                  type="button"
+                >
+                  <svg
+                    aria-label="Copy snippet"
+                    class="mdi-icon pr-2 pt-2"
+                    fill="currentColor"
+                    height="24"
+                    role="img"
+                    viewBox="0 0 24 24"
+                    width="24"
+                  >
+                    <path
+                      d="M19,21H8V7H19M19,5H8A2,2 0 0,0 6,7V21A2,2 0 0,0 8,23H19A2,2 0 0,0 21,21V7A2,2 0 0,0 19,5M16,1H4A2,2 0 0,0 2,3V17H4V3H16V1Z"
+                    />
+                  </svg>
+                </button>
                 <code
-                  class="code d-block"
-                  role="code"
-                  tabindex="0"
+                  class="code commandNodeSnippet"
                 >
                   git config --get sourcegraph.type
                 </code>
@@ -400,7 +427,12 @@ exports[`RepoSettingsLogsPage should render correctly when there are recorded co
                   >
                     Path:
                   </span>
-                   /Users/randomuser/.sourcegraph/repos_1/gerrit.sgdev.org/a/gabe/repo/.git
+                   
+                  <code
+                    class="code"
+                  >
+                    /Users/randomuser/.sourcegraph/repos_1/gerrit.sgdev.org/a/gabe/repo/.git
+                  </code>
                 </small>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { mdiCalendar, mdiClockAlertOutline } from '@mdi/js'
 import { parseISO } from 'date-fns'
 import { useSearchParams } from 'react-router-dom'
 
+import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
 import { Timestamp } from '@sourcegraph/branded/src/components/Timestamp'
 import {
     Text,
@@ -156,7 +157,12 @@ const LastExecutedCommandNode: FC<LastExecutedCommandNodeProps> = ({ command, mi
                 </div>
             </div>
 
-            <LogOutput className={styles.commandNodeLogOutput} text={command.command} logDescription="Command:" />
+            <CodeSnippet
+                codeClassName={styles.commandNodeSnippet}
+                code={command.command}
+                withCopyButton={true}
+                language="sourcegraph"
+            />
 
             <div className={styles.commandNodeFooter}>
                 <small className="mt-2 mb-0">

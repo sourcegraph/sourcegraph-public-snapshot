@@ -21,10 +21,8 @@
         align-items: center;
     }
 
-    &__log-output {
-        code {
-            white-space: break-spaces;
-        }
+    &__snippet {
+        white-space: break-spaces;
     }
 
     &__footer {

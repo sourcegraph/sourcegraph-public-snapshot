@@ -18,12 +18,14 @@ interface CodeSnippetProps {
     withCopyButton?: boolean
 
     className?: string
+    codeClassName?: string
 }
 
 export const CodeSnippet: React.FunctionComponent<React.PropsWithChildren<CodeSnippetProps>> = ({
     code,
     language,
     className,
+    codeClassName,
     withCopyButton = false,
 }) => {
     const highlightedInput = useMemo(() => ({ __html: highlightCodeSafe(code, language) }), [code, language])
@@ -34,7 +36,7 @@ export const CodeSnippet: React.FunctionComponent<React.PropsWithChildren<CodeSn
                     <Icon className="pr-2 pt-2" svgPath={mdiContentCopy} inline={false} aria-label="Copy snippet" />
                 </Button>
             )}
-            <Code dangerouslySetInnerHTML={highlightedInput} />
+            <Code className={codeClassName} dangerouslySetInnerHTML={highlightedInput} />
         </pre>
     )
 }
