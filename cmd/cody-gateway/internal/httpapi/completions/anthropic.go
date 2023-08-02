@@ -58,6 +58,7 @@ func NewAnthropicHandler(
 				r.Header.Set("Content-Type", "application/json")
 				r.Header.Set("Client", "sourcegraph-cody-gateway/1.0")
 				r.Header.Set("X-API-Key", accessToken)
+				r.Header.Set("anthropic-version", "2023-01-01")
 			},
 			parseResponse: func(reqBody anthropicRequest, r io.Reader) int {
 				// Try to parse the request we saw, if it was non-streaming, we can simply parse
