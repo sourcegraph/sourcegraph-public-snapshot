@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -19,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -169,20 +170,16 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 func TestGitHubCloneURLs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("empty repo.URL", func(t *testing.T) {
-		_, err := githubCloneURL(
-			context.Background(),
-			logger,
-			&github.Repository{},
-			&schema.GitHubConnection{},
-		)
-
-		wantErr := errors.New("empty repo.URL")
-		if !errors.Is(err, wantErr) {
-			t.Fatalf("Mismatched error, want: %v, but got: %v", wantErr, err)
+		_, err := githubCloneURL(context.Background(), logger, &github.Repository{}, &schema.GitHubConnection{})
+		got := fmt.Sprintf("%v", err)
+		want := "empty repo.URL"
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Fatalf("Mismatch (-want +got):\n%s", diff)
 		}
 	})
 
-	repo := github.Repository{NameWithOwner: "foo/bar"}
+	var repo github.Repository
+	repo.NameWithOwner = "foo/bar"
 
 	tests := []struct {
 		InstanceUrl string

@@ -389,7 +389,6 @@ func (s *GitHubSource) makeRepo(r *github.Repository) *types.Repo {
 	// so we don't want to store it.
 	metadata.ViewerPermission = ""
 	metadata.Description = sanitizeToUTF8(metadata.Description)
-
 	return &types.Repo{
 		Name: reposource.GitHubRepoName(
 			s.config.RepositoryPathPattern,

@@ -931,21 +931,21 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 	}
 
 	grapherTutorialRepo := &Repository{
-		ID:            "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
-		DatabaseID:    14601798,
-		NameWithOwner: "sourcegraph/grapher-tutorial",
-		Description:   "monkey language",
-		URL:           "https://github.com/sourcegraph/grapher-tutorial",
-		IsPrivate:     true,
-		IsFork:        false,
-		IsArchived:    true,
-		IsLocked:      true,
-		Visibility:    "internal",
+		ID:               "MDEwOlJlcG9zaXRvcnkxNDYwMTc5OA==",
+		DatabaseID:       14601798,
+		NameWithOwner:    "sourcegraph/grapher-tutorial",
+		Description:      "monkey language",
+		URL:              "https://github.com/sourcegraph/grapher-tutorial",
+		IsPrivate:        true,
+		IsFork:           false,
+		IsArchived:       true,
+		IsLocked:         true,
+		ViewerPermission: "ADMIN",
+		Visibility:       "internal",
 		RepositoryTopics: RepositoryTopics{Nodes: []RepositoryTopic{
 			{Topic: Topic{Name: "topic1"}},
 			{Topic: Topic{Name: "topic2"}},
 		}},
-		ViewerPermission: "ADMIN",
 	}
 
 	clojureGrapherRepo := &Repository{
@@ -958,8 +958,8 @@ func TestClient_GetReposByNameWithOwner(t *testing.T) {
 		IsFork:           false,
 		IsArchived:       true,
 		IsDisabled:       true,
-		Visibility:       "private",
 		ViewerPermission: "ADMIN",
+		Visibility:       "private",
 	}
 
 	testCases := []struct {
@@ -1146,15 +1146,15 @@ func TestClient_buildGetRepositoriesBatchQuery(t *testing.T) {
 	}
 
 	wantIncluded := `
-repo0: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
-repo1: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
-repo2: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
-repo3: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
-repo4: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
-repo5: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
-repo6: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
-repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }
-repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields parent { ...RepositoryFields } } }`
+repo0: repository(owner: "sourcegraph", name: "grapher-tutorial") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo1: repository(owner: "sourcegraph", name: "clojure-grapher") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo2: repository(owner: "sourcegraph", name: "programming-challenge") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo3: repository(owner: "sourcegraph", name: "annotate") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo4: repository(owner: "sourcegraph", name: "sourcegraph-sublime-old") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo5: repository(owner: "sourcegraph", name: "makex") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo6: repository(owner: "sourcegraph", name: "pydep") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo7: repository(owner: "sourcegraph", name: "vcsstore") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }
+repo8: repository(owner: "sourcegraph", name: "contains.dot") { ... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }`
 
 	mock := mockHTTPResponseBody{responseBody: ""}
 	apiURL := &url.URL{Scheme: "https", Host: "example.com", Path: "/"}

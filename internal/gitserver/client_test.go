@@ -1071,7 +1071,6 @@ func TestClient_ResolveRevisions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := newMockDB()
-
 	ctx := context.Background()
 
 	s := server.Server{
