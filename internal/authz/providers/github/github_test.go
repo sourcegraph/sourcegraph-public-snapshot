@@ -159,7 +159,9 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 						{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1MTc1234="},
 					}, true, 1, nil
 				case 2:
-					return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTE5678="}}, false, 1, nil
+					return []*github.Repository{
+						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTE5678="},
+					}, false, 1, nil
 				}
 			case mockOrgNoRead2.Login:
 				return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTadmin="}}, false, 1, nil
@@ -321,11 +323,13 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 							switch page {
 							case 1:
 								return []*github.Repository{
-									{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="}, // existing repo,
+									{ID: "MDEwOlJlcG9zaXRvcnkyNDI2NTEwMDA="}, // existing repo
 									{ID: "MDEwOlJlcG9zaXRvcnkyNDQ1nsteam1="},
 								}, true, 1, nil
 							case 2:
-								return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam2="}}, false, 1, nil
+								return []*github.Repository{
+									{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam2="},
+								}, false, 1, nil
 							}
 						}
 					}
@@ -438,7 +442,9 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 			mockClient.ListTeamRepositoriesFunc.SetDefaultHook(
 				func(_ context.Context, _, _ string, _ int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error) {
 					callsToListTeamRepos++
-					return []*github.Repository{{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="}}, false, 1, nil
+					return []*github.Repository{
+						{ID: "MDEwOlJlcG9zaXRvcnkyNDI2nsteam1="},
+					}, false, 1, nil
 				})
 
 			p := NewProvider("", ProviderOptions{GitHubURL: mustURL(t, "https://github.com"), DB: db})
