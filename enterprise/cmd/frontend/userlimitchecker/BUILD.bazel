@@ -4,8 +4,8 @@ load("//dev:go_defs.bzl", "go_test")
 go_library(
     name = "userlimitchecker",
     srcs = [
+        "constants.go",
         "limitchecker.go",
-        "msgs.go",
         "template.go",
     ],
     importpath = "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/userlimitchecker",
@@ -19,6 +19,7 @@ go_library(
         "//internal/txemail/txtypes",
         "//internal/types",
         "//lib/errors",
+        "@com_github_sourcegraph_log//:log",
     ],
 )
 

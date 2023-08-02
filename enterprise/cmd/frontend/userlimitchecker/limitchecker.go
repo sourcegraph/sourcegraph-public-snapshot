@@ -15,10 +15,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var logInfo = func(text string) {
+	log.Scoped(LC_LOGGER_SCOPE, LC_LOGGER_DESC).Info(text)
+}
+
 // send email to site admins if approaching user limit on active license
 func SendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
-	logger := log.Scoped(LC_LOGGER_SCOPE, LC_LOGGER_DESC)
-
 	licenseID, err := getActiveLicense(ctx, db)
 	if err != nil {
 		return errors.Wrap(err, ACTIVE_LICENSE_ERR)
@@ -41,13 +43,13 @@ func SendApproachingUserLimitAlert(ctx context.Context, db database.DB) error {
 	}
 
 	if userCountWithinLimit(userCount, userLimit) {
-		logger.Info(WITHIN_LIMIT_MSG)
+		logInfo(WITHIN_LIMIT_MSG)
 		return nil
 	}
 
 	// if an email was recently sent and the userCount has not increased since the last email, do not alert
 	if emailRecentlySent(checker.UserCountAlertSentAt) && !userCountIncreased(userCount, checker.UserCountWhenEmailLastSent) {
-		logger.Info(EMAIL_RECENTLY_SENT_MSG)
+		logInfo(EMAIL_RECENTLY_SENT)
 		return nil
 	}
 
@@ -111,8 +113,7 @@ func emailRecentlySent(lastSent *time.Time) bool {
 	if lastSent == nil {
 		return false
 	}
-	now := time.Now()
-	return now.Before(lastSent.Add(ONE_WEEK))
+	return time.Now().Before(lastSent.Add(ONE_WEEK))
 }
 
 func updateLicenseUserLimitCheckerFields(ctx context.Context, db database.DB, checkerId string) error {

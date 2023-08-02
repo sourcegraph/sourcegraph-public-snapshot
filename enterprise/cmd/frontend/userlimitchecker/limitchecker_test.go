@@ -2,8 +2,6 @@ package userlimitchecker
 
 import (
 	"context"
-	"io/ioutil"
-	"os"
 	"testing"
 	"time"
 
@@ -82,32 +80,39 @@ func TestSendApproachingUserLimitAlert(t *testing.T) {
 		assert.Equal(t, 1, gotEmailData.RemainingUsers)
 	})
 
-	// update user count for next test
-	err = licensesStore.UpdateUserCount(ctx, licenseID, "15")
-	require.NoError(t, err)
-
-	t.Run("does not send email if user count is not approaching user limit", func(t *testing.T) {
-		old := os.Stdout
-		r, w, err := os.Pipe()
-		require.NoError(t, err)
-		os.Stdout = w
-
-		err = SendApproachingUserLimitAlert(ctx, db)
+	t.Run("no email if recently sent and user count unchanged", func(t *testing.T) {
+		var loggedMessages []string
+		originalLogInfo := logInfo
+		logInfo = func(text string) {
+			loggedMessages = append(loggedMessages, text)
+		}
+		t.Cleanup(func() { logInfo = originalLogInfo })
+		err := SendApproachingUserLimitAlert(ctx, db)
 		require.NoError(t, err)
 
-		w.Close()
-		out, err := ioutil.ReadAll(r)
-		require.NoError(t, err)
-		os.Stdout = old
-
-		assert.Equal(t, "user count within limit; admin not alerted\n", string(out))
+		assert.Equal(t, []string{EMAIL_RECENTLY_SENT}, loggedMessages)
 	})
 
-	// update user count for next test
-	err = licensesStore.UpdateUserCount(ctx, licenseID, "3")
-	require.NoError(t, err)
+	t.Run("does not send email if user count is not approaching user limit", func(t *testing.T) {
+		err = licensesStore.UpdateUserCount(ctx, licenseID, "15")
+		require.NoError(t, err)
+
+		var loggedMessages []string
+		originalLogInfo := logInfo
+		logInfo = func(text string) {
+			loggedMessages = append(loggedMessages, text)
+		}
+		t.Cleanup(func() { logInfo = originalLogInfo })
+		err := SendApproachingUserLimitAlert(ctx, db)
+		require.NoError(t, err)
+
+		assert.Equal(t, []string{WITHIN_LIMIT_MSG}, loggedMessages)
+	})
 
 	t.Run("updates fields once email is sent", func(t *testing.T) {
+		err = licensesStore.UpdateUserCount(ctx, licenseID, "3")
+		require.NoError(t, err)
+
 		checkerData, err := checkerStore.GetByLicenseID(ctx, licenseID)
 		require.NoError(t, err)
 
@@ -165,7 +170,6 @@ func TestGetActiveLicense(t *testing.T) {
 		expected := licenseId
 		assert.Equal(t, expected, actual)
 	})
-
 }
 
 func TestUserCountWithinLimit(t *testing.T) {
