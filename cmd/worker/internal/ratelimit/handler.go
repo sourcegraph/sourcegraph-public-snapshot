@@ -113,8 +113,8 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *Job) er
 	return h.process(ctx, record.CodeHostURL, logger)
 }
 
-func (h *handler) process(ctx context.Context, codeHostURL string, logger log.Logger) error {
-	// Retrieve all of the code host rate limit config keys in Redis.
+func (h *handler) process(ctx context.Context, codeHostURL string, _ log.Logger) error {
+	// Retrieve all the code host rate limit config keys in Redis.
 	apiCapKey, apiReplenishmentKey, gitCapKey, gitReplenishmentKey := redispool.GetCodeHostRateLimiterConfigKeys(redispool.TokenBucketGlobalPrefix, codeHostURL)
 
 	// Retrieve the actual rate limit values from the source of truth (Postgres).

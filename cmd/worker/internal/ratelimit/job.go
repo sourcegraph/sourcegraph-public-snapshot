@@ -8,7 +8,6 @@ import (
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -19,6 +18,8 @@ import (
 
 type rateLimitConfigJob struct{}
 
+var _ job.Job = &rateLimitConfigJob{}
+
 func NewRateLimitConfigJob() job.Job {
 	return &rateLimitConfigJob{}
 }
@@ -28,7 +29,7 @@ func (s *rateLimitConfigJob) Description() string {
 }
 
 func (s *rateLimitConfigJob) Config() []env.Config {
-	return []env.Config{embeddings.EmbeddingsUploadStoreConfigInst}
+	return nil
 }
 
 func (s *rateLimitConfigJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
