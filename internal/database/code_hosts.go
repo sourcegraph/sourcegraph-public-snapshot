@@ -177,6 +177,8 @@ WHERE url = %s
 `
 
 func (s *codeHostStore) List(ctx context.Context, opts ListCodeHostsOpts) (chs []*types.CodeHost, next int32, err error) {
+	// Return an empty list in case of no results
+	chs = []*types.CodeHost{}
 	query := listCodeHostsQuery(opts)
 
 	rows, err := s.Query(ctx, query)
@@ -286,13 +288,10 @@ func (s *codeHostStore) Delete(ctx context.Context, id int32) error {
 	query := deleteCodeHostQuery(id)
 
 	row := s.QueryRow(ctx, query)
-	if err := scanCodeHost(row, &types.CodeHost{}); err != nil {
-		if err == sql.ErrNoRows {
-			return nil
-		}
+
+	if err := row.Err(); err != nil {
 		return err
 	}
-
 	return nil
 }
 
@@ -304,9 +303,9 @@ func deleteCodeHostQuery(id int32) *sqlf.Query {
 }
 
 const deleteCodeHostQueryFmtstr = `
-	DELETE FROM code_hosts
-	WHERE
-		id = %s
+DELETE FROM code_hosts
+WHERE
+	id = %s
 `
 
 func scanCodeHost(rows dbutil.Scanner, ch *types.CodeHost) error {

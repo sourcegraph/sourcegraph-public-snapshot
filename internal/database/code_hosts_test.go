@@ -48,13 +48,23 @@ func TestCodeHostStore_CRUDCodeHost(t *testing.T) {
 	}
 
 	// Create the external service so that the code host appears when we GetByID after.
-	err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
+	es := &types.ExternalService{
 		CodeHostID: &codeHost.ID,
 		Kind:       codeHost.Kind,
 		Config:     extsvcConfig,
-	})
+	}
+	err = db.ExternalServices().Create(ctx, confGet, es)
 	if err != nil {
 		t.Fatal(err)
+	}
+
+	// Code host id should be set correctly in the external service.
+	es2, err := db.ExternalServices().GetByID(ctx, es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if *es2.CodeHostID != codeHost.ID {
+		t.Fatalf("external service code host id does not match, expected: %+v, got:%+v", codeHost.ID, *es2.CodeHostID)
 	}
 
 	// Should get back the same one by id
@@ -155,9 +165,9 @@ func TestCodeHostStore_List(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		listOpts   ListCodeHostsOpts
-		resultSize int
+		name     string
+		listOpts ListCodeHostsOpts
+		results  []*types.CodeHost
 	}{
 		{
 			name: "get 1 by id",
@@ -167,7 +177,7 @@ func TestCodeHostStore_List(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			resultSize: 1,
+			results: []*types.CodeHost{codeHostOne},
 		},
 		{
 			name: "get 1 by url",
@@ -177,7 +187,7 @@ func TestCodeHostStore_List(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			resultSize: 1,
+			results: []*types.CodeHost{codeHostOne},
 		},
 		{
 			name: "get all, non-deleted",
@@ -186,7 +196,7 @@ func TestCodeHostStore_List(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			resultSize: 1,
+			results: []*types.CodeHost{codeHostOne},
 		},
 		{
 			name: "get all, with deleted",
@@ -196,7 +206,7 @@ func TestCodeHostStore_List(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			resultSize: 2,
+			results: []*types.CodeHost{codeHostOne, codeHostTwo},
 		},
 		{
 			name: "list with search",
@@ -207,7 +217,7 @@ func TestCodeHostStore_List(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			resultSize: 1,
+			results: []*types.CodeHost{codeHostTwo},
 		},
 		{
 			name: "list with search matching none",
@@ -218,7 +228,29 @@ func TestCodeHostStore_List(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			resultSize: 0,
+			results: []*types.CodeHost{},
+		},
+		{
+			name: "cursor test",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				Cursor:         int32(2),
+				LimitOffset: LimitOffset{
+					Limit: 10,
+				},
+			},
+			results: []*types.CodeHost{codeHostTwo},
+		},
+		{
+			name: "cursor test, no matches",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				Cursor:         int32(3),
+				LimitOffset: LimitOffset{
+					Limit: 10,
+				},
+			},
+			results: []*types.CodeHost{},
 		},
 	}
 
@@ -229,8 +261,9 @@ func TestCodeHostStore_List(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			if len(ch) != test.resultSize {
-				t.Fatalf("Expected %d code host, got %+v\n", test.resultSize, ch)
+
+			if diff := cmp.Diff(ch, test.results); diff != "" {
+				t.Fatalf("unexpected code host urls, got %+v\n", diff)
 			}
 		})
 	}
