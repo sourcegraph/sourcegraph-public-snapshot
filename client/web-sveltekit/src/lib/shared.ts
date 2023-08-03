@@ -2,11 +2,18 @@
 
 export type { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 
-export { parseRepoRevision, buildSearchURLQuery, makeRepoURI } from '@sourcegraph/shared/src/util/url'
+export {
+    parseRepoRevision,
+    parseQueryAndHash,
+    buildSearchURLQuery,
+    makeRepoURI,
+} from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
     isRepoNotFoundErrorLike,
+    isRevisionNotFoundErrorLike,
+    CloneInProgressError,
 } from '@sourcegraph/shared/src/backend/errors'
 export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'

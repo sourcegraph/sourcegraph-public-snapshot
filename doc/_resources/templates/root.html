@@ -50,12 +50,12 @@
                 }
             </script>
 
-            <link rel="stylesheet" href="https://esm.sh/@markprompt/css@0.6.0?css" />
+            <link rel="stylesheet" href="https://esm.sh/@markprompt/css@0.11.1?css" />
 
             <script>
             </script>
             <script type="module">
-                import { markprompt, openMarkprompt } from 'https://esm.sh/@markprompt/web@0.10.0';
+                import { markprompt, openMarkprompt } from 'https://esm.sh/@markprompt/web@0.14.3';
 
                 function showMarkprompt() {
                     openMarkprompt()
@@ -124,6 +124,7 @@ Answer (including related code snippets if available):`
                             placeholder: "Search or ask a question…",
                             cta: "Ask Docs AI"
                         },
+                        feedback: { enabled: true },
                         search: {
                             enabled: showInstantSearch,
                             getResultHref: (path, sectionHeading) => {

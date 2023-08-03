@@ -702,7 +702,7 @@ func TestExternalServices(t *testing.T) {
 			Label:  "Read all external services for a given repo",
 			Query: fmt.Sprintf(`
 			{
-				externalServices(repoID: "%s") {
+				externalServices(repo: "%s") {
 					nodes {
 						id
 					}

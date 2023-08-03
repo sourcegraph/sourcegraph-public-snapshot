@@ -37,6 +37,7 @@ export const HAS_LICENSE_SEATS = gql`
         site {
             productSubscription {
                 license {
+                    tags
                     userCount
                 }
             }

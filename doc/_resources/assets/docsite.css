@@ -1163,8 +1163,8 @@ body {
     --markprompt-primaryMuted: #1986ea55;
     --markprompt-secondary: #F5F5F5;
     --markprompt-secondaryForeground: #171717;
-    --markprompt-primaryHighlight: #00CBEC;
-    --markprompt-secondaryHighlight: #A112FF;
+    --markprompt-primaryHighlight: #A112FF;
+    --markprompt-secondaryHighlight: #00CBEC;
     --markprompt-overlay: #00000010;
     --markprompt-ring: #00CBEC;
     --markprompt-radius: 8px;

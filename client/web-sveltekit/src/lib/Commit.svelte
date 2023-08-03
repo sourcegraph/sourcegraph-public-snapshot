@@ -3,14 +3,13 @@
 
     import type { GitCommitFields } from '$lib/graphql-operations'
     import Icon from '$lib/Icon.svelte'
-    import { currentDate as now } from '$lib/stores'
     import UserAvatar from '$lib/UserAvatar.svelte'
-    import { getRelativeTime } from '$lib/utils'
+    import Timestamp from './Timestamp.svelte'
 
     export let commit: GitCommitFields
     export let alwaysExpanded: boolean = false
 
-    $: relativeTime = getRelativeTime(new Date(commit.committer ? commit.committer.date : commit.author.date), $now)
+    $: commitDate = new Date(commit.committer ? commit.committer.date : commit.author.date)
     let expanded = alwaysExpanded
 </script>
 
@@ -32,7 +31,7 @@
                 </button>
             {/if}
         </span>
-        <span>committed by <strong>{commit.author.person.name}</strong> about {relativeTime}</span>
+        <span>committed by <strong>{commit.author.person.name}</strong> <Timestamp date={commitDate} /></span>
         {#if expanded}
             <pre>{commit.body}</pre>
         {/if}

@@ -17,7 +17,7 @@ func TestAzureOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
 		client := NewClient(http.DefaultClient, &conftypes.EmbeddingsConfig{})
 		invalidTexts := []string{"a", ""} // empty string is invalid
-		_, err := client.GetEmbeddings(context.Background(), invalidTexts)
+		_, err := client.GetDocumentEmbeddings(context.Background(), invalidTexts)
 		require.ErrorContains(t, err, "empty string")
 	})
 
@@ -64,28 +64,30 @@ func TestAzureOpenAI(t *testing.T) {
 			return oldTransport.RoundTrip(r)
 		})
 
-		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a"})
+		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: 1536})
+		resp, err := client.GetQueryEmbedding(context.Background(), "a")
 		require.NoError(t, err)
 		var expected []float32
 		{
 			expected = append(expected, make([]float32, 1535)...)
 			expected = append(expected, 1)
 		}
-		require.Equal(t, expected, resp)
+		require.Equal(t, expected, resp.Embeddings)
+		require.Empty(t, resp.Failed)
+		require.Equal(t, 1536, resp.Dimensions)
 		require.True(t, gotRequest1)
 		require.True(t, gotRequest2)
 	})
 
-	t.Run("retry on empty embedding fails", func(t *testing.T) {
+	t.Run("retry on empty embedding fails and returns failed indices no error", func(t *testing.T) {
 		gotRequest1 := false
 		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-			// On the first request, respond with a null embedding
+			// On the first request, respond with a successful embedding
 			if !gotRequest1 {
 				resp := openaiEmbeddingAPIResponse{
 					Data: []openaiEmbeddingAPIResponseData{{
 						Index:     0,
-						Embedding: nil,
+						Embedding: append(make([]float32, 1535), 1),
 					}},
 				}
 				json.NewEncoder(w).Encode(resp)
@@ -93,7 +95,7 @@ func TestAzureOpenAI(t *testing.T) {
 				return
 			}
 
-			// Always return an invalid response to all the retry requests
+			// Always return an invalid response to all the requests after the first
 			resp := openaiEmbeddingAPIResponse{
 				Data: []openaiEmbeddingAPIResponseData{{
 					Index:     0,
@@ -111,9 +113,23 @@ func TestAzureOpenAI(t *testing.T) {
 			return oldTransport.RoundTrip(r)
 		})
 
-		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		_, err := client.GetEmbeddings(context.Background(), []string{"a"})
-		require.Error(t, err, "expected request to error on failed retry")
+		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: 1536, ExcludeChunkOnError: true})
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
+		require.NoError(t, err, "expected request to succeed")
+		var expected []float32
+		{
+			expected = append(expected, make([]float32, 1535)...)
+			expected = append(expected, 1)
+
+			// zero value embedding when chunk fails to generate embeddings
+			expected = append(expected, make([]float32, 1536)...)
+		}
+
+		failed := []int{1}
+
+		require.Equal(t, expected, resp.Embeddings)
+		require.Equal(t, failed, resp.Failed)
+		require.Equal(t, 1536, resp.Dimensions)
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -137,8 +153,8 @@ func TestAzureOpenAI(t *testing.T) {
 			return oldTransport.RoundTrip(r)
 		})
 
-		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: 1536})
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
 		require.NoError(t, err, "expected request to succeed")
 		var expected []float32
 		{
@@ -147,7 +163,9 @@ func TestAzureOpenAI(t *testing.T) {
 			expected = append(expected, make([]float32, 1535)...)
 			expected = append(expected, 2)
 		}
-		require.Equal(t, expected, resp)
+		require.Equal(t, expected, resp.Embeddings)
+		require.Empty(t, resp.Failed)
+		require.Equal(t, 1536, resp.Dimensions)
 	})
 }
 
