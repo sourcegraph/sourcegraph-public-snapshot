@@ -2129,7 +2129,7 @@ func (s *Server) getDeduplicatedCloneOptions(ctx context.Context, repo *types.Re
 
 	poolRepoName, ok, err := s.DB.GitserverRepos().GetPoolRepoName(ctx, repo.Name)
 	if err != nil {
-		logger.Warn("failed to get by name from DB (repo will be cloned without deduplicated storage if this was supposed to be deduplicated)", log.Error(err))
+		logger.Warn("failed to get repo by name from DB (repo will be cloned without deduplicated storage if this was supposed to be deduplicated)", log.Error(err))
 		return dedupeNoneOpts
 	}
 
