@@ -1,6 +1,9 @@
 package shared
 
 import (
+	"bytes"
+	"encoding/json"
+	"net/http"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
@@ -41,11 +44,13 @@ var NO_CONTEXT_MESSAGES_REGEXPS = []*lazyregexp.Regexp{
 
 func isContextRequiredForChatQuery(query string) bool {
 	queryTrimmed := strings.TrimSpace(query)
-	queryLower := strings.ToLower(queryTrimmed)
-	for _, regexp := range NO_CONTEXT_MESSAGES_REGEXPS {
-		if regexp.MatchString(queryLower) {
-			return false
-		}
+	payload := map[string]string{
+		"text": queryTrimmed,
 	}
-	return true
+	jsonPayload, _ := json.Marshal(payload)
+
+	resp, _ := http.Post("http://127.0.0.1:8000/context-probabilities", "application/json", bytes.NewBuffer(jsonPayload))
+	probabilities := map[string]float64{}
+	json.NewDecoder(resp.Body).Decode(&probabilities)
+	return probabilities["no_context_probability"] < 0.5
 }
