@@ -1592,7 +1592,16 @@ var nonActiveCodyEvents = []string{
 }
 
 var aggregatedCodyUsageEventsQuery = `
-WITH events AS (
+WITH
+sub_cohort AS (
+  SELECT *
+  FROM event_logs
+  WHERE
+    timestamp >= %s::timestamp - '1 month'::interval
+    AND name not like '%%completion:started%%'
+    AND name not like '%%completion:suggested%%'
+),
+events AS (
   SELECT
     name AS key,
     ` + aggregatedUserIDQueryFragment + ` AS user_id,
@@ -1604,8 +1613,7 @@ WITH events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND lower(name) like '%%cody%%'
+    lower(name) like '%%cody%%'
     AND name not like '%%CTA%%'
     AND name not like '%%Cta%%'
     AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
