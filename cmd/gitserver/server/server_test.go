@@ -915,6 +915,7 @@ func TestCloneRepo(t *testing.T) {
 		time.Sleep(10 * time.Millisecond)
 	}
 	wantRepoSize := dirSize(dst.Path("."))
+	require.NotEqual(t, 0, wantRepoSize)
 	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
 	repo = filepath.Dir(string(dst))
@@ -960,9 +961,7 @@ func TestCloneRepo(t *testing.T) {
 func TestCloneRepo_Deduplication(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(func() {
-		cancel()
-	})
+	t.Cleanup(cancel)
 
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -1018,6 +1017,7 @@ func TestCloneRepo_Deduplication(t *testing.T) {
 	dst := s.dir(repoName)
 
 	wantRepoSize := dirSize(dst.Path("."))
+	require.NotEqual(t, 0, wantRepoSize)
 	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
 	repoDir = filepath.Dir(string(dst))
