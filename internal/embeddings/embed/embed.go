@@ -254,7 +254,7 @@ func embedFiles(
 			batchChunks[idx] = chunk.Content
 		}
 
-		batchEmbeddings, err := embeddingsClient.GetEmbeddings(ctx, batchChunks)
+		batchEmbeddings, err := embeddingsClient.GetDocumentEmbeddings(ctx, batchChunks)
 		if err != nil {
 			return nil, errors.Wrap(err, "error while getting embeddings")
 		}

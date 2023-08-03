@@ -8,9 +8,10 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/codygateway"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/stretchr/testify/require"
 )
 
 func TestOpenAI(t *testing.T) {
@@ -61,7 +62,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(httpClient, &conftypes.EmbeddingsConfig{Dimensions: 1536})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
 		require.NoError(t, err)
 		var expected []float32
 		{
@@ -119,7 +120,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{Dimensions: dimensions})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b", "c"})
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b", "c"})
 		require.NoError(t, err)
 		var expected []float32
 		{
