@@ -4,30 +4,48 @@ import { basename } from 'path'
 const PLAINTEXT_MODE = 'plaintext'
 
 /**
- * getModeFromPath returns the LSP mode for the provided file path. If the file path does not correspond to any
- * known mode, 'plaintext' is returned.
+ * getModeFromPathOrContent returns the LSP mode for the provided file.
+ * If the file path corresponds to a single mode, that is returned.
+ * If the file path corresponds to multiple modes, the file content is examined to deduce a mode.
+ * If the file path does not correspond to any known mode, 'plaintext' is returned.
+ */
+export function getModeFromPathOrContent(path: string, content: string): string {
+    const fileName = basename(path)
+    const extension = getPathExtension(path)
+
+    var mode: string[]
+    mode = getModeFromExactFilename(fileName) || getModeFromExtension(extension) || []
+    if (mode.length !== 1) {
+        mode = [inferModeFromContent(path, content)]
+    }
+    return mode[0]
+}
+
+/**
+ * getModeFromPath returns the LSP mode for the provided file path.
+ * If the file path does not correspond to any known mode, 'plaintext' is returned.
+ * If the path corresponds to multiple LSP modes, the lexographically first mode is returned.
  */
 export function getModeFromPath(path: string): string {
     const fileName = basename(path)
     const extension = getPathExtension(path)
-
-    return getModeFromExactFilename(fileName) || getModeFromExtension(extension) || PLAINTEXT_MODE
+    return (getModeFromExactFilename(fileName) || getModeFromExtension(extension) || [PLAINTEXT_MODE])[0]
 }
 
 /**
- * getModeFromExactFilename returns the LSP mode for the
- * provided file name (e.g. "dockerfile")
+ * getModeFromExactFilename returns all of the the LSP modes for the
+ * provided file name (e.g. "dockerfile"), or undefined if there is no match
  *
  * Cherry picked from https://github.com/github/linguist/blob/master/lib/linguist/languages.yml
  */
-function getModeFromExactFilename(fileName: string): string | undefined {
+function getModeFromExactFilename(fileName: string): string[] | undefined {
     switch (fileName.toLowerCase()) {
         case 'dockerfile':
-            return 'dockerfile'
+            return ['dockerfile']
 
         case 'build':
         case 'workspace':
-            return 'starlark'
+            return ['starlark']
 
         default:
             return undefined
@@ -35,60 +53,60 @@ function getModeFromExactFilename(fileName: string): string | undefined {
 }
 
 /**
- * getModeFromExtension returns the LSP mode for the
- * provided file extension (e.g. "jsx")
+ * getModeFromExtension returns all of the LSP modes for the
+ * provided file extension (e.g. "jsx"), or undefined if there is no match
  *
  * Cherry picked from https://github.com/isagalaev/highlight.js/tree/master/src/languages
  * and https://github.com/github/linguist/blob/master/lib/linguist/languages.yml.
  */
-function getModeFromExtension(extension: string): string | undefined {
+function getModeFromExtension(extension: string): string[] | undefined {
     switch (extension.toLowerCase()) {
         // Ada
         case 'adb':
         case 'ada':
         case 'ads':
-            return 'ada'
+            return ['ada']
 
         // Apex
         case 'cls':
         case 'apex':
         case 'trigger':
-            return 'apex'
+            return ['apex']
 
         // Actionscript
         case 'as':
-            return 'actionscript'
+            return ['actionscript']
 
         // Apache
         case 'apacheconf':
-            return 'apache'
+            return ['apache']
 
         // Applescript
         case 'applescript':
         case 'scpt':
-            return 'applescript'
+            return ['applescript']
 
         // Bash
         case 'sh':
         case 'bash':
         case 'zsh':
-            return 'shell'
+            return ['shell']
 
         // Clojure
         case 'clj':
         case 'cljs':
         case 'cljx':
-            return 'clojure'
+            return ['clojure']
 
         // CSS
         case 'css':
-            return 'css'
+            return ['css']
 
         // CMake
         case 'cmake':
         case 'cmake.in':
         case 'in': // TODO(john): hack b/c we don't properly parse extensions w/ '.' in them
-            return 'cmake'
+            return ['cmake']
 
         // Coffeescript
         case 'coffee':
@@ -96,12 +114,12 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'cson':
         case 'cjsx':
         case 'iced':
-            return 'coffescript'
+            return ['coffescript']
 
         // C#
         case 'cs':
         case 'csx':
-            return 'csharp'
+            return ['csharp']
 
         // C/C++
         case 'c':
@@ -116,43 +134,43 @@ function getModeFromExtension(extension: string): string | undefined {
         // https://github.com/sourcegraph/customer/issues/124
         case 'pc':
         case 'pcc':
-            return 'cpp'
+            return ['cpp']
 
         // CUDA
         case 'cu':
         case 'cuh':
-            return 'cuda'
+            return ['cuda']
 
         // Dart
         case 'dart':
-            return 'dart'
+            return ['dart']
 
         // Diff
         case 'diff':
         case 'patch':
-            return 'diff'
+            return ['diff']
 
         // Django
         case 'jinja':
-            return 'django'
+            return ['django']
 
         // DOS
         case 'bat':
         case 'cmd':
-            return 'dos'
+            return ['dos']
 
         // Elixir
         case 'ex':
         case 'exs':
-            return 'elixir'
+            return ['elixir']
 
         // Elm
         case 'elm':
-            return 'elm'
+            return ['elm']
 
         // Erlang
         case 'erl':
-            return 'erlang'
+            return ['erlang']
 
         // Fortran
         case 'f':
@@ -163,43 +181,43 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'forth':
         case '4th':
         case 'fth':
-            return 'fortran'
+            return ['fortran']
 
         // F#
         case 'fs':
-            return 'fsharp'
+            return ['fsharp']
 
         // Go
         case 'go':
-            return 'go'
+            return ['go']
 
         // GraphQL
         case 'graphql':
-            return 'graphql'
+            return ['graphql']
 
         // Groovy
         case 'groovy':
-            return 'groovy'
+            return ['groovy']
 
         // HAML
         case 'haml':
-            return 'haml'
+            return ['haml']
 
         // Handlebars
         case 'hbs':
         case 'handlebars':
-            return 'handlebars'
+            return ['handlebars']
 
         // Haskell
         case 'hs':
         case 'hsc':
-            return 'haskell'
+            return ['haskell']
 
         // HTML
         case 'htm':
         case 'html':
         case 'xhtml':
-            return 'html'
+            return ['html']
 
         // INI
         case 'ini':
@@ -207,11 +225,11 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'prefs':
         case 'pro':
         case 'properties':
-            return 'ini'
+            return ['ini']
 
         // Java
         case 'java':
-            return 'java'
+            return ['java']
 
         // JavaScript
         case 'js':
@@ -221,7 +239,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'mjs':
         case 'jss':
         case 'jsm':
-            return 'javascript'
+            return ['javascript']
 
         // JSON
         case 'json':
@@ -232,26 +250,26 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'sublime-project':
         case 'sublime-settings':
         case 'sublime-workspace':
-            return 'json'
+            return ['json']
 
         // Jsonnet
         case 'jsonnet':
         case 'libsonnet':
-            return 'jsonnet'
+            return ['jsonnet']
 
         // Julia
         case 'jl':
-            return 'julia'
+            return ['julia']
 
         // Kotlin
         case 'kt':
         case 'ktm':
         case 'kts':
-            return 'kotlin'
+            return ['kotlin']
 
         // Less
         case 'less':
-            return 'less'
+            return ['less']
 
         // Lisp
         case 'lisp':
@@ -263,7 +281,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'podsl':
         case 'sexp':
         case 'el':
-            return 'lisp'
+            return ['lisp']
 
         // Lua
         case 'lua':
@@ -272,27 +290,28 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'pd_lua':
         case 'rbxs':
         case 'wlua':
-            return 'lua'
+            return ['lua']
 
         // Makefile
         case 'mk':
         case 'mak':
-            return 'makefile'
+            return ['makefile']
 
         // Markdown
         case 'md':
         case 'mkdown':
         case 'mkd':
-            return 'markdown'
+            return ['markdown']
 
         // nginx
         case 'nginxconf':
-            return 'nginx'
+            return ['nginx']
 
         // Objective-C
         case 'm':
+            return ['limbo', 'matlab', 'objectivec']
         case 'mm':
-            return 'objectivec'
+            return ['objectivec']
 
         // OCaml
         case 'ml':
@@ -303,13 +322,13 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'mll':
         case 'mly':
         case 're': // reason has the same language server as ocaml
-            return 'ocaml'
+            return ['ocaml']
 
         // Pascal
         case 'p':
         case 'pas':
         case 'pp':
-            return 'pascal'
+            return ['pascal']
 
         // Perl
         case 'pl':
@@ -323,7 +342,7 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'pod':
         case 'psgi':
         case 't':
-            return 'perl'
+            return ['perl']
 
         // PHP
         case 'php':
@@ -334,17 +353,17 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'php6':
         case 'php7':
         case 'phps':
-            return 'php'
+            return ['php']
 
         // Powershell
         case 'ps1':
         case 'psd1':
         case 'psm1':
-            return 'powershell'
+            return ['powershell']
 
         // Proto
         case 'proto':
-            return 'protobuf'
+            return ['protobuf']
 
         // Python
         case 'py':
@@ -353,15 +372,15 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'pyo':
         case 'pyw':
         case 'pyz':
-            return 'python'
+            return ['python']
 
         // R
         case 'r':
         case 'rd':
         case 'rsx':
-            return 'r'
+            return ['r']
         case 'repro':
-            return 'reprolang'
+            return ['reprolang']
 
         // Ruby
         case 'rb':
@@ -384,32 +403,32 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'spec':
         case 'thor':
         case 'watchr':
-            return 'ruby'
+            return ['ruby']
 
         // Rust
         case 'rs':
         case 'rs.in':
-            return 'rust'
+            return ['rust']
 
         // SASS
         case 'sass':
         case 'scss':
-            return 'scss'
+            return ['scss']
 
         // Scala
         case 'sbt':
         case 'sc':
         case 'scala':
-            return 'scala'
+            return ['scala']
 
         // Starlark
         case 'bzl':
         case 'bazel':
-            return 'starlark'
+            return ['starlark']
 
         // Strato
         case 'strato':
-            return 'strato'
+            return ['strato']
 
         // Scheme
         case 'scm':
@@ -417,42 +436,42 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'sls':
         case 'sps':
         case 'ss':
-            return 'scheme'
+            return ['scheme']
 
         // Smalltalk
         case 'st':
-            return 'smalltalk'
+            return ['smalltalk']
 
         // SQL
         case 'sql':
-            return 'sql'
+            return ['sql']
 
         // Stylus
         case 'styl':
-            return 'stylus'
+            return ['stylus']
 
         // Swift
         case 'swift':
-            return 'swift'
+            return ['swift']
 
         // Thrift
         case 'thrift':
-            return 'thrift'
+            return ['thrift']
 
         // TypeScript
         case 'ts':
         case 'tsx':
-            return 'typescript'
+            return ['typescript']
 
         // Twig
         case 'twig':
-            return 'twig'
+            return ['twig']
 
         // Visual Basic
         case 'vb':
-            return 'vbnet'
+            return ['vbnet']
         case 'vbs':
-            return 'vbscrip'
+            return ['vbscrip']
 
         // Verilog, including SystemVerilog
         case 'v':
@@ -460,20 +479,20 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'sv':
         case 'svh':
         case 'svi':
-            return 'verilog'
+            return ['verilog']
 
         // VHDL
         case 'vhd':
         case 'vhdl':
-            return 'vhdl'
+            return ['vhdl']
 
         // VIM
         case 'vim':
-            return 'vim'
+            return ['vim']
 
         // XLSG
         case 'xlsg':
-            return 'xlsg'
+            return ['xlsg']
 
         // XML
         case 'xml':
@@ -567,19 +586,33 @@ function getModeFromExtension(extension: string): string | undefined {
         case 'xspec':
         case 'xul':
         case 'zcml':
-            return 'xml'
+            return ['xml']
 
         case 'zig':
-            return 'zig'
+            return ['zig']
 
         // YAML
         case 'yml':
         case 'yaml':
-            return 'yaml'
+            return ['yaml']
 
         default:
             return undefined
     }
+}
+
+/**
+ * inferModeFromContent examines the supplied file content to deduce the LSP mode.
+ * @param path The file path.
+ * @param content The file content.
+ * @returns The inferred mode, or 'plaintext' if no mode could be inferred.
+ */
+function inferModeFromContent(path: string, content: string): string {
+    // TODO: implement - probably need to create a new GraphQL method that will use enry to examine the content.
+    // TODO: probably don't need to pass the whole content; the first few hundred bytes should suffice.
+    // TODO: PROBLEM: the code that does the content inspection must return the same mode strings as the other functions here.
+    // TODO: SOLUTION: switch to using the same language/type names that `enry` outputs.
+    return PLAINTEXT_MODE
 }
 
 export function getPathExtension(path: string): string {
