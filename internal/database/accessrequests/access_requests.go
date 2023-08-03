@@ -10,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -92,9 +93,10 @@ type store struct {
 }
 
 func NewStore(db database.DB) Store {
-	if mock := database.GetMock[Store](db); mock != nil {
-		return mock
+	if s := dbmock.GetMock[Store](db); s != nil {
+		return s
 	}
+
 	return &store{Store: basestore.NewWithHandle(db.Handle()), logger: db.Logger()}
 }
 
