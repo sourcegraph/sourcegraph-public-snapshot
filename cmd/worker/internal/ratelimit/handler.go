@@ -50,9 +50,9 @@ func (h *handler) processCodeHost(ctx context.Context, codeHostURL string) error
 		return err
 	}
 	// Set API token values
-	err = h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:api_tokens", codeHostURL), apiCap, apiRepInterval)
+	err = h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:%s", codeHostURL, redispool.CodeHostAPITokenBucketSuffix), apiCap, apiRepInterval)
 	// Set Git token values
-	err2 := h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:git_tokens", codeHostURL), gitCap, gitRepInterval)
+	err2 := h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:%s", codeHostURL, redispool.CodeHostGitTokenBucketSuffix), gitCap, gitRepInterval)
 
 	return errors.CombineErrors(err, err2)
 }

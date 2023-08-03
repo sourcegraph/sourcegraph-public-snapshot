@@ -12,6 +12,8 @@ var (
 	TokenBucketGlobalPrefix            = "v2:rate_limiters"
 	bucketCapacityConfigKeySuffix      = "config:bucket_capacity"
 	bucketReplenishmentConfigKeySuffix = "config:bucket_replenishment_interval_seconds"
+	CodeHostAPITokenBucketSuffix       = "api_tokens"
+	CodeHostGitTokenBucketSuffix       = "git_tokens"
 )
 
 type RateLimiter interface {
@@ -111,8 +113,8 @@ func getRateLimiterKeys(prefix, bucketName string) (string, string, string) {
 }
 
 func GetCodeHostRateLimiterConfigKeys(prefix, codeHostURL string) (apiBucketCapacityKey, apiBucketReplenishmentKey, gitBucketCapacityKeystring, gitBucketReplenishmentKey string) {
-	_, apiCapKey, apiReplenishmentKey := getRateLimiterKeys(prefix, fmt.Sprintf("%s:%s", codeHostURL, "api_tokens"))
-	_, gitCapKey, gitReplenishmentKey := getRateLimiterKeys(prefix, fmt.Sprintf("%s:%s", codeHostURL, "git_tokens"))
+	_, apiCapKey, apiReplenishmentKey := getRateLimiterKeys(prefix, fmt.Sprintf("%s:%s", codeHostURL, CodeHostAPITokenBucketSuffix))
+	_, gitCapKey, gitReplenishmentKey := getRateLimiterKeys(prefix, fmt.Sprintf("%s:%s", codeHostURL, CodeHostGitTokenBucketSuffix))
 
 	return apiCapKey, apiReplenishmentKey, gitCapKey, gitReplenishmentKey
 }
