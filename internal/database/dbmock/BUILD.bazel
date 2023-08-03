@@ -1,0 +1,12 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "dbmock",
+    srcs = ["dbmock.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/dbmock",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/database/basestore",
+    ],
+)

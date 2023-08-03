@@ -12,6 +12,7 @@ go_library(
     deps = [
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/dbmock",
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "//internal/types",
