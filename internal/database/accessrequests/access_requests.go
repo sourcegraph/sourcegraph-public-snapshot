@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -76,7 +75,7 @@ func (o *FilterArgs) SQL() []*sqlf.Query {
 //
 // For a detailed overview of the schema, see schema.md.
 type Store interface {
-	basestore.ShareableStore
+	basestore.MockableStore[Store]
 	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
@@ -88,16 +87,12 @@ type Store interface {
 }
 
 type store struct {
-	*basestore.Store
+	*basestore.MockStore[Store]
 	logger log.Logger
 }
 
 func NewStore(db database.DB) Store {
-	if s := dbmock.Get[Store](db); s != nil {
-		return s
-	}
-
-	return &store{Store: basestore.NewWithHandle(db.Handle()), logger: db.Logger()}
+	return (&store{logger: db.Logger()}).With(db)
 }
 
 const (
@@ -258,10 +253,9 @@ func (s *store) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.Pag
 
 func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error {
 	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(&store{
+		return f((&store{
 			logger: s.logger,
-			Store:  tx,
-		})
+		}).With(tx))
 	})
 }
 

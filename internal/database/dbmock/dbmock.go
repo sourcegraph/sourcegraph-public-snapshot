@@ -20,27 +20,7 @@ func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx database.DB) er
 	})
 }
 
-// Get fetches the mocked interface T from the provided DB.
-// If no mocked interface is found, nil is returned.
-func Get[T basestore.ShareableStore](db database.DB) (t T) {
-	switch v := db.(type) {
-	case *mockedDB:
-		if t, ok := v.mockedStore.(T); ok {
-			return t
-		}
-		return Get[T](v.DB)
-	}
-	return t
-}
-
 // New embeds each mock option in the provided DB.
-func New(db database.DB, mockStores ...basestore.ShareableStore) database.DB {
-	for _, mockStore := range mockStores {
-		db = &mockedDB{
-			DB:          db,
-			mockedStore: mockStore,
-		}
-	}
-
-	return db
+func New(db database.DB, options ...basestore.MockOption) database.DB {
+	return database.NewDBWith(db.Logger(), basestore.NewMockableShareableStore(db, options...))
 }
