@@ -524,6 +524,32 @@ func TestGetCompletionsConfig(t *testing.T) {
 			},
 		},
 		{
+			name: "Azure OpenAI completions completions",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schema.Completions{
+					Provider:        "azure-openai",
+					AccessToken:     "asdf",
+					Endpoint:        "https://acmecorp.openai.azure.com",
+					ChatModel:       "gpt4-deployment",
+					FastChatModel:   "gpt35-turbo-deployment",
+					CompletionModel: "gpt35-turbo-deployment",
+				},
+			},
+			wantConfig: &conftypes.CompletionsConfig{
+				ChatModel:                "gpt4-deployment",
+				ChatModelMaxTokens:       8000,
+				FastChatModel:            "gpt35-turbo-deployment",
+				FastChatModelMaxTokens:   8000,
+				CompletionModel:          "gpt35-turbo-deployment",
+				CompletionModelMaxTokens: 8000,
+				AccessToken:              "asdf",
+				Provider:                 "azure-openai",
+				Endpoint:                 "https://acmecorp.openai.azure.com",
+			},
+		},
+		{
 			name: "zero-config cody gateway completions without license key",
 			siteConfig: schema.SiteConfiguration{
 				CodyEnabled: pointers.Ptr(true),
@@ -688,6 +714,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 		FileFilters: conftypes.EmbeddingsFileFilters{
 			MaxFileSizeBytes: 1000000,
 		},
+		ExcludeChunkOnError: true,
 	}
 
 	testCases := []struct {
@@ -793,6 +820,41 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 					IncludedFilePathPatterns: []string{"*.go"},
 					ExcludedFilePathPatterns: []string{"*.java"},
 				},
+				ExcludeChunkOnError: true,
+			},
+		},
+		{
+			name: "Disable exclude failed chunk during indexing",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider: "sourcegraph",
+					FileFilters: &schema.FileFilters{
+						MaxFileSizeBytes:         200,
+						IncludedFilePathPatterns: []string{"*.go"},
+						ExcludedFilePathPatterns: []string{"*.java"},
+					},
+					ExcludeChunkOnError: pointers.Ptr(false),
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegraph",
+				AccessToken:                licenseAccessToken,
+				Model:                      "openai/text-embedding-ada-002",
+				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes:         200,
+					IncludedFilePathPatterns: []string{"*.go"},
+					ExcludedFilePathPatterns: []string{"*.java"},
+				},
+				ExcludeChunkOnError: false,
 			},
 		},
 		{
@@ -818,6 +880,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -855,6 +918,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -867,6 +931,36 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				},
 			},
 			wantDisabled: true,
+		},
+		{
+			name: "Azure OpenAI provider",
+			siteConfig: schema.SiteConfiguration{
+				CodyEnabled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Embeddings: &schema.Embeddings{
+					Provider:    "azure-openai",
+					AccessToken: "asdf",
+					Endpoint:    "https://acmecorp.openai.azure.com",
+					Dimensions:  1536,
+					Model:       "the-model",
+				},
+			},
+			wantConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "azure-openai",
+				AccessToken:                "asdf",
+				Model:                      "the-model",
+				Endpoint:                   "https://acmecorp.openai.azure.com",
+				Dimensions:                 1536,
+				Incremental:                true,
+				MinimumInterval:            24 * time.Hour,
+				MaxCodeEmbeddingsPerRepo:   3_072_000,
+				MaxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				FileFilters: conftypes.EmbeddingsFileFilters{
+					MaxFileSizeBytes: 1000000,
+				},
+				ExcludeChunkOnError: true,
+			},
 		},
 		{
 			name:       "App default config",
@@ -891,6 +985,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -929,6 +1024,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{
@@ -955,6 +1051,7 @@ func TestGetEmbeddingsConfig(t *testing.T) {
 				FileFilters: conftypes.EmbeddingsFileFilters{
 					MaxFileSizeBytes: 1000000,
 				},
+				ExcludeChunkOnError: true,
 			},
 		},
 		{

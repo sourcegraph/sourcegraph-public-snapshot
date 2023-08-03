@@ -56,6 +56,8 @@ export interface SiteAdminAreaRouteContext
 
     /** This property is only used by {@link SiteAdminOverviewPage}. */
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<{}>>[]
+
+    codeInsightsEnabled: boolean
 }
 
 export interface SiteAdminAreaRoute extends RouteV6Descriptor<SiteAdminAreaRouteContext> {}
@@ -67,6 +69,7 @@ interface SiteAdminAreaProps extends PlatformContextProps, SettingsCascadeProps,
     authenticatedUser: AuthenticatedUser
     isSourcegraphDotCom: boolean
     isSourcegraphApp: boolean
+    codeInsightsEnabled: boolean
 }
 
 const sourcegraphOperatorSiteAdminMaintenanceBlockItems = new Set([
@@ -130,6 +133,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         site: { __typename: 'Site' as const, id: window.context.siteGQLID },
         overviewComponents: props.overviewComponents,
         telemetryService: props.telemetryService,
+        codeInsightsEnabled: props.codeInsightsEnabled,
     }
 
     return (
@@ -150,6 +154,7 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
                     batchChangesEnabled={props.batchChangesEnabled}
                     batchChangesExecutionEnabled={props.batchChangesExecutionEnabled}
                     batchChangesWebhookLogsEnabled={props.batchChangesWebhookLogsEnabled}
+                    codeInsightsEnabled={props.codeInsightsEnabled}
                 />
                 <div className="flex-bounded">
                     <React.Suspense fallback={<LoadingSpinner className="m-2" />}>

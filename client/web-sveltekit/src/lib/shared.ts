@@ -2,11 +2,18 @@
 
 export type { AbsoluteRepoFile } from '@sourcegraph/shared/src/util/url'
 
-export { parseRepoRevision, buildSearchURLQuery, makeRepoURI } from '@sourcegraph/shared/src/util/url'
+export {
+    parseRepoRevision,
+    parseQueryAndHash,
+    buildSearchURLQuery,
+    makeRepoURI,
+} from '@sourcegraph/shared/src/util/url'
 export {
     isCloneInProgressErrorLike,
     isRepoSeeOtherErrorLike,
     isRepoNotFoundErrorLike,
+    isRevisionNotFoundErrorLike,
+    CloneInProgressError,
 } from '@sourcegraph/shared/src/backend/errors'
 export { SectionID as SearchSidebarSectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 export { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
@@ -62,7 +69,7 @@ export { type FetchFileParameters, fetchHighlightedFileLineRanges } from '@sourc
  */
 export function displayRepoName(repoName: string): string {
     let parts = repoName.split('/')
-    if (parts.length >= 3 && parts[0].includes('.')) {
+    if (parts.length > 0 && parts[0].includes('.')) {
         parts = parts.slice(1) // remove hostname from repo name (reduce visual noise)
     }
     return parts.join('/')

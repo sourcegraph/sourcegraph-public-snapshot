@@ -16,8 +16,8 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
 	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -88,7 +88,7 @@ func (c *Client) RepoUpdateSchedulerInfo(
 	ctx context.Context,
 	args protocol.RepoUpdateSchedulerInfoArgs,
 ) (result *protocol.RepoUpdateSchedulerInfoResult, err error) {
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -136,7 +136,7 @@ func (c *Client) RepoLookup(
 		tr.EndWithErr(&err)
 	}()
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -207,7 +207,7 @@ func (c *Client) EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*pro
 		return MockEnqueueRepoUpdate(ctx, repo)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -271,7 +271,7 @@ func (c *Client) EnqueueChangesetSync(ctx context.Context, ids []int64) error {
 		return MockEnqueueChangesetSync(ctx, ids)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return err
@@ -316,7 +316,7 @@ func (c *Client) SyncExternalService(ctx context.Context, externalServiceID int6
 		return MockSyncExternalService(ctx, externalServiceID)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -363,7 +363,7 @@ func (c *Client) ExternalServiceNamespaces(ctx context.Context, args protocol.Ex
 		return MockExternalServiceNamespaces(ctx, args)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err
@@ -399,7 +399,7 @@ func (c *Client) ExternalServiceRepositories(ctx context.Context, args protocol.
 		return MockExternalServiceRepositories(ctx, args)
 	}
 
-	if internalgrpc.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnabled(ctx) {
 		client, err := c.grpcClient()
 		if err != nil {
 			return nil, err

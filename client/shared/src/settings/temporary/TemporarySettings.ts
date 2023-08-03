@@ -75,6 +75,7 @@ export interface TemporarySettingsSchema {
     'cody.survey.submitted': boolean
     'app.codyStandalonePage.selectedRepo': string
     'cody.contextCallout.dismissed': boolean
+    'admin.hasDismissedCodeHostPrivacyWarning': boolean
     'simple.search.toggle': boolean
 }
 

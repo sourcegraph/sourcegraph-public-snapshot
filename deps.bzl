@@ -3211,10 +3211,6 @@ def go_dependencies():
     )
     go_repository(
         name = "com_github_googlecloudplatform_opentelemetry_operations_go_exporter_metric",
-        build_file_proto_mode = "disable_global",
-        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric",
-        sum = "h1:VahL5SjDdCas8mMKARolw2vvBsuLc5oV7XNSbxeMQP8=",
-        version = "v0.41.0",
         build_directives = [
             # @go_googleapis is the modern version of @org_golang_google_genproto
             # use @go_googleapis to avoid dependency conflicts between the two
@@ -3224,6 +3220,10 @@ def go_dependencies():
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/label @go_googleapis//google/api:label_go_proto",  # keep
             "gazelle:resolve go google.golang.org/genproto/googleapis/api/monitoredres @go_googleapis//google/api:monitoredres_go_proto",  # keep
         ],
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/GoogleCloudPlatform/opentelemetry-operations-go/exporter/metric",
+        sum = "h1:VahL5SjDdCas8mMKARolw2vvBsuLc5oV7XNSbxeMQP8=",
+        version = "v0.41.0",
     )
 
     go_repository(
@@ -5689,6 +5689,13 @@ def go_dependencies():
         sum = "h1:d+Bc7a5rLufV/sSk/8dngufqelfh6jnri85riMAaF/M=",
         version = "v0.0.0-20170810143723-de5bf2ad4578",
     )
+    go_repository(
+        name = "com_github_qdrant_go_client",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/qdrant/go-client",
+        sum = "h1:LckV8C0TtMPDqWPd5g5sIa9zELQMelRlcZk9ANSZ2H8=",
+        version = "v1.3.0",
+    )
 
     go_repository(
         name = "com_github_quasoft_websspi",
@@ -6266,8 +6273,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:TJsG99aZ8wBa4yQ7znUrhi2QpbgEDPrfSmwlMohGt+8=",
-        version = "v0.0.0-20230719140114-b7e5070bfb56",
+        sum = "h1:RPuTlekup6EQ41utARp+UiR5kc6smGMPQTmor0Rw84w=",
+        version = "v0.0.0-20230801152445-d57235362dca",
     )
 
     go_repository(

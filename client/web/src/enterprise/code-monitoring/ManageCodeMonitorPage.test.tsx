@@ -92,7 +92,7 @@ describe('ManageCodeMonitorPage', () => {
             props.updateCodeMonitor,
             {
                 id: 'test-monitor-id',
-                update: { namespace: 'userID', description: 'Test updated', enabled: true },
+                update: { namespace: 'test-id', description: 'Test updated', enabled: true },
             },
             { id: 'test-0', update: { query: 'test' } },
             [

@@ -8,7 +8,7 @@ Wolfi base images are built _from scratch_ using [apko](https://github.com/chain
 
 Base images are defined using an apko YAML configuration file, found under [wolfi-images](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/tree/wolfi-images).
 
-These configuration files can be processed with apko, which will generate a base image. You can build these locally using [`local-build.sh <image-name>.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/local-build.sh).
+These configuration files can be processed with apko, which will generate a base image. You can build these locally using `sg wolfi image <image-name>`.
 
 ## How to...
 
@@ -28,7 +28,7 @@ This is currently a two-step process, but will be automated in the future:
 To modify a base image to add packages, users, or directories:
 
 - Update its apko YAML configuration file, which can be found under [`wolfi-images/`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/)
-- Build and testing it locally using [`local-build.sh <image-name>.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/local-build.sh).
+- Build and testing it locally using `sg wolfi image <image-name>`.
   - You can use this local image in your Dockerfiles, or exec into it directly.
 - Once happy with changes, create a PR and merge to main. Buildkite will detect the changes and rebuild the base image.
 - Update the relevant Dockerfiles with the new base image's `sha256` hash, commit the change, and merge to main.
@@ -44,7 +44,7 @@ Otherwise, you can create a new base image configuration file:
 - Add any required packages, users, directory structure, or metadata.
   - See [apko file format](https://github.com/chainguard-dev/apko/blob/main/docs/apko_file.md) for a full list of supported configuration.
   - See the other images under [`wolfi-images/`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/) and [`chainguard-images/images`](https://github.com/chainguard-images/images/tree/main/images) for examples and best practices.
-- Build your image locally with [`local-build.sh <image-name>.yaml`](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/wolfi-images/local-build.sh).
+- Build your image locally with `sg wolfi image <image-name>`.
 - Commit your updated YAML file and merge it to main. Buildkite will build and publish your new image.
 
 Once complete, treat the published image it as a standard base image, and use it in your Dockerfile.

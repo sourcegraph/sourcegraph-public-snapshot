@@ -7,6 +7,7 @@ If you haven't yet enabled Cody for your Sourcegraph instance or installed the V
 - [Enabling Cody for Sourcegraph Enterprise customers](explanations/enabling_cody_enterprise.md)
 - [Enabling Cody for Sourcegraph.com users](explanations/enabling_cody.md)
 - [Installing Cody for VS Code](explanations/installing_vs_code.md)
+- [Installing Cody for Jetbrains](explanations/installing_jetbrains.md)
 - [Installing the Cody app](../app/index.md)
 
 ## Introduction
