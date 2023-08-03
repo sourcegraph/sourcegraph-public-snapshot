@@ -49,6 +49,22 @@ func TestAttribution(t *testing.T) {
 	if d := cmp.Diff(want, result); d != "" {
 		t.Fatalf("unexpected (-want, +got):\n%s", d)
 	}
+
+	// With a limit of one we expect one of local or dotcom, depending on
+	// which one returns first.
+	result, err = svc.SnippetAttribution(ctx, "test", 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !result.LimitHit {
+		t.Fatal("we expected the limit to be hit")
+	}
+	if len(result.RepositoryNames) != 1 {
+		t.Fatalf("we wanted one result, got %v", result.RepositoryNames)
+	}
+	if name := result.RepositoryNames[0]; name != "localrepo-1" && name != "dotcomrepo-1" {
+		t.Fatalf("we wanted the first result, got %v", result.RepositoryNames)
+	}
 }
 
 func genRepoNames(prefix string, count int) []string {
@@ -106,7 +122,7 @@ func mockDotComClient(t testing.TB, repoNames []string) dotcom.Client {
 			},
 		}
 
-		return nil
+		return context.Cause(ctx)
 	})
 }
 

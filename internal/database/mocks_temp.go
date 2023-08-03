@@ -13675,6 +13675,9 @@ type MockDB struct {
 	// object controlling the behavior of the method
 	// BitbucketProjectPermissions.
 	BitbucketProjectPermissionsFunc *DBBitbucketProjectPermissionsFunc
+	// CodeHostsFunc is an instance of a mock function object controlling
+	// the behavior of the method CodeHosts.
+	CodeHostsFunc *DBCodeHostsFunc
 	// CodeMonitorsFunc is an instance of a mock function object controlling
 	// the behavior of the method CodeMonitors.
 	CodeMonitorsFunc *DBCodeMonitorsFunc
@@ -13883,6 +13886,11 @@ func NewMockDB() *MockDB {
 		},
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: func() (r0 BitbucketProjectPermissionsStore) {
+				return
+			},
+		},
+		CodeHostsFunc: &DBCodeHostsFunc{
+			defaultHook: func() (r0 CodeHostStore) {
 				return
 			},
 		},
@@ -14213,6 +14221,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.BitbucketProjectPermissions")
 			},
 		},
+		CodeHostsFunc: &DBCodeHostsFunc{
+			defaultHook: func() CodeHostStore {
+				panic("unexpected invocation of MockDB.CodeHosts")
+			},
+		},
 		CodeMonitorsFunc: &DBCodeMonitorsFunc{
 			defaultHook: func() CodeMonitorStore {
 				panic("unexpected invocation of MockDB.CodeMonitors")
@@ -14527,6 +14540,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: i.BitbucketProjectPermissions,
+		},
+		CodeHostsFunc: &DBCodeHostsFunc{
+			defaultHook: i.CodeHosts,
 		},
 		CodeMonitorsFunc: &DBCodeMonitorsFunc{
 			defaultHook: i.CodeMonitors,
@@ -15295,6 +15311,104 @@ func (c DBBitbucketProjectPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBBitbucketProjectPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBCodeHostsFunc describes the behavior when the CodeHosts method of the
+// parent MockDB instance is invoked.
+type DBCodeHostsFunc struct {
+	defaultHook func() CodeHostStore
+	hooks       []func() CodeHostStore
+	history     []DBCodeHostsFuncCall
+	mutex       sync.Mutex
+}
+
+// CodeHosts delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) CodeHosts() CodeHostStore {
+	r0 := m.CodeHostsFunc.nextHook()()
+	m.CodeHostsFunc.appendCall(DBCodeHostsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CodeHosts method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBCodeHostsFunc) SetDefaultHook(hook func() CodeHostStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CodeHosts method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBCodeHostsFunc) PushHook(hook func() CodeHostStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBCodeHostsFunc) SetDefaultReturn(r0 CodeHostStore) {
+	f.SetDefaultHook(func() CodeHostStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBCodeHostsFunc) PushReturn(r0 CodeHostStore) {
+	f.PushHook(func() CodeHostStore {
+		return r0
+	})
+}
+
+func (f *DBCodeHostsFunc) nextHook() func() CodeHostStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBCodeHostsFunc) appendCall(r0 DBCodeHostsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBCodeHostsFuncCall objects describing the
+// invocations of this function.
+func (f *DBCodeHostsFunc) History() []DBCodeHostsFuncCall {
+	f.mutex.Lock()
+	history := make([]DBCodeHostsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBCodeHostsFuncCall is an object that describes an invocation of method
+// CodeHosts on an instance of MockDB.
+type DBCodeHostsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 CodeHostStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBCodeHostsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBCodeHostsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

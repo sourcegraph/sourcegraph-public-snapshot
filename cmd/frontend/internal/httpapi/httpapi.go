@@ -238,14 +238,11 @@ func RegisterInternalServices(
 
 	proto.RegisterZoektConfigurationServiceServer(s, &searchIndexerGRPCServer{server: indexer})
 
-	m.Get(apirouter.ExternalURL).Handler(trace.Route(handler(serveExternalURL)))
-	m.Get(apirouter.SendEmail).Handler(trace.Route(handler(serveSendEmail)))
 	gitService := &gitServiceHandler{
 		Gitserver: gsClient,
 	}
 	m.Get(apirouter.GitInfoRefs).Handler(trace.Route(handler(gitService.serveInfoRefs())))
 	m.Get(apirouter.GitUploadPack).Handler(trace.Route(handler(gitService.serveGitUploadPack())))
-	m.Get(apirouter.Telemetry).Handler(trace.Route(telemetryHandler(db)))
 	m.Get(apirouter.GraphQL).Handler(trace.Route(handler(serveGraphQL(logger, schema, rateLimitWatcher, true))))
 	m.Get(apirouter.Configuration).Handler(trace.Route(handler(serveConfiguration)))
 	m.Path("/ping").Methods("GET").Name("ping").HandlerFunc(handlePing)

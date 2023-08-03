@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -36,14 +35,6 @@ func serveExternalURL(w http.ResponseWriter, _ *http.Request) error {
 func decodeSendEmail(r *http.Request) (txtypes.InternalAPIMessage, error) {
 	var msg txtypes.InternalAPIMessage
 	return msg, json.NewDecoder(r.Body).Decode(&msg)
-}
-
-func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
-	msg, err := decodeSendEmail(r)
-	if err != nil {
-		return errors.Wrap(err, "decode request")
-	}
-	return txemail.Send(r.Context(), msg.Source, msg.Message)
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the
