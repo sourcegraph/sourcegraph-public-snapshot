@@ -672,7 +672,15 @@ type partialFailureEmbeddingsClient struct {
 	failedAttempts map[int]struct{}
 }
 
-func (c *partialFailureEmbeddingsClient) GetEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
+func (c *partialFailureEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, []string{query})
+}
+
+func (c *partialFailureEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, documents)
+}
+
+func (c *partialFailureEmbeddingsClient) getEmbeddings(_ context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	dimensions, err := c.GetDimensions()
 	if err != nil {
 		return nil, err
