@@ -8,15 +8,16 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/stretchr/testify/require"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 )
 
 func TestOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
 		client := NewClient(http.DefaultClient, &conftypes.EmbeddingsConfig{})
 		invalidTexts := []string{"a", ""} // empty string is invalid
-		_, err := client.GetEmbeddings(context.Background(), invalidTexts)
+		_, err := client.GetDocumentEmbeddings(context.Background(), invalidTexts)
 		require.ErrorContains(t, err, "empty string")
 	})
 
@@ -67,7 +68,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b"})
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b"})
 		require.NoError(t, err)
 		var expected []float32
 		{
@@ -123,7 +124,7 @@ func TestOpenAI(t *testing.T) {
 		})
 
 		client := NewClient(s.Client(), &conftypes.EmbeddingsConfig{})
-		resp, err := client.GetEmbeddings(context.Background(), []string{"a", "b", "c"})
+		resp, err := client.GetDocumentEmbeddings(context.Background(), []string{"a", "b", "c"})
 		require.NoError(t, err)
 		var expected []float32
 		{
