@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/mockstore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -75,7 +76,7 @@ func (o *FilterArgs) SQL() []*sqlf.Query {
 //
 // For a detailed overview of the schema, see schema.md.
 type Store interface {
-	basestore.MockableStore[Store]
+	mockstore.MockableStore[Store]
 	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
@@ -87,7 +88,7 @@ type Store interface {
 }
 
 type store struct {
-	*basestore.MockStore[Store]
+	*mockstore.MockStore[Store]
 	logger log.Logger
 }
 

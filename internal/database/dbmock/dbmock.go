@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/mockstore"
 )
 
 type mockedDB struct {
@@ -21,6 +22,6 @@ func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx database.DB) er
 }
 
 // New embeds each mock option in the provided DB.
-func New(db database.DB, options ...basestore.MockOption) database.DB {
-	return database.NewDBWith(db.Logger(), basestore.NewMockableShareableStore(db, options...))
+func New(db database.DB, options ...mockstore.MockOption) database.DB {
+	return database.NewDBWith(db.Logger(), mockstore.NewMockableShareableStore(db, options...))
 }

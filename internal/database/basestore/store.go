@@ -43,59 +43,6 @@ type Store struct {
 	handle TransactableHandle
 }
 
-type MockStore[T ShareableStore] struct {
-	*Store
-}
-
-type MockableStore[T ShareableStore] interface {
-	ShareableStore
-	With(ShareableStore) T
-}
-
-func (ms *MockStore[T]) With(other ShareableStore) T {
-	if s := get[T](other); s != nil {
-		return *s
-	}
-
-	return ms.With(other)
-}
-
-type mockedStore struct {
-	ShareableStore
-	mockedShareableStore ShareableStore
-}
-
-// Get fetches the mocked interface T from the provided DB.
-// If no mocked interface is found, nil is returned.
-func get[T ShareableStore](s ShareableStore) *T {
-	switch v := s.(type) {
-	case *mockedStore:
-		if t, ok := v.mockedShareableStore.(T); ok {
-			return &t
-		}
-		return get[T](v.ShareableStore)
-	}
-	return nil
-}
-
-func With[K ShareableStore, T MockableStore[K]](ms T) MockOption {
-	return func(store ShareableStore) ShareableStore {
-		return &mockedStore{
-			ShareableStore:       store,
-			mockedShareableStore: ms,
-		}
-	}
-}
-
-type MockOption func(ShareableStore) ShareableStore
-
-func NewMockableShareableStore(s ShareableStore, options ...MockOption) ShareableStore {
-	for _, option := range options {
-		s = option(s)
-	}
-
-	return s
-}
 
 // ShareableStore is implemented by stores to explicitly allow distinct store instances
 // to reference the store's underlying handle. This is used to share transactions between
