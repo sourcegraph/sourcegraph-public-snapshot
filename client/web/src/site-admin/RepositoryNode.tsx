@@ -277,7 +277,6 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
                                 </MenuItem>
                                 <MenuItem
                                     as={Button}
-                                    disabled={!repoCloned(node)}
                                     onSelect={() => navigate(`/${node.name}/-/settings`)}
                                     className="p-2"
                                 >
