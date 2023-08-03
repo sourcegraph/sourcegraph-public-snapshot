@@ -16,7 +16,7 @@ import {
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { useMutation } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
     Alert,
