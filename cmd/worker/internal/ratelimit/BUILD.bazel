@@ -28,6 +28,10 @@ go_test(
     name = "ratelimit_test",
     srcs = ["handler_test.go"],
     embed = [":ratelimit"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/conf",
         "//internal/database",
@@ -39,9 +43,5 @@ go_test(
         "@com_github_gomodule_redigo//redis",
         "@com_github_stretchr_testify//assert",
         "@com_github_stretchr_testify//require",
-    ],
-    tags = [
-        # Test requires localhost database
-        "requires-network",
     ],
 )
