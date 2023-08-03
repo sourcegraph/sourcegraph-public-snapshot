@@ -302,7 +302,7 @@ func TestServer_poolDir(t *testing.T) {
 	require.Equal(t, got, want)
 }
 
-func TestServer_maybeGetDeduplicatedCloneOptions(t *testing.T) {
+func TestServer_getDeduplicatedCloneOptions(t *testing.T) {
 	ctx := context.Background()
 	reposDir := t.TempDir()
 	remote := t.TempDir()
@@ -314,10 +314,14 @@ func TestServer_maybeGetDeduplicatedCloneOptions(t *testing.T) {
 	gs := database.NewMockGitserverRepoStore()
 	db.GitserverReposFunc.SetDefaultReturn(gs)
 
+	dedupeNoneOpts := deduplicatedCloneOptions{
+		dedupeCloneType: dedupeNone,
+	}
+
 	t.Run("empty deduplicateForks config", func(t *testing.T) {
 		s.DeduplicatedForksSet = types.NewEmptyRepoURISet()
-		got := s.maybeGetDeduplicatedCloneOptions(ctx, &types.Repo{Name: repoName})
-		require.Nil(t, got)
+		got := s.getDeduplicatedCloneOptions(ctx, &types.Repo{Name: repoName})
+		require.Equal(t, dedupeNoneOpts, got)
 	})
 
 	t.Run("repo name in deduplicateForks config", func(t *testing.T) {
@@ -325,15 +329,12 @@ func TestServer_maybeGetDeduplicatedCloneOptions(t *testing.T) {
 			string(repoName): {}},
 		)
 
-		got := s.maybeGetDeduplicatedCloneOptions(ctx, &types.Repo{Name: repoName, URI: string(repoName)})
-		require.NotNil(t, got)
-
-		want := &deduplicatedCloneOptions{
+		got := s.getDeduplicatedCloneOptions(ctx, &types.Repo{Name: repoName, URI: string(repoName)})
+		want := deduplicatedCloneOptions{
 			dedupeCloneType: dedupeSource,
 			poolDir:         s.poolDir(repoName),
 			poolRepoName:    repoName,
 		}
-
 		require.Equal(t, want, got)
 	})
 
@@ -351,22 +352,19 @@ func TestServer_maybeGetDeduplicatedCloneOptions(t *testing.T) {
 
 		t.Run("pool repo relation does not exist", func(t *testing.T) {
 			gs.GetPoolRepoNameFunc.SetDefaultReturn(repoName, false, nil)
-			got := s.maybeGetDeduplicatedCloneOptions(ctx, forkedRepo)
-			require.Nil(t, got)
+			got := s.getDeduplicatedCloneOptions(ctx, forkedRepo)
+			require.Equal(t, dedupeNoneOpts, got)
 		})
 
 		t.Run("pool repo relation exists", func(t *testing.T) {
 			gs.GetPoolRepoNameFunc.SetDefaultReturn(repoName, true, nil)
 
-			got := s.maybeGetDeduplicatedCloneOptions(ctx, forkedRepo)
-			require.NotNil(t, got)
-
-			want := &deduplicatedCloneOptions{
+			got := s.getDeduplicatedCloneOptions(ctx, forkedRepo)
+			want := deduplicatedCloneOptions{
 				dedupeCloneType: dedupeFork,
 				poolDir:         s.poolDir(repoName),
 				poolRepoName:    repoName,
 			}
-
 			require.Equal(t, want, got)
 		})
 	})
@@ -2176,50 +2174,174 @@ func TestIgnorePath(t *testing.T) {
 	}
 }
 
-func TestCloneOptions_DeepCopy(t *testing.T) {
-	t.Run("nil dedupeoptions", func(t *testing.T) {
-		old := &cloneOptions{}
-		new := old.DeepCopy()
-
-		if old == new {
-			t.Error("address should be different")
-		}
-
-		require.Equal(t, *old, *new)
+func TestCloneOptions_IsDeduplicateableClone(t *testing.T) {
+	t.Run("nil clone optinos", func(t *testing.T) {
+		var c *cloneOptions
+		require.Nil(t, c)
+		require.False(t, c.IsDeduplicateableClone())
 	})
 
-	t.Run("non-nil dedupeoptions", func(t *testing.T) {
-		old := &cloneOptions{
-			DeduplicatedCloneOptions: &deduplicatedCloneOptions{},
-		}
-		new := old.DeepCopy()
+	testCases := []struct {
+		name string
+		opts *cloneOptions
+		want bool
+	}{
+		{
+			name: "deduplicatedCloneOptions is nil",
+			opts: &cloneOptions{},
+			want: false,
+		},
+		{
+			name: "dedupeNone",
+			opts: &cloneOptions{
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeNone,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeSource",
+			opts: &cloneOptions{
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeSource,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "dedupeFork",
+			opts: &cloneOptions{
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeFork,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "dedupe garbage type",
+			opts: &cloneOptions{
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeType(10),
+				},
+			},
+			want: false,
+		},
+	}
 
-		if old == new {
-			t.Error("address should be different")
-		}
-
-		if old.DeduplicatedCloneOptions == new.DeduplicatedCloneOptions {
-			t.Error("address of DeduplicatedCloneOptions attribute should be different")
-		}
-
-		require.Equal(t, *old, *new)
-	})
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.opts.IsDeduplicateableClone()
+			require.Equal(t, tc.want, got)
+		})
+	}
 }
 
-func TestDeduplicatedCloneOptions_DeepCopy(t *testing.T) {
-	old := &deduplicatedCloneOptions{
-		dedupeCloneType: dedupeSource,
-		poolDir:         common.GitDir("foo"),
-		poolRepoName:    api.RepoName("foo"),
+func TestCloneOptions_IsPoolDirOverwritable(t *testing.T) {
+	t.Run("nil clone optinos", func(t *testing.T) {
+		var c *cloneOptions
+		require.Nil(t, c)
+		require.True(t, c.IsPoolDirOverwritable())
+	})
+
+	testCases := []struct {
+		name string
+		opts *cloneOptions
+		want bool
+	}{
+		{
+			name: "deduplicatedCloneOptions is nil",
+			opts: &cloneOptions{},
+			want: true,
+		},
+		{
+			name: "dedupeNone, Overwrite false",
+			opts: &cloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeNone,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeNone, Overwrite true",
+			opts: &cloneOptions{
+				Overwrite: true,
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeNone,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeSource, Overwrite false",
+			opts: &cloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeSource,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeSource, Overwrite true",
+			opts: &cloneOptions{
+				Overwrite: true,
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeSource,
+				},
+			},
+			want: true,
+		},
+		{
+			name: "dedupeFork, Overwrite false",
+			opts: &cloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeFork,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupeFork, Overwrite true",
+			opts: &cloneOptions{
+				Overwrite: true,
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeFork,
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupe garbage type, Overwrite false",
+			opts: &cloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeType(10),
+				},
+			},
+			want: false,
+		},
+		{
+			name: "dedupe garbage type, Overwrite true",
+			opts: &cloneOptions{
+				Overwrite: false,
+				DeduplicatedCloneOptions: &deduplicatedCloneOptions{
+					dedupeCloneType: dedupeType(10),
+				},
+			},
+			want: false,
+		},
 	}
 
-	new := old.DeepCopy()
-
-	if old == new {
-		t.Error("address should be different")
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			got := tc.opts.IsPoolDirOverwritable()
+			require.Equal(t, tc.want, got)
+		})
 	}
-
-	require.Equal(t, *old, *new)
 }
 
 func TestMain(m *testing.M) {
