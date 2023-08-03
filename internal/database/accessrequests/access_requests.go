@@ -76,7 +76,7 @@ func (o *FilterArgs) SQL() []*sqlf.Query {
 //
 // For a detailed overview of the schema, see schema.md.
 type Store interface {
-	mockstore.MockableStore[Store]
+	basestore.ShareableStore
 	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
@@ -88,22 +88,22 @@ type Store interface {
 }
 
 type store struct {
-	*mockstore.MockStore
+	*mockstore.MockableStore
 	logger log.Logger
 }
 
-func (s *store) With(other basestore.ShareableStore) Store {
-	return s.NewStoreFunc().With(other)
+func (mockStore *MockStore) Mock() mockstore.MockedStore {
+	return mockstore.NewnewMockStore(mockStore)
 }
 
-func (s *store) NewStoreFunc() mockstore.NewStoreFunc[Store] {
+func (s *store) WithStoreFunc() mockstore.NewStoreFunc[Store] {
 	return func(other basestore.ShareableStore) Store {
-		return &store{MockStore: s.MockStore.With(other), logger: s.logger}
+		return &store{MockableStore: s.MockableStore.With(other), logger: s.logger}
 	}
 }
 
-func NewStore(db database.DB) Store {
-	return &store{logger: db.Logger()}
+func NewStoreWithDB(db database.DB) Store {
+	return (&store{logger: db.Logger()}).WithStoreFunc().With(db)
 }
 
 const (
@@ -266,7 +266,7 @@ func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error 
 	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
 		return f((&store{
 			logger: s.logger,
-		}).With(tx))
+		}).WithStoreFunc().With(tx))
 	})
 }
 

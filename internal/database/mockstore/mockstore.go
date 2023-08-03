@@ -2,12 +2,23 @@ package mockstore
 
 import "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
-type MockStore struct {
+type MockStoreee struct {
+	basestore.ShareableStore
+}
+
+type MockableStore struct {
 	*basestore.Store
 }
 
-func (ms *MockStore) With(other basestore.ShareableStore) *MockStore {
-	return &MockStore{Store: ms.Store.With(other)}
+func (ms *MockableStore) With(other basestore.ShareableStore) *MockableStore {
+	return &MockableStore{basestore.NewWithHandle(other.Handle())}
+}
+
+func (ms *MockStoreee) ApplyMock(other basestore.ShareableStore) basestore.ShareableStore {
+	return &mockedStore{
+		ShareableStore:       other,
+		mockedShareableStore: ms,
+	}
 }
 
 type NewStoreFunc[T basestore.ShareableStore] func(basestore.ShareableStore) T
@@ -20,21 +31,17 @@ func (f NewStoreFunc[T]) With(other basestore.ShareableStore) T {
 	return f(other)
 }
 
-func NewWithHandle(handle basestore.TransactableHandle) *MockStore {
-	return &MockStore{
-		Store: basestore.NewWithHandle(handle),
-	}
+type MockStore interface {
+	Mock() MockedStore
 }
 
-type MockableStore[T basestore.ShareableStore] interface {
+type MockedStore interface {
 	basestore.ShareableStore
-	NewStoreFunc() NewStoreFunc[T]
+	ApplyMock(basestore.ShareableStore) basestore.ShareableStore
 }
 
-func (ms *MockStore) NewStoreFunc() NewStoreFunc[*MockStore] {
-	return func(other basestore.ShareableStore) *MockStore {
-		return &MockStore{Store: basestore.NewWithHandle(other.Handle())}
-	}
+func NewnewMockStore(store basestore.ShareableStore) MockedStore {
+	return &MockStoreee{store}
 }
 
 type mockedStore struct {
@@ -55,7 +62,7 @@ func get[T basestore.ShareableStore](s basestore.ShareableStore) *T {
 	return nil
 }
 
-func With[K basestore.ShareableStore, T MockableStore[K]](ms T) MockOption {
+func With[T MockedStore](ms T) MockOption {
 	return func(store basestore.ShareableStore) basestore.ShareableStore {
 		return &mockedStore{
 			ShareableStore:       store,
@@ -66,9 +73,9 @@ func With[K basestore.ShareableStore, T MockableStore[K]](ms T) MockOption {
 
 type MockOption func(basestore.ShareableStore) basestore.ShareableStore
 
-func NewMockableShareableStore(s basestore.ShareableStore, options ...MockOption) basestore.ShareableStore {
-	for _, option := range options {
-		s = option(s)
+func NewMockableShareableStore(s basestore.ShareableStore, stores ...MockStore) basestore.ShareableStore {
+	for _, store := range stores {
+		s = store.Mock().ApplyMock(s)
 	}
 
 	return s

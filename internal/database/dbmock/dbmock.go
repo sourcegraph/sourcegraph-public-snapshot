@@ -26,9 +26,9 @@ func (mdb *mockedDB) With(other basestore.ShareableStore) database.DB {
 }
 
 // New embeds each mock option in the provided DB.
-func New(db database.DB, options ...mockstore.MockOption) database.DB {
+func New(db database.DB, stores ...mockstore.MockStore) database.DB {
 	return &mockedDB{
 		DB:          db,
-		mockedStore: mockstore.NewMockableShareableStore(db, options...),
+		mockedStore: mockstore.NewMockableShareableStore(db, stores...),
 	}
 }
