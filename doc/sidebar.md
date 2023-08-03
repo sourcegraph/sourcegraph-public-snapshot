@@ -20,7 +20,6 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Explanations](cody/explanations/index.md)
   - [FAQ](cody/faq.md)
   - [Troubleshooting](cody/troubleshooting.md)
-  - [Code Autocomplete](cody/autocomplete.md)
 - [Cody App (beta)](app/index.md)
 - [Code search](code_search/index.md)
   - [Tutorials](code_search/tutorials/index.md)
