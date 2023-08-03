@@ -174,3 +174,23 @@
 .not-enabled-block {
     background-color: var(--body-bg);
 }
+
+.getting-started {
+    &-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+    }
+
+    &-content {
+        padding: 0 4rem;
+        width: 100%;
+        display: flex;
+        justify-content: space-around;
+        max-height: 400px;
+    }
+
+    &-column {
+    }
+}
