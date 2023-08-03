@@ -1,0 +1,9 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "mockstore",
+    srcs = ["mockstore.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/mockstore",
+    visibility = ["//:__subpackages__"],
+    deps = ["//internal/database/basestore"],
+)

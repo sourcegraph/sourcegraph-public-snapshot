@@ -8,5 +8,6 @@ go_library(
     deps = [
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/mockstore",
     ],
 )

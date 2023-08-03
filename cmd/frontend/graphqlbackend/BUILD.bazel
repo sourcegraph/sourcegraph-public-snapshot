@@ -475,6 +475,7 @@ go_test(
         "//internal/database/dbtest",
         "//internal/database/dbutil",
         "//internal/database/fakedb",
+        "//internal/database/mockstore",
         "//internal/encryption",
         "//internal/extsvc",
         "//internal/extsvc/gerrit",
