@@ -21,6 +21,8 @@ Learn and understand what features Cody offers to ensure a streamlined code AI.
 
 Cody is your AI-powered coding assistant that understands your entire codebase inside out. It goes beyond other AI code chatbots, aligning perfectly with your project's code conventions and architecture. You can chat with Cody right within your code editor or through the Sourcegraph sidebar.
 
+![Example of Cody inline chat ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody_inline_June23-sm.gif)
+
 Cody tells you which code files it reads to generate its response. In case of a wrong answer, please share feedback so we can improve it.
 
 Examples of questions Cody can handle:
@@ -36,13 +38,7 @@ Examples of questions Cody can handle:
 
 ## Fix code inline
 
-Cody can help you make interactive edits and refactor code by following natural-language instructions. To do so, add natural-language instructions to your code, select the relevant code, and run:
-
-```bash
- Cody: Fixup(Ctrl+Opt+/) — for macOS
-
- Cody: Fixup(Ctrl+Alt+/) — for Windows
-```
+Cody can help you make interactive edits and refactor code by following natural-language instructions. To do so, select the relevant code, and ask Cody a question or request inline fix with `/fix` or `/touch` commands.
 
 Cody will take it from there and figure out what edits to make.
 
