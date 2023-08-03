@@ -21,7 +21,14 @@ func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx database.DB) er
 	})
 }
 
+func (mdb *mockedDB) With(other basestore.ShareableStore) database.DB {
+	return mdb.DB.With(other)
+}
+
 // New embeds each mock option in the provided DB.
 func New(db database.DB, options ...mockstore.MockOption) database.DB {
-	return database.NewDBWith(db.Logger(), mockstore.NewMockableShareableStore(db, options...))
+	return &mockedDB{
+		DB:          db,
+		mockedStore: mockstore.NewMockableShareableStore(db, options...),
+	}
 }

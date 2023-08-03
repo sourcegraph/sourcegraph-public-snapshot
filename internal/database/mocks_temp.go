@@ -12710,6 +12710,9 @@ type MockDB struct {
 	// WebhooksFunc is an instance of a mock function object controlling the
 	// behavior of the method Webhooks.
 	WebhooksFunc *DBWebhooksFunc
+	// WithFunc is an instance of a mock function object controlling the
+	// behavior of the method With.
+	WithFunc *DBWithFunc
 	// WithTransactFunc is an instance of a mock function object controlling
 	// the behavior of the method WithTransact.
 	WithTransactFunc *DBWithTransactFunc
@@ -13029,6 +13032,11 @@ func NewMockDB() *MockDB {
 		},
 		WebhooksFunc: &DBWebhooksFunc{
 			defaultHook: func(encryption.Key) (r0 WebhookStore) {
+				return
+			},
+		},
+		WithFunc: &DBWithFunc{
+			defaultHook: func(basestore.ShareableStore) (r0 DB) {
 				return
 			},
 		},
@@ -13359,6 +13367,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Webhooks")
 			},
 		},
+		WithFunc: &DBWithFunc{
+			defaultHook: func(basestore.ShareableStore) DB {
+				panic("unexpected invocation of MockDB.With")
+			},
+		},
 		WithTransactFunc: &DBWithTransactFunc{
 			defaultHook: func(context.Context, func(tx DB) error) error {
 				panic("unexpected invocation of MockDB.WithTransact")
@@ -13561,6 +13574,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		WebhooksFunc: &DBWebhooksFunc{
 			defaultHook: i.Webhooks,
+		},
+		WithFunc: &DBWithFunc{
+			defaultHook: i.With,
 		},
 		WithTransactFunc: &DBWithTransactFunc{
 			defaultHook: i.WithTransact,
@@ -19749,6 +19765,107 @@ func (c DBWebhooksFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBWebhooksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBWithFunc describes the behavior when the With method of the parent
+// MockDB instance is invoked.
+type DBWithFunc struct {
+	defaultHook func(basestore.ShareableStore) DB
+	hooks       []func(basestore.ShareableStore) DB
+	history     []DBWithFuncCall
+	mutex       sync.Mutex
+}
+
+// With delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) With(v0 basestore.ShareableStore) DB {
+	r0 := m.WithFunc.nextHook()(v0)
+	m.WithFunc.appendCall(DBWithFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the With method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) DB) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// With method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBWithFunc) PushHook(hook func(basestore.ShareableStore) DB) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBWithFunc) SetDefaultReturn(r0 DB) {
+	f.SetDefaultHook(func(basestore.ShareableStore) DB {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBWithFunc) PushReturn(r0 DB) {
+	f.PushHook(func(basestore.ShareableStore) DB {
+		return r0
+	})
+}
+
+func (f *DBWithFunc) nextHook() func(basestore.ShareableStore) DB {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBWithFunc) appendCall(r0 DBWithFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBWithFuncCall objects describing the
+// invocations of this function.
+func (f *DBWithFunc) History() []DBWithFuncCall {
+	f.mutex.Lock()
+	history := make([]DBWithFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBWithFuncCall is an object that describes an invocation of method With
+// on an instance of MockDB.
+type DBWithFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 basestore.ShareableStore
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 DB
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBWithFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBWithFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

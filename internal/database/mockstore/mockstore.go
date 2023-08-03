@@ -2,25 +2,40 @@ package mockstore
 
 import "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
-type MockStore[T basestore.ShareableStore] struct {
+type MockStore struct {
 	*basestore.Store
 }
 
-type MockableStore[T basestore.ShareableStore] interface {
-	basestore.ShareableStore
-	With(basestore.ShareableStore) T
-	Mocker()
+func (ms *MockStore) With(other basestore.ShareableStore) *MockStore {
+	return &MockStore{Store: ms.Store.With(other)}
 }
 
-func (ms *MockStore[T]) With(other basestore.ShareableStore) T {
+type NewStoreFunc[T basestore.ShareableStore] func(basestore.ShareableStore) T
+
+func (f NewStoreFunc[T]) With(other basestore.ShareableStore) T {
 	if s := get[T](other); s != nil {
 		return *s
 	}
 
-	return ms.With(other)
+	return f(other)
 }
 
-func (ms *MockStore[T]) Mocker() {}
+func NewWithHandle(handle basestore.TransactableHandle) *MockStore {
+	return &MockStore{
+		Store: basestore.NewWithHandle(handle),
+	}
+}
+
+type MockableStore[T basestore.ShareableStore] interface {
+	basestore.ShareableStore
+	NewStoreFunc() NewStoreFunc[T]
+}
+
+func (ms *MockStore) NewStoreFunc() NewStoreFunc[*MockStore] {
+	return func(other basestore.ShareableStore) *MockStore {
+		return &MockStore{Store: basestore.NewWithHandle(other.Handle())}
+	}
+}
 
 type mockedStore struct {
 	basestore.ShareableStore

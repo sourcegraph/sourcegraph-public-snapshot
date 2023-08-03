@@ -88,12 +88,22 @@ type Store interface {
 }
 
 type store struct {
-	*mockstore.MockStore[Store]
+	*mockstore.MockStore
 	logger log.Logger
 }
 
+func (s *store) With(other basestore.ShareableStore) Store {
+	return s.NewStoreFunc().With(other)
+}
+
+func (s *store) NewStoreFunc() mockstore.NewStoreFunc[Store] {
+	return func(other basestore.ShareableStore) Store {
+		return &store{MockStore: s.MockStore.With(other), logger: s.logger}
+	}
+}
+
 func NewStore(db database.DB) Store {
-	return (&store{logger: db.Logger()}).With(db)
+	return &store{logger: db.Logger()}
 }
 
 const (

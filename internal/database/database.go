@@ -82,6 +82,7 @@ type DB interface {
 	OwnSignalConfigurations() SignalConfigurationStore
 
 	WithTransact(context.Context, func(tx DB) error) error
+	With(basestore.ShareableStore) DB
 
 	Logger() log.Logger
 }
@@ -101,6 +102,10 @@ func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
 type db struct {
 	*basestore.Store
 	logger log.Logger
+}
+
+func (d *db) With(other basestore.ShareableStore) DB {
+	return &db{Store: basestore.NewWithHandle(other.Handle()), logger: d.logger}
 }
 
 func (d *db) Logger() log.Logger {

@@ -12,6 +12,7 @@ import (
 
 	database "github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	mockstore "github.com/sourcegraph/sourcegraph/internal/database/mockstore"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -41,15 +42,12 @@ type MockStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *StoreListFunc
-	// MockerFunc is an instance of a mock function object controlling the
-	// behavior of the method Mocker.
-	MockerFunc *StoreMockerFunc
+	// NewStoreFuncFunc is an instance of a mock function object controlling
+	// the behavior of the method NewStoreFunc.
+	NewStoreFuncFunc *StoreNewStoreFuncFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *StoreUpdateFunc
-	// WithFunc is an instance of a mock function object controlling the
-	// behavior of the method With.
-	WithFunc *StoreWithFunc
 	// WithTransactFunc is an instance of a mock function object controlling
 	// the behavior of the method WithTransact.
 	WithTransactFunc *StoreWithTransactFunc
@@ -94,18 +92,13 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		MockerFunc: &StoreMockerFunc{
-			defaultHook: func() {
+		NewStoreFuncFunc: &StoreNewStoreFuncFunc{
+			defaultHook: func() (r0 mockstore.NewStoreFunc[Store]) {
 				return
 			},
 		},
 		UpdateFunc: &StoreUpdateFunc{
 			defaultHook: func(context.Context, *types.AccessRequest) (r0 *types.AccessRequest, r1 error) {
-				return
-			},
-		},
-		WithFunc: &StoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) (r0 Store) {
 				return
 			},
 		},
@@ -156,19 +149,14 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.List")
 			},
 		},
-		MockerFunc: &StoreMockerFunc{
-			defaultHook: func() {
-				panic("unexpected invocation of MockStore.Mocker")
+		NewStoreFuncFunc: &StoreNewStoreFuncFunc{
+			defaultHook: func() mockstore.NewStoreFunc[Store] {
+				panic("unexpected invocation of MockStore.NewStoreFunc")
 			},
 		},
 		UpdateFunc: &StoreUpdateFunc{
 			defaultHook: func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 				panic("unexpected invocation of MockStore.Update")
-			},
-		},
-		WithFunc: &StoreWithFunc{
-			defaultHook: func(basestore.ShareableStore) Store {
-				panic("unexpected invocation of MockStore.With")
 			},
 		},
 		WithTransactFunc: &StoreWithTransactFunc{
@@ -204,14 +192,11 @@ func NewMockStoreFrom(i Store) *MockStore {
 		ListFunc: &StoreListFunc{
 			defaultHook: i.List,
 		},
-		MockerFunc: &StoreMockerFunc{
-			defaultHook: i.Mocker,
+		NewStoreFuncFunc: &StoreNewStoreFuncFunc{
+			defaultHook: i.NewStoreFunc,
 		},
 		UpdateFunc: &StoreUpdateFunc{
 			defaultHook: i.Update,
-		},
-		WithFunc: &StoreWithFunc{
-			defaultHook: i.With,
 		},
 		WithTransactFunc: &StoreWithTransactFunc{
 			defaultHook: i.WithTransact,
@@ -956,34 +941,34 @@ func (c StoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreMockerFunc describes the behavior when the Mocker method of the
-// parent MockStore instance is invoked.
-type StoreMockerFunc struct {
-	defaultHook func()
-	hooks       []func()
-	history     []StoreMockerFuncCall
+// StoreNewStoreFuncFunc describes the behavior when the NewStoreFunc method
+// of the parent MockStore instance is invoked.
+type StoreNewStoreFuncFunc struct {
+	defaultHook func() mockstore.NewStoreFunc[Store]
+	hooks       []func() mockstore.NewStoreFunc[Store]
+	history     []StoreNewStoreFuncFuncCall
 	mutex       sync.Mutex
 }
 
-// Mocker delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) Mocker() {
-	m.MockerFunc.nextHook()()
-	m.MockerFunc.appendCall(StoreMockerFuncCall{})
-	return
+// NewStoreFunc delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) NewStoreFunc() mockstore.NewStoreFunc[Store] {
+	r0 := m.NewStoreFuncFunc.nextHook()()
+	m.NewStoreFuncFunc.appendCall(StoreNewStoreFuncFuncCall{r0})
+	return r0
 }
 
-// SetDefaultHook sets function that is called when the Mocker method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreMockerFunc) SetDefaultHook(hook func()) {
+// SetDefaultHook sets function that is called when the NewStoreFunc method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreNewStoreFuncFunc) SetDefaultHook(hook func() mockstore.NewStoreFunc[Store]) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Mocker method of the parent MockStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreMockerFunc) PushHook(hook func()) {
+// NewStoreFunc method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreNewStoreFuncFunc) PushHook(hook func() mockstore.NewStoreFunc[Store]) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -991,20 +976,20 @@ func (f *StoreMockerFunc) PushHook(hook func()) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreMockerFunc) SetDefaultReturn() {
-	f.SetDefaultHook(func() {
-		return
+func (f *StoreNewStoreFuncFunc) SetDefaultReturn(r0 mockstore.NewStoreFunc[Store]) {
+	f.SetDefaultHook(func() mockstore.NewStoreFunc[Store] {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreMockerFunc) PushReturn() {
-	f.PushHook(func() {
-		return
+func (f *StoreNewStoreFuncFunc) PushReturn(r0 mockstore.NewStoreFunc[Store]) {
+	f.PushHook(func() mockstore.NewStoreFunc[Store] {
+		return r0
 	})
 }
 
-func (f *StoreMockerFunc) nextHook() func() {
+func (f *StoreNewStoreFuncFunc) nextHook() func() mockstore.NewStoreFunc[Store] {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1017,37 +1002,41 @@ func (f *StoreMockerFunc) nextHook() func() {
 	return hook
 }
 
-func (f *StoreMockerFunc) appendCall(r0 StoreMockerFuncCall) {
+func (f *StoreNewStoreFuncFunc) appendCall(r0 StoreNewStoreFuncFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreMockerFuncCall objects describing the
-// invocations of this function.
-func (f *StoreMockerFunc) History() []StoreMockerFuncCall {
+// History returns a sequence of StoreNewStoreFuncFuncCall objects
+// describing the invocations of this function.
+func (f *StoreNewStoreFuncFunc) History() []StoreNewStoreFuncFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreMockerFuncCall, len(f.history))
+	history := make([]StoreNewStoreFuncFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreMockerFuncCall is an object that describes an invocation of method
-// Mocker on an instance of MockStore.
-type StoreMockerFuncCall struct{}
+// StoreNewStoreFuncFuncCall is an object that describes an invocation of
+// method NewStoreFunc on an instance of MockStore.
+type StoreNewStoreFuncFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 mockstore.NewStoreFunc[Store]
+}
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreMockerFuncCall) Args() []interface{} {
+func (c StoreNewStoreFuncFuncCall) Args() []interface{} {
 	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreMockerFuncCall) Results() []interface{} {
-	return []interface{}{}
+func (c StoreNewStoreFuncFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreUpdateFunc describes the behavior when the Update method of the
@@ -1155,107 +1144,6 @@ func (c StoreUpdateFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreWithFunc describes the behavior when the With method of the parent
-// MockStore instance is invoked.
-type StoreWithFunc struct {
-	defaultHook func(basestore.ShareableStore) Store
-	hooks       []func(basestore.ShareableStore) Store
-	history     []StoreWithFuncCall
-	mutex       sync.Mutex
-}
-
-// With delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) With(v0 basestore.ShareableStore) Store {
-	r0 := m.WithFunc.nextHook()(v0)
-	m.WithFunc.appendCall(StoreWithFuncCall{v0, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the With method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreWithFunc) SetDefaultHook(hook func(basestore.ShareableStore) Store) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// With method of the parent MockStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreWithFunc) PushHook(hook func(basestore.ShareableStore) Store) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreWithFunc) SetDefaultReturn(r0 Store) {
-	f.SetDefaultHook(func(basestore.ShareableStore) Store {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreWithFunc) PushReturn(r0 Store) {
-	f.PushHook(func(basestore.ShareableStore) Store {
-		return r0
-	})
-}
-
-func (f *StoreWithFunc) nextHook() func(basestore.ShareableStore) Store {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreWithFunc) appendCall(r0 StoreWithFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreWithFuncCall objects describing the
-// invocations of this function.
-func (f *StoreWithFunc) History() []StoreWithFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreWithFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreWithFuncCall is an object that describes an invocation of method
-// With on an instance of MockStore.
-type StoreWithFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 basestore.ShareableStore
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 Store
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreWithFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreWithFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // StoreWithTransactFunc describes the behavior when the WithTransact method
