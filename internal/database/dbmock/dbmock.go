@@ -21,9 +21,9 @@ func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx database.DB) er
 	})
 }
 
-// GetMock fetches the mocked interface T from the provided DB.
+// Get fetches the mocked interface T from the provided DB.
 // If no mocked interface is found, nil is returned.
-func GetMock[T basestore.ShareableStore](db database.DB) (t T) {
+func Get[T basestore.ShareableStore](db database.DB) (t T) {
 	switch v := db.(type) {
 	case *mockedDB:
 		if v.mockedStore.Type().Implements(reflect.TypeOf((*T)(nil)).Elem()) {
@@ -31,17 +31,17 @@ func GetMock[T basestore.ShareableStore](db database.DB) (t T) {
 				return mock
 			}
 		}
-		return GetMock[T](v.DB)
+		return Get[T](v.DB)
 	}
 	return t
 }
 
-type MockOption func(database.DB) database.DB
+type mockOption func(database.DB) database.DB
 
-// WithMock creates a new MockOption from the provided store.
+// With creates a new MockOption from the provided store.
 // Store must implement both the basestore.ShareableStore and
 // the MockableStore interfaces.
-func WithMock[T basestore.ShareableStore](val T) MockOption {
+func With[T basestore.ShareableStore](val T) mockOption {
 	return func(db database.DB) database.DB {
 		return &mockedDB{
 			DB:          db,
@@ -50,8 +50,8 @@ func WithMock[T basestore.ShareableStore](val T) MockOption {
 	}
 }
 
-// NewMockedDB embeds each mock option in the provided DB.
-func NewMockedDB(db database.DB, options ...MockOption) database.DB {
+// New embeds each mock option in the provided DB.
+func New(db database.DB, options ...mockOption) database.DB {
 	for _, option := range options {
 		db = option(db)
 	}

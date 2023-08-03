@@ -93,7 +93,7 @@ type store struct {
 }
 
 func NewStore(db database.DB) Store {
-	if s := dbmock.GetMock[Store](db); s != nil {
+	if s := dbmock.Get[Store](db); s != nil {
 		return s
 	}
 
