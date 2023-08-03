@@ -482,8 +482,8 @@ func (s *Server) SyncRepoState(interval time.Duration, batchSize, perSecond int)
 // the currently running process to pass the userAgent to the AddrForRepo method.
 //
 // NOTE: You most probably do not want to be adding any functionality changes to this method and
-// instead all functionality change should be in the AddrForRepo method instead that this calls
-// under the hood. This guarantees that any modified approach to gitserver address resolution can be
+// instead all functionality change should be in the AddrForRepo method.
+// This guarantees that any modified approach to gitserver address resolution can be
 // used by all consumers of gitserver and not just the internal server which is where this method is
 // called from. Modifications to the address resolution scheme here will likely add a bug where this
 // Server's result of address lookup may vary from that of other services ending up in

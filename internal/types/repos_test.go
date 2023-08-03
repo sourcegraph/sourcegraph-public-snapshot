@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRepoURICache(t *testing.T) {
+func TestRepoURISet(t *testing.T) {
 	index := collections.NewSet[string]("abc", "def")
 	cache := NewRepoURISet(index)
 

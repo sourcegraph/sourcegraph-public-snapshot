@@ -762,7 +762,7 @@ func TestV3Client_Fork(t *testing.T) {
 		//
 		// https://github.com/sourcegraph-testing/sourcegraph-automation-testing
 		//
-		// Request an admin to deleted the fork and then run the test again with `-update=success`
+		// Request an admin to delete the fork and then run the test again with `-update=success`
 		for name, org := range map[string]*string{
 			"user":                nil,
 			"sourcegraph-testing": pointers.Ptr("sourcegraph-testing"),
