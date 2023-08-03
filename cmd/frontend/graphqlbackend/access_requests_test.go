@@ -1,4 +1,4 @@
-package graphqlbackend
+package accessrequests
 
 import (
 	"context"
