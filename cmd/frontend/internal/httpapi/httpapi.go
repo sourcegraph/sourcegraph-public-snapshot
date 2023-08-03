@@ -93,7 +93,7 @@ func NewHandler(
 	schema *graphql.Schema,
 	rateLimiter graphqlbackend.LimitWatcher,
 	handlers *Handlers,
-) http.Handler {
+) (http.Handler, error) {
 	logger := sglog.Scoped("Handler", "frontend HTTP API handler")
 
 	if m == nil {
@@ -161,8 +161,16 @@ func NewHandler(
 	if envvar.SourcegraphDotComMode() {
 		m.Path("/app/check/update").Name(codyapp.RouteAppUpdateCheck).Handler(trace.Route(codyapp.AppUpdateHandler(logger)))
 		m.Path("/app/latest").Name(codyapp.RouteCodyAppLatestVersion).Handler(trace.Route(codyapp.LatestVersionHandler(logger)))
-		m.Path("/updates").Methods("GET", "POST").Name("updatecheck").Handler(trace.Route(http.HandlerFunc(updatecheck.HandlerWithLog(logger))))
 		m.Path("/license/check").Methods("POST").Name("dotcom.license.check").Handler(trace.Route(handlers.NewDotcomLicenseCheckHandler()))
+
+		updatecheckHandler, err := updatecheck.HandlerWithLog(logger)
+		if err != nil {
+			return nil, errors.Errorf("create updatecheck handler: %v", err)
+		}
+		m.Path("/updates").
+			Methods(http.MethodGet, http.MethodPost).
+			Name("updatecheck").
+			Handler(trace.Route(updatecheckHandler))
 	}
 
 	m.Get(apirouter.SCIM).Handler(trace.Route(handlers.SCIMHandler))
@@ -187,7 +195,7 @@ func NewHandler(
 		http.Error(w, "no route", http.StatusNotFound)
 	})
 
-	return m
+	return m, nil
 }
 
 // RegisterInternalServices registers REST and gRPC handlers for Sourcegraph's internal API on the

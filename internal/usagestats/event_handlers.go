@@ -157,7 +157,7 @@ type bigQueryEvent struct {
 }
 
 var (
-	pubsubClient     *pubsub.TopicClient
+	pubsubClient     pubsub.TopicClient
 	pubsubClientOnce sync.Once
 	pubsubClientErr  error
 )

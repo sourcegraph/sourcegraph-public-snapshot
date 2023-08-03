@@ -10,7 +10,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/coreos/go-semver/semver"
@@ -68,18 +67,30 @@ func getLatestRelease(deployType string) pingResponse {
 	}
 }
 
-// HandlerWithLog creates a HTTP handler that responds with information about software updates for Sourcegraph. Using the given logger, a scoped
-// logger is created and the handler that is returned uses the logger internally.
-func HandlerWithLog(logger log.Logger) func(w http.ResponseWriter, r *http.Request) {
-	scopedLog := logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
-	return func(w http.ResponseWriter, r *http.Request) {
-		handler(scopedLog, w, r)
+// HandlerWithLog creates an HTTP handler that responds with information about
+// software updates for Sourcegraph. Using the given logger, a scoped logger is
+// created and the handler that is returned uses the logger internally.
+func HandlerWithLog(logger log.Logger) (http.HandlerFunc, error) {
+	logger = logger.Scoped("updatecheck.handler", "handler that responds with information about software updates")
+
+	var pubsubClient pubsub.TopicClient
+	if pubSubPingsTopicID == "" {
+		pubsubClient = pubsub.NewNoopTopicClient()
+	} else {
+		var err error
+		pubsubClient, err = pubsub.NewDefaultTopicClient(pubSubPingsTopicID)
+		if err != nil {
+			return nil, errors.Errorf("create Pub/Sub client: %v", err)
+		}
 	}
+	return func(w http.ResponseWriter, r *http.Request) {
+		handler(logger, pubsubClient, w, r)
+	}, nil
 }
 
 // handler is an HTTP handler that responds with information about software updates
 // for Sourcegraph.
-func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
+func handler(logger log.Logger, pubsubClient pubsub.TopicClient, w http.ResponseWriter, r *http.Request) {
 	requestCounter.Inc()
 
 	pr, err := readPingRequest(r)
@@ -109,7 +120,7 @@ func handler(logger log.Logger, w http.ResponseWriter, r *http.Request) {
 	hasUpdate, err := canUpdate(pr.ClientVersionString, pingResponse, pr.DeployType)
 
 	// Always log, even on malformed version strings
-	logPing(logger, r, pr, hasUpdate)
+	logPing(logger, pubsubClient, r, pr, hasUpdate)
 
 	if err != nil {
 		http.Error(w, pr.ClientVersionString+" is a bad version string: "+err.Error(), http.StatusBadRequest)
@@ -377,13 +388,7 @@ type pingPayload struct {
 	RepoMetadataUsage             json.RawMessage `json:"repo_metadata_usage"`
 }
 
-var (
-	pubsubClient     *pubsub.TopicClient
-	pubsubClientOnce sync.Once
-	pubsubClientErr  error
-)
-
-func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool) {
+func logPing(logger log.Logger, pubsubClient pubsub.TopicClient, r *http.Request, pr *pingRequest, hasUpdate bool) {
 	logger = logger.Scoped("logPing", "logs ping requests")
 	defer func() {
 		if r := recover(); r != nil {
@@ -399,19 +404,6 @@ func logPing(logger log.Logger, r *http.Request, pr *pingRequest, hasUpdate bool
 		rounded := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 		millis := rounded.UnixNano() / (int64(time.Millisecond) / int64(time.Nanosecond))
 		go hubspotutil.SyncUser(pr.InitialAdminEmail, "", &hubspot.ContactProperties{IsServerAdmin: true, LatestPing: millis, HasAgreedToToS: pr.TosAccepted})
-	}
-
-	if pubSubPingsTopicID == "" {
-		return
-	}
-
-	pubsubClientOnce.Do(func() {
-		pubsubClient, pubsubClientErr = pubsub.NewDefaultTopicClient(pubSubPingsTopicID)
-	})
-	if pubsubClientErr != nil {
-		errorCounter.Inc()
-		logger.Error("failed to create Pub/Sub client", log.Error(pubsubClientErr))
-		return
 	}
 
 	var clientAddr string
