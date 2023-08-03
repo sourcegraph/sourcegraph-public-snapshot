@@ -332,3 +332,11 @@
 /cody/autocomplete#enabling-autocomplete /cody/capabilities#code-autocomplete 308
 /cody/autocomplete#configuring-on-sourcegraph-enterprise /cody/capabilities#configure-autocomplete-on-sourcegraph-enterprise 308
 /cody/autocomplete#accessing-autocomplete-logs /cody/capabilities#access-autocomplete-logs 308
+
+# Cody features redirects from main homepage
+/cody#get-cody /cody#getting-started 308
+/cody#features /cody#main-features 308
+/cody#chatbot-that-knows-your-code /cody/capabilities#code-chatbot 308
+/cody#fix-code-inline /cody/capabilities#fix-code-inline 308
+/cody#recipes /cody/capabilities#cody-recipes 308
+/cody#autocomplete /cody/capabilities#code-autocomplete 308
