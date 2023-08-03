@@ -177,6 +177,18 @@ const luaSpec: LanguageSpec = {
     ],
 }
 
+const matlabSpec: LanguageSpec = {
+    languageID: 'matlab',
+    stylized: 'MATLAB',
+    fileExts: ['m'],
+    commentStyles: [
+        {
+            lineRegex: /%+/,
+            block: { startRegex: /% {/, endRegex: /%}/ },
+        },
+    ],
+}
+
 const ocamlSpec: LanguageSpec = {
     languageID: 'ocaml',
     stylized: 'OCaml',
@@ -397,6 +409,7 @@ export const languageSpecs: LanguageSpec[] = [
     kotlinSpec,
     lispSpec,
     luaSpec,
+    matlabSpec,
     ocamlSpec,
     pascalSpec,
     perlSpec,
