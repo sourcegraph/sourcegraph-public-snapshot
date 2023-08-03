@@ -63,7 +63,7 @@ The setup experience allows users to select up to 10 repos for embeddings. Addit
 
 ## Uninstallation
 
-Select Troubleshooting > Clear data from the system tray and delete the app from your applications folder. If you're on an older version of the app and don't see a "Clear data" option, run: 
+Select "Troubleshooting > Clear All Data" from the system tray and delete the app from your applications folder. If you're on an older version of the app and don't see a "Clear All Data" option, run: 
 
 ```bash
 rm -rf ~/.sourcegraph-psql ~/Library/Application\ Support/com.sourcegraph.cody ~/Library/Caches/com.sourcegraph.cody ~/Library/WebKit/com.sourcegraph.cody
@@ -76,6 +76,10 @@ See [App troubleshooting](troubleshooting.md)
 ## Release pipeline
 
 See [App release pipeline](release-pipeline.md)
+
+## API and integrations
+
+See [App API integrations](integrations.md)
 
 ## Get help & give feedback
 

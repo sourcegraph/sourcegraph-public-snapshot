@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom'
 
 import { logger, renderMarkdown } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Alert, Container, H2, H3, H4, Markdown } from '@sourcegraph/wildcard'
+import { Alert, Container, H3, H4, Markdown, PageHeader } from '@sourcegraph/wildcard'
 
 import { AddExternalServiceInput, AddExternalServiceResult } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -93,9 +93,9 @@ export const AddExternalServicePage: FC<Props> = ({
 
     return (
         <>
-            <PageTitle title="Add code host connection" />
-            <H2>Add code host connection</H2>
-            <Container>
+            <PageTitle title="Add a code host connection" />
+            <PageHeader headingElement="h2" path={[{ text: 'Add a code host connection' }]} className="mb-3" />
+            <Container className="mb-3">
                 {createdExternalService?.warning ? (
                     <div>
                         <div className="mb-3">

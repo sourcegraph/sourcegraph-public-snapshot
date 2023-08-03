@@ -10,34 +10,60 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 public class AccessTokenStorage {
+  private static String cachedEnterpriseAccessToken = null;
+  private static String cachedDotComAccessToken = null;
 
   private static final List<String> enterpriseAccessTokenKeyParts =
       List.of("accessToken", "enterprise");
 
   private static final List<String> dotComAccessTokenKeyParts = List.of("accessToken", "dotcom");
 
+  // Empty string means empty or no token. No value means user denied access to token.
   @NotNull
   public static Optional<String> getEnterpriseAccessToken() {
-    return getApplicationLevelSecureConfig(enterpriseAccessTokenKeyParts);
+    if (cachedEnterpriseAccessToken != null) {
+      return Optional.of(cachedEnterpriseAccessToken);
+    }
+    Optional<String> token = getApplicationLevelSecureConfig(enterpriseAccessTokenKeyParts);
+    token.ifPresent(t -> cachedEnterpriseAccessToken = t);
+    return token;
   }
 
   public static void setApplicationEnterpriseAccessToken(@NotNull String accessToken) {
     setApplicationLevelSecureConfig(enterpriseAccessTokenKeyParts, accessToken);
+    cachedEnterpriseAccessToken = accessToken;
   }
 
+  // Empty string means empty or no token. No value means user denied access to token.
   @NotNull
   public static Optional<String> getDotComAccessToken() {
-    return getApplicationLevelSecureConfig(dotComAccessTokenKeyParts);
+    if (cachedDotComAccessToken != null) {
+      return Optional.of(cachedDotComAccessToken);
+    }
+    Optional<String> token = getApplicationLevelSecureConfig(dotComAccessTokenKeyParts);
+    token.ifPresent(t -> cachedDotComAccessToken = t);
+    return token;
   }
 
   public static void setApplicationDotComAccessToken(@NotNull String accessToken) {
     setApplicationLevelSecureConfig(dotComAccessTokenKeyParts, accessToken);
+    cachedDotComAccessToken = accessToken;
   }
 
+  // Empty string means empty or no password. No value means user denied access to password.
   @NotNull
   private static Optional<String> getApplicationLevelSecureConfig(@NotNull List<String> keyParts) {
-    return Optional.ofNullable(
-        PasswordSafe.getInstance().getPassword(createCredentialAttributes(createKey(keyParts))));
+    CredentialAttributes credentialAttributes = createCredentialAttributes(createKey(keyParts));
+    Credentials credentials = PasswordSafe.getInstance().get(credentialAttributes);
+    // No credentials found
+    if (credentials == null) {
+      return Optional.of("");
+    }
+    String password = credentials.getPasswordAsString();
+    if (password == null) { // User denied access to password
+      return Optional.empty();
+    }
+    return Optional.of(password);
   }
 
   private static void setApplicationLevelSecureConfig(

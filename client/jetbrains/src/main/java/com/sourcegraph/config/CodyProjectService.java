@@ -13,9 +13,13 @@ import org.jetbrains.annotations.Nullable;
     storages = {@Storage("sourcegraph.xml")})
 public class CodyProjectService implements PersistentStateComponent<CodyProjectService> {
 
+  @NotNull
+  static CodyProjectService getInstance(@NotNull Project project) {
+    return project.getService(CodyProjectService.class);
+  }
+
   @Nullable public String instanceType;
   @Nullable public String url;
-
   @Nullable public String dotComAccessToken;
   @Nullable public String enterpriseAccessToken;
   @Nullable public String customRequestHeaders;
@@ -25,11 +29,6 @@ public class CodyProjectService implements PersistentStateComponent<CodyProjectS
   public boolean lastSearchCaseSensitive;
   @Nullable public String lastSearchPatternType;
   @Nullable public String lastSearchContextSpec;
-
-  @NotNull
-  static CodyProjectService getInstance(@NotNull Project project) {
-    return project.getService(CodyProjectService.class);
-  }
 
   @Nullable
   public String getInstanceType() {

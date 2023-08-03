@@ -54,7 +54,7 @@ func newCompletionsHandler(
 		requestParams.Model = getModel(requestParams, completionsConfig)
 
 		var err error
-		ctx, done := Trace(ctx, traceFamily, requestParams.Model).
+		ctx, done := Trace(ctx, traceFamily, requestParams.Model, requestParams.MaxTokensToSample).
 			WithErrorP(&err).
 			WithRequest(r).
 			Build()

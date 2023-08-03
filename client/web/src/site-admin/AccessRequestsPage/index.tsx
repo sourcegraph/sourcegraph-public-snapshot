@@ -92,7 +92,13 @@ function useHasRemainingSeats(): boolean {
 
     const licenseSeatsCount = data?.site?.productSubscription?.license?.userCount
     const usersCount = data?.site?.users?.totalCount
-    return typeof licenseSeatsCount !== 'number' || typeof usersCount !== 'number' || licenseSeatsCount > usersCount
+    const tags = data?.site?.productSubscription?.license?.tags ?? []
+    return (
+        typeof licenseSeatsCount !== 'number' ||
+        typeof usersCount !== 'number' ||
+        licenseSeatsCount > usersCount ||
+        tags.includes('true-up')
+    )
 }
 
 const TableColumns: IColumn<AccessRequestNode>[] = [

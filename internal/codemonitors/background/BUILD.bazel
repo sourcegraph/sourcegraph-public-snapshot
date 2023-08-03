@@ -22,8 +22,8 @@ go_library(
     deps = [
         "//internal/actor",
         "//internal/api",
-        "//internal/api/internalapi",
         "//internal/codemonitors",
+        "//internal/conf",
         "//internal/database",
         "//internal/database/basestore",
         "//internal/errcode",

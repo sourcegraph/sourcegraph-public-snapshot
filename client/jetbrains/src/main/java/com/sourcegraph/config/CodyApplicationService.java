@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Storage;
 import com.intellij.util.xmlb.annotations.Transient;
 import com.sourcegraph.find.Search;
 import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -17,14 +18,19 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable public String instanceType;
   @Nullable public String url;
 
-  @Deprecated(since = "3.0.6", forRemoval = true)
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
+  @Deprecated(since = "3.0.7")
   @Nullable
   public String dotComAccessToken;
 
-  @Deprecated(since = "3.0.6", forRemoval = true)
+  public boolean isDotComAccessTokenSet;
+
+  // Remove this after 2024-08-01 when surely everyone migrated to the secure storage.
+  @Deprecated(since = "3.0.7")
   @Nullable
   public String enterpriseAccessToken;
 
+  public boolean isEnterpriseAccessTokenSet;
   @Nullable public String customRequestHeaders;
   @Nullable public String defaultBranch;
   @Nullable public String remoteUrlReplacements;
@@ -32,11 +38,12 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   public boolean isInstallEventLogged;
   public boolean isUrlNotificationDismissed;
 
+  // Use isCodyAutoCompleteEnabled instead. Remove this after 2024-01-01.
   @Deprecated(since = "3.0.4")
   @Nullable
   public Boolean areCodyCompletionsEnabled; // kept for backwards compatibility
 
-  @Nullable public Boolean isCodyEnabled;
+  public boolean isCodyEnabled = true;
   @Nullable public Boolean isCodyAutoCompleteEnabled;
   public boolean isAccessTokenNotificationDismissed;
   @Nullable public Boolean authenticationFailedLastTime;
@@ -60,12 +67,6 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
   @Nullable
   public String getSourcegraphUrl() {
     return url;
-  }
-
-  @Deprecated(since = "3.0.6", forRemoval = true)
-  @Nullable
-  public String getDotComAccessToken() {
-    return dotComAccessToken;
   }
 
   @Transient
@@ -95,27 +96,12 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return null;
   }
 
-  @Nullable
-  @Deprecated(since = "3.0.6", forRemoval = true)
-  public String getEnterpriseAccessToken() {
-    return enterpriseAccessToken;
-  }
-
   @Transient
   public void setSafeEnterpriseAccessToken(@NotNull String accessToken) {
     AccessTokenStorage.setApplicationEnterpriseAccessToken(accessToken);
   }
 
-  public boolean areChatPredictionsEnabled() {
-    // TODO
-    return false;
-  }
-
-  public String getCodebase() {
-    // TODO
-    return null;
-  }
-
+  @Nullable
   public String getAnonymousUserId() {
     return anonymousUserId;
   }
@@ -128,8 +114,8 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     return isUrlNotificationDismissed;
   }
 
-  public boolean isCodyEnabled() {
-    return Optional.ofNullable(isCodyEnabled).orElse(false);
+  public void setCodyEnabled(boolean enabled) {
+    isCodyEnabled = enabled;
   }
 
   public boolean isCodyAutoCompleteEnabled() {
@@ -162,7 +148,13 @@ public class CodyApplicationService implements PersistentStateComponent<CodyAppl
     this.instanceType = settings.instanceType;
     this.url = settings.url;
     this.dotComAccessToken = settings.dotComAccessToken;
+    boolean loadedIsDotComAccessTokenSet = settings.isDotComAccessTokenSet;
+    this.isDotComAccessTokenSet =
+        loadedIsDotComAccessTokenSet || StringUtils.isNotEmpty(settings.dotComAccessToken);
     this.enterpriseAccessToken = settings.enterpriseAccessToken;
+    boolean loadedIsEnterpriseAccessTokenSet = settings.isEnterpriseAccessTokenSet;
+    this.isEnterpriseAccessTokenSet =
+        loadedIsEnterpriseAccessTokenSet || StringUtils.isNotEmpty(settings.enterpriseAccessToken);
     this.customRequestHeaders = settings.customRequestHeaders;
     this.defaultBranch = settings.defaultBranch;
     this.remoteUrlReplacements = settings.remoteUrlReplacements;

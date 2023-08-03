@@ -110,9 +110,6 @@ func (r *Resolver) EmbeddingsMultiSearch(ctx context.Context, args graphqlbacken
 }
 
 func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graphqlbackend.IsContextRequiredForChatQueryInputArgs) (bool, error) {
-	if !conf.EmbeddingsEnabled() {
-		return false, errors.New("embeddings are not configured or disabled")
-	}
 	if isEnabled := cody.IsCodyEnabled(ctx); !isEnabled {
 		return false, errors.New("cody experimental feature flag is not enabled for current user")
 	}
@@ -121,7 +118,7 @@ func (r *Resolver) IsContextRequiredForChatQuery(ctx context.Context, args graph
 		return false, err
 	}
 
-	return r.embeddingsClient.IsContextRequiredForChatQuery(ctx, embeddings.IsContextRequiredForChatQueryParameters{Query: args.Query})
+	return embeddings.IsContextRequiredForChatQuery(args.Query), nil
 }
 
 func (r *Resolver) RepoEmbeddingJobs(ctx context.Context, args graphqlbackend.ListRepoEmbeddingJobsArgs) (*graphqlutil.ConnectionResolver[graphqlbackend.RepoEmbeddingJobResolver], error) {

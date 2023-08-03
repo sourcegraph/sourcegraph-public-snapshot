@@ -60,7 +60,9 @@ func TestRepository_FileSystem(t *testing.T) {
 			third:  "ba3c51080ed4a5b870952ecd7f0e15f255b24cca",
 		},
 	}
-	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+
+	db := database.NewMockDB()
+	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		// notafile should not exist.
@@ -87,7 +89,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		if got, want := "ab771ba54f5571c99ffdae54f44acc7993d9f115", dir1Info.Sys().(gitdomain.ObjectInfo).OID().String(); got != want {
 			t.Errorf("%s: got dir1 OID %q, want %q", label, got, want)
 		}
-		source := gitserver.NewTestClientSource(t, GitserverAddresses)
+		source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 		client := gitserver.NewTestClient(http.DefaultClient, source)
 
 		// dir1 should contain one entry: file1.
@@ -253,7 +255,9 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 			repo: MakeGitRepository(t, append([]string{"git config core.quotepath off"}, gitCommands...)...),
 		},
 	}
-	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+
+	db := database.NewMockDB()
+	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
@@ -313,7 +317,9 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			repo: MakeGitRepository(t, gitCommands...),
 		},
 	}
-	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+
+	db := database.NewMockDB()
+	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	for label, test := range tests {
 		commitID, err := client.ResolveRevision(ctx, test.repo, "master", gitserver.ResolveRevisionOptions{})
@@ -411,7 +417,8 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 		t.Fatalf("unexpected error creating sub-repo perms client: %s", err)
 	}
 
-	source := gitserver.NewTestClientSource(t, GitserverAddresses)
+	db := database.NewMockDB()
+	source := gitserver.NewTestClientSource(t, db, GitserverAddresses)
 	client := gitserver.NewTestClient(http.DefaultClient, source)
 	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
 	if err != nil {

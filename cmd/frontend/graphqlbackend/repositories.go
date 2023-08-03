@@ -30,6 +30,9 @@ type repositoryArgs struct {
 	Indexed    bool
 	NotIndexed bool
 
+	Embedded    bool
+	NotEmbedded bool
+
 	CloneStatus *string
 	FailedFetch bool
 	Corrupted   bool
@@ -80,6 +83,16 @@ func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, err
 		opt.OnlyIndexed = true
 	}
 
+	if !args.Embedded && !args.NotEmbedded {
+		return database.ReposListOptions{}, errors.New("excluding embedded and not embedded repos leaves an empty set")
+	}
+	if !args.Embedded {
+		opt.NoEmbedded = true
+	}
+	if !args.NotEmbedded {
+		opt.OnlyEmbedded = true
+	}
+
 	if args.ExternalService != nil {
 		extSvcID, err := UnmarshalExternalServiceID(*args.ExternalService)
 		if err != nil {
@@ -98,12 +111,10 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 	}
 
 	connectionStore := &repositoriesConnectionStore{
-		ctx:        ctx,
-		db:         r.db,
-		logger:     r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
-		opt:        opt,
-		indexed:    args.Indexed,
-		notIndexed: args.NotIndexed,
+		ctx:    ctx,
+		db:     r.db,
+		logger: r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
+		opt:    opt,
 	}
 
 	maxPageSize := 1000
@@ -124,12 +135,10 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 }
 
 type repositoriesConnectionStore struct {
-	ctx        context.Context
-	logger     log.Logger
-	db         database.DB
-	opt        database.ReposListOptions
-	indexed    bool
-	notIndexed bool
+	ctx    context.Context
+	logger log.Logger
+	db     database.DB
+	opt    database.ReposListOptions
 }
 
 func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, orderBy database.OrderBy) (*string, error) {

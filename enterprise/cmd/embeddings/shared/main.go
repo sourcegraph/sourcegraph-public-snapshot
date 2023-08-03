@@ -141,24 +141,6 @@ func NewHandler(
 		json.NewEncoder(w).Encode(res)
 	})
 
-	mux.HandleFunc("/isContextRequiredForChatQuery", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
-			return
-		}
-
-		var args embeddings.IsContextRequiredForChatQueryParameters
-		err := json.NewDecoder(r.Body).Decode(&args)
-		if err != nil {
-			http.Error(w, "could not parse request body", http.StatusBadRequest)
-			return
-		}
-
-		isRequired := isContextRequiredForChatQuery(args.Query)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(embeddings.IsContextRequiredForChatQueryResult{IsRequired: isRequired})
-	})
-
 	return mux
 }
 
@@ -172,11 +154,15 @@ func getQueryEmbedding(ctx context.Context, query string) ([]float32, string, er
 		return nil, "", errors.Wrap(err, "getting embeddings client")
 	}
 
-	floatQuery, err := client.GetEmbeddings(ctx, []string{query})
+	embeddings, err := client.GetQueryEmbedding(ctx, query)
 	if err != nil {
 		return nil, "", errors.Wrap(err, "getting query embedding")
 	}
-	return floatQuery, client.GetModelIdentifier(), nil
+	if len(embeddings.Failed) > 0 {
+		return nil, "", errors.Newf("failed to get embeddings for query %s", query)
+	}
+
+	return embeddings.Embeddings, client.GetModelIdentifier(), nil
 }
 
 func mustInitializeFrontendDB(observationCtx *observation.Context) *sql.DB {

@@ -10,16 +10,12 @@ func TestLoadQueries(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			if len(c.Groups) < 1 {
-				t.Fatal("expected atleast 1 group")
-			}
-
-			if len(c.Groups[0].Queries) < 2 {
+			if len(c.Queries) < 2 {
 				t.Fatal("expected atleast 2 queries")
 			}
 
 			names := map[string]bool{}
-			for _, q := range c.Groups[0].Queries {
+			for _, q := range c.Queries {
 				if names[q.Name] {
 					t.Fatalf("name %q is not unique", q.Name)
 				}
@@ -27,7 +23,7 @@ func TestLoadQueries(t *testing.T) {
 			}
 
 			if testing.Verbose() {
-				for _, q := range c.Groups[0].Queries {
+				for _, q := range c.Queries {
 					t.Logf("% -25s %s", q.Name, q.Query)
 				}
 			}
