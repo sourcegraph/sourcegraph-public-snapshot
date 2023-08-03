@@ -76,4 +76,30 @@ Select the recipes tab in your editor or right click on a code section, then cho
 
 ## Code Autocomplete
 
-While typing, Cody provides real-time code auto-completion based on the context around your open files and file history. This predictive feature ensures a smoother coding experience.
+Cody provides real-time code auto-completion as you type, based on the context around your open files and file history. This predictive feature tells what you are trying to implement for a smoother coding experience.
+
+![Example of Cody autocomplete. You see a code snippet starting with async function getWeather(city: string) { and Cody response with a multi-line suggestion using a public weather API to return the current weather ](https://storage.googleapis.com/sourcegraph-assets/website/Product%20Animations/GIFS/cody-completions-may2023-optim.gif)
+
+### Configure autocomplete on Sourcegraph enterprise
+
+By default, a fully configured Sourcegraph instance picks a default LLM to generate code autocomplete. Custom models can be used for Cody autocomplete via the `completionModel` option inside the `completions` site config.
+
+We also recommend reading the [Enabling Cody on Sourcegraph Enterprise](explanations/enabling_cody_enterprise.md) guide before you configure the autocomplete feature.
+
+> NOTE: Self-hosted customers need to update to a minimum of version 5.0.4 to use autocomplete.
+
+<br />
+
+> NOTE: Cody autocomplete currently only work with Anthropic's Claude Instant model. Support for other models will be coming later.
+
+### Access autocomplete logs
+
+VS Code logs can be accessed via the **Outputs** view. To access autocomplete logs, you need to enable Cody logs in verbose mode. To do so:
+
+- Go to the Cody Extension Settings and enable: `Cody › Debug: Enable` and `Cody › Debug: Verbose`
+- Restart or reload your VS Code editor
+- You can now see the logs in the Outputs view
+- Open the view via the menu bar: `View > Output`
+- Select **Cody by Sourcegraph** from the dropdown list
+
+![View Cody's autocomplete logs from the Output View in VS Code](https://storage.googleapis.com/sourcegraph-assets/Docs/view-autocomplete-logs.png)
