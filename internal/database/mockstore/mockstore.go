@@ -9,6 +9,7 @@ type MockStore[T basestore.ShareableStore] struct {
 type MockableStore[T basestore.ShareableStore] interface {
 	basestore.ShareableStore
 	With(basestore.ShareableStore) T
+	Mocker()
 }
 
 func (ms *MockStore[T]) With(other basestore.ShareableStore) T {
@@ -18,6 +19,8 @@ func (ms *MockStore[T]) With(other basestore.ShareableStore) T {
 
 	return ms.With(other)
 }
+
+func (ms *MockStore[T]) Mocker() {}
 
 type mockedStore struct {
 	basestore.ShareableStore

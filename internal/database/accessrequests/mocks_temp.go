@@ -41,6 +41,9 @@ type MockStore struct {
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *StoreListFunc
+	// MockerFunc is an instance of a mock function object controlling the
+	// behavior of the method Mocker.
+	MockerFunc *StoreMockerFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *StoreUpdateFunc
@@ -88,6 +91,11 @@ func NewMockStore() *MockStore {
 		},
 		ListFunc: &StoreListFunc{
 			defaultHook: func(context.Context, *FilterArgs, *database.PaginationArgs) (r0 []*types.AccessRequest, r1 error) {
+				return
+			},
+		},
+		MockerFunc: &StoreMockerFunc{
+			defaultHook: func() {
 				return
 			},
 		},
@@ -148,6 +156,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.List")
 			},
 		},
+		MockerFunc: &StoreMockerFunc{
+			defaultHook: func() {
+				panic("unexpected invocation of MockStore.Mocker")
+			},
+		},
 		UpdateFunc: &StoreUpdateFunc{
 			defaultHook: func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 				panic("unexpected invocation of MockStore.Update")
@@ -190,6 +203,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		ListFunc: &StoreListFunc{
 			defaultHook: i.List,
+		},
+		MockerFunc: &StoreMockerFunc{
+			defaultHook: i.Mocker,
 		},
 		UpdateFunc: &StoreUpdateFunc{
 			defaultHook: i.Update,
@@ -938,6 +954,100 @@ func (c StoreListFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreMockerFunc describes the behavior when the Mocker method of the
+// parent MockStore instance is invoked.
+type StoreMockerFunc struct {
+	defaultHook func()
+	hooks       []func()
+	history     []StoreMockerFuncCall
+	mutex       sync.Mutex
+}
+
+// Mocker delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockStore) Mocker() {
+	m.MockerFunc.nextHook()()
+	m.MockerFunc.appendCall(StoreMockerFuncCall{})
+	return
+}
+
+// SetDefaultHook sets function that is called when the Mocker method of the
+// parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreMockerFunc) SetDefaultHook(hook func()) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Mocker method of the parent MockStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *StoreMockerFunc) PushHook(hook func()) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreMockerFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func() {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreMockerFunc) PushReturn() {
+	f.PushHook(func() {
+		return
+	})
+}
+
+func (f *StoreMockerFunc) nextHook() func() {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreMockerFunc) appendCall(r0 StoreMockerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreMockerFuncCall objects describing the
+// invocations of this function.
+func (f *StoreMockerFunc) History() []StoreMockerFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreMockerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreMockerFuncCall is an object that describes an invocation of method
+// Mocker on an instance of MockStore.
+type StoreMockerFuncCall struct{}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreMockerFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreMockerFuncCall) Results() []interface{} {
+	return []interface{}{}
 }
 
 // StoreUpdateFunc describes the behavior when the Update method of the
