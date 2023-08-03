@@ -166,8 +166,10 @@ func (c *client) do(ctx context.Context, req *http.Request, result any) (*http.R
 				Body:       bs,
 			}
 		}
-
-		bs = bs[4:]
+		// Gerrit attaches this prefix to most of its responses, so if it exists, we cut it, so we can parse it as a json properly.
+		if len(bs) >= 4 && string(bs[:4]) == ")]}'" {
+			bs = bs[4:]
+		}
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
