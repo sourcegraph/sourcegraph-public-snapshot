@@ -122,7 +122,7 @@ func mockDotComClient(t testing.TB, repoNames []string) dotcom.Client {
 			},
 		}
 
-		return ctx.Err()
+		return context.Cause(ctx)
 	})
 }
 
