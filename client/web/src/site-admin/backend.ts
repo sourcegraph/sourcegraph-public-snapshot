@@ -203,6 +203,18 @@ export const REPOSITORIES_QUERY = gql`
     ${siteAdminRepositoryFieldsFragment}
 `
 
+export const REFETCH_REPO_FIELDS = gql`
+    query RefetchRepoAfterRecloneTrigger($repoID: ID!, $displayCloneProgress: Boolean = true) {
+        node(id: $repoID) {
+            __typename
+            ... on Repository {
+                ...SiteAdminRepositoryFields
+            }
+        }
+    }
+    ${siteAdminRepositoryFieldsFragment}
+`
+
 export const REPO_PAGE_POLL_INTERVAL = 5000
 
 export const SLOW_REQUESTS = gql`

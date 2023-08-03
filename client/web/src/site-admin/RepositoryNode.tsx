@@ -16,7 +16,7 @@ import {
 import classNames from 'classnames'
 import { useNavigate } from 'react-router-dom'
 
-import { useMutation, useQuery } from '@sourcegraph/http-client'
+import { getDocumentNode, useMutation, useQuery } from '@sourcegraph/http-client'
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import {
     Alert,
@@ -51,7 +51,7 @@ import {
 import { LogsPageTabs } from '../repo/constants'
 import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from '../repo/settings/backend'
 
-import { RECLONE_REPOSITORY_MUTATION, UPDATE_MIRROR_REPOSITORY } from './backend'
+import { RECLONE_REPOSITORY_MUTATION, REFETCH_REPO_FIELDS, UPDATE_MIRROR_REPOSITORY } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
 import { RepoMirrorInfo } from './components/RepoMirrorInfo'
 
@@ -85,17 +85,6 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined): void => {
-    if (data?.repository && data.repository?.mirrorInfo) {
-        node.mirrorInfo.lastError = data.repository.mirrorInfo.lastError
-        node.mirrorInfo.cloned = data.repository.mirrorInfo.cloned
-        node.mirrorInfo.cloneInProgress = data.repository.mirrorInfo.cloneInProgress
-        node.mirrorInfo.updatedAt = data.repository.mirrorInfo.updatedAt
-        node.mirrorInfo.isCorrupted = data.repository.mirrorInfo.isCorrupted
-        node.mirrorInfo.corruptionLogs = data.repository.mirrorInfo.corruptionLogs
-    }
-}
-
 export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const navigate = useNavigate()
@@ -103,23 +92,20 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         RECLONE_REPOSITORY_MUTATION,
         {
             variables: { repo: node.id },
+            refetchQueries: [
+                { query: getDocumentNode(REFETCH_REPO_FIELDS), variables: { repoID: node.id }, errorPolicy: 'ignore' },
+            ],
+            awaitRefetchQueries: true,
         }
     )
+
     const [updateRepo] = useMutation<UpdateMirrorRepositoryResult, UpdateMirrorRepositoryVariables>(
         UPDATE_MIRROR_REPOSITORY,
         { variables: { repository: node.id } }
     )
-    const { data, refetch } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
-        FETCH_SETTINGS_AREA_REPOSITORY_GQL,
-        {
-            variables: { name: node.name },
-            pollInterval: 3000,
-        }
-    )
+
     const recloneAndFetch = async (): Promise<void> => {
         await recloneRepository()
-        await refetch()
-        updateNodeFromData(node, data)
     }
 
     return (
