@@ -96,7 +96,6 @@ func (r *rateLimiter) GetTokensFromBucket(ctx context.Context, bucketName string
 
 func (r *rateLimiter) SetTokenBucketReplenishment(ctx context.Context, bucketName string, bucketCapacity, bucketReplenishRateSeconds int32) error {
 	bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey := getRateLimiterKeys(r.prefix, bucketName)
-	fmt.Println(bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey, bucketReplenishIntervalSecondsKey)
 	_, err := r.setReplenishmentScript.DoContext(ctx, r.pool.Get(), bucketKey, bucketCapacityKey, bucketReplenishIntervalSecondsKey, bucketCapacity, bucketReplenishRateSeconds)
 	return errors.Wrapf(err, "error while setting token bucket replenishment for bucket %s", bucketName)
 }

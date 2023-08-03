@@ -46,7 +46,9 @@ func (h *handler) Handle(ctx context.Context, observationCtx *observation.Contex
 
 func (h *handler) processCodeHost(ctx context.Context, codeHostURL string) error {
 	apiCap, apiRepInterval, gitCap, gitRepInterval, err := h.getRateLimitConfigsOrDefaults(ctx, codeHostURL)
-
+	if err != nil {
+		return err
+	}
 	// Set API token values
 	err = h.ratelimiter.SetTokenBucketReplenishment(ctx, fmt.Sprintf("%s:api_tokens", codeHostURL), apiCap, apiRepInterval)
 	// Set Git token values
