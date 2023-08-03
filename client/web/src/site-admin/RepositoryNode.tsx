@@ -42,14 +42,11 @@ import {
 import {
     RecloneRepositoryResult,
     RecloneRepositoryVariables,
-    SettingsAreaRepositoryResult,
-    SettingsAreaRepositoryVariables,
     SiteAdminRepositoryFields,
     UpdateMirrorRepositoryResult,
     UpdateMirrorRepositoryVariables,
 } from '../graphql-operations'
 import { LogsPageTabs } from '../repo/constants'
-import { FETCH_SETTINGS_AREA_REPOSITORY_GQL } from '../repo/settings/backend'
 
 import { RECLONE_REPOSITORY_MUTATION, UPDATE_MIRROR_REPOSITORY } from './backend'
 import { ExternalRepositoryIcon } from './components/ExternalRepositoryIcon'
@@ -83,21 +80,13 @@ const repoCloned = (repo: SiteAdminRepositoryFields): boolean =>
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
+    refetchAllRepos: any
 }
 
-const updateNodeFromData = (node: SiteAdminRepositoryFields, data: SettingsAreaRepositoryResult | undefined): void => {
-    if (data?.repository && data.repository?.mirrorInfo) {
-        node.mirrorInfo.lastError = data.repository.mirrorInfo.lastError
-        node.mirrorInfo.cloned = data.repository.mirrorInfo.cloned
-        node.mirrorInfo.cloneInProgress = data.repository.mirrorInfo.cloneInProgress
-        node.mirrorInfo.updatedAt = data.repository.mirrorInfo.updatedAt
-        node.mirrorInfo.isCorrupted = data.repository.mirrorInfo.isCorrupted
-        node.mirrorInfo.corruptionLogs = data.repository.mirrorInfo.corruptionLogs
-    }
-}
-
-export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
-    const [shouldRefetch, setShouldRefetch] = useState(false)
+export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({
+    node,
+    refetchAllRepos,
+}) => {
     const [isPopoverOpen, setIsPopoverOpen] = useState(false)
     const navigate = useNavigate()
     const [recloneRepository] = useMutation<RecloneRepositoryResult, RecloneRepositoryVariables>(
@@ -110,19 +99,10 @@ export const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Rep
         UPDATE_MIRROR_REPOSITORY,
         { variables: { repository: node.id } }
     )
-    const { data, refetch } = useQuery<SettingsAreaRepositoryResult, SettingsAreaRepositoryVariables>(
-        FETCH_SETTINGS_AREA_REPOSITORY_GQL,
-        {
-            variables: { name: node.name },
-            skip: !shouldRefetch,
-        }
-    )
+
     const recloneAndFetch = async (): Promise<void> => {
-        setShouldRefetch(true)
         await recloneRepository()
-        await refetch()
-        setShouldRefetch(false)
-        updateNodeFromData(node, data)
+        await refetchAllRepos()
     }
 
     return (
