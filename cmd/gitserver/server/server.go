@@ -558,10 +558,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, tasks <-chan *cloneTask) 
 		go func(task *cloneTask) {
 			defer cancel()
 
-			progressPipe := newProgressPipe()
-			defer progressPipe.Close()
-
-			err := s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options, progressPipe)
+			err := s.doClone(ctx, task.repo, task.dir, task.syncer, task.lock, task.remoteURL, task.options)
 			if err != nil {
 				logger.Error("failed to clone repo", log.Error(err))
 			}
@@ -2257,11 +2254,8 @@ func (s *Server) cloneRepo(ctx context.Context, repoName api.RepoName, opts *clo
 		}
 		defer cancel()
 
-		progressPipe := newProgressPipe()
-		defer progressPipe.Close()
-
 		// We are blocking, so use the passed in context.
-		err = s.doClone(ctx, repoName, dir, syncer, lock, remoteURL, opts, progressPipe)
+		err = s.doClone(ctx, repoName, dir, syncer, lock, remoteURL, opts)
 		err = errors.Wrapf(err, "failed to clone %s", repoName)
 		return "", err
 	}
@@ -2297,7 +2291,7 @@ func (p *progressPipe) Close() error {
 
 var backoffJitterGenerator = rand.New(rand.NewSource(time.Now().UnixNano()))
 
-func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions, progressPipe *progressPipe) (err error) {
+func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitDir, syncer VCSSyncer, lock *RepositoryLock, remoteURL *vcs.URL, opts *cloneOptions) (err error) {
 	logger := s.Logger.Scoped("doClone", "").With(
 		log.String("repo", string(repo)),
 		log.String("dir", string(dir)),
@@ -2356,12 +2350,12 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 		cmd.Env = os.Environ()
 	}
 
-	pr := progressPipe.reader
-	pw := progressPipe.writer
+	progressReader, progressWriter := io.Pipe()
+	defer progressWriter.Close()
 
-	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, pr, repo)
+	go readCloneProgress(s.DB, logger, newURLRedactor(remoteURL), lock, progressReader, repo)
 	if opts.IsDeduplicateableClone() {
-		if err := s.clonePoolRepo(ctx, syncer, remoteURL, progressPipe.writer, *opts); err != nil {
+		if err := s.clonePoolRepo(ctx, syncer, remoteURL, progressWriter, *opts); err != nil {
 			logger.Error(
 				"failed to clone pool repo, deduplicated storage will not be available for this repo",
 				log.Error(err),
@@ -2375,7 +2369,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir common.GitD
 	cmd.Env = append(cmd.Env, "GIT_LFS_SKIP_SMUDGE=1")
 	logger.Info("cloning repo", log.String("tmp", tmpPath), log.String("dst", dstPath))
 
-	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, pw)
+	output, err := runRemoteGitCommand(ctx, s.RecordingCommandFactory.WrapWithRepoName(ctx, s.Logger, repo, cmd), true, progressWriter)
 	redactedOutput := newURLRedactor(remoteURL).redact(string(output))
 
 	// best-effort update the output of the clone
@@ -2612,6 +2606,9 @@ Alternatively, you may also try to increase the value of gitLongCommandTimeout i
 
 // readCloneProgress scans the reader and saves the most recent line of output
 // as the lock status.
+//
+// Writers should terminate the byte string with a "\n" to ensure the scanner will terminate the
+// read on "\n" and update the cloning progress.
 func readCloneProgress(db database.DB, logger log.Logger, redactor *urlRedactor, lock *RepositoryLock, pr io.Reader, repo api.RepoName) {
 	// Use a background context to ensure we still update the DB even if we
 	// time out. IE we intentionally don't take an input ctx.
@@ -3331,17 +3328,4 @@ func isAbsoluteRevision(s string) bool {
 		}
 	}
 	return true
-}
-
-type poolRepoCloneInProgress struct {
-	triedFor       int64
-	dir            common.GitDir
-	lastLockStatus string
-}
-
-func (e *poolRepoCloneInProgress) Error() string {
-	return fmt.Sprintf(
-		"failed to acquire lock on pool dir, dir: %q, tried for: %d seconds, last lock status: %q",
-		e.dir, e.triedFor, e.lastLockStatus,
-	)
 }
