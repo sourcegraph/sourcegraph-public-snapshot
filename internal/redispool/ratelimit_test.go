@@ -22,8 +22,8 @@ func TestRateLimiter(t *testing.T) {
 	// Set up the test by initializing the bucket with some initial capacity and replenishment rate
 	ctx := context.Background()
 	bucketName := "github.com:api_tokens"
-	bucketCapacity := 100
-	bucketReplenishRateSeconds := 10
+	bucketCapacity := int32(100)
+	bucketReplenishRateSeconds := int32(10)
 
 	// Try to get tokens before rate limiter config is set in Redis
 	_, _, err := rl.GetTokensFromBucket(ctx, bucketName, 1)

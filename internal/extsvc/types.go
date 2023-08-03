@@ -629,52 +629,52 @@ func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bo
 	isDefault = true
 	switch c := config.(type) {
 	case *schema.GitLabConnection:
-		limit = rate.Inf
+		limit = GetRateLimit(KindGitLab)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GitHubConnection:
 		// Use an infinite rate limiter. GitHub has an external rate limiter we obey.
-		limit = rate.Inf
+		limit = GetRateLimit(KindGitHub)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.BitbucketServerConnection:
 		// 8/s is the default limit we enforce
-		limit = rate.Limit(8)
+		limit = GetRateLimit(KindBitbucketServer)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.BitbucketCloudConnection:
-		limit = rate.Limit(2)
+		limit = GetRateLimit(KindBitbucketCloud)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.PerforceConnection:
-		limit = rate.Limit(5000.0 / 3600.0)
+		limit = GetRateLimit(KindPerforce)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.JVMPackagesConnection:
-		limit = rate.Limit(2)
+		limit = GetRateLimit(KindJVMPackages)
 		if c != nil && c.Maven.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
 	case *schema.PagureConnection:
 		// 8/s is the default limit we enforce
-		limit = rate.Limit(8)
+		limit = GetRateLimit(KindPagure)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.NpmPackagesConnection:
-		limit = rate.Limit(6000 / 3600.0) // Same as the default in npm-packages.schema.json
+		limit = GetRateLimit(KindNpmPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
@@ -683,7 +683,7 @@ func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bo
 		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://proxy.golang.org)
 		// doesn't document an enforced req/s rate limit AND we do a lot more individual
 		// requests in comparison since they don't offer enough batch APIs.
-		limit = rate.Limit(57600.0 / 3600.0) // Same as default in go-modules.schema.json
+		limit = GetRateLimit(KindGoPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
@@ -691,30 +691,61 @@ func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bo
 	case *schema.PythonPackagesConnection:
 		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
 		// document an enforced req/s rate limit.
-		limit = rate.Limit(57600.0 / 3600.0) // 16/second same as default in python-packages.schema.json
+		limit = GetRateLimit(KindPythonPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RustPackagesConnection:
 		// The crates.io CDN has no rate limits https://www.pietroalbini.org/blog/downloading-crates-io/
-		limit = rate.Limit(100)
+		limit = GetRateLimit(KindRustPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RubyPackagesConnection:
 		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
-		limit = rate.Limit(10)
+		limit = GetRateLimit(KindRubyPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	default:
-		return limit, isDefault, ErrRateLimitUnsupported{codehostKind: kind}
+		// will go to the default case
+		return GetRateLimit("default"), isDefault, nil
 	}
 
 	return limit, isDefault, nil
+}
+
+// GetRateLimit returns the rate limit settings for code hosts.
+func GetRateLimit(kind string) rate.Limit {
+	switch kind {
+	case KindGitHub, KindGitLab:
+		return rate.Inf
+	case KindBitbucketServer:
+		return rate.Limit(8)
+	case KindBitbucketCloud:
+		return rate.Limit(2)
+	case KindPerforce:
+		return rate.Limit(5000.0 / 3600.0)
+	case KindJVMPackages:
+		return rate.Limit(2)
+	case KindPagure:
+		return rate.Limit(8)
+	case KindNpmPackages:
+		return rate.Limit(6000 / 3600.0)
+	case KindGoPackages:
+		return rate.Limit(57600.0 / 3600.0)
+	case KindPythonPackages:
+		return rate.Limit(57600.0 / 3600.0)
+	case KindRustPackages:
+		return rate.Limit(100)
+	case KindRubyPackages:
+		return rate.Limit(10)
+	default:
+		return rate.Inf
+	}
 }
 
 func limitOrInf(enabled bool, perHour float64) rate.Limit {
