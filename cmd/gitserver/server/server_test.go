@@ -960,15 +960,16 @@ func TestCloneRepo(t *testing.T) {
 func TestCloneRepo_Deduplication(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	remote := t.TempDir()
+	t.Cleanup(func() {
+		cancel()
+	})
+
 	repoName := api.RepoName("example.com/foo/bar")
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
-		Name:        repoName,
-		Description: "Test",
-		URI:         string(repoName),
+		Name: repoName,
+		URI:  string(repoName),
 	}
 
 	// Insert the repo into our database
@@ -994,22 +995,23 @@ func TestCloneRepo_Deduplication(t *testing.T) {
 	// Verify the gitserver repo entry exists.
 	assertRepoState(types.CloneStatusNotCloned, 0, nil)
 
-	repo := remote
+	// Not setting this blocks when trying to debug this test with delve. But works fine otherwise.
+	authz.SetProviders(true, nil)
+
+	repoDir := t.TempDir()
 	cmd := func(name string, arg ...string) string {
 		t.Helper()
-		return runCmd(t, repo, name, arg...)
+		return runCmd(t, repoDir, name, arg...)
 	}
 	wantCommit := makeSingleCommitRepo(cmd)
 
 	reposDir := t.TempDir()
-	s := makeTestServer(ctx, t, reposDir, remote, db)
+	s := makeTestServer(ctx, t, reposDir, repoDir, db)
 
 	s.DeduplicatedForksSet.Overwrite(collections.Set[string]{
 		string(repoName): {},
 	})
 
-	// Not setting this blocks when trying to debug this test with delve. But works fine otherwise.
-	authz.SetProviders(true, nil)
 	_, err := s.cloneRepo(ctx, repoName, &cloneOptions{Block: true})
 	require.NoError(t, err)
 
@@ -1018,7 +1020,7 @@ func TestCloneRepo_Deduplication(t *testing.T) {
 	wantRepoSize := dirSize(dst.Path("."))
 	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
 
-	repo = filepath.Dir(string(dst))
+	repoDir = filepath.Dir(string(dst))
 	gotCommit := cmd("git", "rev-parse", "HEAD")
 	if wantCommit != gotCommit {
 		t.Fatal("failed to clone:", gotCommit)
