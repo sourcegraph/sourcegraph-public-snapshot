@@ -635,14 +635,12 @@ func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bo
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GitHubConnection:
-		// Use an infinite rate limiter. GitHub has an external rate limiter we obey.
 		limit = GetRateLimit(KindGitHub)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.BitbucketServerConnection:
-		// 8/s is the default limit we enforce
 		limit = GetRateLimit(KindBitbucketServer)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
@@ -667,7 +665,6 @@ func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bo
 			limit = limitOrInf(c.Maven.RateLimit.Enabled, c.Maven.RateLimit.RequestsPerHour)
 		}
 	case *schema.PagureConnection:
-		// 8/s is the default limit we enforce
 		limit = GetRateLimit(KindPagure)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
@@ -680,31 +677,24 @@ func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bo
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.GoModulesConnection:
-		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://proxy.golang.org)
-		// doesn't document an enforced req/s rate limit AND we do a lot more individual
-		// requests in comparison since they don't offer enough batch APIs.
 		limit = GetRateLimit(KindGoPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.PythonPackagesConnection:
-		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
-		// document an enforced req/s rate limit.
 		limit = GetRateLimit(KindPythonPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RustPackagesConnection:
-		// The crates.io CDN has no rate limits https://www.pietroalbini.org/blog/downloading-crates-io/
 		limit = GetRateLimit(KindRustPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RubyPackagesConnection:
-		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
 		limit = GetRateLimit(KindRubyPackages)
 		if c != nil && c.RateLimit != nil {
 			isDefault = false
@@ -721,9 +711,13 @@ func GetLimitFromConfig(kind string, config any) (limit rate.Limit, isDefault bo
 // GetRateLimit returns the rate limit settings for code hosts.
 func GetRateLimit(kind string) rate.Limit {
 	switch kind {
-	case KindGitHub, KindGitLab:
+	case KindGitHub:
+		// Use an infinite rate limiter. GitHub has an external rate limiter we obey.
+		return rate.Inf
+	case KindGitLab:
 		return rate.Inf
 	case KindBitbucketServer:
+		// 8/s is the default limit we enforce
 		return rate.Limit(8)
 	case KindBitbucketCloud:
 		return rate.Limit(2)
@@ -732,16 +726,24 @@ func GetRateLimit(kind string) rate.Limit {
 	case KindJVMPackages:
 		return rate.Limit(2)
 	case KindPagure:
+		// 8/s is the default limit we enforce
 		return rate.Limit(8)
 	case KindNpmPackages:
 		return rate.Limit(6000 / 3600.0)
 	case KindGoPackages:
+		// Unlike the GitHub or GitLab APIs, the public npm registry (i.e. https://proxy.golang.org)
+		// doesn't document an enforced req/s rate limit AND we do a lot more individual
+		// requests in comparison since they don't offer enough batch APIs
 		return rate.Limit(57600.0 / 3600.0)
 	case KindPythonPackages:
+		// Unlike the GitHub or GitLab APIs, the pypi.org doesn't
+		// document an enforced req/s rate limit.
 		return rate.Limit(57600.0 / 3600.0)
 	case KindRustPackages:
+		// The crates.io CDN has no rate limits https://www.pietroalbini.org/blog/downloading-crates-io/
 		return rate.Limit(100)
 	case KindRubyPackages:
+		// The rubygems.org API allows 10 rps https://guides.rubygems.org/rubygems-org-rate-limits/
 		return rate.Limit(10)
 	default:
 		return rate.Inf

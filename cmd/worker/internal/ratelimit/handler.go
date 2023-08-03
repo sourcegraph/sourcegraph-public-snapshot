@@ -67,7 +67,6 @@ func (h *handler) getRateLimitConfigsOrDefaults(ctx context.Context, codeHostURL
 	if ch.APIRateLimitQuota != nil {
 		apiCap = *ch.APIRateLimitQuota
 	} else {
-		// we only use whole numbers anyways, so this
 		// TODO: is this reasonable? These limits represent remote calls, so we are never reaching these numbers anyways.
 		defaultRateLimitAsInt := int32(extsvc.GetRateLimit(ch.Kind))
 		if defaultRateLimitAsInt < 0 {
