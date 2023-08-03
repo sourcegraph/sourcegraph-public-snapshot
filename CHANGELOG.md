@@ -18,6 +18,11 @@ All notable changes to Sourcegraph are documented in this file.
 ### Added
 
 - Experimental support for Azure OpenAI for the completions and embeddings provider has been added. [#55178](https://github.com/sourcegraph/sourcegraph/pull/55178)
+- Added a feature flag for alternate GitLab project visibility resolution. This may solve some weird cases with not being able to see GitLab internal projects. [#54426](https://github.com/sourcegraph/sourcegraph/pull/54426)
+  - To use this feature flag, create a Boolean feature flag named "gitLabProjectVisibilityExperimental" and set the value to True.
+- It is now possible to add annotations to pods spawned by jobs created by the Kubernetes executor. [#55361](https://github.com/sourcegraph/sourcegraph/pull/55361)
+- New Prometheus metrics have been added to track the response / request sizes of gRPC calls. [#55381](https://github.com/sourcegraph/sourcegraph/pull/55381)
+- A new embeddings site configuration setting `excludeChunkOnError` allows embedding jobs to complete job execution despite chunks of code or text that fail. When enabled the chunks are skipped after failed retries but the index can continue being populated. When disabled the entire job fails and the index is not saved. This setting is enabled by default. Embedding job statistics now capture `code_chunks_excluded` and `text_chunks_excluded` for successfully completed jobs. Total excluded chunks and file names for excluded chunks are logged as warnings. [#55180](https://github.com/sourcegraph/sourcegraph/pull/55180)
 
 ### Changed
 
@@ -27,7 +32,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
-- Fixed an issue where GitHub Apps could not be set up using Firefox. [#55305](https://github.com/sourcegraph/sourcegraph/pull/55305)
+- Fixed a bug where user account requests could not be approved even though the license would permit user creation otherwise. [#55482[(https://github.com/sourcegraph/sourcegraph/pull/55482)
 
 ### Removed
 
@@ -36,6 +41,10 @@ All notable changes to Sourcegraph are documented in this file.
 
 ## 5.1.5
 
+### Known Issues
+
+- Standard and multi-version upgrades are not currently working from Sourcegraph versions 5.0.X to 5.1.5. As a temporary workaround, please upgrade 5.0.X to 5.1.0, then 5.1.0 to 5.1.5.
+
 ### Fixed
 
 - Fixed an embeddings job scheduler bug where if we cannot resolve one of the repositories or its default branch then all repositories submitted will not have their respective embeddings job enqueued. Embeddings job scheduler will now continue to schedule jobs for subsequent repositories in the submitted repositories set. [#54701](https://github.com/sourcegraph/sourcegraph/pull/54701)
@@ -43,13 +52,17 @@ All notable changes to Sourcegraph are documented in this file.
 - Passing multi-line Coursier credentials in JVM packages configuration should now work correctly. [#55113](https://github.com/sourcegraph/sourcegraph/pull/55113)
 - SCIP indexes are now ingested in a streaming fashion, eliminating out-of-memory errors in most cases, even when uploading very large indexes (1GB+ uncompressed). [#53828](https://github.com/sourcegraph/sourcegraph/pull/53828)
 - Moved the license checks to worker service. We make sure to run only 1 instance of license checks this way. [54854](https://github.com/sourcegraph/sourcegraph/pull/54854)
+- Updated base images to resolve issues in curl, OpenSSL, and OpenSSL. [55310](https://github.com/sourcegraph/sourcegraph/pull/55310)
 - The default message size limit for gRPC clients has been raised from 4MB to 90MB. [#55209](https://github.com/sourcegraph/sourcegraph/pull/55209)
 - The message printing feature for the custom gRPC internal error interceptor now supports logging all internal error types, instead of just non-utf 8 errors. [#55130](https://github.com/sourcegraph/sourcegraph/pull/55130)
+- Fixed an issue where GitHub Apps could not be set up using Firefox. [#55305](https://github.com/sourcegraph/sourcegraph/pull/55305)
+- Fixed nil panic on certain GraphQL fields when listing users. [#55322](https://github.com/sourcegraph/sourcegraph/pull/55322)
 
 ### Changed
 
 - The "Files" tab of the fuzzy finder now allows you to navigate directly to a line number by appending `:NUMBER`. For example, the fuzzy query `main.ts:100` opens line 100 in the file `main.ts`. [#55064](https://github.com/sourcegraph/sourcegraph/pull/55064)
 - The gRPC implementation for the Symbol service's `LocalCodeIntel` endpoint has been changed to stream its results. [#55242](https://github.com/sourcegraph/sourcegraph/pull/55242)
+- GitLab auth providers now support an `ssoURL` option that facilitates scenarios where a GitLab group requires SAML/SSO. [#54957](https://github.com/sourcegraph/sourcegraph/pull/54957)
 
 ### Added
 
@@ -65,7 +78,6 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The UI for license keys now displays more information about license validity. [#54990](https://github.com/sourcegraph/sourcegraph/pull/54990)
 - Sourcegraph now supports more than one auth provider per URL. [#54289](https://github.com/sourcegraph/sourcegraph/pull/54289)
-- GitLab auth providers now support an `ssoURL` option that facilitates scenarios where a GitLab group requires SAML/SSO. [#54957](https://github.com/sourcegraph/sourcegraph/pull/54957)
 - Site-admins can now list, view and edit all code monitors. [#54981](https://github.com/sourcegraph/sourcegraph/pull/54981)
 
 ## 5.1.3

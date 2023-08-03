@@ -5689,6 +5689,13 @@ def go_dependencies():
         sum = "h1:d+Bc7a5rLufV/sSk/8dngufqelfh6jnri85riMAaF/M=",
         version = "v0.0.0-20170810143723-de5bf2ad4578",
     )
+    go_repository(
+        name = "com_github_qdrant_go_client",
+        build_file_proto_mode = "disable_global",
+        importpath = "github.com/qdrant/go-client",
+        sum = "h1:LckV8C0TtMPDqWPd5g5sIa9zELQMelRlcZk9ANSZ2H8=",
+        version = "v1.3.0",
+    )
 
     go_repository(
         name = "com_github_quasoft_websspi",
@@ -6266,8 +6273,8 @@ def go_dependencies():
         name = "com_github_sourcegraph_zoekt",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/sourcegraph/zoekt",
-        sum = "h1:VWYAOJEy4iCY5ypRui6xgFGyUWhlq2AtPj3J7BYgzQk=",
-        version = "v0.0.0-20230724134010-f9b3ea5dcf46",
+        sum = "h1:RPuTlekup6EQ41utARp+UiR5kc6smGMPQTmor0Rw84w=",
+        version = "v0.0.0-20230801152445-d57235362dca",
     )
 
     go_repository(

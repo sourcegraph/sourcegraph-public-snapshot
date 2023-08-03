@@ -548,9 +548,9 @@ func TestNewKubernetesJob(t *testing.T) {
 		Env:     []string{"FOO=bar"},
 	}
 	options := command.KubernetesContainerOptions{
-		Namespace:   "default",
-		NodeName:    "my-node",
-		Annotations: map[string]string{"foo": "bar"},
+		Namespace:      "default",
+		NodeName:       "my-node",
+		JobAnnotations: map[string]string{"foo": "bar"},
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: "my-secret"},
 		},
@@ -655,9 +655,9 @@ func TestNewKubernetesSingleJob(t *testing.T) {
 		CloneOptions: command.KubernetesCloneOptions{
 			ExecutorName: "my-executor",
 		},
-		Namespace:   "default",
-		NodeName:    "my-node",
-		Annotations: map[string]string{"foo": "bar"},
+		Namespace:      "default",
+		NodeName:       "my-node",
+		JobAnnotations: map[string]string{"foo": "bar"},
 		ImagePullSecrets: []corev1.LocalObjectReference{
 			{Name: "my-secret"},
 		},

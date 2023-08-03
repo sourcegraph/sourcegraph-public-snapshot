@@ -183,6 +183,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = (
             exact: true,
             path: '/code-insights-jobs',
             render: () => <CodeInsightsJobsPage />,
+            condition: ({ codeInsightsEnabled }) => codeInsightsEnabled,
         },
         {
             exact: true,

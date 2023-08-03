@@ -4,8 +4,9 @@ import { mdiInformation } from '@mdi/js'
 import { useLocation } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { useLocalStorage, Button, Link, Alert, H2, H3, Icon, Text, Container } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, H2, H3, Icon, Text, Container, PageHeader } from '@sourcegraph/wildcard'
 
 import { LimitedAccessBanner } from '../LimitedAccessBanner'
 import { PageTitle } from '../PageTitle'
@@ -49,8 +50,8 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     isSourcegraphApp,
 }) => {
     const { search } = useLocation()
-    const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useLocalStorage(
-        'hasDismissedCodeHostPrivacyWarning',
+    const [hasDismissedPrivacyWarning, setHasDismissedPrivacyWarning] = useTemporarySetting(
+        'admin.hasDismissedCodeHostPrivacyWarning',
         false
     )
     const dismissPrivacyWarning = (): void => {
@@ -99,8 +100,13 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
 
     return (
         <>
-            <PageTitle title="Add code host connection" />
-            <H2>Add code host connection</H2>
+            <PageTitle title="Add a code host connection" />
+            <PageHeader
+                headingElement="h2"
+                path={[{ text: 'Add a code host connection' }]}
+                description="Add code host connection to one of the supported code hosts."
+                className="mb-3"
+            />
 
             {isSourcegraphApp && (
                 <LimitedAccessBanner
@@ -112,9 +118,9 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                     <Link to="/user/app-settings">Settings → Repositories → Local/Remote repositories</Link>
                 </LimitedAccessBanner>
             )}
-            <Container>
-                <Text>Add code host connection to one of the supported code hosts.</Text>
-                {hasDismissedPrivacyWarning && (
+
+            <Container className="mb-3">
+                {!hasDismissedPrivacyWarning && (
                     <Alert variant="info">
                         <Text>
                             This Sourcegraph installation will never send your code, repository names, file names, or
@@ -145,7 +151,7 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                             </li>
                         </ul>
                         <div className="d-flex justify-content-end">
-                            <Button variant="secondary" className={styles.btnLight} onClick={dismissPrivacyWarning}>
+                            <Button variant="secondary" onClick={dismissPrivacyWarning}>
                                 Do not show this again
                             </Button>
                         </div>

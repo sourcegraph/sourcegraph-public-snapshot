@@ -6,16 +6,27 @@
 
 ### Changed
 
+- Store application level access tokens in a safe way [#55251](https://github.com/sourcegraph/sourcegraph/pull/55251)
+
 ### Deprecated
 
 ### Removed
 
 ### Fixed
 
-- Improved the auto-scrolling of the Cody chat [#55150](https://github.com/sourcegraph/sourcegraph/pull/55150)
-- Fixed mouse wheel and mouse drag scrolling in the Cody chat [#55199](https://github.com/sourcegraph/sourcegraph/pull/55199)
+- Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
+- Chat message doesn't jump after finished response generation [#55390](https://github.com/sourcegraph/sourcegraph/pull/55390)
+
+- Removed jumping text effect from the chat when generating response [#55357](https://github.com/sourcegraph/sourcegraph/pull/55357)
 
 ### Security
+
+## [3.0.8]
+
+### Fixed
+
+- Improved the auto-scrolling of the Cody chat [#55150](https://github.com/sourcegraph/sourcegraph/pull/55150)
+- Fixed mouse wheel and mouse drag scrolling in the Cody chat [#55199](https://github.com/sourcegraph/sourcegraph/pull/55199)
 
 ## [3.0.7]
 

@@ -58,15 +58,15 @@ func (c *sourcegraphEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("sourcegraph/%s", c.model)
 }
 
-func (c *sourcegraphEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) ([]float32, error) {
+func (c *sourcegraphEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
 	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
 }
 
-func (c *sourcegraphEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) ([]float32, error) {
+func (c *sourcegraphEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
 	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
 }
 
-func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	request := codygateway.EmbeddingsRequest{Model: c.model, Input: texts}
 	response, err := c.do(ctx, request)
 	if err != nil {
@@ -82,20 +82,26 @@ func (c *sourcegraphEmbeddingsClient) getEmbeddings(ctx context.Context, texts [
 		return response.Embeddings[i].Index < response.Embeddings[j].Index
 	})
 
-	embeddings := make([]float32, 0, len(response.Embeddings)*response.ModelDimensions)
+	dimensionality := response.ModelDimensions
+	embeddings := make([]float32, 0, len(response.Embeddings)*dimensionality)
+	failed := make([]int, 0)
 	for _, embedding := range response.Embeddings {
 		if len(embedding.Data) > 0 {
 			embeddings = append(embeddings, embedding.Data...)
 		} else {
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, c.model, texts[embedding.Index], 3)
 			if err != nil {
-				return nil, client.PartialError{err, embedding.Index}
+				failed = append(failed, embedding.Index)
+
+				// reslice to provide zero value embedding for failed chunk
+				embeddings = embeddings[:len(embeddings)+dimensionality]
+				continue
 			}
 			embeddings = append(embeddings, resp...)
 		}
 	}
 
-	return embeddings, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: response.ModelDimensions}, nil
 }
 
 func (c *sourcegraphEmbeddingsClient) do(ctx context.Context, request codygateway.EmbeddingsRequest) (*codygateway.EmbeddingsResponse, error) {

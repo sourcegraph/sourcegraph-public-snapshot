@@ -44,15 +44,15 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("openai/%s", c.model)
 }
 
-func (c *openaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) ([]float32, error) {
+func (c *openaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
 	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
 }
 
-func (c *openaiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) ([]float32, error) {
+func (c *openaiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
 	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
 }
 
-func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -77,6 +77,7 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 
 	dimensionality := len(response.Data[0].Embedding)
 	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
+	failed := make([]int, 0)
 	for _, embedding := range response.Data {
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
@@ -86,13 +87,17 @@ func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []stri
 			// response. Try it again a few times and hope for the best.
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, texts[embedding.Index], 3)
 			if err != nil {
-				return nil, client.PartialError{Err: err, Index: embedding.Index}
+				failed = append(failed, embedding.Index)
+
+				// reslice to provide zero value embedding for failed chunk
+				embeddings = embeddings[:len(embeddings)+dimensionality]
+				continue
 			}
 			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}
 	}
 
-	return embeddings, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: dimensionality}, nil
 }
 
 func (c *openaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {

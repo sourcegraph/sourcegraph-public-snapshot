@@ -30,6 +30,7 @@ go_library(
         "@com_github_lib_pq//:pq",
         "@com_github_prometheus_client_golang//prometheus",
         "@com_github_sourcegraph_log//:log",
+        "@com_github_yuin_gopher_lua//parse",
         "@io_opentelemetry_go_otel//attribute",
     ],
 )

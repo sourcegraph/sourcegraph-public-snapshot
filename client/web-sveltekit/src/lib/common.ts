@@ -4,7 +4,12 @@ export type { ErrorLike } from '@sourcegraph/common/src/errors/types'
 export { isErrorLike } from '@sourcegraph/common/src/errors/utils'
 export { createAggregateError, asError } from '@sourcegraph/common/src/errors/errors'
 export { memoizeObservable, resetAllMemoizationCaches } from '@sourcegraph/common/src/util/rxjs/memoizeObservable'
-export { encodeURIPathComponent } from '@sourcegraph/common/src/util/url'
+export {
+    encodeURIPathComponent,
+    toPositionOrRangeQueryParameter,
+    addLineRangeQueryParameter,
+    formatSearchParameters,
+} from '@sourcegraph/common/src/util/url'
 export { pluralize, numberWithCommas } from '@sourcegraph/common/src/util/strings'
 export { renderMarkdown } from '@sourcegraph/common/src/util/markdown/markdown'
 export { highlightNodeMultiline } from '@sourcegraph/common/src/util/highlightNode'

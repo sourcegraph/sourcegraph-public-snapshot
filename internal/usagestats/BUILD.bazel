@@ -41,6 +41,7 @@ go_library(
         "//internal/database",
         "//internal/database/basestore",
         "//internal/env",
+        "//internal/eventlogger",
         "//internal/featureflag",
         "//internal/gitserver",
         "//internal/pubsub",
