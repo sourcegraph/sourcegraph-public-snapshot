@@ -41,11 +41,11 @@ type mockOption func(database.DB) database.DB
 // With creates a new MockOption from the provided store.
 // Store must implement both the basestore.ShareableStore and
 // the MockableStore interfaces.
-func With[T basestore.ShareableStore](val T) mockOption {
+func With[T basestore.ShareableStore](mockedStore T) mockOption {
 	return func(db database.DB) database.DB {
 		return &mockedDB{
 			DB:          db,
-			mockedStore: reflect.ValueOf(val),
+			mockedStore: reflect.ValueOf(mockedStore),
 		}
 	}
 }
