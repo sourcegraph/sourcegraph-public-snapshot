@@ -1,3 +1,4 @@
+load("//dev:go_defs.bzl", "go_test")
 load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
@@ -9,5 +10,16 @@ go_library(
         "//internal/database",
         "//internal/database/basestore",
         "@com_github_keegancsmith_sqlf//:sqlf",
+    ],
+)
+
+go_test(
+    name = "dbmock_test",
+    srcs = ["dbmock_test.go"],
+    deps = [
+        ":dbmock",
+        "//internal/database",
+        "//internal/database/dbmock/internal",
+        "@com_github_stretchr_testify//require",
     ],
 )

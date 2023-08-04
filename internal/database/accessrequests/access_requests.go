@@ -98,7 +98,7 @@ func NewStore() *store {
 }
 
 func (s *MockStore) ToEmbeddable() dbmock.Embeddable {
-	return dbmock.NewEmbeddable[Store](s)
+	return dbmock.NewEmbeddable(s)
 }
 
 const (

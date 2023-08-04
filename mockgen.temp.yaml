@@ -1,3 +1,8 @@
+- filename: internal/database/dbmock/internal/mocks_temp.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/internal/database/dbmock/internal
+      interfaces:
+        - Store
 - filename: dev/team/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/dev/team
   interfaces:

@@ -11,9 +11,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 )
 
+// mockedDB is a wrapper around a database.DB, and has an additional
+// mockedStore. A specific mockedStore can be unwrapped using the
+// get function.
 type mockedDB struct {
 	database.DB
 	mockedStore any
+}
+
+// New embeds each mocked store in the provided DB.
+func New(db database.DB, stores ...toEmbeddable) database.DB {
+	for _, store := range stores {
+		db = store.ToEmbeddable().Embed(db)
+	}
+	return db
 }
 
 func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx database.DB) error) error {
@@ -26,27 +37,36 @@ func (mdb *mockedDB) With(other basestore.ShareableStore) database.DB {
 	return mdb.DB.With(other)
 }
 
+// Embeddable describes a store that can embed itself in a database.DB.
 type Embeddable interface {
 	Embed(database.DB) database.DB
 }
 
-type ToEmbeddable interface {
+// toEmbeddable describes a mock store that can be converted to an Embeddable store.
+// The implementation of this interface should simply be:
+//
+//	func (store *MockStore) toEmbeddable() dbmock.Embeddable {
+//		return dbmock.NewEmbeddable(store)
+//	}
+type toEmbeddable interface {
 	ToEmbeddable() Embeddable
 }
 
-type embeddable struct {
+type embeddable[T toEmbeddable] struct {
 	store any
 }
 
-func (e *embeddable) Embed(db database.DB) database.DB {
+// Embed embeds the wrapped store inside the database.DB by wrapping
+// the db inside a mockedDB.
+func (e *embeddable[T]) Embed(db database.DB) database.DB {
 	return &mockedDB{
 		DB:          db,
 		mockedStore: e.store,
 	}
 }
 
-func NewEmbeddable[T any](store T) *embeddable {
-	return &embeddable{store}
+func NewEmbeddable[T toEmbeddable](store T) *embeddable[T] {
+	return &embeddable[T]{store}
 }
 
 // Get fetches the mocked interface T from the provided DB.
@@ -62,15 +82,27 @@ func get[T any](db database.DB) *T {
 	return nil
 }
 
+// MockableStore wraps basestore.Store. The basestore.Store is hidden behind
+// a private field so that it cannot be interacted with.
+// The basestore.Store can only be initialized by calling `.WithDB`, which
+// will then return the embedded store.
 type MockableStore[T any] struct {
 	inner *basestore.Store
 	store T
 }
 
+// NewMockableStore returns a new MockableStore instance from store.
+// The generic parameter T should be the interface that you wish to be
+// mockable.
 func NewMockableStore[T any](store T) *MockableStore[T] {
 	return &MockableStore[T]{store: store}
 }
 
+// WithDB initializes the inner basestore.Store and returns the underlying
+// store.
+//
+// Any attempts to use the inner store before calling WithDB will result in
+// a panic.
 func (s *MockableStore[T]) WithDB(db database.DB) T {
 	if i := get[T](db); i != nil {
 		return *i
@@ -78,16 +110,6 @@ func (s *MockableStore[T]) WithDB(db database.DB) T {
 
 	s.inner = basestore.NewWithHandle(db.Handle())
 	return s.store
-}
-
-type NewStoreFunc[T any] func(database.DB) T
-
-func (f NewStoreFunc[T]) With(db database.DB) T {
-	if i := get[T](db); i != nil {
-		return *i
-	}
-
-	return f(db)
 }
 
 func (s *MockableStore[T]) Done(err error) error {
@@ -168,12 +190,4 @@ func (s *MockableStore[T]) WithTransact(ctx context.Context, f func(tx *basestor
 	}
 
 	return s.inner.WithTransact(ctx, f)
-}
-
-// New embeds each mock option in the provided DB.
-func New(db database.DB, stores ...ToEmbeddable) database.DB {
-	for _, store := range stores {
-		db = store.ToEmbeddable().Embed(db)
-	}
-	return db
 }
