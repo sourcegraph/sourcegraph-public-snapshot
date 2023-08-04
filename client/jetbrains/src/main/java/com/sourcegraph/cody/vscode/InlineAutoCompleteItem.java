@@ -70,9 +70,7 @@ public class InlineAutoCompleteItem {
         !sameLineSuffix.isEmpty() && sameLineRawAutocomplete.contains(sameLineSuffix);
     int lastSuffixIndex = sameLineRawAutocomplete.lastIndexOf(sameLineSuffix);
     String sameLineBeforeSuffixText =
-        needAfterEndOfLineSuffix
-            ? sameLineRawAutocomplete.substring(0, lastSuffixIndex)
-            : sameLineRawAutocomplete;
+        removeCommonSuffix(sameLineRawAutocomplete, sameLineSuffix);
     String afterEndOfLineSuffix =
         needAfterEndOfLineSuffix
             ? sameLineRawAutocomplete.substring(lastSuffixIndex + sameLineSuffix.length())
@@ -82,5 +80,20 @@ public class InlineAutoCompleteItem {
             ? this.insertText.lines().skip(1).collect(Collectors.joining(System.lineSeparator()))
             : "";
     return new AutoCompleteText(sameLineBeforeSuffixText, afterEndOfLineSuffix, blockText);
+  }
+
+  private String removeCommonSuffix(String str1, String str2) {
+    int len1 = str1.length();
+    int len2 = str2.length();
+    int minLength = Math.min(len1, len2);
+    int i = 1;
+
+    // Iterate from the end and find the first character that differs
+    while (i <= minLength && str1.charAt(len1 - i) == str2.charAt(len2 - i)) {
+      i++;
+    }
+
+    // Remove the common suffix
+    return i > 1 ? str1.substring(0, len1 - i + 1) : str1;
   }
 }
