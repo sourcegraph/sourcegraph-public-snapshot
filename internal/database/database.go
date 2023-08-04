@@ -22,7 +22,6 @@ type DB interface {
 	dbutil.DB
 	basestore.ShareableStore
 
-	AccessRequests() AccessRequestStore
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
 	BitbucketProjectPermissions() BitbucketProjectPermissionsStore
@@ -146,10 +145,6 @@ func (d *db) Done(err error) error {
 
 func (d *db) AccessTokens() AccessTokenStore {
 	return AccessTokensWith(d.Store, d.logger.Scoped("AccessTokenStore", ""))
-}
-
-func (d *db) AccessRequests() AccessRequestStore {
-	return AccessRequestsWith(d.Store, d.logger.Scoped("AccessRequestStore", ""))
 }
 
 func (d *db) BitbucketProjectPermissions() BitbucketProjectPermissionsStore {
