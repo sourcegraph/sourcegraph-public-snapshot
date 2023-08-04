@@ -2,7 +2,7 @@
   description = "The Sourcegraph developer environment & packages Nix Flake";
 
   inputs = {
-    nixpkgs.url = "nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/e78d25df6f1036b3fa76750ed4603dd9d5fe90fc";
     flake-utils.url = "github:numtide/flake-utils";
   };
 
