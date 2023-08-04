@@ -50,7 +50,7 @@ func (e *exhaustiveSearch) Handle(ctx context.Context, logger log.Logger, record
 	return errors.New("not implemented")
 }
 
-// InitExhaustiveSearchWorkerStore initializes and returns a dbworker.Store instance for the batch spec workspace resolution worker.
+// InitExhaustiveSearchWorkerStore initializes and returns a dbworker.Store instance for the exhaustive search worker.
 func InitExhaustiveSearchWorkerStore() (dbworkerstore.Store[*exhaustive.Job], error) {
 	return initExhaustiveSearchWorkerStore.Init()
 }
