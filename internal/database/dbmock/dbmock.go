@@ -8,11 +8,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
-// Configurable is any type that, when given database.DB, turns into T.
-type Configurable[T any] interface {
-	WithDB(database.DB) T
-}
-
 // BaseStore is a store without a database connection.
 // It can be turned into a store with a database connection
 // by calling .WithDB and providing a DB.
@@ -21,12 +16,13 @@ type BaseStore[T any] interface {
 }
 
 // baseStore implements BaseStore.
-// It checks the provided database.DB for any mocks.
+// It wraps another BaseStore, but checks the provided database.DB
+// for any mocks and returns a mock if found.
 type baseStore[T any] struct {
-	store Configurable[T]
+	store BaseStore[T]
 }
 
-func NewBaseStore[T any](store Configurable[T]) BaseStore[T] {
+func NewBaseStore[T any](store BaseStore[T]) BaseStore[T] {
 	return &baseStore[T]{
 		store: store,
 	}
