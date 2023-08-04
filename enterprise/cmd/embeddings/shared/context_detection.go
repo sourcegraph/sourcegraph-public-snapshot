@@ -3,6 +3,7 @@ package shared
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -52,5 +53,21 @@ func isContextRequiredForChatQuery(query string) bool {
 	resp, _ := http.Post("http://127.0.0.1:8000/context-probabilities", "application/json", bytes.NewBuffer(jsonPayload))
 	probabilities := map[string]float64{}
 	json.NewDecoder(resp.Body).Decode(&probabilities)
-	return probabilities["no_context_probability"] < 0.5
+	fmt.Println("query: ", queryTrimmed)
+	fmt.Println("probabilities: ", probabilities)
+	noContextProb, ok := probabilities["no_context_probabilities"]
+	if !ok {
+		// TODO: better error handling
+		return false
+	}
+
+	for context_type, p := range probabilities {
+		if p > noContextProb {
+			fmt.Println("Returning that context is needed:", context_type, "is greater than no context probability")
+			return true
+		}
+	}
+
+	fmt.Println("Returning that no context is needed:")
+	return false
 }
