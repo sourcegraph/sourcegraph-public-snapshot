@@ -2,6 +2,7 @@ package dbmock_test
 
 import (
 	"context"
+	"errors"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -16,7 +17,7 @@ import (
 func TestUninitializedStorePanics(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("Expected store on which .WithDB(db) has not been called to panic")
+			t.Errorf(`Expected store on which .WithDB(db) has not been called to panic`)
 		}
 	}()
 
@@ -30,5 +31,20 @@ func TestInitializedStoreDoesNotPanic(t *testing.T) {
 	mockStore := internal.NewMockStore()
 	db := dbmock.New(mockDB, mockStore)
 
-	require.NoError(t, internal.NewStore().WithDB(db).Create(context.Background()))
+	err := internal.NewStore().WithDB(db).Create(context.Background())
+	require.NoError(t, err)
+}
+
+// TestMockedStoreIsReturnedFromWithDB asserts that, when a mocked store is
+// embedded into a database.DB, it is returned when its corresponding store
+// is initialized with .WithDB(db).
+func TestMockedStoreIsReturnedFromWithDB(t *testing.T) {
+	const mockedErr = "mocked return error"
+	mockStore := internal.NewMockStore()
+	mockStore.CreateFunc.SetDefaultReturn(errors.New(mockedErr))
+
+	db := dbmock.New(database.NewMockDB(), mockStore)
+
+	err := internal.NewStore().WithDB(db).Create(context.Background())
+	require.ErrorContains(t, err, mockedErr)
 }
