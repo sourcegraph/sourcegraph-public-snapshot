@@ -127,7 +127,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	}
 
 	err = r.db.WithTransact(ctx, func(tx database.DB) error {
-		store := accessrequests.NewStore(r.logger).WithDB(tx)
+		store := accessrequests.NewStore(tx.Logger()).WithDB(tx)
 
 		accessRequest, err := store.GetByID(ctx, id)
 		if err != nil {
