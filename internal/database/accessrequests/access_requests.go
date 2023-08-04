@@ -91,8 +91,8 @@ type store struct {
 	logger log.Logger
 }
 
-func NewStore() *store {
-	s := &store{}
+func NewStore(logger log.Logger) *store {
+	s := &store{logger: logger.Scoped("accessrequests.Store", "")}
 	s.MockableStore = dbmock.NewMockableStore[Store](s)
 	return s
 }
