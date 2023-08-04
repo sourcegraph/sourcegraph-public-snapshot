@@ -104,12 +104,12 @@ Executors support [auto-indexing](../../../code_navigation/explanations/auto_ind
 To enable executors you must do the following:
 1. Connect to the instance using `ssh`
 2. Run `cd /home/sourcegraph/deploy/install/`
-3. Modify `executor.frontendPassword` in `override.yaml`
+3. Replace the placeholder `executor.frontendPassword` in `override.yaml`
 4. Run the following command to update the executor
 ```
 helm upgrade -i -f ./override.yaml --version "$(cat /home/sourcegraph/.sourcegraph-version)" executor sourcegraph/sourcegraph-executor-k8s
 ```
-5. Enable executors by adding the following to the site-admin config using the password you chose previously
+5. Adding the following to the site-admin config using the password you chose previously
 ```
 "executors.accessToken": "<exector.frontendPassword>",
 "executors.frontendURL": "http://sourcegraph-frontend:30080",

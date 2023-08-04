@@ -71,12 +71,12 @@ Executors support [auto-indexing](../../../code_navigation/explanations/auto_ind
 To enable executors you must do the following:
 1. Connect to the AMI instance using `ssh`
 2. Run `cd /home/ec2-user/deploy/install/`
-3. Modify `executor.frontendPassword` in `override.yaml`
+3. Replace the placeholder `executor.frontendPassword` in `override.yaml`
 4. Run the following command to update the executor
 ```
 helm upgrade -i -f ./override.yaml --version "$(cat /home/ec2-user/.sourcegraph-version)" executor ./sourcegraph-executor-k8s-charts.tgz
 ```
-5. Enable executors by adding the following to the site-admin config using the password you chose previously
+5. Add the following to the site-admin config using the password you chose previously
 ```
 "executors.accessToken": "<exector.frontendPassword>",
 "executors.frontendURL": "http://sourcegraph-frontend:30080",
