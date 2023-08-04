@@ -6,10 +6,7 @@ go_library(
     srcs = ["dbmock.go"],
     importpath = "github.com/sourcegraph/sourcegraph/internal/database/dbmock",
     visibility = ["//:__subpackages__"],
-    deps = [
-        "//internal/database",
-        "//internal/database/basestore",
-    ],
+    deps = ["//internal/database"],
 )
 
 go_test(

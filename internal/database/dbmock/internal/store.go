@@ -18,14 +18,6 @@ type Store interface {
 	Create(context.Context) error
 }
 
-// ToEmbeddable has to be added to the _MockStore_ struct that is generated
-// from the `sg generate` command. This is done outside the generated mock
-// file so that it does not get overwritten on subsequent `sg generate` calls.
-// This exact method can be copied.
-func (s *MockStore) ToEmbeddable() dbmock.Embeddable {
-	return dbmock.NewEmbeddable(s)
-}
-
 // store is the actual implementation of the Store interface.
 // Note that the *basestore.Store is private, and the caller
 // needs to call WithDB to set the store.
@@ -40,7 +32,7 @@ type store struct {
 // will be implementing.
 // All dependencies of store can be initialized here, except for the
 // *basestore.Store, which is configured by WithDB.
-func NewStore( /* dependencies */ ) dbmock.BaseStore[Store, *store] {
+func NewStore( /* dependencies */ ) dbmock.BaseStore[Store] {
 	return dbmock.NewBaseStore[Store](&store{ /* initialize dependencies */ })
 }
 
