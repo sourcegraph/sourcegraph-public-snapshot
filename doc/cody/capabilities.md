@@ -15,7 +15,7 @@
 
 # Cody capabilities
 
-Learn and understand what features Cody offers to ensure a streamlined code AI.
+<p class="subtitle">Learn and understand what features Cody offers to ensure a streamlined code AI.</p>
 
 ## Code chatbot
 
