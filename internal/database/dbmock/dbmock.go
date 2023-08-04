@@ -19,6 +19,16 @@ type mockedDB struct {
 	mockedStore any
 }
 
+func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx database.DB) error) error {
+	return mdb.DB.WithTransact(ctx, func(tx database.DB) error {
+		return f(&mockedDB{DB: tx, mockedStore: mdb.mockedStore})
+	})
+}
+
+func (mdb *mockedDB) With(other basestore.ShareableStore) database.DB {
+	return mdb.DB.With(other)
+}
+
 // New embeds each mocked store in the provided DB.
 func New(db database.DB, stores ...toEmbeddable) database.DB {
 	for _, store := range stores {
