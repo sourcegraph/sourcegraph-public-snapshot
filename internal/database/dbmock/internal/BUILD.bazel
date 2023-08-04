@@ -1,0 +1,15 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "internal",
+    srcs = [
+        "mocks_temp.go",
+        "store.go",
+    ],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/dbmock/internal",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database/dbmock",
+        "@com_github_keegancsmith_sqlf//:sqlf",
+    ],
+)
