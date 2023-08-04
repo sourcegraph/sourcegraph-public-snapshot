@@ -1,4 +1,4 @@
-package database
+package accessrequests
 
 import (
 	"context"
@@ -8,7 +8,9 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -58,11 +60,11 @@ func IsAccessRequestWithEmailExists(err error) bool {
 	return errors.As(err, &e) && e.code == errorCodeAccessRequestWithEmailExists
 }
 
-type AccessRequestsFilterArgs struct {
+type FilterArgs struct {
 	Status *types.AccessRequestStatus
 }
 
-func (o *AccessRequestsFilterArgs) SQL() []*sqlf.Query {
+func (o *FilterArgs) SQL() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o != nil && o.Status != nil {
 		conds = append(conds, sqlf.Sprintf("status = %v", *o.Status))
@@ -70,55 +72,59 @@ func (o *AccessRequestsFilterArgs) SQL() []*sqlf.Query {
 	return conds
 }
 
-// AccessRequestStore provides access to the `access_requests` table.
+// Store provides access to the `access_requests` table.
 //
 // For a detailed overview of the schema, see schema.md.
-type AccessRequestStore interface {
-	basestore.ShareableStore
+type Store interface {
 	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
 	GetByEmail(context.Context, string) (*types.AccessRequest, error)
-	Count(context.Context, *AccessRequestsFilterArgs) (int, error)
-	List(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (_ []*types.AccessRequest, err error)
-	WithTransact(context.Context, func(AccessRequestStore) error) error
+	Count(context.Context, *FilterArgs) (int, error)
+	List(context.Context, *FilterArgs, *database.PaginationArgs) (_ []*types.AccessRequest, err error)
+	WithTransact(context.Context, func(Store) error) error
 	Done(error) error
 }
 
-type accessRequestStore struct {
-	*basestore.Store
+type store struct {
+	*dbmock.MockableStore[Store]
 	logger log.Logger
 }
 
-// AccessRequestsWith instantiates and returns a new accessRequestStore using the other store handle.
-func AccessRequestsWith(other basestore.ShareableStore, logger log.Logger) AccessRequestStore {
-	return &accessRequestStore{Store: basestore.NewWithHandle(other.Handle()), logger: logger}
+func NewStore() *store {
+	s := &store{}
+	s.MockableStore = dbmock.NewMockableStore[Store](s)
+	return s
+}
+
+func (s *MockStore) ToEmbeddable() dbmock.Embeddable {
+	return dbmock.NewEmbeddable(s)
 }
 
 const (
-	accessRequestInsertQuery = `
+	insertQuery = `
 		INSERT INTO access_requests (%s)
 		VALUES ( %s, %s, %s, %s )
 		RETURNING %s`
-	accessRequestListQuery = `
+	listQuery = `
 		SELECT %s
 		FROM access_requests
 		WHERE (%s)`
-	accessRequestUpdateQuery = `
+	updateQuery = `
 		UPDATE access_requests
 		SET status = %s, updated_at = NOW(), decision_by_user_id = %s
 		WHERE id = %s
 		RETURNING %s`
 )
 
-type AccessRequestListColumn string
+type ListColumn string
 
 const (
-	AccessRequestListID AccessRequestListColumn = "id"
+	ListID ListColumn = "id"
 )
 
 var (
-	accessRequestColumns = []*sqlf.Query{
+	columns = []*sqlf.Query{
 		sqlf.Sprintf("id"),
 		sqlf.Sprintf("created_at"),
 		sqlf.Sprintf("updated_at"),
@@ -128,7 +134,7 @@ var (
 		sqlf.Sprintf("additional_info"),
 		sqlf.Sprintf("decision_by_user_id"),
 	}
-	accessRequestInsertColumns = []*sqlf.Query{
+	insertColumns = []*sqlf.Query{
 		sqlf.Sprintf("name"),
 		sqlf.Sprintf("email"),
 		sqlf.Sprintf("additional_info"),
@@ -136,9 +142,9 @@ var (
 	}
 )
 
-func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+func (s *store) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	var newAccessRequest *types.AccessRequest
-	err := s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+	err := s.MockableStore.WithTransact(ctx, func(tx *basestore.Store) error {
 		// We don't allow adding a new request_access with an email address that has already been
 		// verified by another user.
 		userExistsQuery := sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)
@@ -162,13 +168,13 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 
 		// Continue with creating the new access request.
 		createQuery := sqlf.Sprintf(
-			accessRequestInsertQuery,
-			sqlf.Join(accessRequestInsertColumns, ","),
+			insertQuery,
+			sqlf.Join(insertColumns, ","),
 			accessRequest.Name,
 			accessRequest.Email,
 			accessRequest.AdditionalInfo,
 			types.AccessRequestStatusPending,
-			sqlf.Join(accessRequestColumns, ","),
+			sqlf.Join(columns, ","),
 		)
 		data, err := scanAccessRequest(tx.QueryRow(ctx, createQuery))
 		newAccessRequest = data
@@ -181,10 +187,9 @@ func (s *accessRequestStore) Create(ctx context.Context, accessRequest *types.Ac
 	return newAccessRequest, err
 }
 
-func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(accessRequestColumns, ","), id))
+func (s *store) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(columns, ","), id))
 	node, err := scanAccessRequest(row)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &ErrAccessRequestNotFound{ID: id}
@@ -195,10 +200,9 @@ func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.Acce
 	return node, nil
 }
 
-func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(accessRequestColumns, ","), email))
+func (s *store) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
+	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(columns, ","), email))
 	node, err := scanAccessRequest(row)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &ErrAccessRequestNotFound{Email: email}
@@ -209,10 +213,9 @@ func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*typ
 	return node, nil
 }
 
-func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, *accessRequest.DecisionByUserID, accessRequest.ID, sqlf.Join(accessRequestColumns, ","))
+func (s *store) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+	q := sqlf.Sprintf(updateQuery, accessRequest.Status, *accessRequest.DecisionByUserID, accessRequest.ID, sqlf.Join(columns, ","))
 	updated, err := scanAccessRequest(s.QueryRow(ctx, q))
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &ErrAccessRequestNotFound{ID: accessRequest.ID}
@@ -223,18 +226,18 @@ func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.Ac
 	return updated, nil
 }
 
-func (s *accessRequestStore) Count(ctx context.Context, fArgs *AccessRequestsFilterArgs) (int, error) {
+func (s *store) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(fArgs.SQL(), ") AND ("))
 	return basestore.ScanInt(s.QueryRow(ctx, q))
 }
 
-func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilterArgs, pArgs *PaginationArgs) ([]*types.AccessRequest, error) {
+func (s *store) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {
 	if fArgs == nil {
-		fArgs = &AccessRequestsFilterArgs{}
+		fArgs = &FilterArgs{}
 	}
 	where := fArgs.SQL()
 	if pArgs == nil {
-		pArgs = &PaginationArgs{}
+		pArgs = &database.PaginationArgs{}
 	}
 	p := pArgs.SQL()
 
@@ -242,7 +245,7 @@ func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilt
 		where = append(where, p.Where)
 	}
 
-	q := sqlf.Sprintf(accessRequestListQuery, sqlf.Join(accessRequestColumns, ","), sqlf.Join(where, ") AND ("))
+	q := sqlf.Sprintf(listQuery, sqlf.Join(columns, ","), sqlf.Join(where, ") AND ("))
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
 
@@ -254,11 +257,10 @@ func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilt
 	return nodes, nil
 }
 
-func (s *accessRequestStore) WithTransact(ctx context.Context, f func(tx AccessRequestStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(&accessRequestStore{
+func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error {
+	return s.MockableStore.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&store{
 			logger: s.logger,
-			Store:  tx,
 		})
 	})
 }

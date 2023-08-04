@@ -4,7 +4,6 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "database",
     srcs = [
-        "access_requests.go",
         "access_tokens.go",
         "assigned_owners.go",
         "assigned_teams.go",
@@ -183,7 +182,6 @@ go_test(
     size = "enormous",
     timeout = "long",
     srcs = [
-        "access_requests_test.go",
         "access_tokens_test.go",
         "assigned_owners_test.go",
         "assigned_teams_test.go",

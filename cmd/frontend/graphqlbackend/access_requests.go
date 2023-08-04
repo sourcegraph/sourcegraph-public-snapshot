@@ -10,13 +10,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type AccessRequestsArgs struct {
-	database.AccessRequestsFilterArgs
+	accessrequests.FilterArgs
 	graphqlutil.ConnectionResolverArgs
 }
 
@@ -28,13 +29,13 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 
 	connectionStore := &accessRequestConnectionStore{
 		db:   r.db,
-		args: &args.AccessRequestsFilterArgs,
+		args: &args.FilterArgs,
 	}
 
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
-		OrderBy:   database.OrderBy{{Field: string(database.AccessRequestListID)}},
+		OrderBy:   database.OrderBy{{Field: string(accessrequests.ListID)}},
 		Ascending: false,
 	}
 	return graphqlutil.NewConnectionResolver[*accessRequestResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
@@ -42,11 +43,11 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 
 type accessRequestConnectionStore struct {
 	db   database.DB
-	args *database.AccessRequestsFilterArgs
+	args *accessrequests.FilterArgs
 }
 
 func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.db.AccessRequests().Count(ctx, s.args)
+	count, err := accessrequests.NewStore().WithDB(s.db).Count(ctx, s.args)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +58,7 @@ func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32
 }
 
 func (s *accessRequestConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*accessRequestResolver, error) {
-	accessRequests, err := s.db.AccessRequests().List(ctx, s.args, args)
+	accessRequests, err := accessrequests.NewStore().WithDB(s.db).List(ctx, s.args, args)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +114,8 @@ func (s *accessRequestResolver) Status() string { return string(s.accessRequest.
 func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struct {
 	ID     graphql.ID
 	Status types.AccessRequestStatus
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can update access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -125,7 +127,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	}
 
 	err = r.db.WithTransact(ctx, func(tx database.DB) error {
-		store := tx.AccessRequests()
+		store := accessrequests.NewStore().WithDB(tx)
 
 		accessRequest, err := store.GetByID(ctx, id)
 		if err != nil {
@@ -161,7 +163,7 @@ func accessRequestByID(ctx context.Context, db database.DB, id graphql.ID) (*acc
 	if err != nil {
 		return nil, err
 	}
-	accessRequest, err := db.AccessRequests().GetByID(ctx, accessRequestID)
+	accessRequest, err := accessrequests.NewStore().WithDB(db).GetByID(ctx, accessRequestID)
 	if err != nil {
 		return nil, err
 	}
