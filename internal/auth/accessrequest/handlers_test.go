@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -103,7 +104,7 @@ func TestRequestAccess(t *testing.T) {
 		handler(res, req)
 		assert.Equal(t, http.StatusCreated, res.Code)
 
-		_, err = db.AccessRequests().GetByEmail(context.Background(), newUser.Email)
+		_, err = accessrequests.NewStore().WithDB(db).GetByEmail(context.Background(), newUser.Email)
 		require.Error(t, err)
 		require.Equal(t, errcode.IsNotFound(err), true)
 	})
@@ -114,8 +115,8 @@ func TestRequestAccess(t *testing.T) {
 			Name:  "a1",
 			Email: "a1@example.com",
 		}
-		db.AccessRequests().Create(context.Background(), &accessRequest)
-		_, err := db.AccessRequests().GetByEmail(context.Background(), accessRequest.Email)
+		accessrequests.NewStore().WithDB(db).Create(context.Background(), &accessRequest)
+		_, err := accessrequests.NewStore().WithDB(db).GetByEmail(context.Background(), accessRequest.Email)
 		require.NoError(t, err)
 
 		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(fmt.Sprintf(`{"email": "%s", "name": "%s", "additionalInfo": "%s"}`, accessRequest.Email, accessRequest.Name, accessRequest.AdditionalInfo)))
@@ -134,7 +135,7 @@ func TestRequestAccess(t *testing.T) {
 		handler(res, req)
 		assert.Equal(t, http.StatusCreated, res.Code)
 
-		accessRequest, err := db.AccessRequests().GetByEmail(context.Background(), "a2@example.com")
+		accessRequest, err := accessrequests.NewStore().WithDB(db).GetByEmail(context.Background(), "a2@example.com")
 		require.NoError(t, err)
 		assert.Equal(t, "a2", accessRequest.Name)
 		assert.Equal(t, "a2@example.com", accessRequest.Email)
