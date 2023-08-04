@@ -182,7 +182,7 @@ metadata:
   namespace: argocd
 spec:
   destination:
-    namespace: prod
+    namespace: tooling
     server: https://kubernetes.default.svc
   project: default
   source:
