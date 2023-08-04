@@ -8,6 +8,6 @@ go_library(
     deps = [
         "//internal/database",
         "//internal/database/basestore",
-        "//internal/database/mockstore",
+        "@com_github_keegancsmith_sqlf//:sqlf",
     ],
 )

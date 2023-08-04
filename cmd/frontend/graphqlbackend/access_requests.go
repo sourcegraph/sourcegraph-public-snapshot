@@ -50,7 +50,7 @@ type accessRequestConnectionStore struct {
 }
 
 func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := accessrequests.NewStoreWithDB(s.db).Count(ctx, s.args)
+	count, err := accessrequests.NewStore().With(s.db).Count(ctx, s.args)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +61,7 @@ func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32
 }
 
 func (s *accessRequestConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*accessRequestResolver, error) {
-	accessRequests, err := accessrequests.NewStoreWithDB(s.db).List(ctx, s.args, args)
+	accessRequests, err := accessrequests.NewStore().With(s.db).List(ctx, s.args, args)
 	if err != nil {
 		return nil, err
 	}
@@ -131,7 +131,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	}
 
 	err = r.db.WithTransact(ctx, func(tx database.DB) error {
-		store := accessrequests.NewStoreWithDB(tx)
+		store := accessrequests.NewStore().With(tx)
 
 		accessRequest, err := store.GetByID(ctx, id)
 		if err != nil {
@@ -167,7 +167,7 @@ func accessRequestByID(ctx context.Context, db database.DB, id graphql.ID) (*acc
 	if err != nil {
 		return nil, err
 	}
-	accessRequest, err := accessrequests.NewStoreWithDB(db).GetByID(ctx, accessRequestID)
+	accessRequest, err := accessrequests.NewStore().With(db).GetByID(ctx, accessRequestID)
 	if err != nil {
 		return nil, err
 	}

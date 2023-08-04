@@ -21,7 +21,7 @@ func TestAccessRequests_Create(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	store := NewStoreWithDB(db)
+	store := NewStore().With(db)
 
 	t.Run("valid input", func(t *testing.T) {
 		accessRequest, err := store.Create(ctx, &types.AccessRequest{
@@ -83,7 +83,7 @@ func TestAccessRequests_Update(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestsStore := NewStoreWithDB(db)
+	accessRequestsStore := NewStore().With(db)
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
@@ -120,7 +120,7 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := NewStoreWithDB(db)
+	store := NewStore().With(db)
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
@@ -147,7 +147,7 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := NewStoreWithDB(db)
+	store := NewStore().With(db)
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistingAccessRequestEmail := "non-existing@example"
@@ -174,7 +174,7 @@ func TestAccessRequests_Count(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := NewStoreWithDB(db)
+	accessRequestStore := NewStore().With(db)
 
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
@@ -222,7 +222,7 @@ func TestAccessRequests_List(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := NewStoreWithDB(db)
+	accessRequestStore := NewStore().With(db)
 
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})

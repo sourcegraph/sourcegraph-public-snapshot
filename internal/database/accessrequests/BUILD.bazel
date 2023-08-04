@@ -12,8 +12,8 @@ go_library(
     deps = [
         "//internal/database",
         "//internal/database/basestore",
+        "//internal/database/dbmock",
         "//internal/database/dbutil",
-        "//internal/database/mockstore",
         "//internal/types",
         "//lib/errors",
         "@com_github_keegancsmith_sqlf//:sqlf",

@@ -10,8 +10,8 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/mockstore"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -76,7 +76,6 @@ func (o *FilterArgs) SQL() []*sqlf.Query {
 //
 // For a detailed overview of the schema, see schema.md.
 type Store interface {
-	basestore.ShareableStore
 	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
@@ -85,25 +84,28 @@ type Store interface {
 	List(context.Context, *FilterArgs, *database.PaginationArgs) (_ []*types.AccessRequest, err error)
 	WithTransact(context.Context, func(Store) error) error
 	Done(error) error
+	dbmock.RetrievableStore[Store]
 }
 
 type store struct {
-	*mockstore.MockableStore
+	*dbmock.MockableStore[Store]
 	logger log.Logger
 }
 
-func (mockStore *MockStore) Mock() mockstore.MockedStore {
-	return mockstore.NewnewMockStore(mockStore)
+func NewStore() *store {
+	s := &store{}
+	s.MockableStore = dbmock.NewMockableStore[Store](s)
+	return s
 }
 
-func (s *store) WithStoreFunc() mockstore.NewStoreFunc[Store] {
-	return func(other basestore.ShareableStore) Store {
-		return &store{MockableStore: s.MockableStore.With(other), logger: s.logger}
+func (s *MockStore) Embed() dbmock.Embeddable {
+	return dbmock.NewEmbeddable[Store](s)
+}
+
+func (s *store) GetStoreFunc() dbmock.NewStoreFunc[Store] {
+	return func(db database.DB) Store {
+		return s.MockableStore.With(db)
 	}
-}
-
-func NewStoreWithDB(db database.DB) Store {
-	return (&store{logger: db.Logger()}).WithStoreFunc().With(db)
 }
 
 const (
@@ -149,7 +151,7 @@ var (
 
 func (s *store) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	var newAccessRequest *types.AccessRequest
-	err := s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+	err := s.MockableStore.WithTransact(ctx, func(tx *basestore.Store) error {
 		// We don't allow adding a new request_access with an email address that has already been
 		// verified by another user.
 		userExistsQuery := sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)
@@ -263,10 +265,10 @@ func (s *store) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.Pag
 }
 
 func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f((&store{
+	return s.MockableStore.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&store{
 			logger: s.logger,
-		}).WithStoreFunc().With(tx))
+		})
 	})
 }
 

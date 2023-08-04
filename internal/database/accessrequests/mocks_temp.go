@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	dbmock "github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -35,9 +35,9 @@ type MockStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *StoreGetByIDFunc
-	// HandleFunc is an instance of a mock function object controlling the
-	// behavior of the method Handle.
-	HandleFunc *StoreHandleFunc
+	// GetStoreFuncFunc is an instance of a mock function object controlling
+	// the behavior of the method GetStoreFunc.
+	GetStoreFuncFunc *StoreGetStoreFuncFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *StoreListFunc
@@ -78,8 +78,8 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		HandleFunc: &StoreHandleFunc{
-			defaultHook: func() (r0 basestore.TransactableHandle) {
+		GetStoreFuncFunc: &StoreGetStoreFuncFunc{
+			defaultHook: func() (r0 dbmock.NewStoreFunc[Store]) {
 				return
 			},
 		},
@@ -130,9 +130,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetByID")
 			},
 		},
-		HandleFunc: &StoreHandleFunc{
-			defaultHook: func() basestore.TransactableHandle {
-				panic("unexpected invocation of MockStore.Handle")
+		GetStoreFuncFunc: &StoreGetStoreFuncFunc{
+			defaultHook: func() dbmock.NewStoreFunc[Store] {
+				panic("unexpected invocation of MockStore.GetStoreFunc")
 			},
 		},
 		ListFunc: &StoreListFunc{
@@ -172,8 +172,8 @@ func NewMockStoreFrom(i Store) *MockStore {
 		GetByIDFunc: &StoreGetByIDFunc{
 			defaultHook: i.GetByID,
 		},
-		HandleFunc: &StoreHandleFunc{
-			defaultHook: i.Handle,
+		GetStoreFuncFunc: &StoreGetStoreFuncFunc{
+			defaultHook: i.GetStoreFunc,
 		},
 		ListFunc: &StoreListFunc{
 			defaultHook: i.List,
@@ -716,34 +716,34 @@ func (c StoreGetByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreHandleFunc describes the behavior when the Handle method of the
-// parent MockStore instance is invoked.
-type StoreHandleFunc struct {
-	defaultHook func() basestore.TransactableHandle
-	hooks       []func() basestore.TransactableHandle
-	history     []StoreHandleFuncCall
+// StoreGetStoreFuncFunc describes the behavior when the GetStoreFunc method
+// of the parent MockStore instance is invoked.
+type StoreGetStoreFuncFunc struct {
+	defaultHook func() dbmock.NewStoreFunc[Store]
+	hooks       []func() dbmock.NewStoreFunc[Store]
+	history     []StoreGetStoreFuncFuncCall
 	mutex       sync.Mutex
 }
 
-// Handle delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockStore) Handle() basestore.TransactableHandle {
-	r0 := m.HandleFunc.nextHook()()
-	m.HandleFunc.appendCall(StoreHandleFuncCall{r0})
+// GetStoreFunc delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) GetStoreFunc() dbmock.NewStoreFunc[Store] {
+	r0 := m.GetStoreFuncFunc.nextHook()()
+	m.GetStoreFuncFunc.appendCall(StoreGetStoreFuncFuncCall{r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the Handle method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+// SetDefaultHook sets function that is called when the GetStoreFunc method
+// of the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreGetStoreFuncFunc) SetDefaultHook(hook func() dbmock.NewStoreFunc[Store]) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Handle method of the parent MockStore instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *StoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+// GetStoreFunc method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreGetStoreFuncFunc) PushHook(hook func() dbmock.NewStoreFunc[Store]) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -751,20 +751,20 @@ func (f *StoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
-	f.SetDefaultHook(func() basestore.TransactableHandle {
+func (f *StoreGetStoreFuncFunc) SetDefaultReturn(r0 dbmock.NewStoreFunc[Store]) {
+	f.SetDefaultHook(func() dbmock.NewStoreFunc[Store] {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
-	f.PushHook(func() basestore.TransactableHandle {
+func (f *StoreGetStoreFuncFunc) PushReturn(r0 dbmock.NewStoreFunc[Store]) {
+	f.PushHook(func() dbmock.NewStoreFunc[Store] {
 		return r0
 	})
 }
 
-func (f *StoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+func (f *StoreGetStoreFuncFunc) nextHook() func() dbmock.NewStoreFunc[Store] {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -777,40 +777,40 @@ func (f *StoreHandleFunc) nextHook() func() basestore.TransactableHandle {
 	return hook
 }
 
-func (f *StoreHandleFunc) appendCall(r0 StoreHandleFuncCall) {
+func (f *StoreGetStoreFuncFunc) appendCall(r0 StoreGetStoreFuncFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreHandleFuncCall objects describing the
-// invocations of this function.
-func (f *StoreHandleFunc) History() []StoreHandleFuncCall {
+// History returns a sequence of StoreGetStoreFuncFuncCall objects
+// describing the invocations of this function.
+func (f *StoreGetStoreFuncFunc) History() []StoreGetStoreFuncFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreHandleFuncCall, len(f.history))
+	history := make([]StoreGetStoreFuncFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreHandleFuncCall is an object that describes an invocation of method
-// Handle on an instance of MockStore.
-type StoreHandleFuncCall struct {
+// StoreGetStoreFuncFuncCall is an object that describes an invocation of
+// method GetStoreFunc on an instance of MockStore.
+type StoreGetStoreFuncFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 basestore.TransactableHandle
+	Result0 dbmock.NewStoreFunc[Store]
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreHandleFuncCall) Args() []interface{} {
+func (c StoreGetStoreFuncFuncCall) Args() []interface{} {
 	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreHandleFuncCall) Results() []interface{} {
+func (c StoreGetStoreFuncFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
