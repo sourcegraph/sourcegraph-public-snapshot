@@ -63,19 +63,6 @@ To configure SSL, and lock down the instance from the public internet, see the [
 
 > NOTE: If you cannot access the Sourcegraph homepage after 10 minutes, please try reboot your instance.
 
-### Executors
-Executors are supported using [native kubernetes executors](../../../admin/executors/deploy_executors_kubernetes.md).
-
-Executors support [auto-indexing](../../../code_navigation/explanations/auto_indexing.md) and [server-side batch changes](../../../batch_changes/explanations/server_side.md).
-
-To enable executors add the following to the site-admin config:
-```
-"executors.accessToken": "sourcegraph-ami-password",
-"executors.frontendURL": "http://sourcegraph-frontend:30080",
-```
-
-To use server-side batch changes you will need to enable the `native-ssbc-execution` [feature flag](../../../admin/executors/native_execution.md#enable).
-
 ---
 
 ## Networking
