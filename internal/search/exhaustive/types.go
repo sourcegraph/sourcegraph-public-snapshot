@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-// JobState defines the possible states of a batch spec resolution job.
+// JobState defines the possible states of a workerutil.Worker.
 type JobState string
 
 // JobState constants.
