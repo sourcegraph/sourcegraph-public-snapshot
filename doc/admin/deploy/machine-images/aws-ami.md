@@ -72,6 +72,7 @@ To enable executors add the following to the site-admin config:
 ```
 "executors.accessToken": "sourcegraph-ami-password",
 "executors.frontendURL": "http://sourcegraph-frontend:30080",
+"codeIntelAutoIndexing.enabled": true
 ```
 
 To use server-side batch changes you will need to enable the `native-ssbc-execution` [feature flag](../../../admin/executors/native_execution.md#enable).
