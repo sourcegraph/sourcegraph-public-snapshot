@@ -1613,7 +1613,7 @@ events AS (
     ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
   FROM event_logs
   WHERE
-    lower(name) like '%%cody%%'
+    (name like '%%cody%%' or name like '%%Cody%%')
     AND name not like '%%CTA%%'
     AND name not like '%%Cta%%'
     AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
