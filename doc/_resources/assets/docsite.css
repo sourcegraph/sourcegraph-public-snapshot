@@ -696,10 +696,10 @@ body > #page > main > #content {
 }
 
 .markdown-body .subtitle {
-  font-weight: 600;
-  margin-top: -0.5em;
-  font-size: 1.3rem;
-  color: var(--text-muted);
+    font-weight: 250;
+    margin-top: -1em;
+    font-size: 1.1rem;
+    color: var(--text-muted);
 }
 
 .markdown-body .lead {
