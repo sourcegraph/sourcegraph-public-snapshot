@@ -31,7 +31,7 @@ Examples of questions Cody can handle:
 - Why is the UserConnectionResolver giving an error `unknown user`, and how do I fix it
 
 <div class="getting-started">
-  <a class="demo text-center" href="https://twitter.com/beyang/status/1647744307045228544">View Demo</a>
+  <a class="demo text-center" target="_blank" href="https://twitter.com/beyang/status/1647744307045228544">View Demo</a>
 </div>
 
 ## Fix code inline
@@ -52,7 +52,7 @@ Examples of fix-up instructions Cody can handle:
 - Make this work (and yes, it often does work—give it a try!)
 
 <div class="getting-started">
-  <a class="demo text-center" href="https://twitter.com/sqs/status/1647673013343780864">View Demo</a>
+  <a class="demo text-center" target="_blank" href="https://twitter.com/sqs/status/1647673013343780864">View Demo</a>
 </div>
 
 ## Cody Recipes
