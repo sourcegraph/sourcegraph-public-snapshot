@@ -13,12 +13,12 @@ import (
 
 type mockedDB struct {
 	database.DB
-	embeddedInterface any
+	mockedStore any
 }
 
 func (mdb *mockedDB) WithTransact(ctx context.Context, f func(tx database.DB) error) error {
 	return mdb.DB.WithTransact(ctx, func(tx database.DB) error {
-		return f(&mockedDB{DB: tx, embeddedInterface: mdb.embeddedInterface})
+		return f(&mockedDB{DB: tx, mockedStore: mdb.mockedStore})
 	})
 }
 
@@ -30,19 +30,23 @@ type Embeddable interface {
 	Embed(database.DB) database.DB
 }
 
+type ToEmbeddable interface {
+	ToEmbeddable() Embeddable
+}
+
 type embeddable struct {
 	store any
 }
 
-func NewEmbeddable[T any](store T) *embeddable {
-	return &embeddable{store}
-}
-
 func (e *embeddable) Embed(db database.DB) database.DB {
 	return &mockedDB{
-		DB:                db,
-		embeddedInterface: e.store,
+		DB:          db,
+		mockedStore: e.store,
 	}
+}
+
+func NewEmbeddable[T any](store T) *embeddable {
+	return &embeddable{store}
 }
 
 // Get fetches the mocked interface T from the provided DB.
@@ -50,7 +54,7 @@ func (e *embeddable) Embed(db database.DB) database.DB {
 func get[T any](db database.DB) *T {
 	switch v := db.(type) {
 	case *mockedDB:
-		if t, ok := v.embeddedInterface.(T); ok {
+		if t, ok := v.mockedStore.(T); ok {
 			return &t
 		}
 		return get[T](v.DB)
@@ -167,9 +171,9 @@ func (s *MockableStore[T]) WithTransact(ctx context.Context, f func(tx *basestor
 }
 
 // New embeds each mock option in the provided DB.
-func New(db database.DB, stores ...Embeddable) database.DB {
+func New(db database.DB, stores ...ToEmbeddable) database.DB {
 	for _, store := range stores {
-		db = store.Embed(db)
+		db = store.ToEmbeddable().Embed(db)
 	}
 	return db
 }
