@@ -34,7 +34,7 @@ type embeddable struct {
 	store any
 }
 
-func NewEmbeddable[T any](store RetrievableStore[T]) *embeddable {
+func NewEmbeddable[T any](store T) *embeddable {
 	return &embeddable{store}
 }
 
@@ -58,30 +58,22 @@ func get[T any](db database.DB) *T {
 	return nil
 }
 
-type RetrievableStore[T any] interface {
-	GetStoreFunc() NewStoreFunc[T]
-}
-
-type MockableStore[T RetrievableStore[T]] struct {
+type MockableStore[T any] struct {
 	inner *basestore.Store
 	store T
 }
 
-func NewMockableStore[T RetrievableStore[T]](store T) *MockableStore[T] {
+func NewMockableStore[T any](store T) *MockableStore[T] {
 	return &MockableStore[T]{store: store}
 }
 
-func (s *MockableStore[T]) GetStoreFunc() NewStoreFunc[*MockableStore[T]] {
-	return func(db database.DB) *MockableStore[T] {
-		s.inner = basestore.NewWithHandle(db.Handle())
-		return s
+func (s *MockableStore[T]) WithDB(db database.DB) T {
+	if i := get[T](db); i != nil {
+		return *i
 	}
-}
 
-func (s *MockableStore[T]) With(db database.DB) T {
 	s.inner = basestore.NewWithHandle(db.Handle())
-
-	return s.store.GetStoreFunc()(db)
+	return s.store
 }
 
 type NewStoreFunc[T any] func(database.DB) T

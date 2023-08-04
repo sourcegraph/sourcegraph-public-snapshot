@@ -11,7 +11,6 @@ import (
 	"sync"
 
 	database "github.com/sourcegraph/sourcegraph/internal/database"
-	dbmock "github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -35,9 +34,6 @@ type MockStore struct {
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
 	GetByIDFunc *StoreGetByIDFunc
-	// GetStoreFuncFunc is an instance of a mock function object controlling
-	// the behavior of the method GetStoreFunc.
-	GetStoreFuncFunc *StoreGetStoreFuncFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
 	ListFunc *StoreListFunc
@@ -75,11 +71,6 @@ func NewMockStore() *MockStore {
 		},
 		GetByIDFunc: &StoreGetByIDFunc{
 			defaultHook: func(context.Context, int32) (r0 *types.AccessRequest, r1 error) {
-				return
-			},
-		},
-		GetStoreFuncFunc: &StoreGetStoreFuncFunc{
-			defaultHook: func() (r0 dbmock.NewStoreFunc[Store]) {
 				return
 			},
 		},
@@ -130,11 +121,6 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.GetByID")
 			},
 		},
-		GetStoreFuncFunc: &StoreGetStoreFuncFunc{
-			defaultHook: func() dbmock.NewStoreFunc[Store] {
-				panic("unexpected invocation of MockStore.GetStoreFunc")
-			},
-		},
 		ListFunc: &StoreListFunc{
 			defaultHook: func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
 				panic("unexpected invocation of MockStore.List")
@@ -171,9 +157,6 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		GetByIDFunc: &StoreGetByIDFunc{
 			defaultHook: i.GetByID,
-		},
-		GetStoreFuncFunc: &StoreGetStoreFuncFunc{
-			defaultHook: i.GetStoreFunc,
 		},
 		ListFunc: &StoreListFunc{
 			defaultHook: i.List,
@@ -714,104 +697,6 @@ func (c StoreGetByIDFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreGetByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// StoreGetStoreFuncFunc describes the behavior when the GetStoreFunc method
-// of the parent MockStore instance is invoked.
-type StoreGetStoreFuncFunc struct {
-	defaultHook func() dbmock.NewStoreFunc[Store]
-	hooks       []func() dbmock.NewStoreFunc[Store]
-	history     []StoreGetStoreFuncFuncCall
-	mutex       sync.Mutex
-}
-
-// GetStoreFunc delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockStore) GetStoreFunc() dbmock.NewStoreFunc[Store] {
-	r0 := m.GetStoreFuncFunc.nextHook()()
-	m.GetStoreFuncFunc.appendCall(StoreGetStoreFuncFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the GetStoreFunc method
-// of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetStoreFuncFunc) SetDefaultHook(hook func() dbmock.NewStoreFunc[Store]) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetStoreFunc method of the parent MockStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreGetStoreFuncFunc) PushHook(hook func() dbmock.NewStoreFunc[Store]) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *StoreGetStoreFuncFunc) SetDefaultReturn(r0 dbmock.NewStoreFunc[Store]) {
-	f.SetDefaultHook(func() dbmock.NewStoreFunc[Store] {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetStoreFuncFunc) PushReturn(r0 dbmock.NewStoreFunc[Store]) {
-	f.PushHook(func() dbmock.NewStoreFunc[Store] {
-		return r0
-	})
-}
-
-func (f *StoreGetStoreFuncFunc) nextHook() func() dbmock.NewStoreFunc[Store] {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreGetStoreFuncFunc) appendCall(r0 StoreGetStoreFuncFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreGetStoreFuncFuncCall objects
-// describing the invocations of this function.
-func (f *StoreGetStoreFuncFunc) History() []StoreGetStoreFuncFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreGetStoreFuncFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreGetStoreFuncFuncCall is an object that describes an invocation of
-// method GetStoreFunc on an instance of MockStore.
-type StoreGetStoreFuncFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 dbmock.NewStoreFunc[Store]
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreGetStoreFuncFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreGetStoreFuncFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
 
 // StoreListFunc describes the behavior when the List method of the parent

@@ -84,7 +84,6 @@ type Store interface {
 	List(context.Context, *FilterArgs, *database.PaginationArgs) (_ []*types.AccessRequest, err error)
 	WithTransact(context.Context, func(Store) error) error
 	Done(error) error
-	dbmock.RetrievableStore[Store]
 }
 
 type store struct {
@@ -100,12 +99,6 @@ func NewStore() *store {
 
 func (s *MockStore) Embed() dbmock.Embeddable {
 	return dbmock.NewEmbeddable[Store](s)
-}
-
-func (s *store) GetStoreFunc() dbmock.NewStoreFunc[Store] {
-	return func(db database.DB) Store {
-		return s.MockableStore.With(db)
-	}
 }
 
 const (
