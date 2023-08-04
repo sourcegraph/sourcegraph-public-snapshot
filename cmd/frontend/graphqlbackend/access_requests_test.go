@@ -8,6 +8,7 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -26,6 +27,7 @@ func TestAccessRequestNode(t *testing.T) {
 		Status:         types.AccessRequestStatusPending,
 	}
 	mockDB := database.NewMockDB()
+	mockDB.LoggerFunc.SetDefaultReturn(logtest.NoOp(t))
 
 	userStore := database.NewMockUserStore()
 	mockDB.UsersFunc.SetDefaultReturn(userStore)
@@ -63,6 +65,7 @@ func TestAccessRequestNode(t *testing.T) {
 }
 
 func TestAccessRequestsQuery(t *testing.T) {
+	logger := logtest.NoOp(t)
 	const accessRequestsQuery = `
 	query GetAccessRequests($first: Int, $after: String, $before: String, $last: Int) {
 		accessRequests(first: $first, after: $after, before: $before, last: $last) {
@@ -85,6 +88,7 @@ func TestAccessRequestsQuery(t *testing.T) {
 	}`
 
 	mockDB := database.NewMockDB()
+	mockDB.LoggerFunc.SetDefaultReturn(logger)
 
 	userStore := database.NewMockUserStore()
 	mockDB.UsersFunc.SetDefaultReturn(userStore)
