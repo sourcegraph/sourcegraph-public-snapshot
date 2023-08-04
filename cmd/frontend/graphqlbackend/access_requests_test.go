@@ -188,6 +188,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 		}
 	}`
 	mockDB := database.NewMockDB()
+	mockDB.LoggerFunc.SetDefaultReturn(logtest.NoOp(t))
 	mockDB.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
 		return f(mockDB)
 	})
