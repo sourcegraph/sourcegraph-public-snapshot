@@ -610,7 +610,7 @@ func TestExpJitterDelay(t *testing.T) {
 		}
 		attempt := int(a)
 
-		delay := ExpJitterDelay(base, max)(rehttp.Attempt{
+		delay := ExpJitterDelayOrRetryAfterDelay(base, max)(rehttp.Attempt{
 			Index: attempt,
 		})
 
