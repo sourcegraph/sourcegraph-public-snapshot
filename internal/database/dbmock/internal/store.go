@@ -18,11 +18,22 @@ type Store interface {
 	Create(context.Context) error
 }
 
-// store is the actual implementation of the Store interface.
-// Note that the *basestore.Store is private, and the caller
-// needs to call WithDB to set the store.
+// baseStore is the base struct that holds all of the store dependencies.
+// It allows us to transfer dependencies between WithDB calls without having
+// to recreate the struct every time.
+type baseStore struct{}
+
+// store is ment to be a short-lived store that wraps the base store.
+// It's the struct that actually implements the Store interface.
+// This way the Store methods don't all have to take a db connection, but we
+// also don't have to create an entirely new &store{...} instance every time
+// we call .WithDB.
+//
+// Once it's initialised with a .WithDB call on the baseStore class, the
+// underlying DB connection cannot be changed again.
 type store struct {
-	store *basestore.Store
+	base *baseStore
+	db   *basestore.Store
 }
 
 // NewStore creates a new BaseStore.
@@ -33,16 +44,16 @@ type store struct {
 // All dependencies of store can be initialized here, except for the
 // *basestore.Store, which is configured by WithDB.
 func NewStore( /* dependencies */ ) dbmock.BaseStore[Store] {
-	return dbmock.NewBaseStore[Store](&store{ /* initialize dependencies */ })
+	return dbmock.NewBaseStore[Store](&baseStore{ /* initialize dependencies */ })
 }
 
 // WithDB sets the store's *basestore.Store and converts it to its
 // corresponding interface.
-func (s *store) WithDB(db database.DB) Store {
-	return &store{store: basestore.NewWithHandle(db.Handle())}
+func (s *baseStore) WithDB(db database.DB) Store {
+	return &store{base: s, db: basestore.NewWithHandle(db.Handle())}
 }
 
 // Create is a Store method for demonstration purposes.
 func (s *store) Create(ctx context.Context) error {
-	return s.store.Exec(ctx, sqlf.Sprintf("SELECT * FROM test;"))
+	return s.db.Exec(ctx, sqlf.Sprintf("SELECT * FROM test;"))
 }
