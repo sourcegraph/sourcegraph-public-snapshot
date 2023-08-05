@@ -256,7 +256,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 		accessRequestStore := accessrequests.NewMockStore()
 		db := dbmock.New(mockDB, accessRequestStore)
 
-		notFoundErr := &accessrequests.ErrAccessRequestNotFound{ID: 1}
+		notFoundErr := &accessrequests.ErrNotFound{ID: 1}
 		accessRequestStore.GetByIDFunc.SetDefaultReturn(nil, notFoundErr)
 
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)

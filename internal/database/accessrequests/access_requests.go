@@ -21,22 +21,22 @@ const (
 	errorCodeAccessRequestWithEmailExists = "err_access_request_with_such_email_exists"
 )
 
-// ErrCannotCreateAccessRequest is the error that is returned when a request_access cannot be added to the DB due to a constraint.
-type ErrCannotCreateAccessRequest struct {
+// ErrCannotCreate is the error that is returned when a request_access cannot be added to the DB due to a constraint.
+type ErrCannotCreate struct {
 	code string
 }
 
-func (err ErrCannotCreateAccessRequest) Error() string {
+func (err ErrCannotCreate) Error() string {
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
-// ErrAccessRequestNotFound is the error that is returned when a request_access cannot be found in the DB.
-type ErrAccessRequestNotFound struct {
+// ErrNotFound is the error that is returned when a request_access cannot be found in the DB.
+type ErrNotFound struct {
 	ID    int32
 	Email string
 }
 
-func (e *ErrAccessRequestNotFound) Error() string {
+func (e *ErrNotFound) Error() string {
 	if e.Email != "" {
 		return fmt.Sprintf("access_request with email %q not found", e.Email)
 	}
@@ -44,19 +44,15 @@ func (e *ErrAccessRequestNotFound) Error() string {
 	return fmt.Sprintf("access_request with ID %d not found", e.ID)
 }
 
-func (e *ErrAccessRequestNotFound) NotFound() bool {
-	return true
-}
-
 // IsAccessRequestUserWithEmailExists reports whether err is an error indicating that the access request email was already taken by a signed in user.
 func IsAccessRequestUserWithEmailExists(err error) bool {
-	var e ErrCannotCreateAccessRequest
+	var e ErrCannotCreate
 	return errors.As(err, &e) && e.code == errorCodeUserWithEmailExists
 }
 
 // IsAccessRequestWithEmailExists reports whether err is an error indicating that the access request was already created.
 func IsAccessRequestWithEmailExists(err error) bool {
-	var e ErrCannotCreateAccessRequest
+	var e ErrCannotCreate
 	return errors.As(err, &e) && e.code == errorCodeAccessRequestWithEmailExists
 }
 
@@ -87,23 +83,20 @@ type Store interface {
 }
 
 type store struct {
-	store  *basestore.Store
 	logger log.Logger
 }
 
-func NewStore(logger log.Logger) dbmock.BaseStore[Store, *store] {
-	return dbmock.NewBaseStore[Store](&store{logger: logger.Scoped("accessrequests.Store", "")})
+type dbStore struct {
+	base *store
+	db   *basestore.Store
+}
+
+func NewStore(logger log.Logger) *store {
+	return &store{logger: logger.Scoped("accessrequests.Store", "")}
 }
 
 func (s *store) WithDB(db database.DB) Store {
-	return &store{
-		store:  basestore.NewWithHandle(db.Handle()),
-		logger: s.logger,
-	}
-}
-
-func (s *MockStore) ToEmbeddable() dbmock.Embeddable {
-	return dbmock.NewEmbeddable(s)
+	return dbmock.NewBaseStore[Store](s).WithDB(db)
 }
 
 const (
@@ -147,9 +140,9 @@ var (
 	}
 )
 
-func (s *store) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+func (s *dbStore) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	var newAccessRequest *types.AccessRequest
-	err := s.store.WithTransact(ctx, func(tx *basestore.Store) error {
+	err := s.db.WithTransact(ctx, func(tx *basestore.Store) error {
 		// We don't allow adding a new request_access with an email address that has already been
 		// verified by another user.
 		userExistsQuery := sqlf.Sprintf("SELECT TRUE FROM user_emails WHERE email = %s AND verified_at IS NOT NULL", accessRequest.Email)
@@ -158,7 +151,7 @@ func (s *store) Create(ctx context.Context, accessRequest *types.AccessRequest) 
 			return err
 		}
 		if exists {
-			return ErrCannotCreateAccessRequest{errorCodeUserWithEmailExists}
+			return ErrCannotCreate{errorCodeUserWithEmailExists}
 		}
 
 		// We don't allow adding a new request_access with an email address that has already been used
@@ -168,7 +161,7 @@ func (s *store) Create(ctx context.Context, accessRequest *types.AccessRequest) 
 			return err
 		}
 		if exists {
-			return ErrCannotCreateAccessRequest{errorCodeAccessRequestWithEmailExists}
+			return ErrCannotCreate{errorCodeAccessRequestWithEmailExists}
 		}
 
 		// Continue with creating the new access request.
@@ -192,12 +185,12 @@ func (s *store) Create(ctx context.Context, accessRequest *types.AccessRequest) 
 	return newAccessRequest, err
 }
 
-func (s *store) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	row := s.store.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(columns, ","), id))
+func (s *dbStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
+	row := s.db.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(columns, ","), id))
 	node, err := scanAccessRequest(row)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &ErrAccessRequestNotFound{ID: id}
+			return nil, &ErrNotFound{ID: id}
 		}
 		return nil, err
 	}
@@ -205,12 +198,12 @@ func (s *store) GetByID(ctx context.Context, id int32) (*types.AccessRequest, er
 	return node, nil
 }
 
-func (s *store) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
-	row := s.store.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(columns, ","), email))
+func (s *dbStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
+	row := s.db.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(columns, ","), email))
 	node, err := scanAccessRequest(row)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, &ErrAccessRequestNotFound{Email: email}
+			return nil, &ErrNotFound{Email: email}
 		}
 		return nil, err
 	}
@@ -218,12 +211,12 @@ func (s *store) GetByEmail(ctx context.Context, email string) (*types.AccessRequ
 	return node, nil
 }
 
-func (s *store) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+func (s *dbStore) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	q := sqlf.Sprintf(updateQuery, accessRequest.Status, *accessRequest.DecisionByUserID, accessRequest.ID, sqlf.Join(columns, ","))
-	updated, err := scanAccessRequest(s.store.QueryRow(ctx, q))
+	updated, err := scanAccessRequest(s.db.QueryRow(ctx, q))
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, &ErrAccessRequestNotFound{ID: accessRequest.ID}
+			return nil, &ErrNotFound{ID: accessRequest.ID}
 		}
 		return nil, errors.Wrap(err, "scanning access_request")
 	}
@@ -231,12 +224,12 @@ func (s *store) Update(ctx context.Context, accessRequest *types.AccessRequest) 
 	return updated, nil
 }
 
-func (s *store) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
+func (s *dbStore) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(fArgs.SQL(), ") AND ("))
-	return basestore.ScanInt(s.store.QueryRow(ctx, q))
+	return basestore.ScanInt(s.db.QueryRow(ctx, q))
 }
 
-func (s *store) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {
+func (s *dbStore) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {
 	if fArgs == nil {
 		fArgs = &FilterArgs{}
 	}
@@ -254,7 +247,7 @@ func (s *store) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.Pag
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
 
-	nodes, err := scanAccessRequests(s.store.Query(ctx, q))
+	nodes, err := scanAccessRequests(s.db.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}
@@ -262,15 +255,14 @@ func (s *store) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.Pag
 	return nodes, nil
 }
 
-func (s *store) WithTransact(ctx context.Context, f func(Store) error) error {
-	return s.store.WithTransact(ctx, func(tx *basestore.Store) error {
-		s := NewStore(s.logger).WithDB(database.NewDBWith(s.logger, tx))
-		return f(s)
+func (s *dbStore) WithTransact(ctx context.Context, f func(Store) error) error {
+	return s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+		return f(&dbStore{base: s.base, db: tx})
 	})
 }
 
-func (s *store) Done(err error) error {
-	return s.store.Done(err)
+func (s *dbStore) Done(err error) error {
+	return s.db.Done(err)
 }
 
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {

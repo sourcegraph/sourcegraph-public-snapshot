@@ -92,7 +92,7 @@ func TestAccessRequests_Update(t *testing.T) {
 		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.Error(t, err)
 		assert.Nil(t, updated)
-		assert.Equal(t, err, &ErrAccessRequestNotFound{ID: nonExistentAccessRequestID})
+		assert.Equal(t, err, &ErrNotFound{ID: nonExistentAccessRequestID})
 	})
 
 	t.Run("existing access request", func(t *testing.T) {
@@ -127,7 +127,7 @@ func TestAccessRequests_GetByID(t *testing.T) {
 		accessRequest, err := store.GetByID(ctx, nonExistentAccessRequestID)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
-		assert.Equal(t, err, &ErrAccessRequestNotFound{ID: nonExistentAccessRequestID})
+		assert.Equal(t, err, &ErrNotFound{ID: nonExistentAccessRequestID})
 	})
 	t.Run("existing access request", func(t *testing.T) {
 		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
@@ -154,7 +154,7 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 		accessRequest, err := store.GetByEmail(ctx, nonExistingAccessRequestEmail)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
-		assert.Equal(t, err, &ErrAccessRequestNotFound{Email: nonExistingAccessRequestEmail})
+		assert.Equal(t, err, &ErrNotFound{Email: nonExistingAccessRequestEmail})
 	})
 	t.Run("existing access request", func(t *testing.T) {
 		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
