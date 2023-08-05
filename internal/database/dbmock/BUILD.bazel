@@ -16,6 +16,7 @@ go_test(
         ":dbmock",
         "//internal/database",
         "//internal/database/dbmock/internal",
+        "//internal/database/dbmock/internal/internalmock",
         "@com_github_stretchr_testify//require",
     ],
 )

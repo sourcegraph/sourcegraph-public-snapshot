@@ -4,28 +4,30 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package internal
+package internalmock
 
 import (
 	"context"
 	"sync"
+
+	internal "github.com/sourcegraph/sourcegraph/internal/database/dbmock/internal"
 )
 
-// MockStore is a mock implementation of the Store interface (from the
+// MockDBStore is a mock implementation of the DBStore interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/internal/database/dbmock/internal)
 // used for unit testing.
-type MockStore struct {
+type MockDBStore struct {
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
-	CreateFunc *StoreCreateFunc
+	CreateFunc *DBStoreCreateFunc
 }
 
-// NewMockStore creates a new mock of the Store interface. All methods
+// NewMockDBStore creates a new mock of the DBStore interface. All methods
 // return zero values for all results, unless overwritten.
-func NewMockStore() *MockStore {
-	return &MockStore{
-		CreateFunc: &StoreCreateFunc{
+func NewMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CreateFunc: &DBStoreCreateFunc{
 			defaultHook: func(context.Context) (r0 error) {
 				return
 			},
@@ -33,56 +35,56 @@ func NewMockStore() *MockStore {
 	}
 }
 
-// NewStrictMockStore creates a new mock of the Store interface. All methods
-// panic on invocation, unless overwritten.
-func NewStrictMockStore() *MockStore {
-	return &MockStore{
-		CreateFunc: &StoreCreateFunc{
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CreateFunc: &DBStoreCreateFunc{
 			defaultHook: func(context.Context) error {
-				panic("unexpected invocation of MockStore.Create")
+				panic("unexpected invocation of MockDBStore.Create")
 			},
 		},
 	}
 }
 
-// NewMockStoreFrom creates a new mock of the MockStore interface. All
+// NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockStoreFrom(i Store) *MockStore {
-	return &MockStore{
-		CreateFunc: &StoreCreateFunc{
+func NewMockDBStoreFrom(i internal.DBStore) *MockDBStore {
+	return &MockDBStore{
+		CreateFunc: &DBStoreCreateFunc{
 			defaultHook: i.Create,
 		},
 	}
 }
 
-// StoreCreateFunc describes the behavior when the Create method of the
-// parent MockStore instance is invoked.
-type StoreCreateFunc struct {
+// DBStoreCreateFunc describes the behavior when the Create method of the
+// parent MockDBStore instance is invoked.
+type DBStoreCreateFunc struct {
 	defaultHook func(context.Context) error
 	hooks       []func(context.Context) error
-	history     []StoreCreateFuncCall
+	history     []DBStoreCreateFuncCall
 	mutex       sync.Mutex
 }
 
 // Create delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Create(v0 context.Context) error {
+func (m *MockDBStore) Create(v0 context.Context) error {
 	r0 := m.CreateFunc.nextHook()(v0)
-	m.CreateFunc.appendCall(StoreCreateFuncCall{v0, r0})
+	m.CreateFunc.appendCall(DBStoreCreateFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Create method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreCreateFunc) SetDefaultHook(hook func(context.Context) error) {
+// parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreCreateFunc) SetDefaultHook(hook func(context.Context) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Create method of the parent MockStore instance invokes the hook at the
+// Create method of the parent MockDBStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreCreateFunc) PushHook(hook func(context.Context) error) {
+func (f *DBStoreCreateFunc) PushHook(hook func(context.Context) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -90,20 +92,20 @@ func (f *StoreCreateFunc) PushHook(hook func(context.Context) error) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreCreateFunc) SetDefaultReturn(r0 error) {
+func (f *DBStoreCreateFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreCreateFunc) PushReturn(r0 error) {
+func (f *DBStoreCreateFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context) error {
 		return r0
 	})
 }
 
-func (f *StoreCreateFunc) nextHook() func(context.Context) error {
+func (f *DBStoreCreateFunc) nextHook() func(context.Context) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -116,26 +118,26 @@ func (f *StoreCreateFunc) nextHook() func(context.Context) error {
 	return hook
 }
 
-func (f *StoreCreateFunc) appendCall(r0 StoreCreateFuncCall) {
+func (f *DBStoreCreateFunc) appendCall(r0 DBStoreCreateFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreCreateFuncCall objects describing the
-// invocations of this function.
-func (f *StoreCreateFunc) History() []StoreCreateFuncCall {
+// History returns a sequence of DBStoreCreateFuncCall objects describing
+// the invocations of this function.
+func (f *DBStoreCreateFunc) History() []DBStoreCreateFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreCreateFuncCall, len(f.history))
+	history := make([]DBStoreCreateFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreCreateFuncCall is an object that describes an invocation of method
-// Create on an instance of MockStore.
-type StoreCreateFuncCall struct {
+// DBStoreCreateFuncCall is an object that describes an invocation of method
+// Create on an instance of MockDBStore.
+type DBStoreCreateFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -146,12 +148,12 @@ type StoreCreateFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreCreateFuncCall) Args() []interface{} {
+func (c DBStoreCreateFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreCreateFuncCall) Results() []interface{} {
+func (c DBStoreCreateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }

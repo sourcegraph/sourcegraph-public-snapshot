@@ -21,10 +21,10 @@
   path: github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms
   interfaces:
     - SubRepoPermissionsGetter
-- filename: internal/database/dbmock/internal/mocks_temp.go
+- filename: internal/database/dbmock/internal/internalmock/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database/dbmock/internal
   interfaces:
-    - Store
+    - DBStore
 - filename: internal/database/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database
   interfaces:
