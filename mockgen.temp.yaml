@@ -82,7 +82,7 @@
     - WebhookLogStore
     - WebhookStore
     - ZoektReposStore
-- filename: internal/database/accessrequests/accessrequestsmock/mocks_temp.go
+- filename: internal/database/mocks/accessrequests/mocks_temp.go
   path: github.com/sourcegraph/sourcegraph/internal/database/accessrequests
   interfaces:
     - DBStore

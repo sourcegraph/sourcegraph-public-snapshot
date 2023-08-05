@@ -1,0 +1,13 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "accessrequests",
+    srcs = ["mocks_temp.go"],
+    importpath = "github.com/sourcegraph/sourcegraph/internal/database/mocks/accessrequests",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "//internal/database",
+        "//internal/database/accessrequests",
+        "//internal/types",
+    ],
+)

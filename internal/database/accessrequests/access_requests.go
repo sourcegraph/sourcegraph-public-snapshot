@@ -71,6 +71,7 @@ func (o *FilterArgs) SQL() []*sqlf.Query {
 //
 // For a detailed overview of the schema, see schema.md.
 type DBStore interface {
+	database.DBStore[DBStore]
 	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
@@ -81,31 +82,18 @@ type DBStore interface {
 	Done(error) error
 }
 
-type store struct{}
-
-var Store = store{}
-
 type dbStore struct {
-	base *store
-	db   *basestore.Store
+	db *basestore.Store
 }
 
-type BaseStore[T any] interface {
-	WithDB(database.DB) T
-}
+var Store DBStore = &dbStore{}
 
-type BaseStoreFunc[T any] func(database.DB) T
-
-func (f BaseStoreFunc[T]) WithDB(db database.DB) T {
-	return f(db)
-}
-
-func (s *store) WithDB(db database.DB) DBStore {
+func (s *dbStore) WithDB(db database.DB) DBStore {
 	if s := dbmock.Get[DBStore](db); s != nil {
 		return s
 	}
 
-	return &dbStore{base: s, db: basestore.NewWithHandle(db.Handle())}
+	return &dbStore{db: basestore.NewWithHandle(db.Handle())}
 }
 
 const (
@@ -266,7 +254,7 @@ func (s *dbStore) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.P
 
 func (s *dbStore) WithTransact(ctx context.Context, f func(DBStore) error) error {
 	return s.db.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(&dbStore{base: s.base, db: tx})
+		return f(&dbStore{db: tx})
 	})
 }
 

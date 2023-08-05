@@ -4,7 +4,7 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package accessrequestsmock
+package accessrequests
 
 import (
 	"context"
@@ -41,6 +41,9 @@ type MockDBStore struct {
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
 	UpdateFunc *DBStoreUpdateFunc
+	// WithDBFunc is an instance of a mock function object controlling the
+	// behavior of the method WithDB.
+	WithDBFunc *DBStoreWithDBFunc
 	// WithTransactFunc is an instance of a mock function object controlling
 	// the behavior of the method WithTransact.
 	WithTransactFunc *DBStoreWithTransactFunc
@@ -82,6 +85,11 @@ func NewMockDBStore() *MockDBStore {
 		},
 		UpdateFunc: &DBStoreUpdateFunc{
 			defaultHook: func(context.Context, *types.AccessRequest) (r0 *types.AccessRequest, r1 error) {
+				return
+			},
+		},
+		WithDBFunc: &DBStoreWithDBFunc{
+			defaultHook: func(database.DB) (r0 accessrequests.DBStore) {
 				return
 			},
 		},
@@ -132,6 +140,11 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.Update")
 			},
 		},
+		WithDBFunc: &DBStoreWithDBFunc{
+			defaultHook: func(database.DB) accessrequests.DBStore {
+				panic("unexpected invocation of MockDBStore.WithDB")
+			},
+		},
 		WithTransactFunc: &DBStoreWithTransactFunc{
 			defaultHook: func(context.Context, func(accessrequests.DBStore) error) error {
 				panic("unexpected invocation of MockDBStore.WithTransact")
@@ -164,6 +177,9 @@ func NewMockDBStoreFrom(i accessrequests.DBStore) *MockDBStore {
 		},
 		UpdateFunc: &DBStoreUpdateFunc{
 			defaultHook: i.Update,
+		},
+		WithDBFunc: &DBStoreWithDBFunc{
+			defaultHook: i.WithDB,
 		},
 		WithTransactFunc: &DBStoreWithTransactFunc{
 			defaultHook: i.WithTransact,
@@ -915,6 +931,107 @@ func (c DBStoreUpdateFuncCall) Args() []interface{} {
 // invocation.
 func (c DBStoreUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBStoreWithDBFunc describes the behavior when the WithDB method of the
+// parent MockDBStore instance is invoked.
+type DBStoreWithDBFunc struct {
+	defaultHook func(database.DB) accessrequests.DBStore
+	hooks       []func(database.DB) accessrequests.DBStore
+	history     []DBStoreWithDBFuncCall
+	mutex       sync.Mutex
+}
+
+// WithDB delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDBStore) WithDB(v0 database.DB) accessrequests.DBStore {
+	r0 := m.WithDBFunc.nextHook()(v0)
+	m.WithDBFunc.appendCall(DBStoreWithDBFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the WithDB method of the
+// parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreWithDBFunc) SetDefaultHook(hook func(database.DB) accessrequests.DBStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithDB method of the parent MockDBStore instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBStoreWithDBFunc) PushHook(hook func(database.DB) accessrequests.DBStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBStoreWithDBFunc) SetDefaultReturn(r0 accessrequests.DBStore) {
+	f.SetDefaultHook(func(database.DB) accessrequests.DBStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBStoreWithDBFunc) PushReturn(r0 accessrequests.DBStore) {
+	f.PushHook(func(database.DB) accessrequests.DBStore {
+		return r0
+	})
+}
+
+func (f *DBStoreWithDBFunc) nextHook() func(database.DB) accessrequests.DBStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBStoreWithDBFunc) appendCall(r0 DBStoreWithDBFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBStoreWithDBFuncCall objects describing
+// the invocations of this function.
+func (f *DBStoreWithDBFunc) History() []DBStoreWithDBFuncCall {
+	f.mutex.Lock()
+	history := make([]DBStoreWithDBFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBStoreWithDBFuncCall is an object that describes an invocation of method
+// WithDB on an instance of MockDBStore.
+type DBStoreWithDBFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 database.DB
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 accessrequests.DBStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBStoreWithDBFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBStoreWithDBFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBStoreWithTransactFunc describes the behavior when the WithTransact
