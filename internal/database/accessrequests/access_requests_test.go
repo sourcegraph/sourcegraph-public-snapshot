@@ -21,10 +21,9 @@ func TestAccessRequests_Create(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
-	store := NewStore(logger).WithDB(db)
 
 	t.Run("valid input", func(t *testing.T) {
-		accessRequest, err := store.Create(ctx, &types.AccessRequest{
+		accessRequest, err := Store.WithDB(db).Create(ctx, &types.AccessRequest{
 			Email:          "a1@example.com",
 			Name:           "a1",
 			AdditionalInfo: "info1",
@@ -37,14 +36,14 @@ func TestAccessRequests_Create(t *testing.T) {
 	})
 
 	t.Run("existing access request email", func(t *testing.T) {
-		_, err := store.Create(ctx, &types.AccessRequest{
+		_, err := Store.WithDB(db).Create(ctx, &types.AccessRequest{
 			Email:          "a2@example.com",
 			Name:           "a1",
 			AdditionalInfo: "info1",
 		})
 		assert.NoError(t, err)
 
-		_, err = store.Create(ctx, &types.AccessRequest{
+		_, err = Store.WithDB(db).Create(ctx, &types.AccessRequest{
 			Email:          "a2@example.com",
 			Name:           "a2",
 			AdditionalInfo: "info2",
@@ -63,7 +62,7 @@ func TestAccessRequests_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err = store.Create(ctx, &types.AccessRequest{
+		_, err = Store.WithDB(db).Create(ctx, &types.AccessRequest{
 			Email:          "u@example.com",
 			Name:           "a3",
 			AdditionalInfo: "info3",
@@ -83,27 +82,26 @@ func TestAccessRequests_Update(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestsStore := NewStore(logger).WithDB(db)
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
 	t.Run("non-existent access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
-		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
+		updated, err := Store.WithDB(db).Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.Error(t, err)
 		assert.Nil(t, updated)
 		assert.Equal(t, err, &ErrNotFound{ID: nonExistentAccessRequestID})
 	})
 
 	t.Run("existing access request", func(t *testing.T) {
-		accessRequest, err := accessRequestsStore.Create(ctx, &types.AccessRequest{
+		accessRequest, err := Store.WithDB(db).Create(ctx, &types.AccessRequest{
 			Email:          "a1@example.com",
 			Name:           "a1",
 			AdditionalInfo: "info1",
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest.Status, types.AccessRequestStatusPending)
-		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
+		updated, err := Store.WithDB(db).Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.NotNil(t, updated)
 		assert.NoError(t, err)
 		assert.Equal(t, updated.Status, types.AccessRequestStatusApproved)
@@ -120,19 +118,18 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := NewStore(logger).WithDB(db)
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
-		accessRequest, err := store.GetByID(ctx, nonExistentAccessRequestID)
+		accessRequest, err := Store.WithDB(db).GetByID(ctx, nonExistentAccessRequestID)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
 		assert.Equal(t, err, &ErrNotFound{ID: nonExistentAccessRequestID})
 	})
 	t.Run("existing access request", func(t *testing.T) {
-		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
+		createdAccessRequest, err := Store.WithDB(db).Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 		assert.NoError(t, err)
-		accessRequest, err := store.GetByID(ctx, createdAccessRequest.ID)
+		accessRequest, err := Store.WithDB(db).GetByID(ctx, createdAccessRequest.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest, createdAccessRequest)
 	})
@@ -147,19 +144,18 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := NewStore(logger).WithDB(db)
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistingAccessRequestEmail := "non-existing@example"
-		accessRequest, err := store.GetByEmail(ctx, nonExistingAccessRequestEmail)
+		accessRequest, err := Store.WithDB(db).GetByEmail(ctx, nonExistingAccessRequestEmail)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
 		assert.Equal(t, err, &ErrNotFound{Email: nonExistingAccessRequestEmail})
 	})
 	t.Run("existing access request", func(t *testing.T) {
-		createdAccessRequest, err := store.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
+		createdAccessRequest, err := Store.WithDB(db).Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 		assert.NoError(t, err)
-		accessRequest, err := store.GetByEmail(ctx, createdAccessRequest.Email)
+		accessRequest, err := Store.WithDB(db).GetByEmail(ctx, createdAccessRequest.Email)
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest, createdAccessRequest)
 	})
@@ -174,7 +170,7 @@ func TestAccessRequests_Count(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := NewStore(logger).WithDB(db)
+	accessRequestStore := Store.WithDB(db)
 
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
@@ -222,7 +218,7 @@ func TestAccessRequests_List(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := NewStore(logger).WithDB(db)
+	accessRequestStore := Store.WithDB(db)
 
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})

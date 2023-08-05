@@ -4,200 +4,201 @@
 // this repository. To add additional mocks to this or another package, add a new entry
 // to the mockgen.yaml file in the root of this repository.
 
-package accessrequests
+package accessrequestsmock
 
 import (
 	"context"
 	"sync"
 
 	database "github.com/sourcegraph/sourcegraph/internal/database"
+	accessrequests "github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
 	types "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-// MockStore is a mock implementation of the Store interface (from the
+// MockDBStore is a mock implementation of the DBStore interface (from the
 // package
 // github.com/sourcegraph/sourcegraph/internal/database/accessrequests) used
 // for unit testing.
-type MockStore struct {
+type MockDBStore struct {
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
-	CountFunc *StoreCountFunc
+	CountFunc *DBStoreCountFunc
 	// CreateFunc is an instance of a mock function object controlling the
 	// behavior of the method Create.
-	CreateFunc *StoreCreateFunc
+	CreateFunc *DBStoreCreateFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
-	DoneFunc *StoreDoneFunc
+	DoneFunc *DBStoreDoneFunc
 	// GetByEmailFunc is an instance of a mock function object controlling
 	// the behavior of the method GetByEmail.
-	GetByEmailFunc *StoreGetByEmailFunc
+	GetByEmailFunc *DBStoreGetByEmailFunc
 	// GetByIDFunc is an instance of a mock function object controlling the
 	// behavior of the method GetByID.
-	GetByIDFunc *StoreGetByIDFunc
+	GetByIDFunc *DBStoreGetByIDFunc
 	// ListFunc is an instance of a mock function object controlling the
 	// behavior of the method List.
-	ListFunc *StoreListFunc
+	ListFunc *DBStoreListFunc
 	// UpdateFunc is an instance of a mock function object controlling the
 	// behavior of the method Update.
-	UpdateFunc *StoreUpdateFunc
+	UpdateFunc *DBStoreUpdateFunc
 	// WithTransactFunc is an instance of a mock function object controlling
 	// the behavior of the method WithTransact.
-	WithTransactFunc *StoreWithTransactFunc
+	WithTransactFunc *DBStoreWithTransactFunc
 }
 
-// NewMockStore creates a new mock of the Store interface. All methods
+// NewMockDBStore creates a new mock of the DBStore interface. All methods
 // return zero values for all results, unless overwritten.
-func NewMockStore() *MockStore {
-	return &MockStore{
-		CountFunc: &StoreCountFunc{
-			defaultHook: func(context.Context, *FilterArgs) (r0 int, r1 error) {
+func NewMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CountFunc: &DBStoreCountFunc{
+			defaultHook: func(context.Context, *accessrequests.FilterArgs) (r0 int, r1 error) {
 				return
 			},
 		},
-		CreateFunc: &StoreCreateFunc{
+		CreateFunc: &DBStoreCreateFunc{
 			defaultHook: func(context.Context, *types.AccessRequest) (r0 *types.AccessRequest, r1 error) {
 				return
 			},
 		},
-		DoneFunc: &StoreDoneFunc{
+		DoneFunc: &DBStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
 				return
 			},
 		},
-		GetByEmailFunc: &StoreGetByEmailFunc{
+		GetByEmailFunc: &DBStoreGetByEmailFunc{
 			defaultHook: func(context.Context, string) (r0 *types.AccessRequest, r1 error) {
 				return
 			},
 		},
-		GetByIDFunc: &StoreGetByIDFunc{
+		GetByIDFunc: &DBStoreGetByIDFunc{
 			defaultHook: func(context.Context, int32) (r0 *types.AccessRequest, r1 error) {
 				return
 			},
 		},
-		ListFunc: &StoreListFunc{
-			defaultHook: func(context.Context, *FilterArgs, *database.PaginationArgs) (r0 []*types.AccessRequest, r1 error) {
+		ListFunc: &DBStoreListFunc{
+			defaultHook: func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) (r0 []*types.AccessRequest, r1 error) {
 				return
 			},
 		},
-		UpdateFunc: &StoreUpdateFunc{
+		UpdateFunc: &DBStoreUpdateFunc{
 			defaultHook: func(context.Context, *types.AccessRequest) (r0 *types.AccessRequest, r1 error) {
 				return
 			},
 		},
-		WithTransactFunc: &StoreWithTransactFunc{
-			defaultHook: func(context.Context, func(Store) error) (r0 error) {
+		WithTransactFunc: &DBStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(accessrequests.DBStore) error) (r0 error) {
 				return
 			},
 		},
 	}
 }
 
-// NewStrictMockStore creates a new mock of the Store interface. All methods
-// panic on invocation, unless overwritten.
-func NewStrictMockStore() *MockStore {
-	return &MockStore{
-		CountFunc: &StoreCountFunc{
-			defaultHook: func(context.Context, *FilterArgs) (int, error) {
-				panic("unexpected invocation of MockStore.Count")
+// NewStrictMockDBStore creates a new mock of the DBStore interface. All
+// methods panic on invocation, unless overwritten.
+func NewStrictMockDBStore() *MockDBStore {
+	return &MockDBStore{
+		CountFunc: &DBStoreCountFunc{
+			defaultHook: func(context.Context, *accessrequests.FilterArgs) (int, error) {
+				panic("unexpected invocation of MockDBStore.Count")
 			},
 		},
-		CreateFunc: &StoreCreateFunc{
+		CreateFunc: &DBStoreCreateFunc{
 			defaultHook: func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
-				panic("unexpected invocation of MockStore.Create")
+				panic("unexpected invocation of MockDBStore.Create")
 			},
 		},
-		DoneFunc: &StoreDoneFunc{
+		DoneFunc: &DBStoreDoneFunc{
 			defaultHook: func(error) error {
-				panic("unexpected invocation of MockStore.Done")
+				panic("unexpected invocation of MockDBStore.Done")
 			},
 		},
-		GetByEmailFunc: &StoreGetByEmailFunc{
+		GetByEmailFunc: &DBStoreGetByEmailFunc{
 			defaultHook: func(context.Context, string) (*types.AccessRequest, error) {
-				panic("unexpected invocation of MockStore.GetByEmail")
+				panic("unexpected invocation of MockDBStore.GetByEmail")
 			},
 		},
-		GetByIDFunc: &StoreGetByIDFunc{
+		GetByIDFunc: &DBStoreGetByIDFunc{
 			defaultHook: func(context.Context, int32) (*types.AccessRequest, error) {
-				panic("unexpected invocation of MockStore.GetByID")
+				panic("unexpected invocation of MockDBStore.GetByID")
 			},
 		},
-		ListFunc: &StoreListFunc{
-			defaultHook: func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
-				panic("unexpected invocation of MockStore.List")
+		ListFunc: &DBStoreListFunc{
+			defaultHook: func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
+				panic("unexpected invocation of MockDBStore.List")
 			},
 		},
-		UpdateFunc: &StoreUpdateFunc{
+		UpdateFunc: &DBStoreUpdateFunc{
 			defaultHook: func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
-				panic("unexpected invocation of MockStore.Update")
+				panic("unexpected invocation of MockDBStore.Update")
 			},
 		},
-		WithTransactFunc: &StoreWithTransactFunc{
-			defaultHook: func(context.Context, func(Store) error) error {
-				panic("unexpected invocation of MockStore.WithTransact")
+		WithTransactFunc: &DBStoreWithTransactFunc{
+			defaultHook: func(context.Context, func(accessrequests.DBStore) error) error {
+				panic("unexpected invocation of MockDBStore.WithTransact")
 			},
 		},
 	}
 }
 
-// NewMockStoreFrom creates a new mock of the MockStore interface. All
+// NewMockDBStoreFrom creates a new mock of the MockDBStore interface. All
 // methods delegate to the given implementation, unless overwritten.
-func NewMockStoreFrom(i Store) *MockStore {
-	return &MockStore{
-		CountFunc: &StoreCountFunc{
+func NewMockDBStoreFrom(i accessrequests.DBStore) *MockDBStore {
+	return &MockDBStore{
+		CountFunc: &DBStoreCountFunc{
 			defaultHook: i.Count,
 		},
-		CreateFunc: &StoreCreateFunc{
+		CreateFunc: &DBStoreCreateFunc{
 			defaultHook: i.Create,
 		},
-		DoneFunc: &StoreDoneFunc{
+		DoneFunc: &DBStoreDoneFunc{
 			defaultHook: i.Done,
 		},
-		GetByEmailFunc: &StoreGetByEmailFunc{
+		GetByEmailFunc: &DBStoreGetByEmailFunc{
 			defaultHook: i.GetByEmail,
 		},
-		GetByIDFunc: &StoreGetByIDFunc{
+		GetByIDFunc: &DBStoreGetByIDFunc{
 			defaultHook: i.GetByID,
 		},
-		ListFunc: &StoreListFunc{
+		ListFunc: &DBStoreListFunc{
 			defaultHook: i.List,
 		},
-		UpdateFunc: &StoreUpdateFunc{
+		UpdateFunc: &DBStoreUpdateFunc{
 			defaultHook: i.Update,
 		},
-		WithTransactFunc: &StoreWithTransactFunc{
+		WithTransactFunc: &DBStoreWithTransactFunc{
 			defaultHook: i.WithTransact,
 		},
 	}
 }
 
-// StoreCountFunc describes the behavior when the Count method of the parent
-// MockStore instance is invoked.
-type StoreCountFunc struct {
-	defaultHook func(context.Context, *FilterArgs) (int, error)
-	hooks       []func(context.Context, *FilterArgs) (int, error)
-	history     []StoreCountFuncCall
+// DBStoreCountFunc describes the behavior when the Count method of the
+// parent MockDBStore instance is invoked.
+type DBStoreCountFunc struct {
+	defaultHook func(context.Context, *accessrequests.FilterArgs) (int, error)
+	hooks       []func(context.Context, *accessrequests.FilterArgs) (int, error)
+	history     []DBStoreCountFuncCall
 	mutex       sync.Mutex
 }
 
 // Count delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Count(v0 context.Context, v1 *FilterArgs) (int, error) {
+func (m *MockDBStore) Count(v0 context.Context, v1 *accessrequests.FilterArgs) (int, error) {
 	r0, r1 := m.CountFunc.nextHook()(v0, v1)
-	m.CountFunc.appendCall(StoreCountFuncCall{v0, v1, r0, r1})
+	m.CountFunc.appendCall(DBStoreCountFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Count method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreCountFunc) SetDefaultHook(hook func(context.Context, *FilterArgs) (int, error)) {
+// parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreCountFunc) SetDefaultHook(hook func(context.Context, *accessrequests.FilterArgs) (int, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Count method of the parent MockStore instance invokes the hook at the
+// Count method of the parent MockDBStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreCountFunc) PushHook(hook func(context.Context, *FilterArgs) (int, error)) {
+func (f *DBStoreCountFunc) PushHook(hook func(context.Context, *accessrequests.FilterArgs) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -205,20 +206,20 @@ func (f *StoreCountFunc) PushHook(hook func(context.Context, *FilterArgs) (int, 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, *FilterArgs) (int, error) {
+func (f *DBStoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
+	f.SetDefaultHook(func(context.Context, *accessrequests.FilterArgs) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreCountFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, *FilterArgs) (int, error) {
+func (f *DBStoreCountFunc) PushReturn(r0 int, r1 error) {
+	f.PushHook(func(context.Context, *accessrequests.FilterArgs) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreCountFunc) nextHook() func(context.Context, *FilterArgs) (int, error) {
+func (f *DBStoreCountFunc) nextHook() func(context.Context, *accessrequests.FilterArgs) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -231,32 +232,32 @@ func (f *StoreCountFunc) nextHook() func(context.Context, *FilterArgs) (int, err
 	return hook
 }
 
-func (f *StoreCountFunc) appendCall(r0 StoreCountFuncCall) {
+func (f *DBStoreCountFunc) appendCall(r0 DBStoreCountFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreCountFuncCall objects describing the
+// History returns a sequence of DBStoreCountFuncCall objects describing the
 // invocations of this function.
-func (f *StoreCountFunc) History() []StoreCountFuncCall {
+func (f *DBStoreCountFunc) History() []DBStoreCountFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreCountFuncCall, len(f.history))
+	history := make([]DBStoreCountFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreCountFuncCall is an object that describes an invocation of method
-// Count on an instance of MockStore.
-type StoreCountFuncCall struct {
+// DBStoreCountFuncCall is an object that describes an invocation of method
+// Count on an instance of MockDBStore.
+type DBStoreCountFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *FilterArgs
+	Arg1 *accessrequests.FilterArgs
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -267,44 +268,44 @@ type StoreCountFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreCountFuncCall) Args() []interface{} {
+func (c DBStoreCountFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreCountFuncCall) Results() []interface{} {
+func (c DBStoreCountFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreCreateFunc describes the behavior when the Create method of the
-// parent MockStore instance is invoked.
-type StoreCreateFunc struct {
+// DBStoreCreateFunc describes the behavior when the Create method of the
+// parent MockDBStore instance is invoked.
+type DBStoreCreateFunc struct {
 	defaultHook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	hooks       []func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
-	history     []StoreCreateFuncCall
+	history     []DBStoreCreateFuncCall
 	mutex       sync.Mutex
 }
 
 // Create delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Create(v0 context.Context, v1 *types.AccessRequest) (*types.AccessRequest, error) {
+func (m *MockDBStore) Create(v0 context.Context, v1 *types.AccessRequest) (*types.AccessRequest, error) {
 	r0, r1 := m.CreateFunc.nextHook()(v0, v1)
-	m.CreateFunc.appendCall(StoreCreateFuncCall{v0, v1, r0, r1})
+	m.CreateFunc.appendCall(DBStoreCreateFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Create method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreCreateFunc) SetDefaultHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
+// parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreCreateFunc) SetDefaultHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Create method of the parent MockStore instance invokes the hook at the
+// Create method of the parent MockDBStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreCreateFunc) PushHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
+func (f *DBStoreCreateFunc) PushHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -312,20 +313,20 @@ func (f *StoreCreateFunc) PushHook(hook func(context.Context, *types.AccessReque
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreCreateFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
+func (f *DBStoreCreateFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
 	f.SetDefaultHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreCreateFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
+func (f *DBStoreCreateFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
 	f.PushHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreCreateFunc) nextHook() func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
+func (f *DBStoreCreateFunc) nextHook() func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -338,26 +339,26 @@ func (f *StoreCreateFunc) nextHook() func(context.Context, *types.AccessRequest)
 	return hook
 }
 
-func (f *StoreCreateFunc) appendCall(r0 StoreCreateFuncCall) {
+func (f *DBStoreCreateFunc) appendCall(r0 DBStoreCreateFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreCreateFuncCall objects describing the
-// invocations of this function.
-func (f *StoreCreateFunc) History() []StoreCreateFuncCall {
+// History returns a sequence of DBStoreCreateFuncCall objects describing
+// the invocations of this function.
+func (f *DBStoreCreateFunc) History() []DBStoreCreateFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreCreateFuncCall, len(f.history))
+	history := make([]DBStoreCreateFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreCreateFuncCall is an object that describes an invocation of method
-// Create on an instance of MockStore.
-type StoreCreateFuncCall struct {
+// DBStoreCreateFuncCall is an object that describes an invocation of method
+// Create on an instance of MockDBStore.
+type DBStoreCreateFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -374,44 +375,44 @@ type StoreCreateFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreCreateFuncCall) Args() []interface{} {
+func (c DBStoreCreateFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreCreateFuncCall) Results() []interface{} {
+func (c DBStoreCreateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreDoneFunc describes the behavior when the Done method of the parent
-// MockStore instance is invoked.
-type StoreDoneFunc struct {
+// DBStoreDoneFunc describes the behavior when the Done method of the parent
+// MockDBStore instance is invoked.
+type DBStoreDoneFunc struct {
 	defaultHook func(error) error
 	hooks       []func(error) error
-	history     []StoreDoneFuncCall
+	history     []DBStoreDoneFuncCall
 	mutex       sync.Mutex
 }
 
 // Done delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Done(v0 error) error {
+func (m *MockDBStore) Done(v0 error) error {
 	r0 := m.DoneFunc.nextHook()(v0)
-	m.DoneFunc.appendCall(StoreDoneFuncCall{v0, r0})
+	m.DoneFunc.appendCall(DBStoreDoneFuncCall{v0, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the Done method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreDoneFunc) SetDefaultHook(hook func(error) error) {
+// parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreDoneFunc) SetDefaultHook(hook func(error) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Done method of the parent MockStore instance invokes the hook at the
+// Done method of the parent MockDBStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreDoneFunc) PushHook(hook func(error) error) {
+func (f *DBStoreDoneFunc) PushHook(hook func(error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -419,20 +420,20 @@ func (f *StoreDoneFunc) PushHook(hook func(error) error) {
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreDoneFunc) SetDefaultReturn(r0 error) {
+func (f *DBStoreDoneFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreDoneFunc) PushReturn(r0 error) {
+func (f *DBStoreDoneFunc) PushReturn(r0 error) {
 	f.PushHook(func(error) error {
 		return r0
 	})
 }
 
-func (f *StoreDoneFunc) nextHook() func(error) error {
+func (f *DBStoreDoneFunc) nextHook() func(error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -445,26 +446,26 @@ func (f *StoreDoneFunc) nextHook() func(error) error {
 	return hook
 }
 
-func (f *StoreDoneFunc) appendCall(r0 StoreDoneFuncCall) {
+func (f *DBStoreDoneFunc) appendCall(r0 DBStoreDoneFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreDoneFuncCall objects describing the
+// History returns a sequence of DBStoreDoneFuncCall objects describing the
 // invocations of this function.
-func (f *StoreDoneFunc) History() []StoreDoneFuncCall {
+func (f *DBStoreDoneFunc) History() []DBStoreDoneFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreDoneFuncCall, len(f.history))
+	history := make([]DBStoreDoneFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreDoneFuncCall is an object that describes an invocation of method
-// Done on an instance of MockStore.
-type StoreDoneFuncCall struct {
+// DBStoreDoneFuncCall is an object that describes an invocation of method
+// Done on an instance of MockDBStore.
+type DBStoreDoneFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 error
@@ -475,44 +476,44 @@ type StoreDoneFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreDoneFuncCall) Args() []interface{} {
+func (c DBStoreDoneFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreDoneFuncCall) Results() []interface{} {
+func (c DBStoreDoneFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// StoreGetByEmailFunc describes the behavior when the GetByEmail method of
-// the parent MockStore instance is invoked.
-type StoreGetByEmailFunc struct {
+// DBStoreGetByEmailFunc describes the behavior when the GetByEmail method
+// of the parent MockDBStore instance is invoked.
+type DBStoreGetByEmailFunc struct {
 	defaultHook func(context.Context, string) (*types.AccessRequest, error)
 	hooks       []func(context.Context, string) (*types.AccessRequest, error)
-	history     []StoreGetByEmailFuncCall
+	history     []DBStoreGetByEmailFuncCall
 	mutex       sync.Mutex
 }
 
 // GetByEmail delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) GetByEmail(v0 context.Context, v1 string) (*types.AccessRequest, error) {
+func (m *MockDBStore) GetByEmail(v0 context.Context, v1 string) (*types.AccessRequest, error) {
 	r0, r1 := m.GetByEmailFunc.nextHook()(v0, v1)
-	m.GetByEmailFunc.appendCall(StoreGetByEmailFuncCall{v0, v1, r0, r1})
+	m.GetByEmailFunc.appendCall(DBStoreGetByEmailFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GetByEmail method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetByEmailFunc) SetDefaultHook(hook func(context.Context, string) (*types.AccessRequest, error)) {
+// the parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreGetByEmailFunc) SetDefaultHook(hook func(context.Context, string) (*types.AccessRequest, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetByEmail method of the parent MockStore instance invokes the hook at
+// GetByEmail method of the parent MockDBStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreGetByEmailFunc) PushHook(hook func(context.Context, string) (*types.AccessRequest, error)) {
+func (f *DBStoreGetByEmailFunc) PushHook(hook func(context.Context, string) (*types.AccessRequest, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -520,20 +521,20 @@ func (f *StoreGetByEmailFunc) PushHook(hook func(context.Context, string) (*type
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetByEmailFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
+func (f *DBStoreGetByEmailFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
 	f.SetDefaultHook(func(context.Context, string) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetByEmailFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
+func (f *DBStoreGetByEmailFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
 	f.PushHook(func(context.Context, string) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetByEmailFunc) nextHook() func(context.Context, string) (*types.AccessRequest, error) {
+func (f *DBStoreGetByEmailFunc) nextHook() func(context.Context, string) (*types.AccessRequest, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -546,26 +547,26 @@ func (f *StoreGetByEmailFunc) nextHook() func(context.Context, string) (*types.A
 	return hook
 }
 
-func (f *StoreGetByEmailFunc) appendCall(r0 StoreGetByEmailFuncCall) {
+func (f *DBStoreGetByEmailFunc) appendCall(r0 DBStoreGetByEmailFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreGetByEmailFuncCall objects describing
-// the invocations of this function.
-func (f *StoreGetByEmailFunc) History() []StoreGetByEmailFuncCall {
+// History returns a sequence of DBStoreGetByEmailFuncCall objects
+// describing the invocations of this function.
+func (f *DBStoreGetByEmailFunc) History() []DBStoreGetByEmailFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreGetByEmailFuncCall, len(f.history))
+	history := make([]DBStoreGetByEmailFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreGetByEmailFuncCall is an object that describes an invocation of
-// method GetByEmail on an instance of MockStore.
-type StoreGetByEmailFuncCall struct {
+// DBStoreGetByEmailFuncCall is an object that describes an invocation of
+// method GetByEmail on an instance of MockDBStore.
+type DBStoreGetByEmailFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -582,44 +583,44 @@ type StoreGetByEmailFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreGetByEmailFuncCall) Args() []interface{} {
+func (c DBStoreGetByEmailFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreGetByEmailFuncCall) Results() []interface{} {
+func (c DBStoreGetByEmailFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreGetByIDFunc describes the behavior when the GetByID method of the
-// parent MockStore instance is invoked.
-type StoreGetByIDFunc struct {
+// DBStoreGetByIDFunc describes the behavior when the GetByID method of the
+// parent MockDBStore instance is invoked.
+type DBStoreGetByIDFunc struct {
 	defaultHook func(context.Context, int32) (*types.AccessRequest, error)
 	hooks       []func(context.Context, int32) (*types.AccessRequest, error)
-	history     []StoreGetByIDFuncCall
+	history     []DBStoreGetByIDFuncCall
 	mutex       sync.Mutex
 }
 
 // GetByID delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) GetByID(v0 context.Context, v1 int32) (*types.AccessRequest, error) {
+func (m *MockDBStore) GetByID(v0 context.Context, v1 int32) (*types.AccessRequest, error) {
 	r0, r1 := m.GetByIDFunc.nextHook()(v0, v1)
-	m.GetByIDFunc.appendCall(StoreGetByIDFuncCall{v0, v1, r0, r1})
+	m.GetByIDFunc.appendCall(DBStoreGetByIDFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the GetByID method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int32) (*types.AccessRequest, error)) {
+// the parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreGetByIDFunc) SetDefaultHook(hook func(context.Context, int32) (*types.AccessRequest, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// GetByID method of the parent MockStore instance invokes the hook at the
+// GetByID method of the parent MockDBStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreGetByIDFunc) PushHook(hook func(context.Context, int32) (*types.AccessRequest, error)) {
+func (f *DBStoreGetByIDFunc) PushHook(hook func(context.Context, int32) (*types.AccessRequest, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -627,20 +628,20 @@ func (f *StoreGetByIDFunc) PushHook(hook func(context.Context, int32) (*types.Ac
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreGetByIDFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
+func (f *DBStoreGetByIDFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
 	f.SetDefaultHook(func(context.Context, int32) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreGetByIDFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
+func (f *DBStoreGetByIDFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
 	f.PushHook(func(context.Context, int32) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreGetByIDFunc) nextHook() func(context.Context, int32) (*types.AccessRequest, error) {
+func (f *DBStoreGetByIDFunc) nextHook() func(context.Context, int32) (*types.AccessRequest, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -653,26 +654,26 @@ func (f *StoreGetByIDFunc) nextHook() func(context.Context, int32) (*types.Acces
 	return hook
 }
 
-func (f *StoreGetByIDFunc) appendCall(r0 StoreGetByIDFuncCall) {
+func (f *DBStoreGetByIDFunc) appendCall(r0 DBStoreGetByIDFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreGetByIDFuncCall objects describing the
-// invocations of this function.
-func (f *StoreGetByIDFunc) History() []StoreGetByIDFuncCall {
+// History returns a sequence of DBStoreGetByIDFuncCall objects describing
+// the invocations of this function.
+func (f *DBStoreGetByIDFunc) History() []DBStoreGetByIDFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreGetByIDFuncCall, len(f.history))
+	history := make([]DBStoreGetByIDFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreGetByIDFuncCall is an object that describes an invocation of method
-// GetByID on an instance of MockStore.
-type StoreGetByIDFuncCall struct {
+// DBStoreGetByIDFuncCall is an object that describes an invocation of
+// method GetByID on an instance of MockDBStore.
+type DBStoreGetByIDFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -689,44 +690,44 @@ type StoreGetByIDFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreGetByIDFuncCall) Args() []interface{} {
+func (c DBStoreGetByIDFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreGetByIDFuncCall) Results() []interface{} {
+func (c DBStoreGetByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreListFunc describes the behavior when the List method of the parent
-// MockStore instance is invoked.
-type StoreListFunc struct {
-	defaultHook func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error)
-	hooks       []func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error)
-	history     []StoreListFuncCall
+// DBStoreListFunc describes the behavior when the List method of the parent
+// MockDBStore instance is invoked.
+type DBStoreListFunc struct {
+	defaultHook func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error)
+	hooks       []func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error)
+	history     []DBStoreListFuncCall
 	mutex       sync.Mutex
 }
 
 // List delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) List(v0 context.Context, v1 *FilterArgs, v2 *database.PaginationArgs) ([]*types.AccessRequest, error) {
+func (m *MockDBStore) List(v0 context.Context, v1 *accessrequests.FilterArgs, v2 *database.PaginationArgs) ([]*types.AccessRequest, error) {
 	r0, r1 := m.ListFunc.nextHook()(v0, v1, v2)
-	m.ListFunc.appendCall(StoreListFuncCall{v0, v1, v2, r0, r1})
+	m.ListFunc.appendCall(DBStoreListFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the List method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreListFunc) SetDefaultHook(hook func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error)) {
+// parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreListFunc) SetDefaultHook(hook func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// List method of the parent MockStore instance invokes the hook at the
+// List method of the parent MockDBStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreListFunc) PushHook(hook func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error)) {
+func (f *DBStoreListFunc) PushHook(hook func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -734,20 +735,20 @@ func (f *StoreListFunc) PushHook(hook func(context.Context, *FilterArgs, *databa
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreListFunc) SetDefaultReturn(r0 []*types.AccessRequest, r1 error) {
-	f.SetDefaultHook(func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
+func (f *DBStoreListFunc) SetDefaultReturn(r0 []*types.AccessRequest, r1 error) {
+	f.SetDefaultHook(func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreListFunc) PushReturn(r0 []*types.AccessRequest, r1 error) {
-	f.PushHook(func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
+func (f *DBStoreListFunc) PushReturn(r0 []*types.AccessRequest, r1 error) {
+	f.PushHook(func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreListFunc) nextHook() func(context.Context, *FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
+func (f *DBStoreListFunc) nextHook() func(context.Context, *accessrequests.FilterArgs, *database.PaginationArgs) ([]*types.AccessRequest, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -760,32 +761,32 @@ func (f *StoreListFunc) nextHook() func(context.Context, *FilterArgs, *database.
 	return hook
 }
 
-func (f *StoreListFunc) appendCall(r0 StoreListFuncCall) {
+func (f *DBStoreListFunc) appendCall(r0 DBStoreListFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreListFuncCall objects describing the
+// History returns a sequence of DBStoreListFuncCall objects describing the
 // invocations of this function.
-func (f *StoreListFunc) History() []StoreListFuncCall {
+func (f *DBStoreListFunc) History() []DBStoreListFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreListFuncCall, len(f.history))
+	history := make([]DBStoreListFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreListFuncCall is an object that describes an invocation of method
-// List on an instance of MockStore.
-type StoreListFuncCall struct {
+// DBStoreListFuncCall is an object that describes an invocation of method
+// List on an instance of MockDBStore.
+type DBStoreListFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 *FilterArgs
+	Arg1 *accessrequests.FilterArgs
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 *database.PaginationArgs
@@ -799,44 +800,44 @@ type StoreListFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreListFuncCall) Args() []interface{} {
+func (c DBStoreListFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreListFuncCall) Results() []interface{} {
+func (c DBStoreListFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreUpdateFunc describes the behavior when the Update method of the
-// parent MockStore instance is invoked.
-type StoreUpdateFunc struct {
+// DBStoreUpdateFunc describes the behavior when the Update method of the
+// parent MockDBStore instance is invoked.
+type DBStoreUpdateFunc struct {
 	defaultHook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	hooks       []func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
-	history     []StoreUpdateFuncCall
+	history     []DBStoreUpdateFuncCall
 	mutex       sync.Mutex
 }
 
 // Update delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockStore) Update(v0 context.Context, v1 *types.AccessRequest) (*types.AccessRequest, error) {
+func (m *MockDBStore) Update(v0 context.Context, v1 *types.AccessRequest) (*types.AccessRequest, error) {
 	r0, r1 := m.UpdateFunc.nextHook()(v0, v1)
-	m.UpdateFunc.appendCall(StoreUpdateFuncCall{v0, v1, r0, r1})
+	m.UpdateFunc.appendCall(DBStoreUpdateFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the Update method of the
-// parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreUpdateFunc) SetDefaultHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
+// parent MockDBStore instance is invoked and the hook queue is empty.
+func (f *DBStoreUpdateFunc) SetDefaultHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// Update method of the parent MockStore instance invokes the hook at the
+// Update method of the parent MockDBStore instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *StoreUpdateFunc) PushHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
+func (f *DBStoreUpdateFunc) PushHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -844,20 +845,20 @@ func (f *StoreUpdateFunc) PushHook(hook func(context.Context, *types.AccessReque
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreUpdateFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
+func (f *DBStoreUpdateFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
 	f.SetDefaultHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreUpdateFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
+func (f *DBStoreUpdateFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
 	f.PushHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 		return r0, r1
 	})
 }
 
-func (f *StoreUpdateFunc) nextHook() func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
+func (f *DBStoreUpdateFunc) nextHook() func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -870,26 +871,26 @@ func (f *StoreUpdateFunc) nextHook() func(context.Context, *types.AccessRequest)
 	return hook
 }
 
-func (f *StoreUpdateFunc) appendCall(r0 StoreUpdateFuncCall) {
+func (f *DBStoreUpdateFunc) appendCall(r0 DBStoreUpdateFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreUpdateFuncCall objects describing the
-// invocations of this function.
-func (f *StoreUpdateFunc) History() []StoreUpdateFuncCall {
+// History returns a sequence of DBStoreUpdateFuncCall objects describing
+// the invocations of this function.
+func (f *DBStoreUpdateFunc) History() []DBStoreUpdateFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreUpdateFuncCall, len(f.history))
+	history := make([]DBStoreUpdateFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreUpdateFuncCall is an object that describes an invocation of method
-// Update on an instance of MockStore.
-type StoreUpdateFuncCall struct {
+// DBStoreUpdateFuncCall is an object that describes an invocation of method
+// Update on an instance of MockDBStore.
+type DBStoreUpdateFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -906,44 +907,45 @@ type StoreUpdateFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreUpdateFuncCall) Args() []interface{} {
+func (c DBStoreUpdateFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreUpdateFuncCall) Results() []interface{} {
+func (c DBStoreUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// StoreWithTransactFunc describes the behavior when the WithTransact method
-// of the parent MockStore instance is invoked.
-type StoreWithTransactFunc struct {
-	defaultHook func(context.Context, func(Store) error) error
-	hooks       []func(context.Context, func(Store) error) error
-	history     []StoreWithTransactFuncCall
+// DBStoreWithTransactFunc describes the behavior when the WithTransact
+// method of the parent MockDBStore instance is invoked.
+type DBStoreWithTransactFunc struct {
+	defaultHook func(context.Context, func(accessrequests.DBStore) error) error
+	hooks       []func(context.Context, func(accessrequests.DBStore) error) error
+	history     []DBStoreWithTransactFuncCall
 	mutex       sync.Mutex
 }
 
 // WithTransact delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockStore) WithTransact(v0 context.Context, v1 func(Store) error) error {
+func (m *MockDBStore) WithTransact(v0 context.Context, v1 func(accessrequests.DBStore) error) error {
 	r0 := m.WithTransactFunc.nextHook()(v0, v1)
-	m.WithTransactFunc.appendCall(StoreWithTransactFuncCall{v0, v1, r0})
+	m.WithTransactFunc.appendCall(DBStoreWithTransactFuncCall{v0, v1, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the WithTransact method
-// of the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(Store) error) error) {
+// of the parent MockDBStore instance is invoked and the hook queue is
+// empty.
+func (f *DBStoreWithTransactFunc) SetDefaultHook(hook func(context.Context, func(accessrequests.DBStore) error) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// WithTransact method of the parent MockStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
+// WithTransact method of the parent MockDBStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *StoreWithTransactFunc) PushHook(hook func(context.Context, func(Store) error) error) {
+func (f *DBStoreWithTransactFunc) PushHook(hook func(context.Context, func(accessrequests.DBStore) error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -951,20 +953,20 @@ func (f *StoreWithTransactFunc) PushHook(hook func(context.Context, func(Store) 
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreWithTransactFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, func(Store) error) error {
+func (f *DBStoreWithTransactFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, func(accessrequests.DBStore) error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreWithTransactFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, func(Store) error) error {
+func (f *DBStoreWithTransactFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, func(accessrequests.DBStore) error) error {
 		return r0
 	})
 }
 
-func (f *StoreWithTransactFunc) nextHook() func(context.Context, func(Store) error) error {
+func (f *DBStoreWithTransactFunc) nextHook() func(context.Context, func(accessrequests.DBStore) error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -977,32 +979,32 @@ func (f *StoreWithTransactFunc) nextHook() func(context.Context, func(Store) err
 	return hook
 }
 
-func (f *StoreWithTransactFunc) appendCall(r0 StoreWithTransactFuncCall) {
+func (f *DBStoreWithTransactFunc) appendCall(r0 DBStoreWithTransactFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreWithTransactFuncCall objects
+// History returns a sequence of DBStoreWithTransactFuncCall objects
 // describing the invocations of this function.
-func (f *StoreWithTransactFunc) History() []StoreWithTransactFuncCall {
+func (f *DBStoreWithTransactFunc) History() []DBStoreWithTransactFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreWithTransactFuncCall, len(f.history))
+	history := make([]DBStoreWithTransactFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreWithTransactFuncCall is an object that describes an invocation of
-// method WithTransact on an instance of MockStore.
-type StoreWithTransactFuncCall struct {
+// DBStoreWithTransactFuncCall is an object that describes an invocation of
+// method WithTransact on an instance of MockDBStore.
+type DBStoreWithTransactFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 func(Store) error
+	Arg1 func(accessrequests.DBStore) error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -1010,12 +1012,12 @@ type StoreWithTransactFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreWithTransactFuncCall) Args() []interface{} {
+func (c DBStoreWithTransactFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreWithTransactFuncCall) Results() []interface{} {
+func (c DBStoreWithTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }

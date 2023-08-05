@@ -64,7 +64,7 @@ func handleRequestAccess(logger log.Logger, db database.DB, w http.ResponseWrite
 		Email:          data.Email,
 		AdditionalInfo: data.AdditionalInfo,
 	}
-	_, err := accessrequests.NewStore(db.Logger()).WithDB(db).Create(r.Context(), &accessRequest)
+	_, err := accessrequests.Store.WithDB(db).Create(r.Context(), &accessRequest)
 	if err == nil {
 		w.WriteHeader(http.StatusCreated)
 		if err = usagestats.LogBackendEvent(db, actor.FromContext(r.Context()).UID, deviceid.FromContext(r.Context()), "CreateAccessRequestSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {

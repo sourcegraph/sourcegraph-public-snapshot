@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -68,35 +67,45 @@ func (o *FilterArgs) SQL() []*sqlf.Query {
 	return conds
 }
 
-// Store provides access to the `access_requests` table.
+// DBStore provides access to the `access_requests` table.
 //
 // For a detailed overview of the schema, see schema.md.
-type Store interface {
+type DBStore interface {
 	Create(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	Update(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
 	GetByID(context.Context, int32) (*types.AccessRequest, error)
 	GetByEmail(context.Context, string) (*types.AccessRequest, error)
 	Count(context.Context, *FilterArgs) (int, error)
 	List(context.Context, *FilterArgs, *database.PaginationArgs) (_ []*types.AccessRequest, err error)
-	WithTransact(context.Context, func(Store) error) error
+	WithTransact(context.Context, func(DBStore) error) error
 	Done(error) error
 }
 
-type store struct {
-	logger log.Logger
-}
+type store struct{}
+
+var Store = store{}
 
 type dbStore struct {
 	base *store
 	db   *basestore.Store
 }
 
-func NewStore(logger log.Logger) *store {
-	return &store{logger: logger.Scoped("accessrequests.Store", "")}
+type BaseStore[T any] interface {
+	WithDB(database.DB) T
 }
 
-func (s *store) WithDB(db database.DB) Store {
-	return dbmock.NewBaseStore[Store](s).WithDB(db)
+type BaseStoreFunc[T any] func(database.DB) T
+
+func (f BaseStoreFunc[T]) WithDB(db database.DB) T {
+	return f(db)
+}
+
+func (s *store) WithDB(db database.DB) DBStore {
+	if s := dbmock.Get[DBStore](db); s != nil {
+		return s
+	}
+
+	return &dbStore{base: s, db: basestore.NewWithHandle(db.Handle())}
 }
 
 const (
@@ -255,7 +264,7 @@ func (s *dbStore) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.P
 	return nodes, nil
 }
 
-func (s *dbStore) WithTransact(ctx context.Context, f func(Store) error) error {
+func (s *dbStore) WithTransact(ctx context.Context, f func(DBStore) error) error {
 	return s.db.WithTransact(ctx, func(tx *basestore.Store) error {
 		return f(&dbStore{base: s.base, db: tx})
 	})

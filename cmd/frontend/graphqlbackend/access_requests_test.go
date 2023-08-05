@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
+	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests/accessrequestsmock"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbmock"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -33,7 +34,7 @@ func TestAccessRequestNode(t *testing.T) {
 	mockDB.UsersFunc.SetDefaultReturn(userStore)
 	userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	accessRequestStore := accessrequests.NewMockStore()
+	accessRequestStore := accessrequestsmock.NewMockDBStore()
 	accessRequestStore.GetByIDFunc.SetDefaultReturn(mockAccessRequest, nil)
 
 	db := dbmock.New(mockDB, accessRequestStore)
@@ -93,7 +94,7 @@ func TestAccessRequestsQuery(t *testing.T) {
 	userStore := database.NewMockUserStore()
 	mockDB.UsersFunc.SetDefaultReturn(userStore)
 
-	accessRequestStore := accessrequests.NewMockStore()
+	accessRequestStore := accessrequestsmock.NewMockDBStore()
 	db := dbmock.New(mockDB, accessRequestStore)
 
 	t.Parallel()
@@ -199,7 +200,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	t.Parallel()
 
 	t.Run("non-admin user", func(t *testing.T) {
-		accessRequestStore := accessrequests.NewMockStore()
+		accessRequestStore := accessrequestsmock.NewMockDBStore()
 		db := dbmock.New(mockDB, accessRequestStore)
 
 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
@@ -226,7 +227,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	})
 
 	t.Run("existing access request", func(t *testing.T) {
-		accessRequestStore := accessrequests.NewMockStore()
+		accessRequestStore := accessrequestsmock.NewMockDBStore()
 		db := dbmock.New(mockDB, accessRequestStore)
 
 		createdAtTime, _ := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
@@ -253,7 +254,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 	})
 
 	t.Run("non-existing access request", func(t *testing.T) {
-		accessRequestStore := accessrequests.NewMockStore()
+		accessRequestStore := accessrequestsmock.NewMockDBStore()
 		db := dbmock.New(mockDB, accessRequestStore)
 
 		notFoundErr := &accessrequests.ErrNotFound{ID: 1}
