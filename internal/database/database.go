@@ -14,6 +14,16 @@ import (
 	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
+type DBStore[T any] interface {
+	WithDB(DB) T
+}
+
+type DBStoreFunc[T any] func(DB) T
+
+func (f DBStoreFunc[T]) WithDB(db DB) T {
+	return f(db)
+}
+
 // DB is an interface that embeds dbutil.DB, adding methods to
 // return specialized stores on top of that interface. In time,
 // the expectation is to replace uses of dbutil.DB with database.DB,

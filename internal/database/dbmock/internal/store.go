@@ -18,13 +18,6 @@ type DBStore interface {
 	Create(context.Context) error
 }
 
-// store is the base struct that holds all of the Store dependencies.
-// It allows us to transfer dependencies between WithDB calls without having
-// to recreate the struct every time.
-type Store struct {
-	/* Dependencies like loggers */
-}
-
 // dbStore is ment to be a short-lived dbStore that wraps the base store.
 // It's the struct that actually implements the Store interface.
 // This way the Store methods don't all have to take a db connection, but we
@@ -36,21 +29,16 @@ type Store struct {
 type dbStore struct {
 	// We don't embed *store directly because we
 	// don't want WithDB to be accessible.
-	base *Store
-	db   *basestore.Store
+	db *basestore.Store
 }
 
-// WithDB converts the store to a dbStore that implements the Store interface.
-func (s *Store) WithDB(db database.DB) DBStore {
-	// For a store to be mockable, this function has to be called when
-	// adding the db.
-	// It checks if a mock store is found within db.
+var Store = database.DBStoreFunc[DBStore](func(db database.DB) DBStore {
 	if s := dbmock.Get[DBStore](db); s != nil {
 		return s
 	}
 
-	return &dbStore{base: s, db: basestore.NewWithHandle(db.Handle())}
-}
+	return &dbStore{db: basestore.NewWithHandle(db.Handle())}
+})
 
 // Create is a Store method for demonstration purposes.
 func (s *dbStore) Create(ctx context.Context) error {

@@ -22,7 +22,6 @@ func TestMockedStoreIsReturnedFromWithDB(t *testing.T) {
 
 	db := dbmock.New(database.NewMockDB(), mockStore)
 
-	store := internal.Store{}
-	err := store.WithDB(db).Create(context.Background())
+	err := internal.Store.WithDB(db).Create(context.Background())
 	require.ErrorContains(t, err, mockedErr)
 }
