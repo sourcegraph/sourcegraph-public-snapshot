@@ -163,7 +163,7 @@ func (q *CreateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 	return &CreateResponse{newAccessRequest}, err
 }
 
-func (c *ARClient) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+func (c *Client) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	query := &CreateQuery{
 		AccessRequest: accessRequest,
 	}
@@ -202,7 +202,7 @@ func (q *UpdateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 	return &UpdateResponse{updated}, nil
 }
 
-func (c *ARClient) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+func (c *Client) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	query := &UpdateQuery{
 		AccessRequest: accessRequest,
 	}
@@ -228,7 +228,7 @@ type GetByIDResponse struct {
 	AccessRequest *types.AccessRequest
 }
 
-func (c *ARClient) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
+func (c *Client) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
 	query := &GetByIDQuery{
 		ID: id,
 	}
@@ -280,7 +280,7 @@ func (q *GetByEmailQuery) Execute(ctx context.Context, store *basestore.Store) (
 	return &GetByEmailResponse{node}, nil
 }
 
-func (c *ARClient) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
+func (c *Client) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
 	query := &GetByEmailQuery{
 		Email: email,
 	}
@@ -316,7 +316,7 @@ func (q *CountQuery) Execute(ctx context.Context, store *basestore.Store) (any, 
 	return &CountResponse{count}, nil
 }
 
-func (c *ARClient) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
+func (c *Client) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
 	query := &CountQuery{
 		FArgs: fArgs,
 	}
@@ -369,7 +369,7 @@ func (q *ListQuery) Execute(ctx context.Context, store *basestore.Store) (any, e
 	return &ListResponse{nodes}, nil
 }
 
-func (c *ARClient) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {
+func (c *Client) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {
 	query := &ListQuery{
 		FArgs: fArgs,
 		PArgs: pArgs,
@@ -399,10 +399,10 @@ func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
 
 var scanAccessRequests = basestore.NewSliceScanner(scanAccessRequest)
 
-type ARClient struct {
+type Client struct {
 	dbclient database.DBClient
 }
 
-func NewARClient(dbclient database.DBClient) *ARClient {
-	return &ARClient{dbclient}
+func NewClient(dbclient database.DBClient) *Client {
+	return &Client{dbclient}
 }

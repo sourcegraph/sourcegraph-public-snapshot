@@ -29,7 +29,7 @@ func TestRequestAccess(t *testing.T) {
 	logger := logtest.NoOp(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	handler := HandleRequestAccess(logger, db)
-	client := accessrequests.NewARClient(db.Client())
+	client := accessrequests.NewClient(db.Client())
 
 	t.Run("accessRequest feature is disabled", func(t *testing.T) {
 		falseVal := false
@@ -116,7 +116,7 @@ func TestRequestAccess(t *testing.T) {
 			Name:  "a1",
 			Email: "a1@example.com",
 		}
-		accessrequests.NewARClient(db.Client()).Create(context.Background(), &accessRequest)
+		accessrequests.NewClient(db.Client()).Create(context.Background(), &accessRequest)
 		_, err := client.GetByEmail(context.Background(), accessRequest.Email)
 		require.NoError(t, err)
 

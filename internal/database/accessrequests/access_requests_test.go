@@ -22,7 +22,7 @@ func TestAccessRequests_Create(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("valid input", func(t *testing.T) {
-		accessRequest, err := NewARClient(db.Client()).Create(ctx, &types.AccessRequest{
+		accessRequest, err := NewClient(db.Client()).Create(ctx, &types.AccessRequest{
 			Email:          "a1@example.com",
 			Name:           "a1",
 			AdditionalInfo: "info1",
@@ -35,14 +35,14 @@ func TestAccessRequests_Create(t *testing.T) {
 	})
 
 	t.Run("existing access request email", func(t *testing.T) {
-		_, err := NewARClient(db.Client()).Create(ctx, &types.AccessRequest{
+		_, err := NewClient(db.Client()).Create(ctx, &types.AccessRequest{
 			Email:          "a2@example.com",
 			Name:           "a1",
 			AdditionalInfo: "info1",
 		})
 		assert.NoError(t, err)
 
-		_, err = NewARClient(db.Client()).Create(ctx, &types.AccessRequest{
+		_, err = NewClient(db.Client()).Create(ctx, &types.AccessRequest{
 			Email:          "a2@example.com",
 			Name:           "a2",
 			AdditionalInfo: "info2",
@@ -61,7 +61,7 @@ func TestAccessRequests_Create(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		_, err = NewARClient(db.Client()).Create(ctx, &types.AccessRequest{
+		_, err = NewClient(db.Client()).Create(ctx, &types.AccessRequest{
 			Email:          "u@example.com",
 			Name:           "a3",
 			AdditionalInfo: "info3",
@@ -81,7 +81,7 @@ func TestAccessRequests_Update(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestsClient := NewARClient(db.Client())
+	accessRequestsClient := NewClient(db.Client())
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
@@ -118,7 +118,7 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	client := NewARClient(db.Client())
+	client := NewClient(db.Client())
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
@@ -145,7 +145,7 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	client := NewARClient(db.Client())
+	client := NewClient(db.Client())
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistingAccessRequestEmail := "non-existing@example"
@@ -172,8 +172,8 @@ func TestAccessRequests_Count(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestClient := NewARClient(db.Client())
-	client := NewARClient(db.Client())
+	accessRequestClient := NewClient(db.Client())
+	client := NewClient(db.Client())
 
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
@@ -221,7 +221,7 @@ func TestAccessRequests_List(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestClient := NewARClient(db.Client())
+	accessRequestClient := NewClient(db.Client())
 
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
