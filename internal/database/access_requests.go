@@ -75,7 +75,6 @@ func (o *AccessRequestsFilterArgs) SQL() []*sqlf.Query {
 // For a detailed overview of the schema, see schema.md.
 type AccessRequestStore interface {
 	basestore.ShareableStore
-	GetByID(context.Context, int32) (*types.AccessRequest, error)
 	GetByEmail(context.Context, string) (*types.AccessRequest, error)
 	Count(context.Context, *AccessRequestsFilterArgs) (int, error)
 	List(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (_ []*types.AccessRequest, err error)
@@ -133,19 +132,6 @@ var (
 		sqlf.Sprintf("status"),
 	}
 )
-
-func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(accessRequestColumns, ","), id))
-	node, err := scanAccessRequest(row)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, &ErrAccessRequestNotFound{ID: id}
-		}
-		return nil, err
-	}
-
-	return node, nil
-}
 
 func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(accessRequestColumns, ","), email))

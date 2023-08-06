@@ -127,10 +127,9 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	}
 
 	err = r.db.WithTransact(ctx, func(tx database.DB) error {
-		store := tx.AccessRequests()
 		client := accessrequests.NewARClient(tx.Client())
 
-		accessRequest, err := store.GetByID(ctx, id)
+		accessRequest, err := client.GetByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -164,7 +163,7 @@ func accessRequestByID(ctx context.Context, db database.DB, id graphql.ID) (*acc
 	if err != nil {
 		return nil, err
 	}
-	accessRequest, err := db.AccessRequests().GetByID(ctx, accessRequestID)
+	accessRequest, err := accessrequests.NewARClient(db.Client()).GetByID(ctx, accessRequestID)
 	if err != nil {
 		return nil, err
 	}

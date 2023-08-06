@@ -118,12 +118,11 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.AccessRequests()
 	client := NewARClient(db.Client())
 
 	t.Run("non-existing access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
-		accessRequest, err := store.GetByID(ctx, nonExistentAccessRequestID)
+		accessRequest, err := client.GetByID(ctx, nonExistentAccessRequestID)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
 		assert.Equal(t, err, &ErrNotFound{ID: nonExistentAccessRequestID})
@@ -131,7 +130,7 @@ func TestAccessRequests_GetByID(t *testing.T) {
 	t.Run("existing access request", func(t *testing.T) {
 		createdAccessRequest, err := client.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
 		assert.NoError(t, err)
-		accessRequest, err := store.GetByID(ctx, createdAccessRequest.ID)
+		accessRequest, err := client.GetByID(ctx, createdAccessRequest.ID)
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest, createdAccessRequest)
 	})
