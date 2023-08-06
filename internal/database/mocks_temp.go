@@ -39,9 +39,6 @@ type MockAccessRequestStore struct {
 	// CountFunc is an instance of a mock function object controlling the
 	// behavior of the method Count.
 	CountFunc *AccessRequestStoreCountFunc
-	// CreateFunc is an instance of a mock function object controlling the
-	// behavior of the method Create.
-	CreateFunc *AccessRequestStoreCreateFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *AccessRequestStoreDoneFunc
@@ -72,11 +69,6 @@ func NewMockAccessRequestStore() *MockAccessRequestStore {
 	return &MockAccessRequestStore{
 		CountFunc: &AccessRequestStoreCountFunc{
 			defaultHook: func(context.Context, *AccessRequestsFilterArgs) (r0 int, r1 error) {
-				return
-			},
-		},
-		CreateFunc: &AccessRequestStoreCreateFunc{
-			defaultHook: func(context.Context, *types.AccessRequest) (r0 *types.AccessRequest, r1 error) {
 				return
 			},
 		},
@@ -128,11 +120,6 @@ func NewStrictMockAccessRequestStore() *MockAccessRequestStore {
 				panic("unexpected invocation of MockAccessRequestStore.Count")
 			},
 		},
-		CreateFunc: &AccessRequestStoreCreateFunc{
-			defaultHook: func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
-				panic("unexpected invocation of MockAccessRequestStore.Create")
-			},
-		},
 		DoneFunc: &AccessRequestStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockAccessRequestStore.Done")
@@ -178,9 +165,6 @@ func NewMockAccessRequestStoreFrom(i AccessRequestStore) *MockAccessRequestStore
 	return &MockAccessRequestStore{
 		CountFunc: &AccessRequestStoreCountFunc{
 			defaultHook: i.Count,
-		},
-		CreateFunc: &AccessRequestStoreCreateFunc{
-			defaultHook: i.Create,
 		},
 		DoneFunc: &AccessRequestStoreDoneFunc{
 			defaultHook: i.Done,
@@ -311,114 +295,6 @@ func (c AccessRequestStoreCountFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c AccessRequestStoreCountFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// AccessRequestStoreCreateFunc describes the behavior when the Create
-// method of the parent MockAccessRequestStore instance is invoked.
-type AccessRequestStoreCreateFunc struct {
-	defaultHook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
-	hooks       []func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)
-	history     []AccessRequestStoreCreateFuncCall
-	mutex       sync.Mutex
-}
-
-// Create delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockAccessRequestStore) Create(v0 context.Context, v1 *types.AccessRequest) (*types.AccessRequest, error) {
-	r0, r1 := m.CreateFunc.nextHook()(v0, v1)
-	m.CreateFunc.appendCall(AccessRequestStoreCreateFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Create method of the
-// parent MockAccessRequestStore instance is invoked and the hook queue is
-// empty.
-func (f *AccessRequestStoreCreateFunc) SetDefaultHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Create method of the parent MockAccessRequestStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *AccessRequestStoreCreateFunc) PushHook(hook func(context.Context, *types.AccessRequest) (*types.AccessRequest, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AccessRequestStoreCreateFunc) SetDefaultReturn(r0 *types.AccessRequest, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AccessRequestStoreCreateFunc) PushReturn(r0 *types.AccessRequest, r1 error) {
-	f.PushHook(func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
-		return r0, r1
-	})
-}
-
-func (f *AccessRequestStoreCreateFunc) nextHook() func(context.Context, *types.AccessRequest) (*types.AccessRequest, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AccessRequestStoreCreateFunc) appendCall(r0 AccessRequestStoreCreateFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AccessRequestStoreCreateFuncCall objects
-// describing the invocations of this function.
-func (f *AccessRequestStoreCreateFunc) History() []AccessRequestStoreCreateFuncCall {
-	f.mutex.Lock()
-	history := make([]AccessRequestStoreCreateFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AccessRequestStoreCreateFuncCall is an object that describes an
-// invocation of method Create on an instance of MockAccessRequestStore.
-type AccessRequestStoreCreateFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *types.AccessRequest
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 *types.AccessRequest
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AccessRequestStoreCreateFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AccessRequestStoreCreateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -13675,6 +13551,9 @@ type MockDB struct {
 	// object controlling the behavior of the method
 	// BitbucketProjectPermissions.
 	BitbucketProjectPermissionsFunc *DBBitbucketProjectPermissionsFunc
+	// ClientFunc is an instance of a mock function object controlling the
+	// behavior of the method Client.
+	ClientFunc *DBClientFunc
 	// CodeHostsFunc is an instance of a mock function object controlling
 	// the behavior of the method CodeHosts.
 	CodeHostsFunc *DBCodeHostsFunc
@@ -13886,6 +13765,11 @@ func NewMockDB() *MockDB {
 		},
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: func() (r0 BitbucketProjectPermissionsStore) {
+				return
+			},
+		},
+		ClientFunc: &DBClientFunc{
+			defaultHook: func() (r0 DBClient) {
 				return
 			},
 		},
@@ -14221,6 +14105,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.BitbucketProjectPermissions")
 			},
 		},
+		ClientFunc: &DBClientFunc{
+			defaultHook: func() DBClient {
+				panic("unexpected invocation of MockDB.Client")
+			},
+		},
 		CodeHostsFunc: &DBCodeHostsFunc{
 			defaultHook: func() CodeHostStore {
 				panic("unexpected invocation of MockDB.CodeHosts")
@@ -14540,6 +14429,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		BitbucketProjectPermissionsFunc: &DBBitbucketProjectPermissionsFunc{
 			defaultHook: i.BitbucketProjectPermissions,
+		},
+		ClientFunc: &DBClientFunc{
+			defaultHook: i.Client,
 		},
 		CodeHostsFunc: &DBCodeHostsFunc{
 			defaultHook: i.CodeHosts,
@@ -15311,6 +15203,104 @@ func (c DBBitbucketProjectPermissionsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBBitbucketProjectPermissionsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBClientFunc describes the behavior when the Client method of the parent
+// MockDB instance is invoked.
+type DBClientFunc struct {
+	defaultHook func() DBClient
+	hooks       []func() DBClient
+	history     []DBClientFuncCall
+	mutex       sync.Mutex
+}
+
+// Client delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Client() DBClient {
+	r0 := m.ClientFunc.nextHook()()
+	m.ClientFunc.appendCall(DBClientFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Client method of the
+// parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBClientFunc) SetDefaultHook(hook func() DBClient) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Client method of the parent MockDB instance invokes the hook at the front
+// of the queue and discards it. After the queue is empty, the default hook
+// function is invoked for any future action.
+func (f *DBClientFunc) PushHook(hook func() DBClient) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBClientFunc) SetDefaultReturn(r0 DBClient) {
+	f.SetDefaultHook(func() DBClient {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBClientFunc) PushReturn(r0 DBClient) {
+	f.PushHook(func() DBClient {
+		return r0
+	})
+}
+
+func (f *DBClientFunc) nextHook() func() DBClient {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBClientFunc) appendCall(r0 DBClientFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBClientFuncCall objects describing the
+// invocations of this function.
+func (f *DBClientFunc) History() []DBClientFuncCall {
+	f.mutex.Lock()
+	history := make([]DBClientFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBClientFuncCall is an object that describes an invocation of method
+// Client on an instance of MockDB.
+type DBClientFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 DBClient
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBClientFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBClientFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
