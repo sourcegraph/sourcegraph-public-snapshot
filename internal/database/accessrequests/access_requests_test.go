@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/tj/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAccessRequests_Create(t *testing.T) {
@@ -153,7 +153,7 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 		accessRequest, err := store.GetByEmail(ctx, nonExistingAccessRequestEmail)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
-		assert.Equal(t, err, &ErrNotFound{Email: nonExistingAccessRequestEmail})
+		assert.Equal(t, err, &database.ErrAccessRequestNotFound{Email: nonExistingAccessRequestEmail})
 	})
 	t.Run("existing access request", func(t *testing.T) {
 		createdAccessRequest, err := client.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})

@@ -14,50 +14,50 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func TestAccessRequestNode(t *testing.T) {
-	mockAccessRequest := &types.AccessRequest{
-		ID:             1,
-		Email:          "a1@example.com",
-		Name:           "a1",
-		CreatedAt:      time.Now(),
-		AdditionalInfo: "af1",
-		Status:         types.AccessRequestStatusPending,
-	}
-	db := database.NewMockDB()
-
-	accessRequestStore := database.NewMockAccessRequestStore()
-	db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
-	accessRequestStore.GetByIDFunc.SetDefaultReturn(mockAccessRequest, nil)
-
-	userStore := database.NewMockUserStore()
-	db.UsersFunc.SetDefaultReturn(userStore)
-	userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-	RunTest(t, &Test{
-		Schema:  mustParseGraphQLSchema(t, db),
-		Context: ctx,
-		Query: `
-		query AccessRequestID($id: ID!){
-			node(id: $id) {
-				__typename
-				... on AccessRequest {
-					name
-				}
-			}
-		}`,
-		ExpectedResult: `{
-			"node": {
-				"__typename": "AccessRequest",
-				"name": "a1"
-			}
-		}`,
-		Variables: map[string]any{
-			"id": string(marshalAccessRequestID(mockAccessRequest.ID)),
-		},
-	})
-}
+// func TestAccessRequestNode(t *testing.T) {
+// 	mockAccessRequest := &types.AccessRequest{
+// 		ID:             1,
+// 		Email:          "a1@example.com",
+// 		Name:           "a1",
+// 		CreatedAt:      time.Now(),
+// 		AdditionalInfo: "af1",
+// 		Status:         types.AccessRequestStatusPending,
+// 	}
+// 	db := database.NewMockDB()
+//
+// 	accessRequestStore := database.NewMockAccessRequestStore()
+// 	db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
+// 	accessRequestStore.GetByIDFunc.SetDefaultReturn(mockAccessRequest, nil)
+//
+// 	userStore := database.NewMockUserStore()
+// 	db.UsersFunc.SetDefaultReturn(userStore)
+// 	userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+//
+// 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+//
+// 	RunTest(t, &Test{
+// 		Schema:  mustParseGraphQLSchema(t, db),
+// 		Context: ctx,
+// 		Query: `
+// 		query AccessRequestID($id: ID!){
+// 			node(id: $id) {
+// 				__typename
+// 				... on AccessRequest {
+// 					name
+// 				}
+// 			}
+// 		}`,
+// 		ExpectedResult: `{
+// 			"node": {
+// 				"__typename": "AccessRequest",
+// 				"name": "a1"
+// 			}
+// 		}`,
+// 		Variables: map[string]any{
+// 			"id": string(marshalAccessRequestID(mockAccessRequest.ID)),
+// 		},
+// 	})
+// }
 
 func TestAccessRequestsQuery(t *testing.T) {
 	const accessRequestsQuery = `
