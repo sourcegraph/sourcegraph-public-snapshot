@@ -110,7 +110,6 @@ func (o *FilterArgs) SQL() []*sqlf.Query {
 	return conds
 }
 
-
 type CreateQuery struct {
 	AccessRequest *types.AccessRequest
 }
@@ -161,7 +160,7 @@ func (q *CreateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 
 		return nil
 	})
-	return newAccessRequest, err
+	return &CreateResponse{newAccessRequest}, err
 }
 
 type UpdateQuery struct {
@@ -182,7 +181,28 @@ func (q *UpdateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 		return nil, errors.Wrap(err, "scanning access_request")
 	}
 
-	return updated, nil
+	return &UpdateResponse{updated}, nil
+}
+
+type GetByIDQuery struct {
+	ID int32
+}
+
+type GetByIDResponse struct {
+	AccessRequest *types.AccessRequest
+}
+
+func (q *GetByIDQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
+	row := store.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(columns, ","), q.ID))
+	node, err := scanAccessRequest(row)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &ErrNotFound{ID: q.ID}
+		}
+		return nil, err
+	}
+
+	return &GetByIDResponse{node}, nil
 }
 
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
@@ -238,4 +258,22 @@ func (c *ARClient) Update(ctx context.Context, accessRequest *types.AccessReques
 	}
 
 	return updateResp.AccessRequest, nil
+}
+
+func (c *ARClient) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
+	query := &GetByIDQuery{
+		ID: id,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	getByIDResp, ok := resp.(*GetByIDResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return getByIDResp.AccessRequest, nil
 }
