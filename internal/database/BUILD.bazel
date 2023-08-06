@@ -42,6 +42,7 @@ go_library(
         "global_state.go",
         "helpers.go",
         "insights.go",
+        "mockclient.go",
         "mockerr.go",
         "mocks_temp.go",
         "namespace_permissions.go",
