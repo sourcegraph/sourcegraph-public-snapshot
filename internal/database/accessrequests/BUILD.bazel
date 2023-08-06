@@ -20,6 +20,10 @@ go_test(
     name = "accessrequests_test",
     srcs = ["access_requests_test.go"],
     embed = [":accessrequests"],
+    tags = [
+        # Test requires localhost database
+        "requires-network",
+    ],
     deps = [
         "//internal/database",
         "//internal/database/dbtest",
