@@ -253,6 +253,7 @@ go_library(
         "//internal/conf/deploy",
         "//internal/conf/reposource",
         "//internal/database",
+        "//internal/database/accessrequests",
         "//internal/database/migration",
         "//internal/database/migration/cliutil",
         "//internal/database/migration/drift",
