@@ -23,7 +23,7 @@ import (
 func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	r := &schemaResolver{logger: logger, db: db}
+	r := &schemaResolver{logger: logger, dbclient: db}
 	ctx := context.Background()
 
 	user, err := db.Users().Create(ctx, database.NewUser{Username: "test-1"})
@@ -113,7 +113,7 @@ func TestSchemaResolver_CreateExecutorSecret(t *testing.T) {
 func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	r := &schemaResolver{logger: logger, db: db}
+	r := &schemaResolver{logger: logger, dbclient: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
 
@@ -203,7 +203,7 @@ func TestSchemaResolver_UpdateExecutorSecret(t *testing.T) {
 func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	r := &schemaResolver{logger: logger, db: db}
+	r := &schemaResolver{logger: logger, dbclient: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
 
@@ -280,7 +280,7 @@ func TestSchemaResolver_DeleteExecutorSecret(t *testing.T) {
 func TestSchemaResolver_ExecutorSecrets(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	r := &schemaResolver{logger: logger, db: db}
+	r := &schemaResolver{logger: logger, dbclient: db}
 	ctx := context.Background()
 	internalCtx := actor.WithInternalActor(ctx)
 

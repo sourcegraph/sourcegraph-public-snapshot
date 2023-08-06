@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbclient"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
@@ -381,53 +382,53 @@ func prometheusGraphQLRequestName(requestName string) string {
 	return "other"
 }
 
-func NewSchemaWithoutResolvers(db database.DB) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{})
+func NewSchemaWithoutResolvers(dbclient dbclient.DBClient) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{})
 }
 
-func NewSchemaWithNotebooksResolver(db database.DB, notebooks NotebooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{NotebooksResolver: notebooks}})
+func NewSchemaWithNotebooksResolver(dbclient dbclient.DBClient, notebooks NotebooksResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{NotebooksResolver: notebooks}})
 }
 
-func NewSchemaWithAuthzResolver(db database.DB, authz AuthzResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{AuthzResolver: authz}})
+func NewSchemaWithAuthzResolver(dbclient dbclient.DBClient, authz AuthzResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{AuthzResolver: authz}})
 }
 
-func NewSchemaWithBatchChangesResolver(db database.DB, batchChanges BatchChangesResolver, githubApps GitHubAppsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
+func NewSchemaWithBatchChangesResolver(dbclient dbclient.DBClient, batchChanges BatchChangesResolver, githubApps GitHubAppsResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{BatchChangesResolver: batchChanges}, {GitHubAppsResolver: githubApps}})
 }
 
-func NewSchemaWithCodeMonitorsResolver(db database.DB, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
+func NewSchemaWithCodeMonitorsResolver(dbclient dbclient.DBClient, codeMonitors CodeMonitorsResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{CodeMonitorsResolver: codeMonitors}})
 }
 
-func NewSchemaWithLicenseResolver(db database.DB, license LicenseResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{LicenseResolver: license}})
+func NewSchemaWithLicenseResolver(dbclient dbclient.DBClient, license LicenseResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{LicenseResolver: license}})
 }
 
-func NewSchemaWithWebhooksResolver(db database.DB, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{WebhooksResolver: webhooksResolver}})
+func NewSchemaWithWebhooksResolver(dbclient dbclient.DBClient, webhooksResolver WebhooksResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{WebhooksResolver: webhooksResolver}})
 }
 
-func NewSchemaWithRBACResolver(db database.DB, rbacResolver RBACResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{RBACResolver: rbacResolver}})
+func NewSchemaWithRBACResolver(dbclient dbclient.DBClient, rbacResolver RBACResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{RBACResolver: rbacResolver}})
 }
 
-func NewSchemaWithOwnResolver(db database.DB, own OwnResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{OwnResolver: own}})
+func NewSchemaWithOwnResolver(dbclient dbclient.DBClient, own OwnResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{OwnResolver: own}})
 }
 
-func NewSchemaWithCompletionsResolver(db database.DB, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
-	return NewSchema(db, gitserver.NewClient(db), []OptionalResolver{{CompletionsResolver: completionsResolver}})
+func NewSchemaWithCompletionsResolver(dbclient dbclient.DBClient, completionsResolver CompletionsResolver) (*graphql.Schema, error) {
+	return NewSchema(dbclient, gitserver.NewClient(dbclient.DB()), []OptionalResolver{{CompletionsResolver: completionsResolver}})
 }
 
 func NewSchema(
-	db database.DB,
+	dbclient dbclient.DBClient,
 	gitserverClient gitserver.Client,
 	optionals []OptionalResolver,
 	graphqlOpts ...graphql.SchemaOpt,
 ) (*graphql.Schema, error) {
-	resolver := newSchemaResolver(db, gitserverClient)
+	resolver := newSchemaResolver(dbclient, gitserverClient)
 	schemas := []string{mainSchema, outboundWebhooksSchema}
 
 	for _, optional := range optionals {
@@ -603,7 +604,7 @@ func NewSchema(
 	logger := log.Scoped("GraphQL", "general GraphQL logging")
 	opts := []graphql.SchemaOpt{
 		graphql.Tracer(&requestTracer{
-			DB: db,
+			DB: dbclient.DB(),
 			tracer: &otel.Tracer{
 				Tracer: oteltracer.Tracer("GraphQL"),
 			},
@@ -625,7 +626,7 @@ func NewSchema(
 // schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
 	logger            log.Logger
-	db                database.DB
+	dbclient          dbclient.DBClient
 	gitserverClient   gitserver.Client
 	repoupdaterClient *repoupdater.Client
 	nodeByIDFns       map[string]NodeByIDFunc
@@ -660,26 +661,26 @@ type OptionalResolver struct {
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
 // defaults. It does not implement any sub-resolvers.
-func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schemaResolver {
+func newSchemaResolver(dbclient dbclient.DBClient, gitserverClient gitserver.Client) *schemaResolver {
 	r := &schemaResolver{
 		logger:            log.Scoped("schemaResolver", "GraphQL schema resolver"),
-		db:                db,
+		dbclient:          dbclient,
 		gitserverClient:   gitserverClient,
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
 
 	r.nodeByIDFns = map[string]NodeByIDFunc{
 		"AccessRequest": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return accessRequestByID(ctx, db, id)
+			return accessRequestByID(ctx, dbclient, id)
 		},
 		"AccessToken": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return accessTokenByID(ctx, db, id)
+			return accessTokenByID(ctx, dbclient.DB(), id)
 		},
 		"ExternalAccount": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return externalAccountByID(ctx, db, id)
+			return externalAccountByID(ctx, dbclient.DB(), id)
 		},
 		externalServiceIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
-			return externalServiceByID(ctx, db, id)
+			return externalServiceByID(ctx, dbclient.DB(), id)
 		},
 		"GitRef": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.gitRefByID(ctx, id)
@@ -688,13 +689,13 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 			return r.repositoryByID(ctx, id)
 		},
 		"User": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return UserByID(ctx, db, id)
+			return UserByID(ctx, dbclient.DB(), id)
 		},
 		"Org": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return OrgByID(ctx, db, id)
+			return OrgByID(ctx, dbclient.DB(), id)
 		},
 		"OrganizationInvitation": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return orgInvitationByID(ctx, db, id)
+			return orgInvitationByID(ctx, dbclient.DB(), id)
 		},
 		"GitCommit": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.gitCommitByID(ctx, id)
@@ -709,7 +710,7 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 			return r.OutOfBandMigrationByID(ctx, id)
 		},
 		"WebhookLog": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return webhookLogByID(ctx, db, id)
+			return webhookLogByID(ctx, dbclient.DB(), id)
 		},
 		"OutboundRequest": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.outboundRequestByID(ctx, id)
@@ -718,22 +719,22 @@ func newSchemaResolver(db database.DB, gitserverClient gitserver.Client) *schema
 			return r.backgroundJobByID(ctx, id)
 		},
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return executorByID(ctx, db, id)
+			return executorByID(ctx, dbclient.DB(), id)
 		},
 		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return externalServiceSyncJobByID(ctx, db, id)
+			return externalServiceSyncJobByID(ctx, dbclient.DB(), id)
 		},
 		"ExecutorSecret": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return executorSecretByID(ctx, db, id)
+			return executorSecretByID(ctx, dbclient.DB(), id)
 		},
 		"ExecutorSecretAccessLog": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return executorSecretAccessLogByID(ctx, db, id)
+			return executorSecretAccessLogByID(ctx, dbclient.DB(), id)
 		},
 		teamIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
-			return teamByID(ctx, db, id)
+			return teamByID(ctx, dbclient.DB(), id)
 		},
 		outboundWebhookIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
-			return OutboundWebhookByID(ctx, db, id)
+			return OutboundWebhookByID(ctx, dbclient.DB(), id)
 		},
 		roleIDKind: func(ctx context.Context, id graphql.ID) (Node, error) {
 			return r.roleByID(ctx, id)
@@ -773,7 +774,7 @@ var EnterpriseResolvers = struct {
 //
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return newSchemaResolver(r.db, r.gitserverClient)
+	return newSchemaResolver(r.dbclient, r.gitserverClient)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {
@@ -809,7 +810,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Only site admins can reclone repositories.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return nil, err
 	}
 
@@ -817,7 +818,7 @@ func (r *schemaResolver) RecloneRepository(ctx context.Context, args *struct {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("could not delete repository with ID %d", repoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).RequestRepositoryClone(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.dbclient.DB(), r.gitserverClient).RequestRepositoryClone(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while requesting clone for repository with ID %d", repoID))
 	}
 
@@ -835,11 +836,11 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return nil, err
 	}
 	// 🚨 SECURITY: Only site admins can delete repositories from disk.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return nil, err
 	}
 
-	repo, err := r.db.GitserverRepos().GetByID(ctx, repoID)
+	repo, err := r.dbclient.DB().GitserverRepos().GetByID(ctx, repoID)
 	if err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while fetching repository with ID %d", repoID))
 	}
@@ -848,7 +849,7 @@ func (r *schemaResolver) DeleteRepositoryFromDisk(ctx context.Context, args *str
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("cannot delete repository %d: busy cloning", repo.RepoID))
 	}
 
-	if err := backend.NewRepos(r.logger, r.db, r.gitserverClient).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
+	if err := backend.NewRepos(r.logger, r.dbclient.DB(), r.gitserverClient).DeleteRepositoryFromDisk(ctx, repoID); err != nil {
 		return &EmptyResponse{}, errors.Wrap(err, fmt.Sprintf("error while deleting repository with ID %d", repoID))
 	}
 
@@ -860,11 +861,11 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err := relay.UnmarshalSpec(id, &repoID); err != nil {
 		return nil, err
 	}
-	repo, err := r.db.Repos().Get(ctx, repoID)
+	repo, err := r.dbclient.DB().Repos().Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
-	return NewRepositoryResolver(r.db, r.gitserverClient, repo), nil
+	return NewRepositoryResolver(r.dbclient.DB(), r.gitserverClient, repo), nil
 }
 
 type RedirectResolver struct {
@@ -897,11 +898,11 @@ func (r *repositoryRedirect) ToRedirect() (*RedirectResolver, bool) {
 func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositoryRedirectArgs) (*repositoryRedirect, error) {
 	if args.HashedName != nil {
 		// Query by repository hashed name
-		repo, err := r.db.Repos().GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
+		repo, err := r.dbclient.DB().Repos().GetByHashedName(ctx, api.RepoHashedName(*args.HashedName))
 		if err != nil {
 			return nil, err
 		}
-		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.dbclient.DB(), r.gitserverClient, repo)}, nil
 	}
 	var name api.RepoName
 	if args.Name != nil {
@@ -910,7 +911,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 	} else if args.CloneURL != nil {
 		// Query by git clone URL
 		var err error
-		name, err = cloneurls.RepoSourceCloneURLToRepoName(ctx, r.db, *args.CloneURL)
+		name, err = cloneurls.RepoSourceCloneURLToRepoName(ctx, r.dbclient.DB(), *args.CloneURL)
 		if err != nil {
 			return nil, err
 		}
@@ -922,7 +923,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		return nil, errors.New("neither name nor cloneURL given")
 	}
 
-	repo, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).GetByName(ctx, name)
+	repo, err := backend.NewRepos(r.logger, r.dbclient.DB(), r.gitserverClient).GetByName(ctx, name)
 	if err != nil {
 		var e backend.ErrRepoSeeOther
 		if errors.As(err, &e) {
@@ -933,7 +934,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, r.gitserverClient, repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.dbclient.DB(), r.gitserverClient, repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
@@ -946,7 +947,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	repo, err := r.db.Phabricator().GetByName(ctx, api.RepoName(*args.URI))
+	repo, err := r.dbclient.DB().Phabricator().GetByName(ctx, api.RepoName(*args.URI))
 	if err != nil {
 		return nil, err
 	}
@@ -954,7 +955,7 @@ func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {
 }
 
 func (r *schemaResolver) CurrentUser(ctx context.Context) (*UserResolver, error) {
-	return CurrentUser(ctx, r.db)
+	return CurrentUser(ctx, r.dbclient.DB())
 }
 
 // CodeHostSyncDue returns true if any of the supplied code hosts are due to sync
@@ -975,5 +976,5 @@ func (r *schemaResolver) CodeHostSyncDue(ctx context.Context, args *struct {
 		}
 		ids[i] = id
 	}
-	return r.db.ExternalServices().SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
+	return r.dbclient.DB().ExternalServices().SyncDue(ctx, ids, time.Duration(args.Seconds)*time.Second)
 }

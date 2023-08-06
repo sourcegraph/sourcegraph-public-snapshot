@@ -25,7 +25,7 @@ type usersArgs struct {
 
 func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConnectionResolver, error) {
 	// 🚨 SECURITY: Verify listing users is allowed.
-	if err := checkMembersAccess(ctx, r.db); err != nil {
+	if err := checkMembersAccess(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -47,7 +47,7 @@ func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConne
 		opt.LimitOffset.Offset = int(cursor)
 	}
 
-	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}, nil
+	return &userConnectionResolver{db: r.dbclient, opt: opt, activePeriod: args.ActivePeriod}, nil
 }
 
 type UserConnectionResolver interface {

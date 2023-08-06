@@ -59,7 +59,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient) != nil {
 		err = auth.ErrMustBeSiteAdmin
 		return nil, err
 	}
@@ -70,12 +70,12 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
 	}
 
-	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
+	if err = r.dbclient.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
 		return nil, err
 	}
 
-	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
-	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.dbclient, externalService: externalService}
+	if err = backend.NewExternalServices(r.logger, r.dbclient, r.repoupdaterClient).SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
 
@@ -102,7 +102,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 	}
 
 	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -111,7 +111,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	es, err := r.dbclient.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -131,12 +131,12 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		DisplayName: args.Input.DisplayName,
 		Config:      args.Input.Config,
 	}
-	if err = r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
+	if err = r.dbclient.ExternalServices().Update(ctx, ps, id, update); err != nil {
 		return nil, err
 	}
 
 	// Fetch from database again to get all fields with updated values.
-	es, err = r.db.ExternalServices().GetByID(ctx, id)
+	es, err = r.dbclient.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -145,10 +145,10 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.dbclient, externalService: es}
 
 	if oldConfig != newConfig {
-		if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, es, syncExternalServiceTimeout); err != nil {
+		if err = backend.NewExternalServices(r.logger, r.dbclient, r.repoupdaterClient).SyncExternalService(ctx, es, syncExternalServiceTimeout); err != nil {
 			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
 		}
 	}
@@ -164,7 +164,7 @@ type excludeRepoFromExternalServiceArgs struct {
 // ExcludeRepoFromExternalServices excludes the given repo from the given external service configs.
 func (r *schemaResolver) ExcludeRepoFromExternalServices(ctx context.Context, args *excludeRepoFromExternalServiceArgs) (*EmptyResponse, error) {
 	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -182,7 +182,7 @@ func (r *schemaResolver) ExcludeRepoFromExternalServices(ctx context.Context, ar
 		return nil, err
 	}
 
-	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExcludeRepoFromExternalServices(ctx, extSvcIDs, repositoryID); err != nil {
+	if err = backend.NewExternalServices(r.logger, r.dbclient, r.repoupdaterClient).ExcludeRepoFromExternalServices(ctx, extSvcIDs, repositoryID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -203,7 +203,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	}
 
 	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -213,7 +213,7 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	}
 
 	// Load external service to make sure it exists
-	_, err = r.db.ExternalServices().GetByID(ctx, id)
+	_, err = r.dbclient.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -221,12 +221,12 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	if args.Async {
 		// run deletion in the background and return right away
 		go func() {
-			if err := r.db.ExternalServices().Delete(context.Background(), id); err != nil {
+			if err := r.dbclient.ExternalServices().Delete(context.Background(), id); err != nil {
 				r.logger.Error("Background external service deletion failed", log.Error(err))
 			}
 		}()
 	} else {
-		if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
+		if err := r.dbclient.ExternalServices().Delete(ctx, id); err != nil {
 			return nil, err
 		}
 	}
@@ -243,7 +243,7 @@ type ExternalServicesArgs struct {
 
 func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
 	// 🚨 SECURITY: Check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -268,7 +268,7 @@ func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalSer
 		}
 		opt.RepoID = repoID
 	}
-	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
+	return &externalServiceConnectionResolver{db: r.dbclient, opt: opt}, nil
 }
 
 type externalServiceConnectionResolver struct {
@@ -412,7 +412,7 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 	defer reportExternalServiceDuration(start, Update, &err)
 
 	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -421,13 +421,13 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 		return nil, err
 	}
 
-	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	es, err := r.dbclient.ExternalServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// Enqueue a sync job for the external service, if none exists yet.
-	rstore := repos.NewStore(r.logger, r.db)
+	rstore := repos.NewStore(r.logger, r.dbclient)
 	if err := rstore.EnqueueSingleSyncJob(ctx, es.ID); err != nil {
 		return nil, err
 	}
@@ -445,7 +445,7 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 	defer reportExternalServiceDuration(start, Update, &err)
 
 	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -454,7 +454,7 @@ func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *ca
 		return nil, err
 	}
 
-	if err := r.db.ExternalServices().CancelSyncJob(ctx, database.ExternalServicesCancelSyncJobOptions{ID: id}); err != nil {
+	if err := r.dbclient.ExternalServices().CancelSyncJob(ctx, database.ExternalServicesCancelSyncJobOptions{ID: id}); err != nil {
 		return nil, err
 	}
 
@@ -469,7 +469,7 @@ type externalServiceNamespacesArgs struct {
 }
 
 func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*externalServiceNamespaceConnectionResolver, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 
@@ -500,12 +500,12 @@ type externalServiceRepositoriesArgs struct {
 }
 
 func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *externalServiceRepositoriesArgs) (*externalServiceRepositoryConnectionResolver, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient) != nil {
 		return nil, auth.ErrMustBeSiteAdmin
 	}
 
 	return &externalServiceRepositoryConnectionResolver{
-		db:                r.db,
+		db:                r.dbclient,
 		args:              args,
 		repoupdaterClient: r.repoupdaterClient,
 	}, nil

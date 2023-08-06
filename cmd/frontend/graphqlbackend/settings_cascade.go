@@ -57,17 +57,17 @@ func (r *settingsCascade) Merged(ctx context.Context) (_ *configurationResolver,
 }
 
 func (r *schemaResolver) ViewerSettings(ctx context.Context) (*settingsCascade, error) {
-	user, err := CurrentUser(ctx, r.db)
+	user, err := CurrentUser(ctx, r.dbclient)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings", "ViewerSettings"), r.db)}}, nil
+		return &settingsCascade{db: r.dbclient, subject: &settingsSubjectResolver{site: NewSiteResolver(log.Scoped("settings", "ViewerSettings"), r.dbclient)}}, nil
 	}
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: user}}, nil
+	return &settingsCascade{db: r.dbclient, subject: &settingsSubjectResolver{user: user}}, nil
 }
 
 // Deprecated: in the GraphQL API
 func (r *schemaResolver) ViewerConfiguration(ctx context.Context) (*settingsCascade, error) {
-	return newSchemaResolver(r.db, r.gitserverClient).ViewerSettings(ctx)
+	return newSchemaResolver(r.dbclient, r.gitserverClient).ViewerSettings(ctx)
 }

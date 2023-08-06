@@ -60,7 +60,7 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 		}
 	}
 
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observation.NewContext(r.logger), r.dbclient)
 
 	matchingPkgs, totalCount, hasMore, err := depsService.PackagesOrVersionsMatchingFilter(ctx, shared.MinimalPackageFilter{
 		PackageScheme: externalServiceToPackageSchemeMap[args.Kind],
@@ -71,7 +71,7 @@ func (r *schemaResolver) PackageRepoReferencesMatchingFilter(ctx context.Context
 	if args.Filter.NameFilter != nil {
 		return &filterMatchingResolver{
 			packageResolver: &packageRepoReferenceConnectionResolver{
-				db:      r.db,
+				db:      r.dbclient,
 				deps:    matchingPkgs,
 				hasMore: hasMore,
 				total:   totalCount,
@@ -107,7 +107,7 @@ func (r *schemaResolver) PackageRepoFilters(ctx context.Context, args struct {
 		opts.PackageScheme = externalServiceToPackageSchemeMap[*args.Kind]
 	}
 
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observation.NewContext(r.logger), r.dbclient)
 	filters, _, err := depsService.ListPackageRepoFilters(ctx, opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "error listing package repo filters")
@@ -194,7 +194,7 @@ func (r *schemaResolver) AddPackageRepoFilter(ctx context.Context, args struct {
 		return nil, errors.New("cannot provide both a name filter and version filter")
 	}
 
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observation.NewContext(r.logger), r.dbclient)
 
 	filter := shared.MinimalPackageFilter{
 		Behaviour:     &args.Behaviour,
@@ -222,7 +222,7 @@ func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *stru
 		return nil, errors.New("cannot provide both a name filter and version filter")
 	}
 
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observation.NewContext(r.logger), r.dbclient)
 
 	var filterID int
 	if err := relay.UnmarshalSpec(args.ID, &filterID); err != nil {
@@ -239,7 +239,7 @@ func (r *schemaResolver) UpdatePackageRepoFilter(ctx context.Context, args *stru
 }
 
 func (r *schemaResolver) DeletePackageRepoFilter(ctx context.Context, args struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observation.NewContext(r.logger), r.dbclient)
 
 	var filterID int
 	if err := relay.UnmarshalSpec(args.ID, &filterID); err != nil {

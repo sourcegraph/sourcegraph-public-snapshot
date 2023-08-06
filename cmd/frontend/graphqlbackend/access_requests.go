@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbclient"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -23,12 +24,12 @@ type AccessRequestsArgs struct {
 
 func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequestsArgs) (*graphqlutil.ConnectionResolver[*accessRequestResolver], error) {
 	// 🚨 SECURITY: Only site admins can see access requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
 	connectionStore := &accessRequestConnectionStore{
-		db:   r.db,
+		db:   r.dbclient,
 		args: &args.FilterArgs,
 	}
 
@@ -47,7 +48,7 @@ type accessRequestConnectionStore struct {
 }
 
 func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := accessrequests.Store.WithDB(s.db).Count(ctx, s.args)
+	count, err := accessrequests.NewARClient(s.db).Count(ctx, s.args)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +59,7 @@ func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32
 }
 
 func (s *accessRequestConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*accessRequestResolver, error) {
-	accessRequests, err := accessrequests.Store.WithDB(s.db).List(ctx, s.args, args)
+	accessRequests, err := accessrequests.NewARClient(s.db).List(ctx, s.args, args)
 	if err != nil {
 		return nil, err
 	}
@@ -117,7 +118,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 },
 ) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can update access requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -126,10 +127,10 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 		return nil, err
 	}
 
-	err = r.db.WithTransact(ctx, func(tx database.DB) error {
-		store := accessrequests.Store.WithDB(tx)
+	err = r.dbclient.WithTransact(ctx, func(tx database.DB) error {
+		cli := accessrequests.NewARClient(tx)
 
-		accessRequest, err := store.GetByID(ctx, id)
+		accessRequest, err := cli.GetByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -140,7 +141,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 		}
 
 		accessRequest.Status = args.Status
-		if _, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status, DecisionByUserID: &currentUser.ID}); err != nil {
+		if _, err := cli.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status, DecisionByUserID: &currentUser.ID}); err != nil {
 			return err
 		}
 		return nil
@@ -153,9 +154,9 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 	return &EmptyResponse{}, nil
 }
 
-func accessRequestByID(ctx context.Context, db database.DB, id graphql.ID) (*accessRequestResolver, error) {
+func accessRequestByID(ctx context.Context, dbclient dbclient.DBClient, id graphql.ID) (*accessRequestResolver, error) {
 	// 🚨 SECURITY: Only site admins can see access requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, dbclient.DB()); err != nil {
 		return nil, err
 	}
 
@@ -163,7 +164,8 @@ func accessRequestByID(ctx context.Context, db database.DB, id graphql.ID) (*acc
 	if err != nil {
 		return nil, err
 	}
-	accessRequest, err := accessrequests.Store.WithDB(db).GetByID(ctx, accessRequestID)
+	cli := accessrequests.NewARClient(db)
+	accessRequest, err := cli.GetByID(ctx, accessRequestID)
 	if err != nil {
 		return nil, err
 	}

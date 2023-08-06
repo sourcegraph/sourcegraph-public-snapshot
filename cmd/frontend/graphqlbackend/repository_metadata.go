@@ -57,7 +57,7 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.dbclient, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -74,7 +74,7 @@ func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, emptyNonNilValueError{value: *args.Value}
 	}
 
-	err = r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	err = r.dbclient.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
 	if err == nil {
 		r.logBackendEvent(ctx, "RepoMetadataAdded")
 	}
@@ -98,7 +98,7 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 	Value *string
 },
 ) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.dbclient, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -115,7 +115,7 @@ func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, emptyNonNilValueError{value: *args.Value}
 	}
 
-	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	_, err = r.dbclient.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
 	if err == nil {
 		r.logBackendEvent(ctx, "RepoMetadataUpdated")
 	}
@@ -136,7 +136,7 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+	if err := rbac.CheckCurrentUserHasPermission(ctx, r.dbclient, rbac.RepoMetadataWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
@@ -149,7 +149,7 @@ func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
 		return &EmptyResponse{}, err
 	}
 
-	err = r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+	err = r.dbclient.RepoKVPs().Delete(ctx, repoID, args.Key)
 	if err == nil {
 		r.logBackendEvent(ctx, "RepoMetadataDeleted")
 	}
@@ -160,7 +160,7 @@ func (r *schemaResolver) logBackendEvent(ctx context.Context, eventName string) 
 	a := actor.FromContext(ctx)
 	if a.IsAuthenticated() && !a.IsMockUser() {
 		if err := usagestats.LogBackendEvent(
-			r.db,
+			r.dbclient,
 			a.UID,
 			deviceid.FromContext(ctx),
 			eventName,
@@ -180,7 +180,7 @@ type repoMetaResolver struct {
 
 func (r *schemaResolver) RepoMeta(ctx context.Context) (*repoMetaResolver, error) {
 	return &repoMetaResolver{
-		db: r.db,
+		db: r.dbclient,
 	}, nil
 }
 

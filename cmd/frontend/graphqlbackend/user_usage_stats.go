@@ -138,7 +138,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 	userID := actor.FromContext(ctx).UID
 	userPrimaryEmail := ""
 	if envvar.SourcegraphDotComMode() {
-		userPrimaryEmail, _, _ = r.db.UserEmails().GetPrimaryEmail(ctx, userID)
+		userPrimaryEmail, _, _ = r.dbclient.UserEmails().GetPrimaryEmail(ctx, userID)
 	}
 
 	events := make([]usagestats.Event, 0, len(*args.Events))
@@ -224,7 +224,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 		})
 	}
 
-	if err := usagestats.LogEvents(ctx, r.db, events); err != nil {
+	if err := usagestats.LogEvents(ctx, r.dbclient, events); err != nil {
 		return nil, err
 	}
 
@@ -315,7 +315,7 @@ func (r *schemaResolver) SubmitCodySurvey(ctx context.Context, args *struct {
 		return nil, errors.New("user must be authenticated to submit a Cody survey")
 	}
 
-	email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+	email, _, err := r.dbclient.UserEmails().GetPrimaryEmail(ctx, actor.UID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}

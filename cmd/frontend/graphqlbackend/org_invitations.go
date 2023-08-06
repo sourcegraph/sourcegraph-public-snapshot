@@ -127,11 +127,11 @@ func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that we get the invitations for
-	if err := auth.CheckOrgAccess(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccess(ctx, r.dbclient, orgID); err != nil {
 		return nil, err
 	}
 
-	pendingInvites, err := r.db.OrgInvitations().GetPendingByOrgID(ctx, orgID)
+	pendingInvites, err := r.dbclient.OrgInvitations().GetPendingByOrgID(ctx, orgID)
 
 	if err != nil {
 		return nil, err
@@ -139,7 +139,7 @@ func (r *schemaResolver) PendingInvitations(ctx context.Context, args *struct {
 
 	var invitations []*organizationInvitationResolver
 	for _, invitation := range pendingInvites {
-		invitations = append(invitations, NewOrganizationInvitationResolver(r.db, invitation))
+		invitations = append(invitations, NewOrganizationInvitationResolver(r.dbclient, invitation))
 	}
 
 	return invitations, nil
@@ -177,7 +177,7 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 	}
 
 	if claims, ok := token.Claims.(*orgInvitationClaims); ok && token.Valid {
-		invite, err := r.db.OrgInvitations().GetPendingByID(ctx, claims.InvitationID)
+		invite, err := r.dbclient.OrgInvitations().GetPendingByID(ctx, claims.InvitationID)
 		if err != nil {
 			return nil, err
 		}
@@ -185,14 +185,14 @@ func (r *schemaResolver) InvitationByToken(ctx context.Context, args *struct {
 			return nil, database.NewOrgInvitationNotFoundError(claims.InvitationID)
 		}
 		if invite.RecipientEmail != "" {
-			willVerify, err := checkEmail(ctx, r.db, invite.RecipientEmail)
+			willVerify, err := checkEmail(ctx, r.dbclient, invite.RecipientEmail)
 			if err != nil {
 				return nil, err
 			}
 			invite.IsVerifiedEmail = !willVerify
 		}
 
-		return NewOrganizationInvitationResolver(r.db, invite), nil
+		return NewOrganizationInvitationResolver(r.dbclient, invite), nil
 	} else {
 		return nil, errors.Newf("Invitation token not valid")
 	}
@@ -213,22 +213,22 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	}
 	// 🚨 SECURITY: Check that the current user is a member of the org that the user is being
 	// invited to.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.dbclient, orgID); err != nil {
 		return nil, err
 	}
 	// check org has feature flag for email invites enabled, we can ignore errors here as flag value would be false
-	enabled, _ := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EmailInvitesFeatureFlag)
+	enabled, _ := r.dbclient.FeatureFlags().GetOrgFeatureFlag(ctx, orgID, EmailInvitesFeatureFlag)
 	// return error if feature flag is not enabled and we got an email as an argument
 	if ((args.Email != nil && *args.Email != "") || args.Username == nil) && !enabled {
 		return nil, errors.New("inviting by email is not supported for this organization")
 	}
 
 	// Create the invitation.
-	org, err := r.db.Orgs().GetByID(ctx, orgID)
+	org, err := r.dbclient.Orgs().GetByID(ctx, orgID)
 	if err != nil {
 		return nil, err
 	}
-	sender, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	sender, err := r.dbclient.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -239,7 +239,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	var userEmail string
 	if args.Username != nil {
 		var recipient *types.User
-		recipient, userEmail, err = getUserToInviteToOrganization(ctx, r.db, *args.Username, orgID)
+		recipient, userEmail, err = getUserToInviteToOrganization(ctx, r.dbclient, *args.Username, orgID)
 		if err != nil {
 			return nil, err
 		}
@@ -256,7 +256,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	}
 
 	expiryTime := newExpiryTime()
-	invitation, err := r.db.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail, expiryTime)
+	invitation, err := r.dbclient.OrgInvitations().Create(ctx, orgID, sender.ID, recipientID, recipientEmail, expiryTime)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +279,7 @@ func (r *schemaResolver) InviteUserToOrganization(ctx context.Context, args *str
 	// Send a notification to the recipient. If disabled, the frontend will still show the
 	// invitation link.
 	if conf.CanSendEmail() && userEmail != "" {
-		if err := sendOrgInvitationNotification(ctx, r.db, org, sender, userEmail, invitationURL, *invitation.ExpiresAt); err != nil {
+		if err := sendOrgInvitationNotification(ctx, r.dbclient, org, sender, userEmail, invitationURL, *invitation.ExpiresAt); err != nil {
 			return nil, errors.WithMessage(err, "sending notification to invitation recipient")
 		}
 		result.sentInvitationEmail = true
@@ -312,7 +312,7 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 		return nil, errors.Errorf("invalid OrganizationInvitationResponseType value %q", args.ResponseType)
 	}
 
-	invitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
+	invitation, err := r.dbclient.OrgInvitations().GetPendingByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -320,13 +320,13 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 	// Mark the email as verified if needed
 	if invitation.RecipientEmail != "" {
 		// 🚨 SECURITY: This fails if the org invitation's recipient email is not the one given
-		shouldMarkAsVerified, err := checkEmail(ctx, r.db, invitation.RecipientEmail)
+		shouldMarkAsVerified, err := checkEmail(ctx, r.dbclient, invitation.RecipientEmail)
 		if err != nil {
 			return nil, err
 		}
 		if shouldMarkAsVerified && accept {
 			// ignore errors here as this is a best-effort action
-			_ = r.db.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
+			_ = r.dbclient.UserEmails().SetVerified(ctx, a.UID, invitation.RecipientEmail, shouldMarkAsVerified)
 		}
 	} else if invitation.RecipientUserID > 0 && invitation.RecipientUserID != a.UID {
 		// 🚨 SECURITY: Fail if the org invitation's recipient is not the one given
@@ -334,19 +334,19 @@ func (r *schemaResolver) RespondToOrganizationInvitation(ctx context.Context, ar
 	}
 
 	// 🚨 SECURITY: This fails if the invitation is invalid
-	orgID, err := r.db.OrgInvitations().Respond(ctx, id, a.UID, accept)
+	orgID, err := r.dbclient.OrgInvitations().Respond(ctx, id, a.UID, accept)
 	if err != nil {
 		return nil, err
 	}
 
 	if accept {
 		// The recipient accepted the invitation.
-		if _, err := r.db.OrgMembers().Create(ctx, orgID, a.UID); err != nil {
+		if _, err := r.dbclient.OrgMembers().Create(ctx, orgID, a.UID); err != nil {
 			return nil, err
 		}
 
 		// Schedule permission sync for user that accepted the invite. Internally it will log an error if enqueuing fails.
-		permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}, Reason: database.ReasonUserAcceptedOrgInvite})
+		permssync.SchedulePermsSync(ctx, r.logger, r.dbclient, protocol.PermsSyncRequest{UserIDs: []int32{a.UID}, Reason: database.ReasonUserAcceptedOrgInvite})
 	}
 	return &EmptyResponse{}, nil
 }
@@ -359,13 +359,13 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 		return nil, err
 	}
 
-	orgInvitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
+	orgInvitation, err := r.dbclient.OrgInvitations().GetPendingByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.dbclient, orgInvitation.OrgID); err != nil {
 		return nil, err
 	}
 
@@ -378,11 +378,11 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 		return nil, errors.New("unable to send notification for invitation because sending emails is not enabled")
 	}
 
-	org, err := r.db.Orgs().GetByID(ctx, orgInvitation.OrgID)
+	org, err := r.dbclient.Orgs().GetByID(ctx, orgInvitation.OrgID)
 	if err != nil {
 		return nil, err
 	}
-	sender, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	sender, err := r.dbclient.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +391,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 		recipientEmail = orgInvitation.RecipientEmail
 	} else {
 		recipientEmailVerified := false
-		recipientEmail, recipientEmailVerified, err = r.db.UserEmails().GetPrimaryEmail(ctx, orgInvitation.RecipientUserID)
+		recipientEmail, recipientEmailVerified, err = r.dbclient.UserEmails().GetPrimaryEmail(ctx, orgInvitation.RecipientUserID)
 		if err != nil {
 			return nil, err
 		}
@@ -402,7 +402,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 
 	expiryTime := newExpiryTime()
 	orgInvitation.ExpiresAt = &expiryTime
-	if err := r.db.OrgInvitations().UpdateExpiryTime(ctx, orgInvitation.ID, expiryTime); err != nil {
+	if err := r.dbclient.OrgInvitations().UpdateExpiryTime(ctx, orgInvitation.ID, expiryTime); err != nil {
 		return nil, err
 	}
 
@@ -415,7 +415,7 @@ func (r *schemaResolver) ResendOrganizationInvitationNotification(ctx context.Co
 	if err != nil {
 		return nil, err
 	}
-	if err := sendOrgInvitationNotification(ctx, r.db, org, sender, recipientEmail, invitationURL, *orgInvitation.ExpiresAt); err != nil {
+	if err := sendOrgInvitationNotification(ctx, r.dbclient, org, sender, recipientEmail, invitationURL, *orgInvitation.ExpiresAt); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -428,17 +428,17 @@ func (r *schemaResolver) RevokeOrganizationInvitation(ctx context.Context, args 
 	if err != nil {
 		return nil, err
 	}
-	orgInvitation, err := r.db.OrgInvitations().GetPendingByID(ctx, id)
+	orgInvitation, err := r.dbclient.OrgInvitations().GetPendingByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Check that the current user is a member of the org that the invite is for.
-	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgInvitation.OrgID); err != nil {
+	if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.dbclient, orgInvitation.OrgID); err != nil {
 		return nil, err
 	}
 
-	if err := r.db.OrgInvitations().Revoke(ctx, orgInvitation.ID); err != nil {
+	if err := r.dbclient.OrgInvitations().Revoke(ctx, orgInvitation.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

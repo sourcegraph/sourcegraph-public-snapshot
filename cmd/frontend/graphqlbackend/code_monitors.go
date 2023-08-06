@@ -11,7 +11,7 @@ import (
 )
 
 func (s *schemaResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.dbclient.DB()); err != nil {
 		return nil, err
 	}
 

@@ -102,7 +102,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 	actor := sgactor.FromContext(ctx)
 	if actor.IsAuthenticated() {
 		uid = &actor.UID
-		e, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+		e, _, err := r.dbclient.UserEmails().GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
@@ -111,7 +111,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		}
 	}
 
-	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.OtherUseCase, input.Better)
+	_, err := database.SurveyResponses(r.dbclient).Create(ctx, uid, email, int(input.Score), input.OtherUseCase, input.Better)
 	if err != nil {
 		return nil, err
 	}
@@ -123,7 +123,7 @@ func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
 		OtherUseCase:    args.Input.OtherUseCase,
 		Better:          args.Input.Better,
 		IsAuthenticated: actor.IsAuthenticated(),
-		SiteID:          siteid.Get(r.db),
+		SiteID:          siteid.Get(r.dbclient),
 	}); err != nil {
 		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
 		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
@@ -159,19 +159,19 @@ func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *stru
 		Feedback:    args.Input.Feedback,
 		CurrentPath: args.Input.CurrentPath,
 		IsTest:      env.InsecureDev,
-		SiteID:      siteid.Get(r.db),
+		SiteID:      siteid.Get(r.dbclient),
 	}
 
 	// We include the username and email address of the user (if signed in). For signed-in users,
 	// the UI indicates that the username and email address will be sent to Sourcegraph.
 	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
-		currentUser, err := r.db.Users().GetByID(ctx, actor.UID)
+		currentUser, err := r.dbclient.Users().GetByID(ctx, actor.UID)
 		if err != nil {
 			return nil, err
 		}
 		data.Username = &currentUser.Username
 
-		email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+		email, _, err := r.dbclient.UserEmails().GetPrimaryEmail(ctx, actor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}

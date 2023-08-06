@@ -26,7 +26,7 @@ type ExecutorsListArgs struct {
 
 func (r *schemaResolver) Executors(ctx context.Context, args ExecutorsListArgs) (*executorConnectionResolver, error) {
 	// 🚨 SECURITY: Only site-admins may view executor details
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -36,7 +36,7 @@ func (r *schemaResolver) Executors(ctx context.Context, args ExecutorsListArgs) 
 	}
 
 	var executorConnection *executorConnectionResolver
-	err = r.db.WithTransact(ctx, func(tx database.DB) error {
+	err = r.dbclient.WithTransact(ctx, func(tx database.DB) error {
 		opts := database.ExecutorStoreListOptions{
 			Offset: offset,
 			Limit:  int(args.First),

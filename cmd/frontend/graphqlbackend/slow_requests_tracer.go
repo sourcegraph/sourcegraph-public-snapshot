@@ -65,7 +65,7 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 		return nil, errors.New("slow graphql requests capture is not enabled")
 	}
 	// 🚨 SECURITY: Only site admins may list outbound requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 	after := "0"
@@ -76,7 +76,7 @@ func (r *schemaResolver) SlowRequests(ctx context.Context, args *slowRequestsArg
 		after:           after,
 		perPage:         slowRequestRedisFIFOListPerPage,
 		gitserverClient: r.gitserverClient,
-		db:              r.db,
+		db:              r.dbclient,
 	}, nil
 }
 

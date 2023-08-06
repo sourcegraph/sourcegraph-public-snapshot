@@ -34,7 +34,7 @@ func (r *parentSourcegraphResolver) URL() string {
 }
 
 func (r *schemaResolver) ClientConfiguration(ctx context.Context) (*clientConfigurationResolver, error) {
-	services, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+	services, err := r.dbclient.ExternalServices().List(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{
 			extsvc.KindGitHub,
 			extsvc.KindBitbucketServer,

@@ -66,14 +66,14 @@ type AlertFuncArgs struct {
 }
 
 func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
-	settings, err := settings.CurrentUserFinal(ctx, r.db)
+	settings, err := settings.CurrentUserFinal(ctx, r.dbclient)
 	if err != nil {
 		return nil, err
 	}
 
 	args := AlertFuncArgs{
 		IsAuthenticated:     actor.FromContext(ctx).IsAuthenticated(),
-		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil,
+		IsSiteAdmin:         auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient) == nil,
 		ViewerFinalSettings: settings,
 	}
 

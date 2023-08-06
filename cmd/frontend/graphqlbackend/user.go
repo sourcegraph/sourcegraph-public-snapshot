@@ -36,17 +36,17 @@ func (r *schemaResolver) User(
 	var user *types.User
 	switch {
 	case args.Username != nil:
-		user, err = r.db.Users().GetByUsername(ctx, *args.Username)
+		user, err = r.dbclient.Users().GetByUsername(ctx, *args.Username)
 
 	case args.Email != nil:
 		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
 		// Sourcegraph.com, for user privacy reasons.
 		if envvar.SourcegraphDotComMode() {
-			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 				return nil, err
 			}
 		}
-		user, err = r.db.Users().GetByVerifiedEmail(ctx, *args.Email)
+		user, err = r.dbclient.Users().GetByVerifiedEmail(ctx, *args.Email)
 
 	default:
 		return nil, errors.New("must specify either username or email to look up a user")
@@ -57,7 +57,7 @@ func (r *schemaResolver) User(
 		}
 		return nil, err
 	}
-	return NewUserResolver(ctx, r.db, user), nil
+	return NewUserResolver(ctx, r.dbclient, user), nil
 }
 
 // UserResolver implements the GraphQL User type.
@@ -256,7 +256,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		}
 	} else {
 		// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.dbclient, userID); err != nil {
 			return nil, err
 		}
 	}
@@ -284,7 +284,7 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 		DisplayName: args.DisplayName,
 		AvatarURL:   args.AvatarURL,
 	}
-	user, err := r.db.Users().GetByID(ctx, userID)
+	user, err := r.dbclient.Users().GetByID(ctx, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "getting user from the database")
 	}
@@ -292,15 +292,15 @@ func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (
 	// If user is changing their username, we need to verify if this action can be
 	// done.
 	if args.Username != nil && user.Username != *args.Username {
-		if !viewerCanChangeUsername(actor.FromContext(ctx), r.db, userID) {
+		if !viewerCanChangeUsername(actor.FromContext(ctx), r.dbclient, userID) {
 			return nil, errors.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
 		}
 		update.Username = *args.Username
 	}
-	if err := r.db.Users().Update(ctx, userID, update); err != nil {
+	if err := r.dbclient.Users().Update(ctx, userID, update); err != nil {
 		return nil, err
 	}
-	return UserByIDInt32(ctx, r.db, userID)
+	return UserByIDInt32(ctx, r.dbclient, userID)
 }
 
 // CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
@@ -391,7 +391,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 },
 ) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can change their password.
-	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	user, err := r.dbclient.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -399,7 +399,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := r.db.Users().UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
+	if err := r.dbclient.Users().UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
 		return nil, err
 	}
 
@@ -407,7 +407,7 @@ func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
 		With(log.Int32("userID", user.ID))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
+		if err := backend.NewUserEmailsService(r.dbclient, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
 			logger.Warn("Failed to send email to inform user of password update", log.Error(err))
 		}
 	}
@@ -419,7 +419,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 },
 ) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the authenticated user can create their password.
-	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	user, err := r.dbclient.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -427,7 +427,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 		return nil, errors.New("no authenticated user")
 	}
 
-	if err := r.db.Users().CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
+	if err := r.dbclient.Users().CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
 		return nil, err
 	}
 
@@ -435,7 +435,7 @@ func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
 		With(log.Int32("userID", user.ID))
 
 	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
+		if err := backend.NewUserEmailsService(r.dbclient, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
 			logger.Warn("Failed to send email to inform user of password creation", log.Error(err))
 		}
 	}
@@ -471,7 +471,7 @@ func (r *schemaResolver) updateAffectedUser(ctx context.Context, args *userMutat
 			return nil, err
 		}
 	} else {
-		user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+		user, err := r.dbclient.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -480,11 +480,11 @@ func (r *schemaResolver) updateAffectedUser(ctx context.Context, args *userMutat
 	}
 
 	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.dbclient, affectedUserID); err != nil {
 		return nil, err
 	}
 
-	if err := r.db.Users().Update(ctx, affectedUserID, update); err != nil {
+	if err := r.dbclient.Users().Update(ctx, affectedUserID, update); err != nil {
 		return nil, err
 	}
 
@@ -492,7 +492,7 @@ func (r *schemaResolver) updateAffectedUser(ctx context.Context, args *userMutat
 }
 
 func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
-	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
+	user, err := r.dbclient.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -505,7 +505,7 @@ func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Search
 		Searchable: &searchable,
 	}
 
-	if err := r.db.Users().Update(ctx, user.ID, update); err != nil {
+	if err := r.dbclient.Users().Update(ctx, user.ID, update); err != nil {
 		return nil, err
 	}
 
@@ -635,7 +635,7 @@ type SetUserCompletionsQuotaArgs struct {
 
 func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUserCompletionsQuotaArgs) (*UserResolver, error) {
 	// 🚨 SECURITY: Only site admins are allowed to change a users quota.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -649,7 +649,7 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 	}
 
 	// Verify the ID is valid.
-	user, err := r.db.Users().GetByID(ctx, id)
+	user, err := r.dbclient.Users().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -659,11 +659,11 @@ func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUs
 		i := int(*args.Quota)
 		quota = &i
 	}
-	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
+	if err := r.dbclient.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
 
-	return UserByIDInt32(ctx, r.db, user.ID)
+	return UserByIDInt32(ctx, r.dbclient, user.ID)
 }
 
 type SetUserCodeCompletionsQuotaArgs struct {
@@ -673,7 +673,7 @@ type SetUserCodeCompletionsQuotaArgs struct {
 
 func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args SetUserCodeCompletionsQuotaArgs) (*UserResolver, error) {
 	// 🚨 SECURITY: Only site admins are allowed to change a users quota.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -687,7 +687,7 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 	}
 
 	// Verify the ID is valid.
-	user, err := r.db.Users().GetByID(ctx, id)
+	user, err := r.dbclient.Users().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -697,9 +697,9 @@ func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args S
 		i := int(*args.Quota)
 		quota = &i
 	}
-	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
+	if err := r.dbclient.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
 		return nil, err
 	}
 
-	return UserByIDInt32(ctx, r.db, user.ID)
+	return UserByIDInt32(ctx, r.dbclient, user.ID)
 }

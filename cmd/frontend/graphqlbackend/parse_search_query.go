@@ -63,7 +63,7 @@ func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (stri
 	case ParseTree:
 		return outputParseTree(searchType, args)
 	case JobTree:
-		return outputJobTree(ctx, searchType, args, r.db, r.logger)
+		return outputJobTree(ctx, searchType, args, r.dbclient, r.logger)
 	}
 	return "", nil
 }

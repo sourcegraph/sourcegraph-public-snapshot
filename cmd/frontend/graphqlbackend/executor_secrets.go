@@ -50,11 +50,11 @@ func (r *schemaResolver) CreateExecutorSecret(ctx context.Context, args CreateEx
 	}
 
 	// 🚨 SECURITY: Check namespace access.
-	if err := checkNamespaceAccess(ctx, r.db, userID, orgID); err != nil {
+	if err := checkNamespaceAccess(ctx, r.dbclient, userID, orgID); err != nil {
 		return nil, err
 	}
 
-	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	store := r.dbclient.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 
 	if len(args.Key) == 0 {
 		return nil, errors.New("key cannot be empty string")
@@ -82,7 +82,7 @@ func (r *schemaResolver) CreateExecutorSecret(ctx context.Context, args CreateEx
 		return nil, err
 	}
 
-	return &executorSecretResolver{db: r.db, secret: secret}, nil
+	return &executorSecretResolver{db: r.dbclient, secret: secret}, nil
 }
 
 type ErrDuplicateExecutorSecret struct{}
@@ -116,7 +116,7 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 		return nil, errors.New("scope mismatch")
 	}
 
-	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	store := r.dbclient.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 
 	var oldSecret *database.ExecutorSecret
 	err = store.WithTransact(ctx, func(tx database.ExecutorSecretStore) error {
@@ -145,7 +145,7 @@ func (r *schemaResolver) UpdateExecutorSecret(ctx context.Context, args UpdateEx
 		return nil, err
 	}
 
-	return &executorSecretResolver{db: r.db, secret: oldSecret}, nil
+	return &executorSecretResolver{db: r.dbclient, secret: oldSecret}, nil
 }
 
 type DeleteExecutorSecretArgs struct {
@@ -168,7 +168,7 @@ func (r *schemaResolver) DeleteExecutorSecret(ctx context.Context, args DeleteEx
 		return nil, errors.New("scope mismatch")
 	}
 
-	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+	store := r.dbclient.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
 
 	err = store.WithTransact(ctx, func(tx database.ExecutorSecretStore) error {
 		secret, err := tx.GetByID(ctx, args.Scope.ToDatabaseScope(), id)
@@ -217,7 +217,7 @@ func (r *schemaResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecre
 	// 🚨 SECURITY: Only allow access to list global secrets if the user is admin.
 	// This is not terribly bad, since the secrets are also part of the user's namespace
 	// secrets, but this endpoint is useless to non-admins.
-	if err := checkNamespaceAccess(ctx, r.db, 0, 0); err != nil {
+	if err := checkNamespaceAccess(ctx, r.dbclient, 0, 0); err != nil {
 		return nil, err
 	}
 
@@ -227,7 +227,7 @@ func (r *schemaResolver) ExecutorSecrets(ctx context.Context, args ExecutorSecre
 	}
 
 	return &executorSecretConnectionResolver{
-		db:    r.db,
+		db:    r.dbclient,
 		scope: args.Scope,
 		opts: database.ExecutorSecretsListOpts{
 			LimitOffset:     limit,

@@ -24,12 +24,12 @@ func (r *siteResolver) Users(ctx context.Context, args *struct {
 },
 ) (*siteUsersResolver, error) {
 	// 🚨 SECURITY: Only site admins can see users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
 	return &siteUsersResolver{
-		&sgusers.UsersStats{DB: r.db, Filters: sgusers.UsersStatsFilters{
+		&sgusers.UsersStats{DB: r.dbclient, Filters: sgusers.UsersStatsFilters{
 			Query:        args.Query,
 			SiteAdmin:    args.SiteAdmin,
 			Username:     args.Username,

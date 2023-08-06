@@ -387,12 +387,12 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 	}
 
 	if args.ReadOnly {
-		if !isSiteAdmin(ctx, r.db) {
+		if !isSiteAdmin(ctx, r.dbclient) {
 			return nil, errors.New("only site admins can create read-only teams")
 		}
 	}
 
-	teams := r.db.Teams()
+	teams := r.dbclient.Teams()
 	var t types.Team
 	t.Name = args.Name
 	if args.DisplayName != nil {
@@ -408,7 +408,7 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 	}
 	if parentTeam != nil {
 		t.ParentTeamID = parentTeam.ID
-		if ok, err := canModifyTeam(ctx, r.db, parentTeam); err != nil {
+		if ok, err := canModifyTeam(ctx, r.dbclient, parentTeam); err != nil {
 			return nil, err
 		} else if !ok {
 			return nil, ErrNoAccessToTeam
@@ -419,7 +419,7 @@ func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (
 	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, team), nil
+	return NewTeamResolver(r.dbclient, team), nil
 }
 
 type UpdateTeamArgs struct {
@@ -452,13 +452,13 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 		return nil, errors.New("the only possible value for makeRoot is true (if set); to assign a parent team please use parentTeam or parentTeamName parameters")
 	}
 	var t *types.Team
-	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
+	err := r.dbclient.WithTransact(ctx, func(tx database.DB) (err error) {
 		t, err = findTeam(ctx, tx.Teams(), args.ID, args.Name)
 		if err != nil {
 			return err
 		}
 
-		if ok, err := canModifyTeam(ctx, r.db, t); err != nil {
+		if ok, err := canModifyTeam(ctx, r.dbclient, t); err != nil {
 			return err
 		} else if !ok {
 			return ErrNoAccessToTeam
@@ -500,7 +500,7 @@ func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (
 	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, t), nil
+	return NewTeamResolver(r.dbclient, t), nil
 }
 
 // findTeam returns a team by either GraphQL ID or name.
@@ -550,18 +550,18 @@ func (r *schemaResolver) DeleteTeam(ctx context.Context, args *DeleteTeamArgs) (
 	if args.ID != nil && args.Name != nil {
 		return nil, errors.New("team to delete is identified by either id or name, but both were specified")
 	}
-	t, err := findTeam(ctx, r.db.Teams(), args.ID, args.Name)
+	t, err := findTeam(ctx, r.dbclient.Teams(), args.ID, args.Name)
 	if err != nil {
 		return nil, err
 	}
 
-	if ok, err := canModifyTeam(ctx, r.db, t); err != nil {
+	if ok, err := canModifyTeam(ctx, r.dbclient, t); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, ErrNoAccessToTeam
 	}
 
-	if err := r.db.Teams().DeleteTeam(ctx, t.ID); err != nil {
+	if err := r.dbclient.Teams().DeleteTeam(ctx, t.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
@@ -627,7 +627,7 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
 	}
 
-	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
+	users, notFound, err := usersForTeamMembers(ctx, r.dbclient, args.Members)
 	if err != nil {
 		return nil, err
 	}
@@ -643,12 +643,12 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 		usersMap[user.ID] = user
 	}
 
-	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	team, err := findTeam(ctx, r.dbclient.Teams(), args.Team, args.TeamName)
 	if err != nil {
 		return nil, err
 	}
 
-	if ok, err := canModifyTeam(ctx, r.db, team); err != nil {
+	if ok, err := canModifyTeam(ctx, r.dbclient, team); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, ErrNoAccessToTeam
@@ -661,11 +661,11 @@ func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersAr
 			TeamID: team.ID,
 		})
 	}
-	if err := r.db.Teams().CreateTeamMember(ctx, ms...); err != nil {
+	if err := r.dbclient.Teams().CreateTeamMember(ctx, ms...); err != nil {
 		return nil, err
 	}
 
-	return NewTeamResolver(r.db, team), nil
+	return NewTeamResolver(r.dbclient, team), nil
 }
 
 func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
@@ -680,7 +680,7 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
 	}
 
-	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
+	users, notFound, err := usersForTeamMembers(ctx, r.dbclient, args.Members)
 	if err != nil {
 		return nil, err
 	}
@@ -696,18 +696,18 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 		usersMap[user.ID] = user
 	}
 
-	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	team, err := findTeam(ctx, r.dbclient.Teams(), args.Team, args.TeamName)
 	if err != nil {
 		return nil, err
 	}
 
-	if ok, err := canModifyTeam(ctx, r.db, team); err != nil {
+	if ok, err := canModifyTeam(ctx, r.dbclient, team); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, ErrNoAccessToTeam
 	}
 
-	if err := r.db.WithTransact(ctx, func(tx database.DB) error {
+	if err := r.dbclient.WithTransact(ctx, func(tx database.DB) error {
 		var membersToRemove []*types.TeamMember
 		listOpts := database.ListTeamMembersOpts{
 			TeamID: team.ID,
@@ -753,7 +753,7 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 	}); err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, team), nil
+	return NewTeamResolver(r.dbclient, team), nil
 }
 
 func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
@@ -768,7 +768,7 @@ func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMember
 		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
 	}
 
-	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
+	users, notFound, err := usersForTeamMembers(ctx, r.dbclient, args.Members)
 	if err != nil {
 		return nil, err
 	}
@@ -780,11 +780,11 @@ func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMember
 		return nil, err
 	}
 
-	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	team, err := findTeam(ctx, r.dbclient.Teams(), args.Team, args.TeamName)
 	if err != nil {
 		return nil, err
 	}
-	if ok, err := canModifyTeam(ctx, r.db, team); err != nil {
+	if ok, err := canModifyTeam(ctx, r.dbclient, team); err != nil {
 		return nil, err
 	} else if !ok {
 		return nil, ErrNoAccessToTeam
@@ -797,11 +797,11 @@ func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMember
 		})
 	}
 	if len(membersToRemove) > 0 {
-		if err := r.db.Teams().DeleteTeamMember(ctx, membersToRemove...); err != nil {
+		if err := r.dbclient.Teams().DeleteTeamMember(ctx, membersToRemove...); err != nil {
 			return nil, err
 		}
 	}
-	return NewTeamResolver(r.db, team), nil
+	return NewTeamResolver(r.dbclient, team), nil
 }
 
 type QueryTeamsArgs struct {
@@ -814,7 +814,7 @@ func (r *schemaResolver) Teams(ctx context.Context, args *QueryTeamsArgs) (*team
 	if err := areTeamEndpointsAvailable(); err != nil {
 		return nil, err
 	}
-	c := &teamConnectionResolver{db: r.db}
+	c := &teamConnectionResolver{db: r.dbclient}
 	if err := c.applyArgs(&args.ListTeamsArgs); err != nil {
 		return nil, err
 	}
@@ -841,7 +841,7 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolve
 		return nil, err
 	}
 
-	t, err := r.db.Teams().GetTeamByName(ctx, args.Name)
+	t, err := r.dbclient.Teams().GetTeamByName(ctx, args.Name)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -849,7 +849,7 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolve
 		return nil, err
 	}
 
-	return NewTeamResolver(r.db, t), nil
+	return NewTeamResolver(r.dbclient, t), nil
 }
 
 func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {

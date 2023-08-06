@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbclient"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
@@ -56,7 +57,7 @@ func (r *schemaResolver) siteByGQLID(_ context.Context, id graphql.ID) (Node, er
 	if siteGQLID != singletonSiteGQLID {
 		return nil, errors.Errorf("site not found: %q", siteGQLID)
 	}
-	return NewSiteResolver(r.logger, r.db), nil
+	return NewSiteResolver(r.logger, r.dbclient), nil
 }
 
 func marshalSiteGQLID(siteID string) graphql.ID { return relay.MarshalID("Site", siteID) }
@@ -71,37 +72,37 @@ func unmarshalSiteGQLID(id graphql.ID) (siteID string, err error) {
 }
 
 func (r *schemaResolver) Site() *siteResolver {
-	return NewSiteResolver(r.logger, r.db)
+	return NewSiteResolver(r.logger, r.dbclient)
 }
 
-func NewSiteResolver(logger log.Logger, db database.DB) *siteResolver {
+func NewSiteResolver(logger log.Logger, dbclient dbclient.DBClient) *siteResolver {
 	return &siteResolver{
 		logger: logger,
-		db:     db,
+		dbclient:     dbclient,
 		gqlID:  singletonSiteGQLID,
 	}
 }
 
 type siteResolver struct {
 	logger log.Logger
-	db     database.DB
+	dbclient     dbclient.DBClient
 	gqlID  string // == singletonSiteGQLID, not the site ID
 }
 
 func (r *siteResolver) ID() graphql.ID { return marshalSiteGQLID(r.gqlID) }
 
-func (r *siteResolver) SiteID() string { return siteid.Get(r.db) }
+func (r *siteResolver) SiteID() string { return siteid.Get(r.dbclient.DB()) }
 
 type SiteConfigurationArgs struct {
 	ReturnSafeConfigsOnly *bool
 }
 
 func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfigurationArgs) (*siteConfigurationResolver, error) {
-	var returnSafeConfigsOnly = pointers.Deref(args.ReturnSafeConfigsOnly, false)
+	returnSafeConfigsOnly := pointers.Deref(args.ReturnSafeConfigsOnly, false)
 
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		// returnSafeConfigsOnly determines whether to return a redacted version of the
 		// site configuration that removes sensitive information. If true, returns a
 		// siteConfigurationResolver that will return the redacted configuration. If
@@ -110,15 +111,15 @@ func (r *siteResolver) Configuration(ctx context.Context, args *SiteConfiguratio
 		// The only way a non-admin can access this field is when `returnSafeConfigsOnly`
 		// is set to true.
 		if returnSafeConfigsOnly {
-			return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
+			return &siteConfigurationResolver{db: r.dbclient.DB(), returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 		}
 		return nil, err
 	}
-	return &siteConfigurationResolver{db: r.db, returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
+	return &siteConfigurationResolver{db: r.dbclient.DB(), returnSafeConfigsOnly: returnSafeConfigsOnly}, nil
 }
 
 func (r *siteResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err == auth.ErrMustBeSiteAdmin || err == auth.ErrNotAuthenticated {
 		return false, nil
 	} else if err != nil {
 		return false, err
@@ -131,18 +132,18 @@ func (r *siteResolver) settingsSubject() api.SettingsSubject {
 }
 
 func (r *siteResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
+	settings, err := r.dbclient.DB().Settings().GetLatest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
 	if settings == nil {
 		return nil, nil
 	}
-	return &settingsResolver{r.db, &settingsSubjectResolver{site: r}, settings, nil}, nil
+	return &settingsResolver{r.dbclient.DB(), &settingsSubjectResolver{site: r}, settings, nil}, nil
 }
 
 func (r *siteResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{site: r}}
+	return &settingsCascade{db: r.dbclient.DB(), subject: &settingsSubjectResolver{site: r}}
 }
 
 func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
@@ -150,7 +151,7 @@ func (r *siteResolver) ConfigurationCascade() *settingsCascade { return r.Settin
 func (r *siteResolver) SettingsURL() *string { return strptr("/site-admin/global-settings") }
 
 func (r *siteResolver) CanReloadSite(ctx context.Context) bool {
-	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db)
+	err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB())
 	return canReloadSite && err == nil
 }
 
@@ -173,11 +174,11 @@ func (r *siteResolver) AllowSiteSettingsEdits() bool {
 
 func (r *siteResolver) ExternalServicesCounts(ctx context.Context) (*externalServicesCountsResolver, error) {
 	// 🚨 SECURITY: Only admins can view repositories counts
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return nil, err
 	}
 
-	return &externalServicesCountsResolver{db: r.db}, nil
+	return &externalServicesCountsResolver{db: r.dbclient.DB()}, nil
 }
 
 type externalServicesCountsResolver struct {
@@ -307,7 +308,7 @@ func (r *schemaResolver) UpdateSiteConfiguration(ctx context.Context, args *stru
 ) (bool, error) {
 	// 🚨 SECURITY: The site configuration contains secret tokens and credentials,
 	// so only admins may view it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return false, err
 	}
 	if !canUpdateSiteConfiguration() {
@@ -339,13 +340,13 @@ func canUpdateSiteConfiguration() bool {
 
 func (r *siteResolver) UpgradeReadiness(ctx context.Context) (*upgradeReadinessResolver, error) {
 	// 🚨 SECURITY: Only site admins may view upgrade readiness information.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return nil, err
 	}
 
 	return &upgradeReadinessResolver{
 		logger: r.logger.Scoped("upgradeReadiness", ""),
-		db:     r.db,
+		db:     r.dbclient.DB(),
 	}, nil
 }
 
@@ -535,10 +536,10 @@ func (r *upgradeReadinessResolver) RequiredOutOfBandMigrations(ctx context.Conte
 // Return the enablement of auto upgrades
 func (r *siteResolver) AutoUpgradeEnabled(ctx context.Context) (bool, error) {
 	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return false, err
 	}
-	_, enabled, err := upgradestore.NewWith(r.db.Handle()).GetAutoUpgrade(ctx)
+	_, enabled, err := upgradestore.NewWith(r.dbclient.DB().Handle()).GetAutoUpgrade(ctx)
 	if err != nil {
 		return false, err
 	}
@@ -550,10 +551,10 @@ func (r *schemaResolver) SetAutoUpgrade(ctx context.Context, args *struct {
 },
 ) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can set auto_upgrade readiness
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return &EmptyResponse{}, err
 	}
-	err := upgradestore.NewWith(r.db.Handle()).SetAutoUpgrade(ctx, args.Enable)
+	err := upgradestore.NewWith(r.dbclient.DB().Handle()).SetAutoUpgrade(ctx, args.Enable)
 	return &EmptyResponse{}, err
 }
 
@@ -590,7 +591,7 @@ func (r *siteResolver) RequiresVerifiedEmailForCody(ctx context.Context) bool {
 		return false
 	}
 
-	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil
+	isAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()) == nil
 	return !isAdmin
 }
 

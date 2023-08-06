@@ -61,7 +61,7 @@ type backgroundJobConnectionResolver struct {
 
 func (r *schemaResolver) BackgroundJobs(ctx context.Context, args *backgroundJobsArgs) (*backgroundJobConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may list background jobs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -83,7 +83,7 @@ func (r *schemaResolver) BackgroundJobs(ctx context.Context, args *backgroundJob
 
 func (r *schemaResolver) backgroundJobByID(ctx context.Context, id graphql.ID) (*BackgroundJobResolver, error) {
 	// 🚨 SECURITY: Only site admins may view background jobs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 

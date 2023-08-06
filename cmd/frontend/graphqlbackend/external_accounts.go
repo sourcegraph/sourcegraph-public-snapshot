@@ -27,7 +27,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 },
 ) (*externalAccountConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins can list all external accounts.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -49,7 +49,7 @@ func (r *siteResolver) ExternalAccounts(ctx context.Context, args *struct {
 		}
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &externalAccountConnectionResolver{db: r.db, opt: opt}, nil
+	return &externalAccountConnectionResolver{db: r.dbclient, opt: opt}, nil
 }
 
 func (r *UserResolver) ExternalAccounts(ctx context.Context, args *struct {
@@ -130,22 +130,22 @@ func (r *schemaResolver) DeleteExternalAccount(ctx context.Context, args *struct
 	if err != nil {
 		return nil, err
 	}
-	account, err := r.db.UserExternalAccounts().Get(ctx, id)
+	account, err := r.dbclient.UserExternalAccounts().Get(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, account.UserID); err != nil {
+	if err := auth.CheckSiteAdminOrSameUser(ctx, r.dbclient, account.UserID); err != nil {
 		return nil, err
 	}
 
 	deleteOpts := database.ExternalAccountsDeleteOptions{IDs: []int32{account.ID}}
-	if err := r.db.UserExternalAccounts().Delete(ctx, deleteOpts); err != nil {
+	if err := r.dbclient.UserExternalAccounts().Delete(ctx, deleteOpts); err != nil {
 		return nil, err
 	}
 
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, r.logger, r.dbclient, protocol.PermsSyncRequest{
 		UserIDs: []int32{account.UserID},
 		Reason:  database.ReasonExternalAccountDeleted,
 	})
@@ -166,13 +166,13 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 
 	switch args.ServiceType {
 	case extsvc.TypeGerrit:
-		err := gext.AddGerritExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
+		err := gext.AddGerritExternalAccount(ctx, r.dbclient, a.UID, args.ServiceID, args.AccountDetails)
 		if err != nil {
 			return nil, err
 		}
 
 	case auth.SourcegraphOperatorProviderType:
-		err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(ctx, r.db, a.UID, args.ServiceID, args.AccountDetails)
+		err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(ctx, r.dbclient, a.UID, args.ServiceID, args.AccountDetails)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to add Sourcegraph Operator external account")
 		}
@@ -181,7 +181,7 @@ func (r *schemaResolver) AddExternalAccount(ctx context.Context, args *struct {
 		return nil, errors.Newf("unsupported service type %q", args.ServiceType)
 	}
 
-	permssync.SchedulePermsSync(ctx, r.logger, r.db, protocol.PermsSyncRequest{
+	permssync.SchedulePermsSync(ctx, r.logger, r.dbclient, protocol.PermsSyncRequest{
 		UserIDs: []int32{a.UID},
 		Reason:  database.ReasonExternalAccountAdded,
 	})

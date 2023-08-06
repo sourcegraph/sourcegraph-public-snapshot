@@ -18,7 +18,7 @@ func (r *schemaResolver) SurveyResponses(args *struct {
 }) *surveyResponseConnectionResolver {
 	var opt database.SurveyResponseListOptions
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &surveyResponseConnectionResolver{db: r.db, opt: opt}
+	return &surveyResponseConnectionResolver{db: r.dbclient, opt: opt}
 }
 
 func (r *surveyResponseConnectionResolver) Nodes(ctx context.Context) ([]*surveyResponseResolver, error) {

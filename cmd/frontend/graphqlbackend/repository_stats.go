@@ -179,7 +179,7 @@ func (r *repositoryStatsResolver) computeEmbeddedRepos(ctx context.Context) (int
 
 func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {
 	// 🚨 SECURITY: Only site admins may query repository statistics for the site.
-	db := r.db
+	db := r.dbclient
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}

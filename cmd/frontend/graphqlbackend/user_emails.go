@@ -201,7 +201,7 @@ func (r *schemaResolver) AddUserEmail(ctx context.Context, args *addUserEmailArg
 	logger := r.logger.Scoped("AddUserEmail", "adding email to user").
 		With(log.Int32("userID", userID))
 
-	userEmails := backend.NewUserEmailsService(r.db, logger)
+	userEmails := backend.NewUserEmailsService(r.dbclient, logger)
 	if err := userEmails.Add(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (r *schemaResolver) RemoveUserEmail(ctx context.Context, args *removeUserEm
 		return nil, err
 	}
 
-	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	userEmails := backend.NewUserEmailsService(r.dbclient, r.logger)
 	if err := userEmails.Remove(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
@@ -245,7 +245,7 @@ func (r *schemaResolver) SetUserEmailPrimary(ctx context.Context, args *setUserE
 		return nil, err
 	}
 
-	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	userEmails := backend.NewUserEmailsService(r.dbclient, r.logger)
 	if err := userEmails.SetPrimaryEmail(ctx, userID, args.Email); err != nil {
 		return nil, err
 	}
@@ -265,7 +265,7 @@ func (r *schemaResolver) SetUserEmailVerified(ctx context.Context, args *setUser
 		return nil, err
 	}
 
-	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	userEmails := backend.NewUserEmailsService(r.dbclient, r.logger)
 	if err := userEmails.SetVerified(ctx, userID, args.Email, args.Verified); err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (r *schemaResolver) ResendVerificationEmail(ctx context.Context, args *rese
 		return nil, err
 	}
 
-	userEmails := backend.NewUserEmailsService(r.db, r.logger)
+	userEmails := backend.NewUserEmailsService(r.dbclient, r.logger)
 	if err := userEmails.ResendVerificationEmail(ctx, userID, args.Email, timeNow()); err != nil {
 		return nil, err
 	}

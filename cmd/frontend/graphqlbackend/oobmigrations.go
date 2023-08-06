@@ -14,7 +14,7 @@ import (
 // OutOfBandMigrationByID resolves a single out-of-band migration by its identifier.
 func (r *schemaResolver) OutOfBandMigrationByID(ctx context.Context, id graphql.ID) (*outOfBandMigrationResolver, error) {
 	// 🚨 SECURITY: Only site admins may view out-of-band migrations
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -23,7 +23,7 @@ func (r *schemaResolver) OutOfBandMigrationByID(ctx context.Context, id graphql.
 		return nil, err
 	}
 
-	migration, exists, err := oobmigration.NewStoreWithDB(r.db).GetByID(ctx, int(migrationID))
+	migration, exists, err := oobmigration.NewStoreWithDB(r.dbclient).GetByID(ctx, int(migrationID))
 	if err != nil || !exists {
 		return nil, err
 	}
@@ -34,11 +34,11 @@ func (r *schemaResolver) OutOfBandMigrationByID(ctx context.Context, id graphql.
 // OutOfBandMigrations resolves all registered single out-of-band migrations.
 func (r *schemaResolver) OutOfBandMigrations(ctx context.Context) ([]*outOfBandMigrationResolver, error) {
 	// 🚨 SECURITY: Only site admins may view out-of-band migrations
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
-	migrations, err := oobmigration.NewStoreWithDB(r.db).List(ctx)
+	migrations, err := oobmigration.NewStoreWithDB(r.dbclient).List(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (r *schemaResolver) SetMigrationDirection(ctx context.Context, args *struct
 	ApplyReverse bool
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins may modify out-of-band migrations
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func (r *schemaResolver) SetMigrationDirection(ctx context.Context, args *struct
 		return nil, err
 	}
 
-	if err := oobmigration.NewStoreWithDB(r.db).UpdateDirection(ctx, int(migrationID), args.ApplyReverse); err != nil {
+	if err := oobmigration.NewStoreWithDB(r.dbclient).UpdateDirection(ctx, int(migrationID), args.ApplyReverse); err != nil {
 		return nil, err
 	}
 

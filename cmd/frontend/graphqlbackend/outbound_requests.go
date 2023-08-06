@@ -44,7 +44,7 @@ type outboundRequestConnectionResolver struct {
 
 func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundRequestsArgs) (*outboundRequestConnectionResolver, error) {
 	// 🚨 SECURITY: Only site admins may list outbound requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -67,7 +67,7 @@ func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundReq
 
 func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID) (*OutboundRequestResolver, error) {
 	// 🚨 SECURITY: Only site admins may view outbound requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 

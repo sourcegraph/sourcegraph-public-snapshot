@@ -14,7 +14,7 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 	Weeks  *int32
 	Months *int32
 }) (*siteUsageStatisticsResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -31,7 +31,7 @@ func (r *siteResolver) UsageStatistics(ctx context.Context, args *struct {
 		m := int(*args.Months)
 		opt.MonthPeriods = &m
 	}
-	activity, err := usagestats.GetSiteUsageStatistics(ctx, r.db, opt)
+	activity, err := usagestats.GetSiteUsageStatistics(ctx, r.dbclient, opt)
 	if err != nil {
 		return nil, err
 	}

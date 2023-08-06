@@ -2,7 +2,6 @@ package example
 
 import (
 	f "fmt"
-	"github.com/sourcegraph/"
 )
 
 func Something() {

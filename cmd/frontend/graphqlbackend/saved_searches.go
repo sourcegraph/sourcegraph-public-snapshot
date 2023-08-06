@@ -36,7 +36,7 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 		return nil, err
 	}
 
-	ss, err := r.db.SavedSearches().GetByID(ctx, intID)
+	ss, err := r.dbclient.SavedSearches().GetByID(ctx, intID)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 			}
 		}
 	} else if ss.Config.OrgID != nil {
-		if err := auth.CheckOrgAccess(ctx, r.db, *ss.Config.OrgID); err != nil {
+		if err := auth.CheckOrgAccess(ctx, r.dbclient, *ss.Config.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -58,7 +58,7 @@ func (r *schemaResolver) savedSearchByID(ctx context.Context, id graphql.ID) (*s
 	}
 
 	savedSearch := &savedSearchResolver{
-		db: r.db,
+		db: r.dbclient,
 		s: types.SavedSearch{
 			ID:              intID,
 			Description:     ss.Config.Description,
@@ -110,7 +110,7 @@ func (r savedSearchResolver) Namespace(ctx context.Context) (*NamespaceResolver,
 func (r savedSearchResolver) SlackWebhookURL() *string { return r.s.SlackWebhookURL }
 
 func (r *schemaResolver) toSavedSearchResolver(entry types.SavedSearch) *savedSearchResolver {
-	return &savedSearchResolver{db: r.db, s: entry}
+	return &savedSearchResolver{db: r.dbclient, s: entry}
 }
 
 type savedSearchesArgs struct {
@@ -125,11 +125,11 @@ func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesAr
 	}
 
 	if userID != 0 {
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.dbclient, userID); err != nil {
 			return nil, err
 		}
 	} else if orgID != 0 {
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, orgID); err != nil {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.dbclient, orgID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -137,7 +137,7 @@ func (r *schemaResolver) SavedSearches(ctx context.Context, args savedSearchesAr
 	}
 
 	connectionStore := &savedSearchesConnectionStore{
-		db:     r.db,
+		db:     r.dbclient,
 		userID: &userID,
 		orgID:  &orgID,
 	}
@@ -214,7 +214,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 		userID = &u
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, u); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.dbclient, u); err != nil {
 			return nil, err
 		}
 	} else if args.OrgID != nil {
@@ -223,7 +223,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 			return nil, err
 		}
 		orgID = &o
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, o); err != nil {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.dbclient, o); err != nil {
 			return nil, err
 		}
 	} else {
@@ -234,7 +234,7 @@ func (r *schemaResolver) CreateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := r.db.SavedSearches().Create(ctx, &types.SavedSearch{
+	ss, err := r.dbclient.SavedSearches().Create(ctx, &types.SavedSearch{
 		Description: args.Description,
 		Query:       args.Query,
 		Notify:      args.NotifyOwner,
@@ -263,18 +263,18 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	old, err := r.db.SavedSearches().GetByID(ctx, id)
+	old, err := r.dbclient.SavedSearches().GetByID(ctx, id)
 	if err != nil {
 		return nil, errors.Wrap(err, "fetch old saved search")
 	}
 
 	// 🚨 SECURITY: Make sure the current user has permission to update a saved search for the specified user or org.
 	if old.Config.UserID != nil {
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, *old.Config.UserID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.dbclient, *old.Config.UserID); err != nil {
 			return nil, err
 		}
 	} else if old.Config.OrgID != nil {
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, *old.Config.OrgID); err != nil {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.dbclient, *old.Config.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
@@ -285,7 +285,7 @@ func (r *schemaResolver) UpdateSavedSearch(ctx context.Context, args *struct {
 		return nil, errMissingPatternType
 	}
 
-	ss, err := r.db.SavedSearches().Update(ctx, &types.SavedSearch{
+	ss, err := r.dbclient.SavedSearches().Update(ctx, &types.SavedSearch{
 		ID:          id,
 		Description: args.Description,
 		Query:       args.Query,
@@ -308,23 +308,23 @@ func (r *schemaResolver) DeleteSavedSearch(ctx context.Context, args *struct {
 	if err != nil {
 		return nil, err
 	}
-	ss, err := r.db.SavedSearches().GetByID(ctx, id)
+	ss, err := r.dbclient.SavedSearches().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 	// 🚨 SECURITY: Make sure the current user has permission to delete a saved search for the specified user or org.
 	if ss.Config.UserID != nil {
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, *ss.Config.UserID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.dbclient, *ss.Config.UserID); err != nil {
 			return nil, err
 		}
 	} else if ss.Config.OrgID != nil {
-		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.db, *ss.Config.OrgID); err != nil {
+		if err := auth.CheckOrgAccessOrSiteAdmin(ctx, r.dbclient, *ss.Config.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
 		return nil, errors.New("failed to delete saved search: no Org ID or User ID associated with saved search")
 	}
-	err = r.db.SavedSearches().Delete(ctx, id)
+	err = r.dbclient.SavedSearches().Delete(ctx, id)
 	if err != nil {
 		return nil, err
 	}

@@ -72,7 +72,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 	}
 
 	// 🚨 SECURITY: Only site admins can randomize user passwords.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -85,14 +85,14 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 		With(log.Int32("userID", userID))
 
 	logger.Info("resetting user password")
-	if err := r.db.Users().RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
+	if err := r.dbclient.Users().RandomizePasswordAndClearPasswordResetRateLimit(ctx, userID); err != nil {
 		return nil, err
 	}
 
 	// This method modifies the DB, which is somewhat counterintuitive for a "value" type from an
 	// implementation POV. Its behavior is justified because it is convenient and intuitive from the
 	// POV of the API consumer.
-	resetURL, err := backend.MakePasswordResetURL(ctx, r.db, userID)
+	resetURL, err := backend.MakePasswordResetURL(ctx, r.dbclient, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -102,7 +102,7 @@ func (r *schemaResolver) RandomizeUserPassword(ctx context.Context, args *struct
 	var emailSendErr error
 	if conf.CanSendEmail() {
 		logger.Debug("sending password reset URL in email")
-		if emailSendErr = sendPasswordResetURLToPrimaryEmail(ctx, r.db, userID, resetURL); emailSendErr != nil {
+		if emailSendErr = sendPasswordResetURLToPrimaryEmail(ctx, r.dbclient, userID, resetURL); emailSendErr != nil {
 			// This is not a hard error - if the email send fails, we still want to
 			// provide the reset URL to the caller, so we just log it here.
 			logger.Error("failed to send password reset URL", log.Error(emailSendErr))

@@ -119,7 +119,7 @@ func (r *schemaResolver) WebhookLogs(ctx context.Context, args *globalWebhookLog
 		externalServiceID = WebhookLogsUnmatchedExternalService
 	}
 
-	return NewWebhookLogConnectionResolver(ctx, r.db, &args.WebhookLogsArgs, externalServiceID)
+	return NewWebhookLogConnectionResolver(ctx, r.dbclient, &args.WebhookLogsArgs, externalServiceID)
 }
 
 type WebhookLogConnectionResolver struct {

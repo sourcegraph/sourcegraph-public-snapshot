@@ -19,12 +19,12 @@ func (r *siteResolver) NeedsRepositoryConfiguration(ctx context.Context) (bool, 
 
 	// 🚨 SECURITY: The site alerts may contain sensitive data, so only site
 	// admins may view them.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		// TODO(dax): This should return err once the site flags query is fixed for users
 		return false, nil
 	}
 
-	return needsRepositoryConfiguration(ctx, r.db)
+	return needsRepositoryConfiguration(ctx, r.dbclient)
 }
 
 func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, error) {
@@ -94,7 +94,7 @@ func (r *siteResolver) FreeUsersExceeded(ctx context.Context) (bool, error) {
 		return false, nil
 	}
 
-	userCount, err := r.db.Users().Count(
+	userCount, err := r.dbclient.Users().Count(
 		ctx,
 		&database.UsersListOptions{
 			ExcludeSourcegraphOperators: true,

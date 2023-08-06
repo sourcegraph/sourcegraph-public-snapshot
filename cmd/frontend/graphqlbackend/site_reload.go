@@ -20,7 +20,7 @@ var canReloadSite = processrestart.CanRestart()
 func (r *schemaResolver) ReloadSite(ctx context.Context) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Reloading the site is an interruptive action, so only admins
 	// may do it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 

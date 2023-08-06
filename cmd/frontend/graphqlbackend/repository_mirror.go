@@ -323,7 +323,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 }) (*checkMirrorRepositoryConnectionResult, error) {
 	// 🚨 SECURITY: This is an expensive operation and the errors may contain secrets,
 	// so only site admins may run it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -338,7 +338,7 @@ func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, ar
 		if err != nil {
 			return nil, err
 		}
-		repo, err = backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, repoID)
+		repo, err = backend.NewRepos(r.logger, r.dbclient, r.gitserverClient).Get(ctx, repoID)
 		if err != nil {
 			return nil, err
 		}
@@ -369,7 +369,7 @@ func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struc
 	Repository graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 

@@ -24,7 +24,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 },
 ) (*createUserResult, error) {
 	// 🚨 SECURITY: Only site admins can create user accounts.
-	if err := iauth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := iauth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -60,7 +60,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 		}
 	}
 
-	user, err := r.db.Users().Create(ctx, database.NewUser{
+	user, err := r.dbclient.Users().Create(ctx, database.NewUser{
 		Username: args.Username,
 		Password: backend.MakeRandomHardToGuessPassword(),
 
@@ -79,7 +79,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 	logger = logger.With(log.Int32("userID", user.ID))
 	logger.Debug("user created")
 
-	if err = r.db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+	if err = r.dbclient.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
 		UserID: user.ID,
 		Perm:   authz.Read,
 		Type:   authz.PermRepos,
@@ -90,7 +90,7 @@ func (r *schemaResolver) CreateUser(ctx context.Context, args *struct {
 
 	return &createUserResult{
 		logger:        logger,
-		db:            r.db,
+		db:            r.dbclient,
 		user:          user,
 		email:         email,
 		emailVerified: !needsEmailVerification,

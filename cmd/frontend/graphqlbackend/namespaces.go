@@ -18,7 +18,7 @@ type Namespace interface {
 }
 
 func (r *schemaResolver) Namespace(ctx context.Context, args *struct{ ID graphql.ID }) (*NamespaceResolver, error) {
-	n, err := NamespaceByID(ctx, r.db, args.ID)
+	n, err := NamespaceByID(ctx, r.dbclient, args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +76,7 @@ func UnmarshalNamespaceToIDs(id graphql.ID) (userID *int32, orgID *int32, err er
 }
 
 func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name string }) (*NamespaceResolver, error) {
-	namespace, err := r.db.Namespaces().GetByName(ctx, args.Name)
+	namespace, err := r.dbclient.Namespaces().GetByName(ctx, args.Name)
 	if err == database.ErrNamespaceNotFound {
 		return nil, nil
 	}
@@ -87,9 +87,9 @@ func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name
 	var n Namespace
 	switch {
 	case namespace.User != 0:
-		n, err = UserByIDInt32(ctx, r.db, namespace.User)
+		n, err = UserByIDInt32(ctx, r.dbclient, namespace.User)
 	case namespace.Organization != 0:
-		n, err = OrgByIDInt32(ctx, r.db, namespace.Organization)
+		n, err = OrgByIDInt32(ctx, r.dbclient, namespace.Organization)
 	default:
 		panic("invalid namespace (neither user nor organization)")
 	}

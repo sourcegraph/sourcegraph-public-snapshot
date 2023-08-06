@@ -87,7 +87,7 @@ type OutboundWebhookUpdateInput struct {
 }
 
 func (r *schemaResolver) OutboundWebhooks(ctx context.Context, args ListOutboundWebhooksArgs) (OutboundWebhookConnectionResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return nil, err
 	}
 
@@ -107,11 +107,11 @@ func (r *schemaResolver) OutboundWebhooks(ctx context.Context, args ListOutbound
 		opts.EventTypes = []database.FilterEventType{{EventType: *args.EventType, Scope: args.Scope}}
 	}
 
-	return newOutboundWebhookConnectionResolver(ctx, outboundWebhookStore(r.db), opts), nil
+	return newOutboundWebhookConnectionResolver(ctx, outboundWebhookStore(r.dbclient.DB()), opts), nil
 }
 
 func (r *schemaResolver) OutboundWebhookEventTypes(ctx context.Context) ([]OutboundWebhookEventTypeResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return nil, err
 	}
 
@@ -128,7 +128,7 @@ func (r *schemaResolver) OutboundWebhookEventTypes(ctx context.Context) ([]Outbo
 }
 
 func (r *schemaResolver) CreateOutboundWebhook(ctx context.Context, args CreateOutboundWebhookArgs) (OutboundWebhookResolver, error) {
-	user, err := auth.CurrentUser(ctx, r.db)
+	user, err := auth.CurrentUser(ctx, r.dbclient.DB())
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +150,7 @@ func (r *schemaResolver) CreateOutboundWebhook(ctx context.Context, args CreateO
 		EventTypes: outboundWebhookEventTypes(args.Input.EventTypes),
 	}
 
-	store := outboundWebhookStore(r.db)
+	store := outboundWebhookStore(r.dbclient.DB())
 	if err := store.Create(ctx, webhook); err != nil {
 		return nil, err
 	}
@@ -159,7 +159,7 @@ func (r *schemaResolver) CreateOutboundWebhook(ctx context.Context, args CreateO
 }
 
 func (r *schemaResolver) DeleteOutboundWebhook(ctx context.Context, args DeleteOutboundWebhookArgs) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient.DB()); err != nil {
 		return nil, err
 	}
 
@@ -168,7 +168,7 @@ func (r *schemaResolver) DeleteOutboundWebhook(ctx context.Context, args DeleteO
 		return nil, err
 	}
 
-	store := outboundWebhookStore(r.db)
+	store := outboundWebhookStore(r.dbclient.DB())
 	if err := store.Delete(ctx, id); err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func (r *schemaResolver) DeleteOutboundWebhook(ctx context.Context, args DeleteO
 }
 
 func (r *schemaResolver) UpdateOutboundWebhook(ctx context.Context, args UpdateOutboundWebhookArgs) (OutboundWebhookResolver, error) {
-	user, err := auth.CurrentUser(ctx, r.db)
+	user, err := auth.CurrentUser(ctx, r.dbclient.DB())
 	if err != nil {
 		return nil, err
 	}
@@ -190,7 +190,7 @@ func (r *schemaResolver) UpdateOutboundWebhook(ctx context.Context, args UpdateO
 		return nil, err
 	}
 
-	store, err := outboundWebhookStore(r.db).Transact(ctx)
+	store, err := outboundWebhookStore(r.dbclient.DB()).Transact(ctx)
 	if err != nil {
 		return nil, err
 	}

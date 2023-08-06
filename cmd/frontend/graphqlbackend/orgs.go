@@ -19,7 +19,7 @@ func (r *schemaResolver) Organizations(args *struct {
 		opt.Query = *args.Query
 	}
 	args.ConnectionArgs.Set(&opt.LimitOffset)
-	return &orgConnectionResolver{db: r.db, opt: opt}
+	return &orgConnectionResolver{db: r.dbclient, opt: opt}
 }
 
 type orgConnectionResolver struct {

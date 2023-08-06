@@ -17,6 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbclient"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -44,9 +45,10 @@ func TestAddExternalService(t *testing.T) {
 
 		db := database.NewMockDB()
 		db.UsersFunc.SetDefaultReturn(users)
+		dbclient := dbclient.NewDBClient(db)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(db)).AddExternalService(ctx, &addExternalServiceArgs{})
+		result, err := newSchemaResolver(dbclient, gitserver.NewClient(db)).AddExternalService(ctx, &addExternalServiceArgs{})
 		if want := auth.ErrMustBeSiteAdmin; err != want {
 			t.Errorf("err: want %q but got %q", want, err)
 		}
@@ -102,9 +104,10 @@ func TestUpdateExternalService(t *testing.T) {
 		t.Run("cannot update external services", func(t *testing.T) {
 			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
+			dbclient := dbclient.NewDBClient(db)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
+			result, err := newSchemaResolver(dbclient, nil).UpdateExternalService(ctx, &updateExternalServiceArgs{
 				Input: updateExternalServiceInput{
 					ID: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				},
@@ -135,7 +138,7 @@ func TestUpdateExternalService(t *testing.T) {
 		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
+		result, err := newSchemaResolver(dbclient.NewDBClient(db), gitserver.NewClient(db)).UpdateExternalService(ctx, &updateExternalServiceArgs{
 			Input: updateExternalServiceInput{
 				ID:     "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 				Config: strptr(""),
@@ -526,7 +529,7 @@ func TestDeleteExternalService(t *testing.T) {
 			db.UsersFunc.SetDefaultReturn(users)
 
 			ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
+			result, err := newSchemaResolver(dbclient.NewDBClient(db), gitserver.NewClient(db)).DeleteExternalService(ctx, &deleteExternalServiceArgs{
 				ExternalService: "RXh0ZXJuYWxTZXJ2aWNlOjQ=",
 			})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
@@ -587,7 +590,7 @@ func TestExternalServicesResolver(t *testing.T) {
 			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			result, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			result, err := newSchemaResolver(dbclient.NewDBClient(db), gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if want := auth.ErrMustBeSiteAdmin; err != want {
 				t.Errorf("err: want %q but got %v", want, err)
 			}
@@ -608,7 +611,7 @@ func TestExternalServicesResolver(t *testing.T) {
 			db := database.NewMockDB()
 			db.UsersFunc.SetDefaultReturn(users)
 
-			_, err := newSchemaResolver(db, gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
+			_, err := newSchemaResolver(dbclient.NewDBClient(db), gitserver.NewClient(db)).ExternalServices(context.Background(), &ExternalServicesArgs{})
 			if err != nil {
 				t.Fatal(err)
 			}

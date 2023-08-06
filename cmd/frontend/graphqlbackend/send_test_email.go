@@ -14,7 +14,7 @@ import (
 
 func (r *schemaResolver) SendTestEmail(ctx context.Context, args struct{ To string }) (string, error) {
 	// 🚨 SECURITY: Only site admins can send test emails.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return "", err
 	}
 

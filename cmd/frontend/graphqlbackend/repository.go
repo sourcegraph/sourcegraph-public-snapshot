@@ -555,7 +555,7 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 		args.URI = args.Name
 	}
 
-	_, err := r.db.Phabricator().CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
+	_, err := r.dbclient.Phabricator().CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
 	if err != nil {
 		r.logger.Error("adding phabricator repo", log.String("callsign", args.Callsign), log.Stringp("name", args.URI), log.String("url", args.URL))
 	}
@@ -573,7 +573,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	Date        *string
 },
 ) (*GitCommitResolver, error) {
-	db := r.db
+	db := r.dbclient
 	repo, err := db.Repos().GetByName(ctx, api.RepoName(args.RepoName))
 	if err != nil {
 		return nil, err

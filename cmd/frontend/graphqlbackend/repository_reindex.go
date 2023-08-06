@@ -14,7 +14,7 @@ func (r *schemaResolver) ReindexRepository(ctx context.Context, args *struct {
 	Repository graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 

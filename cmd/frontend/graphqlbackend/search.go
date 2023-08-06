@@ -51,7 +51,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 }
 
 func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchImplementer, error) {
-	return NewBatchSearchImplementer(ctx, r.logger, r.db, args)
+	return NewBatchSearchImplementer(ctx, r.logger, r.dbclient, args)
 }
 
 // searchResolver is a resolver for the GraphQL type `Search`

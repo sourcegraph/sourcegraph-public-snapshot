@@ -20,11 +20,11 @@ func (r *schemaResolver) TemporarySettings(ctx context.Context) (*TemporarySetti
 		return nil, errors.New("not authenticated")
 	}
 
-	temporarySettings, err := r.db.TemporarySettings().GetTemporarySettings(ctx, a.UID)
+	temporarySettings, err := r.dbclient.TemporarySettings().GetTemporarySettings(ctx, a.UID)
 	if err != nil {
 		return nil, err
 	}
-	return &TemporarySettingsResolver{db: r.db, inner: temporarySettings}, nil
+	return &TemporarySettingsResolver{db: r.dbclient, inner: temporarySettings}, nil
 }
 
 func (t *TemporarySettingsResolver) Contents() string {
@@ -37,7 +37,7 @@ func (r *schemaResolver) OverwriteTemporarySettings(ctx context.Context, args st
 		return nil, errors.New("not authenticated")
 	}
 
-	return &EmptyResponse{}, r.db.TemporarySettings().OverwriteTemporarySettings(ctx, a.UID, args.Contents)
+	return &EmptyResponse{}, r.dbclient.TemporarySettings().OverwriteTemporarySettings(ctx, a.UID, args.Contents)
 }
 
 func (r *schemaResolver) EditTemporarySettings(ctx context.Context, args struct{ SettingsToEdit string }) (*EmptyResponse, error) {
@@ -46,5 +46,5 @@ func (r *schemaResolver) EditTemporarySettings(ctx context.Context, args struct{
 		return nil, errors.New("not authenticated")
 	}
 
-	return &EmptyResponse{}, r.db.TemporarySettings().EditTemporarySettings(ctx, a.UID, args.SettingsToEdit)
+	return &EmptyResponse{}, r.dbclient.TemporarySettings().EditTemporarySettings(ctx, a.UID, args.SettingsToEdit)
 }

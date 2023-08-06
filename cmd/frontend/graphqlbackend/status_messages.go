@@ -13,18 +13,18 @@ import (
 
 func (r *schemaResolver) StatusMessages(ctx context.Context) ([]*statusMessageResolver, error) {
 	// 🚨 SECURITY: Only site admins can fetch status messages.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
-	messages, err := repos.FetchStatusMessages(ctx, r.db)
+	messages, err := repos.FetchStatusMessages(ctx, r.dbclient)
 	if err != nil {
 		return nil, err
 	}
 
 	var messageResolvers []*statusMessageResolver
 	for _, m := range messages {
-		messageResolvers = append(messageResolvers, &statusMessageResolver{db: r.db, message: m})
+		messageResolvers = append(messageResolvers, &statusMessageResolver{db: r.dbclient, message: m})
 	}
 
 	return messageResolvers, nil

@@ -70,7 +70,7 @@ func (r *schemaResolver) SettingsMutation(ctx context.Context, args *settingsMut
 	}
 
 	return &settingsMutation{
-		db:      r.db,
+		db:      r.dbclient,
 		input:   args.Input,
 		subject: subject,
 	}, nil

@@ -30,7 +30,7 @@ func TestFreeUsersExceeded(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.CountFunc.SetDefaultReturn(5, nil)
 		db.UsersFunc.SetDefaultReturn(users)
-		s := &siteResolver{db: db, gqlID: ""}
+		s := &siteResolver{dbclient: db, gqlID: ""}
 
 		exceeded, err := s.FreeUsersExceeded(context.Background())
 		assert.NoError(t, err)
@@ -42,7 +42,7 @@ func TestFreeUsersExceeded(t *testing.T) {
 		users := database.NewMockUserStore()
 		users.CountFunc.SetDefaultReturn(10, nil)
 		db.UsersFunc.SetDefaultReturn(users)
-		s := &siteResolver{db: db, gqlID: ""}
+		s := &siteResolver{dbclient: db, gqlID: ""}
 
 		exceeded, err := s.FreeUsersExceeded(context.Background())
 		assert.NoError(t, err)

@@ -25,7 +25,7 @@ type RecoverUsersRequest struct {
 
 func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersRequest) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can recover users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -48,7 +48,7 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 		ids[index] = id
 	}
 
-	users, err := r.db.Users().RecoverUsersList(ctx, ids)
+	users, err := r.dbclient.Users().RecoverUsersList(ctx, ids)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +79,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	Hard  *bool
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can delete users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -108,7 +108,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	// Collect username, verified email addresses, and external accounts to be used
 	// for revoking user permissions later, otherwise they will be removed from database
 	// if it's a hard delete.
-	users, err := r.db.Users().List(ctx, &database.UsersListOptions{
+	users, err := r.dbclient.Users().List(ctx, &database.UsersListOptions{
 		UserIDs: ids,
 	})
 	if err != nil {
@@ -125,7 +125,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	for index, user := range users {
 		var accounts []*extsvc.Accounts
 
-		extAccounts, err := r.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: user.ID})
+		extAccounts, err := r.dbclient.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: user.ID})
 		if err != nil {
 			return nil, errors.Wrap(err, "list external accounts")
 		}
@@ -146,7 +146,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 			})
 		}
 
-		verifiedEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		verifiedEmails, err := r.dbclient.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
 			UserID:       user.ID,
 			OnlyVerified: true,
 		})
@@ -172,11 +172,11 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	}
 
 	if args.Hard != nil && *args.Hard {
-		if err := r.db.Users().HardDeleteList(ctx, ids); err != nil {
+		if err := r.dbclient.Users().HardDeleteList(ctx, ids); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := r.db.Users().DeleteList(ctx, ids); err != nil {
+		if err := r.dbclient.Users().DeleteList(ctx, ids); err != nil {
 			return nil, err
 		}
 	}
@@ -185,7 +185,7 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
 	// This call is purely for the purpose of cleanup.
 	// TODO: Add user deletion and this to a transaction. See SCIM's user_delete.go for an example.
-	if err := r.db.Authz().RevokeUserPermissionsList(ctx, revokeUserPermissionsArgsList); err != nil {
+	if err := r.dbclient.Authz().RevokeUserPermissionsList(ctx, revokeUserPermissionsArgsList); err != nil {
 		return nil, err
 	}
 
@@ -196,7 +196,7 @@ func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	Organization graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -205,7 +205,7 @@ func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	if err := r.db.Orgs().Delete(ctx, orgID); err != nil {
+	if err := r.dbclient.Orgs().Delete(ctx, orgID); err != nil {
 		return nil, err
 	}
 
@@ -249,7 +249,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 
 	eventArgs.For = affectedUserID
 
-	userResolver, err := CurrentUser(ctx, r.db)
+	userResolver, err := CurrentUser(ctx, r.dbclient)
 	if err != nil {
 		return nil, err
 	}
@@ -266,11 +266,11 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	// eventArgs.By which is used as the UserID in database.SecurityEvent - a required argument to
 	// write an entry into the database.
 	eventName := database.SecurityEventNameRoleChangeDenied
-	defer logRoleChangeAttempt(ctx, r.db, &eventName, &eventArgs, &err)
+	defer logRoleChangeAttempt(ctx, r.dbclient, &eventName, &eventArgs, &err)
 
 	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
 	// admin).
-	if err = auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err = auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -278,7 +278,7 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 		return nil, errRefuseToSetCurrentUserSiteAdmin
 	}
 
-	if err = r.db.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
+	if err = r.dbclient.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
 		return nil, err
 	}
 
@@ -296,7 +296,7 @@ func (r *schemaResolver) InvalidateSessionsByIDs(ctx context.Context, args *stru
 	UserIDs []graphql.ID
 }) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 	if len(args.UserIDs) == 0 {
@@ -310,7 +310,7 @@ func (r *schemaResolver) InvalidateSessionsByIDs(ctx context.Context, args *stru
 		}
 		userIDs[index] = userID
 	}
-	if err := session.InvalidateSessionsByIDs(ctx, r.db, userIDs); err != nil {
+	if err := session.InvalidateSessionsByIDs(ctx, r.dbclient, userIDs); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

@@ -38,7 +38,7 @@ func (r *schemaResolver) InviteEmailToSourcegraph(ctx context.Context, args *str
 	if !a.IsAuthenticated() {
 		return nil, errors.New("no current user")
 	}
-	invitedBy, err := a.User(ctx, r.db.Users())
+	invitedBy, err := a.User(ctx, r.dbclient.Users())
 	if err != nil {
 		return nil, err
 	}

@@ -13,7 +13,7 @@ import (
 
 func (r *schemaResolver) permissionByID(ctx context.Context, id graphql.ID) (PermissionResolver, error) {
 	// 🚨 SECURITY: Only site admins can query role permissions or all permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil {
 		return nil, err
 	}
 
@@ -26,7 +26,7 @@ func (r *schemaResolver) permissionByID(ctx context.Context, id graphql.ID) (Per
 		return nil, ErrIDIsZero{}
 	}
 
-	permission, err := r.db.Permissions().GetByID(ctx, database.GetPermissionOpts{
+	permission, err := r.dbclient.Permissions().GetByID(ctx, database.GetPermissionOpts{
 		ID: permissionID,
 	})
 	if err != nil {
@@ -37,7 +37,7 @@ func (r *schemaResolver) permissionByID(ctx context.Context, id graphql.ID) (Per
 
 func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionArgs) (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
 	connectionStore := permisionConnectionStore{
-		db: r.db,
+		db: r.dbclient,
 	}
 
 	if args.User != nil {
@@ -51,12 +51,12 @@ func (r *schemaResolver) Permissions(ctx context.Context, args *ListPermissionAr
 		}
 
 		// 🚨 SECURITY: Only viewable for self or by site admins.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		if err := auth.CheckSiteAdminOrSameUser(ctx, r.dbclient, userID); err != nil {
 			return nil, err
 		}
 
 		connectionStore.userID = userID
-	} else if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil { // 🚨 SECURITY: Only site admins can query role permissions or all permissions.
+	} else if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.dbclient); err != nil { // 🚨 SECURITY: Only site admins can query role permissions or all permissions.
 		return nil, err
 	}
 

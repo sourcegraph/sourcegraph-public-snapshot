@@ -45,7 +45,7 @@ func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *st
 		return nil, err
 	}
 
-	usersMatching, err := r.db.OrgMembers().AutocompleteMembersSearch(ctx, orgID, args.Query)
+	usersMatching, err := r.dbclient.OrgMembers().AutocompleteMembersSearch(ctx, orgID, args.Query)
 
 	if err != nil {
 		return nil, err
@@ -53,7 +53,7 @@ func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *st
 
 	var users []*OrgMemberAutocompleteSearchItemResolver
 	for _, user := range usersMatching {
-		users = append(users, NewOrgMemberAutocompleteSearchItemResolver(r.db, user))
+		users = append(users, NewOrgMemberAutocompleteSearchItemResolver(r.dbclient, user))
 	}
 
 	return users, nil
@@ -72,19 +72,19 @@ func (r *schemaResolver) OrgMembersSummary(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	usersCount, err := r.db.OrgMembers().MemberCount(ctx, orgID)
+	usersCount, err := r.dbclient.OrgMembers().MemberCount(ctx, orgID)
 
 	if err != nil {
 		return nil, err
 	}
 
-	pendingInvites, err := r.db.OrgInvitations().Count(ctx, database.OrgInvitationsListOptions{OrgID: orgID})
+	pendingInvites, err := r.dbclient.OrgInvitations().Count(ctx, database.OrgInvitationsListOptions{OrgID: orgID})
 
 	if err != nil {
 		return nil, err
 	}
 
-	var summary = NewOrgMembersSummaryResolver(r.db, orgID, int32(usersCount), int32(pendingInvites))
+	var summary = NewOrgMembersSummaryResolver(r.dbclient, orgID, int32(usersCount), int32(pendingInvites))
 
 	return summary, nil
 }

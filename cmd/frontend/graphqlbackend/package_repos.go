@@ -45,7 +45,7 @@ var packageSchemeToExternalServiceMap = map[string]string{
 }
 
 func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *PackageRepoReferenceConnectionArgs) (_ *packageRepoReferenceConnectionResolver, err error) {
-	depsService := dependencies.NewService(observation.NewContext(r.logger), r.db)
+	depsService := dependencies.NewService(observation.NewContext(r.logger), r.dbclient)
 
 	opts := dependencies.ListDependencyReposOpts{
 		IncludeBlocked: true,
@@ -76,7 +76,7 @@ func (r *schemaResolver) PackageRepoReferences(ctx context.Context, args *Packag
 		return nil, err
 	}
 
-	return &packageRepoReferenceConnectionResolver{r.db, deps, hasMore, total}, err
+	return &packageRepoReferenceConnectionResolver{r.dbclient, deps, hasMore, total}, err
 }
 
 type packageRepoReferenceConnectionResolver struct {
