@@ -17,7 +17,7 @@ import (
 )
 
 type AccessRequestsArgs struct {
-	database.AccessRequestsFilterArgs
+	accessrequests.FilterArgs
 	graphqlutil.ConnectionResolverArgs
 }
 
@@ -29,7 +29,7 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 
 	connectionStore := &accessRequestConnectionStore{
 		db:   r.db,
-		args: &args.AccessRequestsFilterArgs,
+		args: &args.FilterArgs,
 	}
 
 	reverse := false
@@ -43,11 +43,11 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 
 type accessRequestConnectionStore struct {
 	db   database.DB
-	args *database.AccessRequestsFilterArgs
+	args *accessrequests.FilterArgs
 }
 
 func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.db.AccessRequests().Count(ctx, s.args)
+	count, err := accessrequests.NewARClient(s.db.Client()).Count(ctx, s.args)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (s *accessRequestConnectionStore) ComputeTotal(ctx context.Context) (*int32
 }
 
 func (s *accessRequestConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*accessRequestResolver, error) {
-	accessRequests, err := s.db.AccessRequests().List(ctx, s.args, args)
+	accessRequests, err := accessrequests.NewARClient(s.db.Client()).List(ctx, s.args, args)
 	if err != nil {
 		return nil, err
 	}

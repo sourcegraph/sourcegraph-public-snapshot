@@ -172,7 +172,6 @@ func TestAccessRequests_Count(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := db.AccessRequests()
 	accessRequestClient := NewARClient(db.Client())
 	client := NewARClient(db.Client())
 
@@ -187,7 +186,7 @@ func TestAccessRequests_Count(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
-		count, err := accessRequestStore.Count(ctx, &database.AccessRequestsFilterArgs{})
+		count, err := accessRequestClient.Count(ctx, &FilterArgs{})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 3)
 	})
@@ -197,17 +196,17 @@ func TestAccessRequests_Count(t *testing.T) {
 		accessRequestClient.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected, DecisionByUserID: &user.ID})
 
 		pending := types.AccessRequestStatusPending
-		count, err := accessRequestStore.Count(ctx, &database.AccessRequestsFilterArgs{Status: &pending})
+		count, err := accessRequestClient.Count(ctx, &FilterArgs{Status: &pending})
 		assert.NoError(t, err)
 		assert.Equal(t, 1, count)
 
 		rejected := types.AccessRequestStatusRejected
-		count, err = accessRequestStore.Count(ctx, &database.AccessRequestsFilterArgs{Status: &rejected})
+		count, err = accessRequestClient.Count(ctx, &FilterArgs{Status: &rejected})
 		assert.NoError(t, err)
 		assert.Equal(t, 1, count)
 
 		approved := types.AccessRequestStatusApproved
-		count, err = accessRequestStore.Count(ctx, &database.AccessRequestsFilterArgs{Status: &approved})
+		count, err = accessRequestClient.Count(ctx, &FilterArgs{Status: &approved})
 		assert.NoError(t, err)
 		assert.Equal(t, count, 1)
 	})
@@ -222,7 +221,6 @@ func TestAccessRequests_List(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestStore := db.AccessRequests()
 	accessRequestClient := NewARClient(db.Client())
 
 	usersStore := db.Users()
@@ -236,7 +234,7 @@ func TestAccessRequests_List(t *testing.T) {
 	assert.NoError(t, err)
 
 	t.Run("all", func(t *testing.T) {
-		accessRequests, err := accessRequestStore.List(ctx, nil, nil)
+		accessRequests, err := accessRequestClient.List(ctx, nil, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -250,7 +248,7 @@ func TestAccessRequests_List(t *testing.T) {
 	})
 
 	t.Run("order", func(t *testing.T) {
-		accessRequests, err := accessRequestStore.List(ctx, nil, &database.PaginationArgs{OrderBy: database.OrderBy{{Field: "name"}}, Ascending: true})
+		accessRequests, err := accessRequestClient.List(ctx, nil, &database.PaginationArgs{OrderBy: database.OrderBy{{Field: "name"}}, Ascending: true})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 3)
 
@@ -265,7 +263,7 @@ func TestAccessRequests_List(t *testing.T) {
 
 	t.Run("limit & pagination", func(t *testing.T) {
 		one := 1
-		accessRequests, err := accessRequestStore.List(ctx, nil, &database.PaginationArgs{First: &one})
+		accessRequests, err := accessRequestClient.List(ctx, nil, &database.PaginationArgs{First: &one})
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
@@ -279,7 +277,7 @@ func TestAccessRequests_List(t *testing.T) {
 
 		after := strconv.Itoa(int(accessRequests[0].ID))
 		two := int(2)
-		accessRequests, err = accessRequestStore.List(ctx, nil, &database.PaginationArgs{First: &two, After: &after, OrderBy: database.OrderBy{{Field: string(ListID)}}})
+		accessRequests, err = accessRequestClient.List(ctx, nil, &database.PaginationArgs{First: &two, After: &after, OrderBy: database.OrderBy{{Field: string(ListID)}}})
 		assert.NoError(t, err)
 		assert.Equal(t, 2, len(accessRequests))
 
@@ -298,19 +296,19 @@ func TestAccessRequests_List(t *testing.T) {
 
 		// list all pending
 		pending := types.AccessRequestStatusPending
-		accessRequests, err := accessRequestStore.List(ctx, &database.AccessRequestsFilterArgs{Status: &pending}, nil)
+		accessRequests, err := accessRequestClient.List(ctx, &FilterArgs{Status: &pending}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
 		// list all rejected
 		rejected := types.AccessRequestStatusRejected
-		accessRequests, err = accessRequestStore.List(ctx, &database.AccessRequestsFilterArgs{Status: &rejected}, nil)
+		accessRequests, err = accessRequestClient.List(ctx, &FilterArgs{Status: &rejected}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 
 		// list all approved
 		approved := types.AccessRequestStatusApproved
-		accessRequests, err = accessRequestStore.List(ctx, &database.AccessRequestsFilterArgs{Status: &approved}, nil)
+		accessRequests, err = accessRequestClient.List(ctx, &FilterArgs{Status: &approved}, nil)
 		assert.NoError(t, err)
 		assert.Equal(t, len(accessRequests), 1)
 	})

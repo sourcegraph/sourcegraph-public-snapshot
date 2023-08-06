@@ -163,6 +163,24 @@ func (q *CreateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 	return &CreateResponse{newAccessRequest}, err
 }
 
+func (c *ARClient) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+	query := &CreateQuery{
+		AccessRequest: accessRequest,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	createResp, ok := resp.(*CreateResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return createResp.AccessRequest, nil
+}
+
 type UpdateQuery struct {
 	AccessRequest *types.AccessRequest
 }
@@ -184,12 +202,48 @@ func (q *UpdateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 	return &UpdateResponse{updated}, nil
 }
 
+func (c *ARClient) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+	query := &UpdateQuery{
+		AccessRequest: accessRequest,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	updateResp, ok := resp.(*UpdateResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return updateResp.AccessRequest, nil
+}
+
 type GetByIDQuery struct {
 	ID int32
 }
 
 type GetByIDResponse struct {
 	AccessRequest *types.AccessRequest
+}
+
+func (c *ARClient) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
+	query := &GetByIDQuery{
+		ID: id,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	getByIDResp, ok := resp.(*GetByIDResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return getByIDResp.AccessRequest, nil
 }
 
 func (q *GetByIDQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
@@ -223,7 +277,115 @@ func (q *GetByEmailQuery) Execute(ctx context.Context, store *basestore.Store) (
 		return nil, err
 	}
 
-	return node, nil
+	return &GetByEmailResponse{node}, nil
+}
+
+func (c *ARClient) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
+	query := &GetByEmailQuery{
+		Email: email,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	getByEmailResp, ok := resp.(*GetByEmailResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return getByEmailResp.AccessRequest, nil
+}
+
+type CountQuery struct {
+	FArgs *FilterArgs
+}
+
+type CountResponse struct {
+	Count int
+}
+
+func (q *CountQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
+	query := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(q.FArgs.SQL(), ") AND ("))
+	count, err := basestore.ScanInt(store.QueryRow(ctx, query))
+	if err != nil {
+		return nil, err
+	}
+
+	return &CountResponse{count}, nil
+}
+
+func (c *ARClient) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
+	query := &CountQuery{
+		FArgs: fArgs,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return 0, err
+	}
+
+	countResp, ok := resp.(*CountResponse)
+	if !ok {
+		return 0, errors.New("Oh noes")
+	}
+
+	return countResp.Count, nil
+}
+
+type ListQuery struct {
+	FArgs *FilterArgs
+	PArgs *database.PaginationArgs
+}
+
+type ListResponse struct {
+	AccessRequests []*types.AccessRequest
+}
+
+func (q *ListQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
+	if q.FArgs == nil {
+		q.FArgs = &FilterArgs{}
+	}
+	where := q.FArgs.SQL()
+	if q.PArgs == nil {
+		q.PArgs = &database.PaginationArgs{}
+	}
+	p := q.PArgs.SQL()
+
+	if p.Where != nil {
+		where = append(where, p.Where)
+	}
+
+	query := sqlf.Sprintf(listQuery, sqlf.Join(columns, ","), sqlf.Join(where, ") AND ("))
+	query = p.AppendOrderToQuery(query)
+	query = p.AppendLimitToQuery(query)
+
+	nodes, err := scanAccessRequests(store.Query(ctx, query))
+	if err != nil {
+		return nil, err
+	}
+
+	return nodes, nil
+}
+
+func (c *ARClient) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {
+	query := &ListQuery{
+		FArgs: fArgs,
+		PArgs: pArgs,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	listResp, ok := resp.(*ListResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return listResp.AccessRequests, nil
 }
 
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
@@ -243,76 +405,4 @@ type ARClient struct {
 
 func NewARClient(dbclient database.DBClient) *ARClient {
 	return &ARClient{dbclient}
-}
-
-func (c *ARClient) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	query := &CreateQuery{
-		AccessRequest: accessRequest,
-	}
-
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	createResp, ok := resp.(*CreateResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return createResp.AccessRequest, nil
-}
-
-func (c *ARClient) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
-	query := &UpdateQuery{
-		AccessRequest: accessRequest,
-	}
-
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	updateResp, ok := resp.(*UpdateResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return updateResp.AccessRequest, nil
-}
-
-func (c *ARClient) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
-	query := &GetByIDQuery{
-		ID: id,
-	}
-
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	getByIDResp, ok := resp.(*GetByIDResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return getByIDResp.AccessRequest, nil
-}
-
-func (c *ARClient) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
-	query := &GetByEmailQuery{
-		Email: email,
-	}
-
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	getByEmailResp, ok := resp.(*GetByEmailResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return getByEmailResp.AccessRequest, nil
 }

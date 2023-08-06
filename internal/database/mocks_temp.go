@@ -36,18 +36,12 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/database) used for unit
 // testing.
 type MockAccessRequestStore struct {
-	// CountFunc is an instance of a mock function object controlling the
-	// behavior of the method Count.
-	CountFunc *AccessRequestStoreCountFunc
 	// DoneFunc is an instance of a mock function object controlling the
 	// behavior of the method Done.
 	DoneFunc *AccessRequestStoreDoneFunc
 	// HandleFunc is an instance of a mock function object controlling the
 	// behavior of the method Handle.
 	HandleFunc *AccessRequestStoreHandleFunc
-	// ListFunc is an instance of a mock function object controlling the
-	// behavior of the method List.
-	ListFunc *AccessRequestStoreListFunc
 	// WithTransactFunc is an instance of a mock function object controlling
 	// the behavior of the method WithTransact.
 	WithTransactFunc *AccessRequestStoreWithTransactFunc
@@ -58,11 +52,6 @@ type MockAccessRequestStore struct {
 // overwritten.
 func NewMockAccessRequestStore() *MockAccessRequestStore {
 	return &MockAccessRequestStore{
-		CountFunc: &AccessRequestStoreCountFunc{
-			defaultHook: func(context.Context, *AccessRequestsFilterArgs) (r0 int, r1 error) {
-				return
-			},
-		},
 		DoneFunc: &AccessRequestStoreDoneFunc{
 			defaultHook: func(error) (r0 error) {
 				return
@@ -70,11 +59,6 @@ func NewMockAccessRequestStore() *MockAccessRequestStore {
 		},
 		HandleFunc: &AccessRequestStoreHandleFunc{
 			defaultHook: func() (r0 basestore.TransactableHandle) {
-				return
-			},
-		},
-		ListFunc: &AccessRequestStoreListFunc{
-			defaultHook: func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (r0 []*types.AccessRequest, r1 error) {
 				return
 			},
 		},
@@ -91,11 +75,6 @@ func NewMockAccessRequestStore() *MockAccessRequestStore {
 // overwritten.
 func NewStrictMockAccessRequestStore() *MockAccessRequestStore {
 	return &MockAccessRequestStore{
-		CountFunc: &AccessRequestStoreCountFunc{
-			defaultHook: func(context.Context, *AccessRequestsFilterArgs) (int, error) {
-				panic("unexpected invocation of MockAccessRequestStore.Count")
-			},
-		},
 		DoneFunc: &AccessRequestStoreDoneFunc{
 			defaultHook: func(error) error {
 				panic("unexpected invocation of MockAccessRequestStore.Done")
@@ -104,11 +83,6 @@ func NewStrictMockAccessRequestStore() *MockAccessRequestStore {
 		HandleFunc: &AccessRequestStoreHandleFunc{
 			defaultHook: func() basestore.TransactableHandle {
 				panic("unexpected invocation of MockAccessRequestStore.Handle")
-			},
-		},
-		ListFunc: &AccessRequestStoreListFunc{
-			defaultHook: func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) ([]*types.AccessRequest, error) {
-				panic("unexpected invocation of MockAccessRequestStore.List")
 			},
 		},
 		WithTransactFunc: &AccessRequestStoreWithTransactFunc{
@@ -124,130 +98,16 @@ func NewStrictMockAccessRequestStore() *MockAccessRequestStore {
 // implementation, unless overwritten.
 func NewMockAccessRequestStoreFrom(i AccessRequestStore) *MockAccessRequestStore {
 	return &MockAccessRequestStore{
-		CountFunc: &AccessRequestStoreCountFunc{
-			defaultHook: i.Count,
-		},
 		DoneFunc: &AccessRequestStoreDoneFunc{
 			defaultHook: i.Done,
 		},
 		HandleFunc: &AccessRequestStoreHandleFunc{
 			defaultHook: i.Handle,
 		},
-		ListFunc: &AccessRequestStoreListFunc{
-			defaultHook: i.List,
-		},
 		WithTransactFunc: &AccessRequestStoreWithTransactFunc{
 			defaultHook: i.WithTransact,
 		},
 	}
-}
-
-// AccessRequestStoreCountFunc describes the behavior when the Count method
-// of the parent MockAccessRequestStore instance is invoked.
-type AccessRequestStoreCountFunc struct {
-	defaultHook func(context.Context, *AccessRequestsFilterArgs) (int, error)
-	hooks       []func(context.Context, *AccessRequestsFilterArgs) (int, error)
-	history     []AccessRequestStoreCountFuncCall
-	mutex       sync.Mutex
-}
-
-// Count delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockAccessRequestStore) Count(v0 context.Context, v1 *AccessRequestsFilterArgs) (int, error) {
-	r0, r1 := m.CountFunc.nextHook()(v0, v1)
-	m.CountFunc.appendCall(AccessRequestStoreCountFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the Count method of the
-// parent MockAccessRequestStore instance is invoked and the hook queue is
-// empty.
-func (f *AccessRequestStoreCountFunc) SetDefaultHook(hook func(context.Context, *AccessRequestsFilterArgs) (int, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Count method of the parent MockAccessRequestStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *AccessRequestStoreCountFunc) PushHook(hook func(context.Context, *AccessRequestsFilterArgs) (int, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AccessRequestStoreCountFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, *AccessRequestsFilterArgs) (int, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AccessRequestStoreCountFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, *AccessRequestsFilterArgs) (int, error) {
-		return r0, r1
-	})
-}
-
-func (f *AccessRequestStoreCountFunc) nextHook() func(context.Context, *AccessRequestsFilterArgs) (int, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AccessRequestStoreCountFunc) appendCall(r0 AccessRequestStoreCountFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AccessRequestStoreCountFuncCall objects
-// describing the invocations of this function.
-func (f *AccessRequestStoreCountFunc) History() []AccessRequestStoreCountFuncCall {
-	f.mutex.Lock()
-	history := make([]AccessRequestStoreCountFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AccessRequestStoreCountFuncCall is an object that describes an invocation
-// of method Count on an instance of MockAccessRequestStore.
-type AccessRequestStoreCountFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *AccessRequestsFilterArgs
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 int
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AccessRequestStoreCountFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AccessRequestStoreCountFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // AccessRequestStoreDoneFunc describes the behavior when the Done method of
@@ -449,117 +309,6 @@ func (c AccessRequestStoreHandleFuncCall) Args() []interface{} {
 // invocation.
 func (c AccessRequestStoreHandleFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
-}
-
-// AccessRequestStoreListFunc describes the behavior when the List method of
-// the parent MockAccessRequestStore instance is invoked.
-type AccessRequestStoreListFunc struct {
-	defaultHook func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) ([]*types.AccessRequest, error)
-	hooks       []func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) ([]*types.AccessRequest, error)
-	history     []AccessRequestStoreListFuncCall
-	mutex       sync.Mutex
-}
-
-// List delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockAccessRequestStore) List(v0 context.Context, v1 *AccessRequestsFilterArgs, v2 *PaginationArgs) ([]*types.AccessRequest, error) {
-	r0, r1 := m.ListFunc.nextHook()(v0, v1, v2)
-	m.ListFunc.appendCall(AccessRequestStoreListFuncCall{v0, v1, v2, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the List method of the
-// parent MockAccessRequestStore instance is invoked and the hook queue is
-// empty.
-func (f *AccessRequestStoreListFunc) SetDefaultHook(hook func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) ([]*types.AccessRequest, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// List method of the parent MockAccessRequestStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *AccessRequestStoreListFunc) PushHook(hook func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) ([]*types.AccessRequest, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *AccessRequestStoreListFunc) SetDefaultReturn(r0 []*types.AccessRequest, r1 error) {
-	f.SetDefaultHook(func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) ([]*types.AccessRequest, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *AccessRequestStoreListFunc) PushReturn(r0 []*types.AccessRequest, r1 error) {
-	f.PushHook(func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) ([]*types.AccessRequest, error) {
-		return r0, r1
-	})
-}
-
-func (f *AccessRequestStoreListFunc) nextHook() func(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) ([]*types.AccessRequest, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *AccessRequestStoreListFunc) appendCall(r0 AccessRequestStoreListFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of AccessRequestStoreListFuncCall objects
-// describing the invocations of this function.
-func (f *AccessRequestStoreListFunc) History() []AccessRequestStoreListFuncCall {
-	f.mutex.Lock()
-	history := make([]AccessRequestStoreListFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// AccessRequestStoreListFuncCall is an object that describes an invocation
-// of method List on an instance of MockAccessRequestStore.
-type AccessRequestStoreListFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *AccessRequestsFilterArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 *PaginationArgs
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*types.AccessRequest
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c AccessRequestStoreListFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c AccessRequestStoreListFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // AccessRequestStoreWithTransactFunc describes the behavior when the

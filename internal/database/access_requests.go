@@ -74,8 +74,6 @@ func (o *AccessRequestsFilterArgs) SQL() []*sqlf.Query {
 // For a detailed overview of the schema, see schema.md.
 type AccessRequestStore interface {
 	basestore.ShareableStore
-	Count(context.Context, *AccessRequestsFilterArgs) (int, error)
-	List(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (_ []*types.AccessRequest, err error)
 	WithTransact(context.Context, func(AccessRequestStore) error) error
 	Done(error) error
 }
@@ -130,37 +128,6 @@ var (
 		sqlf.Sprintf("status"),
 	}
 )
-
-func (s *accessRequestStore) Count(ctx context.Context, fArgs *AccessRequestsFilterArgs) (int, error) {
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(fArgs.SQL(), ") AND ("))
-	return basestore.ScanInt(s.QueryRow(ctx, q))
-}
-
-func (s *accessRequestStore) List(ctx context.Context, fArgs *AccessRequestsFilterArgs, pArgs *PaginationArgs) ([]*types.AccessRequest, error) {
-	if fArgs == nil {
-		fArgs = &AccessRequestsFilterArgs{}
-	}
-	where := fArgs.SQL()
-	if pArgs == nil {
-		pArgs = &PaginationArgs{}
-	}
-	p := pArgs.SQL()
-
-	if p.Where != nil {
-		where = append(where, p.Where)
-	}
-
-	q := sqlf.Sprintf(accessRequestListQuery, sqlf.Join(accessRequestColumns, ","), sqlf.Join(where, ") AND ("))
-	q = p.AppendOrderToQuery(q)
-	q = p.AppendLimitToQuery(q)
-
-	nodes, err := scanAccessRequests(s.Query(ctx, q))
-	if err != nil {
-		return nil, err
-	}
-
-	return nodes, nil
-}
 
 func (s *accessRequestStore) WithTransact(ctx context.Context, f func(tx AccessRequestStore) error) error {
 	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
