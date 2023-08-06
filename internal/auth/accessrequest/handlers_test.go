@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -114,7 +115,7 @@ func TestRequestAccess(t *testing.T) {
 			Name:  "a1",
 			Email: "a1@example.com",
 		}
-		db.AccessRequests().Create(context.Background(), &accessRequest)
+		accessrequests.NewARClient(db.Client()).Create(context.Background(), &accessRequest)
 		_, err := db.AccessRequests().GetByEmail(context.Background(), accessRequest.Email)
 		require.NoError(t, err)
 

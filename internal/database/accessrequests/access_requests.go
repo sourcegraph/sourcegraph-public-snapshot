@@ -2,9 +2,11 @@ package accessrequests
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,6 +53,12 @@ var (
 	}
 )
 
+type ListColumn string
+
+const (
+	ListID ListColumn = "id"
+)
+
 // ErrCannotCreate is the error that is returned when a request_access cannot be added to the DB due to a constraint.
 type ErrCannotCreate struct {
 	code string
@@ -60,7 +68,54 @@ func (err ErrCannotCreate) Error() string {
 	return fmt.Sprintf("cannot create user: %v", err.code)
 }
 
+// ErrNotFound is the error that is returned when a request_access cannot be found in the DB.
+type ErrNotFound struct {
+	ID    int32
+	Email string
+}
+
+func (e *ErrNotFound) Error() string {
+	if e.Email != "" {
+		return fmt.Sprintf("access_request with email %q not found", e.Email)
+	}
+
+	return fmt.Sprintf("access_request with ID %d not found", e.ID)
+}
+
+func (e *ErrNotFound) NotFound() bool {
+	return true
+}
+
+// IsAccessRequestUserWithEmailExists reports whether err is an error indicating that the access request email was already taken by a signed in user.
+func IsAccessRequestUserWithEmailExists(err error) bool {
+	var e ErrCannotCreate
+	return errors.As(err, &e) && e.code == errorCodeUserWithEmailExists
+}
+
+// IsAccessRequestWithEmailExists reports whether err is an error indicating that the access request was already created.
+func IsAccessRequestWithEmailExists(err error) bool {
+	var e ErrCannotCreate
+	return errors.As(err, &e) && e.code == errorCodeAccessRequestWithEmailExists
+}
+
+type FilterArgs struct {
+	Status *types.AccessRequestStatus
+}
+
+func (o *FilterArgs) SQL() []*sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+	if o != nil && o.Status != nil {
+		conds = append(conds, sqlf.Sprintf("status = %v", *o.Status))
+	}
+	return conds
+}
+
+
 type CreateQuery struct {
+	AccessRequest *types.AccessRequest
+}
+
+type CreateResponse struct {
 	AccessRequest *types.AccessRequest
 }
 
@@ -109,6 +164,27 @@ func (q *CreateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 	return newAccessRequest, err
 }
 
+type UpdateQuery struct {
+	AccessRequest *types.AccessRequest
+}
+
+type UpdateResponse struct {
+	AccessRequest *types.AccessRequest
+}
+
+func (q *UpdateQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
+	query := sqlf.Sprintf(updateQuery, q.AccessRequest.Status, *q.AccessRequest.DecisionByUserID, q.AccessRequest.ID, sqlf.Join(columns, ","))
+	updated, err := scanAccessRequest(store.QueryRow(ctx, query))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, &ErrNotFound{ID: q.AccessRequest.ID}
+		}
+		return nil, errors.Wrap(err, "scanning access_request")
+	}
+
+	return updated, nil
+}
+
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
 	var accessRequest types.AccessRequest
 	if err := sc.Scan(&accessRequest.ID, &accessRequest.CreatedAt, &accessRequest.UpdatedAt, &accessRequest.Name, &accessRequest.Email, &accessRequest.Status, &accessRequest.AdditionalInfo, &accessRequest.DecisionByUserID); err != nil {
@@ -119,3 +195,47 @@ func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
 }
 
 var scanAccessRequests = basestore.NewSliceScanner(scanAccessRequest)
+
+type ARClient struct {
+	dbclient database.DBClient
+}
+
+func NewARClient(dbclient database.DBClient) *ARClient {
+	return &ARClient{dbclient}
+}
+
+func (c *ARClient) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+	query := &CreateQuery{
+		AccessRequest: accessRequest,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	createResp, ok := resp.(*CreateResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return createResp.AccessRequest, nil
+}
+
+func (c *ARClient) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
+	query := &UpdateQuery{
+		AccessRequest: accessRequest,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	updateResp, ok := resp.(*UpdateResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return updateResp.AccessRequest, nil
+}

@@ -138,7 +138,6 @@ var (
 func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE id = %s", sqlf.Join(accessRequestColumns, ","), id))
 	node, err := scanAccessRequest(row)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &ErrAccessRequestNotFound{ID: id}
@@ -152,7 +151,6 @@ func (s *accessRequestStore) GetByID(ctx context.Context, id int32) (*types.Acce
 func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
 	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(accessRequestColumns, ","), email))
 	node, err := scanAccessRequest(row)
-
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &ErrAccessRequestNotFound{Email: email}
@@ -166,7 +164,6 @@ func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*typ
 func (s *accessRequestStore) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
 	q := sqlf.Sprintf(accessRequestUpdateQuery, accessRequest.Status, *accessRequest.DecisionByUserID, accessRequest.ID, sqlf.Join(accessRequestColumns, ","))
 	updated, err := scanAccessRequest(s.QueryRow(ctx, q))
-
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &ErrAccessRequestNotFound{ID: accessRequest.ID}
