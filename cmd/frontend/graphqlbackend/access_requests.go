@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/accessrequests"
 	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -113,7 +114,8 @@ func (s *accessRequestResolver) Status() string { return string(s.accessRequest.
 func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struct {
 	ID     graphql.ID
 	Status types.AccessRequestStatus
-}) (*EmptyResponse, error) {
+},
+) (*EmptyResponse, error) {
 	// 🚨 SECURITY: Only site admins can update access requests.
 	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
@@ -126,6 +128,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 
 	err = r.db.WithTransact(ctx, func(tx database.DB) error {
 		store := tx.AccessRequests()
+		client := accessrequests.NewARClient(tx.Client())
 
 		accessRequest, err := store.GetByID(ctx, id)
 		if err != nil {
@@ -138,7 +141,7 @@ func (r *schemaResolver) SetAccessRequestStatus(ctx context.Context, args *struc
 		}
 
 		accessRequest.Status = args.Status
-		if _, err := store.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status, DecisionByUserID: &currentUser.ID}); err != nil {
+		if _, err := client.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: accessRequest.Status, DecisionByUserID: &currentUser.ID}); err != nil {
 			return err
 		}
 		return nil

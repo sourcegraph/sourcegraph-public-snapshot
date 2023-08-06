@@ -81,14 +81,13 @@ func TestAccessRequests_Update(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	accessRequestsStore := db.AccessRequests()
 	accessRequestsClient := NewARClient(db.Client())
 	usersStore := db.Users()
 	user, _ := usersStore.Create(ctx, database.NewUser{Username: "u1", Email: "u1@email", EmailIsVerified: true})
 
 	t.Run("non-existent access request", func(t *testing.T) {
 		nonExistentAccessRequestID := int32(1234)
-		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
+		updated, err := accessRequestsClient.Update(ctx, &types.AccessRequest{ID: nonExistentAccessRequestID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.Error(t, err)
 		assert.Nil(t, updated)
 		assert.Equal(t, err, &ErrNotFound{ID: nonExistentAccessRequestID})
@@ -102,7 +101,7 @@ func TestAccessRequests_Update(t *testing.T) {
 		})
 		assert.NoError(t, err)
 		assert.Equal(t, accessRequest.Status, types.AccessRequestStatusPending)
-		updated, err := accessRequestsStore.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
+		updated, err := accessRequestsClient.Update(ctx, &types.AccessRequest{ID: accessRequest.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
 		assert.NotNil(t, updated)
 		assert.NoError(t, err)
 		assert.Equal(t, updated.Status, types.AccessRequestStatusApproved)
@@ -176,6 +175,7 @@ func TestAccessRequests_Count(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	accessRequestStore := db.AccessRequests()
+	accessRequestClient := NewARClient(db.Client())
 	client := NewARClient(db.Client())
 
 	usersStore := db.Users()
@@ -195,8 +195,8 @@ func TestAccessRequests_Count(t *testing.T) {
 	})
 
 	t.Run("by status", func(t *testing.T) {
-		accessRequestStore.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
-		accessRequestStore.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected, DecisionByUserID: &user.ID})
+		accessRequestClient.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
+		accessRequestClient.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected, DecisionByUserID: &user.ID})
 
 		pending := types.AccessRequestStatusPending
 		count, err := accessRequestStore.Count(ctx, &database.AccessRequestsFilterArgs{Status: &pending})
@@ -295,8 +295,8 @@ func TestAccessRequests_List(t *testing.T) {
 	})
 
 	t.Run("by status", func(t *testing.T) {
-		accessRequestStore.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
-		accessRequestStore.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected, DecisionByUserID: &user.ID})
+		accessRequestClient.Update(ctx, &types.AccessRequest{ID: ar1.ID, Status: types.AccessRequestStatusApproved, DecisionByUserID: &user.ID})
+		accessRequestClient.Update(ctx, &types.AccessRequest{ID: ar2.ID, Status: types.AccessRequestStatusRejected, DecisionByUserID: &user.ID})
 
 		// list all pending
 		pending := types.AccessRequestStatusPending
