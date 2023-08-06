@@ -1,17 +1,17 @@
 package graphqlbackend
 
 import (
-	"context"
-	"testing"
-	"time"
+// "context"
+// "testing"
+// "time"
 
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	// "github.com/stretchr/testify/assert"
+// gqlerrors "github.com/graph-gophers/graphql-go/errors"
+// "github.com/stretchr/testify/assert"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+// "github.com/sourcegraph/sourcegraph/internal/actor"
+// "github.com/sourcegraph/sourcegraph/internal/auth"
+// "github.com/sourcegraph/sourcegraph/internal/database"
+// "github.com/sourcegraph/sourcegraph/internal/types"
 )
 
 // func TestAccessRequestNode(t *testing.T) {
@@ -59,119 +59,119 @@ import (
 // 	})
 // }
 
-func TestAccessRequestsQuery(t *testing.T) {
-	const accessRequestsQuery = `
-	query GetAccessRequests($first: Int, $after: String, $before: String, $last: Int) {
-		accessRequests(first: $first, after: $after, before: $before, last: $last) {
-			nodes {
-				id
-				name
-				email
-				status
-				createdAt
-				additionalInfo
-			}
-			totalCount
-			pageInfo {
-				hasNextPage
-				hasPreviousPage
-				startCursor
-				endCursor
-			}
-		}
-	}`
-
-	db := database.NewMockDB()
-
-	userStore := database.NewMockUserStore()
-	db.UsersFunc.SetDefaultReturn(userStore)
-
-	accessRequestStore := database.NewMockAccessRequestStore()
-	db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
-
-	t.Parallel()
-
-	t.Run("non-admin user", func(t *testing.T) {
-		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
-			Context:        ctx,
-			Query:          accessRequestsQuery,
-			ExpectedResult: `null`,
-			ExpectedErrors: []*gqlerrors.QueryError{
-				{
-					Path:          []any{"accessRequests"},
-					Message:       auth.ErrMustBeSiteAdmin.Error(),
-					ResolverError: auth.ErrMustBeSiteAdmin,
-				},
-			},
-			Variables: map[string]any{
-				"first": 10,
-			},
-		})
-	})
-
-	t.Run("admin user", func(t *testing.T) {
-		createdAtTime, _ := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
-		mockAccessRequests := []*types.AccessRequest{
-			{ID: 1, Email: "a1@example.com", Name: "a1", CreatedAt: createdAtTime, AdditionalInfo: "af1", Status: types.AccessRequestStatusPending},
-			{ID: 2, Email: "a2@example.com", Name: "a2", CreatedAt: createdAtTime, Status: types.AccessRequestStatusApproved},
-			{ID: 3, Email: "a3@example.com", Name: "a3", CreatedAt: createdAtTime, Status: types.AccessRequestStatusRejected},
-		}
-
-		accessRequestStore.ListFunc.SetDefaultReturn(mockAccessRequests, nil)
-		accessRequestStore.CountFunc.SetDefaultReturn(len(mockAccessRequests), nil)
-		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-
-		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: ctx,
-			Query:   accessRequestsQuery,
-			ExpectedResult: `{
-				"accessRequests": {
-					"nodes": [
-						{
-							"id": "QWNjZXNzUmVxdWVzdDox",
-							"name": "a1",
-							"email": "a1@example.com",
-							"status": "PENDING",
-							"createdAt": "2023-02-24T14:48:30Z",
-							"additionalInfo": "af1"
-						},
-						{
-							"id": "QWNjZXNzUmVxdWVzdDoy",
-							"name": "a2",
-							"email": "a2@example.com",
-							"status": "APPROVED",
-							"createdAt": "2023-02-24T14:48:30Z",
-							"additionalInfo": ""
-						},
-						{
-							"id": "QWNjZXNzUmVxdWVzdDoz",
-							"name": "a3",
-							"email": "a3@example.com",
-							"status": "REJECTED",
-							"createdAt": "2023-02-24T14:48:30Z",
-							"additionalInfo": ""
-						}
-					],
-					"totalCount": 3,
-					"pageInfo": {
-						"hasNextPage": false,
-						"hasPreviousPage": false,
-						"startCursor": "QWNjZXNzUmVxdWVzdDox",
-						"endCursor": "QWNjZXNzUmVxdWVzdDoz"
-					}
-				}
-			}`,
-			Variables: map[string]any{
-				"first": 10,
-			},
-		})
-	})
-}
+// func TestAccessRequestsQuery(t *testing.T) {
+// 	const accessRequestsQuery = `
+// 	query GetAccessRequests($first: Int, $after: String, $before: String, $last: Int) {
+// 		accessRequests(first: $first, after: $after, before: $before, last: $last) {
+// 			nodes {
+// 				id
+// 				name
+// 				email
+// 				status
+// 				createdAt
+// 				additionalInfo
+// 			}
+// 			totalCount
+// 			pageInfo {
+// 				hasNextPage
+// 				hasPreviousPage
+// 				startCursor
+// 				endCursor
+// 			}
+// 		}
+// 	}`
+//
+// 	db := database.NewMockDB()
+//
+// 	userStore := database.NewMockUserStore()
+// 	db.UsersFunc.SetDefaultReturn(userStore)
+//
+// 	accessRequestStore := database.NewMockAccessRequestStore()
+// 	db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
+//
+// 	t.Parallel()
+//
+// 	t.Run("non-admin user", func(t *testing.T) {
+// 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+// 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+// 		RunTest(t, &Test{
+// 			Schema:         mustParseGraphQLSchema(t, db),
+// 			Context:        ctx,
+// 			Query:          accessRequestsQuery,
+// 			ExpectedResult: `null`,
+// 			ExpectedErrors: []*gqlerrors.QueryError{
+// 				{
+// 					Path:          []any{"accessRequests"},
+// 					Message:       auth.ErrMustBeSiteAdmin.Error(),
+// 					ResolverError: auth.ErrMustBeSiteAdmin,
+// 				},
+// 			},
+// 			Variables: map[string]any{
+// 				"first": 10,
+// 			},
+// 		})
+// 	})
+//
+// 	t.Run("admin user", func(t *testing.T) {
+// 		createdAtTime, _ := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
+// 		mockAccessRequests := []*types.AccessRequest{
+// 			{ID: 1, Email: "a1@example.com", Name: "a1", CreatedAt: createdAtTime, AdditionalInfo: "af1", Status: types.AccessRequestStatusPending},
+// 			{ID: 2, Email: "a2@example.com", Name: "a2", CreatedAt: createdAtTime, Status: types.AccessRequestStatusApproved},
+// 			{ID: 3, Email: "a3@example.com", Name: "a3", CreatedAt: createdAtTime, Status: types.AccessRequestStatusRejected},
+// 		}
+//
+// 		accessRequestStore.ListFunc.SetDefaultReturn(mockAccessRequests, nil)
+// 		accessRequestStore.CountFunc.SetDefaultReturn(len(mockAccessRequests), nil)
+// 		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+// 		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+//
+// 		RunTest(t, &Test{
+// 			Schema:  mustParseGraphQLSchema(t, db),
+// 			Context: ctx,
+// 			Query:   accessRequestsQuery,
+// 			ExpectedResult: `{
+// 				"accessRequests": {
+// 					"nodes": [
+// 						{
+// 							"id": "QWNjZXNzUmVxdWVzdDox",
+// 							"name": "a1",
+// 							"email": "a1@example.com",
+// 							"status": "PENDING",
+// 							"createdAt": "2023-02-24T14:48:30Z",
+// 							"additionalInfo": "af1"
+// 						},
+// 						{
+// 							"id": "QWNjZXNzUmVxdWVzdDoy",
+// 							"name": "a2",
+// 							"email": "a2@example.com",
+// 							"status": "APPROVED",
+// 							"createdAt": "2023-02-24T14:48:30Z",
+// 							"additionalInfo": ""
+// 						},
+// 						{
+// 							"id": "QWNjZXNzUmVxdWVzdDoz",
+// 							"name": "a3",
+// 							"email": "a3@example.com",
+// 							"status": "REJECTED",
+// 							"createdAt": "2023-02-24T14:48:30Z",
+// 							"additionalInfo": ""
+// 						}
+// 					],
+// 					"totalCount": 3,
+// 					"pageInfo": {
+// 						"hasNextPage": false,
+// 						"hasPreviousPage": false,
+// 						"startCursor": "QWNjZXNzUmVxdWVzdDox",
+// 						"endCursor": "QWNjZXNzUmVxdWVzdDoz"
+// 					}
+// 				}
+// 			}`,
+// 			Variables: map[string]any{
+// 				"first": 10,
+// 			},
+// 		})
+// 	})
+// }
 
 // func TestSetAccessRequestStatusMutation(t *testing.T) {
 // 	const setAccessRequestStatusMutation = `

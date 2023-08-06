@@ -35,7 +35,7 @@ func (r *schemaResolver) AccessRequests(ctx context.Context, args *AccessRequest
 	reverse := false
 	connectionOptions := graphqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
-		OrderBy:   database.OrderBy{{Field: string(database.AccessRequestListID)}},
+		OrderBy:   database.OrderBy{{Field: string(accessrequests.ListID)}},
 		Ascending: false,
 	}
 	return graphqlutil.NewConnectionResolver[*accessRequestResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
