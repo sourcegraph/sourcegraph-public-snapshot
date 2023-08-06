@@ -366,7 +366,7 @@ func (q *ListQuery) Execute(ctx context.Context, store *basestore.Store) (any, e
 		return nil, err
 	}
 
-	return nodes, nil
+	return &ListResponse{nodes}, nil
 }
 
 func (c *ARClient) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {

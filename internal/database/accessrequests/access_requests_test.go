@@ -152,7 +152,7 @@ func TestAccessRequests_GetByEmail(t *testing.T) {
 		accessRequest, err := client.GetByEmail(ctx, nonExistingAccessRequestEmail)
 		assert.Error(t, err)
 		assert.Nil(t, accessRequest)
-		assert.Equal(t, err, &database.ErrAccessRequestNotFound{Email: nonExistingAccessRequestEmail})
+		assert.Equal(t, err, &ErrNotFound{Email: nonExistingAccessRequestEmail})
 	})
 	t.Run("existing access request", func(t *testing.T) {
 		createdAccessRequest, err := client.Create(ctx, &types.AccessRequest{Email: "a1@example.com", Name: "a1", AdditionalInfo: "info1"})
