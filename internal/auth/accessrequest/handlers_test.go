@@ -29,6 +29,7 @@ func TestRequestAccess(t *testing.T) {
 	logger := logtest.NoOp(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	handler := HandleRequestAccess(logger, db)
+	client := accessrequests.NewARClient(db.Client())
 
 	t.Run("accessRequest feature is disabled", func(t *testing.T) {
 		falseVal := false
@@ -104,7 +105,7 @@ func TestRequestAccess(t *testing.T) {
 		handler(res, req)
 		assert.Equal(t, http.StatusCreated, res.Code)
 
-		_, err = db.AccessRequests().GetByEmail(context.Background(), newUser.Email)
+		_, err = client.GetByEmail(context.Background(), newUser.Email)
 		require.Error(t, err)
 		require.Equal(t, errcode.IsNotFound(err), true)
 	})
@@ -116,7 +117,7 @@ func TestRequestAccess(t *testing.T) {
 			Email: "a1@example.com",
 		}
 		accessrequests.NewARClient(db.Client()).Create(context.Background(), &accessRequest)
-		_, err := db.AccessRequests().GetByEmail(context.Background(), accessRequest.Email)
+		_, err := client.GetByEmail(context.Background(), accessRequest.Email)
 		require.NoError(t, err)
 
 		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(fmt.Sprintf(`{"email": "%s", "name": "%s", "additionalInfo": "%s"}`, accessRequest.Email, accessRequest.Name, accessRequest.AdditionalInfo)))
@@ -135,7 +136,7 @@ func TestRequestAccess(t *testing.T) {
 		handler(res, req)
 		assert.Equal(t, http.StatusCreated, res.Code)
 
-		accessRequest, err := db.AccessRequests().GetByEmail(context.Background(), "a2@example.com")
+		accessRequest, err := client.GetByEmail(context.Background(), "a2@example.com")
 		require.NoError(t, err)
 		assert.Equal(t, "a2", accessRequest.Name)
 		assert.Equal(t, "a2@example.com", accessRequest.Email)

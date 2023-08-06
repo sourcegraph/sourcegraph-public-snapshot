@@ -205,6 +205,27 @@ func (q *GetByIDQuery) Execute(ctx context.Context, store *basestore.Store) (any
 	return &GetByIDResponse{node}, nil
 }
 
+type GetByEmailQuery struct {
+	Email string
+}
+
+type GetByEmailResponse struct {
+	AccessRequest *types.AccessRequest
+}
+
+func (q *GetByEmailQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
+	row := store.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(columns, ","), q.Email))
+	node, err := scanAccessRequest(row)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &ErrNotFound{Email: q.Email}
+		}
+		return nil, err
+	}
+
+	return node, nil
+}
+
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
 	var accessRequest types.AccessRequest
 	if err := sc.Scan(&accessRequest.ID, &accessRequest.CreatedAt, &accessRequest.UpdatedAt, &accessRequest.Name, &accessRequest.Email, &accessRequest.Status, &accessRequest.AdditionalInfo, &accessRequest.DecisionByUserID); err != nil {
@@ -276,4 +297,22 @@ func (c *ARClient) GetByID(ctx context.Context, id int32) (*types.AccessRequest,
 	}
 
 	return getByIDResp.AccessRequest, nil
+}
+
+func (c *ARClient) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
+	query := &GetByEmailQuery{
+		Email: email,
+	}
+
+	resp, err := c.dbclient.Execute(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+
+	getByEmailResp, ok := resp.(*GetByEmailResponse)
+	if !ok {
+		return nil, errors.New("Oh noes")
+	}
+
+	return getByEmailResp.AccessRequest, nil
 }

@@ -2,7 +2,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
@@ -75,7 +74,6 @@ func (o *AccessRequestsFilterArgs) SQL() []*sqlf.Query {
 // For a detailed overview of the schema, see schema.md.
 type AccessRequestStore interface {
 	basestore.ShareableStore
-	GetByEmail(context.Context, string) (*types.AccessRequest, error)
 	Count(context.Context, *AccessRequestsFilterArgs) (int, error)
 	List(context.Context, *AccessRequestsFilterArgs, *PaginationArgs) (_ []*types.AccessRequest, err error)
 	WithTransact(context.Context, func(AccessRequestStore) error) error
@@ -132,19 +130,6 @@ var (
 		sqlf.Sprintf("status"),
 	}
 )
-
-func (s *accessRequestStore) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
-	row := s.QueryRow(ctx, sqlf.Sprintf("SELECT %s FROM access_requests WHERE email = %s", sqlf.Join(accessRequestColumns, ","), email))
-	node, err := scanAccessRequest(row)
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, &ErrAccessRequestNotFound{Email: email}
-		}
-		return nil, err
-	}
-
-	return node, nil
-}
 
 func (s *accessRequestStore) Count(ctx context.Context, fArgs *AccessRequestsFilterArgs) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM access_requests WHERE (%s)", sqlf.Join(fArgs.SQL(), ") AND ("))
