@@ -14,6 +14,22 @@ import (
 	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
+type DBQuery interface {
+	Execute(context.Context, *basestore.Store) (any, error)
+}
+
+type DBClient interface {
+	Execute(context.Context, DBQuery) (any, error)
+}
+
+type dbClient struct {
+	store *basestore.Store
+}
+
+func (c *dbClient) Execute(ctx context.Context, query DBQuery) (any, error) {
+	return query.Execute(ctx, c.store)
+}
+
 // DB is an interface that embeds dbutil.DB, adding methods to
 // return specialized stores on top of that interface. In time,
 // the expectation is to replace uses of dbutil.DB with database.DB,
@@ -22,6 +38,7 @@ type DB interface {
 	dbutil.DB
 	basestore.ShareableStore
 
+	Client() DBClient
 	AccessRequests() AccessRequestStore
 	AccessTokens() AccessTokenStore
 	Authz() AuthzStore
@@ -131,6 +148,12 @@ func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) error {
 
 func (d *db) Done(err error) error {
 	return d.Store.Done(err)
+}
+
+func (d *db) Client() DBClient {
+	return &dbClient{
+		store: d.Store,
+	}
 }
 
 func (d *db) AccessTokens() AccessTokenStore {
