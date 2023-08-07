@@ -46,16 +46,25 @@ func ReadResponse[T any](resp any, respErr error) (T, error) {
 	return t, nil
 }
 
-// A DBQuery uses a store to perform various operations on a database.
+// A DBExecutableRaw uses a store to perform various operations on a database.
 //
 // Execute returns an `any` type, and it is the responsibility of the caller
 // to ensure that the response is casted to the correct response type.
 //
+// This is not meant to be used outside of a dedicated Client implementation.
+//
 // An Execute call can require multiple database calls to produce its result.
 //
 // See ReadResponse for a method to conveniently process an Execute response.
-type DBQuery interface {
-	Execute(context.Context, *basestore.Store) (any, error)
+type DBExecutableRaw interface {
+	ExecuteRaw(context.Context, *basestore.Store) (any, error)
+}
+
+// A DBExecutable uses a store to perform various operations on a database.
+//
+// An Execute call can require multiple database calls to produce its result.
+type DBExecutable[T any] interface {
+	Execute(context.Context, *basestore.Store) (T, error)
 }
 
 // A DBClient is a database client capable of executing DBQueries.
@@ -65,15 +74,15 @@ type DBQuery interface {
 //
 // An Execute call can lead to multiple database queries.
 type DBClient interface {
-	Execute(context.Context, DBQuery) (any, error)
+	Execute(context.Context, DBExecutableRaw) (any, error)
 }
 
 type dbClient struct {
 	store *basestore.Store
 }
 
-func (c *dbClient) Execute(ctx context.Context, query DBQuery) (any, error) {
-	return query.Execute(ctx, c.store)
+func (c *dbClient) Execute(ctx context.Context, query DBExecutableRaw) (any, error) {
+	return query.ExecuteRaw(ctx, c.store)
 }
 
 // DB is an interface that embeds dbutil.DB, adding methods to
