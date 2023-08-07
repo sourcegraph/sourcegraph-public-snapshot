@@ -39,7 +39,7 @@ func readResponse[T any](resp any, respErr error) (T, error) {
 		return t, &ErrInvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(t)}
 	}
 
-	return t, nil
+	return t, respErr
 }
 
 // ExecuteWithClient executes a DBExecutable with the provided DBClient.
