@@ -14,7 +14,6 @@ go_library(
         "//internal/actor",
         "//internal/env",
         "//internal/goroutine",
-        "//internal/memo",
         "//internal/observation",
         "//internal/search/exhaustive",
         "//internal/workerutil",

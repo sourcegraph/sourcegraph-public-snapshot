@@ -6,9 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -49,19 +47,3 @@ func (e *exhaustiveSearch) Handle(ctx context.Context, logger log.Logger, record
 	// TODO at the moment this does nothing. This will be implemented in a future PR.
 	return errors.New("not implemented")
 }
-
-// InitExhaustiveSearchWorkerStore initializes and returns a dbworker.Store instance for the exhaustive search worker.
-func InitExhaustiveSearchWorkerStore() (dbworkerstore.Store[*exhaustive.Job], error) {
-	return initExhaustiveSearchWorkerStore.Init()
-}
-
-var initExhaustiveSearchWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store[*exhaustive.Job], error) {
-	observationCtx := observation.NewContext(log.Scoped("store.exhaustive_search", "the exhaustive search worker store"))
-
-	db, err := workerdb.InitDB(observationCtx)
-	if err != nil {
-		return nil, err
-	}
-
-	return exhaustive.NewJobWorkerStore(observationCtx, db.Handle()), nil
-})
