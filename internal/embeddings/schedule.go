@@ -51,13 +51,11 @@ func ScheduleRepositoriesForEmbedding(
 				if job.EmptyRepoEmbeddingJob() {
 					errs = errors.Append(errs, errors.Newf("Embedding job cannot be scheduled because the latest revision or default branch cannot be resolved for repo: %v", repoName))
 					return nil
-					//return errors.Newf("Embedding job cannot be scheduled because the latest revision or default branch cannot be resolved for %v", repoName)
 				}
 
 				if job.IsRepoEmbeddingJobScheduledOrCompleted() {
-					errs = errors.Append(errs, errors.Newf("Embedding job is already scheduled or completed for repo %v at the latest revision %v", repoName, latestRevision))
+					errs = errors.Append(errs, errors.Newf("Embedding job is already scheduled or completed for repo %v at the latest revision %v", repoName, latestRevision.Short()))
 					return nil
-					//return errors.Newf("Embedding job is already scheduled or completed for the latest revision %v", latestRevision)
 				}
 			}
 
