@@ -16,32 +16,54 @@ import (
 	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
 
-type InvalidResponseType struct {
+// ErrInvalidResponseType is returned by ReadResponse if the any value in the
+// resp argument could not be casted to the requested type in the generic
+// parameter.
+type ErrInvalidResponseType struct {
 	FromType reflect.Type
 	ToType   reflect.Type
 }
 
-func (e *InvalidResponseType) Error() string {
+func (e *ErrInvalidResponseType) Error() string {
 	return fmt.Sprintf("Could not cast from %s to %s", e.FromType, e.ToType)
 }
 
+// ReadResponse accepts a (any, error) pair returned from a DBQuery.Execute
+// call and attempts to cast the response to the generic type T.
+//
+// The error in the response pair, if non-nil, is returned immediately.
+// If the type casting fails, an ErrInvalidResponseType is returned.
 func ReadResponse[T any](resp any, respErr error) (t T, err error) {
 	if respErr != nil {
 		return t, respErr
 	}
 
-	createResp, ok := resp.(T)
+	respT, ok := resp.(T)
 	if !ok {
-		return t, &InvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(*(*T)(nil))}
+		return t, &ErrInvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(*(*T)(nil))}
 	}
 
-	return createResp, nil
+	return respT, nil
 }
 
+// A DBQuery uses a store to perform various operations on a database.
+//
+// Execute returns an `any` type, and it is the responsibility of the caller
+// to ensure that the response is casted to the correct response type.
+//
+// An Execute call can require multiple database calls to produce its result.
+//
+// See ReadResponse for a method to conveniently process an Execute response.
 type DBQuery interface {
 	Execute(context.Context, *basestore.Store) (any, error)
 }
 
+// A DBClient is a database client capable of executing DBQueries.
+//
+// It is higher-level than a basestore.Store, and will most likely be passing
+// a basestore.Store to the DBQuery in order to execute it.
+//
+// An Execute call can lead to multiple database queries.
 type DBClient interface {
 	Execute(context.Context, DBQuery) (any, error)
 }
