@@ -1583,7 +1583,7 @@ importers:
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
         specifier: ^0.0.4
-        version: link:node_modules/@sourcegraph/cody-shared
+        version: 0.0.4
       '@sourcegraph/cody-ui':
         specifier: ^0.0.6
         version: 0.0.6
