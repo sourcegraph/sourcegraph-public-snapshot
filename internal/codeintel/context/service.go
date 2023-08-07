@@ -1,9 +1,12 @@
 package context
 
 import (
+	"archive/tar"
+	"bytes"
 	"context"
 	"encoding/base64"
 	"fmt"
+	"io"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -23,8 +26,10 @@ import (
 	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -278,63 +283,148 @@ func (s *Service) GetPreciseContext(ctx context.Context, args *resolverstubs.Get
 	}
 	preciseDataList := []*preciseData{}
 
-	for symbol, fuzzyNames := range fuzzyNameSetBySymbol {
-		// TODO - these are duplicated and should also be batched
-		fmt.Printf("> Fetching definitions of %q\n", symbol)
+	symbolNames := make([]string, 0, len(fuzzyNameSetBySymbol))
+	for symbolName := range fuzzyNameSetBySymbol {
+		symbolNames = append(symbolNames, symbolName)
+	}
 
-		ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{symbol})
-		if err != nil {
-			return nil, err
-		}
+	ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, symbolNames)
+	if err != nil {
+		return nil, err
+	}
 
-		// TODO - should this ever be non-singleton? (this will go away when we batch)
-		for fzn := range fuzzyNames {
+	for _, location := range ul {
+		for fzn := range fuzzyNameSetBySymbol[location.SymbolName] {
 			preciseDataList = append(preciseDataList, &preciseData{
 				fuzzyName:      fzn,
-				scipSymbolName: symbol,
-				location:       ul,
+				scipSymbolName: location.SymbolName,
+				location:       []codenavshared.UploadLocation{location},
 			})
 		}
 	}
 
+	// for symbol, fuzzyNames := range fuzzyNameSetBySymbol {
+	// 	// TODO - these are duplicated and should also be batched
+	// 	fmt.Printf("> Fetching definitions of %q\n", symbol)
+
+	// 	ul, err := s.codenavSvc.NewGetDefinitionsBySymbolNames(ctx, requestArgs, reqState, []string{symbol})
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+
+	// 	// TODO - should this ever be non-singleton? (this will go away when we batch)
+	// 	for fzn := range fuzzyNames {
+	// 		preciseDataList = append(preciseDataList, &preciseData{
+	// 			fuzzyName:      fzn,
+	// 			scipSymbolName: symbol,
+	// 			location:       ul,
+	// 		})
+	// 	}
+	// }
+
 	trace.AddEvent("preciseDataList", attribute.Int("fuzzyName", len(preciseDataList)))
 
 	// DEBUGGING
-	lap("PHASE 3: %d matching precise symbols\n", len(fuzzyNameSetBySymbol))
+	lap("PHASE 3: %d matching precise symbols with len %d \n", len(fuzzyNameSetBySymbol), len(preciseDataList))
 
 	// PHASE 4: Read the files that contain a definition
+	filesByRepo := map[string]struct {
+		paths map[gitdomain.Pathspec]struct{}
+		dump  shared.Dump
+	}{}
 
 	cache := map[string]DocumentAndText{}
 	for _, pd := range preciseDataList {
 		for _, l := range pd.location {
-			key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
-			if _, ok := cache[key]; ok {
-				continue
+			// key := fmt.Sprintf("%s@%s:%s", l.Dump.RepositoryName, l.Dump.Commit, filepath.Join(l.Dump.Root, l.Path))
+			// if _, ok := cache[key]; ok {
+			// 	continue
+			// }
+			// fmt.Printf("> Parsing file %q\n", key)
+
+			repoCommitKey := fmt.Sprintf("%s@%s", l.Dump.RepositoryName, l.Dump.Commit)
+
+			px := filesByRepo[repoCommitKey].paths
+			if px == nil {
+				px = map[gitdomain.Pathspec]struct{}{}
+			}
+			px[gitdomain.Pathspec(l.Path)] = struct{}{}
+			filesByRepo[repoCommitKey] = struct {
+				paths map[gitdomain.Pathspec]struct{}
+				dump  shared.Dump
+			}{
+				dump:  l.Dump,
+				paths: px,
 			}
 
-			fmt.Printf("> Parsing file %q\n", key)
+			// // TODO - archive where possible when we fetch multiple files from the
+			// // same repo. Cut round trips down from one per file to one per repo,
+			// // and we'll likely have a lot of shared definition sources.
+			// // TODO: Group by repo, then fetch the archive containing those files
 
-			// TODO - archive where possible when we fetch multiple files from the
-			// same repo. Cut round trips down from one per file to one per repo,
-			// and we'll likely have a lot of shared definition sources.
-			// TODO: Group by repo, then fetch the archive containing those files
+			// file, err := s.gitserverClient.ReadFile(
+			// 	ctx,
+			// 	authz.DefaultSubRepoPermsChecker,
+			// 	api.RepoName(l.Dump.RepositoryName),
+			// 	api.CommitID(l.Dump.Commit),
+			// 	l.Path,
+			// )
+			// if err != nil {
+			// 	return nil, err
+			// }
 
-			file, err := s.gitserverClient.ReadFile(
-				ctx,
-				authz.DefaultSubRepoPermsChecker,
-				api.RepoName(l.Dump.RepositoryName),
-				api.CommitID(l.Dump.Commit),
-				l.Path,
-			)
+			// syntectDocs, err := s.getSCIPDocumentByContent(ctx, string(file), l.Path)
+			// if err != nil {
+			// 	return nil, err
+			// }
+			// cache[key] = NewDocumentAndText(string(file), syntectDocs)
+		}
+	}
+
+	for repoCommitKey, path := range filesByRepo {
+		parts := strings.Split(repoCommitKey, "@")
+		repo := api.RepoName(parts[0])
+		pathspec := []gitdomain.Pathspec{}
+		for key := range path.paths {
+			pathspec = append(pathspec, key)
+		}
+		opts := gitserver.ArchiveOptions{
+			Treeish:   parts[1],
+			Format:    gitserver.ArchiveFormatTar,
+			Pathspecs: pathspec,
+		}
+		rc, err := s.gitserverClient.ArchiveReader(ctx, authz.DefaultSubRepoPermsChecker, repo, opts)
+		if err != nil {
+			return nil, err
+		}
+		defer rc.Close()
+
+		tr := tar.NewReader(rc)
+		for {
+			header, err := tr.Next()
 			if err != nil {
+				if err != io.EOF {
+					return nil, err
+				}
+
+				break
+			}
+
+			var buf bytes.Buffer
+			if _, err := io.CopyN(&buf, tr, header.Size); err != nil {
 				return nil, err
 			}
 
-			syntectDocs, err := s.getSCIPDocumentByContent(ctx, string(file), l.Path)
+			// Since we quoted all literal path specs on entry, we need to remove it from
+			// the returned filepaths.
+			file := buf.String()
+			p := strings.TrimPrefix(header.Name, ":(literal)")
+			syntectDocs, err := s.getSCIPDocumentByContent(ctx, file, p)
 			if err != nil {
 				return nil, err
 			}
-			cache[key] = NewDocumentAndText(string(file), syntectDocs)
+			key := fmt.Sprintf("%s@%s:%s", path.dump.RepositoryName, path.dump.Commit, filepath.Join(path.dump.Root, p))
+			cache[key] = NewDocumentAndText(file, syntectDocs)
 		}
 	}
 

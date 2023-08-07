@@ -580,9 +580,10 @@ outer:
 			}
 
 			locations = append(locations, shared.Location{
-				DumpID: monikerLocations.DumpID,
-				Path:   row.URI,
-				Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+				SymbolName: row.SymbolName,
+				DumpID:     monikerLocations.DumpID,
+				Path:       row.URI,
+				Range:      newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
 			})
 
 			if len(locations) >= limit {
@@ -595,13 +596,15 @@ outer:
 	return locations, totalCount, nil
 }
 
+// msn.name, "dude return the symbol name and thread it through"
 var minimalBulkMonikerResultsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
 	ss.upload_id,
 	%s,
-	document_path
+	document_path,
+	msn.symbol_name
 FROM codeintel_scip_symbols ss
 JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
 JOIN matching_symbol_names msn ON msn.upload_id = ss.upload_id AND msn.id = ss.symbol_id

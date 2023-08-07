@@ -545,6 +545,7 @@ func (s *Service) getUploadLocation(ctx context.Context, args RequestArgs, reque
 	}
 
 	return shared.UploadLocation{
+		SymbolName:   location.SymbolName,
 		Dump:         dump,
 		Path:         dump.Root + location.Path,
 		TargetCommit: adjustedCommit,

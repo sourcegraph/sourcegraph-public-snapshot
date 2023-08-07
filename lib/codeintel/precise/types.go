@@ -119,6 +119,7 @@ type DocumentPathRangeID struct {
 // Loocation represents a range within a particular document relative to its
 // containing bundle.
 type LocationData struct {
+	SymbolName     string
 	URI            string
 	StartLine      int
 	StartCharacter int
