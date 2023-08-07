@@ -16,7 +16,7 @@ export class RepoContainerEditor implements Editor {
         return null
     }
 
-    public getWorkspaceRootUri(): Uri | null {
+    public getWorkspaceRootUri(): URI | null {
         return null
     }
 
