@@ -145,19 +145,19 @@ func TestGetMinimalBulkMonikerLocations(t *testing.T) {
 	}
 
 	expectedLocations := []shared.Location{
-		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(10, 9, 10, 16)},
-		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(186, 43, 186, 50)},
-		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(296, 34, 296, 41)},
-		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(324, 38, 324, 45)},
-		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(384, 30, 384, 37)},
-		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(415, 8, 415, 15)},
-		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(420, 27, 420, 34)},
-		{DumpID: testSCIPUploadID1, Path: "template/src/search/providers.ts", Range: newRange(9, 9, 9, 16)},
-		{DumpID: testSCIPUploadID1, Path: "template/src/search/providers.ts", Range: newRange(225, 20, 225, 27)},
+		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(10, 9, 10, 16), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
+		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(186, 43, 186, 50), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
+		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(296, 34, 296, 41), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
+		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(324, 38, 324, 45), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
+		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(384, 30, 384, 37), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
+		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(415, 8, 415, 15), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
+		{DumpID: testSCIPUploadID1, Path: "template/src/providers.ts", Range: newRange(420, 27, 420, 34), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
+		{DumpID: testSCIPUploadID1, Path: "template/src/search/providers.ts", Range: newRange(9, 9, 9, 16), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
+		{DumpID: testSCIPUploadID1, Path: "template/src/search/providers.ts", Range: newRange(225, 20, 225, 27), SymbolName: "scip-typescript npm template 0.0.0-DEVELOPMENT src/util/`helpers.ts`/asArray()."},
 
-		{DumpID: testSCIPUploadID2, Path: "internal/mockgen/generation/errors.go", Range: newRange(7, 8, 7, 26)},
-		{DumpID: testSCIPUploadID2, Path: "internal/mockgen/generation/errors.go", Range: newRange(8, 8, 8, 26)},
-		{DumpID: testSCIPUploadID2, Path: "internal/mockgen/generation/generate.go", Range: newRange(138, 10, 138, 28)},
+		{DumpID: testSCIPUploadID2, Path: "internal/mockgen/generation/errors.go", Range: newRange(7, 8, 7, 26), SymbolName: "scip-go gomod github.com/derision-test/go-mockgen d061eb01e698 `github.com/derision-test/go-mockgen/internal/mockgen/generation`/errorWithSolutions#"},
+		{DumpID: testSCIPUploadID2, Path: "internal/mockgen/generation/errors.go", Range: newRange(8, 8, 8, 26), SymbolName: "scip-go gomod github.com/derision-test/go-mockgen d061eb01e698 `github.com/derision-test/go-mockgen/internal/mockgen/generation`/errorWithSolutions#"},
+		{DumpID: testSCIPUploadID2, Path: "internal/mockgen/generation/generate.go", Range: newRange(138, 10, 138, 28), SymbolName: "scip-go gomod github.com/derision-test/go-mockgen d061eb01e698 `github.com/derision-test/go-mockgen/internal/mockgen/generation`/errorWithSolutions#"},
 	}
 	if diff := cmp.Diff(expectedLocations, locations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
