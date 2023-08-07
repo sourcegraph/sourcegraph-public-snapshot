@@ -20,7 +20,6 @@ go_test(
     srcs = ["auth_test.go"],
     embed = [":auth"],
     deps = [
-        "//internal/database",
         "//internal/encryption/keyring",
         "//internal/extsvc/auth",
         "//internal/github_apps/auth",
