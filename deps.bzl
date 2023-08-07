@@ -1257,8 +1257,8 @@ def go_dependencies():
         name = "com_github_containerd_containerd",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/containerd/containerd",
-        sum = "h1:F0qgQPrG0P2JPgwpxWxYavrVeXAG0ezUIB9Z/4FTUAU=",
-        version = "v1.6.19",
+        sum = "h1:+itjwpdqXpzHB/QAiWc/BZCjjVfcNgw69w/oIeF4Oy0=",
+        version = "v1.6.20",
     )
     go_repository(
         name = "com_github_containerd_continuity",
@@ -1336,8 +1336,8 @@ def go_dependencies():
         name = "com_github_containerd_ttrpc",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/containerd/ttrpc",
-        sum = "h1:GbtyLRxb0gOLR0TYQWt3O6B0NvT8tMdorEHqIQo/lWI=",
-        version = "v1.1.0",
+        sum = "h1:NoRHS/z8UiHhpY1w0xcOqoJDGf2DHyzXrF0H4l5AE8c=",
+        version = "v1.1.1",
     )
     go_repository(
         name = "com_github_containerd_typeurl",
@@ -4703,8 +4703,8 @@ def go_dependencies():
         name = "com_github_microsoft_hcsshim",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/Microsoft/hcsshim",
-        sum = "h1:mKNHW/Xvv1aFH87Jb6ERDzXTJTLPlmzfZ28VBFD/bfg=",
-        version = "v0.9.7",
+        sum = "h1:lf7xxK2+Ikbj9sVf2QZsouGjRjEp2STj1yDHgoVtU5k=",
+        version = "v0.9.8",
     )
     go_repository(
         name = "com_github_microsoft_hcsshim_test",
@@ -4881,8 +4881,8 @@ def go_dependencies():
         name = "com_github_moby_buildkit",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/moby/buildkit",
-        sum = "h1:bnQFPHkNJTELRb2n3HISPGvB1FWzFx+YD1MTZg8bsfk=",
-        version = "v0.11.3",
+        sum = "h1:VYNdoKk5TVxN7k4RvZgdeM4GOyRvIi4Z8MXOY7xvyUs=",
+        version = "v0.11.6",
     )
     go_repository(
         name = "com_github_moby_locker",
@@ -5282,8 +5282,8 @@ def go_dependencies():
         name = "com_github_opencontainers_image_spec",
         build_file_proto_mode = "disable_global",
         importpath = "github.com/opencontainers/image-spec",
-        sum = "h1:2zx/Stx4Wc5pIPDvIxHXvXtQFW/7XWJGmnM7r3wg034=",
-        version = "v1.1.0-rc2",
+        sum = "h1:YWuSjZCQAPM8UUBLkYUk1e+rZcvWHJmFb6i6rM44Xs8=",
+        version = "v1.1.0-rc2.0.20221005185240-3a7f492d3f1b",
     )
     go_repository(
         name = "com_github_opencontainers_runc",
