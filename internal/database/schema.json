@@ -10601,7 +10601,7 @@
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_name ON event_logs USING btree (name)",
+          "IndexDefinition": "CREATE INDEX event_logs_name ON event_logs USING gin (name gin_trgm_ops)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },
