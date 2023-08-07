@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS exhaustive_search_jobs
 );
 
 ALTER TABLE exhaustive_search_jobs
+    DROP CONSTRAINT IF EXISTS exhaustive_search_jobs_initiator_id_fkey,
     ADD CONSTRAINT exhaustive_search_jobs_initiator_id_fkey
         FOREIGN KEY (initiator_id)
             REFERENCES users (id)
