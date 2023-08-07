@@ -70,22 +70,27 @@ public class SettingsChangeListener implements Disposable {
             // Log install events
             if (!Objects.equals(context.oldUrl, context.newUrl)) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
-            } else if ((!Objects.equals(context.oldDotComAccessToken, context.newDotComAccessToken)
-                    || !Objects.equals(
-                        context.oldEnterpriseAccessToken, context.newEnterpriseAccessToken))
+            } else if ((context.isDotComAccessTokenChanged
+                    || context.isEnterpriseAccessTokenChanged)
                 && !ConfigUtil.isInstallEventLogged()) {
               GraphQlLogger.logInstallEvent(project, ConfigUtil::setInstallEventLogged);
             }
 
+            boolean urlChanged = !Objects.equals(context.oldUrl, context.newUrl);
+            SettingsComponent.InstanceType instanceType = ConfigUtil.getInstanceType(project);
+            boolean accessTokenChanged =
+                (instanceType == SettingsComponent.InstanceType.DOTCOM
+                        && context.isDotComAccessTokenChanged)
+                    || (instanceType == SettingsComponent.InstanceType.ENTERPRISE
+                        && context.isEnterpriseAccessTokenChanged);
+
+            boolean connectionSettingsChanged = urlChanged || accessTokenChanged;
             // Notify user about a successful connection
-            if (context.newUrl != null) {
-              final String accessToken =
-                  ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.DOTCOM
-                      ? context.newDotComAccessToken
-                      : context.newEnterpriseAccessToken;
+            if (connectionSettingsChanged) {
+              String accessTokenToTest = ConfigUtil.getProjectAccessToken(project);
               ApiAuthenticator.testConnection(
                   context.newUrl,
-                  accessToken,
+                  accessTokenToTest,
                   context.newCustomRequestHeaders,
                   (status) -> {
                     if (ConfigUtil.didAuthenticationFailLastTime()

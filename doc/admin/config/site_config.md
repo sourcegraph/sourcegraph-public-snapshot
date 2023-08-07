@@ -24,11 +24,11 @@ All site configuration options and their default values are shown below.
 The following site configuration options require the server to be restarted for the changes to take effect:
 
 ```
-auth.accessTokens
-auth.sessionExpiry
-git.cloneURLToRepositoryName
-searchScopes
-extensions
+auth.providers
+externalURL
+insights.query.worker.concurrency
+insights.commit.indexer.interval
+permissions.syncUsersMaxConcurrency
 ```
 
 ## Editing your site configuration if you cannot access the web UI

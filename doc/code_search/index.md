@@ -36,19 +36,19 @@ Sourcegraph code search helps developers perform these tasks more quickly and ef
 <div class="getting-started">
   <a href="tutorials/examples" class="btn" alt="See search examples">
    <span>New to search?</span>
-   </br>
+   <br>
    See search examples for inspiration.
   </a>
 
   <a href="https://www.youtube.com/watch?v=GQj5jXdON3A" class="btn" alt="Watch the intro to code search video">
    <span>Intro to code search video</span>
-   </br>
+   <br>
    Watch the intro to code search video to see what you can do with Sourcegraph search.
   </a>
 
   <a href="reference/queries" class="btn" alt="Learn the search syntax">
    <span>Learn the search syntax</span>
-   </br>
+   <br>
    Learn the search syntax for writing powerful search queries.
   </a>
 </div>

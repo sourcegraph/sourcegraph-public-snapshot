@@ -11,8 +11,6 @@ import (
 	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
-	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
 )
 
 func enterpriseInit(db database.DB, keyring keyring.Ring) {
@@ -22,7 +20,4 @@ func enterpriseInit(db database.DB, keyring keyring.Ring) {
 	if err != nil {
 		logger.Fatal("Failed to create sub-repo client", log.Error(err))
 	}
-
-	ghAppsStore := db.GitHubApps().WithEncryptionKey(keyring.GitHubAppKey)
-	auth.FromConnection = ghaauth.CreateEnterpriseFromConnection(ghAppsStore, keyring.GitHubAppKey)
 }

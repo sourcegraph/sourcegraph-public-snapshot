@@ -1,0 +1,34 @@
+.tab-container {
+    background-color: var(--color-bg-1);
+}
+
+.command-node {
+    margin: 0.8rem 0;
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--border-color-2);
+
+    &__header {
+        display: grid;
+        grid-template-columns: auto 1fr auto;
+        align-items: center;
+        gap: 1rem;
+        margin: 0.5rem 0;
+    }
+
+    &__duration-group {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    &__log-output {
+        code {
+            white-space: break-spaces;
+        }
+    }
+
+    &__footer {
+        display: flex;
+        flex-direction: column;
+    }
+}
