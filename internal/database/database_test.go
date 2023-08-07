@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -30,6 +31,7 @@ func TestReadResponse(t *testing.T) {
 		resp, err := ReadResponse[*testStruct](testAny, nil)
 		require.NoError(t, err)
 		require.Equal(t, testString, resp.data)
+		require.True(t, testAny == resp, fmt.Sprintf("pointers don't match, want %p got %p", testAny, resp))
 	})
 
 	t.Run("invalid response type returns ErrInvalidResponseType", func(t *testing.T) {
