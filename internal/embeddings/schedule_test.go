@@ -213,7 +213,7 @@ func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
 	require.Equal(t, 3, count)
 }
 
-func TestScheduleRepositoriesForEmbedding2(t *testing.T) {
+func TestScheduleRepositoriesForEmbeddingTransactionError(t *testing.T) {
 	t.Parallel()
 
 	logger := logtest.Scoped(t)
