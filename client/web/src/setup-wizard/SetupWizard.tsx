@@ -64,7 +64,9 @@ const CHECKLIST_STEPS: StepConfiguration[] = [
         nextURL: '/setup/remote-repositories',
         component: () => (
             <div className="w-50 h-100 mx-auto d-flex flex-column justify-content-center align-items-center">
-                <Text size="base" weight='bold'>Coming soon</Text>
+                <Text size="base" weight="bold">
+                    Coming soon
+                </Text>
             </div>
         ),
     },

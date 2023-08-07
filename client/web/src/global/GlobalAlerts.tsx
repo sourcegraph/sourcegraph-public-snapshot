@@ -11,6 +11,7 @@ import { Link, Markdown } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { DismissibleAlert } from '../components/DismissibleAlert'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { GlobalAlertsSiteFlagsResult, GlobalAlertsSiteFlagsVariables } from '../graphql-operations'
 import { FreeUsersExceededAlert } from '../site/FreeUsersExceededAlert'
 import { LicenseExpirationAlert } from '../site/LicenseExpirationAlert'
@@ -21,7 +22,6 @@ import { GlobalAlert } from './GlobalAlert'
 import { Notices, VerifyEmailNotices } from './Notices'
 
 import styles from './GlobalAlerts.module.scss'
-import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 
 interface Props {
     authenticatedUser: AuthenticatedUser | null
@@ -61,9 +61,9 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({ authenticatedUser
         <div className={classNames('test-global-alert', styles.globalAlerts)}>
             {siteFlagsValue && (
                 <>
-                    {!isSetupChecklistEnabled && siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 && !isSourcegraphApp && (
-                        <NeedsRepositoryConfigurationAlert className={styles.alert} />
-                    )}
+                    {!isSetupChecklistEnabled &&
+                        siteFlagsValue?.externalServicesCounts.remoteExternalServicesCount === 0 &&
+                        !isSourcegraphApp && <NeedsRepositoryConfigurationAlert className={styles.alert} />}
                     {siteFlagsValue.freeUsersExceeded && (
                         <FreeUsersExceededAlert
                             noLicenseWarningUserCount={siteFlagsValue.productSubscription.noLicenseWarningUserCount}
