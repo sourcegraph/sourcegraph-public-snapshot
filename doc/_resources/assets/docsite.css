@@ -194,6 +194,9 @@ body > div#page {
 }
 /* Responsive */
 @media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
+    :root {
+        --gutter: calc(0.5 * var(--spacing));
+    }
     body {
         flex-direction: column;
     }
