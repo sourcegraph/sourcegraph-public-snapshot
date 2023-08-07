@@ -28,15 +28,7 @@ import com.intellij.util.ui.UIUtil;
 import com.sourcegraph.cody.agent.CodyAgent;
 import com.sourcegraph.cody.api.CodyLLMConfiguration;
 import com.sourcegraph.cody.api.Message;
-import com.sourcegraph.cody.chat.AssistantMessageWithSettingsButton;
-import com.sourcegraph.cody.chat.Chat;
-import com.sourcegraph.cody.chat.ChatMessage;
-import com.sourcegraph.cody.chat.ChatScrollPane;
-import com.sourcegraph.cody.chat.ChatUIConstants;
-import com.sourcegraph.cody.chat.ContextFilesMessage;
-import com.sourcegraph.cody.chat.Interaction;
-import com.sourcegraph.cody.chat.MessagePanel;
-import com.sourcegraph.cody.chat.Transcript;
+import com.sourcegraph.cody.chat.*;
 import com.sourcegraph.cody.context.ContextGetter;
 import com.sourcegraph.cody.context.ContextMessage;
 import com.sourcegraph.cody.context.EmbeddingStatusView;
@@ -98,6 +90,7 @@ public class CodyToolWindowContent implements UpdatableChat {
   private final JPanel stopGeneratingButtonPanel;
   private @NotNull Transcript transcript = new Transcript();
   private boolean isChatVisible = false;
+  private WaitingForContentMessage waitingForContentMessage;
 
   public CodyToolWindowContent(@NotNull Project project) {
     this.project = project;
@@ -177,6 +170,7 @@ public class CodyToolWindowContent implements UpdatableChat {
         new Dimension(Short.MAX_VALUE, stopGeneratingButton.getPreferredSize().height + 10));
     stopGeneratingButton.addActionListener(
         e -> {
+          waitingForContentMessage.removeAll();
           cancellationToken.abort();
           stopGeneratingButton.setVisible(false);
           sendButton.setEnabled(true);
@@ -378,6 +372,22 @@ public class CodyToolWindowContent implements UpdatableChat {
             });
   }
 
+  public synchronized void addMessageToChat(@NotNull ChatMessage message, Runnable executeAfterMessageIsAdded) {
+    ApplicationManager.getApplication()
+        .invokeLater(
+            () -> {
+              // Bubble panel
+              MessagePanel messagePanel =
+                  new MessagePanel(
+                      message,
+                      project,
+                      messagesPanel,
+                      ChatUIConstants.ASSISTANT_MESSAGE_GRADIENT_WIDTH);
+              addComponentToChat(messagePanel);
+              executeAfterMessageIsAdded.run();
+            });
+  }
+
   private void addComponentToChat(@NotNull JPanel messageContent) {
 
     var wrapperPanel = new JPanel();
@@ -387,6 +397,11 @@ public class CodyToolWindowContent implements UpdatableChat {
     messagesPanel.add(wrapperPanel);
     messagesPanel.revalidate();
     messagesPanel.repaint();
+  }
+
+  private void addComponentToChat(@NotNull JPanel message, Runnable executeAfterComponentIsAdded) {
+    addComponentToChat(message);
+    executeAfterComponentIsAdded.run();
   }
 
   @Override
@@ -561,7 +576,7 @@ public class CodyToolWindowContent implements UpdatableChat {
                           TruncationUtils.getChatMaxAvailablePromptLength(project));
 
                   try {
-                    chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken);
+                    chat.sendMessageWithoutAgent(prompt, responsePrefix, this, cancellationToken, waitingForContentMessage);
                   } catch (Exception e) {
                     logger.warn("Error sending message '" + humanMessage + "' to chat", e);
                   }
@@ -576,6 +591,7 @@ public class CodyToolWindowContent implements UpdatableChat {
 
   @Override
   public void displayUsedContext(@NotNull List<ContextMessage> contextMessages) {
+    waitingForContentMessage = new WaitingForContentMessage();
     // Use context
     if (contextMessages.size() == 0) {
       InstanceType instanceType = ConfigUtil.getInstanceType(project);
@@ -591,13 +607,13 @@ public class CodyToolWindowContent implements UpdatableChat {
                       : ""));
       String resolution = "I will try to answer without context.";
       this.addMessageToChat(
-          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution));
+          ChatMessage.createAssistantMessage(report + " " + ask + " " + resolution), () -> addComponentToChat(waitingForContentMessage));
     } else {
 
       ContextFilesMessage contextFilesMessage = new ContextFilesMessage(contextMessages);
       var messageContentPanel = new JPanel(new BorderLayout());
       messageContentPanel.add(contextFilesMessage);
-      this.addComponentToChat(messageContentPanel);
+      this.addComponentToChat(messageContentPanel, () -> addComponentToChat(waitingForContentMessage));
     }
   }
 

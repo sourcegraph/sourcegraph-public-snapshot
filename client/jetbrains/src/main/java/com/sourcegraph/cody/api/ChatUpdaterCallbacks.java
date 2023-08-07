@@ -3,6 +3,7 @@ package com.sourcegraph.cody.api;
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.cody.UpdatableChat;
 import com.sourcegraph.cody.chat.ChatMessage;
+import com.sourcegraph.cody.chat.WaitingForContentMessage;
 import com.sourcegraph.cody.vscode.CancellationToken;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,14 +22,18 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
   @NotNull private final String prefix;
   private final AtomicBoolean gotFirstMessage = new AtomicBoolean(false);
   private final AtomicReference<String> lastMessage = new AtomicReference<>("");
+  private final WaitingForContentMessage waitingForContentMessage;
 
   public ChatUpdaterCallbacks(
       @NotNull UpdatableChat chat,
       @NotNull CancellationToken cancellationToken,
-      @NotNull String prefix) {
+      @NotNull String prefix,
+      @NotNull WaitingForContentMessage waitingForContentMessage
+      ) {
     this.chat = chat;
     this.cancellationToken = cancellationToken;
     this.prefix = prefix;
+    this.waitingForContentMessage = waitingForContentMessage;
   }
 
   @Override
@@ -38,6 +43,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onData(@Nullable String data) {
+    waitingForContentMessage.removeAll();
     if (!cancellationToken.isCancelled())
       Optional.ofNullable(data)
           .ifPresent(
@@ -59,6 +65,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onError(@NotNull Throwable error) {
+    waitingForContentMessage.removeAll();
     if (!cancellationToken.isCancelled()) {
       String message = error.getMessage();
       chat.respondToErrorFromServer(message != null ? message : "");
@@ -69,6 +76,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onComplete() {
+    waitingForContentMessage.removeAll();
     logger.info("Streaming completed.");
     if (!cancellationToken.isCancelled()) {
       chat.finishMessageProcessing();
@@ -77,6 +85,7 @@ public class ChatUpdaterCallbacks implements CompletionsCallbacks {
 
   @Override
   public void onCancelled() {
+    waitingForContentMessage.removeAll();
     if (!cancellationToken.isCancelled()) {
       chat.finishMessageProcessing();
     }
