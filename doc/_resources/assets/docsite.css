@@ -1128,7 +1128,7 @@ a.cloud-cta {
     background: #5033E1;
     color: #ffffff;
 }
-@media only screen and (min-width: 640px /* --breakpoint-sm */) {
+@media (min-width: 640px /* --breakpoint-sm */) {
     .cloud-cta {
         flex-direction: row;
         align-items: center;
@@ -1137,7 +1137,7 @@ a.cloud-cta {
         margin: 0 0 0 auto;
     }
 }
-@media only screen and (min-width: 1024px /* --breakpoint-lg */) {
+@media (min-width: 1024px /* --breakpoint-lg */) {
     .cloud-cta {
         background: #270741 url('/assets/cloud-cta-illustration.svg') no-repeat left top;
     }
