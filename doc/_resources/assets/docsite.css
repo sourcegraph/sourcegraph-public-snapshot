@@ -986,11 +986,17 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
 .markdown-body .getting-started {
   display: flex;
   align-items: stretch;
+  gap: 0.5em;
+}
+
+@media (max-width: 800px /* == var(--sidebar-breakpoint-width) */) {
+    .markdown-body .getting-started {
+        flex-direction: column;
+    }
 }
 
 .markdown-body .getting-started .btn {
   flex: 1;
-  margin: 0.5em;
   padding: 1rem 1rem;
   color: var(--text-color);
   border-radius: 4px;
