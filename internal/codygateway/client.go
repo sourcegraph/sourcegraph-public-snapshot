@@ -37,21 +37,21 @@ type Client interface {
 	GetLimits(ctx context.Context) ([]LimitStatus, error)
 }
 
-func NewClientFromSiteConfig(cli httpcli.Doer) Client {
+func NewClientFromSiteConfig(cli httpcli.Doer) (_ Client, ok bool) {
 	config := conf.Get().SiteConfig()
 	cc := conf.GetCompletionsConfig(config)
 	ec := conf.GetEmbeddingsConfig(config)
 
 	// If neither completions nor embeddings are configured, return empty.
 	if cc == nil && ec == nil {
-		return nil
+		return nil, false
 	}
 
 	// If neither completions nor embeddings use Cody Gateway, return empty.
 	ccUsingGateway := cc != nil && cc.Provider == conftypes.CompletionsProviderNameSourcegraph
 	ecUsingGateway := ec != nil && ec.Provider == conftypes.EmbeddingsProviderNameSourcegraph
 	if !ccUsingGateway && !ecUsingGateway {
-		return nil
+		return nil, false
 	}
 
 	// It's possible the user is only using Cody Gateway for completions _or_ embeddings
@@ -64,7 +64,7 @@ func NewClientFromSiteConfig(cli httpcli.Doer) Client {
 		token = cc.AccessToken
 	}
 
-	return NewClient(cli, endpoint, token)
+	return NewClient(cli, endpoint, token), true
 }
 
 func NewClient(cli httpcli.Doer, endpoint string, accessToken string) Client {

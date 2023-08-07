@@ -50,8 +50,8 @@ func (j *usageRoutine) Start() {
 
 	goroutine.Go(func() {
 		checkAndStoreLimits := func() {
-			cgc := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
-			if cgc == nil {
+			cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
+			if !ok {
 				// If no client is configured, skip this iteration.
 				j.logger.Info("Not checking Cody Gateway usage, disabled")
 				return
@@ -65,11 +65,12 @@ func (j *usageRoutine) Start() {
 
 			for _, l := range limits {
 				ttl := redisTTLMinutes * 60
-				// Make sure the expiry will happen at least every redisTTLMinutes,
-				// but when the limit actually expires otherwise.
+				// Make sure the expiry will happen
+				// - either at least every redisTTLMinutes
+				// - or when the limit actually expires, whatever is earlier.
 				if l.Expiry != nil {
 					timeToReset := int(time.Until(*l.Expiry).Seconds())
-					if timeToReset == 0 {
+					if timeToReset <= 0 {
 						ttl = 1
 					}
 					if timeToReset < ttl {
@@ -82,7 +83,7 @@ func (j *usageRoutine) Start() {
 			}
 		}
 
-		// Run once on init:
+		// Run once on init.
 		checkAndStoreLimits()
 
 		// Now set up a ticker for running again every checkIntervalMinutes.

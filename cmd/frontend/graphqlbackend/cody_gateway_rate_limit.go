@@ -15,8 +15,8 @@ func (r *siteResolver) CodyGatewayRateLimitStatus(ctx context.Context) (*[]RateL
 		return nil, err
 	}
 
-	cgc := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
-	if cgc == nil {
+	cgc, ok := codygateway.NewClientFromSiteConfig(httpcli.ExternalDoer)
+	if !ok {
 		// Not configured.
 		return nil, nil
 	}
