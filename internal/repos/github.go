@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -58,7 +60,7 @@ var (
 )
 
 // NewGitHubSource returns a new GitHubSource from the given external service.
-func NewGitHubSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGitHubSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	rawConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -67,7 +69,7 @@ func NewGitHubSource(ctx context.Context, logger log.Logger, svc *types.External
 	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitHubSource(ctx, logger, svc, &c, cf)
+	return newGitHubSource(ctx, logger, db, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -84,6 +86,7 @@ var githubRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 func newGitHubSource(
 	ctx context.Context,
 	logger log.Logger,
+	db database.DB,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
 	cf *httpcli.Factory,
@@ -149,7 +152,7 @@ func newGitHubSource(
 	if err != nil {
 		return nil, err
 	}
-	auther, err := ghauth.FromConnection(ctx, c)
+	auther, err := ghauth.FromConnection(ctx, c, db.GitHubApps(), keyring.Default().GitHubAppKey)
 	if err != nil {
 		return nil, err
 	}
@@ -228,10 +231,14 @@ func (s *GitHubSource) Version(ctx context.Context) (string, error) {
 	return s.v3Client.GetVersion(ctx)
 }
 
-func (s *GitHubSource) CheckConnection(ctx context.Context) error {
-	_, err := s.v3Client.GetAuthenticatedUser(ctx)
+func (s *GitHubSource) CheckConnection(ctx context.Context) (err error) {
+	if s.config.GitHubAppDetails == nil {
+		_, err = s.v3Client.GetAuthenticatedUser(ctx)
+	} else {
+		_, _, _, err = s.v3Client.ListInstallationRepositories(ctx, 1)
+	}
 	if err != nil {
-		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+		return errors.Wrap(err, "connection check failed")
 	}
 	return nil
 }

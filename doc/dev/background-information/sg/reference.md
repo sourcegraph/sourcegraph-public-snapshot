@@ -1517,12 +1517,12 @@ Flags:
 
 Create Sourcegraph RFCs.
 
-Arguments: `--type <type> <title...>`
+Arguments: `--type <type> [title...]`
 
 Flags:
 
 * `--feedback`: provide feedback about this command by opening up a GitHub discussion
-* `--type="<value>"`: the type of the RFC to create (valid: solution)
+* `--type="<value>"`: the type of the RFC to create (valid: solution) (default: solution)
 
 ## sg adr
 

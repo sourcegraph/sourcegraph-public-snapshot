@@ -29,15 +29,26 @@ All notable changes to Sourcegraph are documented in this file.
 - OpenTelemetry Collector has been upgraded to v0.81, and OpenTelemetry packages have been upgraded to v1.16. [#54969](https://github.com/sourcegraph/sourcegraph/pull/54969), [#54999](https://github.com/sourcegraph/sourcegraph/pull/54999)
 - Bitbucket Cloud code host connections no longer automatically syncs the repository of the username used. The appropriate workspace name will have to be added to the `teams` list if repositories for that account need to be synced. [#55095](https://github.com/sourcegraph/sourcegraph/pull/55095)
 - The gRPC implementation for the Symbol service's `LocalCodeIntel` endpoint has been changed to stream its results. [#55242](https://github.com/sourcegraph/sourcegraph/pull/55242)
+- Pressing `Mod-f` will always select the input value in the file view search [#55546](https://github.com/sourcegraph/sourcegraph/pull/55546)
 
 ### Fixed
-
-- Fixed a bug where user account requests could not be approved even though the license would permit user creation otherwise. [#55482[(https://github.com/sourcegraph/sourcegraph/pull/55482)
 
 ### Removed
 
 - indexed-search has removed the deprecated environment variable ZOEKT_ENABLE_LAZY_DOC_SECTIONS [zoekt#620](https://github.com/sourcegraph/zoekt/pull/620)
 - The federation feature that could redirect users from their own Sourcegraph instance to public repositories on Sourcegraph.com has been removed. It allowed users to open a repository URL on their own Sourcegraph instance and, if the repository wasn't found on that instance, the user would be redirect to the repository on Sourcegraph.com, where it was possibly found. The feature has been broken for over a year though and we don't know that it was used. If you want to use it, please open a feature-request issue and tag the `@sourcegraph/source` team. [#55161](https://github.com/sourcegraph/sourcegraph/pull/55161)
+
+## 5.1.6
+
+### Added
+
+### Changed
+
+### Fixed
+
+- Fixed a bug where user account requests could not be approved even though the license would permit user creation otherwise. [#55482](https://github.com/sourcegraph/sourcegraph/pull/55482)
+
+### Removed
 
 ## 5.1.5
 
