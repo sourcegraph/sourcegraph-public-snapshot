@@ -157,10 +157,10 @@ Some of the main Cody features include:
 
 |     Feature     |                                                                                         Description                                                                                         |
 | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [Code chatbot](capabilities#code-chatbot)    | Your AI-powered code assistant. It fits your project's coding conventions and architecture, unlike other AI code chatbots. Chat with Cody from your code editor or the Sourcegraph sidebar. |
-| [Fix code inline](capabilities#fix-code-inline) | Cody can help you make interactive edits and refactor code by following natural-language instructions.                                                                                      |
-| [Recipes](capabilities#cody-recipes)         | Cody uses its codebase awareness to produce unit tests, documentation, and more. Use our pre-built recipes to simplify development with a few clicks.                                       |
-| [Autocomplete](capabilities#code-autocomplete)    | Cody provides context-based code auto-completion while typing. Predictions make coding easier.                                                                                              |
+| [Code chatbot](capabilities#code-chatbot.md)    | Your AI-powered code assistant. It fits your project's coding conventions and architecture, unlike other AI code chatbots. Chat with Cody from your code editor or the Sourcegraph sidebar. |
+| [Fix code inline](capabilities#fix-code-inline.md) | Cody can help you make interactive edits and refactor code by following natural-language instructions.                                                                                      |
+| [Recipes](capabilities#cody-recipes.md)         | Cody uses its codebase awareness to produce unit tests, documentation, and more. Use our pre-built recipes to simplify development with a few clicks.                                       |
+| [Autocomplete](capabilities#code-autocomplete.md)    | Cody provides context-based code auto-completion while typing. Predictions make coding easier.                                                                                              |
 
 ## Join our community
 
