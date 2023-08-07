@@ -6,7 +6,7 @@ import (
 	"time"
 
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	// "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/auth"
@@ -214,7 +214,7 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 				"status": string(types.AccessRequestStatusApproved),
 			},
 		})
-		// assert.Len(t, accessRequestStore.UpdateFunc.History(), 0)
+		assert.Len(t, mockDBClient.History(&accessrequests.UpdateQuery{}), 0)
 	})
 
 	t.Run("existing access request", func(t *testing.T) {
@@ -237,11 +237,19 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 				"status": string(types.AccessRequestStatusApproved),
 			},
 		})
-		// assert.Len(t, accessRequestStore.UpdateFunc.History(), 1)
-		// assert.Equal(t, types.AccessRequest{ID: mockAccessRequest.ID, DecisionByUserID: &userID, Status: types.AccessRequestStatusApproved}, *accessRequestStore.UpdateFunc.History()[0].Arg1)
+		assert.Len(t, mockDBClient.History(&accessrequests.UpdateQuery{}), 1)
+		assert.Equal(t, &accessrequests.UpdateQuery{
+			AccessRequest: &types.AccessRequest{
+				ID:               mockAccessRequest.ID,
+				DecisionByUserID: &userID,
+				Status:           types.AccessRequestStatusApproved,
+			},
+		}, mockDBClient.History(&accessrequests.UpdateQuery{})[0])
 	})
 
 	t.Run("non-existing access request", func(t *testing.T) {
+		mockDBClient := database.NewMockDBClient()
+		db.ClientFunc.SetDefaultReturn(mockDBClient)
 		notFoundErr := &accessrequests.ErrNotFound{ID: 1}
 		mockDBClient.Mock(&accessrequests.GetByIDQuery{}, nil, notFoundErr)
 
@@ -265,6 +273,6 @@ func TestSetAccessRequestStatusMutation(t *testing.T) {
 				"status": string(types.AccessRequestStatusApproved),
 			},
 		})
-		// assert.Len(t, accessRequestStore.UpdateFunc.History(), 0)
+		assert.Len(t, mockDBClient.History(&accessrequests.UpdateQuery{}), 0)
 	})
 }
