@@ -1516,7 +1516,7 @@ type Query {
         """
         If provided, fetch external services which contain a repo with the given ID.
         """
-        repoID: ID
+        repo: ID
     ): ExternalServiceConnection!
     """
     Lists all namespaces for a given external service connection.

@@ -2864,7 +2864,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102100`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_started_total{instance=~`${internalInstance:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m]))`
 
 </details>
 
@@ -2885,7 +2885,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102101`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -2906,7 +2906,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102110`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_code!="OK",instance=~`${internalInstance:regex}`}[2m]))) / (sum(rate(frontend_grpc_server_handled_total{instance=~`${internalInstance:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m]))) ))`
 
 </details>
 
@@ -2927,7 +2927,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102111`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)) / (sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -2948,7 +2948,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102120`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
 
 </details>
 
@@ -2969,7 +2969,7 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102121`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
 
 </details>
 
@@ -2990,7 +2990,133 @@ To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102122`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(frontend_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: frontend_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102130` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: frontend_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102131` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: frontend_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102132` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: frontend_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102140` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: frontend_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102141` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
+
+</details>
+
+<br />
+
+#### frontend: frontend_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102142` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])))`
 
 </details>
 
@@ -3004,14 +3130,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102130` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102150` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(frontend_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method))/(sum(rate(frontend_grpc_server_started_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -3025,14 +3151,14 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102140` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/frontend/frontend?viewPanel=102160` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(frontend_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${internalInstance:regex}`,grpc_service=~"sourcegraph.zoekt.configuration.v1.ZoektConfigurationService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -6311,7 +6437,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{instance=~`${shard:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m]))`
 
 </details>
 
@@ -6332,7 +6458,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10070
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -6353,7 +6479,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`}[2m]))) / (sum(rate(gitserver_grpc_server_handled_total{instance=~`${shard:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m]))) ))`
 
 </details>
 
@@ -6374,7 +6500,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10071
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${shard:regex}`}[2m])) by (grpc_method)) / (sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -6395,7 +6521,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
 
 </details>
 
@@ -6416,7 +6542,7 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
 
 </details>
 
@@ -6437,7 +6563,133 @@ To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=10072
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(gitserver_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100730` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100731` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100732` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100740` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100741` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
+
+</details>
+
+<br />
+
+#### gitserver: gitserver_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100742` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])))`
 
 </details>
 
@@ -6451,14 +6703,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100730` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100750` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(gitserver_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`}[2m])) by (grpc_method))/(sum(rate(gitserver_grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -6472,14 +6724,14 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100740` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/gitserver/gitserver?viewPanel=100760` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(gitserver_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${shard:regex}`,grpc_service=~"gitserver.v1.GitserverService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -14570,7 +14822,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m]))`
 
 </details>
 
@@ -14591,7 +14843,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -14612,7 +14864,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(repo_updater_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m]))) ))`
 
 </details>
 
@@ -14633,7 +14885,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -14654,7 +14906,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
 
 </details>
 
@@ -14675,7 +14927,7 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
 
 </details>
 
@@ -14696,7 +14948,133 @@ To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(repo_updater_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100730` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100731` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100732` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100740` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100741` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
+
+</details>
+
+<br />
+
+#### repo-updater: repo_updater_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100742` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])))`
 
 </details>
 
@@ -14710,14 +15088,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100730` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100750` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(repo_updater_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(repo_updater_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -14731,14 +15109,14 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100740` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/repo-updater/repo-updater?viewPanel=100760` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Source team](https://handbook.sourcegraph.com/departments/engineering/teams/source).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(repo_updater_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"repoupdater.v1.RepoUpdaterService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -15944,7 +16322,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100400`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m]))`
 
 </details>
 
@@ -15965,7 +16343,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100401`
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -15986,7 +16364,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100410`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(searcher_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m]))) ))`
 
 </details>
 
@@ -16007,7 +16385,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100411`
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -16028,7 +16406,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100420`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
 
 </details>
 
@@ -16049,7 +16427,7 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100421`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
 
 </details>
 
@@ -16070,7 +16448,133 @@ To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100422`
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(searcher_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100430` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100431` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100432` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100440` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100441` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
+
+</details>
+
+<br />
+
+#### searcher: searcher_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100442` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])))`
 
 </details>
 
@@ -16084,14 +16588,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100430` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100450` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(searcher_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(searcher_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -16105,14 +16609,14 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100440` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/searcher/searcher?viewPanel=100460` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Search Core team](https://handbook.sourcegraph.com/departments/engineering/teams/search/core).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(searcher_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"searcher.v1.SearcherService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 
@@ -17511,7 +18015,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100500` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{instance=~`${instance:regex}`}[2m]))`
+Query: `sum(rate(grpc_server_started_total{instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m]))`
 
 </details>
 
@@ -17532,7 +18036,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100501` o
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)`
+Query: `sum(rate(grpc_server_started_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method)`
 
 </details>
 
@@ -17553,7 +18057,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100510` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`}[2m]))) / (sum(rate(symbols_grpc_server_handled_total{instance=~`${instance:regex}`}[2m]))) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m]))) / (sum(rate(grpc_server_handled_total{instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m]))) ))`
 
 </details>
 
@@ -17574,7 +18078,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100511` o
 <details>
 <summary>Technical details</summary>
 
-Query: `(100.0 * ( (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`}[2m])) by (grpc_method)) / (sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method)) ))`
+Query: `(100.0 * ( (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,grpc_code!="OK",instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method)) / (sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method)) ))`
 
 </details>
 
@@ -17595,7 +18099,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100520` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.99, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
 
 </details>
 
@@ -17616,7 +18120,7 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100521` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
 
 </details>
 
@@ -17637,7 +18141,133 @@ To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100522` o
 <details>
 <summary>Technical details</summary>
 
-Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(symbols_grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])))`
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(grpc_server_handling_seconds_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p99_9_response_size_per_method
+
+<p class="subtitle">99.9th percentile total response size per method over 2m</p>
+
+The 99.9th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100530` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p90_response_size_per_method
+
+<p class="subtitle">90th percentile total response size per method over 2m</p>
+
+The 90th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100531` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p75_response_size_per_method
+
+<p class="subtitle">75th percentile total response size per method over 2m</p>
+
+The 75th percentile total per-RPC response size per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100532` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p99_9_invididual_sent_message_size_per_method
+
+<p class="subtitle">99.9th percentile individual sent message size per method over 2m</p>
+
+The 99.9th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100540` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.999, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p90_invididual_sent_message_size_per_method
+
+<p class="subtitle">90th percentile individual sent message size per method over 2m</p>
+
+The 90th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100541` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.90, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
+
+</details>
+
+<br />
+
+#### symbols: symbols_p75_invididual_sent_message_size_per_method
+
+<p class="subtitle">75th percentile individual sent message size per method over 2m</p>
+
+The 75th percentile size of every individual protocol buffer size sent by the service per method, aggregated across all instances.
+
+This panel has no related alerts.
+
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100542` on your Sourcegraph instance.
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<details>
+<summary>Technical details</summary>
+
+Query: `histogram_quantile(0.75, sum by (le, name, grpc_method)(rate(src_grpc_server_sent_individual_message_size_bytes_per_rpc_bucket{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])))`
 
 </details>
 
@@ -17651,14 +18281,14 @@ The average number of response messages sent during a streaming RPC method, brok
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100530` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100550` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `((sum(rate(symbols_grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method))/(sum(rate(symbols_grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`}[2m])) by (grpc_method)))`
+Query: `((sum(rate(grpc_server_msg_sent_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method))/(sum(rate(grpc_server_started_total{grpc_type="server_stream",instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method)))`
 
 </details>
 
@@ -17672,14 +18302,14 @@ The rate of all generated gRPC response codes per method, aggregated across all 
 
 This panel has no related alerts.
 
-To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100540` on your Sourcegraph instance.
+To see this panel, visit `/-/debug/grafana/d/symbols/symbols?viewPanel=100560` on your Sourcegraph instance.
 
 <sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
 
 <details>
 <summary>Technical details</summary>
 
-Query: `sum(rate(symbols_grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`}[2m])) by (grpc_method, grpc_code)`
+Query: `sum(rate(grpc_server_handled_total{grpc_method=~`${method:regex}`,instance=~`${instance:regex}`,grpc_service=~"symbols.v1.SymbolsService"}[2m])) by (grpc_method, grpc_code)`
 
 </details>
 

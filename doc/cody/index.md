@@ -108,7 +108,7 @@ We value your feedback! You can <a href="https://about.sourcegraph.com/contact">
 
 ## What is Cody?
 
-Cody is an AI coding assistant that utilizes Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">code graph</a> and Large Language Models (LLMs) to write code and provide answers based on your codebase.
+Cody is a free and open source AI coding assistant that utilizes Sourcegraph's <a href="https://docs.sourcegraph.com/cody/explanations/code_graph_context">code graph</a> and Large Language Models (LLMs) to write code and provide answers based on your codebase.
 
 Think of Cody as your personal dedicated AI coding assistant, equipped with a comprehensive understanding of three crucial elements:
 

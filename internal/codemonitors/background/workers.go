@@ -254,7 +254,7 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *database.ActionJob) e
 		return errors.Wrap(err, "ListRecipients")
 	}
 
-	externalURL, err := getExternalURL(ctx)
+	externalURL, err := getExternalURL()
 	if err != nil {
 		return err
 	}
@@ -307,7 +307,7 @@ func (r *actionRunner) handleWebhook(ctx context.Context, j *database.ActionJob)
 		return errors.Wrap(err, "GetWebhookAction")
 	}
 
-	externalURL, err := getExternalURL(ctx)
+	externalURL, err := getExternalURL()
 	if err != nil {
 		return err
 	}
@@ -343,7 +343,7 @@ func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *database.Actio
 		return errors.Wrap(err, "GetSlackWebhookAction")
 	}
 
-	externalURL, err := getExternalURL(ctx)
+	externalURL, err := getExternalURL()
 	if err != nil {
 		return err
 	}

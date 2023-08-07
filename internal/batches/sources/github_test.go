@@ -18,6 +18,7 @@ import (
 
 	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
@@ -493,7 +494,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 	}
 
 	ctx := context.Background()
-	githubSrc, err := NewGitHubSource(ctx, svc, nil)
+	githubSrc, err := NewGitHubSource(ctx, database.NewMockDB(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -901,7 +902,7 @@ func setup(t *testing.T, ctx context.Context, tName string) (src *GitHubSource, 
 		})),
 	}
 
-	src, err := NewGitHubSource(ctx, svc, cf)
+	src, err := NewGitHubSource(ctx, database.NewMockDB(), svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}

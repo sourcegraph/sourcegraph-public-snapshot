@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/bg"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
@@ -46,6 +45,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
 	"github.com/sourcegraph/sourcegraph/internal/service"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegraph/sourcegraph/internal/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/users"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -265,7 +265,7 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 	}
 
 	// Create the external HTTP handler.
-	externalHandler := newExternalHTTPHandler(
+	externalHandler, err := newExternalHTTPHandler(
 		db,
 		schema,
 		rateLimiter,
@@ -294,6 +294,9 @@ func makeExternalAPI(db database.DB, logger sglog.Logger, schema *graphql.Schema
 		enterprise.NewExecutorProxyHandler,
 		enterprise.NewGitHubAppSetupHandler,
 	)
+	if err != nil {
+		return nil, errors.Errorf("create external HTTP handler: %v", err)
+	}
 	httpServer := &http.Server{
 		Handler:      externalHandler,
 		ReadTimeout:  75 * time.Second,

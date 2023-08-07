@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/siteid"
@@ -154,30 +156,33 @@ type bigQueryEvent struct {
 	HashedLicenseKey       *string `json:"hashed_license_key,omitempty"`
 }
 
+var (
+	pubsubClient     pubsub.TopicClient
+	pubsubClientOnce sync.Once
+	pubsubClientErr  error
+)
+
 // publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
 func publishSourcegraphDotComEvents(events []Event) error {
-	if !envvar.SourcegraphDotComMode() {
+	if !envvar.SourcegraphDotComMode() || pubSubDotComEventsTopicID == "" {
 		return nil
 	}
-	if pubSubDotComEventsTopicID == "" {
-		return nil
+	pubsubClientOnce.Do(func() {
+		pubsubClient, pubsubClientErr = pubsub.NewDefaultTopicClient(pubSubDotComEventsTopicID)
+	})
+	if pubsubClientErr != nil {
+		return pubsubClientErr
 	}
+
 	pubsubEvents, err := serializePublishSourcegraphDotComEvents(events)
 	if err != nil {
 		return err
 	}
-
-	for _, event := range pubsubEvents {
-		if err := pubsub.Publish(pubSubDotComEventsTopicID, event); err != nil {
-			return err
-		}
-	}
-
-	return nil
+	return pubsubClient.Publish(context.Background(), pubsubEvents...)
 }
 
-func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
-	pubsubEvents := make([]string, 0, len(events))
+func serializePublishSourcegraphDotComEvents(events []Event) ([][]byte, error) {
+	pubsubEvents := make([][]byte, 0, len(events))
 	for _, event := range events {
 		firstSourceURL := ""
 		if event.FirstSourceURL != nil {
@@ -243,7 +248,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			return nil, err
 		}
 
-		pubsubEvents = append(pubsubEvents, string(pubsubEvent))
+		pubsubEvents = append(pubsubEvents, pubsubEvent)
 	}
 
 	return pubsubEvents, nil
@@ -262,6 +267,14 @@ func logLocalEvents(ctx context.Context, db database.DB, events []Event) error {
 func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 	databaseEvents := make([]*database.Event, 0, len(events))
 	for _, event := range events {
+		// If this event should only be logged to our remote data warehouse, simply exclude it
+		// from the serialized events for the local database.
+		for _, eventToOnlyLogRemotely := range eventlogger.OnlyLogRemotelyEvents {
+			if event.EventName == eventToOnlyLogRemotely {
+				continue
+			}
+		}
+
 		if event.EventName == "SearchResultsQueried" {
 			if err := logSiteSearchOccurred(); err != nil {
 				return nil, err

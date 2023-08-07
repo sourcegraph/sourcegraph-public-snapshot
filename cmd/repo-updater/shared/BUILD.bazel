@@ -31,8 +31,6 @@ go_library(
         "//internal/encryption/keyring",
         "//internal/env",
         "//internal/extsvc",
-        "//internal/extsvc/github/auth",
-        "//internal/github_apps/auth",
         "//internal/goroutine",
         "//internal/grpc",
         "//internal/grpc/defaults",

@@ -1820,11 +1820,12 @@ type Repository struct {
 	IsArchived    bool   // whether the repository is archived on the code host
 	IsLocked      bool   // whether the repository is locked on the code host
 	IsDisabled    bool   // whether the repository is disabled on the code host
-	// This field will always be blank on repos stored in our database because the value will be different
-	// depending on which token was used to fetch it
-	ViewerPermission string // ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
-
-	// a list of topics the repository is tagged with
+	// This field will always be blank on repos stored in our database because the value will be
+	// different depending on which token was used to fetch it.
+	//
+	// ADMIN, WRITE, READ, or empty if unknown. Only the graphql api populates this. https://developer.github.com/v4/enum/repositorypermission/
+	ViewerPermission string
+	// RepositoryTopics is a  list of topics the repository is tagged with.
 	RepositoryTopics RepositoryTopics
 
 	// Metadata retained for ranking
@@ -1835,6 +1836,15 @@ type Repository struct {
 	// to identify if a repository is public or private or internal.
 	// https://developer.github.com/changes/2019-12-03-internal-visibility-changes/#repository-visibility-fields
 	Visibility Visibility `json:",omitempty"`
+
+	// Parent is non-nil for forks and contains details of the parent repository.
+	Parent *ParentRepository `json:",omitempty"`
+}
+
+// ParentRepository is the parent of a GitHub repository.
+type ParentRepository struct {
+	NameWithOwner string
+	IsFork        bool
 }
 
 type RepositoryTopics struct {
@@ -1855,6 +1865,11 @@ type restRepositoryPermissions struct {
 	Pull  bool `json:"pull"`
 }
 
+type restParentRepository struct {
+	FullName string `json:"full_name,omitempty"`
+	Fork     bool   `json:"is_fork,omitempty"`
+}
+
 type restRepository struct {
 	ID          string `json:"node_id"` // GraphQL ID
 	DatabaseID  int64  `json:"id"`
@@ -1871,6 +1886,7 @@ type restRepository struct {
 	Forks       int                       `json:"forks_count"`
 	Visibility  string                    `json:"visibility"`
 	Topics      []string                  `json:"topics"`
+	Parent      *restParentRepository     `json:"parent,omitempty"`
 }
 
 // getRepositoryFromAPI attempts to fetch a repository from the GitHub API without use of the redis cache.
@@ -1896,6 +1912,7 @@ func convertRestRepo(restRepo restRepository) *Repository {
 	for _, topic := range restRepo.Topics {
 		topics = append(topics, RepositoryTopic{Topic{Name: topic}})
 	}
+
 	repo := Repository{
 		ID:               restRepo.ID,
 		DatabaseID:       restRepo.DatabaseID,
@@ -1911,6 +1928,13 @@ func convertRestRepo(restRepo restRepository) *Repository {
 		StargazerCount:   restRepo.Stars,
 		ForkCount:        restRepo.Forks,
 		RepositoryTopics: RepositoryTopics{topics},
+	}
+
+	if restRepo.Parent != nil {
+		repo.Parent = &ParentRepository{
+			NameWithOwner: restRepo.Parent.FullName,
+			IsFork:        restRepo.Parent.Fork,
+		}
 	}
 
 	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {

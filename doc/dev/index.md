@@ -42,19 +42,19 @@ body.theme-dark .markdown-body ul li:before {
 <div class="getting-started">
   <a href="setup/quickstart" class="btn" alt="Run through the Quickstart guide">
    <span>★ Quickstart</span>
-   </br>
+   <br>
    Run through the <b>step by step guide</b> and get your local environment ready.
   </a>
 
   <a href="../dev/how-to" class="btn" alt="How-to guides">
    <span>How-to guides</span>
-   </br>
+   <br>
   <b>Context specific</b> guides: debugging live code
   </a>
 
   <a href="setup/troubleshooting" class="btn" alt="Troubleshooting">
    <span>Troubleshooting</span>
-   </br>
+   <br>
   Help for the <b>most common</b> problems.
   </a>
 </div>

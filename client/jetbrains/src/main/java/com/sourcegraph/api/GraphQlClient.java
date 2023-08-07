@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.CookieSpecs;
@@ -71,7 +72,7 @@ public class GraphQlClient {
 
     request.setHeader("Content-Type", "application/json");
     request.setHeader("X-Sourcegraph-Should-Trace", "false");
-    if (accessToken != null) {
+    if (!StringUtils.isEmpty(accessToken)) {
       request.setHeader("Authorization", "token " + accessToken);
     }
     // Do some checks to make sure the string and its parts are well-formed, but fail silently in

@@ -1012,7 +1012,7 @@ func TestPermsStore_SetRepoPermissionsUnrestricted(t *testing.T) {
 
 	assertUnrestricted := func(t *testing.T, id int32, want bool) {
 		t.Helper()
-		
+
 		legacyUnrestricted(t, id, want)
 
 		type unrestrictedResult struct {

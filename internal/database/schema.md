@@ -3543,6 +3543,8 @@ Foreign-key constraints:
  text_chunks_embedded | integer |           | not null | 0
  text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
  text_bytes_embedded  | integer |           | not null | 0
+ code_chunks_excluded | integer |           | not null | 0
+ text_chunks_excluded | integer |           | not null | 0
 Indexes:
     "repo_embedding_job_stats_pkey" PRIMARY KEY, btree (job_id)
 Foreign-key constraints:
