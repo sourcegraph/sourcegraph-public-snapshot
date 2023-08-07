@@ -248,7 +248,7 @@ body > #sidebar {
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    margin-top: calc(2*var(--spacing));
+    padding-top: calc(2*var(--spacing));
     margin-left: calc(6*var(--spacing));
 }
 /* Logo */
