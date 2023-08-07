@@ -1,11 +1,3 @@
-// .add-external-services-page {
-//     &__card {
-//         display: block;
-//         margin-bottom: 1rem;
-//     }
-// }
-
-
 .add-external-services-page {
     &__card {
         display: block;
@@ -16,7 +8,5 @@
             padding: 0 !important;
             border: 1px solid red;
         }
-
-        &__body {}
     }
 }
