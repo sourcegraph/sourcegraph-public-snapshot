@@ -38,12 +38,12 @@ func ReadResponse[T any](resp any, respErr error) (t T, err error) {
 		return t, respErr
 	}
 
-	respT, ok := resp.(T)
+	t, ok := resp.(T)
 	if !ok {
-		return t, &ErrInvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(*(*T)(nil))}
+		return t, &ErrInvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(t)}
 	}
 
-	return respT, nil
+	return t, nil
 }
 
 // A DBQuery uses a store to perform various operations on a database.

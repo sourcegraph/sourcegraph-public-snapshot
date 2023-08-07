@@ -18,6 +18,32 @@ func init() {
 	useFastPasswordMocks()
 }
 
+func TestReadResponse(t *testing.T) {
+	type testStruct struct {
+		data string
+	}
+
+	const testString = "some test data"
+	var testAny any = &testStruct{data: testString}
+
+	t.Run("valid response type returns correctly", func(t *testing.T) {
+		resp, err := ReadResponse[*testStruct](testAny, nil)
+		require.NoError(t, err)
+		require.Equal(t, testString, resp.data)
+	})
+
+	t.Run("invalid response type returns ErrInvalidResponseType", func(t *testing.T) {
+		type wrongStruct struct {
+			data string
+		}
+
+		resp, err := ReadResponse[*wrongStruct](testAny, nil)
+		wantErr := &ErrInvalidResponseType{}
+		require.ErrorAs(t, err, &wantErr)
+		require.Nil(t, resp)
+	})
+}
+
 func TestDBTransactions(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
