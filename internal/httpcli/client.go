@@ -571,10 +571,6 @@ func NewRetryPolicy(max int, retryAfterMaxSleepDuration time.Duration) rehttp.Re
 			if retry {
 				metricRetry.Inc()
 			}
-
-			if retry || a.Error == nil || a.Index == 0 {
-				return
-			}
 		}()
 
 		if a.Response != nil {
