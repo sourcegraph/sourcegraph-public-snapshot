@@ -107,7 +107,7 @@ func TestRequestAccess(t *testing.T) {
 
 		_, err = client.GetByEmail(context.Background(), newUser.Email)
 		require.Error(t, err)
-		require.Equal(t, errcode.IsNotFound(err), true)
+		require.Equal(t, true, errcode.IsNotFound(err))
 	})
 
 	t.Run("existing access requests's email", func(t *testing.T) {

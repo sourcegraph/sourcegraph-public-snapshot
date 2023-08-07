@@ -34,6 +34,10 @@ func (e *ErrInvalidResponseType) Error() string {
 // The error in the response pair, if non-nil, is returned immediately.
 // If the type casting fails, an ErrInvalidResponseType is returned.
 func ReadResponse[T any](resp any, respErr error) (T, error) {
+	if respErr != nil {
+		return *new(T), respErr
+	}
+
 	t, ok := resp.(T)
 	if !ok {
 		return t, &ErrInvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(t)}
