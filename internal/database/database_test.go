@@ -28,7 +28,7 @@ func TestReadResponse(t *testing.T) {
 	var testAny any = &testStruct{data: testString}
 
 	t.Run("valid response type returns correctly", func(t *testing.T) {
-		resp, err := ReadResponse[*testStruct](testAny, nil)
+		resp, err := readResponse[*testStruct](testAny, nil)
 		require.NoError(t, err)
 		require.Equal(t, testString, resp.data)
 		require.True(t, testAny == resp, fmt.Sprintf("pointers don't match, want %p got %p", testAny, resp))
@@ -39,7 +39,7 @@ func TestReadResponse(t *testing.T) {
 			data string
 		}
 
-		resp, err := ReadResponse[*wrongStruct](testAny, nil)
+		resp, err := readResponse[*wrongStruct](testAny, nil)
 		wantErr := &ErrInvalidResponseType{}
 		require.ErrorAs(t, err, &wantErr)
 		require.Nil(t, resp)
