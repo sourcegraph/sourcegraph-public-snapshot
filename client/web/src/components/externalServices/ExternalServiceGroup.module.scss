@@ -19,7 +19,7 @@
     &__description {
         font-size: 0.75rem;
         font-weight: 400;
-        color: var(--gray-08);
+        color: var(--gray-07);
     }
 
     &__body {
@@ -32,7 +32,7 @@
         list-style: none;
         padding-top: 0.5rem;
 
-        &__link {
+        &__wrapper {
             display: flex;
             justify-content: flex-start;
             align-items: center;

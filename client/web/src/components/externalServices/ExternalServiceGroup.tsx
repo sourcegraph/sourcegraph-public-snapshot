@@ -12,7 +12,7 @@ import styles from './ExternalServiceGroup.module.scss'
 interface ExternalServiceGroupProps {
     name: string
     services: AddExternalServiceOptionsWithID[]
-    description: string
+    description?: string
     renderServiceIcon: boolean
 
     icon?: React.ComponentType<{ className?: string }>
@@ -55,39 +55,54 @@ export const ExternalServiceGroup: FC<ExternalServiceGroupProps> = ({
                 <ul className={styles.externalServiceGroupBody}>
                     {services.map((service, index) => (
                         <li key={index} className={styles.externalServiceGroupNode}>
-                            <Link
-                                className={classNames(
-                                    styles.externalServiceGroupNodeLink,
-                                    'text-left text-body text-decoration-none'
-                                )}
-                                to={getAddURL(service.serviceID)}
-                            >
-                                {renderServiceIcon && (
-                                    <Icon inline={true} className="mb-0 mr-1" as={service.icon} aria-hidden={true} />
-                                )}
-                                <div className={styles.externalServiceGroupNodeDisplayName}>
-                                    <span>{service.title}</span>
-                                    {'  '}
-                                    {service.status && <ProductStatusBadge status={service.status} className="mx-1" />}
-                                    {service.badge && (
-                                        <Badge className="mx-1" variant="outlineSecondary">
-                                            {service.badge.toUpperCase()}
-                                        </Badge>
-                                    )}
-                                    <span
-                                        className={classNames(styles.externalServiceGroupNodeDescription, {
-                                            'd-block': Boolean(service.status || service.badge),
-                                        })}
-                                    >
-                                        {service.shortDescription}
-                                    </span>
-                                </div>
-                            </Link>
+                            <ExternalServiceGroupNode service={service} renderServiceIcon={renderServiceIcon} />
                         </li>
                     ))}
                 </ul>
             )}
         </div>
+    )
+}
+
+interface ExternalServiceGroupNodeProps {
+    service: AddExternalServiceOptionsWithID
+    renderServiceIcon: boolean
+}
+
+const ExternalServiceGroupNode: FC<ExternalServiceGroupNodeProps> = ({ service, renderServiceIcon }) => {
+    const children = (
+        <div
+            className={classNames(styles.externalServiceGroupNodeWrapper, {
+                'text-muted': !service.enabled,
+            })}
+        >
+            {renderServiceIcon && <Icon inline={true} className="mb-0 mr-1" as={service.icon} aria-hidden={true} />}
+            <div className={styles.externalServiceGroupNodeDisplayName}>
+                <span>{service.title}</span>
+                {'  '}
+                {service.status && <ProductStatusBadge status={service.status} className="mx-1" />}
+                {service.badge && (
+                    <Badge className="mx-1" variant="outlineSecondary">
+                        {service.badge.toUpperCase()}
+                    </Badge>
+                )}
+                <span
+                    className={classNames(styles.externalServiceGroupNodeDescription, {
+                        'd-block': Boolean(service.status || service.badge),
+                    })}
+                >
+                    {service.shortDescription}
+                </span>
+            </div>
+        </div>
+    )
+
+    return service.enabled ? (
+        <Link className="text-left text-body text-decoration-none" to={getAddURL(service.serviceID)}>
+            {children}
+        </Link>
+    ) : (
+        children
     )
 }
 
