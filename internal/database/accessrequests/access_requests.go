@@ -176,7 +176,7 @@ func (c *Client) Create(ctx context.Context, accessRequest *types.AccessRequest)
 		AccessRequest: accessRequest,
 	}
 
-	return database.ReadResponse[*types.AccessRequest](c.dbclient.Execute(ctx, query))
+	return database.ExecuteWithClient[*types.AccessRequest](ctx, query, c.dbclient)
 }
 
 type UpdateQuery struct {
@@ -205,7 +205,7 @@ func (c *Client) Update(ctx context.Context, accessRequest *types.AccessRequest)
 		AccessRequest: accessRequest,
 	}
 
-	return database.ReadResponse[*types.AccessRequest](c.dbclient.Execute(ctx, query))
+	return database.ExecuteWithClient[*types.AccessRequest](ctx, query, c.dbclient)
 }
 
 type GetByIDQuery struct {
@@ -234,7 +234,7 @@ func (c *Client) GetByID(ctx context.Context, id int32) (*types.AccessRequest, e
 		ID: id,
 	}
 
-	return database.ReadResponse[*types.AccessRequest](c.dbclient.Execute(ctx, query))
+	return database.ExecuteWithClient[*types.AccessRequest](ctx, query, c.dbclient)
 }
 
 type GetByEmailQuery struct {
@@ -263,7 +263,7 @@ func (c *Client) GetByEmail(ctx context.Context, email string) (*types.AccessReq
 		Email: email,
 	}
 
-	return database.ReadResponse[*types.AccessRequest](c.dbclient.Execute(ctx, query))
+	return database.ExecuteWithClient[*types.AccessRequest](ctx, query, c.dbclient)
 }
 
 type CountQuery struct {
@@ -289,7 +289,7 @@ func (c *Client) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
 		FArgs: fArgs,
 	}
 
-	return database.ReadResponse[int](c.dbclient.Execute(ctx, query))
+	return database.ExecuteWithClient[int](ctx, query, c.dbclient)
 }
 
 type ListQuery struct {
@@ -333,7 +333,7 @@ func (c *Client) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.Pa
 		PArgs: pArgs,
 	}
 
-	return database.ReadResponse[[]*types.AccessRequest](c.dbclient.Execute(ctx, query))
+	return database.ExecuteWithClient[[]*types.AccessRequest](ctx, query, c.dbclient)
 }
 
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {

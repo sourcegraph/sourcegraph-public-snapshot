@@ -28,22 +28,25 @@ func (e *ErrInvalidResponseType) Error() string {
 	return fmt.Sprintf("Could not cast from %s to %s", e.FromType, e.ToType)
 }
 
-// ReadResponse accepts a (any, error) pair returned from a DBQuery.Execute
-// call and attempts to cast the response to the generic type T.
+// readResponse accepts a (any, error) pair returned from a
+// DBExecutableRaw.ExecuteRaw call and attempts to cast the
+// response to the generic type T.
 //
-// The error in the response pair, if non-nil, is returned immediately.
 // If the type casting fails, an ErrInvalidResponseType is returned.
-func ReadResponse[T any](resp any, respErr error) (T, error) {
-	if respErr != nil {
-		return *new(T), respErr
-	}
-
+func readResponse[T any](resp any, respErr error) (T, error) {
 	t, ok := resp.(T)
 	if !ok {
 		return t, &ErrInvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf(t)}
 	}
 
 	return t, nil
+}
+
+// ExecuteWithClient executes a DBExecutable with the provided DBClient.
+// The client executes the Executable using the ExecuteRaw method, which
+// is then immediately converted by the readResponse function.
+func ExecuteWithClient[T any](ctx context.Context, dbe DBExecutable[T], client DBClient) (T, error) {
+	return readResponse[T](client.Execute(ctx, dbe))
 }
 
 // A DBExecutableRaw uses a store to perform various operations on a database.
@@ -64,6 +67,7 @@ type DBExecutableRaw interface {
 //
 // An Execute call can require multiple database calls to produce its result.
 type DBExecutable[T any] interface {
+	DBExecutableRaw
 	Execute(context.Context, *basestore.Store) (T, error)
 }
 
