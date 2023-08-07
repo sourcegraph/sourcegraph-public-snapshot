@@ -17,22 +17,31 @@ func ScheduleRepositoriesForEmbedding(
 	db database.DB,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
 	gitserverClient gitserver.Client,
-) error {
-	tx, err := repoEmbeddingJobsStore.Transact(ctx)
-	if err != nil {
-		return err
-	}
-	defer func() { err = tx.Done(err) }()
+) (errs error) {
+	// we track skipped repo errors in the errs return value so the transaction should not rollback based on skip errors.
+	// we need a separate error to pass to Done()
+	var txErr error
 
-	var errs error
+	tx, txErr := repoEmbeddingJobsStore.Transact(ctx)
+	if txErr != nil {
+		return
+	}
+	defer func() {
+		txErr = tx.Done(txErr)
+
+		// if we did not commit the transaction then that error is the only value to return
+		if txErr != nil {
+			errs = txErr
+		}
+	}()
 
 	repoStore := db.Repos()
 	for _, repoName := range repoNames {
 		// Scope the iteration to an anonymous function, so we can capture all errors and properly rollback tx in defer above.
-		err = func() error {
+		txErr = func() error {
 			r, err := repoStore.GetByName(ctx, repoName)
 			if err != nil {
-				errs = errors.Append(errs, errors.Newf("Repo not found: %v", repoName))
+				errs = errors.Append(errs, errors.Wrap(err, "getting repo by name"))
 				return nil
 			}
 
@@ -62,9 +71,9 @@ func ScheduleRepositoriesForEmbedding(
 			_, err = tx.CreateRepoEmbeddingJob(ctx, r.ID, latestRevision)
 			return err
 		}()
-		if err != nil {
-			return err
+		if txErr != nil {
+			return
 		}
 	}
-	return errs
+	return
 }

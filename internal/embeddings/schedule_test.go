@@ -3,6 +3,7 @@ package embeddings
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
@@ -75,7 +76,7 @@ func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
 
 	repoNames := []api.RepoName{"github.com/repo/notfound", "github.com/sourcegraph/sourcegraph"}
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, store, gitserverClient)
-	require.ErrorContains(t, err, fmt.Sprintf("Repo not found: %v", string(repoNames[0])))
+	require.ErrorContains(t, err, fmt.Sprintf("getting repo by name: repo not found: name=\"%v\"", string(repoNames[0])))
 	count, err := store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
@@ -89,7 +90,7 @@ func TestScheduleRepositoriesForEmbeddingRepoNotFound(t *testing.T) {
 	// check that enabling forceReschedule for jobs does not apply to non-existent repos
 	gitserverClient.GetDefaultBranchFunc.PushReturn("main", "sgrevision02", nil)
 	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, true, db, store, gitserverClient)
-	require.ErrorContains(t, err, fmt.Sprintf("Repo not found: %v", string(repoNames[0])))
+	require.ErrorContains(t, err, fmt.Sprintf("getting repo by name: repo not found: name=\"%v\"", string(repoNames[0])))
 	count, err = store.CountRepoEmbeddingJobs(ctx, repo.ListOpts{})
 	require.NoError(t, err)
 	require.Equal(t, 2, count)
@@ -209,6 +210,44 @@ func TestScheduleRepositoriesForEmbeddingFailed(t *testing.T) {
 	require.NoError(t, err)
 	// failed job is rescheduled for sourcegraph once repo is valid
 	require.Equal(t, 3, count)
+}
+
+func TestScheduleRepositoriesForEmbedding2(t *testing.T) {
+	t.Parallel()
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoStore := db.Repos()
+
+	finalErr := "error has caused rollback in Done()"
+	mockRepoEmbeddingJobsStore := repo.NewMockRepoEmbeddingJobsStore()
+	mockRepoEmbeddingJobsStore.TransactFunc.SetDefaultReturn(mockRepoEmbeddingJobsStore, nil)
+
+	// first repo has a completed job
+	mockRepoEmbeddingJobsStore.GetLastRepoEmbeddingJobForRevisionFunc.SetDefaultReturn(&repo.RepoEmbeddingJob{State: "completed"}, nil)
+
+	// second repo returns error on job creation
+	mockRepoEmbeddingJobsStore.CreateRepoEmbeddingJobFunc.SetDefaultReturn(1, errors.New("error creating repo embedding job in store"))
+	mockRepoEmbeddingJobsStore.DoneFunc.SetDefaultReturn(errors.New(finalErr))
+
+	createdRepo0 := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
+	err := repoStore.Create(ctx, createdRepo0)
+	require.NoError(t, err)
+
+	createdRepo1 := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
+	err = repoStore.Create(ctx, createdRepo1)
+	require.NoError(t, err)
+
+	rev := api.CommitID("sourcegraphrevision")
+	gitserverClient := gitserver.NewMockClient()
+	gitserverClient.GetDefaultBranchFunc.SetDefaultReturn("main", rev, nil)
+
+	repoNames := []api.RepoName{"github.com/sourcegraph/sourcegraph"}
+	err = ScheduleRepositoriesForEmbedding(ctx, repoNames, false, db, mockRepoEmbeddingJobsStore, gitserverClient)
+
+	// error does not include reason for skipping the first repo
+	require.EqualError(t, err, finalErr)
 }
 
 func setJobState(t *testing.T, ctx context.Context, store repo.RepoEmbeddingJobsStore, jobID int, state string) {
