@@ -1,4 +1,22 @@
-.add-external-services-page__card {
-    display: block;
-    margin-bottom: 1rem;
+// .add-external-services-page {
+//     &__card {
+//         display: block;
+//         margin-bottom: 1rem;
+//     }
+// }
+
+
+.add-external-services-page {
+    &__card {
+        display: block;
+        margin-bottom: 1rem;
+
+        &__header {
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 1px solid red;
+        }
+
+        &__body {}
+    }
 }

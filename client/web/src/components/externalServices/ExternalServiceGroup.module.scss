@@ -1,0 +1,58 @@
+.external-service-group {
+    &__container {
+        border: 1px solid var(--border-color-2);
+        margin-bottom: 1rem;
+    }
+
+    &__header {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        justify-content: space-between;
+        padding: 0.5rem;
+    }
+
+    &__expanded-header {
+        border-bottom: 1px solid var(--border-color-2);
+    }
+
+    &__description {
+        font-size: 0.75rem;
+        font-weight: 400;
+        color: var(--gray-08);
+    }
+
+    &__body {
+        padding-right: 2rem;
+        padding-bottom: 0.75rem;
+        margin: 0;
+    }
+
+    &__node {
+        list-style: none;
+        padding-top: 0.5rem;
+
+        &__link {
+            display: flex;
+            justify-content: flex-start;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        &:not(:last-child) {
+            border-bottom: 1px solid var(--border-color-2);
+            padding-bottom: 0.5rem;
+        }
+
+        &__display-name {
+            font-weight: 500;
+            margin: 0;
+        }
+
+        &__description {
+            font-size: 0.6875rem;
+            font-weight: 400;
+            color: var(--gray-07);
+        }
+    }
+}

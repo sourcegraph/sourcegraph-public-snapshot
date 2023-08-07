@@ -1,6 +1,10 @@
 import { type FC, useMemo } from 'react'
 
 import { mdiInformation } from '@mdi/js'
+import BitbucketIcon from 'mdi-react/BitbucketIcon'
+import GithubIcon from 'mdi-react/GithubIcon'
+import GitIcon from 'mdi-react/GitIcon'
+import GitLabIcon from 'mdi-react/GitlabIcon'
 import { useLocation } from 'react-router-dom'
 
 import { ExternalServiceKind } from '@sourcegraph/shared/src/graphql-operations'
@@ -14,7 +18,8 @@ import { PageTitle } from '../PageTitle'
 
 import { AddExternalServicePage } from './AddExternalServicePage'
 import { ExternalServiceCard } from './ExternalServiceCard'
-import { allExternalServices, type AddExternalServiceOptions, gitHubAppConfig } from './externalServices'
+import { ExternalServiceGroup } from './ExternalServiceGroup'
+import { allExternalServices, AddExternalServiceOptions, gitHubAppConfig, GITHUB_DOTCOM } from './externalServices'
 
 import styles from './AddExternalServicesPage.module.scss'
 
@@ -59,6 +64,11 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
         setHasDismissedPrivacyWarning(true)
     }
 
+    const codeHostGroup = useMemo(
+        () => computeExternalServicesGroup(codeHostExternalServices),
+        [codeHostExternalServices]
+    )
+
     const externalService = useMemo(() => {
         const params = new URLSearchParams(search)
         const id = params.get('id')
@@ -100,7 +110,33 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     }
 
     // const temp = [ExternalServiceKind.GITHUB, ExternalServiceKind.GITLAB, ExternalServiceKind.BITBUCKETCLOUD]
-    console.log(codeHostExternalServices)
+    // console.log(codeHostExternalServices)
+
+    // const nonCodeHostServices: ExternalServiceKind[] = [
+    //     ExternalServiceKind.JVMPACKAGES,
+    //     ExternalServiceKind.NPMPACKAGES,
+    //     ExternalServiceKind.PYTHONPACKAGES,
+    //     ExternalServiceKind.RUBYPACKAGES,
+    //     ExternalServiceKind.RUSTPACKAGES,
+    //     ExternalServiceKind.GOMODULES,
+    // ]
+    // console.log(codeHostExternalServices, '<=====')
+
+    // const servicesMap = new Map<string, AddExternalServiceOptions[]>([
+    //     ['GitHub', []],
+    //     ['GitLab', []],
+    //     ['Bitbucket', []],
+    //     ['Other code hosts', []],
+    //     ['Dependencies', []],
+    // ])
+    // const cc = Object.entries(codeHostExternalServices)
+    //     .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1]))
+    //     .sort(([, externalService1], [, externalService2]) =>
+    //         externalService1.title.localeCompare(externalService2.title)
+    //     )
+    // console.log(Object.entries(codeHostExternalServices), '<===')
+
+    console.log(codeHostExternalServices, '<==')
 
     return (
         <>
@@ -128,6 +164,38 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
                 {!hasDismissedPrivacyWarning && (
                     <ExternalServicesPrivacyAlert dismissPrivacyWarning={dismissPrivacyWarning} />
                 )}
+
+                {allowedCodeHosts && (
+                    <>
+                        <br />
+                        <Text>
+                            <Icon aria-label="Information icon" svgPath={mdiInformation} /> Upgrade to{' '}
+                            <Link to="https://about.sourcegraph.com/pricing">Sourcegraph Enterprise</Link> to add
+                            repositories from other code hosts.
+                        </Text>
+                    </>
+                )}
+
+                {Object.entries(codeHostGroup).map(([displayName, info], index) => (
+                    <ExternalServiceGroup
+                        key={index}
+                        name={displayName}
+                        services={info.services}
+                        description={info.description}
+                        icon={info.icon}
+                        renderServiceIcon={info.renderServiceIcon}
+                    />
+                ))}
+
+                {Object.values(nonCodeHostExternalServices).length > 0 && (
+                    <ExternalServiceGroup
+                        name="Dependencies"
+                        services={Object.values(nonCodeHostExternalServices)}
+                        description=""
+                        renderServiceIcon={true}
+                    />
+                )}
+
                 {/* {Object.entries(codeHostExternalServices)
                     .filter(externalService => !allowedCodeHosts || allowedCodeHosts.includes(externalService[1]))
                     .sort(([, externalService1], [, externalService2]) =>
@@ -183,12 +251,6 @@ export const AddExternalServicesPage: FC<AddExternalServicesPageProps> = ({
     )
 }
 
-function getAddURL(id: string): string {
-    const parameters = new URLSearchParams()
-    parameters.append('id', id)
-    return `?${parameters.toString()}`
-}
-
 interface ExternalServicesPrivacyAlertProps {
     dismissPrivacyWarning: () => void
 }
@@ -229,3 +291,65 @@ const ExternalServicesPrivacyAlert: FC<ExternalServicesPrivacyAlertProps> = ({ d
         </div>
     </Alert>
 )
+
+interface ExternalServicesGroup {
+    services: AddExternalServiceOptions[]
+    icon: React.ComponentType<{ className?: string }>
+    description: string
+    renderServiceIcon: boolean
+}
+
+type GroupedServiceDisplayName = 'GitHub' | 'GitLab' | 'Bitbucket' | 'Other code hosts'
+
+const computeExternalServicesGroup = (
+    services: Record<string, AddExternalServiceOptions>
+): Record<GroupedServiceDisplayName, ExternalServicesGroup> => {
+    const groupedServices: Record<GroupedServiceDisplayName, ExternalServicesGroup> = {
+        GitHub: {
+            services: [],
+            icon: GithubIcon,
+            description: 'Connect with repositories on GitHub',
+            renderServiceIcon: false,
+        },
+        GitLab: {
+            services: [],
+            icon: GitLabIcon,
+            description: 'Connect with repositories on GitLab',
+            renderServiceIcon: false,
+        },
+        Bitbucket: {
+            services: [],
+            icon: BitbucketIcon,
+            description: 'Connect with repositories on Bitbucket',
+            renderServiceIcon: false,
+        },
+        'Other code hosts': { services: [], icon: GitIcon, description: '', renderServiceIcon: true },
+    }
+
+    for (const [_, service] of Object.entries(services)) {
+        switch (service.kind) {
+            case ExternalServiceKind.GITHUB:
+                groupedServices.GitHub.services.push(service)
+                break
+            case ExternalServiceKind.GITLAB:
+                groupedServices.GitLab.services.push(service)
+                break
+            case ExternalServiceKind.BITBUCKETCLOUD:
+            case ExternalServiceKind.BITBUCKETSERVER:
+                groupedServices.Bitbucket.services.push(service)
+                break
+            // case ExternalServiceKind.JVMPACKAGES:
+            // case ExternalServiceKind.NPMPACKAGES:
+            // case ExternalServiceKind.PYTHONPACKAGES:
+            // case ExternalServiceKind.RUBYPACKAGES:
+            // case ExternalServiceKind.RUSTPACKAGES:
+            // case ExternalServiceKind.GOMODULES:
+            //     groupedServices.Dependencies.services.push(service)
+            //     break
+            default:
+                groupedServices['Other code hosts'].services.push(service)
+        }
+    }
+
+    return groupedServices
+}

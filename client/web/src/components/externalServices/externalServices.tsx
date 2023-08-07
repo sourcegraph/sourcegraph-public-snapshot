@@ -583,7 +583,7 @@ const azureDevOpsEditorActions = (): EditorAction[] => [
     },
 ]
 
-const GITHUB_DOTCOM: AddExternalServiceOptions = {
+export const GITHUB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITHUB,
     shortDescription: 'Connect GitHub.com hosted repositories using an access token',
     title: 'GitHub.com',
@@ -860,6 +860,7 @@ const BITBUCKET_CLOUD: AddExternalServiceOptions = {
             </Text>
         </div>
     ),
+    shortDescription: 'Cloud-hosted using credentials',
 }
 const BITBUCKET_SERVER: AddExternalServiceOptions = {
     kind: ExternalServiceKind.BITBUCKETSERVER,
@@ -1023,12 +1024,13 @@ const BITBUCKET_SERVER: AddExternalServiceOptions = {
             },
         },
     ],
+    shortDescription: 'Self-hosted using an access token',
 }
 const GITLAB_DOTCOM: AddExternalServiceOptions = {
     kind: ExternalServiceKind.GITLAB,
     title: 'GitLab.com',
     icon: GitLabIcon,
-    shortDescription: 'Connect GitLab.com hosted repositories using an access token',
+    shortDescription: 'Cloud-hosted using an access token',
     jsonSchema: gitlabSchemaJSON,
     defaultDisplayName: 'GitLab',
     defaultConfig: `{
@@ -1044,7 +1046,7 @@ const GITLAB_DOTCOM: AddExternalServiceOptions = {
 const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
     ...GITLAB_DOTCOM,
     title: 'GitLab Self-Managed',
-    shortDescription: 'Connect repositories on self-hosted GitLab installations using an access token',
+    shortDescription: 'Self-hosted installation using an access token',
     Instructions: () => <GitLabInstructions isSelfManaged={true} />,
     editorActions: gitlabEditorActions(true),
     defaultConfig: `{
