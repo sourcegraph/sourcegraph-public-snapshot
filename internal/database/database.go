@@ -3,6 +3,8 @@ package database
 import (
 	"context"
 	"database/sql"
+	"fmt"
+	"reflect"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -13,6 +15,28 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 )
+
+type InvalidResponseType struct {
+	FromType reflect.Type
+	ToType   reflect.Type
+}
+
+func (e *InvalidResponseType) Error() string {
+	return fmt.Sprintf("Could not cast from %s to %s", e.FromType, e.ToType)
+}
+
+func ReadResponse[T any](resp any, respErr error) (t T, err error) {
+	if respErr != nil {
+		return t, err
+	}
+
+	createResp, ok := resp.(T)
+	if !ok {
+		return t, &InvalidResponseType{FromType: reflect.TypeOf(resp), ToType: reflect.TypeOf((*T)(nil))}
+	}
+
+	return createResp, nil
+}
 
 type DBQuery interface {
 	Execute(context.Context, *basestore.Store) (any, error)

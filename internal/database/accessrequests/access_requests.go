@@ -114,10 +114,6 @@ type CreateQuery struct {
 	AccessRequest *types.AccessRequest
 }
 
-type CreateResponse struct {
-	AccessRequest *types.AccessRequest
-}
-
 func (q *CreateQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
 	var newAccessRequest *types.AccessRequest
 	err := store.WithTransact(ctx, func(tx *basestore.Store) error {
@@ -160,7 +156,7 @@ func (q *CreateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 
 		return nil
 	})
-	return &CreateResponse{newAccessRequest}, err
+	return newAccessRequest, err
 }
 
 func (c *Client) Create(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
@@ -168,24 +164,10 @@ func (c *Client) Create(ctx context.Context, accessRequest *types.AccessRequest)
 		AccessRequest: accessRequest,
 	}
 
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	createResp, ok := resp.(*CreateResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return createResp.AccessRequest, nil
+	return database.ReadResponse[*types.AccessRequest](c.dbclient.Execute(ctx, query))
 }
 
 type UpdateQuery struct {
-	AccessRequest *types.AccessRequest
-}
-
-type UpdateResponse struct {
 	AccessRequest *types.AccessRequest
 }
 
@@ -199,7 +181,7 @@ func (q *UpdateQuery) Execute(ctx context.Context, store *basestore.Store) (any,
 		return nil, errors.Wrap(err, "scanning access_request")
 	}
 
-	return &UpdateResponse{updated}, nil
+	return updated, nil
 }
 
 func (c *Client) Update(ctx context.Context, accessRequest *types.AccessRequest) (*types.AccessRequest, error) {
@@ -207,25 +189,11 @@ func (c *Client) Update(ctx context.Context, accessRequest *types.AccessRequest)
 		AccessRequest: accessRequest,
 	}
 
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	updateResp, ok := resp.(*UpdateResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return updateResp.AccessRequest, nil
+	return database.ReadResponse[*types.AccessRequest](c.dbclient.Execute(ctx, query))
 }
 
 type GetByIDQuery struct {
 	ID int32
-}
-
-type GetByIDResponse struct {
-	AccessRequest *types.AccessRequest
 }
 
 func (c *Client) GetByID(ctx context.Context, id int32) (*types.AccessRequest, error) {
@@ -233,17 +201,7 @@ func (c *Client) GetByID(ctx context.Context, id int32) (*types.AccessRequest, e
 		ID: id,
 	}
 
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	getByIDResp, ok := resp.(*GetByIDResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return getByIDResp.AccessRequest, nil
+	return database.ReadResponse[*types.AccessRequest](c.dbclient.Execute(ctx, query))
 }
 
 func (q *GetByIDQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
@@ -256,15 +214,11 @@ func (q *GetByIDQuery) Execute(ctx context.Context, store *basestore.Store) (any
 		return nil, err
 	}
 
-	return &GetByIDResponse{node}, nil
+	return node, nil
 }
 
 type GetByEmailQuery struct {
 	Email string
-}
-
-type GetByEmailResponse struct {
-	AccessRequest *types.AccessRequest
 }
 
 func (q *GetByEmailQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
@@ -277,7 +231,7 @@ func (q *GetByEmailQuery) Execute(ctx context.Context, store *basestore.Store) (
 		return nil, err
 	}
 
-	return &GetByEmailResponse{node}, nil
+	return node, nil
 }
 
 func (c *Client) GetByEmail(ctx context.Context, email string) (*types.AccessRequest, error) {
@@ -285,25 +239,11 @@ func (c *Client) GetByEmail(ctx context.Context, email string) (*types.AccessReq
 		Email: email,
 	}
 
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	getByEmailResp, ok := resp.(*GetByEmailResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return getByEmailResp.AccessRequest, nil
+	return database.ReadResponse[*types.AccessRequest](c.dbclient.Execute(ctx, query))
 }
 
 type CountQuery struct {
 	FArgs *FilterArgs
-}
-
-type CountResponse struct {
-	Count int
 }
 
 func (q *CountQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
@@ -313,7 +253,7 @@ func (q *CountQuery) Execute(ctx context.Context, store *basestore.Store) (any, 
 		return nil, err
 	}
 
-	return &CountResponse{count}, nil
+	return count, nil
 }
 
 func (c *Client) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
@@ -321,26 +261,12 @@ func (c *Client) Count(ctx context.Context, fArgs *FilterArgs) (int, error) {
 		FArgs: fArgs,
 	}
 
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return 0, err
-	}
-
-	countResp, ok := resp.(*CountResponse)
-	if !ok {
-		return 0, errors.New("Oh noes")
-	}
-
-	return countResp.Count, nil
+	return database.ReadResponse[int](c.dbclient.Execute(ctx, query))
 }
 
 type ListQuery struct {
 	FArgs *FilterArgs
 	PArgs *database.PaginationArgs
-}
-
-type ListResponse struct {
-	AccessRequests []*types.AccessRequest
 }
 
 func (q *ListQuery) Execute(ctx context.Context, store *basestore.Store) (any, error) {
@@ -366,7 +292,7 @@ func (q *ListQuery) Execute(ctx context.Context, store *basestore.Store) (any, e
 		return nil, err
 	}
 
-	return &ListResponse{nodes}, nil
+	return nodes, nil
 }
 
 func (c *Client) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.PaginationArgs) ([]*types.AccessRequest, error) {
@@ -375,17 +301,7 @@ func (c *Client) List(ctx context.Context, fArgs *FilterArgs, pArgs *database.Pa
 		PArgs: pArgs,
 	}
 
-	resp, err := c.dbclient.Execute(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	listResp, ok := resp.(*ListResponse)
-	if !ok {
-		return nil, errors.New("Oh noes")
-	}
-
-	return listResp.AccessRequests, nil
+	return database.ReadResponse[[]*types.AccessRequest](c.dbclient.Execute(ctx, query))
 }
 
 func scanAccessRequest(sc dbutil.Scanner) (*types.AccessRequest, error) {
