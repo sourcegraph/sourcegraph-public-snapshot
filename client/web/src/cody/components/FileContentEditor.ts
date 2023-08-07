@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import {
     ActiveTextEditor,
     ActiveTextEditorSelection,
@@ -19,6 +21,10 @@ export class FileContentEditor implements Editor {
     }
 
     public getWorkspaceRootPath(): string | null {
+        return null
+    }
+
+    public getWorkspaceRootUri(): URI | null {
         return null
     }
 

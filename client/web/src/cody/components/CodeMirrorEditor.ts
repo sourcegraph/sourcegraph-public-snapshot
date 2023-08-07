@@ -1,8 +1,11 @@
 import type { EditorView } from '@codemirror/view'
+import { URI } from 'vscode-uri'
 
 import {
     ActiveTextEditor,
+    ActiveTextEditorDiagnostic,
     ActiveTextEditorSelection,
+    ActiveTextEditorSelectionRange,
     ActiveTextEditorVisibleContent,
     Editor,
 } from '@sourcegraph/cody-shared/dist/editor'
@@ -34,6 +37,16 @@ export class CodeMirrorEditor implements Editor {
     }
 
     public getWorkspaceRootPath(): string | null {
+        return null
+    }
+
+    // ???
+    public getWorkspaceRootUri(): URI | null {
+        return null
+    }
+    public getActiveTextEditorDiagnosticsForRange(
+        range: ActiveTextEditorSelectionRange
+    ): ActiveTextEditorDiagnostic[] | null {
         return null
     }
 
