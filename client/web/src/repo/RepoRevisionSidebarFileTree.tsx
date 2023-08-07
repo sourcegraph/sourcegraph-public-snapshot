@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { useApolloClient, gql as apolloGql } from '@apollo/client'
 import {
@@ -21,8 +21,8 @@ import {
     TreeNode as WildcardTreeNode,
     Link,
     LoadingSpinner,
-    ErrorAlert,
     Tooltip,
+    ErrorAlert,
 } from '@sourcegraph/wildcard'
 
 import { FileTreeEntriesResult, FileTreeEntriesVariables } from '../graphql-operations'
@@ -90,18 +90,12 @@ interface Props extends FocusableTreeProps {
 }
 
 export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props => {
-    const { initialFilePathIsDirectory, telemetryService, onExpandParent } = props
+    const { telemetryService, onExpandParent } = props
 
     // Ensure that the initial file path does not update when the props change
-    // const [initialFilePath] = useState(() =>
-    //     props.initialFilePathIsDirectory ? props.initialFilePath : getParentPath(props.initialFilePath)
-    // )
-
-    const initialFilePath = useMemo(
-        () => (initialFilePathIsDirectory ? props.initialFilePath : getParentPath(props.initialFilePath)),
-        [props.initialFilePath, initialFilePathIsDirectory]
+    const [initialFilePath] = useState(() =>
+        props.initialFilePathIsDirectory ? props.initialFilePath : getParentPath(props.initialFilePath)
     )
-
     const [treeData, setTreeData] = useState<TreeData | null>(null)
 
     // We need a mutable reference to the tree data since we don't want some
@@ -144,24 +138,21 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
         },
     })
 
-    const updateTreeData = useCallback(
-        (currentTreeData: TreeData, data: FileTreeEntriesResult, loadParent: boolean = false) => {
-            const rootTreeUrl = data?.repository?.commit?.tree?.url
-            const entries = data?.repository?.commit?.tree?.entries
+    const updateTreeData = useCallback((currentTreeData: TreeData, data: FileTreeEntriesResult) => {
+        const rootTreeUrl = data?.repository?.commit?.tree?.url
+        const entries = data?.repository?.commit?.tree?.entries
 
-            if (rootTreeUrl === undefined || entries === undefined) {
-                return
-            }
+        if (rootTreeUrl === undefined || entries === undefined) {
+            return
+        }
 
-            const nextTreeData = appendTreeData(currentTreeData, entries, rootTreeUrl)
+        const nextTreeData = appendTreeData(currentTreeData, entries, rootTreeUrl)
 
-            setTreeData(nextTreeData)
-            // Eagerly update the ref so that the selected path syncing can
-            // use the new data before the tree is re-rendered.
-            treeDataRef.current = nextTreeData
-        },
-        []
-    )
+        setTreeData(nextTreeData)
+        // Eagerly update the ref so that the selected path syncing can
+        // use the new data before the tree is re-rendered.
+        treeDataRef.current = nextTreeData
+    }, [])
 
     // Initialize the treeData from the initial query
     useEffect(() => {
@@ -174,7 +165,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
     const client = useApolloClient()
     const fetchEntries = useCallback(
-        async (variables: FileTreeEntriesVariables, loadParent: boolean = false) => {
+        async (variables: FileTreeEntriesVariables) => {
             const result = await client.query<FileTreeEntriesResult, FileTreeEntriesVariables>({
                 query: APOLLO_QUERY,
                 variables,
@@ -184,7 +175,7 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
                 return
             }
 
-            updateTreeData(treeDataRef.current, result.data, loadParent)
+            updateTreeData(treeDataRef.current, result.data)
         },
         [client, updateTreeData]
     )
@@ -230,27 +221,15 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
 
             if (element.dotdot) {
                 telemetryService.log('FileTreeLoadParent')
+                navigate(element.dotdot)
 
-                let parent = dirname(initialFilePath)
+                let parent = props.initialFilePathIsDirectory
+                    ? dirname(initialFilePath)
+                    : dirname(dirname(initialFilePath))
                 if (parent === '.') {
                     parent = ''
                 }
-
-                // onExpandParent(parent)
-
-                async function loadParentTree(): Promise<void> {
-                    await fetchEntries(
-                        {
-                            ...defaultVariables,
-                            filePath: parent,
-                            ancestors: false,
-                        },
-                        true
-                    )
-                }
-
-                loadParentTree()
-
+                onExpandParent(parent)
                 return
             }
 
@@ -268,7 +247,6 @@ export const RepoRevisionSidebarFileTree: React.FunctionComponent<Props> = props
             props.initialFilePathIsDirectory,
             initialFilePath,
             onExpandParent,
-            fetchEntries,
         ]
     )
 
