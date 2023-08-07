@@ -12,5 +12,9 @@
   "ViewerPermission": "ADMIN",
   "RepositoryTopics": {
    "Nodes": []
+  },
+  "Parent": {
+   "NameWithOwner": "sourcegraph/automation-testing",
+   "IsFork": false
   }
  }

@@ -153,7 +153,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Release branch nightly healthcheck build
 
@@ -215,7 +215,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Publish docker registry mirror image, Push final images
 
 ### Release branch
 
@@ -233,7 +233,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Browser extension release build
 
@@ -274,7 +274,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Publish executor image, Publish executor binary, Push final images
 
 ### Main dry run
 
@@ -297,7 +297,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Patch image
 
@@ -350,7 +350,7 @@ sg ci build docker-images-candidates-notest
 Base pipeline (more steps might be included based on branch changes):
 
 - **Image builds**: Build Docker images
-- **Publish images**: Push final images, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine
+- **Publish images**: Push final images, dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine
 
 ### Backend integration tests
 
@@ -373,7 +373,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **Security Scanning**: Sonarcloud Scan
 - **Publish candidate images**: Push candidate Images
 - **End-to-end tests**: Executors E2E
-- **Publish images**: executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
+- **Publish images**: dind, executor-vm, alpine-3.14, codeinsights-db, codeintel-db, postgres-12-alpine, Push final images
 
 ### Bazel command
 

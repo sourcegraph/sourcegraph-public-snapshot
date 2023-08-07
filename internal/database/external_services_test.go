@@ -248,6 +248,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	tests := []struct {
 		name             string
 		externalService  *types.ExternalService
+		codeHostURL      string
 		wantUnrestricted bool
 		wantHasWebhooks  bool
 		wantError        bool
@@ -259,6 +260,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITHUB #1",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "webhooks": [{"org": "org", "secret": "secret"}]}`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  true,
 		},
@@ -269,6 +271,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITHUB #1",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
@@ -279,6 +282,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITHUB #2",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
@@ -295,6 +299,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 	// "authorization": {}
 }`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 		},
 		{
@@ -304,6 +309,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITHUB #4",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
 			},
+			codeHostURL:      "https://github.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
@@ -314,6 +320,7 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				DisplayName: "GITLAB #1",
 				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`),
 			},
+			codeHostURL:      "https://gitlab.com/",
 			wantUnrestricted: false,
 			wantHasWebhooks:  false,
 		},
@@ -363,6 +370,14 @@ func TestExternalServicesStore_Create(t *testing.T) {
 				t.Fatalf("Wanted has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
 			}
 
+			ch, err := db.CodeHosts().GetByURL(ctx, test.codeHostURL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ch.ID != *got.CodeHostID {
+				t.Fatalf("expected code host ids to match:%+v\n, and: %+v\n", ch.ID, *got.CodeHostID)
+			}
+
 			err = db.ExternalServices().Delete(ctx, test.externalService.ID)
 			if err != nil {
 				t.Fatal(err)
@@ -404,6 +419,7 @@ func TestExternalServicesStore_Update(t *testing.T) {
 	ctx := context.Background()
 
 	now := timeutil.Now()
+	codeHostURL := "https://github.com/"
 
 	envvar.MockSourcegraphDotComMode(true)
 	defer envvar.MockSourcegraphDotComMode(false)
@@ -418,6 +434,16 @@ func TestExternalServicesStore_Update(t *testing.T) {
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
 	}
 	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// We want to test that Update creates the Code Host, so we have to delete it first because db.ExternalServices().Create also creates the code host.
+	ch, err := db.CodeHosts().GetByURL(ctx, codeHostURL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = db.CodeHosts().Delete(ctx, ch.ID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -605,6 +631,14 @@ func TestExternalServicesStore_Update(t *testing.T) {
 
 			if (got.TokenExpiresAt != nil) != test.wantTokenExpiresAt {
 				t.Fatalf("Want token_expires_at = %v, but got %v", test.wantTokenExpiresAt, got.TokenExpiresAt)
+			}
+
+			ch, err := db.CodeHosts().GetByURL(ctx, codeHostURL)
+			if err != nil {
+				t.Fatal(err)
+			}
+			if ch.ID != *got.CodeHostID {
+				t.Fatalf("expected code host ids to match:%+v\n, and: %+v\n", ch.ID, *got.CodeHostID)
 			}
 		})
 	}
@@ -2061,6 +2095,50 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
+	})
+
+	t.Run("check code hosts created with many external services", func(t *testing.T) {
+		db := NewDB(logger, dbtest.NewDB(logger, t))
+		store := db.ExternalServices()
+
+		svcs := typestest.MakeExternalServices()
+		want := typestest.GenerateExternalServices(11, svcs...)
+
+		if err := store.Upsert(ctx, want...); err != nil {
+			t.Fatalf("Upsert error: %s", err)
+		}
+
+		haveES, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+		chs, _, err := db.CodeHosts().List(ctx, ListCodeHostsOpts{
+			LimitOffset: LimitOffset{
+				Limit: 20,
+			},
+		})
+		if err != nil {
+			t.Fatalf("List error: %s", err)
+		}
+
+		// for this test all external services of the same kind have the same URL, so we can group them into one code host.
+		chMap := make(map[string]int32)
+		for _, es := range haveES {
+			chMap[es.Kind] = *es.CodeHostID
+		}
+		if len(chs) != len(chMap) {
+			t.Fatalf("expected equal number of external services: %+v and code hosts: %+v", len(chs), len(chMap))
+		}
+		for _, ch := range chs {
+			if chID, ok := chMap[ch.Kind]; !ok {
+				t.Fatalf("could not find code host with id: %+v", ch.ID)
+			} else {
+				if chID != ch.ID {
+					t.Fatalf("expected code host ids to match: %+v and %+v", ch.ID, chID)
+				}
+			}
+		}
+
 	})
 }
 
