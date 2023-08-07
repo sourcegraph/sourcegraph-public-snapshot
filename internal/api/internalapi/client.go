@@ -12,12 +12,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -43,35 +41,6 @@ var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Buckets: prometheus.DefBuckets,
 }, []string{"category", "code"})
 
-// TODO(slimsag): In the future, once we're no longer using environment
-// variables to build ExternalURL, remove this in favor of services just reading it
-// directly from the configuration file.
-//
-// TODO(slimsag): needs cleanup as part of upcoming configuration refactor.
-func (c *internalClient) ExternalURL(ctx context.Context) (string, error) {
-	var externalURL string
-	err := c.postInternal(ctx, "app-url", nil, &externalURL)
-	if err != nil {
-		return "", err
-	}
-	return externalURL, nil
-}
-
-// SendEmail issues a request to send an email. All services outside the frontend should
-// use this to send emails.  Source is used to categorize metrics, and should indicate the
-// product feature that is sending this email.
-//
-// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
-// the email should be verified or not, and conduct the appropriate checks before sending.
-// This helps reduce the chance that we damage email sender reputations when attempting to
-// send emails to nonexistent email addresses.
-func (c *internalClient) SendEmail(ctx context.Context, source string, message txtypes.Message) error {
-	return c.postInternal(ctx, "send-email", &txtypes.InternalAPIMessage{
-		Source:  source,
-		Message: message,
-	}, nil)
-}
-
 // MockClientConfiguration mocks (*internalClient).Configuration.
 var MockClientConfiguration func() (conftypes.RawUnified, error)
 
@@ -82,23 +51,6 @@ func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnifie
 	var cfg conftypes.RawUnified
 	err := c.postInternal(ctx, "configuration", nil, &cfg)
 	return cfg, err
-}
-
-var MockExternalServiceConfigs func(kind string, result any) error
-
-// ExternalServiceConfigs fetches external service configs of a single kind into the result parameter,
-// which should be a slice of the expected config type.
-func (c *internalClient) ExternalServiceConfigs(ctx context.Context, kind string, result any) error {
-	if MockExternalServiceConfigs != nil {
-		return MockExternalServiceConfigs(kind, result)
-	}
-	return c.postInternal(ctx, "external-services/configs", api.ExternalServiceConfigsRequest{
-		Kind: kind,
-	}, &result)
-}
-
-func (c *internalClient) LogTelemetry(ctx context.Context, reqBody any) error {
-	return c.postInternal(ctx, "telemetry", reqBody, nil)
 }
 
 // postInternal sends an HTTP post request to the internal route.

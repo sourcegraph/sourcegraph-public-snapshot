@@ -19,6 +19,7 @@ import (
 )
 
 var legacyDockerImages = []string{
+	"dind",
 	"executor-vm",
 
 	// See RFC 793, those images will be dropped in 5.1.x.
@@ -214,6 +215,22 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.AppInsiders:
 		ops = operations.NewSet(addAppReleaseSteps(c, true))
+
+	case runtype.CandidatesNoTest:
+		imageBuildOps := operations.NewNamedSet("Image builds")
+		imageBuildOps.Append(bazelBuildCandidateDockerImages(legacyDockerImages, c.Version, c.candidateImageTag(), c.RunType))
+		ops.Merge(imageBuildOps)
+
+		ops.Append(wait)
+
+		// Add final artifacts
+		publishOps := operations.NewNamedSet("Publish images")
+		publishOps.Append(bazelPushImagesNoTest(c.Version))
+
+		for _, dockerImage := range legacyDockerImages {
+			publishOps.Append(publishFinalDockerImage(c, dockerImage))
+		}
+		ops.Merge(publishOps)
 
 	case runtype.ImagePatch:
 		// only build image for the specified image in the branch name

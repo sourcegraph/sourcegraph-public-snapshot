@@ -7,7 +7,8 @@ Cody uses Sourcegraph to fetch relevant context to generate answers and code. Th
 1. [Create a Sourcegraph.com account](https://sourcegraph.com/sign-up)
 2. Install [the Cody VS Code extension](https://marketplace.visualstudio.com/items?itemName=sourcegraph.cody-ai)
 3. Open the Cody extension
-4. Click on **Continue with Sourcegraph.com** and follow the instructions
+4. Click on **Other Sign In Options...** and select Sign in to Sourcegraph.com
+5. Follow the prompts to authorize Cody to access your Sourcegraph.com account
 
 You're now ready to use Cody in VS Code!
 

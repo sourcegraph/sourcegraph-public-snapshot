@@ -823,6 +823,27 @@ Webhook actions configured on code monitors
 
 **url**: The webhook URL we send the code monitor event to
 
+# Table "public.code_hosts"
+```
+             Column              |           Type           | Collation | Nullable |                Default                 
+---------------------------------+--------------------------+-----------+----------+----------------------------------------
+ id                              | integer                  |           | not null | nextval('code_hosts_id_seq'::regclass)
+ kind                            | text                     |           | not null | 
+ url                             | text                     |           | not null | 
+ api_rate_limit_quota            | integer                  |           |          | 
+ api_rate_limit_interval_seconds | integer                  |           |          | 
+ git_rate_limit_quota            | integer                  |           |          | 
+ git_rate_limit_interval_seconds | integer                  |           |          | 
+ created_at                      | timestamp with time zone |           | not null | now()
+ updated_at                      | timestamp with time zone |           | not null | now()
+Indexes:
+    "code_hosts_pkey" PRIMARY KEY, btree (id)
+    "code_hosts_url_key" UNIQUE CONSTRAINT, btree (url)
+Referenced by:
+    TABLE "external_services" CONSTRAINT "external_services_code_host_id_fkey" FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
+
+```
+
 # Table "public.codeintel_autoindex_queue"
 ```
     Column     |           Type           | Collation | Nullable |                        Default                        
@@ -1333,25 +1354,28 @@ Referenced by:
 
 # Table "public.event_logs"
 ```
-      Column       |           Type           | Collation | Nullable |                Default                 
--------------------+--------------------------+-----------+----------+----------------------------------------
- id                | bigint                   |           | not null | nextval('event_logs_id_seq'::regclass)
- name              | text                     |           | not null | 
- url               | text                     |           | not null | 
- user_id           | integer                  |           | not null | 
- anonymous_user_id | text                     |           | not null | 
- source            | text                     |           | not null | 
- argument          | jsonb                    |           | not null | 
- version           | text                     |           | not null | 
- timestamp         | timestamp with time zone |           | not null | 
- feature_flags     | jsonb                    |           |          | 
- cohort_id         | date                     |           |          | 
- public_argument   | jsonb                    |           | not null | '{}'::jsonb
- first_source_url  | text                     |           |          | 
- last_source_url   | text                     |           |          | 
- referrer          | text                     |           |          | 
- device_id         | text                     |           |          | 
- insert_id         | text                     |           |          | 
+          Column          |           Type           | Collation | Nullable |                Default                 
+--------------------------+--------------------------+-----------+----------+----------------------------------------
+ id                       | bigint                   |           | not null | nextval('event_logs_id_seq'::regclass)
+ name                     | text                     |           | not null | 
+ url                      | text                     |           | not null | 
+ user_id                  | integer                  |           | not null | 
+ anonymous_user_id        | text                     |           | not null | 
+ source                   | text                     |           | not null | 
+ argument                 | jsonb                    |           | not null | 
+ version                  | text                     |           | not null | 
+ timestamp                | timestamp with time zone |           | not null | 
+ feature_flags            | jsonb                    |           |          | 
+ cohort_id                | date                     |           |          | 
+ public_argument          | jsonb                    |           | not null | '{}'::jsonb
+ first_source_url         | text                     |           |          | 
+ last_source_url          | text                     |           |          | 
+ referrer                 | text                     |           |          | 
+ device_id                | text                     |           |          | 
+ insert_id                | text                     |           |          | 
+ billing_product_category | text                     |           |          | 
+ billing_event_id         | text                     |           |          | 
+ client                   | text                     |           |          | 
 Indexes:
     "event_logs_pkey" PRIMARY KEY, btree (id)
     "event_logs_anonymous_user_id" btree (anonymous_user_id)
@@ -1653,6 +1677,7 @@ Foreign-key constraints:
  namespace_org_id  | integer                  |           |          | 
  has_webhooks      | boolean                  |           |          | 
  token_expires_at  | timestamp with time zone |           |          | 
+ code_host_id      | integer                  |           |          | 
 Indexes:
     "external_services_pkey" PRIMARY KEY, btree (id)
     "external_services_unique_kind_org_id" UNIQUE, btree (kind, namespace_org_id) WHERE deleted_at IS NULL AND namespace_user_id IS NULL AND namespace_org_id IS NOT NULL
@@ -1665,6 +1690,7 @@ Check constraints:
     "check_non_empty_config" CHECK (btrim(config) <> ''::text)
     "external_services_max_1_namespace" CHECK (namespace_user_id IS NULL AND namespace_org_id IS NULL OR (namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
+    "external_services_code_host_id_fkey" FOREIGN KEY (code_host_id) REFERENCES code_hosts(id) ON UPDATE CASCADE ON DELETE SET NULL DEFERRABLE INITIALLY DEFERRED
     "external_services_namepspace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     "external_services_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
@@ -3517,6 +3543,8 @@ Foreign-key constraints:
  text_chunks_embedded | integer |           | not null | 0
  text_files_skipped   | jsonb   |           | not null | '{}'::jsonb
  text_bytes_embedded  | integer |           | not null | 0
+ code_chunks_excluded | integer |           | not null | 0
+ text_chunks_excluded | integer |           | not null | 0
 Indexes:
     "repo_embedding_job_stats_pkey" PRIMARY KEY, btree (job_id)
 Foreign-key constraints:

@@ -8,10 +8,10 @@ import (
 	"io"
 	"net/http"
 	"sort"
-	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
+	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -44,8 +44,15 @@ func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
 	return fmt.Sprintf("openai/%s", c.model)
 }
 
-// GetEmbeddings tries to embed the given texts using the external service specified in the config.
-func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []string) ([]float32, error) {
+func (c *openaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
+}
+
+func (c *openaiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
+}
+
+func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
 	for _, text := range texts {
 		if text == "" {
 			// The OpenAI API will return an error if any of the strings in texts is an empty string,
@@ -54,17 +61,7 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 		}
 	}
 
-	_, replaceNewlines := modelsWithoutNewlines[c.model]
-	augmentedTexts := texts
-	if replaceNewlines {
-		augmentedTexts = make([]string, len(texts))
-		// Replace newlines for certain (OpenAI) models, because they can negatively affect performance.
-		for idx, text := range texts {
-			augmentedTexts[idx] = strings.ReplaceAll(text, "\n", " ")
-		}
-	}
-
-	response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: augmentedTexts})
+	response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: texts})
 	if err != nil {
 		return nil, err
 	}
@@ -80,6 +77,7 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 
 	dimensionality := len(response.Data[0].Embedding)
 	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
+	failed := make([]int, 0)
 	for _, embedding := range response.Data {
 		if len(embedding.Embedding) != 0 {
 			embeddings = append(embeddings, embedding.Embedding...)
@@ -87,19 +85,19 @@ func (c *openaiEmbeddingsClient) GetEmbeddings(ctx context.Context, texts []stri
 			// HACK(camdencheek): Nondeterministically, the OpenAI API will
 			// occasionally send back a `null` for an embedding in the
 			// response. Try it again a few times and hope for the best.
-			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, augmentedTexts[embedding.Index], 3)
+			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, texts[embedding.Index], 3)
 			if err != nil {
-				return nil, client.PartialError{Err: err, Index: embedding.Index}
+				failed = append(failed, embedding.Index)
+
+				// reslice to provide zero value embedding for failed chunk
+				embeddings = embeddings[:len(embeddings)+dimensionality]
+				continue
 			}
 			embeddings = append(embeddings, resp.Data[0].Embedding...)
 		}
 	}
 
-	return embeddings, nil
-}
-
-var modelsWithoutNewlines = map[string]struct{}{
-	"text-embedding-ada-002": {},
+	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: dimensionality}, nil
 }
 
 func (c *openaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {

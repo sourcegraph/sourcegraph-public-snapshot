@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -14,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/wrexec"
 	"github.com/sourcegraph/sourcegraph/schema"
-	"github.com/stretchr/testify/require"
 )
 
 func TestRecordedCommandsResolver(t *testing.T) {
@@ -24,30 +25,6 @@ func TestRecordedCommandsResolver(t *testing.T) {
 	startTime, err := time.Parse(timeFormat, "2023-07-20T15:04:05Z")
 	require.NoError(t, err)
 
-	cmd1 := wrexec.RecordedCommand{
-		Start:    startTime,
-		Duration: float64(100),
-		Args:     []string{"git", "fetch"},
-		Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-		Path:     "/opt/homebrew/bin/git",
-	}
-	cmd2 := wrexec.RecordedCommand{
-		Start:    startTime,
-		Duration: float64(10),
-		Args:     []string{"git", "clone"},
-		Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-		Path:     "/opt/homebrew/bin/git",
-	}
-	cmd3 := wrexec.RecordedCommand{
-		Start:    startTime,
-		Duration: float64(5),
-		Args:     []string{"git", "ls-files"},
-		Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-		Path:     "/opt/homebrew/bin/git",
-	}
-
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
-	t.Cleanup(func() { conf.Mock(nil) })
 	db := database.NewMockDB()
 
 	repoName := "github.com/sourcegraph/sourcegraph"
@@ -58,119 +35,451 @@ func TestRecordedCommandsResolver(t *testing.T) {
 		backend.Mocks = backend.MockServices{}
 	})
 
-	repos := database.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
-	db.ReposFunc.SetDefaultReturn(repos)
-
-	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
-		Query: `
+	t.Run("gitRecoreder not configured for repository", func(t *testing.T) {
+		// When gitRecorder isn't set, we return an empty list.
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
 				{
 					repository(name: "github.com/sourcegraph/sourcegraph") {
 						recordedCommands {
-							start
-							duration
-							command
-							dir
-							path
+							nodes {
+								start
+								duration
+								command
+								dir
+								path
+							}
+							totalCount
+							pageInfo {
+								hasNextPage
+							}
 						}
 					}
 				}
 			`,
-		ExpectedResult: `
+			ExpectedResult: `
 				{
 					"repository": {
-						"recordedCommands": []
+						"recordedCommands": {
+							"nodes": [],
+							"totalCount": 0,
+							"pageInfo": {
+								"hasNextPage": false
+							}
+						}
 					}
 				}
 			`,
+		})
+
 	})
 
-	r := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), 3)
-	err = r.Insert(marshalCmd(t, cmd1))
-	require.NoError(t, err)
+	t.Run("no recorded commands for repository", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
+		t.Cleanup(func() { conf.Mock(nil) })
 
-	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
-		Query: `
-				{
-					repository(name: "github.com/sourcegraph/sourcegraph") {
-						recordedCommands {
-							start
-							duration
-							command
-							dir
-							path
+		repos := database.NewMockRepoStore()
+		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
+
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
+					{
+						repository(name: "github.com/sourcegraph/sourcegraph") {
+							recordedCommands {
+								nodes {
+									start
+									duration
+									command
+									dir
+									path
+								}
+								totalCount
+								pageInfo {
+									hasNextPage
+								}
+							}
 						}
 					}
-				}
-			`,
-		ExpectedResult: `
-				{
-					"repository": {
-						"recordedCommands": [
-							{
-								"command": "git fetch",
-								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-								"duration": 100,
-								"path": "/opt/homebrew/bin/git",
-								"start": "2023-07-20T15:04:05Z"
+				`,
+			ExpectedResult: `
+					{
+						"repository": {
+							"recordedCommands": {
+								"nodes": [],
+								"totalCount": 0,
+								"pageInfo": {
+									"hasNextPage": false
+								}
 							}
-						]
+						}
 					}
-				}
-			`,
+				`,
+		})
+
 	})
 
-	err = r.Insert(marshalCmd(t, cmd2))
-	require.NoError(t, err)
-	err = r.Insert(marshalCmd(t, cmd3))
-	require.NoError(t, err)
+	t.Run("one recorded command for repository", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
+		t.Cleanup(func() { conf.Mock(nil) })
 
-	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
-		Query: `
+		repos := database.NewMockRepoStore()
+		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
+
+		r := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), 3)
+		cmd1 := wrexec.RecordedCommand{
+			Start:    startTime,
+			Duration: float64(100),
+			Args:     []string{"git", "fetch"},
+			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+			Path:     "/opt/homebrew/bin/git",
+		}
+		err = r.Insert(marshalCmd(t, cmd1))
+		require.NoError(t, err)
+
+		RunTest(t, &Test{
+			Schema: mustParseGraphQLSchema(t, db),
+			Query: `
 				{
 					repository(name: "github.com/sourcegraph/sourcegraph") {
 						recordedCommands {
-							start
-							duration
-							command
-							dir
-							path
+							nodes {
+								start
+								duration
+								command
+								dir
+								path
+							}
+							totalCount
+							pageInfo {
+								hasNextPage
+							}
 						}
 					}
 				}
 			`,
-		ExpectedResult: `
+			ExpectedResult: `
 				{
 					"repository": {
-						"recordedCommands": [
-							{
-								"command": "git ls-files",
-								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-								"duration": 5,
-								"path": "/opt/homebrew/bin/git",
-								"start": "2023-07-20T15:04:05Z"
-							},
-							{
-								"command": "git clone",
-								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-								"duration": 10,
-								"path": "/opt/homebrew/bin/git",
-								"start": "2023-07-20T15:04:05Z"
-							},
-							{
-								"command": "git fetch",
-								"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-								"duration": 100,
-								"path": "/opt/homebrew/bin/git",
-								"start": "2023-07-20T15:04:05Z"
+						"recordedCommands": {
+							"nodes": [
+								{
+									"command": "git fetch",
+									"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+									"duration": 100,
+									"path": "/opt/homebrew/bin/git",
+									"start": "2023-07-20T15:04:05Z"
+								}
+							],
+							"totalCount": 1,
+							"pageInfo": {
+								"hasNextPage": false
 							}
-						]
+						}
 					}
 				}
 			`,
+		})
+
+	})
+
+	t.Run("paginated recorded commands", func(t *testing.T) {
+		cmd1 := wrexec.RecordedCommand{
+			Start:    startTime,
+			Duration: float64(100),
+			Args:     []string{"git", "fetch"},
+			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+			Path:     "/opt/homebrew/bin/git",
+		}
+		cmd2 := wrexec.RecordedCommand{
+			Start:    startTime,
+			Duration: float64(10),
+			Args:     []string{"git", "clone"},
+			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+			Path:     "/opt/homebrew/bin/git",
+		}
+		cmd3 := wrexec.RecordedCommand{
+			Start:    startTime,
+			Duration: float64(5),
+			Args:     []string{"git", "ls-files"},
+			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+			Path:     "/opt/homebrew/bin/git",
+		}
+
+		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
+		t.Cleanup(func() { conf.Mock(nil) })
+
+		repos := database.NewMockRepoStore()
+		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
+		db.ReposFunc.SetDefaultReturn(repos)
+
+		r := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), 3)
+
+		err = r.Insert(marshalCmd(t, cmd1))
+		require.NoError(t, err)
+		err = r.Insert(marshalCmd(t, cmd2))
+		require.NoError(t, err)
+		err = r.Insert(marshalCmd(t, cmd3))
+		require.NoError(t, err)
+
+		t.Run("limit within bounds", func(t *testing.T) {
+			RunTest(t, &Test{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+						{
+							repository(name: "github.com/sourcegraph/sourcegraph") {
+								recordedCommands(limit: 2) {
+									nodes {
+										start
+										duration
+										command
+										dir
+										path
+									}
+									totalCount
+									pageInfo {
+										hasNextPage
+									}
+								}
+							}
+						}
+					`,
+				ExpectedResult: `
+						{
+							"repository": {
+								"recordedCommands": {
+									"nodes": [
+										{
+											"command": "git ls-files",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 5,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										},
+										{
+											"command": "git clone",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 10,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										}
+									],
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": true
+									}
+								}
+							}
+						}
+					`,
+			})
+		})
+
+		t.Run("limit exceeds bounds", func(t *testing.T) {
+			RunTest(t, &Test{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+						{
+							repository(name: "github.com/sourcegraph/sourcegraph") {
+								recordedCommands(limit: 10000) {
+									nodes {
+										start
+										duration
+										command
+										dir
+										path
+									}
+									totalCount
+									pageInfo {
+										hasNextPage
+									}
+								}
+							}
+						}
+					`,
+				ExpectedResult: `
+						{
+							"repository": {
+								"recordedCommands": {
+									"nodes": [
+										{
+											"command": "git ls-files",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 5,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										},
+										{
+											"command": "git clone",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 10,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										},
+										{
+											"command": "git fetch",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 100,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										}
+									],
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": false
+									}
+								}
+							}
+						}
+					`,
+			})
+		})
+
+		t.Run("offset exceeds total count", func(t *testing.T) {
+			RunTest(t, &Test{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+						{
+							repository(name: "github.com/sourcegraph/sourcegraph") {
+								recordedCommands(offset: 1000) {
+									nodes {
+										start
+										duration
+										command
+										dir
+										path
+									}
+									totalCount
+									pageInfo {
+										hasNextPage
+									}
+								}
+							}
+						}
+					`,
+				ExpectedResult: `
+						{
+							"repository": {
+								"recordedCommands": {
+									"nodes": [],
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": false
+									}
+								}
+							}
+						}
+					`,
+			})
+		})
+
+		t.Run("valid offset and limit", func(t *testing.T) {
+			RunTest(t, &Test{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+						{
+							repository(name: "github.com/sourcegraph/sourcegraph") {
+								recordedCommands(offset: 1, limit: 2) {
+									nodes {
+										start
+										duration
+										command
+										dir
+										path
+									}
+									totalCount
+									pageInfo {
+										hasNextPage
+									}
+								}
+							}
+						}
+					`,
+				ExpectedResult: `
+						{
+							"repository": {
+								"recordedCommands": {
+									"nodes": [
+										{
+											"command": "git clone",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 10,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										},
+										{
+											"command": "git fetch",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 100,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										}
+									],
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": false
+									}
+								}
+							}
+						}
+					`,
+			})
+		})
+
+		t.Run("limit exceeds recordedCommandMaxLimit", func(t *testing.T) {
+			MockGetRecordedCommandMaxLimit = func() int {
+				return 1
+			}
+			t.Cleanup(func() {
+				MockGetRecordedCommandMaxLimit = nil
+			})
+			RunTest(t, &Test{
+				Schema: mustParseGraphQLSchema(t, db),
+				Query: `
+						{
+							repository(name: "github.com/sourcegraph/sourcegraph") {
+								recordedCommands(limit: 20) {
+									nodes {
+										start
+										duration
+										command
+										dir
+										path
+									}
+									totalCount
+									pageInfo {
+										hasNextPage
+									}
+								}
+							}
+						}
+					`,
+				ExpectedResult: `
+						{
+							"repository": {
+								"recordedCommands": {
+									"nodes": [
+										{
+											"command": "git ls-files",
+											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
+											"duration": 5,
+											"path": "/opt/homebrew/bin/git",
+											"start": "2023-07-20T15:04:05Z"
+										}
+									],
+									"totalCount": 3,
+									"pageInfo": {
+										"hasNextPage": true
+									}
+								}
+							}
+						}
+					`,
+			})
+		})
 	})
 }
 

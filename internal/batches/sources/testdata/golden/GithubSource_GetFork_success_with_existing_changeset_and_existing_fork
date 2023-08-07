@@ -34,6 +34,10 @@
    "ViewerPermission": "ADMIN",
    "RepositoryTopics": {
     "Nodes": []
+   },
+   "Parent": {
+    "NameWithOwner": "sourcegraph-testing/vcr-fork-test-repo-already-forked",
+    "IsFork": false
    }
   }
  }

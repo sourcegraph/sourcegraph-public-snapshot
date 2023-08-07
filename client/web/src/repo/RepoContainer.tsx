@@ -473,12 +473,14 @@ export const RepoContainer: FC<RepoContainerProps> = props => {
                                     }
                                 />
                             ))}
-                            <Route
-                                path={repoNameAndRevision + repoSettingsAreaPath}
-                                errorElement={<RouteError />}
-                                // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
-                                element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
-                            />
+                            {props.authenticatedUser?.siteAdmin && (
+                                <Route
+                                    path={repoNameAndRevision + repoSettingsAreaPath}
+                                    errorElement={<RouteError />}
+                                    // Always render the `RepoSettingsArea` even for empty repo to allow side-admins access it.
+                                    element={<RepoSettingsArea {...repoRevisionContainerContext} repoName={repoName} />}
+                                />
+                            )}
                             <Route
                                 key="hardcoded-key" // see https://github.com/ReactTraining/react-router/issues/4578#issuecomment-334489490
                                 path={repoNameAndRevision + '/*'}

@@ -2,7 +2,7 @@
 
 package schema
 
-// BatchSpecJSON is the content of the file "../../../schema/batch_spec.schema.json".
+// BatchSpecJSON is the content of the file "schema/batch_spec.schema.json".
 const BatchSpecJSON = `{
   "$id": "batch_spec.schema.json#",
   "$schema": "http://json-schema.org/draft-07/schema#",

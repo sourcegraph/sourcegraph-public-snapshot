@@ -10,15 +10,16 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
 
 -->
 
-- [Home](index.md)
-- [Getting started](getting-started/index.md)
-- [Tutorials](tutorials/index.md)
+<!-- - [Home](index.md) -->
+
+<!-- - [Getting Started](getting-started/index.md) -->
+<!-- - [Tutorials](tutorials/index.md) -->
 - [Cody (beta)](cody/index.md)
   - [Quickstart](cody/quickstart.md)
+  - [Capabilities](cody/capabilities.md)
   - [Explanations](cody/explanations/index.md)
   - [FAQ](cody/faq.md)
   - [Troubleshooting](cody/troubleshooting.md)
-  - [Code Autocomplete](cody/autocomplete.md)
 - [Cody App (beta)](app/index.md)
 - [Code search](code_search/index.md)
   - [Tutorials](code_search/tutorials/index.md)

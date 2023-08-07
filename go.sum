@@ -1878,6 +1878,8 @@ github.com/pseudomuto/protoc-gen-doc v1.5.1 h1:Ah259kcrio7Ix1Rhb6u8FCaOkzf9qRBqX
 github.com/pseudomuto/protoc-gen-doc v1.5.1/go.mod h1:XpMKYg6zkcpgfpCfQ8GcWBDRtRxOmMR5w7pz4Xo+dYM=
 github.com/pseudomuto/protokit v0.2.0 h1:hlnBDcy3YEDXH7kc9gV+NLaN0cDzhDvD1s7Y6FZ8RpM=
 github.com/pseudomuto/protokit v0.2.0/go.mod h1:2PdH30hxVHsup8KpBTOXTBeMVhJZVio3Q8ViKSAXT0Q=
+github.com/qdrant/go-client v1.3.0 h1:LckV8C0TtMPDqWPd5g5sIa9zELQMelRlcZk9ANSZ2H8=
+github.com/qdrant/go-client v1.3.0/go.mod h1:680gkxNAsVtre0Z8hAQmtPzJtz1xFAyCu2TUxULtnoE=
 github.com/qustavo/sqlhooks/v2 v2.1.0 h1:54yBemHnGHp/7xgT+pxwmIlMSDNYKx5JW5dfRAiCZi0=
 github.com/qustavo/sqlhooks/v2 v2.1.0/go.mod h1:aMREyKo7fOKTwiLuWPsaHRXEmtqG4yREztO0idF83AU=
 github.com/rafaeljusto/redigomock/v3 v3.1.2 h1:B4Y0XJQiPjpwYmkH55aratKX1VfR+JRqzmDKyZbC99o=
@@ -2025,8 +2027,8 @@ github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc h1:o+eq0cjVV3B5
 github.com/sourcegraph/scip v0.3.1-0.20230627154934-45df7f6d33fc/go.mod h1:7ZKAtLIUmiMvOIgG5LMcBxdtBXVa0v2GWC4Hm1ASYQ0=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152 h1:z/MpntplPaW6QW95pzcAR/72Z5TWDyDnSo0EOcyij9o=
 github.com/sourcegraph/yaml v1.0.1-0.20200714132230-56936252f152/go.mod h1:GIjDIg/heH5DOkXY3YJ/wNhfHsQHoXGjl8G8amsYQ1I=
-github.com/sourcegraph/zoekt v0.0.0-20230724134010-f9b3ea5dcf46 h1:VWYAOJEy4iCY5ypRui6xgFGyUWhlq2AtPj3J7BYgzQk=
-github.com/sourcegraph/zoekt v0.0.0-20230724134010-f9b3ea5dcf46/go.mod h1:QJc8dPAIRJ9KZbFBXteD4/YbXkSnMe7zK9wJkOoPg7c=
+github.com/sourcegraph/zoekt v0.0.0-20230801152445-d57235362dca h1:RPuTlekup6EQ41utARp+UiR5kc6smGMPQTmor0Rw84w=
+github.com/sourcegraph/zoekt v0.0.0-20230801152445-d57235362dca/go.mod h1:QJc8dPAIRJ9KZbFBXteD4/YbXkSnMe7zK9wJkOoPg7c=
 github.com/spaolacci/murmur3 v0.0.0-20180118202830-f09979ecbc72/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spaolacci/murmur3 v1.1.0/go.mod h1:JwIasOWyU6f++ZhiEuf87xNszmSA2myDM2Kzu9HwQUA=
 github.com/spf13/afero v0.0.0-20170901052352-ee1bd8ee15a1/go.mod h1:j4pytiNVoe2o6bmDsKpLACNPDBIoEAkihy7loJ1B0CQ=

@@ -98,7 +98,6 @@ export const GetCodyPage: React.FunctionComponent<GetCodyPageProps> = ({ authent
                                         onClick={onClickCTAButton}
                                         ctaClassName={styles.authButton}
                                         iconClassName={styles.buttonIcon}
-                                        redirect="/get-cody"
                                     />
                                 </div>
                                 <Link

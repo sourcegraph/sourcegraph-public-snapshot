@@ -20,13 +20,15 @@ export const SimpleSearch: FC<SimpleSearchProps> = props => {
     const [showState, setShowState] = useState<string>('default')
 
     function onSubmitWithTelemetry(event?: React.FormEvent): void {
-        props.telemetryService.log(eventName('SubmitSearch'), { type: showState })
+        const arg = { type: showState }
+        props.telemetryService.log(eventName('SubmitSearch'), arg, arg)
         props.onSubmit(event)
     }
 
     function pickRender(): JSX.Element {
         const changeState = (nextState: string): void => {
-            props.telemetryService.log(eventName('SelectJob'), { next: nextState })
+            const arg = { next: nextState }
+            props.telemetryService.log(eventName('SelectJob'), arg, arg)
             setShowState(nextState)
         }
 
