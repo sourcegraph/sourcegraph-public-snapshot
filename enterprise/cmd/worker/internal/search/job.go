@@ -25,14 +25,17 @@ func (j *searchJob) Config() []env.Config {
 }
 
 func (j *searchJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "exhaustive search job routines"))
-	workCtx := actor.WithInternalActor(context.Background())
-
 	workerStore, err := InitExhaustiveSearchWorkerStore()
 	if err != nil {
 		return nil, err
 	}
 
+	observationCtx = observation.ContextWithLogger(
+		observationCtx.Logger.Scoped("routines", "exhaustive search job routines"),
+		observationCtx,
+	)
+
+	workCtx := actor.WithInternalActor(context.Background())
 	return []goroutine.BackgroundRoutine{
 		NewExhaustiveSearchWorker(workCtx, observationCtx, workerStore),
 	}, nil
