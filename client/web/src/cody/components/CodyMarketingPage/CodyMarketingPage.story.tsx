@@ -15,6 +15,7 @@ export default config
 const context: Pick<SourcegraphContext, 'authProviders'> = {
     authProviders: [
         {
+            clientID: '000',
             serviceType: 'github',
             displayName: 'GitHub.com',
             isBuiltin: false,
@@ -22,6 +23,7 @@ const context: Pick<SourcegraphContext, 'authProviders'> = {
             serviceID: 'https://github.com',
         },
         {
+            clientID: '001',
             serviceType: 'gitlab',
             displayName: 'GitLab.com',
             isBuiltin: false,

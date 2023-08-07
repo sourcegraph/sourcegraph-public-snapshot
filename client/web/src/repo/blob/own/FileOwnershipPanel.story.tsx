@@ -149,6 +149,7 @@ const response: FetchOwnershipResult = {
                 },
             },
         },
+        changelist: null,
     },
 }
 

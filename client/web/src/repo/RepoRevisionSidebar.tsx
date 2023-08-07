@@ -60,6 +60,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
 
     const [initialFilePath, setInitialFilePath] = useState<string>(props.filePath)
     const [initialFilePathIsDir, setInitialFilePathIsDir] = useState<boolean>(props.isDir)
+
     const onExpandParent = useCallback((parent: string) => {
         setInitialFilePath(parent)
         setInitialFilePathIsDir(true)
@@ -147,9 +148,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                     <TabPanels className="h-100">
                                         <TabPanel>
                                             <RepoRevisionSidebarFileTree
-                                                key={initialFilePath}
                                                 focusKey={fileTreeFocusKey}
-                                                onExpandParent={onExpandParent}
                                                 repoName={props.repoName}
                                                 revision={props.revision}
                                                 commitID={props.commitID}
@@ -158,6 +157,7 @@ export const RepoRevisionSidebar: FC<RepoRevisionSidebarProps> = props => {
                                                 filePath={props.filePath}
                                                 filePathIsDirectory={props.isDir}
                                                 telemetryService={props.telemetryService}
+                                                onExpandParent={onExpandParent}
                                             />
                                         </TabPanel>
                                         <TabPanel>

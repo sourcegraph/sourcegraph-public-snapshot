@@ -1,5 +1,9 @@
 lockfileVersion: '6.0'
 
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
 overrides:
   browserify-zlib: 0.2.0
   '@types/webpack': '5'
@@ -1579,7 +1583,7 @@ importers:
         version: link:../codeintellify
       '@sourcegraph/cody-shared':
         specifier: ^0.0.4
-        version: 0.0.4
+        version: link:node_modules/@sourcegraph/cody-shared
       '@sourcegraph/cody-ui':
         specifier: ^0.0.6
         version: 0.0.6
