@@ -4,41 +4,15 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
+	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
 	"github.com/sourcegraph/sourcegraph/internal/github_apps/types"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
 	"github.com/tj/assert"
 )
-
-func TestFromConnection(t *testing.T) {
-	ctx := context.Background()
-
-	conn := &schema.GitHubConnection{
-		Url:   "https://github.com",
-		Token: "abc123",
-	}
-
-	db := database.NewMockDB()
-
-	auther, err := FromConnection(ctx, conn, db.GitHubApps(), keyring.Default().GitHubAppKey)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	oat, ok := auther.(*auth.OAuthBearerToken)
-	if !ok {
-		t.Fatal("expected OAuthBearerToken")
-	}
-
-	if oat.Token != "abc123" {
-		t.Errorf("want token abc123, got %s", oat.Token)
-	}
-}
 
 // Random valid private key generated for this test and nothing else
 const testPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
@@ -69,7 +43,7 @@ cEoKFPr8HjXXUVCa3Q84tf9nGb4iUFslRSbS6RCP6Nm+JsfbCTtzyglYuPRKITGm
 jSzka5UER3Dj1lSLMk9DkU+jrBxUsFeeiQOYhzQBaZxguvwYRIYHpg==
 -----END RSA PRIVATE KEY-----`
 
-func TestCreateEnterpriseFromConnection(t *testing.T) {
+func TestFromConnection(t *testing.T) {
 	t.Run("returns OAuthBearerToken when GitHubAppDetails is nil", func(t *testing.T) {
 		ghAppsStore := store.NewMockGitHubAppsStore()
 

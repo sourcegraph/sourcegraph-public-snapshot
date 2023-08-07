@@ -17,8 +17,10 @@ type RefreshableURLRequestAuthenticator interface {
 	auth.Refreshable
 }
 
-// FromConnection creates an authenticator from a GitHubConnection.,
-// This function gets replaced in Enterprise services that support GitHub App.
+// FromConnection creates an authenticator from a GitHubConnection.
+// It returns an OAuthBearerToken if the connection uses a Personal Access
+// Token, and it returns a GitHubAppAuthenticator if the connection is
+// configured via a GitHub App Installation.
 func FromConnection(
 	ctx context.Context,
 	conn *schema.GitHubConnection,
