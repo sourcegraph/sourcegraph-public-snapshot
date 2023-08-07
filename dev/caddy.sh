@@ -6,7 +6,7 @@ pushd "$(dirname "${BASH_SOURCE[0]}")/.." >/dev/null
 
 mkdir -p .bin
 
-version="2.7.2"
+version="2.7.3"
 case "$(go env GOOS)" in
   linux)
     os="linux"
