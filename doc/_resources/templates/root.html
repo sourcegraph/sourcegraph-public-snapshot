@@ -50,12 +50,12 @@
                 }
             </script>
 
-            <link rel="stylesheet" href="https://esm.sh/@markprompt/css@0.11.1?css" />
+            <link rel="stylesheet" href="https://esm.sh/@markprompt/css@0.12.0?css" />
 
             <script>
             </script>
             <script type="module">
-                import { markprompt, openMarkprompt } from 'https://esm.sh/@markprompt/web@0.14.3';
+                import { markprompt, openMarkprompt } from 'https://esm.sh/@markprompt/web@0.15.0';
 
                 function showMarkprompt() {
                     openMarkprompt()
@@ -74,13 +74,6 @@
 
                 const markpromptEl = newMarkprompt
 
-                const pathToHref = (path) => {
-                    return path
-                        ?.replace(/^\/*doc\//, "/")
-                        ?.replace(/\.[^.]+$/, "")
-                        ?.replace(/\/index$/, "")
-                };
-
                 const sluggify = (text) => {
                     return text
                         .toLowerCase()
@@ -88,14 +81,47 @@
                         .replace(/\s+/g, '-');
                 }
 
-                const getHref = (path, sectionHeading) => {
-                    const p = pathToHref(path);
-                    if (sectionHeading?.id) {
-                        return `${p}#${sectionHeading.id}`;
-                    } else if (sectionHeading?.value) {
-                        return `${p}#${sluggify(sectionHeading.value)}`;
+                const pathToHref = (path) => {
+                    const lastDotIndex = path.lastIndexOf('.');
+                    let cleanPath = path;
+                    if (lastDotIndex >= 0) {
+                        cleanPath = path.substring(0, lastDotIndex);
                     }
-                    return p;
+                    if (cleanPath.endsWith('/index')) {
+                        cleanPath = cleanPath.replace(/\/index/gi, '');
+                    }
+                    return cleanPath.replace(/^\/*doc\//, "/")?.replace(/\.[^.]+$/, "");
+                };
+
+                const getHref = (result) => {
+                    const path = pathToHref(result.file.path);
+                    if (result.meta?.leadHeading?.id) {
+                        return `${path}#${result.meta.leadHeading.id}`;
+                    } else if (result.meta?.leadHeading?.value) {
+                        return `${path}#${result.meta.leadHeading.slug}`;
+                    }
+                };
+
+                const removeFileExtension = (fileName) => {
+                    const lastDotIndex = fileName.lastIndexOf('.');
+                    if (lastDotIndex === -1) {
+                        return fileName;
+                    }
+                    return fileName.substring(0, lastDotIndex);
+                };
+
+                const getLabel = (result) => {
+                    let label = (
+                        result.meta?.leadHeading?.value ||
+                        result.file?.title ||
+                        removeFileExtension(result.file.path.split('/').slice(-1)[0])
+                    );
+                    if (label === "index") {
+                        label = "Home"
+                    }
+                    label = label.replace(/[_-]+/gi, " ")
+                    label = label.charAt(0).toUpperCase() + label.slice(1);
+                    return label
                 };
 
                 const promptTemplate = `You are a very enthusiastic company representative from Sourcegraph who loves to help people! Below is a list of context sections separated by three dashes ('---'). They consist of a section id, which corresponds to the file from which the section is in, followed by the actual section content, in Markdown format.
@@ -117,7 +143,7 @@ Answer (including related code snippets if available):`
 
                 markprompt('dzvb1USv2SLXKiQMnH56ua3dW54mSChj',
                     markpromptEl, {
-                        debug: true,
+                        debug: false,
                         prompt: {
                             model: "gpt-4",
                             promptTemplate,
@@ -127,9 +153,7 @@ Answer (including related code snippets if available):`
                         feedback: { enabled: true },
                         search: {
                             enabled: showInstantSearch,
-                            getResultHref: (path, sectionHeading) => {
-                                return getHref(path, sectionHeading);
-                            }
+                            getHref
                         },
                         trigger: {
                             label: 'Search or ask Docs AI',
@@ -138,25 +162,7 @@ Answer (including related code snippets if available):`
                             customElement: !showInstantSearch,
                         },
                         showBranding: false,
-                        references: {
-                            transformReferenceId: (referenceId) => {
-                                const parts = referenceId.split("/")
-                                let text = parts.slice(-1)[0].replace(/\.[^.]+$/, '')
-                                if (text === "index") {
-                                    if (parts.length === 1) {
-                                        text = "Home"
-                                    } else {
-                                        text = parts.slice(-2)[0]
-                                    }
-                                }
-                                text = text.replace(/[_-]+/gi, " ")
-                                text = text.charAt(0).toUpperCase() + text.slice(1);
-
-                                const href = pathToHref(referenceId);
-
-                                return { text, href }
-                            },
-                        },
+                        references: { getHref, getLabel },
                     }
                 );
             </script>
