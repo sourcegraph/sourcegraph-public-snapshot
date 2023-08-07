@@ -1,3 +1,5 @@
+import { URI } from 'vscode-uri'
+
 import {
     ActiveTextEditor,
     ActiveTextEditorDiagnostic,
@@ -14,7 +16,7 @@ export class RepoContainerEditor implements Editor {
         return null
     }
 
-    public getWorkspaceRootUri(): URI | null {
+    public getWorkspaceRootUri(): Uri | null {
         return null
     }
 
