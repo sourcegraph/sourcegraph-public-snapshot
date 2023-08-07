@@ -343,21 +343,19 @@ body > #sidebar .nav-section li.collapse ul {
 }
 /* Theme */
 body > #sidebar #theme {
-    flex: 1;
     display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    margin-top: calc(2*var(--spacing));
-    padding: 0 calc(1.5*var(--spacing));
+    margin: calc(2*var(--spacing)) 0;
+    gap: 0.5rem;
+    align-items: center;
 }
-body > #sidebar #theme div {
-    display: flex;
+body > #sidebar svg {
+    width: 16px;
+    margin-right: 0.25rem;
+    fill: var(--text-muted);
 }
 body > #sidebar #theme button {
-    border: 0;
-    background-color: transparent;
+    all: unset;
     font-family: var(--base-font-family);
-    font-size: 1rem;
     cursor: pointer;
 }
 body > #sidebar #theme button:not(.active) {
@@ -365,6 +363,9 @@ body > #sidebar #theme button:not(.active) {
 }
 body > #sidebar #theme button.active {
     color: var(--text-body);
+}
+body > #sidebar #theme button:hover {
+    opacity: 0.8;
 }
 
 /* FOOTER */
