@@ -1005,13 +1005,13 @@ body.theme-dark .markdown-body .chroma.sgquery .ss { color: #ff6b6b; background-
   padding-top: 1.25rem;
 }
 
-.markdown-body .getting-started .btn:hover {
-  color: var(--link-color);
-}
-
 .markdown-body .getting-started .btn span {
   color: var(--link-color);
   font-weight: bold;
+}
+
+.markdown-body .getting-started .btn p {
+    margin: 0.5rem 0 0 0;
 }
 
 /* Home Page - index.md */
